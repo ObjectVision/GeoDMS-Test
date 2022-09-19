@@ -1,0 +1,65 @@
+container merge_indirect_domainunit
+{
+	unit<float32> Eur_m2;
+
+	unit<Float32> Meter := BaseUnit('m', float32);
+	parameter<Meter> x_min := 0[Meter];
+	parameter<Meter> x_max := 280000[Meter];
+	parameter<Meter> y_min := 300000[Meter];
+	parameter<Meter> y_max := 625000[Meter];
+
+	unit<fpoint> rdc_meter_base :Format = "EPSG:28992";
+	unit<fpoint> rdc_meter      := range(rdc_meter_base, point(y_min, x_min), point(y_max, x_max));
+
+	parameter<string> SrcDomain_grid_ref       := 'rdc_25m';
+	unit<spoint> SrcDomain_grid := = 'Geography/'+SrcDomain_grid_ref;
+	/*{
+		attribute<domain_grid> domain_grid_rel := = domain_grid_ref+'_rel';
+	}*/
+
+	container Geography
+	{
+		unit<spoint> rdc_25m := TiledUnit(Point(1024s, 1280s, rdc_25m_org)); 
+		unit<spoint> rdc_25m_org := range(
+						gridset(
+							 rdc_meter
+							,point(-25[Meter], 25[Meter], rdc_meter)
+							,point(y_max, x_min, rdc_meter)
+							,spoint
+						)
+						,point(    0s,     0s)
+						,point(13000s, 11200s)
+		);
+	}
+
+	unit<uint8> CBSKlasse : nrofrows = 39
+	{
+		attribute<uint32> arg_1A := uint32(mod(id(.), 3b));
+	}
+
+	attribute<CBSKlasse> arg_1B (/SrcDomain_grid) := value((mod(PointCol(id(/SrcDomain_grid)), int16(39))), CBSKlasse);
+
+	attribute<Eur_m2> arg_2 (/SrcDomain_grid) := rnd_uniform(0, /SrcDomain_grid, range(float32, 0[Eur_m2], 100[Eur_m2]));
+	attribute<Eur_m2> arg_3 (/SrcDomain_grid) := rnd_uniform(1, /SrcDomain_grid, range(float32, 0[Eur_m2], 100[Eur_m2]));
+	attribute<Eur_m2> arg_4 (/SrcDomain_grid) := rnd_uniform(2, /SrcDomain_grid, range(float32, 0[Eur_m2], 100[Eur_m2]));
+	attribute<Eur_m2> arg_5 (/SrcDomain_grid) := rnd_uniform(3, /SrcDomain_grid, range(float32, 0[Eur_m2], 100[Eur_m2]));
+
+	attribute<Eur_m2> merge (/SrcDomain_grid) := 
+		merge(
+			  value(CBSKlasse/arg_1A[arg_1B], uint16) 
+			, Eur_m2 
+			, arg_2 
+			, arg_3
+			, arg_4
+			, arg_5
+		);
+	parameter<int32> mean_merge := round(mean(merge));
+	parameter<bool> test := mean_merge == 50i;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'merge indirect domainunit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/merge_indirect_domainunit.txt";
+
+}

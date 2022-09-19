@@ -1,0 +1,27 @@
+container ComplexNamespaces
+{
+	unit<uint32> src := referred
+	{
+		container sublevel := Templates/meta()
+		{
+			attribute<string> att1 (..) := att2;
+			parameter<bool>   test      := all(att1 == const('ok',..));
+		}
+	}
+
+	unit<uint32> referred: nrofrows = 1
+	{
+		attribute<string> att2 := const('ok',.);
+	}
+
+	container Templates
+	{
+		Template Meta;
+	}
+
+	parameter<string> test_log := src/sublevel/test 
+		? '' 
+		: 'ComplexNamespaces Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(src/sublevel/test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/ComplexNamespaces.txt";
+}

@@ -1,0 +1,46 @@
+container reg_count
+{
+	template unitsT
+	{
+		unit<Uint32> Domain: nrofrows = 10;
+		unit<uint8>  RegioA: nrofrows = 5;
+		unit<uint8>  RegioB: nrofrows = 3;
+		unit<uint8>  Class:  nrofrows = 4
+		{
+			attribute<string> label: ['class1','class2','class3','class4'];
+		}
+	}
+	container units := UnitsT();
+
+	container Regios
+	{
+		attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
+		attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+	}
+	attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+	attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+
+	container references // expected results
+	{
+		attribute<uint32> class1 (units/regioA):[1,1,0,1,0];
+		attribute<uint32> class2 (units/regioA):[2,0,1,0,0];
+		attribute<uint32> class3 (units/regioB):[0,1,1];
+		attribute<uint32> class4 (units/regioA):[1,1,0,0,0];
+	}
+	container attributes := reg_count(src, units/Class/label, Regios, refs);
+	container tests
+	{
+		attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
+		attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
+		attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
+		attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+	}
+	parameter<bool> test := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
+
+	parameter<string> test_log := test
+		? '' 
+		: 'reg_count Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/reg_count.txt";
+}
+

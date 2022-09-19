@@ -1,0 +1,84 @@
+container accenten
+{
+	container src
+	{
+		container gdal
+		{
+			unit<uint32> src
+			:	StorageName = "%projDir%/data/accents.csv"
+			,	StorageType = "gdal.vect";
+		}
+		container TableChopper
+		{
+			unit<uint8>       Domain: nrofrows = 16;
+			parameter<string> FieldSeparator := ';';
+		
+			parameter<string> FileData
+			:	StorageType = "str"
+			,	StorageName = "%projDir%/data/accents.csv";
+			parameter<string> HeaderLine := readLines(FileData, void, 0);
+			unit<uint32> Field := Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)
+			{
+				attribute<string> Name := ReadArray(HeaderLine, Field, String, 0);
+			}
+			attribute<string> BodyLines(Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
+
+			container Data :=
+				for_each_nedv(
+					Field/Name
+					,'ReadElems(
+						BodyLines
+						,string
+						,'+ MakeDefined(
+							Field/Name[ID(Field)-1]+'/ReadPos'
+							,'const(0,Domain)'
+						)+'
+					)'
+					,Domain
+					,string
+				);
+		}
+	}
+	container conversions
+	{
+		container From_UTF :=
+			for_each_nedv(
+				  src/TableChopper/field/name
+				,'from_utf(src/TableChopper/Data/' + src/TableChopper/field/name + ')'
+				, src/TableChopper/domain
+				, string);
+				
+		container To_UTF :=
+			for_each_nedv(
+				  src/TableChopper/field/name
+				,'To_UTF(From_UTF/' + src/TableChopper/field/name + ')'
+				, src/TableChopper/domain
+				, string);
+
+	}
+	container export
+	{
+		container TableComposer
+		{
+			unit<uint32> context:= src/gdal/src;
+			parameter<String> Fieldlist      := 'basis;nr1;nr2;nr3;nr4;nr5;nr6;nr7;nr8';
+			parameter<String> FieldSeperator := ';';
+			parameter<String> FileName       := '%LocalDataProjDir%/accents.csv';
+
+			unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
+			{
+				attribute<string> Name := ReadArray(FieldList,.,string,0);
+			}
+			parameter<string> NewLine := '\n';
+			parameter<String> Header  := FieldList;
+			attribute<String> Body (context) :=
+				= AsList(
+					+'String(context/'+Field/Name+')',' + '+Quote(FieldSeperator)+' +'
+				);
+		
+			parameter<String> Result:= Header + NewLine + AsList(Body, NewLine)
+			,	StorageName = "=FileName"
+			,	StorageType = "str";
+		}
+	}
+}

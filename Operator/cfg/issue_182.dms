@@ -1,0 +1,51 @@
+container issue_182
+{
+	unit<float32> rdc_coord;
+	unit<fpoint>  rdc_base
+	:	Format     = "EPSG:28992";
+	unit<fpoint> rdc := range(rdc_base, point(110000f,475000f), point(135000f,500000f));
+	unit<float32> m;
+
+	container AMS_grid
+	{
+		parameter<m> x_min := 108200[m];
+		parameter<m> x_max := 136200[m];
+		parameter<m> y_min := 470000[m];
+		parameter<m> y_max := 500000[m];
+
+		container m100 := make_grid(100[m]);
+		container m10  := make_grid(10[m]);
+		container m2   := make_grid(2[m])
+		{
+			attribute<m100/domain> m100_rel (domain):= domain/id[m100/domain];
+		}
+
+		template make_grid
+		{
+			// begin case parameters
+			parameter<m> gridsize;
+			// end case parameters
+	
+			parameter<int16> nr_cols := int16((x_max - x_min) / gridsize);
+			parameter<int16> nr_rows := int16((y_max - y_min) / gridsize);
+	
+			unit<spoint> domain :=
+				range(
+					 gridset(
+						 rdc
+						,point(gridsize, -gridsize, rdc)
+						,point(x_min, y_max, rdc)
+						,spoint
+					)
+					,point(0s, 0s)
+					,point(nr_cols, nr_rows)
+				)
+			,	DialogData = "rdc"
+			{
+				attribute<.>     id  := id(.);
+				attribute<int16> row := PointRow(id);
+			}
+		}
+	}
+	attribute<int16> modus_row (AMS_grid/m100/domain):= modus(AMS_grid/m2/domain/row , AMS_grid/m2/m100_rel);
+}

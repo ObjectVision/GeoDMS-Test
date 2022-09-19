@@ -1,0 +1,29 @@
+container folderinfo
+{
+	container impl
+	{
+		parameter<string> DataDir         := '%projdir%/data';
+		
+		parameter<string> Slash           : [ '/' ];
+		parameter<string> BackSlash       : [ '\\' ];
+		parameter<string> NewLine         : [ '\n' ];
+
+		parameter<string> ComSpec         := Expand(., '%env:ComSpec%');
+		parameter<string> FileNameDirInfo := '%LocalDataProjDir%/dirinfo.str';
+
+		parameter<string> DirCmdOrg       := Expand(., 'Dir '+ DataDir +'/*.dbf > ' + FileNameDirInfo);
+		parameter<string> DirCmd          := Replace(DirCmdOrg, Slash, BackSlash) + ' /B';
+	}
+
+	container writer  := exec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataProjDir%'));
+	parameter<string> WrittenFile := do(writer, impl/FileNameDirInfo), KeepData="True";
+	parameter<string> bestand: Storagename = "=WrittenFile", StorageReadOnly = "True";
+
+	container bestand_selectie
+	{
+		unit<uint32> alle_regels := range(uint32, 0, strcount(bestand,impl/NewLine))
+		{
+			attribute<string> inhoud := uppercase(readLines(bestand, ., 0));
+		}
+	}
+}

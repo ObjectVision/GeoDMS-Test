@@ -1,0 +1,35 @@
+container Kentallen: Descr = "Check that Copy of BaseLine -> Toekomst doesn't copy referent of BaseLine/Woning to Toekomst/Woning so that Tokomst.Zon_PV doesn't see Oppervlak."
+{
+	container GenericBase
+	{
+		container Zon_PV;
+	}
+	container BaseLine
+	{
+		container Woning := GenericBase
+		{
+			container Zon_PV
+			{
+				parameter<Float32> Oppervlak: [ 10 ]; 
+			}
+		}
+	}
+	container Toekomst := BaseLine // inheritance
+	{
+		container Woning
+		{
+			container Zon_PV := BaseLine/Woning/Zon_PV
+			{
+				parameter<Float32> Opbr:  [200.0];
+			}
+		}
+	}
+	parameter<Float32> opp := Toekomst/Woning/Zon_PV/Oppervlak;
+	parameter<Bool> Test := opp == Float32(10);
+	
+	parameter<string> test_log := Test 
+		? '' 
+		: 'ComplexNamespaces Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(Test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/Kentallen.txt";
+}

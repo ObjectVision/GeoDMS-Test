@@ -1,0 +1,929 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                                    Storage Manager Test                                                    //
+//                                                                                                            //
+//                  Configuratie voor het testen van de DMS Storage Managers                                  //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       Juli 2009                                                            //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// KNOWN ISSUES:
+// 1 boolean in dbf files, see dbf/wish
+// null files in string files, see strfiles/wish
+// xdb write werkt niet, see xdb
+// ASCII grid, write for a unit_derived grid, OS Structured Exception, see /ASCIIgrid/Write/GridData_d
+// bmp truecolor leest verkeerde waarden uit, zie /bmp/TrueColor/grid/GridData
+// bmp palette based leest geen palette information, zie /bmp/Palette/grid/PaletteData
+// tiff truecolor geeft verkeerde waarde bij wegschrijven, zie: Tiff/TrueColor/Write/GridData
+
+container StorageManagerTest
+{
+	container ConfigSettings
+	{
+		// driver name is different on x64, after installing new x64 drivers (incl related SP1), see http://www.mantis.objectvision.nl/view.php?id=249
+		parameter<String> OdbcExcelDriver := (GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'; 
+		parameter<String> OdbcTxtDriver   := (GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'; 
+	}
+	
+	container units
+	{
+		unit<uint32>  color;
+		unit<float32> m         := baseunit('m', float32);
+		unit<fpoint>  point_rd  := baseunit('m', fpoint), Format = "EPSG:28992";
+		unit<dpoint>  dpoint_rd := baseunit('m', dpoint);
+		unit<fpoint>  LatLong : Format = "EPSG:4326";
+
+//		#include<wmts_layer.dms>
+	}
+
+	container results
+	{
+		parameter<bool> read:=
+//			   odbc/MsAccess/results/all 
+//			&& odbc/MsExcel/results/all 
+			 dbf/results/all 
+			&& xdb/results/all 
+			&& str/results/all 
+			&& strfiles/results/all 
+			&& ASCIIgrid/results/all 
+			&& Tiff/results/all 
+			&& Tiff/Palette/results/all 
+			&& Tiff/GeoReference/test 
+			&& EsriShape/point/results/all 
+			&& EsriShape/arc/results/all 
+			&& EsriShape/polygon/results/all
+			&& TableChoppers/semicolon_seperated/results/all 
+			&& TableChoppers/comma_seperated/results/all  ;
+
+		parameter<string> read_str := String(read)
+		,	StorageType = "str"
+		,	storagename = "%localDataProjDir%/regr_results/read_regr.txt";
+		
+		parameter<string> unit_test_log := read 
+			? '' 
+			: 'Storage Read GeoDMS formats : ' + expand(., '%configDir%') + '.dms ' + PropValue(read, 'fullname') + ' result: not OK'
+		,	StorageType = "str"
+		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_geodms_formats.txt";
+	}
+
+	parameter <float32> Dif_all_float32   := 0.99f;
+	parameter <float64> Dif_all_float64   := 0.99;
+	parameter <float32> Dif_pconv_float32 := 1.000001f;
+	parameter <float64> Dif_pconv_float64 := 1.000001;
+
+	unit<uint32> reference: nrofrows = 5
+	{
+		attribute<int32>   IntegerAtt      : [0,1,256,-100,9999];
+		attribute<int32>   IntegerAttNull  : [null,1,256,-100,9999];
+		attribute<uint32>  UIntegerAtt     := uint32(IntegerAtt);
+		attribute<int64>   Int64Att        := int64(IntegerAtt);
+		attribute<uint64>  UInt64Att       := uint64(IntegerAtt);
+		attribute<uint2>   UInt2Att        := uint2(IntegerAtt);
+		attribute<uint4>   UInt4Att        := uint4(IntegerAtt);
+		attribute<uint8>   UInt8Att        := uint8(IntegerAtt);
+
+		attribute<float32> FloatAtt        : [0,1,9999999,-2.5,99.9];
+		attribute<float32> FloatAttNull    : [null,1,9999999,-2.5,99.9];
+		attribute<float64> Float64Att      := Float64(FloatAtt);
+		attribute<fpoint>  FPointAtt       := point(FloatAtt, FloatAtt, fpoint);
+
+		attribute<bool>    BoolAtt         : [False, True, True, False, True];
+		attribute<string>  StringAtt       : ['Hello','Test',null,'Two words','88a'];
+		attribute<string>  StringAttEmpty  : ['Hello','Test','','','88a'];
+		attribute<string>  StringAttNull   : ['Hello','Test',null, null,'88a'];
+
+		attribute<string>  StringAttNoNull : ['Hello','Test','12345','Two words','88a'];
+	}
+
+	unit<spoint> GridReference := Tiff/grid_uint32
+	{
+		attribute<units/color> GridData_uint32  : [0, 100, 12607552, 2000, 65535, 8405088, 49376, 1, 16777215, 12639424, 17, 8437920, 12624064, 4294967294, 4294967295, null];
+		attribute<uint8>       GridData_uint8   : [0, 254, 100, 200, 55, 1, 200, 10, 125, 37, 189, 5, 150, 800, 255, null];
+		attribute<float32>     GridData_float32 : [0, 254.5628, 100.0, 200.5, 55, 10101, 2, -10, -125.87, 37, 189.0000001, 5, -150, 175, null, null];
+		attribute<bool>        GridData_bool    : [true, true, false, true, false, true, true, true, true, true, false, false, true, false, true, null];
+	}
+
+	container ODBC
+	{
+		container MsAccess:
+			StorageName = "%projdir%/data/ODBC.mdb",
+			Source      = "ODBC test database",
+			SyncMode    = "None"
+		{
+			container src : Sqlstring = "SELECT * FROM TestTable ORDER BY ID"
+			{
+				attribute<int32>   IntegerAtt (reference);
+				attribute<float32> FloatAtt   (reference);
+				attribute<bool>    BoolAtt    (reference);
+				attribute<string>  StringAtt  (reference);
+			}
+			container Tests
+			{
+				attribute<bool> IntegerAtt (reference) := src/IntegerAtt == reference/IntegerAtt;
+				attribute<bool> FloatAtt   (reference) := src/FloatAtt   == reference/FloatAtt;
+				attribute<bool> BoolAtt    (reference) := src/BoolAtt    == reference/BoolAtt;
+				attribute<bool> StringAtt  (reference) := eq_or_both_null(src/StringAtt, reference/StringAtt);
+			}
+			container Results
+			{
+				parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
+				parameter<bool> FloatAtt   := all(Tests/FloatAtt);
+				parameter<bool> BoolAtt    := all(Tests/BoolAtt);
+				parameter<bool> StringAtt  := all(Tests/StringAtt);
+				parameter<bool> all        := IntegerAtt && FloatAtt && BoolAtt && StringAtt;
+			}
+		}
+		container MsExcel
+		{
+			container src:
+				Sqlstring   = "SELECT * FROM ImportSection ORDER BY ID",
+				StorageName = "DRIVER=%OdbcExcelDriver%;DBQ=%projdir%/data/ODBC.xls",
+				StorageType = "ODBC",
+				Source      = "ODBC test ExcelSheet",
+				SyncMode    = "None"
+			{
+				attribute<int32>   IntegerAtt (reference);
+				attribute<float32> FloatAtt   (reference);
+				attribute<bool>    BoolAtt    (reference);
+				attribute<string>  StringAtt  (reference);
+			}
+			container Tests
+			{
+				attribute<bool> IntegerAtt (reference) := src/IntegerAtt == reference/IntegerAtt;
+				attribute<bool> FloatAtt   (reference) := src/FloatAtt   == reference/FloatAtt;
+				attribute<bool> BoolAtt    (reference) := src/BoolAtt    == reference/BoolAtt;
+				attribute<bool> StringAtt  (reference) := src/StringAtt  == MakeDefined(reference/StringAtt,'');
+			}
+			container Results
+			{
+				parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
+				parameter<bool> FloatAtt   := all(Tests/FloatAtt);
+				parameter<bool> BoolAtt    := all(Tests/BoolAtt);
+				parameter<bool> StringAtt  := all(Tests/StringAtt);
+				parameter<bool> all        := IntegerAtt && FloatAtt && BoolAtt && StringAtt;
+			}
+		}
+	}
+	container dbf
+	{
+		container src:
+			StorageName     = "%projDir%/data/dbf.dbf",
+			StorageType     = "dbf",
+			Source          = "dbf example source",
+			SyncMode        = "None",
+			StorageReadOnly = "True",
+			SqlString       = "SELECT * FROM dbf" // NOT WORKING
+		{
+			attribute<int32>   IntegerAtt (reference);
+			attribute<float32> FloatAtt   (reference);
+			attribute<string>  StringAtt  (reference);
+		}
+		container Tests
+		{
+			attribute<bool> IntegerAtt (reference) := eq_or_both_null(src/IntegerAtt, reference/IntegerAtt);
+			attribute<bool> FloatAtt   (reference) := eq_or_both_null(src/FloatAtt, reference/FloatAtt);
+			attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
+		}
+		container Results
+		{
+			parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
+			parameter<bool> FloatAtt   := all(Tests/FloatAtt);
+			parameter<bool> StringAtt  := all(Tests/StringAtt);
+			parameter<bool> all        := IntegerAtt && FloatAtt && StringAtt;
+		}
+		container Write: StorageName = "%localDataProjDir%/regr_results/dbf.dbf"
+		{
+			attribute<int32>   IntegerAtt (reference) := reference/IntegerAtt;
+			attribute<float32> FloatAtt   (reference) := reference/FloatAtt;
+			attribute<string>  StringAtt  (reference) := reference/StringAtt;
+		}
+	}
+
+	container xdb // ASCII reference
+	{
+		container src: StorageName = "%projDir%/data/XDB.xdb"
+		{
+			attribute<int32>   IntegerAtt (reference);
+			attribute<float32> FloatAtt   (reference);
+		}
+		container Tests
+		{
+			attribute<bool> IntegerAtt (reference) := src/IntegerAtt == reference/IntegerAtt;
+			attribute<bool> FloatAtt   (reference) := src/FloatAtt   == reference/FloatAtt;
+		}
+		container Results
+		{
+			parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
+			parameter<bool> FloatAtt   := all(Tests/FloatAtt);
+			parameter<bool> all        := IntegerAtt && FloatAtt;
+		}
+		// In Maintenace
+		//container Write: StorageName = "C:/temp/XDB.xdb"
+		//{
+		//	attribute<int32>   IntAtt     (xdb/reference): expr = "reference/IntegerAtt";
+		//	attribute<float32> FloatAtt   (xdb/reference): expr = "reference/FloatAtt";
+		//}
+	}
+	container Str // ASCII String file
+	{
+		unit<uint8> Five: NrOfRows = 5;
+		container FileSet
+		{
+			parameter<string> StringParam: StorageType = "str", StorageName = "%projDir%/data/strfiles/regr/file01.txt";
+			
+			attribute<uint8> UInt8Array (Five): StorageType = "str", StorageName = "%projDir%/data/strfiles/regr/file01.txt";
+		}
+		container Tests
+		{
+			parameter<bool> StringParam       := eq_or_both_null(FileSet/StringParam, reference/StringAttNoNull[0]);
+			attribute<Bool> UInt8Array (Five) := FileSet/UInt8Array == union_data(Five, UInt8(72), UInt8(69+32), UInt8(76+32), UInt8(76+32), UInt8(79+32));
+		}
+		container results
+		{
+			parameter<bool> all := all(Tests/UInt8Array) && Tests/StringParam;
+		}
+		container Write
+		{
+			parameter<string> StringParam      := FileSet/StringParam, StorageType = "str", StorageName = "%localDataProjDir%/regr_results/strfiles/regr/str.txt";  
+			attribute<uint8>  UInt8Array(Five) := FileSet/UInt8Array,  StorageType = "str", StorageName = "%localDataProjDir%/regr_results/strfiles/regr/uint8.txt";
+		}
+	}
+	container StrFiles // ASCII String files
+	{
+		container FileSet
+		{
+			attribute<string>  StringAtt (reference) : StorageType = "strfiles", StorageName = "%projDir%/data/strfiles/regr";
+			attribute<string>  FileName  (reference) : ['file01.txt','file02.txt','file03.txt','file04.txt','file05.txt'];
+		}
+		container Test
+		{
+			attribute<bool> StringAtt (reference) := eq_or_both_null(FileSet/StringAtt, reference/StringAttNoNull);
+		}
+		container results
+		{
+			parameter<bool> all := all(Test/StringAtt);
+		}
+		container Write
+		{
+			attribute<string> FileName  (reference) : ['file01.txt','file02.txt','file03.txt','file04.txt','file05.txt'];
+			attribute<string> StringAtt (reference) := FileSet/StringAtt, StorageType = "strfiles", StorageName = "%localDataProjDir%/regr_results/strfiles/regr";
+		}
+	}
+	container ASCIIgrid
+	{
+		container unit_config
+		{
+			unit<fpoint> rdc_meter: Range = "[{300000, 0}, {300500, 500}) ";
+			unit<spoint> grid :=
+				range(gridset(rdc_meter,
+						point(Float32(  -100.0), Float32(100.0), rdc_meter),
+						point(Float32(300500.0), Float32(    0), rdc_meter),
+						SPoint), 
+					point(int16(0), int16(0)),
+					point(int16(5), int16(5))
+				);
+
+			attribute<uint8> GridData  (grid) : StorageName = "%projdir%/data/testgrid.asc";
+			attribute<uint8> reference (grid) : [null,0,0,0,1,0,0,2,1,1,0,2,3,3,3,1,1,1,3,0,0,1,0,1,3];
+			attribute<bool>  test      (grid) := eq_or_both_null(GridData, reference);
+		}
+		container unit_derived
+		{
+			unit<spoint> grid_ud : StorageName = "%projdir%/data/testgrid.asc"
+			{
+				attribute<int32> GridData;
+			}
+			attribute<int32> reference (grid_ud) : [null,0,0,0,1,0,0,2,1,1,0,2,3,3,3,1,1,1,3,0,0,1,0,1,3];
+			attribute<bool>  test      (grid_ud) := eq_or_both_null(grid_ud/GridData, reference);
+		}
+		container results
+		{
+			parameter<bool> all := all(unit_config/test) && all(unit_derived/test);
+		}
+		container Write
+		{
+			attribute<uint8> GridData    (unit_config/grid)     := unit_config/GridData,                 StorageName = "%localDataProjDir%/regr_results/ASCII_grid_uc.asc";
+			attribute<uint8> GridData_d  (unit_derived/grid_ud) := uint8(unit_derived/grid_ud/GridData), StorageName = "%localDataProjDir%/regr_results/ASCII_grid_ud.asc";
+		}
+	}
+	container Tiff
+	{
+		unit<spoint> gridsel :=
+				range(
+					gridset(
+						 units/point_rd
+						,point(-40f, 40f, units/point_rd)
+						,point(383960,216040)
+						,spoint
+					)
+					,point(int16(0), int16(0))
+					,point(int16(2), int16(2))
+				)
+		{
+			attribute<.> id := id(.);
+		}
+
+		unit<spoint> Grid_uint32:
+			StorageName     = "%projdir%/data/tiff_uint32.tif",
+			DialogData      = "units/point_rd",
+			StorageReadOnly = "True"
+		{
+			attribute<units/color> GridData          : DialogType = "BrushColor";
+			attribute<units/color> ReadData (gridsel): DialogType = "BrushColor";
+		}
+		unit<spoint> Grid_uint8:
+			StorageName     = "%projdir%/data/tiff_uint8.tif",
+			DialogData      = "units/point_rd",
+			StorageReadOnly = "True"
+		{
+			attribute<uint8> GridData;
+		}
+		unit<spoint> Grid_float32:
+			StorageName     = "%projdir%/data/tiff_float32.tif",
+			DialogData      = "units/point_rd",
+			StorageReadOnly = "True"
+		{
+			attribute<float32> GridData;
+			attribute<float32> ReadData (gridsel);
+		}
+		unit<spoint> Grid_bool:
+			StorageName     = "%projdir%/data/tiff_bool.tif",
+			DialogData      = "units/point_rd",
+			StorageReadOnly = "True"
+		{
+			attribute<bool> GridData;
+		}
+
+		// Write Test Grids
+		//container WriteUint32: StorageName = "%projdir%/data/tiff_uint32.tif"
+		//{
+		//	attribute<uint32> GridData (Grid_uint32) := GridReference/GridData_uint32;
+		//}
+
+		container reference
+		{
+			attribute<units/color> ReadData_uint32 (gridsel): [8405088, 49376, 12639424, 17];
+		}
+
+		container tests
+		{
+			attribute<bool> test_uint32  (Grid_uint32)  := eq_or_both_null(Grid_uint32/GridData,  GridReference/GridData_uint32);
+			attribute<bool> test_uint8   (Grid_uint8)   := eq_or_both_null(Grid_uint8/GridData ,  union_data(Grid_uint8,   GridReference/GridData_uint8));
+			attribute<bool> test_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, Float32(0 / 0)), union_data(Grid_float32, GridReference/GridData_float32));
+			attribute<bool> test_bool    (Grid_bool)    := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
+
+			attribute<bool> test_sel     (gridsel)      := Grid_uint32/ReadData == reference/ReadData_uint32;
+		}
+
+		container Results
+		{
+			parameter<bool> all := all(tests/test_uint32) && all(tests/test_uint8) && all(tests/test_float32) && all(tests/test_uint32) && all (tests/test_sel); 
+		}
+
+		container TrueColor
+		{
+			container Write: StorageName = "%localDataProjDir%/regr_results/tiff_tc.tif"
+			{
+				attribute<units/color> GridData (Grid_uint32): [0, 4202720, 12607552, 4243488, 65535, 8405088, 49376, 12624096, 16777215, 12639424, 4219040, 8437920, 12624064, 8421504, 4210752, 8446176];
+			}
+		}
+
+		container Palette
+		{
+			unit<uint4> colorindex
+			{
+				attribute<units/color> palette := Grid/PaletteData, DialogType = "BrushColor";
+			}
+			unit<spoint> Grid: 
+				StorageName     = "%projdir%/data/tiff_pa.tif", 
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<colorindex>  GridData;
+				attribute<units/color> PaletteData (colorindex);
+			}
+			container reference
+			{
+				attribute<colorindex> GridData (Grid): [2, 2, 6, 6, 6, 4, 0, 0, 0, 3, 5, 6, 6, 6, 5, 5, 3, 3, 3, 5, 11, 11, 11, 11, 11];
+				attribute<bool>       test     (Grid):= Grid/GridData == reference/GridData;
+			}
+			container Results
+			{
+				parameter<bool> all := all(reference/test);
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/tiff_pa.tif", ExplicitSuppliers = "Grid"
+			{
+				attribute<colorindex>  GridData    (Grid)       := Grid/GridData;
+				attribute<units/color> PaletteData (colorindex) := Grid/PaletteData;
+			}
+		}
+
+		container GeoReference
+		{
+			parameter<bool> test := 
+				PropValue(Grid_uint32, 'Projection') = '{-40.5, 40.5}*m+{384000, 216000}' &&
+				PropValue(Palette/Grid, 'Projection') = '{-40.5, 40.5}*m+{384000, 216000}';
+		}
+	}
+	container EsriShape
+	{
+		container Point
+		{
+			unit<uint32> PointSet:
+				StorageName     = "%projdir%/data/point/point.dbf",
+				DialogType      = "map",
+				DialogData      = "location",
+				StorageReadOnly = "True"
+			{
+				attribute<units/point_rd> location : StorageName= "%projdir%/data/point/point.shp";
+				attribute<string>         name; 
+			}
+			container reference
+			{
+				attribute<float32>        x        (PointSet) : [115135,111803,114903,111353,111741];
+				attribute<float32>        y        (PointSet) : [401331,399476,399289,401729,398696];
+				attribute<units/point_rd> location (PointSet) := point(y, x, units/point_rd);
+				attribute<string>         name     (PointSet) := 'point_' + String(id(PointSet));
+				attribute<bool>           test     (PointSet) := PointSet/location == location && PointSet/name == reference/name;
+			}
+			container Results
+			{
+				parameter<bool> all := all(reference/test);
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/point/point.dbf"
+			{
+				attribute<units/point_rd> location (PointSet) := PointSet/location, StorageName= "%localDataProjDir%/regr_results/point/point.shp";
+				attribute<string>         name     (PointSet) := PointSet/name;
+			}
+		}
+		container Arc
+		{
+			unit<uint32> ArcSet: 
+				StorageName     = "%projdir%/data/arc/road.dbf",
+				DialogType      = "map",
+				DialogData      = "arc",
+				StorageReadOnly = "True"
+			{
+				attribute<units/point_rd> arc (arc) : StorageName= "%projdir%/data/arc/road.shp";
+				attribute<string>         label;
+			}
+			container reference
+			{
+				unit<uint32> PointSet: = Sequence2Points(ArcSet/arc);
+
+				attribute<float32>        x          (PointSet): [120157,120487,120584,119680,120157,120123,120146,120157];
+				attribute<float32>        y          (PointSet): [411022,413887,414205,410929,411022,410640,410900,411022];
+				attribute<PointSet>       sequence   (PointSet): [0,0,0,1,1,2,2,2];
+				attribute<uint32>         ordinal    (PointSet): [0,1,2,0,1,0,1,2];
+
+				attribute<units/point_rd> point      (PointSet) := Point(y, x, units/point_rd);
+				attribute<string>         name       (ArcSet): ['A27;E311','A59','A27;E311'];
+
+				attribute<bool>           test_point (PointSet) := point_isNearby(pointset/point, point, Dif_all_float32);
+				attribute<bool>           test_seq   (PointSet) := pointset/sequenceNr ==  sequence;
+				attribute<bool>           test_ord   (PointSet) := pointset/ordinal ==  ordinal;
+				attribute<bool>           test_label (ArcSet)   := ArcSet/label == name;
+			}
+			container Results
+			{
+				parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/arc/road.dbf"
+			{
+				attribute<units/point_rd> arc   (ArcSet, arc) := ArcSet/arc, StorageName= "%localDataProjDir%/regr_results/arc/road.shp";
+				attribute<string>         label (ArcSet)      := ArcSet/label;
+			}
+		}
+		container Polygon
+		{
+			unit<uint32> PolygonSet:
+				StorageName     = "%projdir%/data/polygon/area.dbf",
+				DialogType      = "map",
+				DialogData      = "polygon",
+				StorageReadOnly = "True"
+			{
+				attribute<units/point_rd> poly (polygon): StorageName = "%projdir%/data/polygon/area.shp";
+				attribute<string>        label;
+			}
+			container reference
+			{
+				unit<uint32> PointSet := Sequence2Points(PolygonSet/poly);
+
+				attribute<float32>        x          (PointSet)   : [120157,120487,120584,120157,120123,120146,120157,120123];
+				attribute<float32>        y          (PointSet)   : [411022,413887,414205,411022,410640,410900,411022,410640];
+				attribute<PointSet>       sequence   (PointSet)   : [0,0,0,0,2,2,2,2];
+				attribute<uint32>         ordinal    (PointSet)   : [0,1,2,3,0,1,2,3];
+
+				attribute<units/point_rd> point      (PointSet)   := Point(y, x, units/point_rd);
+				attribute<string>         name       (PolygonSet) : ['A27;E311','A59','A27;E311'];
+
+				attribute<bool>           test_point (PointSet)   := point_isNearby(pointset/point, point, Dif_all_float32);
+				attribute<bool>           test_seq   (PointSet)   := pointset/sequenceNr == sequence;
+				attribute<bool>           test_ord   (PointSet)   := pointset/ordinal == ordinal;
+				attribute<bool>           test_label (PolygonSet) := PolygonSet/label == name;
+			}
+			container Results
+			{
+				parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/Polygon/area.dbf"
+			{
+				attribute<units/point_rd> Polygon (PolygonSet, polygon) := PolygonSet/poly, StorageName= "%localDataProjDir%/regr_results/Polygon/area.shp";
+				attribute<string>         label   (PolygonSet)          := PolygonSet/label;
+			}
+		}
+	}
+
+	/*container gdal_grid
+	{
+		container TIFF
+		{
+			unit<spoint> Grid_uint32:
+				StorageName     = "%projdir%/data/gdal/tiff_uint32.tif",
+				StorageType     = "gdal.grid",
+				DialogData      = "units/point_rd"
+			{
+				attribute<units/color> GridData                : DialogType = "BrushColor";
+				attribute<units/color> ReadData (/Tiff/gridsel): DialogType = "BrushColor";
+			}
+			unit<spoint> WriteGrid_uint32 := Grid_uint32,
+				StorageName     = "%localDataProjDir%/regr_results/gdal/tiff_uint32.tif", // check that folder exists and file(s) doesn't.
+				StorageType     = "gdalwrite.grid",
+				DialogData      = "units/point_rd"
+			{
+				attribute<units/color> GridData  := Grid_uint32/GridData;
+			}
+			unit<spoint> ReadWrittenGrid_uint32:
+				StorageName     = "%localDataProjDir%/regr_results/gdal/tiff_uint32.tif",
+				StorageType     = "gdal.grid",
+				DialogData      = "units/point_rd"
+			{
+				attribute<units/color> GridData;
+			}
+			unit<spoint> Grid_uint8:
+				StorageName     = "%projdir%/data/gdal/tiff_uint8.tif",
+				StorageType     = "gdal.grid",
+				DialogData      = "units/point_rd"
+			{
+				attribute<uint8> GridData;
+			}
+			unit<spoint> Grid_float32:
+				StorageName     = "%projdir%/data/gdal/tiff_float32.tif",
+				StorageType     = "gdal.grid",
+				DialogData      = "units/point_rd"
+			{
+				attribute<float32> GridData;
+			}
+			unit<spoint> Grid_bool:
+				StorageName     = "%projdir%/data/gdal/tiff_bool.tif",
+				StorageType     = "gdal.grid",
+				DialogData      = "units/point_rd"
+			{
+				attribute<bool> GridData;
+			}
+
+			container tests
+			{
+				attribute<bool> test_uint32  (Grid_uint32)   := eq_or_both_null(Grid_uint32/GridData,  union_data(Grid_uint32,  GridReference/GridData_uint32));
+				attribute<bool> test_uint32_W(Grid_uint32)   := eq_or_both_null(ReadWrittenGrid_uint32/GridData,  union_data(Grid_uint32,  GridReference/GridData_uint32));
+				attribute<bool> test_uint8   (Grid_uint8)    := eq_or_both_null(Grid_uint8/GridData ,  union_data(Grid_uint8,   GridReference/GridData_uint8));
+				attribute<bool> test_float32 (Grid_float32)  := eq_or_both_null(Grid_float32/GridData, union_data(Grid_float32, GridReference/GridData_float32));
+				attribute<bool> test_bool    (Grid_bool)     := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
+
+				attribute<bool> test_sel     (/Tiff/gridsel) := Grid_uint32/ReadData == /Tiff/reference/ReadData_uint32;
+			}
+
+			container Results
+			{
+				parameter<bool> all := all(tests/test_uint32) && all(tests/test_uint32_W) && all(tests/test_uint8) && all(tests/test_float32) && all(tests/test_uint32) && all (tests/test_sel); 
+			}		
+		}
+
+		container netCDF_with_ERROR {
+			parameter<string> GDAL_Driver : [ 'netCDF' ];
+			unit<uint32> optionSet:= range(uint32, 0, 2);
+			attribute<string> GDAL_Options(optionSet): [ 'yyy=a', 'zzz=b' ];
+			container NetCDF
+				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\""
+				,	StorageType     = "gdal.grid"
+				,	SyncMode        = "AllTables"
+				,	DialogData      = "units/LatLong"
+				,	StorageReadOnly = "True"
+			{
+				unit<spoint> area_domain {
+					attribute<uint32> GridData;
+				}
+	//			unit<spoint> GridDomain;
+	//			attribute<uint32> GridData(GridDomain);
+				
+	//			attribute<uint32> area(area_domain);
+			}
+		}
+		container NetDriver {
+			parameter<string> GDAL_Driver : [ 'netCDF' ];
+			unit<spoint> msk_rgn
+//				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":lon_bnds"
+				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":msk_rgn"
+				,	StorageType     = "gdal.grid"
+				,	SyncMode        = "AllTables"
+				,	DialogData      = "units/LatLong"
+				,	StorageReadOnly = "True"
+			{
+				attribute<uint32> GridData;
+			}
+			unit<spoint> tas
+				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":tas"
+				,	StorageType     = "gdal.grid"
+				,	SyncMode        = "AllTables"
+				,	DialogData      = "units/LatLong"
+				,	StorageReadOnly = "True"
+			{
+				attribute<uint32> GridData;
+			}
+			unit<spoint> ua
+				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":ua"
+				,	StorageType     = "gdal.grid"
+				,	SyncMode        = "AllTables"
+				,	DialogData      = "units/LatLong"
+				,	StorageReadOnly = "True"
+			{
+				attribute<uint32> GridData;
+			}
+//			attribute<uint32> tas_ua(msk_rgn) := tas/GridData + ua/GridData; INCOMPATIBLE DOMAIN
+			
+			container bij_elkaar
+			{
+				attribute<uint32> tas(msk_rgn)
+					:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":tas"
+					,	StorageType     = "gdal.grid"
+					,	StorageReadOnly = "True";
+					
+				attribute<uint32> ua(msk_rgn)
+					:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":ua"
+					,	StorageType     = "gdal.grid"
+					,	StorageReadOnly = "True";
+					
+				attribute<uint32> tas_ua(msk_rgn) := tas + ua;
+					
+				unit<spoint> lon_bnds
+					:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":lon_bnds"
+					,	StorageType     = "gdal.grid"
+					,	SyncMode        = "AllTables"
+					,	DialogData      = "units/LatLong"
+					,	StorageReadOnly = "True"
+				{
+					attribute<uint32> GridData;
+				}
+			}
+		}
+		
+		container netCDFSubdatasets
+				:	StorageName     = "%projDir%/data/ECMWF_ERA-40_subset.nc"
+				,	StorageType     = "gdal.grid"
+				,	SyncMode        = "AllTables"
+				,	DialogData      = "units/LatLong"
+				,	StorageReadOnly = "True"
+				, 	SyncMode 		= "AllTables"
+		{
+		}
+
+		container x := DocStorageManagers()
+		{
+			
+		}
+		
+	     container y := DocData()
+		{
+			
+		}
+		
+		unit<wpoint> aig: Descr = "Arc/Info binary grid",
+			StorageName     = "%sourcedatadir%/SpaceToGo/Contest/wetlands1",
+			StorageType     = "gdal.grid",
+			DialogData      = "WorldBaseUnit",
+			StorageReadOnly = "True"
+		{
+			unit<wpoint> World1kmGrid := TiledUnit(point(uint16(1024), uint16(1024),aig));
+			attribute<UInt8> GridData(World1kmGrid);
+//			attribute<UInt8> ReadData(SouthEastAsia);
+		}
+	}*/
+
+
+	container cfs
+	{
+		parameter<uint32> MakeCfs : = uint32(make/att_str[0]) + make/att_int[0] + uint32(make/att_float[0]) + uint32(pointCol(make/att_point[0]));
+		container result
+		{
+			parameter<string> tests_log := String(all)
+			,	StorageType = "str"
+			,	storagename = "%localDataProjDir%/regr_results/cfs.txt";
+
+			parameter<bool>    all      := str && int && float && point;
+			parameter<bool>    str      := AsItemList(read/att_str) == 'label1,label2,label3,label4,label5';
+			parameter<bool>    int      := sum(read/att_int) == 931;
+			parameter<bool>    float    := sum(read/att_float) > 19.9f && sum(read/att_float) < 20.0f;
+			parameter<float32> pointsum := sum(pointCol(read/att_point) + pointRow(read/att_point));
+			parameter<bool>    point    := pointsum > 39.995f &&pointsum < 39.997f;
+		}
+		unit<uint32> src: nrofrows = 5
+		{
+			attribute<string>  att_str   : ['label1','label2','label3','label4','label5'];
+			attribute<uint32>  att_int   : [1,2,3,4,921];
+			attribute<float32> att_float : [1.0,2.1,3.4,5.6,7.898];
+			attribute<fpoint>  att_point := point(att_float,att_float,fpoint);
+		}
+		unit<uint32> make := src
+		,	StorageName = "%LocalDataProjDir%/regr_results/cfs_test.cfs"
+		{
+			attribute<string>  att_str   := src/att_str;
+			attribute<uint32>  att_int   := src/att_int;
+			attribute<float32> att_float := src/att_float;
+			attribute<fpoint>  att_point := src/att_point;
+		}
+		unit<uint32> read: StorageName = "%LocalDataProjDir%/regr_results/cfs_test.cfs"
+		{
+			attribute<string>  att_str;
+			attribute<uint32>  att_int;
+			attribute<float32> att_float;
+			attribute<fpoint>  att_point;
+		}
+	}
+	container fss
+	{
+		container result
+		{
+			parameter<string> tests_log := String(all)
+			,	StorageType = "str"
+			,	storagename = "%localDataProjDir%/regr_results/fss.txt";
+			parameter<bool>    all      := str && int && float && point;
+			parameter<bool>    str      := AsItemList(read/att_str) = 'label1,label2,label3,label4,label5';
+			parameter<bool>    int      := sum(read/att_int) = 931;
+			parameter<bool>    float    := sum(read/att_float) > 19.9f && sum(read/att_float) < 20.0f;
+			parameter<float32> pointsum := sum(pointCol(read/att_point) + pointRow(read/att_point));
+			parameter<bool>    point    := pointsum > 39.995f &&pointsum < 39.997f;
+		}
+		unit<uint32> src: nrofrows = 5
+		{
+			attribute<string>  att_str   : ['label1','label2','label3','label4','label5'];
+			attribute<uint32>  att_int   : [1,2,3,4,921];
+			attribute<float32> att_float : [1.0,2.1,3.4,5.6,7.898];
+			attribute<fpoint>  att_point := point(att_float,att_float,fpoint);
+		}
+		unit<uint32> make := src
+		,	StorageName = "%LocalDataProjDir%/regr_results/fss_test"
+		,	StorageType = "fss"
+		{
+			attribute<string>  att_str   := src/att_str;
+			attribute<uint32>  att_int   := src/att_int;
+			attribute<float32> att_float := src/att_float;
+			attribute<fpoint>  att_point := src/att_point;
+		}
+		unit<uint32> read
+		:	StorageName = "%LocalDataProjDir%/regr_results/fss_test"
+		,	StorageType = "fss"
+		{
+			attribute<string>  att_str;
+			attribute<uint32>  att_int;
+			attribute<float32> att_float;
+			attribute<fpoint>  att_point;
+		}
+	}
+
+	container TableChoppers
+	{
+		container semicolon_seperated := TableChopperT('%projdir%/data/TableChopperSemicolon.csv',';'); 
+		container comma_seperated     := TableChopperT('%projdir%/data/TableChopperComma.csv',',');
+
+		Template TableChopperT
+		{
+			// begin case parameters
+			parameter<String> FileName;
+			parameter<String> FieldSeparator;
+			// einde case parameters
+
+			parameter<uint32> nrRows         := strcount(FileData,FieldSeparator) / 8;
+			unit<uint32>      Domain         := range(uint32,0,nrRows );
+
+			parameter<string> FileData: StorageType = "str", StorageName = "=FileName", StorageReadOnly="True";
+			parameter<string> HeaderLine := readLines(FileData, void, 0);
+
+			unit<UInt32> Field := Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)
+			{
+				attribute<String> Name := ReadArray(HeaderLine, Field, String, 0);
+			}
+			attribute<String> BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
+
+			container Data := for_each_nedv(Field/Name, 'ReadElems(BodyLines, string, '+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0, Domain)')+')', Domain, string)
+			{
+				attribute<float32> Max_elem (Domain) := Max_elem(float32(bedrijventerrein_min),float32(bedrijventerrein_max),float32(openbarevoorz_min),float32(openbarevoorz_max),float32(zeehaven_min),float32(zeehaven_max));
+			}
+
+			container Reference
+			{
+				attribute<string> Corop                (Domain): ['0', '1',  '2', '3',  '4'];
+				attribute<string> CoropLabel           (Domain): ['Buitengebied','Oost-Groningen','Delfzijl e.o.','Overig Groningen','Noord-Friesland'];
+				attribute<string> bedrijventerrein_min (Domain): ['0','-1','2.2','10', '21'];
+				attribute<string> bedrijventerrein_max (Domain): ['0','-1','3.4','20', '38'];
+				attribute<string> openbarevoorz_min    (Domain): ['0', '1','4.6','30', '45'];
+				attribute<string> openbarevoorz_max    (Domain): ['0', '1','5.8','20','521'];
+				attribute<string> zeehaven_min         (Domain): ['0', '1','6'  ,'10', '68'];
+				attribute<string> zeehaven_max         (Domain): ['0', '1','7'  , '0', '79'];
+			}
+
+			container Tests
+			{
+				attribute<bool> Corop                (Domain):= Data/Corop == Reference/Corop;
+				attribute<bool> CoropLabel           (Domain):= Data/CoropLabel == Reference/CoropLabel;
+				attribute<bool> bedrijventerrein_min (Domain):= Data/bedrijventerrein_min == Reference/bedrijventerrein_min;
+				attribute<bool> bedrijventerrein_max (Domain):= Data/bedrijventerrein_max == Reference/bedrijventerrein_max;
+				attribute<bool> openbarevoorz_min    (Domain):= Data/openbarevoorz_min == Reference/openbarevoorz_min;
+				attribute<bool> openbarevoorz_max    (Domain):= Data/openbarevoorz_max == Reference/openbarevoorz_max;
+				attribute<bool> zeehaven_min         (Domain):= Data/zeehaven_min == Reference/zeehaven_min;
+				attribute<bool> zeehaven_max         (Domain):= Data/zeehaven_max == Reference/zeehaven_max;
+			}
+
+			container Results
+			{
+				parameter<bool> all :=
+					   all(Tests/Corop)             && all(Tests/CoropLabel)        && all(Tests/bedrijventerrein_min) && all(Tests/bedrijventerrein_max)
+					&& all(Tests/openbarevoorz_min) && all(Tests/openbarevoorz_max) && all(Tests/zeehaven_min)         && all(Tests/zeehaven_max);
+			}
+		}
+	}
+
+	container TableComposer
+	{
+		unit<uint32> ExportDomain: nrofrows = 5
+		{
+			attribute<.>       id   := id(.);
+			attribute<float32> Dist : [250,500,100,200,700];
+		}
+
+		unit<uint32> context:= ExportDomain;
+		// context refer to a domain unit with two attributes as subitems:
+		// id & Dest
+
+		parameter<string> FieldList      := 'id;Dist';
+		parameter<string> FieldSeperator := ';';
+		parameter<string> FileName       := '%localDataProjDir%/distances.csv';
+
+		unit<uint32> Field := range(uint32,0,strcount(fieldlist,';')+1)
+		{
+			attribute<string> name := ReadArray(fieldlist,.,string,0);
+		}
+		parameter<string> NewLine := '\n';
+		parameter<string> Header  := FieldList;
+
+		parameter<string> Metric :=
+			=asList(
+				Quote('[')+'+PropValue(
+					ValuesUnit(context/' + Field/Name +')
+					,' + quote('metric') + '
+				) + ' + Quote(']' )
+				, '+' + Quote(FieldSeperator) + '+'
+			);
+		
+		attribute<string> Body (context):= =AsList(+'String(context/' +Field/Name +')',' + ' + quote(FieldSeperator) +' +');
+
+		parameter<String> Result := Header + NewLine + Metric + NewLine + AsList(Body,NewLine)
+		,	StorageName = "=FileName"
+		,	StorageType = "str";
+	}
+
+	container ExportCalculatedItem
+	{
+		unit<uint32> src
+		:	StorageName     = "%ProjDir%/data/motorway.dbf"
+		,	StorageReadOnly = "True"
+		,	DialogType      = "Map"
+		,	DialogData      = "line_rd"
+		,	SyncMode        = "None"
+		{
+			attribute<string> type;
+		}
+// 		unit<uint32> motorway
+// 		:	StorageName = "%LocalDataProjDir%/regr_results/motorway.cfs"
+// 		,	expr        = "Subset(src/type = 'Motorway')"
+// 		{
+// 			attribute<string> type: expr = "src/type[nr_OrgEntity]";
+// 		}
+		unit<uint32> motorway
+		:	StorageName = "%LocalDataProjDir%/regr_results/motorway.cfs"
+		,	expr        = "src"
+		{
+			attribute<string> type: expr = "src/type";
+		}
+		parameter<uint32> all: expr = "sum(uint32(motorway/type))";
+		
+		unit<uint32> motorway2
+		:	StorageName = "%LocalDataProjDir%/regr_results/motorway2.cfs"
+		,	expr        = "src"
+		{
+			attribute<string> type: expr = "src/type + src/type";
+		}
+		parameter<uint32> all2: expr = "sum(uint32(motorway2/type))";
+	}
+}

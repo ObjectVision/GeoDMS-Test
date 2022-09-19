@@ -1,0 +1,18 @@
+container integrity_check_primary_key_unique
+{
+	unit<uint32> src : nrofrows = 3
+	{
+		attribute<string> name_part_A: ['att','att','at'];
+		attribute<string> name_part_B: ['A','B','B'];
+	}
+
+	unit<uint32> unique_key := src
+	,	IntegrityCheck = "# unique(src/name_part_A + '_' + src/name_part_B) == #(src)";
+
+	parameter<bool>   test     := all(sum(id(unique_key)) == 3 );
+	parameter<string> test_log := test
+		? '' 
+		: 'integrity check primary key unique check Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/primary_key_unique.txt";
+}

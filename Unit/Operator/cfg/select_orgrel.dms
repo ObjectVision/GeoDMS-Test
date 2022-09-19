@@ -1,0 +1,21 @@
+container select_orgrel
+{
+	unit<uint32> full: nrofrows = 10
+	{
+		attribute<uint32> id   := id(.);
+		attribute<string> name := 'name_' + string(id);
+	}
+
+	unit<uint32> selection := select_orgrel(full/id < 2)
+	{
+		attribute<string> name := org_rel->name;
+		attribute<full> org_rel;
+	}
+
+	parameter<bool>   test     := selection/name[0] == 'name_0' &&  selection/name[1] == 'name_1';
+	parameter<string> test_log := test 
+		? '' 
+		: 'select_orgrel Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/select_orgrel.txt";
+}

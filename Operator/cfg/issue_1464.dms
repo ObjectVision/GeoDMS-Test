@@ -1,0 +1,21 @@
+container issue_1464
+{
+	unit<spoint> EGridDomain := 
+		range(
+			gridset(
+				  fpoint
+				, point(float32(-5000.0), float32(5000)  , fpoint)
+				, point(float32(24900.0), float32(-100.0), fpoint)
+				, SPoint
+			)
+			, point(int16(0), int16(0))
+			, point(int16(0), int16(0))
+		)
+	{
+		attribute<uint8> src :[];
+		attribute<uint32> districtOk :[];
+	}
+	unit<uint32>    unit_district     := district(EGridDomain/src);
+	
+	attribute<bool> test (EGridDomain) := eq_or_both_null(unit_district/districts, EGridDomain/districtOk);
+}

@@ -1,0 +1,36 @@
+container connect
+{
+	container SourceData
+	{
+		unit<uint32> point: nrofrows = 10
+		{
+			attribute<float32> X: [122102,121488,120752,119639,120705,120566,121299,123046,124399,123001];
+			attribute<float32> Y: [487125,487405,488981,489387,487952,487118,486233,486726,487412,488631];
+			attribute<fpoint> geometry := point(Y, X, fpoint);
+			
+			attribute<arc>     arc_rel: [1487,3444,546,3534,2463,1703,1075,1395,1513,3408];
+			attribute<uint32>  key    := id(.) + 3902;
+		}
+		unit<uint32> arc: StorageName = "%projDir%/data/roads_amsterdam.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True";
+	}
+
+	unit<uint32> connect_point_arc := connect( fpolygon(SourceData/arc/geometry) , SourceData/point/geometry)
+	{
+		attribute<SourceData/arc> arc_rel  := rjoin(id(.), SourceData/point/key, SourceData/point/arc_rel);
+
+		attribute<bool> isOK  := switch(
+			  case(id(.) < 3892                , nr_OrgEntity == id(.))
+			, case(id(.) > 3891 && id(.) < 3902, isNull(nr_OrgEntity))
+			, nr_OrgEntity == arc_rel
+			);
+	}
+
+	parameter<bool>   test     := all(connect_point_arc/isOK);
+	parameter<string> test_log := test 
+		? '' 
+		: 'Connect point to arc Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/connect_point_arc.txt";
+}

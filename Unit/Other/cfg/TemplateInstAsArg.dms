@@ -1,0 +1,23 @@
+container TemplateInstAsArg
+{
+	template T1
+	{
+		parameter<UInt32> X
+		{
+			container subItem;
+		}
+	}
+	template T2
+	{
+		container T1Inst;
+	}
+
+	container result := T2(T1(3));
+	parameter<bool> test := result/T1Inst/X == 3;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'TemplateInstAsArg Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/TemplateInstAsArg.txt";
+}

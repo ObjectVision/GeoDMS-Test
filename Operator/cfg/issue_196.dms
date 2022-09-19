@@ -1,0 +1,18 @@
+container issue_196
+{
+	container co
+	{
+		unit<uint32> un: nrofrows = 1
+		{
+			attribute<uint32> at : [1];
+		}
+	}
+	unit<uint32> un: nrofrows = 1
+	{
+		attribute<uint32> at : [1];
+	}
+	unit<uint32> un2 := union_unit(un, co)
+	{
+		attribute<uint32> at := union_data(.,  un/at, co/un/at);
+	}
+}

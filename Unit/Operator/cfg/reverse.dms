@@ -1,0 +1,43 @@
+container reverse
+{
+	// gebruikte domain units
+	unit<uint32> CDomain: nrofrows = 10;
+
+	template sourceT
+	{
+		// begin case parameters
+		unit<uint32> Domain;
+		// end case parameters
+
+		attribute<float32> A  (Domain): [0,1,2.5,-100,999,null,null,0, null,100];
+	}
+
+	container srcDomain := sourceT(CDomain);
+
+	Template XXX
+	{
+		unit<uint32> Domain;
+		container source;
+		// end case parameters
+
+		container reverse: url = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/reverse"
+		{
+			attribute<float32> att (Domain) := reverse(Source/A);
+		}
+	}
+	container UnTiled  := XXX(CDomain, srcDomain);
+
+	container ok
+	{
+		attribute<float32> A (CDomain): [100,null,0,null,null,999,-100,2.5,1,0];
+	}
+	attribute<bool> test_att (CDomain) := eq_or_both_null(UnTiled/reverse/att, ok/A);
+
+	parameter<bool> test := all(test_att);
+
+	parameter<string> test_log := test
+		? '' 
+		: 'reverse Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/reverse.txt";
+}

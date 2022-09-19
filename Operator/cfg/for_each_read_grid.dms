@@ -1,0 +1,39 @@
+container for_each_read_grid: url = "http://www.objectvision.nl/geodms/operators-a-functions/metascript/for_each"
+{
+
+	unit<fpoint> Coords;
+	unit<spoint> GridDomain := 
+		range(
+			gridset(
+				  Coords
+				, point(float32(-5000.0), float32(5000)  , Coords)
+				, point(float32(24900.0), float32(-100.0), Coords)
+				, SPoint
+			)
+			, point(int16(0), int16(0))
+			, point(int16(5), int16(5))
+		);
+
+	unit<spoint> GridTiledDomain := TiledUnit(Point(Int16(2), Int16(2), GridDomain));
+	
+	unit <uint32> Region : nrofrows = 5
+	{
+		attribute<Region> RegionNr:         [0,1,2,3,4];
+		attribute<string> MetaScriptName:   ['NoordHolland','ZuidHolland','Utrecht','NoordBrabant','Gelderland'];
+		attribute<uint32> sumNrInhabitants: [550,1025,300,200,0];
+		attribute<string> RegionLabel:      ['hoofdstad: Amterdam','hoofdstad: Den Bosch','hoofdstad: Utrecht','hoofdstad: Den Haag',null];
+		attribute<string> RegionDescr:      ['Van Texel tot het Gooi','De locatie voor het carnaval','De dom is het hoogste gebouw',null,null];
+	}
+
+	container griddata := for_each_ind(
+		'ndvatr'
+		,Region/MetaScriptName
+		,GridDomain
+		,uint8
+		,'%projdir%/data/src.tif'
+		,'gdal.grid'
+		, True
+	);
+
+	parameter<bool> test := sum(griddata/NoordHolland) + sum(griddata/ZuidHolland) + sum(griddata/Utrecht) + sum(griddata/NoordBrabant) + sum(griddata/Gelderland) == 135b;
+}

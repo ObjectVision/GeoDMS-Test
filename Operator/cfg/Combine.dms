@@ -1,0 +1,116 @@
+container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
+{
+	// gebruikte domain units
+	unit<uint32> EDomain:      nrofrows = 0;
+	unit<uint32> RegionDomain: nrofrows = 5;
+
+	unit<UInt32> ETiledDomain      := TiledUnit(2[EDomain]);
+	unit<uint32> RegionTiledDomain := TiledUnit(2[RegionDomain]);
+
+	container Relational
+	{
+		container srcUnTiled2UnTiledDomain := Source(RegionDomain      );
+		container srcUnTiled2TiledDomain   := Source(RegionTiledDomain );
+		container srcTiled2UnTiledDomain   := Source(RegionDomain      );
+		container srcTiled2TiledDomain     := Source(RegionTiledDomain );
+
+		container srcEDomain               := ESource(EDomain          );
+		container srcETiledDomain          := ESource(ETiledDomain     );
+
+		template Source
+		{
+			// begin case parameters
+			unit<uint32> RegionDomain;
+			// end case parameters
+			
+			attribute<uint32> Year (RegionDomain): [1990, 2000, 2010, 2020, 2030];
+
+			unit<uint32> NoordHollandBigCities := range(BaseUnit('NHC',uint32), 0, 5)
+			{
+				attribute<string> CityNames: ['Amsterdam','Haarlem','Alkmaar','Zaanstad','Purmerend'];
+			}
+			unit<uint32> Years := RegionDomain
+			{
+				attribute<string> Names: ['1995','2005','2015','2025','2035'];
+			}
+		}
+		template ESource
+		{
+			// begin case parameters
+			unit<uint32> RegionDomain;
+			// end case parameters
+			
+			attribute<uint32> Year (RegionDomain): [];
+
+			unit<uint32> NoordHollandBigCities : nrofrows = 0
+			{
+				attribute<string> CityNames: [];
+			}
+			unit<uint32> Years := RegionDomain
+			{
+				attribute<string> Names: [];
+			}
+		}
+
+		container UnTiled2UnTiled  := Template(srcUnTiled2UnTiledDomain/Years, srcUnTiled2UnTiledDomain);
+//		container UnTiled2Tiled    := Template(srcUnTiled2TiledDomain/Years  , srcUnTiled2TiledDomain);
+//		container Tiled2UnTiled    := Template(srcTiled2UnTiledDomain/Years  , srcTiled2UnTiledDomain);
+//		container Tiled2Tiled      := Template(srcTiled2TiledDomain/Years    , srcTiled2TiledDomain);
+
+//		container EunTiled         := Template(EDomain, srcEDomain);
+//		container ETiled           := Template(ETiledDomain, srcETiledDomain);
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> Years;
+			container Source;
+			// end case parameters
+
+			container combine: url  = "http://www.objectvision.nl/geodms/operators-a-functions/combine"
+			{
+				unit<uint32>    unit_CityForEachYear  := combine(Source/NoordHollandBigCities, Source/Years);
+				unit<uint32>    unit_two_bools        : nrofrows = 4
+				{
+					attribute<bool> A: [True,True,False, False];
+					attribute<bool> B: [True,False,True, False];
+				}
+/*				
+				unit<uint16>    unit_CityForEachYear_uint16 := combine_uint16(Source/NoordHollandBigCities, Source/Years);
+				unit<uint32>    unit_CityForEachYear_uint32 := combine_uint32(Source/NoordHollandBigCities, Source/Years);
+				unit<uint64>    unit_CityForEachYear_uint64 := combine_uint64(Source/NoordHollandBigCities, Source/Years);
+				unit<uint8>     unit_CityForEachYear_uint8  := combine_uint8(Source/NoordHollandBigCities, Source/Years);
+
+				parameter<bool>  test_uint16 := sum(id(unit_CityForEachYear_uint16)) == 300w;
+				parameter<bool>  test_uint32 := sum(id(unit_CityForEachYear_uint32)) == 300u;
+				parameter<bool>  test_uint64 := sum(id(unit_CityForEachYear_uint64)) == 300u64;
+				parameter<bool>  test_uint8_uint16  := sum(uint16(id(unit_CityForEachYear_uint8 ))) == 300w;
+				parameter<uint8> sum_uint8  := sum(id(unit_CityForEachYear_uint8 ));
+				parameter<bool>  test_uint8  := sum_uint8 == 44b;
+				parameter<bool>  test_default := sum(unit_CityForEachYear/nr_1) == 50 && sum(unit_CityForEachYear/nr_2) == 50 && unit_CityForEachYear/nr_1[14]  ==  2 && unit_CityForEachYear/nr_2[14]  ==  4;
+				
+				parameter<bool> test        := #(unit_CityForEachYear) > 0 
+					? test_default && test_uint16 && test_uint32 && test_uint64 && test_uint8 && test_uint8_uint16
+					: nrofrows(unit_CityForEachYear) = 0;
+*/					
+			}
+			
+			container combine_data
+			{
+				attribute<combine/unit_CityForEachYear> CityForEachYear_rel (combine/unit_CityForEachYear) := 
+					combine_data(combine/unit_CityForEachYear, combine/unit_CityForEachYear/nr_2, combine/unit_CityForEachYear/nr_1);
+/*
+				attribute<combine/unit_CityForEachYear> att_two_bools (combine/unit_two_bools) := 
+					combine_data(combine/unit_two_bools, combine/unit_two_bools/A, combine/unit_two_bools/B);
+
+				attribute<uint32> okWithEntries    (combine/unit_CityForEachYear) : [0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24];
+				attribute<uint32> okWithoutEntries (combine/unit_CityForEachYear) : [];
+				attribute<uint32> ok               (combine/unit_CityForEachYear) := = #(combine/unit_CityForEachYear) > 0 ? 'okWithEntries' : 'okWithoutEntries';
+
+				attribute<bool>   test_attr        (combine/unit_CityForEachYear) := CityForEachYear_rel == ok;
+				parameter<bool>   test := all(test_attr);
+*/				
+			}
+		}
+	}
+}

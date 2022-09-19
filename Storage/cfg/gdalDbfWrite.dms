@@ -1,0 +1,114 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                                    Storage Manager Test                                                    //
+//                                                                                                            //
+//                  Configuratie voor het testen van de DMS Storage Managers                                  //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       Juli 2009                                                            //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// KNOWN ISSUES:
+// 1 boolean in dbf files, see dbf/wish
+// null files in string files, see strfiles/wish
+// xdb write werkt niet, see xdb
+// ASCII grid, write for a unit_derived grid, OS Structured Exception, see /ASCIIgrid/Write/GridData_d
+// bmp truecolor leest verkeerde waarden uit, zie /bmp/TrueColor/grid/GridData
+// bmp palette based leest geen palette information, zie /bmp/Palette/grid/PaletteData
+// tiff truecolor geeft verkeerde waarde bij wegschrijven, zie: Tiff/TrueColor/Write/GridData
+
+container StorageManagerTest
+{
+	container ConfigSettings
+	{
+		// driver name is different on x64, after installing new x64 drivers (incl related SP1), see http://www.mantis.objectvision.nl/view.php?id=249
+		parameter<String> OdbcExcelDriver := (GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'; 
+		parameter<String> OdbcTxtDriver   := (GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'; 
+	}
+	
+	container units
+	{
+		unit<uint32>  color;
+		unit<float32> m         := baseunit('m', float32);
+		unit<fpoint>  point_rd  := baseunit('m', fpoint), Format = "EPSG:28992";
+		unit<dpoint>  dpoint_rd := baseunit('m', dpoint);
+		unit<fpoint>  LatLong : Format = "EPSG:4326";
+
+//		#include<wmts_layer.dms>
+	}
+
+	parameter <float32> Dif_all_float32   := 0.99f;
+	parameter <float64> Dif_all_float64   := 0.99;
+	parameter <float32> Dif_pconv_float32 := 1.000001f;
+	parameter <float64> Dif_pconv_float64 := 1.000001;
+
+	unit<uint32> reference: nrofrows = 5
+	{
+		attribute<int32>   IntegerAtt      : [0,1,256,-100,9999];
+		attribute<int32>   IntegerAttNull  : [null,1,256,-100,9999];
+
+		attribute<float32> FloatAtt        : [0,1,9999999,-2.5,99.9];
+		attribute<float32> FloatAttNull    : [null,1,9999999,-2.5,99.9];
+
+		attribute<bool>    BoolAtt         : [False, True, True, False, True];
+		attribute<string>  StringAtt       : ['Hello','Test',null,'Two words','88a'];
+		attribute<string>  StringAttEmpty  : ['Hello','Test','','','88a'];
+		attribute<string>  StringAttNull   : ['Hello','Test',null, null,'88a'];
+
+		attribute<string>  StringAttNoNull : ['Hello','Test','12345','Two words','88a'];
+	}
+
+	container gdal_vect
+	{
+		container dbf
+		{
+			container src:
+				StorageName     = "%projDir%/data/GDAL/dbf.dbf",
+				StorageType     = "gdal.vect",
+				Source          = "dbf example source",
+				SyncMode        = "None",
+				StorageReadOnly = "True"
+			{
+				attribute<int32>   IntegerAtt (reference);
+				attribute<float32> FloatAtt   (reference);
+				attribute<string>  StringAtt  (reference);
+			}
+
+			container Test
+			{
+				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, Int32(0 / 0)), reference/IntegerAttNull);
+				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, Float32(0 / 0)), reference/FloatAttNull);
+				attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
+			}
+
+			container Results
+			{
+				parameter<bool>    IntegerAtt := all(Test/IntegerAtt);
+				parameter<bool>    FloatAtt   := all(Test/FloatAtt);
+				parameter<bool>    StringAtt  := all(Test/StringAtt);
+				parameter<bool>    all        := IntegerAtt && FloatAtt && StringAtt;
+			}
+		}
+		container dbfWrite 
+		{
+			unit<uint32> domain := reference, StorageName = "%localDataProjDir%/regr_results/gdalDbf.shp", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+			{
+				//attribute<int32>   IntegerAtt (reference) := reference/IntegerAtt;
+				//attribute<float32> FloatAtt   (reference) := reference/FloatAtt;
+				//attribute<string>  StringAtt  (reference) := reference/StringAtt;
+				
+				attribute<int32> IntegerAtt   := int32(reference/IntegerAtt);
+				attribute<uint32> UIntegerAt := MakeDefined(uint32(reference/IntegerAtt), 0);
+				attribute<int64> Int64Att     := int64(reference/IntegerAtt);
+				attribute<uint64> UInt64Att   := MakeDefined(uint64(reference/IntegerAtt), uint64(0));
+				attribute<float32> FloatAtt   := Float32(reference/FloatAtt);
+				attribute<float64> Float64Att := Float64(reference/FloatAtt);
+				attribute<string>  StringAtt  := const("a;b", .);
+				attribute<bool>    BoolAtt    := const(true, .);
+				attribute<UInt2>    UInt2Att  := const(UInt2(true), .);
+				attribute<UInt4>    UInt4Att  := const(UInt4(true), .);
+			}
+		}
+	}
+}

@@ -1,0 +1,22 @@
+container ChangingReferences
+{
+	unit<uint32> A;
+	unit<uint32> B;
+	
+	unit<uint32> items: nrOfrows = 2
+	{
+		attribute<string> name : ['j2014', 'j2018'];
+	}
+
+	container Cases
+	{
+		Template T
+		{
+			unit<uint32> domain;
+		}
+		unit<uint32> A := B
+		{
+			container per_item := for_each_ne(items/name, 'T(A)');
+		}
+	}
+}

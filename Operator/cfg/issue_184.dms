@@ -1,0 +1,44 @@
+container issue_184
+{
+	unit<dpoint> LatLong :=  range(LatLong_Base, point(-90.0,-180.0), point(90.0, 180.0));
+
+	unit<dpoint> LatLong_Base: DialogData = "TopoCountry/Geometry", Format = "EPSG:4326"
+	{
+		parameter<float32> ViewPortMinSize := 100f / 3600f;
+		parameter<float32> PenWorldWidth := 10f / 3600f, DialogType = "PenWorldWidth";
+		parameter<float32> LabelWorldSize := 10f / 3600f, DialogType = "LabelWorldSize";
+	}
+
+	unit<ipoint> LatLong_mdegrees := gridset(LatLong, point(0.001, 0.001), point(0.0,0.0), ipoint);
+
+	unit<uint8> Benelux
+	:	StorageName = "%SourceDataDir%/mondiaal/landen/Benelux.shp"
+	,	StorageType = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		attribute<uint8>            ID          := id(.);
+		attribute<uint32>           one         := const(1u,.);
+		attribute<LatLong>          Geometry(polygon);
+		attribute<LatLong_mdegrees> Geometry_mdegrees(polygon) := Geometry[LatLong_mdegrees];
+		attribute<LatLong_mdegrees> Geometry_mdegrees_clean1(polygon) := partitioned_union_polygon(SG_mg/Geometry, SG_mg/nr_OrgEntity);
+		attribute<LatLong_mdegrees> Geometry_mdegrees_clean2(polygon) := partitioned_union_polygon(Geometry_mdegrees, ID(.));
+	}
+//	unit<uint32> SG_deg := split_polygon(Benelux/Geometry);
+	unit<uint32> SG_mg  := split_polygon(Benelux/Geometry_mdegrees)
+	{
+		attribute<float64> Area := Area(DPolygon(Geometry), float64);
+	}
+	
+	
+	unit<uint32> pointset: nrofrows = 5, DialogType = "Map", DialogData = "point"
+	{
+		attribute<LatLong> point:
+		[
+			 {51.591749,3.91564586},{52.1577936, 4.76340147},{52.9444126,5.24840488},{53.3189209,5.55359314},{52.4643432,4.45005492}
+		]
+		{
+			parameter<float64>   SymbolWorldSize  := 0.03d ,  DialogType = "SymbolWorldSize";
+		}
+		unit<uint32> connect := connect(Benelux/Geometry, point);
+	}
+}

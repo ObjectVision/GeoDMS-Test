@@ -1,0 +1,316 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                                    gdal2  Storage Manager Test                                             //
+//                                                                                                            //
+//                  Configuratie voor het testen van de GDAL 2.3.1 Storage Managers                           //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       Juli 2009                                                            //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container gdal2test
+{
+	container units
+	{
+		unit<uint32>  color;
+//		unit<float32> m        := baseunit('m', float32);
+		unit<fpoint>  point_rd;
+//		unit<fpoint>  LatLong;
+	}
+	container Geometries
+	{
+		unit<spoint> gridsel :=
+				range(
+					gridset(
+						 units/point_rd
+						,point(-40f, 40f, units/point_rd)
+						,point(383960,216040)
+						,spoint
+					)
+					,point(0s, 0s)
+					,point(2s, 2s)
+				);
+	}
+	unit<uint32> reference: nrofrows = 5
+	{
+		attribute<int32>   IntegerAtt      : [0,1,256,-100,9999];
+		attribute<int32>   IntegerAttNull  : [null,1,256,-100,9999];
+
+		attribute<float32> FloatAtt        : [0,1,9999999,-2.5,99.9];
+		attribute<float32> FloatAttNull    : [null,1,9999999,-2.5,99.9];
+
+		attribute<bool>    BoolAtt         : [False, True, True, False, True];
+		attribute<string>  StringAtt       : ['Hello','Test',null,'Two words','88a'];
+		attribute<string>  StringAttNoNull : ['Hello','Test','12345','Two words','88a'];
+	}
+	container gdal2_grid
+	{
+		container TIFF
+		{
+			unit<spoint> Grid_uint32:
+				StorageName     = "%projdir%/data/gdal/tiff_uint32.tif",
+				StorageType     = "gdal2.grid",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<units/color> GridData                : DialogType = "BrushColor";
+				attribute<units/color> ReadData (Geometries/gridsel): DialogType = "BrushColor";
+			}
+			unit<spoint> Grid_uint8:
+				StorageName     = "%projdir%/data/gdal/tiff_uint8.tif",
+				StorageType     = "gdal2.grid",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<uint8> GridData;
+			}
+			unit<spoint> Grid_float32:
+				StorageName     = "%projdir%/data/gdal/tiff_float32.tif",
+				StorageType     = "gdal2.grid",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<float32> GridData;
+			}
+			unit<spoint> Grid_bool:
+				StorageName     = "%projdir%/data/gdal/tiff_bool.tif",
+				StorageType     = "gdal2.grid",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<bool> GridData;
+			}
+
+			container tests
+			{
+				attribute<bool> test_uint32  (Grid_uint32)   := eq_or_both_null(Grid_uint32/GridData,  union_data(Grid_uint32,  GridReference/GridData_uint32));
+				attribute<bool> test_uint8   (Grid_uint8)    := eq_or_both_null(Grid_uint8/GridData ,  union_data(Grid_uint8,   GridReference/GridData_uint8));
+				attribute<bool> test_float32 (Grid_float32)  := eq_or_both_null(Grid_float32/GridData, union_data(Grid_float32, GridReference/GridData_float32));
+				attribute<bool> test_bool    (Grid_bool)     := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
+
+				attribute<bool> test_sel     (/Tiff/gridsel) := Grid_uint32/ReadData == /Tiff/reference/ReadData_uint32;
+			}
+
+			container Results
+			{
+				parameter<bool> all := all(tests/test_uint32) && all(tests/test_uint8) && all(tests/test_float32) && all(tests/test_uint32) && all (tests/test_sel); 
+			}		
+		}
+
+		unit<wpoint> aig: Descr = "Arc/Info binary grid",
+			StorageName     = "%sourcedatadir%/SpaceToGo/Contest/wetlands1",
+			StorageType     = "gdal2.grid",
+			DialogData      = "WorldBaseUnit",
+			StorageReadOnly = "True"
+		{
+			unit<wpoint> World1kmGrid := TiledUnit(point(1024w, 1024w,aig));
+			attribute<UInt8> GridData(World1kmGrid);
+			attribute<UInt8> ReadData(SouthEastAsia);
+		}
+	}
+	
+	container gdal2_vect
+	{
+		container dbf
+		{
+			container src:
+				StorageName     = "%projDir%/data/GDAL/dbf.dbf",
+				StorageType     = "gdal2.vect",
+				Source          = "dbf example source",
+				SyncMode        = "None",
+				StorageReadOnly = "True"
+			{
+				attribute<int32>   IntegerAtt (reference);
+				attribute<float32> FloatAtt   (reference);
+				attribute<string>  StringAtt  (reference);
+			}
+
+			container Test
+			{
+				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, Int32(0 / 0)), reference/IntegerAttNull);
+				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, Float32(0 / 0)), reference/FloatAttNull);
+				attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
+			}
+
+			container Results
+			{
+				parameter<bool>    IntegerAtt := all(Test/IntegerAtt);
+				parameter<bool>    FloatAtt   := all(Test/FloatAtt);
+				parameter<bool>    StringAtt  := all(Test/StringAtt);
+				parameter<bool>    all        := IntegerAtt && FloatAtt && StringAtt;
+			}
+		}
+		container csv
+		{
+			unit<uint32> src
+			:	StorageName     = "%projdir%/data/csv.csv"
+			,	StorageType     = "gdal2.vect"
+			,	StorageReadOnly = "True";
+
+			container Tests
+			{
+				attribute<bool> IntegerAtt (reference) := union_data(reference, int32(src/IntegerAtt)) == reference/IntegerAtt;
+				attribute<bool> FloatAtt   (reference) := union_data(reference, float32(src/FloatAtt)) == reference/FloatAtt;
+				attribute<bool> BoolAtt    (reference) := union_data(reference, bool(src/BoolAtt))     == reference/BoolAtt;
+				attribute<bool> StringAtt  (reference) := union_data(reference, src/StringAtt)  == MakeDefined(reference/StringAtt,'');
+			}
+			container Results
+			{
+				parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
+				parameter<bool> FloatAtt   := all(Tests/FloatAtt);
+				parameter<bool> BoolAtt    := all(Tests/BoolAtt);
+				parameter<bool> StringAtt  := all(Tests/StringAtt);
+				parameter<bool> all        := IntegerAtt && FloatAtt && BoolAtt && StringAtt;
+			}
+		}
+		container gml
+		{
+			container src
+			:	StorageName     = "%projdir%/data/waterdeel.gml"
+			,	StorageType     = "gdal2.vect"
+			,	StorageReadOnly = "True"
+			,	SyncMode        = "AllTables"
+			{
+				attribute<int32> area (waterdeel) := round(area(waterdeel/geometry,float64));
+			}
+
+			container Test
+			{
+				parameter<bool> area                   := sum(src/area) == 435432i && src/area[0] == 594i && src/area[100] == 747i;
+				attribute<bool> status (src/waterdeel) := src/waterdeel/BGT_STATUS == const('bestaand',src/waterdeel);
+			}
+			container Results
+			{
+				parameter<bool>    status  := all(Test/status);
+				parameter<bool>    all     := Test/area && status;
+			}
+		}
+		container fgdb
+		{
+			container src: // test db with multiple layers with polymorph geometries, taken from http://trac.osgeo.org/gdal/wiki/FileGDB where 'jmckenna' added this.
+				StorageName     = "%projdir%/data/test_fgdb.gdb",
+				StorageType     = "gdal2.vect",
+				StorageReadOnly = "True",
+				SyncMode        = "AllTables"
+			{
+				unit<uint32> Query
+					:	SqlString = "SELECT * FROM base_table1 WHERE OBJECTID_1 <= 3"
+					,	IntegrityCheck  = "GeoDmsVersion() >= 6.045";
+
+				unit<uint32> Query_no_data
+					:	SqlString = "SELECT * FROM base_table1 WHERE OBJECTID_1 <= 0"
+					,	IntegrityCheck  = "GeoDmsVersion() >= 6.045";
+			}
+			container Tests
+			{
+				parameter<bool> cardinalities := 
+					   #src/basetable_2 == 3 && #src/basetable == 2       && #src/base_table1 == 14
+					&& #src/test_lines  == 2 && #src/more_test_lines == 2 && #src/test_points == 2
+					&& #src/test_areas  == 2 && #src/Query  == 6          && #src/Query_no_data == 0;
+				attribute<bool> vert_accur (src/test_lines) := src/test_lines/VERT_ACCUR == const(0.01, src/test_lines);
+				parameter<bool> sum_submission := sum(src/base_table1/SUBMISSION_ID ) == 2685.0;
+				parameter<bool> random_values  := src/Query/PROJTYP_ID[3] == 3.0 && src/more_test_lines/UP_RIVER_M[0] == 114.6 && src/basetable/SYSTEM_NAME[1] == 'Some Other System';  
+			}
+			container Results
+			{
+				parameter<bool> vert_accur := all(Tests/vert_accur);
+				parameter<bool> all        := Tests/cardinalities && vert_accur && Tests/sum_submission && Tests/random_values;
+			}
+		}
+		container EsriShape
+		{
+			container Point
+			{
+				unit<uint32> PointSet:
+					StorageName     = "%projdir%/data/gdal/point/point.shp",
+					StorageType     = "gdal2.vect",
+					DialogType      = "map",
+					DialogData      = "location",
+					StorageReadOnly = "True"
+				{
+					attribute<units/point_rd> location;
+					attribute<string>         name; 
+				}
+				container reference
+				{
+					attribute<units/point_rd> location (PointSet) := Union_Data(Pointset, /EsriShape/point/reference/location);
+					attribute<string>         name     (PointSet) := Union_Data(Pointset, /EsriShape/point/reference/name);
+					attribute<bool>           test     (PointSet) := PointSet/location == location && PointSet/name == reference/name;
+				}
+				container Results
+				{
+					parameter<bool> all := all(reference/test);
+				}
+			}
+			container Arc
+			{
+				unit<uint32> ArcSet:
+					StorageName     = "%projdir%/data/gdal/arc/road.shp",
+					StorageType     = "gdal2.vect",
+					DialogType      = "map",
+					DialogData      = "arc",
+					StorageReadOnly = "True"
+				{
+					attribute<units/point_rd> arc (arc);
+					attribute<string>         label;
+				}
+				container reference
+				{
+					unit<uint32> PointSet: = Sequence2Points(ArcSet/arc);
+	
+					attribute<units/point_rd> point      (PointSet) := union_data(Pointset, /EsriShape/arc/reference/point);
+					attribute<string>         name       (ArcSet)   := union_data(ArcSet, /EsriShape/arc/reference/name);
+	
+					attribute<bool>           test_point (PointSet) := point_isNearby(pointset/point, point, Dif_all_float32);
+					attribute<bool>           test_seq   (PointSet) := pointset/sequenceNr ==  union_data(Pointset, /EsriShape/arc/reference/sequence);
+					attribute<bool>           test_ord   (PointSet) := pointset/ordinal ==  union_data(Pointset, /EsriShape/arc/reference/ordinal);
+					attribute<bool>           test_label (ArcSet)   := ArcSet/label == name;
+				}
+				container Results
+				{
+					parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
+				}
+			}
+			container Polygon
+			{
+				unit<uint32> PolygonSet:
+					StorageName     = "%projdir%/data/gdal/polygon/area.shp",
+					StorageType     = "gdal2.vect",
+					DialogType      = "map",
+					DialogData      = "polygon",
+					StorageReadOnly = "True"
+				{
+					attribute<units/point_rd> poly (polygon);
+					attribute<string>        label;
+				}
+				container reference
+				{
+					unit<uint32> PointSet := Sequence2Points(PolygonSet/poly);
+	
+					attribute<units/point_rd> point      (PointSet)   := union_data(Pointset, /EsriShape/polygon/reference/point);
+					attribute<string>         name       (PolygonSet) := union_data(PolygonSet, /EsriShape/polygon/reference/name);
+	
+					attribute<bool>           test_point (PointSet)   := point_isNearby(pointset/point, point, Dif_all_float32);
+					attribute<bool>           test_seq   (PointSet)   := pointset/sequenceNr ==  union_data(Pointset, /EsriShape/polygon/reference/sequence);
+					attribute<bool>           test_ord   (PointSet)   := pointset/ordinal ==  union_data(Pointset, /EsriShape/polygon/reference/ordinal);
+					attribute<bool>           test_label (PolygonSet) := PolygonSet/label == name;
+				}
+				container Results
+				{
+					parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
+				}
+			}
+		}
+		container geopackage
+		{
+			container src
+			:	StorageName     = "%projdir%/data/bgt.gpkg"
+			,	StorageType     = "gdal2.vect"
+			,	StorageReadOnly = "True"
+			,	SyncMode        = "AllTables"
+			{
+			}
+		}
+	}
+}

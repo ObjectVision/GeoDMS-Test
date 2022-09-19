@@ -1,0 +1,16 @@
+container InstantiateDataBlock
+{
+	template T1
+	{
+		parameter<UInt32> X: [ 3];
+	}
+
+	container result := T1();
+	parameter<bool> test: = result/X == 3;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'InstantiateDataBlock Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/InstantiateDataBlock.txt";
+}

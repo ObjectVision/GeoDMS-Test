@@ -1,0 +1,14 @@
+container test_issue
+{
+	unit<uint32> district: nrofrows = 0
+	{
+		attribute<uint32> NrInhabitants:[];
+	}
+	unit<uint32> class: nrofrows = 20;
+
+	attribute<uint32> classifiedEC(class) := ClassifyEqualCount   (district/NrInhabitants, class);
+	attribute<uint32> classifiedEI(class) := ClassifyEqualInterval(district/NrInhabitants, class);
+	attribute<uint32> classifiedUV(class) := ClassifyUniqueValues (district/NrInhabitants, class);
+	attribute<uint32> classifiedJF(class) := ClassifyJenksFisher  (District/NrInhabitants, class);
+	attribute<uint32> classifiedLI(class) := ClassifyLogInterval  (district/NrInhabitants, class);
+}

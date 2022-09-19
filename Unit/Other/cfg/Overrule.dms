@@ -1,0 +1,40 @@
+container Overrule
+{
+	container A
+	{
+		parameter<UINt32> X: [ 1.0 ];
+		parameter<UINt32> y:= 2;
+		parameter<UINt32> z;
+		parameter<UINt32> W:= 0;
+	}
+	container B := A
+	{
+		parameter<UINt32> X: [ 3.0 ];
+		parameter<UINt32> y: [ 4   ];
+		parameter<UINt32> z: [ 5.  ];
+	}
+	container C := A
+	{
+		parameter<UINt32> W;
+		parameter<UINt32> X := 6;
+		parameter<UINt32> y := value(7, UInt32);
+		parameter<UINt32> z := value(8, BaseUnit('m', UInt32));
+	}
+	container Results
+	{
+		parameter<bool> TBW := B/W == 0, Descr = "Check that A/W is found through namespace extension";
+		parameter<bool> TBX := B/X == 3, Descr = "Check that B/X hides A/X";
+		parameter<bool> TBY := B/Y == 4;
+		parameter<bool> TBZ := B/Z == 5;
+		parameter<bool> TCX := C/X == 6;
+		parameter<bool> TCY := C/Y == 7;
+		parameter<bool> TCZ := C/Z == 8;
+
+		parameter<Bool> Test := TBW && TBX && TBY && TBZ && TCX && TCY && TCZ;
+	}
+	parameter<string> test_log := Results/Test 
+		? '' 
+		: 'Overrule Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(Results/Test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/Overrule.txt";
+}

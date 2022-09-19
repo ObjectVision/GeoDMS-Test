@@ -1,0 +1,43 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                                     Update Expression Editor                                               //
+//                                                                                                            //
+//               Configuratie voor het testen van het updaten van data via de Expression Editor               //
+//               Waarbij het te overschijven item gegeneerd is vanuit een rekenschema                         //                                                                     //
+//                                            Mei 2007                                                        //
+//                                                                                                            //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container OperatorTest
+{
+	
+	container vrz_naam: expr = "for_each_ne(vrz_code/label, 'vrz_schema(vrz_all/code = value('+String(vrz_code/code) +' ,vrz_code))')";
+
+	unit<uint32> vrz_code:nrofrows = 2
+	{
+		attribute<vrz_code> code: [0,1];
+		attribute<string>   label: ['vrz_code_0','vrz_code_1'];
+	}
+	unit<uint32> vrz_all: nrofrows = 2
+	{
+		attribute<vrz_code> code: [1,0];
+		attribute<string>   naam: ['vrz1','vrz2']; 
+		attribute<spoint>   locatie:[{100,100},{200,200}]
+		{
+			parameter<uint32> SymbolColor: expr = "rgb(255,0,0)";
+		}
+	}
+	container vrz_schema: isTemplate = "True"
+	{
+		attribute<bool> vrz_sel (vrz_all); 
+		unit<uint32>    selectie: expr = "Subset(vrz_sel)"
+		{
+			attribute<string> naam :   expr = "lookup(selectie/nr_OrgEntity, vrz_all/naam)";
+			attribute<spoint> locatie: expr = "lookup(selectie/nr_OrgEntity, vrz_all/locatie)"
+			{
+				parameter<uint32> SymbolColor: expr = "rgb(255,0,0)";
+			}
+		}
+	}
+}

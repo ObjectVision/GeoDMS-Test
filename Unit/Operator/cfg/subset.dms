@@ -1,0 +1,27 @@
+container subset
+{
+	unit<uint32> RegionEK;
+
+	unit <uint32> City : NrOfRows = 7 
+	{
+		attribute<RegionEK> RegionCode: [100,200,300,200,400,null,400];
+	}
+
+	unit<uint32> s_uint32 := subset(City/RegionCode == 200)
+	{
+		attribute<uint32> RC   := City/RegionCode[nr_OrgEntity];
+		attribute<bool>   att  := City/RegionCode[nr_OrgEntity] == const(200, ., RegionEK);
+		attribute<bool>   att2 := nr_OrgEntity->RegionCode      == const(200, ., RegionEK);
+		parameter<bool>   test := all(att);
+
+		attribute<City> nr_OrgEntity;
+	}
+
+	parameter<bool> test := s_uint32/test;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'subset Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/subset.txt";
+}

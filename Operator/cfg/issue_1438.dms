@@ -1,0 +1,31 @@
+container issue_1438
+{
+	unit<Float32> m: = baseunit('m', float32);
+	unit<fpoint> point_rd_base
+	:	DialogData = "ngr_layer" 
+	,	Format     = "EPSG:28992";
+	unit<fpoint> point_rd      := range(point_rd_base, point(300000[m],0[m]), point(625000[m],280000[m]));
+
+	container adres
+	{
+		unit<uint32> src
+		:	StorageName     = "%SourceDataDir%/RegressionTests/BAG/20180311/adres.fss"
+		,	StorageReadOnly = "True"
+		{
+			attribute<point_rd> geometry;
+			attribute<string>   postcode;
+			attribute<int32>    huisnummer;
+			attribute<string>   pc_hnr := postcode + '_' + string(huisnummer);
+		}
+	}
+	unit<uint32> vrz_20201009
+	:	StorageName = "%SourceDataDir%/RegressionTests/vrz.csv"
+	,	StorageType = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		attribute<string> pc_hnr := postcode + '_' + huisnummer;
+		attribute<point_rd> geometry_pc_hnr := rjoin(pc_hnr, adres/src/pc_hnr, adres/src/geometry);
+		
+		attribute<point_rd> geometry := strlen(X) > 2 ? point(float32(X),float32(Y),point_rd) : geometry_pc_hnr;
+	}
+}

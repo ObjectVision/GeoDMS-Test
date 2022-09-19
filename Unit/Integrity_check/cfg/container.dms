@@ -1,0 +1,17 @@
+container integrity_check_container : IntegrityCheck = "GeoDmsVersion() > 8.020"
+{
+	container c {
+		unit<uint32> data : nrofrows = 3
+		{
+			attribute<uint32> A :[1,2,3];
+			attribute<uint32> test := A;
+		}
+	}
+	container with_test := c,  IntegrityCheck = "sum(c/data/A) = 6";
+
+	parameter<string> test_log := all(with_test/data/test == with_test/data/A)
+		? '' 
+		: 'integrity check container Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(with_test/data/test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/container.txt";
+}

@@ -1,0 +1,67 @@
+container wmts_tests
+{
+
+    container Geography
+    {
+        container EPSG28992
+        {                         //: Format   = "EPSG:28992", DialogData = "ngr_layer";
+            unit<fpoint> rdc_base : format = "EPSG:28992", DialogData = "ngr_layer_rd";
+            unit<fpoint> rdc      := range(rdc_base, point(0f, 300000f), point(280000f, 625000f));
+
+            #include<ngr_layer_rd.dms>
+        }
+        
+        container EPSG3035
+        {
+            unit<fpoint> lea_base : format = "EPSG:3035", DialogData = "ngr_layer_lea";
+            unit<fpoint> lea      := range(lea_base, point(2500000f, 1300000f), point(4900000f, 4300000f));
+
+            #include<ngr_layer_lea.dms>
+        }
+        
+        container EPSG4326
+        {
+            unit<fpoint> llh_base : format = "EPSG:4326", DialogData = "ngr_layer_llh";
+            unit<fpoint> llh      := range(llh_base, point(-90f, -180f), point(90f, 180f));
+
+            #include<ngr_layer_llh.dms>
+        }
+    }
+
+    container SourceData
+    {
+        container EPSG28992
+        {
+            unit<uint32> provinces_yr2020
+            :	StorageName     = "%ProjDir%/Data/rd/provincie.shp"
+            ,	StorageType     = "gdal.vect"
+            ,	StorageReadOnly = "True"
+            {
+                attribute<Geography/EPSG28992/rdc>  geometry (poly);
+                attribute<string>                   naam;
+            }
+        }
+        
+        container EPSG3035
+        {
+            unit<uint32> de_100km
+            :	StorageName     = "%ProjDir%/Data/lea/de_100km.shp"
+            ,	StorageType     = "gdal.vect"
+            ,	StorageReadOnly = "True"
+            {
+                attribute<Geography/EPSG3035/lea>  geometry (poly);
+            }
+        }
+        
+        container EPSG4326
+        {
+            unit<uint32> WorldCountryBorders
+            :	StorageName     = "%ProjDir%/Data/llh/World_Countries__Generalized_.shp"
+            ,	StorageType     = "gdal.vect"
+            ,	StorageReadOnly = "True"
+            {
+                attribute<Geography/EPSG4326/llh>  geometry (poly);
+            }
+        }
+    }
+}

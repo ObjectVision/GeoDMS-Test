@@ -1,0 +1,408 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS configuratie structuren                              //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       November 2010                                                        //
+//                                                                                                            //
+//                            Continue aanpassingen vanaf 2010                                                //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container Mini// : IntegrityCheck = "GeoDmsVersion() >= 5.89"
+{
+	container rlookup
+	{
+		unit<uint32> CodeTabel: nrofrows = 8
+		{
+			attribute<string> label: ['A','A','B','C','A','A','C','B'];
+		}
+		
+		unit<uint32> Primary: nrofrows = 7
+		{
+			attribute<string>    label: ['A','B','C','A','A','C','B'];
+			attribute<CodeTabel> CodeTabel_rel := rlookup(label,CodeTabel/label);
+		}
+	}
+	container RegressieTest
+	{
+		parameter<Bool> Result:
+			Expr =
+				"DoubleInst/Test"
+				"&& DoubleInheritance/Test"
+				"&& ComplexNamespaces/src/sublevel/Test"
+				"&& Kentallen/Test"
+				"&& OverruleTest/Results/TestAll "
+				"&& CombineRangeAndExprTest/testAll "
+				"&& TemplateInstAsArg/test "
+				"&& InstantiateDataBlock/test";
+		parameter<string> tests_log:
+			StorageType = "str",
+			storagename = "%localDataProjDir%/regr_results/mini.txt",
+			expr        = "String(RegressieTest/Result)";
+	}
+	container LargeTiledMiniDoublePipeline
+	{
+		unit<uint32> Domain : nrofrows = 100000000
+		{
+			attribute<Domain> id := id(.); // whatever
+			attribute<Domain> next := id+1;
+			attribute<Domain> prev := id-1;
+			attribute<Domain> sum  := next+prev;	
+		}
+	}
+	
+	container DoubleInheritance
+	{
+		container GenericBase
+		{
+			parameter<Float32> Oppervlak: [1.5];
+		}
+		container BaseLine
+		{
+			container Woning := GenericBase
+			{
+				parameter<Float32> Oppervlak: Expr = "Float32(2.5)";
+			}
+		}
+		container Toekomst := BaseLine // inheritance
+		{
+			container Woning := BaseLine/Woning; // auto connection with BaseLine/Woning or directly to GenericBase?
+		}
+		parameter<Float32> Result1 := Toekomst/Woning/Oppervlak;
+		parameter<Float32> Result2 := BaseLine/Woning/Oppervlak;
+		parameter<Bool> Test := Result1 == result2;
+	}
+
+	container Kentallen: Descr = "Check that Copy of BaseLine -> Toekomst doesn't copy referent of BaseLine/Woning to Toekomst/Woning so that Tokomst.Zon_PV doesn't see Oppervlak."
+	{
+		container GenericBase
+		{
+			container Zon_PV;
+		}
+		container BaseLine
+		{
+			container Woning := GenericBase
+			{
+				container Zon_PV
+				{
+					parameter<Float32> Oppervlak: [ 10 ]; 
+				}
+			}
+		}
+		container Toekomst := BaseLine // inheritance
+		{
+			container Woning
+			{
+				container Zon_PV := BaseLine/Woning/Zon_PV
+				{
+					parameter<Float32> Opbr:  [200.0];
+				}
+			}
+		}
+		parameter<Float32> opp := Toekomst/Woning/Zon_PV/Oppervlak;
+		parameter<Bool> Test := opp == Float32(10);
+	}
+
+	container DoubleInst
+	{
+		container F: IsTemplate = "True"
+		{
+			parameter<Float32> X;
+			
+			container Results: IsTemplate = "True"
+			{
+				parameter<Float32> y: Expr = "x * x";
+			}
+		}
+		
+		parameter<Float32> X: Expr = "Float32(5.0)";
+		
+		container CaseData: Expr = "F(Float32(4.0))";
+		
+		container Results: Expr = "CaseData/Results()";
+		parameter<Bool> Test: Expr = "Results/y == Float32(16)";
+	}
+	container OverruleTest
+	{
+		container A
+		{
+			parameter<UINt32> X: [ 1.0 ];
+			parameter<UINt32> y: Expr = "2";
+			parameter<UINt32> z;
+			parameter<UINt32> W: Expr = "0";
+		}
+		container B := A
+		{
+			parameter<UINt32> X: [ 3.0 ];
+			parameter<UINt32> y: [ 4   ];
+			parameter<UINt32> z: [ 5.  ];
+		}
+		container C := A
+		{
+			parameter<UINt32> W;
+			parameter<UINt32> X: Expr = "6";
+			parameter<UINt32> y: Expr = "value(7, UInt32)";
+			parameter<UINt32> z: Expr = "value(8, BaseUnit('m', UInt32))";
+		}
+		container Results
+		{
+			parameter<bool> TBW: Expr = "B/W == 0", Descr = "Check that A/W is found through namespace extension";
+			parameter<bool> TBX: Expr = "B/X == 3", Descr = "Check that B/X hides A/X";
+			parameter<bool> TBY: Expr = "B/Y == 4";
+			parameter<bool> TBZ: Expr = "B/Z == 5";
+
+//			parameter<bool> TCW: Expr = "C/W == 0", Descr = "Check that C/W refers to the calculation rule of A/W due to lack of own calculator";
+			parameter<bool> TCX: Expr = "C/X == 6";
+			parameter<bool> TCY: Expr = "C/Y == 7";
+			parameter<bool> TCZ: Expr = "C/Z == 8";
+			
+			parameter<Bool> TestAll: Expr = "TBW && TBX && TBY && TBZ && TCX && TCY && TCZ";
+		}
+	}
+	container ComplexNamespaces
+	{
+		unit<uint32> src:= referred
+		{
+			container sublevel := Templates/meta()
+			{
+				attribute<string> att1 (..) := att2;
+				parameter<bool>   test      := all(att1 == const('ok',..));
+			}
+		}
+		
+		unit<uint32> referred: nrofrows = 1
+		{
+			attribute<string> att2 := const('ok',.);
+		}
+		
+		container Templates
+		{
+			Template Meta;
+		}
+	}
+	
+	container CombineRangeAndExprTest
+	{
+		unit <float32> DegreesCelsius:  expr = "BaseUnit('celsius',float32)", Range = "[-20, 50) ";
+		unit <float32> DegreesCelsius2: expr = "DegreesCelsius * DegreesCelsius"; // used for statistical tests, (co)variance, 
+		
+		parameter<DegreesCelsius > LB_DC : expr = "LowerBound(DegreesCelsius )";
+		parameter<DegreesCelsius2> LB_DC2: expr = "LowerBound(DegreesCelsius2)";
+		parameter<bool> test1: expr = "Value(LB_DC, float32) != value(LB_DC2, float32)";
+		
+		unit <float32> RangedDegreesCelsius:  expr = "Range(BaseUnit('celsius',float32), Float32(-20), Float32(50))";
+		unit <float32> RangedDegreesCelsius2: expr = "DegreesCelsius * DegreesCelsius"; // used for statistical tests, (co)variance, 
+		
+		parameter<RangedDegreesCelsius > LB_RDC : expr = "LowerBound(RangedDegreesCelsius )";
+		parameter<RangedDegreesCelsius2> LB_RDC2: expr = "LowerBound(RangedDegreesCelsius2)";
+		parameter<bool> test2: expr = "Value(LB_RDC , float32) == Float32(-20)";
+		parameter<bool> test3: expr = "Value(LB_RDC2, float32) == value(LB_DC2, float32)";
+		parameter<bool> testAll: expr = "test1 && test2 && test3";
+	}
+
+	container InstantiateDataBlock
+	{
+		container T1: IsTemplate = "True"
+		{
+			parameter<UInt32> X: [ 3];
+		}
+		container result: Expr = "T1()";
+		parameter<bool> test: Expr = "result/X == 3";
+	}
+	
+	container TemplateInstAsArg
+	{
+		container T1: IsTemplate = "True"
+		{
+			parameter<UInt32> X
+			{
+				container subItem;
+			}
+		}
+		container T2: IsTemplate = "True"
+		{
+			container T1Inst;
+		}
+		container result: Expr = "T2(T1(3))";
+		parameter<bool> test: Expr = "result/T1Inst/X == 3";
+	}
+	
+	container IntegrityChecks
+	{
+		// Test I: Vraag Item: Cardinaliteit\TestPositiveA op in data grid. De integrity check moet falen, echter niet blijven hangen zoals in 5.95 gebeurt.
+		// Test II: Vraag Item: Cardinaliteit\TestUniqueB op in data grid. De integrity check moet falen, echter niet blijven hangen zoals in 5.95 gebeurt.
+		Container Cardinaliteit
+		{
+			unit<uint32> TestDomain: nrofrows = 5
+			{
+				attribute<uint32> A: [0,1,2,3,4];
+				attribute<uint32> B: [0,0,2,3,4];
+			}
+			parameter<uint32> TestPositiveA:            Expr = "min(TestDomain/A)", IntegrityCheck = "this < 0";
+			attribute<bool>   TestUniqueA (TestDomain): Expr = "TestDomain/A == TestDomain/A", IntegrityCheck = "#unique(TestDomain/A) == #TestDomain"; 
+			attribute<bool>   TestUniqueB (TestDomain): Expr = "TestDomain/B == TestDomain/B", IntegrityCheck = "#unique(TestDomain/B) == #TestDomain"; 
+		}
+	}
+
+	container GUITests
+	{
+		parameter<string> LangeTekst: expr =  "repeat('a', 10000000 )"; // Opvragen in DataGrid, error: blijft in zandloperstand, OK in 6.0
+		parameter<uint32> Max: expr = "max_elem(uint32(40)-uint32(60), uint32(0))";
+		parameter<string> LangeTekst2: expr =  "repeat('a', Max )"; // Opvragen in DataGrid, error: blijft in zandloperstand, OK in 6.0
+	}
+	
+	container ReadArray
+	{
+		unit<uint32> domain_agg: nrofrows = 274
+		{
+			attribute<domain_agg> id: expr = "id(domain_agg)";
+			attribute<uint32>     nr: [1,1,1,1,1,1,1,2,1,1,2,9,1,1,3,1,1,1,1,1,1,2,1,1,1,1,10,3,1,1,1,1,1,2,1,2,2,5,1,1,2,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,8,1,1,3,1,1,1,1,1,1,1,1,1,4,1,1,1,1,1,1,1,3,3,1,1,1,1,2,1,2,1,1,1,1,1,1,1,2,1,1,1,1,3,4,1,1,1,32,1,1,1,1,2,1,1,2,1,1,5,1,1,2,1,4,2,1,1,1,1,2,1,1,1,1,1,1,1,1,4,1,1,1,1,1,1,1,1,7,1,1,1,1,1,2,1,1,1,2,1,2,4,1,1,1,1,1,1,1,1,1,4,1,1,1,1,1,1,1,1,1,1,1,7,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,2,1,2,1,1,1,1,5,1,1,7,1,1,1,1,1,1,2,1,5,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,1,1,1,1,2,2,1,1,1,1,1,4,1,1,1,2,1,3,1,1,1,1,1,1,1,1,1,1,2,3,2,1,1];
+		}
+		parameter<string> param: Expr = "AsList(repeat(String(domain_agg/Id) + ',', domain_agg/nr), '')";
+		unit<uint32> domain: Expr = "range(uint32, 0, sum(domain_agg/nr))"
+		// TOD, opvragen van dit data item in table view en applicatie afsluiten levert error op: 
+		// Illegal Abstract Error: Drop called.
+		// C:\dev\GeoDMS\srv\dms\rtc\dll\src\mem/AbstrSequenceProvider.h(81):
+		// Getest in 6.00 en OK
+		{
+			attribute<String> att: expr = "ReadArray(param,domain, String, 0)";
+		}
+	}
+	
+	container Tracing
+	{
+		unit<uint32> domainA: nrofrows = 5
+		{
+			attribute<uint32>  A : [1,2,3,4,5];
+			attribute<uint32>  C : [1,1,1,1,1];
+		}
+		unit<uint32> domainB: Expr = "Subset(domainA/A > 2)"
+		{
+			attribute<uint32>  B : expr = "domainA/A[nr_OrgEntity]";
+		}
+	}
+	container Table
+	{
+		parameter<uint32> ParamNumeric: [123];
+		parameter<uint32> ParamString:  ['text inhoud'];
+		attribute<uint32> AttNumeric      (DomainWithAttributes):      expr = "DomainWithAttributes/A";
+		attribute<string> AttString       (DomainWithAttributes):      expr = "String(DomainWithAttributes/A)";
+		attribute<uint32> EmptyAttNumeric (EmptyDomainWithAttributes): expr = "EmptyDomainWithAttributes/A";
+		attribute<string> EmptyAttString  (EmptyDomainWithAttributes): expr = "String(EmptyDomainWithAttributes/A)";
+		
+		unit<uint32> DomainWithAttributes: nrofrows = 5
+		{
+			attribute<uint32>  A : [1,2,3,4,5];
+			attribute<string>  C : ['text',' ','abc','t t','text'];
+		}
+		unit<uint32> EmptyDomainWithAttributes: expr = "Subset(DomainWithAttributes/A > 5)"
+		{
+			attribute<uint32>  A : expr = "DomainWithAttributes/A[nr_OrgEntity]";
+			attribute<uint32>  C : expr = "DomainWithAttributes/C[nr_OrgEntity]";
+		}
+	}
+	container Classifications
+	{
+		// Test, vraag item domain/lokatie op in MapView
+		// Activeer Edit Palette op dit item in Legenda
+		// Kies Classify > Equal Count
+		// t/m 5.91 ging dit goed
+		// 5.95 geeft dit error
+		
+		unit<float32> m: cdf = "m_10K/ClassBreaks";
+		unit<uint8> m_10K: nrofrows = 10
+		{
+			attribute<m> ClassBreaks: DialogType = "Classification",
+				[0, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000];
+			attribute<uint32> BrushColor:  DialogType = "BrushColor",
+				 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+				  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+			attribute<string> Label: DialogType = "LabelText",
+				['0 - 1.000 m2','1.000 -  1.500 m2','1.500 - 2.000 m2','2.000 - 2.500 m2','2.500 -  3.000 m2','3.500 - 3.500 m2','3.500 - 4.000 m2','4.000 - 4.500 m2','4.500 - 5.000 m2','> 5.000 m2'];
+		}
+		unit<uint32> domain: 
+			nrofrows   = 9,
+			DialogData = "lokatie",
+			DialogType = "Map"
+		{
+			attribute<spoint> lokatie: [{0,1},{0,2},{0,3},{1,1},{1,2},{1,3},{2,1},{2,2},{2,3}];
+			attribute<m>      distance: [23,6700,16212,3200,600,3000,6000,100,1257];
+		}
+	}
+	container MaxPlusMax
+		// Test opvragen item dijkstra_plus_dijkstra in tabel leidt tot OS
+	{
+		unit <uint32> NodeSet: nrofrows = 3
+		{
+			attribute<Classifications/m> dist: [10,20,30];
+			attribute<NodeSet> F1: [0,0,2];
+			attribute<NodeSet> F2: [0,2,0];
+		}
+		unit <uint32> orgNode: nrofrows = 2
+		{
+			attribute<nodeset> nr_OrgNode: [1,3];
+		}
+		unit <uint32> dest: nrofrows = 1
+		{
+			attribute<nodeset> nr_DestNode: [1];
+		}
+		attribute<Classifications/m> dijkstra               (NodeSet): expr = "dijkstra(NodeSet/dist, NodeSet/F1, NodeSet/F2, dest/Nr_DestNode)";
+		attribute<Classifications/m> dijkstra_plus_dijkstra (NodeSet): expr = "dijkstra + dijkstra";
+	}
+	container LargeAttODBC
+	{
+		unit<UInt32> src:
+			SqlString   = "SELECT id, idBAG, poly_str FROM testlargeatt.csv ORDER BY id",
+			StorageName = "DRIVER={Microsoft Text Driver (*.txt; *.csv)};DBQ=%ProjDir%/data;extensions=csv;HDR=NO",
+			StorageType = "odbc",
+			SyncMode    = "none"
+		{
+			attribute<String> id(.);
+			attribute<String> idBAG(.);
+			attribute<String> poly_str(.);
+		}
+	}
+	container StringMemoryAllocation
+	{
+		unit<uint32> src: expr = "range(uint32,0,100000)"
+		{
+			parameter<string> FileContents: StorageName = "%SourceDataDir%/BAG/20_04_2011/pand1.csv", StorageType = "str";
+			parameter<String> FileContentsCodedOnce: expr = "replace(FileContents, '_', '_0', ' ', '_1', '/', '_2', '-', '_3')";
+		}
+	}
+	container ReadElem
+	{
+		unit<uint32> domain: nrofrows = 2
+		{
+			attribute<string> src: ['1_test','test_1'];
+			attribute<string> att:  expr = "ReadElems(src, string, const(0,domain))";
+			attribute<bool>   test: expr = "att = src";
+		}
+	}
+	container Metric
+	{
+		container Units
+		{
+			unit<float32> NrWoningen: Expr = "BaseUnit('Woningen', float32)";
+			unit<Float32> Ratio:      Expr = "1.0 * NrWoningen / NrWoningen";
+			unit<Float32> Percent:    Expr = "0.01 * Float32";
+		}
+		container Data
+		{
+			parameter<Units/Percent>    ratioKoop:      [60];
+			parameter<Units/NrWoningen> WoningenTotaal: [1000];
+		}
+		container Sub
+		{
+			parameter<Units/Percent>    ratioHuur:    expr = "float32(100) - Data/RatioKoop";  // perfect match
+			parameter<Float32>          ratioHuur2:   expr = "float32(100) - Data/RatioKoop";  // expr with metric matches configured default unit
+			parameter<Units/Percent>    ratioHuur3:   expr = "float32(100) - float32(60)";     // expl without metric now matches any metric of the configured unit, but issue 158 is about disallowing this
+			parameter<Units/Percent>    ratioHuur4:   expr = "Data/RatioKoop * 5[units/Percent]"; // metric of this expr does NOT and should not match the metric of the configured values unit.
+			parameter<Units/NrWoningen> KoopWoningen: expr = "Data/ratioKoop / value(100, Units/percent) * Data/WoningenTotaal";
+			parameter<Units/NrWoningen> HuurWoningen: expr = "     ratioHuur / value(100, Units/percent) * Data/WoningenTotaal";
+		}
+	}
+}

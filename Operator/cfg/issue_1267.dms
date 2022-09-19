@@ -1,0 +1,39 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS configuratie structuren                              //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       November 2010                                                        //
+//                                                                                                            //
+//                            Continue aanpassingen vanaf 2010                                                //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97", 
+{
+	container MetricPropValue
+	{
+		unit<float32> sec     := baseUnit('sec', Float32);
+		unit<float32> min     := 60 * sec;
+		unit<float64> min_f64 := float64(min);
+
+		parameter<min>     hr         := 60[min];
+		
+//		parameter<float32> hr2        := float32(hr * hr);
+		parameter<float64> hr2F64     := float64(hr * hr);
+//		parameter<int32> hr2i        := round(hr * hr);
+		
+//		parameter<min_f64> hrf64      := float64(hr);
+//		parameter<float64> hrf64_d    := float64(hr);
+//		parameter<min_f64> hrf64round := float64(round(hrf64));
+
+//		parameter<string> me_hr         := PropValue(ValuesUnit(hr)        , 'metric');
+//		parameter<string> me_hr2        := PropValue(ValuesUnit(hr2)       , 'metric');
+		parameter<string> me_hr2F64     := PropValue(ValuesUnit(hr2F64)    , 'metric');
+//		parameter<string> me_hr2i       := PropValue(ValuesUnit(hr2i)      , 'metric');
+//		parameter<string> me_hrf64      := PropValue(ValuesUnit(hrf64)     , 'metric');
+//		parameter<string> me_hrf64round := PropValue(ValuesUnit(hrf64round), 'metric');
+	}
+}

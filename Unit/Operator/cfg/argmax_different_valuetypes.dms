@@ -1,0 +1,13 @@
+container argmax_different_valuetypes
+{
+	parameter<uint32>  A: [3];
+	parameter<float32> B:= 0.3f; // [null];
+	parameter<float32> C:= 0.6f; // [null];
+
+	parameter<uint32> test    := argmax(A,B,C);
+	parameter<string> test_log := test == 0
+		? '' 
+		: 'argmax different valuetypes Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/argmax_different_valuetypes.txt";
+}

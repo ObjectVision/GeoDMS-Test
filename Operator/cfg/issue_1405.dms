@@ -1,0 +1,46 @@
+container issue_1405
+{
+	unit<dpoint> LatLong      := range(LatLong_Base, point( 45.0, -2.0), point(54.0,11.0));
+	unit<dpoint> LatLong_Base : Format = "EPSG:4326";
+
+	parameter<float64> SourceRasterFactorDiv   := 30.0 / 3600.0 ;//http://mantis.objectvision.nl/view.php?id=1313
+	parameter<float64> SourceRasterFactorConst := 0.00833333333333333333333333333333333333333333333333333333333;//http://mantis.objectvision.nl/view.php?id=1313
+
+	container make_gtopoDiv   := make_gtopo('div'   ,SourceRasterFactorDiv);
+	container make_gtopoConst := make_gtopo('const' ,SourceRasterFactorConst);
+
+	template make_gtopo 
+	{
+		parameter<string> label;
+		parameter<float64> SourceRasterFactor;
+		
+		unit<wpoint> gtopo_base :=
+			gridset(
+				range(LatLong, 
+					LowerBound(LatLong) + point(0.5 * SourceRasterFactor, 0.5 * SourceRasterFactor, LatLong), 
+					UpperBound(LatLong) - point(0.5 * SourceRasterFactor, 0.5 * SourceRasterFactor, LatLong)
+				)
+				, point(-SourceRasterFactor, SourceRasterFactor, LatLong)
+				, point(90d, -180d, LatLong)
+				, wpoint
+			);
+	
+		unit<wpoint> gtopo := TiledUnit(point(1024w, 43200w, gtopo_base));
+	
+		container Countries
+		{
+			unit<uint8> Country
+				: StorageName = "%SourceDataDir%/Mondiaal/landen/countries_GADM_2012_UCD_v5.shp"
+				, StorageType = "gdal.vect"
+				, StorageReadOnly = "True"
+			{
+				attribute<LatLong> Geometry(polygon);
+				attribute<string>  Name;
+			}
+	
+			//gridded country before claimed
+			attribute<Country> Country_grid (gtopo) := poly2grid(Country/Geometry , gtopo)
+			,	StorageName = "= '%LocalDataProjDir%/' + label + '/Country_grid.tif'";
+		}
+	}
+}

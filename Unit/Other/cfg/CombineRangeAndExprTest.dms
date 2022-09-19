@@ -1,0 +1,26 @@
+container CombineRangeAndExprTest
+{
+	unit <float32> DegreesCelsius  := BaseUnit('celsius',float32), Range = "[-20, 50) ";
+	unit <float32> DegreesCelsius2 := DegreesCelsius * DegreesCelsius; // used for statistical tests, (co)variance, 
+
+	parameter<DegreesCelsius > LB_DC  := LowerBound(DegreesCelsius );
+	parameter<DegreesCelsius2> LB_DC2 := LowerBound(DegreesCelsius2);
+
+	parameter<bool> test1 := Value(LB_DC, float32) != value(LB_DC2, float32);
+
+	unit<float32> RangedDegreesCelsius  := Range(BaseUnit('celsius',float32), Float32(-20), Float32(50));
+	unit<float32> RangedDegreesCelsius2 := DegreesCelsius * DegreesCelsius; // used for statistical tests, (co)variance, 
+
+	parameter<RangedDegreesCelsius > LB_RDC : expr = "LowerBound(RangedDegreesCelsius )";
+	parameter<RangedDegreesCelsius2> LB_RDC2: expr = "LowerBound(RangedDegreesCelsius2)";
+
+	parameter<bool> test2 := Value(LB_RDC , float32) == Float32(-20);
+	parameter<bool> test3 := Value(LB_RDC2, float32) == value(LB_DC2, float32);
+	parameter<bool> test  := test1 && test2 && test3;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'CombineRangeAndExprTest Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/CombineRangeAndExprTest.txt";
+}

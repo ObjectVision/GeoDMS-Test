@@ -1,0 +1,24 @@
+container DoubleInstantiation
+{
+	template F
+	{
+		parameter<float32> X;
+
+		template Results
+		{
+			parameter<float32> y := x * x;
+		}
+	}
+
+	parameter<float32> X := 5f;
+	container CaseData := F(4f);
+
+	container Results := CaseData/Results();
+	parameter<bool> Test:= Results/y == 16f;
+
+	parameter<string> test_log := test 
+		? '' 
+		: 'DoubleInstantiation Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/DoubleInstantiation.txt";
+}

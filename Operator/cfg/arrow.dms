@@ -1,0 +1,67 @@
+container ArrowTest
+{
+	unit<uint32> I := range(uint32, 0, 2)
+	{
+		attribute<float64> V : [ 0.33, 0.66 ];
+	}
+	unit<uint32> II := range(uint32, 0, 3)
+	{
+		attribute<float64> W : [ 0.33, 0.66 ];
+		attribute<I> I_ref: [0, 0, 1];
+		attribute<II> II_ref := ID(II);
+		attribute<string> name: [ 'a', 'b'];
+		attribute<float64> V := II_ref->V; // error: invalid recursion ?
+	}
+	unit<uint32> D := range(uint32, 0, 4)
+	{
+		attribute<II> II_ref : [0, 1, 0, 2];
+		attribute<float64> W := II_ref->W;
+		attribute<float64> V1 := II_ref->(I_ref->V);
+
+		
+		attribute<float64> VW1 := II_ref->(W + I_ref->V);
+		attribute<float64> VW2 := II_ref->(I_ref->V + W);
+		
+		// NYI
+		attribute<string>  rlookup := rlookup(W, II->W)->name;
+		attribute<float64> V2 := (II_ref->I_ref)->V;
+		attribute<float64> V3 := II_ref->I_ref->V;
+		
+		// Error
+		attribute<float64> Err3 := II_ref->3;
+		
+//		x==classifications/Installatie/V/A || x==classifications/Installatie/V/A
+
+//		classifications/Installatie/V: (x==A || x==B)
+//		input/ruimte/warmtenet: a+b
+	}	
+	
+	parameter<bool> trueer_than_ever : Expr = "true and true";
+	
+	parameter<bool> trueer_than_ever2 := true and true;
+	container or {
+		parameter<bool> test_param := true;
+	}
+	container and {
+		parameter<bool> text:= true;
+	}
+	container not_op{
+		parameter<bool> test_param := true;
+	}
+//	container _op{
+//		parameter<bool> test_param := true;
+//	}
+	parameter<bool> test_params := 
+//	trueer_than_ever and or/test_param 
+//	or not _op/test_param 
+	//or not_op/test_param && 
+	and/text
+//	&& not and/text
+	&& not(and/text)
+//	&& not/test_param 
+//	&& bitand/test_param
+//	&& bitor/test_param
+//	&& complement/test_param
+	;	
+
+}

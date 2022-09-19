@@ -1,0 +1,271 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS Operatoren/Functies met lange rekentijd              //
+//                                                                                                            //
+//                                       April 2018                                                           //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//              Merge To Rapport to generate a full HTML rapport based on test database (folder)              //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container mergeToRapport
+{
+	unit<uint8> DaysInMonth: nrofrows = 12
+	{
+		attribute<eenheden/day_u64 > days                        : [0,31,28,31,30,31,30,31,31,30,31,30];
+		attribute<eenheden/day_u64 > cumulate_days               := cumulate(days);
+		attribute<eenheden/day_u64 > cumulate_days_schrikkeljaar := cumulate_days + (id(.) > 2b ? 1u64 : 0u64);
+	}
+
+	parameter<string> dirinfo : Storagename = "=TempDir + '/dirinfo.str'", StorageReadOnly = "True";
+
+	unit<uint32> testfiles := range(uint32, 0, strcount(dirinfo,NewLine))
+	{
+		attribute<string> ver_test_full_path    := readLines(dirinfo, ., 0);
+		attribute<string> ver_test_file         := substr(ver_test_full_path, strlen(expand(.,ResultDir))+1);
+		attribute<string> ver                   := left(ver_test_file , strpos(ver_test_file, BackSlash));
+
+		attribute<string> test                  := replace(substr(ver_test_file, strpos(ver_test_file, BackSlash) + 1),'.txt','','_',' ');
+
+		attribute<mergeToRapport/ver>      ver_rel  := rlookup(ver, mergeToRapport/ver/values);
+		attribute<mergeToRapport/test_all> test_rel := rlookup(test, mergeToRapport/test_all/values);
+
+		attribute<string> key                   := string(test_rel) + '_' + string(ver_rel);
+
+		attribute<string> contents              : StorageName = "=ResultDir", StorageType = "strfiles";
+
+		attribute<string> contents_till_startTS := substr(contents, 0, strpos(contents,'<startdate>'));
+
+		attribute<string> FileName              := ver_test_file;
+
+		unit<uint32> timestamps :=testfiles
+		{
+			attribute<uint32> startpos_startdate := strpos(contents,'<startdate>') + strlen('<startdate>');
+			attribute<uint32> endpos_startdate   := strpos(contents,'</startdate>');
+			attribute<string> startdate          := replace(Substr(contents,startpos_startdate, endpos_startdate - startpos_startdate),'-', Slash);
+
+			attribute<uint32> startpos_starttime := strpos(contents,'<starttime>') + strlen('<starttime>');
+			attribute<uint32> endpos_starttime   := strpos(contents,'</starttime>');
+			attribute<string> starttime          := Substr(contents,startpos_starttime, endpos_starttime - startpos_starttime);
+
+			attribute<uint32> startpos_enddate   := strpos(contents,'<enddate>') + strlen('<enddate>');
+			attribute<uint32> endpos_enddate     := strpos(contents,'</enddate>');
+			attribute<string> enddate            := replace(Substr(contents,startpos_enddate, endpos_enddate - startpos_enddate),'-', Slash);
+
+			attribute<uint32> startpos_endtime   := strpos(contents,'<endtime>') + strlen('<endtime>');
+			attribute<uint32> endpos_endtime     := strpos(contents,'</endtime>');
+			attribute<string> endtime            := Substr(contents,startpos_endtime, endpos_endtime - startpos_endtime);
+		}
+		container duration_seconds := duration(., timestamps/startdate, timestamps/starttime, timestamps/enddate, timestamps/endtime);
+
+
+		attribute<string> html_no_information_written  := testfiles/timestamps/startpos_startdate == 11 
+			? '<I>result</I>:<B>Test Failed, no results written by test</result></B><BR>' 
+			: '';
+
+		attribute<string> html:= 
+			'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">' +
+			(test == 'general'
+			?
+				replace(
+					contents_till_startTS
+						,'<version>','<I>version</I>: <B>'
+						,'</version>','</B><BR>'
+						,'<buildconfig>','<I>build</I>: <B>'
+						,'</buildconfig>','</B><BR>'
+						,'<platform>','<I>platform</I>: <B>'
+						,'</platform>','</B><BR>'
+						,'<typemodel>Complete Edition</typemodel>',''
+						,'<statusflag>','<I>multi tasking</I>: <B>'
+						,'</statusflag>','</B><BR>'
+						,'<os>','<I>operating system</I>: <B>'
+						,'</os>','</B><BR>'
+						,'<computername>','<I>computername</I>: <B>'
+						,'</computername>','</B><BR><BR>'
+				)
+			:
+				replace(
+					contents_till_startTS
+						,'<description>','<I>description</I>: '
+						,'</description>','<BR>'
+						,'<size>','<I>size indication</I>: '
+						,'</size>','<BR>'
+						,'<issue>','<I>mantis</I> : <a href="http://mantis.objectvision.nl/view.php?id='
+						,'</issue>','">issue</a><BR>'
+						,'</description>','<BR>'
+						,'<result>','<I>result</I>: <B>'
+						,'</result>','</B><BR>'
+				)
+				+ '<I>test started at</I>: ' + duration_seconds/startSeconds/impl/formatted + '<BR>'
+				+ html_no_information_written
+				+ '<I>duration</I>: ' + duration_seconds/result_formatted
+			)
+			+ '</td>';
+	}
+
+	unit<uint32> ver_wrong_order:= unique(testfiles/ver)
+	{
+		attribute<string> name:= 'ver_' + values;
+	}
+
+	unit<uint32> ver := range(uint32,0,#ver_wrong_order)
+	{
+		attribute<string> values        := union_data(.,reverse(ver_wrong_order/values));
+		attribute<string> name          := 'ver_' + values;
+
+		attribute<uint32> version_pos   := (IsDefined(strpos(lowercase(values),'x64')) ? strpos(lowercase(values),'x64') : strpos(lowercase(values),'win32')) - 1;
+		attribute<string> version       := left(values, version_pos);
+
+		parameter<string> version_range := max(version) + '___' + min(ver/version);
+	}
+
+	unit<uint32> test_all:= unique(testfiles/test)
+	{
+		attribute<string> name     := replace(values, 'general', 'GeoDMS performance<BR>test results<BR>versions: <BR>'+ replace(ver/version_range,'_','.'));
+		attribute<bool>   isPublic := left(uppercase(name), 4) <> 'T620' && left(uppercase(name), 4) <> 'T625';
+		
+		container html:= for_each_nedv(
+			ver/name,
+			'MakeDefined(rjoin(string(id(test_all)) + ' + quote('_' +string(id(ver))) +', testfiles/key, testfiles/html),''<td></td>'')'
+			,.
+			,string
+		)
+		{
+			attribute<string> total (test_all):= =AsList(ver/name,' + ');
+		}
+		attribute<string> bgcolor := id(.) == 0 ? 'fff497': uint8(substr(name,1,1)) % 2b = 0b ? 'EEEEFF': 'F8F8FF';
+		attribute<string> firstcolum: ='<tr style="background-color: #' + bgcolor + '"><td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><H3>' + name + '</H3></TD>';
+		attribute<string> regel:= firstcolum + html/total + '</TR>';
+	}
+
+	unit<uint32> test_public:= Subset(test_all/isPublic) // Not all tests in public version
+	{
+		attribute<string> name:= test_all/name[nr_OrgEntity];
+		
+		container html:= for_each_nedv(
+			ver/name,
+			'test_all/html/' + ver/name + '[nr_OrgEntity]'
+			,.
+			,string
+		)
+		{
+			attribute<string> total (test_public):= test_all/html/total[nr_OrgEntity];
+		}
+		attribute<string> bgcolor    := test_all/bgcolor[nr_OrgEntity];
+		attribute<string> firstcolum := test_all/firstcolum[nr_OrgEntity];
+		attribute<string> regel      := test_all/regel[nr_OrgEntity];
+	}
+
+	container report_all     := make_report(test_all,   '');
+	container report_public  := make_report(test_public,'_public');
+
+	container total
+	{
+		parameter<string> Export := report_all/Export + report_public/Export;
+	}
+
+	template make_report
+	{
+		// begin case parameters
+		unit <uint32> test;
+		parameter<string> file_label;
+		// end case parameters
+
+		parameter<string> pre  := '<!DOCTYPE html>' + newline + '<html>' + newline + '<head>' + newline + '<meta charset="UTF-8">' + newline +'</head>' + newline + '<body>';
+		parameter<string> body := '<table style="border: 0; background-color: #ddd;">' + AsList(test/regel, newline) + '</Table>';
+		parameter<string> post := '</body></html>';
+	
+		parameter<string> htmlfile := ver/version_range + file_label + '.html'
+		{
+			parameter<string> file:= ver/version_range, Storagename = "= TempDir + '/temp_ver_range.txt'", StorageType = "str";
+		}
+
+		parameter<string> Export := pre + body + post
+		,	ExplicitSuppliers = "htmlfile/file"
+		,	StorageType = "str"
+		,	StorageName = "= ResultDir + '/reports/' + htmlfile ";
+	}
+
+	template duration
+	{
+		// begin case parameters
+		unit<uint32> rapport;
+		attribute<string> startdate (rapport);
+		attribute<string> starttime (rapport);
+		attribute<string> enddate   (rapport);
+		attribute<string> endtime   (rapport);
+
+		// end case parameters
+		
+		container startSeconds := SecondsSince20180101(rapport, startdate, starttime);
+		container endSeconds   := SecondsSince20180101(rapport, enddate, endtime);
+
+		attribute<eenheden/s_u64>   result              (rapport) := endSeconds/result - startSeconds/result;
+
+		attribute<eenheden/day_u64> days                (rapport) := result / datefactors/s_in_day;
+		attribute<eenheden/s_u64>   result_after_days   (rapport) := result - (days * datefactors/s_in_day) ;
+		attribute<eenheden/hr_u64>  hours               (rapport) := result_after_days / datefactors/s_in_hr;
+		attribute<eenheden/s_u64>   result_after_hours  (rapport) := result_after_days - (hours * datefactors/s_in_hr) ;
+		attribute<eenheden/min_u64> minutes             (rapport) := result_after_hours / datefactors/s_in_min;
+		attribute<eenheden/s_u64>   seconds             (rapport) := result_after_hours - (minutes * datefactors/s_in_min);
+		
+		attribute<string>           result_formatted    (rapport) := MakeDefined('<B>' + string(days) +'</B>d<B> ' + string(hours) + '</B>h<B> ' + string(minutes) + '</B>m<B> ' + string(seconds) + '</B>s', 'niet te bepalen');
+
+	}
+	
+	template SecondsSince20180101
+	{
+		// begin case parameters
+		unit<uint32> rapport;
+		attribute<string> date (rapport);
+		attribute<string> time (rapport);
+
+		container impl
+		{
+			attribute<eenheden/year_u64>  year  (rapport):= left(date,4)[eenheden/year_u64];
+			attribute<eenheden/month_u64> month (rapport):= substr(date, 5,2)[eenheden/month_u64];
+			attribute<eenheden/day_u64>   day   (rapport):= right(date,2)[eenheden/day_u64];
+			attribute<eenheden/hr_u64>    hr    (rapport):= uint64(left(time,2))[eenheden/hr_u64];
+			attribute<eenheden/min_u64>   min   (rapport):= uint64(substr(time, 3,2))[eenheden/min_u64];
+			attribute<eenheden/s_u64>     s     (rapport):= uint64(substr(time, 6,2)) + (cs > uint64(49) ? 1u64 : 0u64)[eenheden/s_u64];
+			attribute<uint64>             cs    (rapport):= uint64(right(time,2));
+
+			attribute<string> year_str  (rapport):= string(year);
+			attribute<string> month_str (rapport):= (month > 9u64 ? '' : '0') + string(month);
+			attribute<string> day_str   (rapport):= (day   > 9u64 ? '' : '0') + string(day);
+			attribute<string> hr_str    (rapport):= (hr    > 9u64 ? '' : '0') + string(hr);
+			attribute<string> min_str   (rapport):= (min   > 9u64 ? '' : '0') + string(min);
+			attribute<string> s_str     (rapport):= (s     > 9u64 ? '' : '0') + string(s);
+
+			attribute<string> formatted (rapport):= MakeDefined(year_str + ' ' +  month_str  + ' ' + day_str + ' : ' + hr_str + '.'+ min_str + '.'+ s_str, 'niet te bepalen');
+
+			container daysInYearInFullMonths:= NrdaysInYearInFullMonths(rapport, year, month);
+		}
+
+		attribute<bool>                       IsSchrikkeljaar      (rapport) := impl/year % 4u64 == 0u64 && impl/year % 100u64 <> 0u64;
+		attribute<mergeToRapport/DaysInMonth> DaysInMonth_rel      (rapport) := impl/month[mergeToRapport/DaysInMonth];
+		attribute<eenheden/day_u64>           DaysinFinishedMonths (rapport) := IsSchrikkeljaar ? DaysinMonth/cumulate_days_schrikkeljaar[DaysInMonth_rel - 1b] : DaysinMonth/cumulate_days[DaysInMonth_rel - 1b];
+
+		attribute<eenheden/s_u64> result (rapport) := 
+			impl/s
+			+ datefactors/s_in_min * impl/min
+			+ datefactors/s_in_hr  * impl/hr
+			+ datefactors/s_in_day * impl/day
+			+ datefactors/s_in_day * DaysinFinishedMonths;
+//			+ (2018[eenheden/year_u64] - impl/year) * (IsSchrikkeljaar ? 366[eenheden/day_u64] : 365[eenheden/day_u64]) * datefactors/s_in_day;
+//			+ (2018[eenheden/year_u64] - impl/year) * datefactors/day_in_normal_year * datefactors/s_in_day;
+
+	}
+	
+	template NrdaysInYearInFullMonths
+	{
+		// begin case parameters
+		unit<uint32> rapport;
+		attribute<uint64> year  (rapport);
+		attribute<uint64> month (rapport);
+		
+	}
+}

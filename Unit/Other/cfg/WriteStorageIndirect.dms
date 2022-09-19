@@ -1,0 +1,30 @@
+// Test based on version 7411, updating test item resulted in a memmory leak, application did not close correctly
+
+container WriteStorageIndirect 
+{
+	parameter<string> storage1 := 'A' 
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/WriteStorageIndirect1.txt";
+	parameter<string> storage2 := 'B' 
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/WriteStorageIndirect2.txt";
+
+	parameter<string> export := storage1 + storage2;
+
+	container read
+	{
+		parameter<string> storage1:
+			StorageType = "str"
+		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/WriteStorageIndirect1.txt";
+		parameter<string> storage2:
+			StorageType = "str"
+		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/WriteStorageIndirect2.txt";
+	}
+	
+	parameter<bool>   test     := read/storage1 == 'A' &&  read/storage2 == 'B';
+	parameter<string> test_log := test 
+		? '' 
+		: 'Write Storage Indirect Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/WriteStorageIndirect.txt";
+}

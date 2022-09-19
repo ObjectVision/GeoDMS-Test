@@ -1,0 +1,78 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                                    Storage Manager Test                                                    //
+//                                                                                                            //
+//                  Configuratie voor het testen van de DMS Storage Managers                                  //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       Juli 2009                                                            //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// KNOWN ISSUES:
+// 1 boolean in dbf files, see dbf/wish
+// null files in string files, see strfiles/wish
+// xdb werkt niet, see xdb
+// ASCII grid, write for a unit_derived grid, OS Structured Exception, see /ASCIIgrid/Write/GridData_d
+// bmp truecolor leest verkeerde waarden uit, zie /bmp/TrueColor/grid/GridData
+// bmp palette based leest geen palette information, zie /bmp/Palette/grid/PaletteData
+// tiff truecolor geeft verkeerde waarde bij wegschrijven, zie: Tiff/TrueColor/Write/GridData
+
+container StorageManagerTest
+{
+	container cfs
+	{
+		unit<uint32> src: nrofrows = 5
+		{
+			attribute<float32> att_float: [1.0,2.1,3.4,5.6,7.898];
+			attribute<fpoint>  att_point: expr = "point(att_float,att_float,fpoint)";
+		}
+//		unit<uint32> make
+//		:	expr        = "src"
+//		,	StorageName = "%LocalDataProjDir%/regr_results/cfs_test.cfs"
+		container make
+		{
+			attribute<fpoint>  att_point(src) : expr = "src/att_point";
+		}
+	}
+	// * Geeft Structured Exceptions
+	container fss
+	{
+		container result
+		{
+			parameter<string> tests_log:
+				StorageType = "str",
+				storagename = "%localDataProjDir%/regr_results/fss.txt",
+				expr        = "String(all)";
+			parameter<bool> all:   expr = "str && int && float && point";
+			parameter<bool> str:   expr = "AsItemList(read/att_str) = 'label1,label2,label3,label4,label5'";
+			parameter<bool> int:   expr = "sum(read/att_int) = 931";
+			parameter<bool> float: expr = "sum(read/att_float) > float32(19.9) && sum(read/att_float) < float32(20.0)";
+			parameter<float32> pointsum: expr = "sum(pointCol(read/att_point) + pointRow(read/att_point))";
+			parameter<bool> point: expr = " pointsum > float32(39.995) &&pointsum < float32(39.997)";
+		}
+		unit<uint32> src: nrofrows = 5
+		{
+			attribute<string>  att_str:   ['label1','label2','label3','label4','label5'];
+			attribute<uint32>  att_int:   [1,2,3,4,921];
+			attribute<float32> att_float: [1.0,2.1,3.4,5.6,7.898];
+			attribute<fpoint>  att_point: expr = "point(att_float,att_float,fpoint)";
+		}
+		unit<uint32> make
+		:	expr        = "src"
+		,	StorageName = "%LocalDataProjDir%/regr_results/fss_test.fss"
+		{
+			attribute<string>  att_str   : expr = "src/att_str";
+			attribute<uint32>  att_int   : expr = "src/att_int";
+			attribute<float32> att_float : expr = "src/att_float";
+			attribute<fpoint>  att_point : expr = "src/att_point";
+		}
+		unit<uint32> read: StorageName = "%LocalDataProjDir%/regr_results/fss_test.fss"
+		{
+			attribute<string>  att_str  ;
+			attribute<uint32>  att_int  ;
+			attribute<float32> att_float;
+			attribute<fpoint>  att_point;
+		}
+	}
+}

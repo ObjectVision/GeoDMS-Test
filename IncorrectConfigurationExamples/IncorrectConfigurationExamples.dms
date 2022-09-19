@@ -1,0 +1,59 @@
+container IncorrectConfigurationExamples
+{
+   container SourceData: Using = "Units"
+   {
+      unit<uint32> area1
+      {
+         attribute<area1>  nr;
+         attribute<uint32> nr_inhabitants;
+      }
+      unit<uint32> area2
+      {
+         attribute<area1>  nr;  
+         attribute<area2>  nr2;
+      }
+   }
+   container Model: Using = "SourceData"
+   {
+         attribute<uint32> nr_inhabitants1 (area2): Expr = "lookup(area2/nr2, area1/nr_inhabitants)";        
+   }		
+	
+   container Units2
+   {
+      unit<uint32> Country: nrofrows = 15; // Domain unit for countries    
+      unit<uint32> EU15:    nrofrows = 1;  // Domain unit for EU15
+
+      unit<uint32> CountryKey;    // Values unit for country keys
+      unit<uint32> EU15Key;       // Values unit for EU15 key
+      unit<uint32> NrInhabitants: Expr = "BaseUnit('NrInhabitants', 'uint32')"; // Values unit for inhabitants
+      unit<uint32> NrCows:        Expr = "BaseUnit('NrCows', 'uint32')";        // Values unit for cows
+      unit<float32>NrHa:          Expr = "BaseUnit('NrHa', 'float32')";         // Values unit for nrHa
+   }
+   container RegionalInformation:
+      Using       = "Units",
+      StorageName = "%projDir%/data/regionalinfo.mdb"
+   {
+	   unit<uint32> CountryInfo: 
+	      SqlString = "SELECT * FROM Country ORDER BY CountryID",
+	      nrofrows  = 100
+	   {
+	      attribute<CountryInfo>   CountryID   ;
+	      attribute<uint32>        Inhabitants ;
+	      attribute<uint32>        Cows        ;
+	      attribute<uint32>        Area        ;
+		}
+		/*
+	   container EU15Info:SqlString = "SELECT * FROM EU15 ORDER BY EU15ID"
+	   {
+	      attribute<EU15Key>       EU15ID       (EU15);
+	      attribute<NrInhabitants> Inhabitants  (EU15);
+	      attribute<NrHa>          Area         (EU15);
+	   }
+	   container Derived: Using = "RegionalInformation"
+	   {
+	      attribute <uint32>        SumInhabitantsAndCows (Country): Expr = "CountryInfo/Inhabitants +  CountryInfo/Cows";
+	      attribute <NrInhabitants> SumInhabitants        (Country): Expr = "CountryInfo/Inhabitants +  EU15Info/Inhabitants";
+	      attribute <float32>       NrInhabitantsPerHa    (Country): Expr = "CountryInfo/Inhabitants /  CountryInfo/Area";
+	   }*/
+   }
+}

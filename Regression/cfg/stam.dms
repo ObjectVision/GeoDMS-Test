@@ -1,0 +1,670 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS Operatoren/Functies met lange rekentijd              //
+//                                                                                                            //
+//                                       April 2018                                                           //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                                         Root File                                                          //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container Regression:	FreeData = "True"
+{
+	container ConfigSettings: isHidden = "True"
+	{
+		container Overridable
+		{
+			parameter<String> RegressionDataDir   := '%sourceDataDir%/RegressionTests';
+		}
+		
+		parameter<String> DataDir := '%RSLDataDir%';
+	}
+	parameter<string> NewLine         : [ '\n' ];
+	parameter<string> Slash           : [ '/' ];
+	parameter<string> BackSlash       : [ '\\' ];
+
+	parameter<string> ResultDir       := '%ProjDir%/GeoDMSTestResults';
+	parameter<string> TempDir         := '%LocalDataDir%/regression/log';
+
+	container eenheden
+	{
+		unit<float32> m               := baseunit('m', float32), cdf = "klassificaties/m_5K/ClassBreaks";
+		unit<float32> km              := 1000f * m;
+
+		unit<float32> s               := baseunit('s', float32);
+		unit<float32> minuut          := 60f * s;
+		unit<float32> hr              := 60f * minuut;
+
+		unit<float32> km_hr           := km / hr, cdf = "klassificaties/km_hr_8K/ClassBreaks";
+
+		unit<float32> coord_rd        := m;
+		unit<fpoint>  point_rd        := baseunit('m', fpoint);
+		
+		unit<uint64>  s_u64           := uint64(s);
+
+		unit<uint64>  min_u64         := 60u64 * s_u64;
+		unit<uint64>  s_min_u64       := s_u64 / min_u64;
+
+		unit<uint64>  hr_u64          := 60u64 * min_u64;
+		unit<uint64>  s_hr_u64        := s_u64 / hr_u64;
+
+		unit<uint64>  day_u64         := 24u64 * hr_u64;
+		unit<uint64>  s_day_u64       := s_u64 / day_u64;
+		
+		unit<uint64>  month_u64       := baseunit('mo', uint64);
+		unit<uint64>  year_u64        := baseunit('ye', uint64);
+
+		unit<uint64>  day_in_year_u64 := day_u64 / year_u64;
+	}
+	
+	container datefactors: using = "eenheden"
+	{
+		parameter<s_min_u64>       s_in_min           :=           60[s_u64]   / 1[min_u64];
+		parameter<s_hr_u64>        s_in_hr            :=         3600[s_u64]   / 1[hr_u64];
+		parameter<s_day_u64>       s_in_day           := 24u64 * 3600[s_u64]   / 1[day_u64];
+		parameter<day_in_year_u64> day_in_normal_year :=          365[day_u64] / 1[year_u64];
+	}
+
+	container brondata
+	{
+		unit<uint32> PC4_centroid: StorageName = "%RegressionDataDir%/pc4_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
+		{
+			attribute<eenheden/point_rd> geometry := point(float32(X), float32(Y), eenheden/point_rd);
+		}
+		/*
+		unit<uint32> PC4_centroid_sel:= Subset(id(PC4_centroid_org) < 10)
+		{
+			attribute<eenheden/point_rd> geometry := PC4_centroid_org/geometry[nr_OrgEntity];
+			attribute<string> PC                  := PC4_centroid_org/PC[nr_OrgEntity];
+			
+			attribute<float32> X := PointCol(geometry)[float32];
+			attribute<float32> Y := PointRow(geometry)[float32];
+			
+			parameter<float32> X_min := min(X);
+			parameter<float32> X_max := max(X);
+			parameter<float32> Y_min := min(Y);
+			parameter<float32> Y_max := max(Y);
+		}*/
+		unit<uint32> PC6_centroid: StorageName = "%RegressionDataDir%/pc6_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
+		{
+			attribute<eenheden/point_rd> geometry := point(float32(X), float32(Y), eenheden/point_rd);
+		}
+		unit<uint32> weg: StorageName = "%RegressionDataDir%/roads_nl_be_du.fss", StorageReadOnly = "True"
+		{
+			attribute<eenheden/point_rd> geometry (arc);
+			attribute<eenheden/point_rd> geometry_simplified (arc) := bg_simplify_linestring(geometry, 10.0);
+			attribute<eenheden/km_hr>    KMH;
+			attribute<bool>              isSnelWeg;
+		}
+
+		parameter<string> PC6_connect_ok_filename := '%RegressionDataDir%/pc6_connect' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
+		unit<uint32> PC6_connect_ok: StorageName = "= PC6_connect_ok_filename", StorageReadOnly = "True"
+		{
+			attribute<eenheden/point_rd> UnionData (arc);
+			unit<uint32> pointset:= sequence2points(UnionData)
+			{
+				attribute<eenheden/point_rd> point;
+			}
+		}
+
+		parameter<string> PC6_impedance_ok_filename := '%RegressionDataDir%/pc6_impedance' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
+		unit<uint32> PC6_impedance_ok: StorageName = "= PC6_impedance_ok_filename", StorageReadOnly = "True"
+		{
+			attribute<eenheden/m> alt_imp;
+			attribute<eenheden/s> impedance;
+			attribute<uint32>     OrgZone_rel;
+			attribute<uint32>     DstZone_rel;
+		}
+		unit<uint32> PC4_impedance_ok: StorageName = "%RegressionDataDir%/PC4_impedance.fss", StorageReadOnly = "True"
+		{
+			attribute<eenheden/m> alt_imp;
+			attribute<eenheden/s> impedance;
+			attribute<uint32>     OrgZone_rel;
+			attribute<uint32>     DstZone_rel;
+		}
+
+		unit<uint32> Make_BAG_type_woonpand_rel: StorageName = "%RegressionDataDir%/type_woonpand_rel_ok.fss"
+		{
+			unit<uint32> domain := results/t301_BAG_ResidentialType/pand_snapshot;
+			attribute<string> identificatie     (domain):= results/t301_BAG_ResidentialType/pand_id;
+			attribute<uint8>  type_woonpand_rel (domain):= results/t301_BAG_ResidentialType/calculated;
+		}
+
+		unit<uint32> BAG_type_woonpand_rel: StorageName = "%RegressionDataDir%/type_woonpand_rel_ok.fss", StorageReadOnly = "True"
+		{
+			unit<uint32> domain;
+			attribute<string> identificatie     (domain);
+			attribute<uint8>  type_woonpand_rel (domain);
+		}
+
+		unit<uint32> bodemgebruik
+		:	StorageName     = "%RegressionDataDir%/CBS/BBG2012.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		,	DialogType      = "Map"
+		,	DialogData      = "geometry_rd"
+		{
+			attribute<eenheden/point_rd> geometry_rd (polygon) := geometry[eenheden/point_rd];
+			attribute<groep> groep_rel := rlookup(Hoofdgroep, groep/label);
+			
+			unit<uint8> groep : nrofrows = 14
+			{
+				attribute<string> label:
+					['Bebouwd','Bedrijfsterrein','Bos','Buitenland','Droog natuurlijk terrein','Glastuinbouw','Hoofdweg','Landbouw','Nat natuurlijk terrein','Recreatie','Semi-bebouwd','Spoorweg','Vliegveld','Water'];
+			}
+		}
+		container bodemgebruik_groep_10m_ok
+		{
+			attribute<uint8> GridData (grid/domain_10m): StorageName = "%RegressionDataDir%/bbg_2012.tif";
+		}
+	}
+
+	container netwerk: Using = "eenheden"
+	{
+		#include <WegenVerbonden.dms>
+		#include <WegenMetLokaties.dms>
+	}
+
+	container OD
+	{
+		container netwerk_PC4:= netwerk/WegenMetLokaties/PC4;
+		unit<uint32> PC4_dense :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+				, netwerk_PC4/LinkSet/traveltime_s
+				, netwerk_PC4/F1
+				, netwerk_PC4/F2
+				, netwerk_PC4/nr_orgNode
+				, netwerk_PC4/nr_destNode
+				, netwerk_PC4/LinkSet/length_m
+			);
+		//,StorageName = "%RegressionDataDir%/PC4_impedance.fss";
+		
+		container netwerk_PC6:= netwerk/WegenMetLokaties/PC6;
+		unit<uint32> PC6_sparse :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+				, netwerk_PC6/LinkSet/length_m
+			)
+			,	StorageName = "%RegressionDataDir%/PC6_impedance.fss"
+		{
+			attribute<eenheden/m> alt_imp;
+			attribute<eenheden/s> impedance;
+			attribute<uint32>     OrgZone_rel;
+			attribute<uint32>     DstZone_rel;
+		}
+	}
+	container grid
+	{
+		parameter<float32> gridsize_10m :=  10f;
+
+		parameter<float32> x_min := 10000f;
+		parameter<float32> x_max := 280000f;
+		parameter<float32> y_min := 300000f;
+		parameter<float32> y_max := 625000f;
+
+		parameter<int16>   nr_cols := int16((x_max - x_min) / gridsize_10m);
+		parameter<int16>   nr_rows := int16((y_max - y_min) / gridsize_10m);
+
+		unit<spoint> domain_10m_untiled :=
+			range(
+				 gridset(
+					 eenheden/point_rd
+					,point(gridsize_10m, -gridsize_10m, eenheden/point_rd)
+					,point(x_min, y_max, eenheden/point_rd)
+					,spoint
+				)
+				,point(0s, 0s)
+				,point(nr_cols, nr_rows)
+			)
+		,	DialogData = "eenheden/point_rd"
+		{
+			attribute<uint32>       grey             := const(rgb(200,200,200),.), DialogType = "BrushColor";
+			attribute<brondata/bodemgebruik> bodemgebruik_rel := poly2grid(brondata/bodemgebruik/geometry_rd, .);
+		}
+
+		unit<spoint> domain_10m := TiledUnit(Point(1000s, 1200s, domain_10m_untiled))
+		{
+			attribute<brondata/bodemgebruik/groep> groep_rel := brondata/bodemgebruik/groep_rel[poly2grid(brondata/bodemgebruik/geometry_rd, .)];
+		}
+	}
+
+	#include<XML.dms>
+	#include<MakeSnapshot.dms>
+
+	container CalcCache: Using = "eenheden"
+	{
+		unit<uint32> PointSet: nrofrows = 75000
+		{
+			attribute<point_rd> geometry     := point(id(.)[m],id(.)[m],point_rd);
+			attribute<point_rd> geometry_arc := point(const(max(id(.)),.)[m],id(.)[m],point_rd);
+			
+			attribute<arcset>   sequence := value(id(.) / 2, arcset);
+			attribute<uint32>   ordinal  := id(.) % 2;
+			
+		}
+		unit<uint32> arcset := range(uint32,0,#PointSet / 2)
+		{
+			attribute<point_rd> geometry(arc) := points2sequence(PointSet/geometry_arc, PointSet/sequence, PointSet/ordinal);
+		}
+		unit<uint32> connect := connect(arcset/geometry, PointSet/geometry), FreeData = "False"
+		{
+			attribute<m> UnionData_length := arc_length(UnionData, m);
+		}
+	}
+
+	container format10mln := formatnumber_1000_seperators(string(1));
+
+	template formatnumber_1000_seperators
+	{
+		// begin case parameters
+		parameter<string> size_str_org;
+		// end case parameters
+		
+		parameter<float32> strlength         := float32(strlen(size_str_org));
+		parameter<uint32 > length_first_part := uint32(strlength % 3f) == 0 ? 3 : uint32(strlength % 3f);
+	
+		unit<uint32> strparts:= range(uint32,0,uint32(roundup(strlength / 3f)))
+		{
+			attribute<string> part := substr(
+				size_str_org
+				, id(.) == 0 ? 0 : length_first_part + (id(.) -1) * 3 // startpos
+				, id(.) == 0 ? length_first_part : 3);// length
+		}
+		parameter<string> result := AsList(strparts/part,'.');
+	}
+	container results
+	{
+		container VersionInfo
+		{
+			parameter<float64> GeoDMSVersionFloat64 := GeoDMSVersion();
+			parameter<String>  GeoDMSVersionString  := String(GeoDMSVersionFloat64);
+			parameter<uint32>  GeoDMSVersionLength  := strlen(GeoDMSVersionString);
+
+			parameter<string> GeoDMSVersion := 
+				GeoDMSVersionLength == 3 
+					? GeoDMSVersionString + '00' 
+					: GeoDMSVersionLength == 4 
+						? GeoDMSVersionString + '0' 
+						: GeoDMSVersionString;
+
+			parameter<string> version     := '<version>'    + GeoDMSVersion       + '</version>';
+			parameter<string> BuildConfig := '<buildconfig>'+ GeoDmsBuildConfig() + '</buildconfig>';
+			parameter<string> platform    := '<platform>'   + GeoDmsPlatform()    + '</platform>';
+			parameter<string> TypeModel   := '<typemodel>'  + GeoDmsTypeModel()   + '</typemodel>';
+			parameter<string> StatusFlag  := '<statusflag>' + StatusFlags/file    + '</statusflag>';
+
+			container StatusFlags
+			{
+				parameter<string> file: Storagename = "= TempDir + '/statusflags.txt'", StorageType = "str", StorageReadOnly = "True";
+			}
+			container ComputerName
+			{
+				parameter<string> file: Storagename = "= TempDir + '/computername.txt'", StorageType = "str", StorageReadOnly = "True";
+			}
+
+			container RegionalSettings
+			{
+				parameter<string> file: Storagename = "= TempDir + '/date_format.txt'", StorageType = "str", StorageReadOnly = "True";
+				parameter<bool> isUKformat:= lowercase(left(file,1)) == 'm';
+			}
+			
+			parameter<string> ver_key := replace(GeoDMSVersion,'.','_') + '_' + GeoDmsPlatform() + '_SF_' + trim(replace(StatusFlags/file,'x','',';','')) + '_' + trim(replace(ComputerName/file,'x','',';',''))
+			{
+				parameter<string> file:= ver_key, Storagename = "= TempDir + '/ver_key.txt'", StorageType = "str";
+			}
+			parameter<string> results_folder := replace(ResultDir + '/' + ver_key, ' ', '')
+			{
+				parameter<string> file:= expand(., results_folder), Storagename = "= TempDir + '/results_folder.txt'", StorageType = "str";
+			}
+
+			parameter<string> all := version + BuildConfig + platform + TypeModel// + StatusFlag
+			,	ExplicitSuppliers = "ver_key/file;results_folder/file"
+			,	StorageType       = "str"
+			,	storagename       = "= TempDir + '/GeoDMSVersionInfo.txt'";
+		}
+		
+		container t100_network_connect
+		{
+			unit<uint32> uniondata_pointset := sequence2points(netwerk/WegenMetLokaties/pc6/SubWegenMetVerbondenLocaties/UnionData)
+			{
+				attribute<eenheden/point_rd> point;
+			}
+
+			attribute<eenheden/point_rd> calculated (uniondata_pointset) := uniondata_pointset/point;
+			attribute<eenheden/point_rd> recorded   (uniondata_pointset) := union_data(uniondata_pointset, Brondata/PC6_connect_ok/pointset/Point );
+			attribute<bool> test                    (uniondata_pointset) := calculated == recorded;
+
+			container size := formatnumber_1000_seperators(string(#netwerk/WegenMetLokaties/pc6/SubWegenMetVerbondenLocaties));
+
+			parameter<string> result := all(test) ? 'OK' : 'False';
+
+			parameter<string> result_html :=
+				'<description>connect pc6 points to <BR>road network (NL/BE/GE)</description>' + 
+				'<size>' + size/result + ' connections </size>' + 
+				'<result>' + result + '</result>'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t100_network_connect.txt'";
+			
+		}
+		container t101_network_od_pc4_dense
+		{
+			unit<uint32> pc4_recorded := brondata/PC4_impedance_ok;
+			container impedance
+			{
+				attribute<float32> calculated (OD/PC4_dense) := OD/PC4_dense/impedance ;
+				attribute<float32> recorded   (OD/PC4_dense) := union_data(OD/PC4_dense, pc4_recorded/impedance);
+				attribute<bool>    test       (OD/PC4_dense) := calculated == recorded;
+			}
+			container alt_imp
+			{
+				attribute<float32> calculated (OD/PC4_dense) := OD/PC4_dense/alt_imp ;
+				attribute<float32> recorded   (OD/PC4_dense) := union_data(OD/PC4_dense, pc4_recorded/alt_imp);
+				attribute<bool>    test       (OD/PC4_dense) := calculated == recorded;
+			}
+			container DstZone_rel
+			{
+				attribute<uint32> calculated (OD/PC4_dense) := OD/PC4_dense/DstZone_rel ;
+				attribute<uint32> recorded   (OD/PC4_dense) := union_data(OD/PC4_dense, pc4_recorded/DstZone_rel);
+				attribute<bool>   test       (OD/PC4_dense) := calculated == recorded;
+			}
+			container OrgZone_rel
+			{
+				attribute<uint32> calculated (OD/PC4_dense) := OD/PC4_dense/OrgZone_rel ;
+				attribute<uint32> recorded   (OD/PC4_dense) := union_data(OD/PC4_dense, pc4_recorded/OrgZone_rel);
+				attribute<bool>   test       (OD/PC4_dense) := calculated == recorded;
+			}
+
+			parameter<bool> all := all(impedance/test) && all(alt_imp/test) && all(DstZone_rel/test) && all(OrgZone_rel/test);
+
+			container size_imp   := formatnumber_1000_seperators(string(#brondata/PC4_centroid * #brondata/PC4_centroid));
+			container size_nodes := formatnumber_1000_seperators(string(#netwerk/WegenMetLokaties/PC4/NodeSet));
+
+			parameter<string> result := all ? 'OK' : 'False';
+
+			parameter<string> result_html := 
+				'<description>OD PC4 dense matrix with<BR>road network (NL/BE/GE)</description>' + 
+				'<size>' + size_imp/result + ' impedances & alt impedances, <BR>' + size_nodes/result + ' nodes</size>' +
+				'<issue>1021</issue>' + 
+				'<result>' + result + '</result>'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t101_network_od_pc4_dense.txt'";
+		}
+
+		container t102_network_od_pc6_sparse
+		{
+			unit<uint32> pc6_recorded := brondata/PC6_impedance_ok;
+
+			container impedance
+			{
+				attribute<float32> calculated (OD/PC6_sparse) := OD/PC6_sparse/impedance;
+				attribute<float32> recorded   (OD/PC6_sparse) := union_data(OD/PC6_sparse, pc6_recorded/impedance);
+				attribute<bool>    test       (OD/PC6_sparse) := calculated == recorded;
+			}
+			container alt_imp
+			{
+				attribute<float32> calculated (OD/PC6_sparse) := OD/PC6_sparse/alt_imp;
+				attribute<float32> recorded   (OD/PC6_sparse) := union_data(OD/PC6_sparse, pc6_recorded/alt_imp);
+				attribute<bool>    test       (OD/PC6_sparse) := calculated == recorded;
+			}
+			container DstZone_rel
+			{
+				attribute<uint32> calculated (OD/PC6_sparse) := OD/PC6_sparse/DstZone_rel;
+				attribute<uint32> recorded   (OD/PC6_sparse) := union_data(OD/PC6_sparse, pc6_recorded/DstZone_rel);
+				attribute<bool>   test       (OD/PC6_sparse) := calculated == recorded;
+			}
+			container OrgZone_rel
+			{
+				attribute<uint32> calculated (OD/PC6_sparse) := OD/PC6_sparse/OrgZone_rel;
+				attribute<uint32> recorded   (OD/PC6_sparse) := union_data(OD/PC6_sparse, pc6_recorded/OrgZone_rel);
+				attribute<bool>   test       (OD/PC6_sparse) := calculated == recorded;
+			}
+
+			parameter<bool> all := all(impedance/test) && all(alt_imp/test) && all(DstZone_rel/test) && all(OrgZone_rel/test);
+
+			container size_imp   := formatnumber_1000_seperators(string(#OD/PC6_sparse));
+			container size_nodes := formatnumber_1000_seperators(string(#netwerk/WegenMetLokaties/PC6/NodeSet));
+
+			parameter<string> result := all ? 'OK' : 'False';
+
+			parameter<string> result_html := 
+				'<description>OD PC6 sparse matrix with <BR>road network (NL/BE/GE)</description>' + 
+				'<size>' + size_imp/result + ' impedances & alt impedances , <BR>' + size_nodes/result + ' nodes</size>' +
+				'<issue>1021</issue>' + 
+				'<result>' + (all ? 'OK' : 'False')+ '</result>'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t102_network_od_pc6_sparse.txt'";
+
+			container error_analysis
+			{
+				unit<uint32> testresult_false:= subset(!t102_network_od_pc6_sparse/alt_imp || !t102_network_od_pc6_sparse/DstZone_rel || !t102_network_od_pc6_sparse/OrgZone_rel)
+				{
+					attribute<uint32>  OrgZone_rel := OD/PC6_sparse/OrgZone_rel[Nr_OrgEntity];
+					attribute<uint32>  DstZone_rel := OD/PC6_sparse/DstZone_rel[Nr_OrgEntity];
+					attribute<float32> imp         := OD/PC6_sparse/impedance[Nr_OrgEntity];
+					attribute<float32> alt_imp     := OD/PC6_sparse/alt_imp[Nr_OrgEntity];
+	//				attribute<string>  key         := string(DstZone_rel) + '_' + string(OrgZone_rel);
+	//				attribute<string>  bron_key(brondata/PC6_impedance_ok) := string(brondata/PC6_impedance_ok/DstZone_rel) + '_' + string(brondata/PC6_impedance_ok/OrgZone_rel);
+					attribute<uint32>  OrgZone_ok  := pc6_recorded/OrgZone_rel[value(Nr_OrgEntity, bron)];
+					attribute<uint32>  DstZone_ok  := pc6_recorded/DstZone_rel[value(Nr_OrgEntity, bron)];
+					attribute<float32> imp_ok      := pc6_recorded/impedance  [value(Nr_OrgEntity, bron)];
+					attribute<float32> alt_imp_ok  := pc6_recorded/alt_imp    [value(Nr_OrgEntity, bron)];
+				}
+			}
+		}
+
+		container t200_grid_Poly2Grid
+		{
+			attribute<brondata/bodemgebruik/groep> calculated (grid/domain_10m) := grid/domain_10m/groep_rel;
+			attribute<brondata/bodemgebruik/groep> recorded   (grid/domain_10m) := Brondata/bodemgebruik_groep_10m_ok/GridData[brondata/bodemgebruik/groep];
+			attribute<bool>                        test       (grid/domain_10m) := eq_or_both_null(calculated, recorded);
+
+			parameter<bool> all := all(test);
+
+			container size := formatnumber_1000_seperators(string(#grid/domain_10m));
+
+			parameter<string> result := all ? 'OK' : 'False';
+
+			parameter<string> result_html := 
+				'<description>poly2grid bbg to 10m grid (NL)</description>'+
+				'<size>' + size/result + ' grid cells</size>' +
+				'<issue>929</issue>' + 
+				'<result>'+ result + '</result>'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t200_grid_Poly2Grid.txt'";
+		}
+
+		container t300_xml_ReadParse
+		{
+			unit<uint32> bron: = xml/pand/all;
+
+			container tests
+			{
+				parameter<bool> pand_id_0        := bron/pand_id[0] == '0003100000117485';
+				parameter<bool> pand_id_500000   := bron/pand_id[500000] == '0040100000000468';
+				parameter<bool> pand_id_1000000  := bron/pand_id[1000000]== '0080100000489319';
+				parameter<bool> strcount_0       := sum(strcount(bron/pand_id,'0')) == 38691899;
+
+				parameter<float64> dif := 0.99d;
+				parameter<bool> area_id_0        := float_isNearby(bron/area[0]      , -312.912538,  dif);
+				parameter<bool> area_id_500000   := float_isNearby(bron/area[500000] ,  -32.681908,  dif);
+				parameter<bool> area_id_1000000  := float_isNearby(bron/area[1000000],  -57.6939875, dif);
+				parameter<bool> meanarea         := float_isNearby(mean(bron/area)   , -253.061977,  dif);
+
+				parameter<bool> all              := pand_id_0 && pand_id_500000 && pand_id_1000000 && strcount_0 && area_id_0 && area_id_500000 && area_id_1000000 && meanarea;
+			}
+
+			container size := formatnumber_1000_seperators(string(#bron));
+
+			parameter<string> result := tests/all ? 'OK' : 'False';
+
+			parameter<string> result_html := 
+				'<description>reading xml files, parsing poly geometries</description>'+
+				'<size>' + size/result + ' bag panden</size>' +
+				'<result>'+ result+ '</result>'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t300_xml_ReadParse.txt'";
+		}
+
+		container t301_BAG_ResidentialType
+		{
+			unit<uint32> pand_snapshot := BAG_MakeSnapshot/snapshot_20170701/results/pand;
+			unit<uint8>  type_woonpand := BAG_MakeSnapshot/snapshot_20170701/afleidingen/panden/geometrie/type_woonpand;
+			
+			attribute<type_woonpand> recorded  (pand_snapshot) := union_data(pand_snapshot, brondata/BAG_type_woonpand_rel/type_woonpand_rel)[type_woonpand];
+			attribute<type_woonpand> calculated(pand_snapshot) := pand_snapshot/type_woonpand_rel;
+
+			attribute<string> pand_id   (pand_snapshot) := pand_snapshot/identificatie;
+
+			attribute<bool> test      (pand_snapshot) := 
+				calculated == recorded
+			 || pand_id    == '0392100000079203' // handmatig bekeken, overlap in panden kan tot andere uitkomst leiden
+			 || pand_id    == '0518100000346390'; // handmatig bekeken, overlap in panden kan tot andere uitkomst leiden
+
+			parameter<bool> all := all(test);
+
+			container size := formatnumber_1000_seperators(string(#BAG_MakeSnapshot/snapshot_20170701/pand/results/unique));
+
+			parameter<string> result := all ? 'OK' : 'False';
+
+			parameter<string> result_html := 
+				'<description>calculate residence type based on BAG geometry pand/vbo</description>'+
+				'<size>' + size/result + ' bag panden</size>' +
+				'<result>'+ result + '</result>'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t301_BAG_ResidentialType.txt'";
+
+			container error_analysis
+			{
+				unit<uint32> errors:= Subset(!test)
+				{
+					attribute<uint8>  type_woonpand_rel := BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/type_woonpand_rel[nr_OrgEntity];
+					attribute<string> identificatie     := pand_id[nr_OrgEntity];
+					
+					attribute<uint8>  test_ok           := union_data(BAG_MakeSnapshot/snapshot_20170701/pand/results/unique, brondata/BAG_type_woonpand_rel/type_woonpand_rel)[nr_OrgEntity];
+				}
+	
+				unit<uint32> vreemde_pand_id : nrofrows = 19, DialogType = "Map", DialogData = "geometry_mm"
+				{
+					attribute<string> pand_id:
+					[
+					 '0193100000042040'
+					,'0193100000042042'
+					,'0363100012239653'
+					,'0363100012239655'
+					,'0363100012239657'
+					,'0363100012246482'
+					,'0363100012247051'
+					,'0363100012247227'
+					,'0622100000068164'
+					,'0622100000068165'
+					,'0622100000068166'
+					,'0622100000068167'
+					,'0622100000068168'
+					,'0622100000068169'
+					,'0622100000068170'
+					,'0622100000068171'
+					,'0622100000068172'
+					,'0622100000068173'
+					,'0622100000068174'
+					];
+			
+					attribute<BAG_MakeSnapshot/geometries/rdc_mm> geometry_mm       (poly) : = rjoin(pand_id, BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/identificatie, BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/geometry_mm);
+					attribute<uint8>                              type_woonpand_rel        : = rjoin(pand_id, BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/identificatie, BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/type_woonpand_rel);
+	
+					attribute<uint8>                             test_ok                   :=  rjoin(pand_id, BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/identificatie, union_data(BAG_MakeSnapshot/snapshot_20170701/pand/results/unique, brondata/BAG_type_woonpand_rel/type_woonpand_rel));
+				}
+			}
+		}
+		container t301_BAG_ResidentialType_Zuidbroek
+		{
+			unit<uint32> pand_snapshot := BAG_MakeSnapshot/snapshot_20170701_zuidbroek/results/pand;
+			unit<uint8>  type_woonpand := BAG_MakeSnapshot/snapshot_20170701_zuidbroek/afleidingen/panden/geometrie/type_woonpand;
+			
+			attribute<type_woonpand> recorded  (pand_snapshot) := rjoin(pand_id, t301_BAG_ResidentialType/pand_id, t301_BAG_ResidentialType/recorded);
+			attribute<type_woonpand> calculated(pand_snapshot) := pand_snapshot/type_woonpand_rel;
+
+			attribute<string> pand_id   (pand_snapshot) := pand_snapshot/identificatie;
+
+			attribute<bool> test      (pand_snapshot) := calculated == recorded;
+			parameter<bool> all := all(test);
+		}
+
+		container t400_CalcCache_connect
+		{
+			parameter<bool> calculated := any(isDefined(CalcCache/connect/UnionData_length));
+
+			container size := formatnumber_1000_seperators(string(#CalcCache/pointset));
+
+			parameter<string> result_html := calculated 
+				?
+					'<description>CalCache test, connect points to arcs</description>'+
+					'<size>' + size/result + ' connected points</size>' +
+					'<issue>1389</issue>' + 
+					'<result>ok if duration is a few seconds, false if duration > 30 seconds</result>'
+				: 'failed'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t400_CalcCache_connect.txt'";
+		}
+		container t1640_value_info_agg
+		{
+			parameter<string> recorded:
+				storagename = "%RegressionDataDir%/t1640_value_info_agg_recorded.txt"
+			,	StorageType = "str";
+			
+			parameter<string> generated:
+				storagename = "= results/VersionInfo/results_folder + '/t1640_value_info_agg.tmp'"
+			,	StorageType = "str";
+
+			parameter<bool> test:= lowercase(recorded) == lowercase(generated);
+
+			parameter<string> result_html := 
+				'<description>compare detail page value info on aggregations</description>'+
+				'<result>'
+					+ (test 
+						? '   OK, identical to version 7.233' 
+						: 'FALSE, not identical to version 7.233'
+					) + 
+				'</result>'  + 
+				'<issue>1434</issue>'
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t1640_value_info_agg.txt'";
+		}
+		container t1642_value_info_stat
+		{
+			parameter<string> recorded:
+				storagename = "%RegressionDataDir%/t1642_value_info_stat_recorded.txt"
+			,	StorageType = "str";
+			
+			parameter<string> generated:
+				storagename = "= results/VersionInfo/results_folder + '/t1642_value_info_stat.tmp'"
+			,	StorageType = "str";
+
+			parameter<bool> test:= lowercase(recorded) == lowercase(generated);
+
+			parameter<string> result_html := 
+				'<description>compare detail page statistics info on geometry</description>'+
+				'<result>'
+					+ (test 
+						? '   OK, identical to version 7.234' 
+						: 'FALSE, not identical to version 7.234'
+					) + 
+				'</result>' + 
+				'<issue>1438</issue>' 
+				
+			,	StorageType = "str"
+			,	storagename = "= results/VersionInfo/results_folder + '/t1642_value_info_stat.txt'";
+		}
+	}
+	#include<mergeToRapport.dms>
+}
+
+// echo ^<startdate^>%date%^</startdate^>^<starttime^>%time%^</starttime^> >> C:\SourceData\GeoDMSTests\TestVersion\TestI.txt
+// echo ^<enddate^>%date%^</enddate^>^<endtime^>%time%^</endtime^> >> C:\SourceData\GeoDMSTests\TestVersion\TestI.txt

@@ -1,0 +1,16 @@
+// Test based on version 7411, updating test item resulted in a memmory leak, application did not close correctly
+
+container CloseGUIIssue1 
+{
+	unit<uint32> direct := SubTree_PropValues( x ,'name');
+
+	unit<uint32> x : StorageName = "%projdir%/data/vreemde_centroids.shp", StorageReadOnly = "True";
+
+	parameter<bool> test := direct/name[0] == 'ShapeID' && direct/name[1] == 'ShapeRange' && direct/name[2] == 'PolyData';
+
+	parameter<string> test_log := test 
+		? '' 
+		: 'CloseGUIIssue1 Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/CloseGUIIssue1.txt";
+}

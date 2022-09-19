@@ -1,0 +1,37 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van de DMS Operatoren/Functies                               //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       Februari 2004                                                        //
+//                                                                                                            //
+//                             Continue aanpassingen voor nieuwe operatoren                                   //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
+{
+	parameter<bool> tests_all := Arithmetics/add_op/test_attr;
+	
+	container Arithmetics
+	{
+		unit<uint32> Domain : nrofrows = 5;
+		container source
+		{
+			attribute<float32> A     (Domain): [0,1,-2,3.6,999];
+			attribute<float32> B     (Domain): [1,-1,2,1.44,111];
+			attribute<int32>   C     (Domain): [0,1,4,7,-5];
+			attribute<float32> AddABC(Domain): [1,1,4,12.04,1105];
+		}
+
+		container add_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/add"
+		{
+			attribute<float32> attr       (Domain) := source/A + source/B + float32(source/C);
+			attribute<bool>    test       (Domain) := attr == source/AddABC;
+			
+			parameter<bool>    test_attr := all(test);
+		}
+	}
+}

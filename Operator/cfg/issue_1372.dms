@@ -1,0 +1,40 @@
+container Overlay32
+{
+	container geography
+	{
+		unit<fpoint> rdc_meter: Range = "[{300000, 0}, {625000, 280000})"; 
+		
+		parameter<rdc_meter> TopLeftCoord 
+		:=  point(float32(625000), float32(10000), rdc_meter);
+		
+		parameter<int16> nrofrows := int16(3250);
+		parameter<int16> nrofcols := int16(2700);
+		
+		unit<spoint> rdc_100m
+		:=  range(
+				gridset(
+					rdc_meter
+					,point(float32(-100), float32(100), rdc_meter)
+					,TopLeftCoord
+				,spoint
+				)
+				,point(int16(0), int16(0))
+				,point(nrofrows, nrofcols)
+		);
+	}
+
+	unit<uint8> OverlayRegios: nrofrows = 5
+	{
+		attribute<string> names: ['GA1', 'GA2','GA3','GA4','GA5'];
+	}
+	
+	container OverlayGrids
+	{
+		attribute<uint8> GA1 (geography/rdc_100m) := const(1b, geography/rdc_100m);
+		attribute<uint8> GA2 (geography/rdc_100m) := const(2b, geography/rdc_100m);
+		attribute<uint8> GA3 (geography/rdc_100m) := const(3b, geography/rdc_100m);
+		attribute<uint8> GA4 (geography/rdc_100m) := const(4b, geography/rdc_100m);
+		attribute<uint8> GA5 (geography/rdc_100m) := const(5b, geography/rdc_100m);
+	}
+	unit<uint32> result := overlay32(OverlayRegios/names, geography/rdc_100m, OverlayGrids);
+}

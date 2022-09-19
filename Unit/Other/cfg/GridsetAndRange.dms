@@ -1,0 +1,50 @@
+container GridFromTemplate
+{
+	unit<float32> m             := baseunit('m', float32);
+	unit<float32> coord_rd      := m;
+	unit<fpoint>  point_rd_base : Format = "EPSG:28992";
+	unit<fpoint>  point_rd      := range(point_rd_base, point(300000[m],0[m]), point(625000[m],280000[m]));
+
+	container bbox
+	{
+		parameter<coord_rd> left   := 89849.8[coord_rd];
+		parameter<coord_rd> right  := 96170.6[coord_rd];
+		parameter<coord_rd> bottom := 459114[coord_rd]; 
+		parameter<coord_rd> top    := 466895[coord_rd]; 
+	}
+
+	parameter<m> gridsize := 5[m];
+
+	parameter<int16> nr_cols:= int16((bbox/right - bbox/left)   / gridsize);
+	parameter<int16> nr_rows:= int16((bbox/top   - bbox/bottom) / gridsize);
+
+	unit<spoint> gridset_:=
+			 gridset(
+				 point_rd
+				,point(float32(gridsize), float32(-gridsize), point_rd)
+				,point(bbox/left,bbox/top,point_rd)
+				,spoint
+			);
+		
+	unit<spoint> domain:=
+		range(gridset_
+			,point(int16(0), int16(0))
+			,point(nr_cols,nr_rows)
+		)
+	,	DialogData = "point_rd"
+	{				
+		attribute<.>     id  := id(.);
+		attribute<int16> row := PointRow(id);
+		attribute<int16> col := PointCol(id);
+
+	}
+
+	parameter<bool> test := count(domain/row) == 1966784; //&& max(gridcel_5m/domain/row) == 1263s && max(gridcel_5m/domain/col) == 1555s;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'GridFromTemplate Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/GridFromTemplate.txt";
+
+}

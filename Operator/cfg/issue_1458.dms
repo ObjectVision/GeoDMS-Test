@@ -1,0 +1,26 @@
+container issue_xxx
+{
+	unit<uint32> LinkSet: nrofrows = 0
+	{
+		attribute<float32> dist:[];
+		attribute<NodeSet> F1:[];
+		attribute<NodeSet> F2:[];
+	}
+
+	unit<uint32> DDomain: nrofrows = 0
+	{
+		attribute<NodeSet> nr_DestinationNode (DDomain) :[];
+	}
+
+	unit<uint32> NodeSet: nrofrows = 0
+	{
+	}
+
+	container dijkstra
+	{
+		attribute<float32> distance_nodeset (NodeSet) := dijkstra_s('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, LinkSet/F1, LinkSet/F2, DDomain/nr_DestinationNode)
+		{
+			attribute<LinkSet> TraceBack (NodeSet);
+		}
+	}
+}

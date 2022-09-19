@@ -1,0 +1,37 @@
+container projection
+{
+	container Source
+	{
+		unit<fpoint> rdc_meter: Range = "[{300000, 0}, {625000, 280000})";
+		unit<spoint> rdc_100 := range(
+			gridset(
+				 rdc_meter
+				,point(float32( - 100.0), float32(  100.0), rdc_meter)
+				,point(float32(625000.0), float32(10000.0), rdc_meter)
+				,spoint)
+			,
+				 point(int16(0)   , int16(0))
+				,point(int16(3250), int16(2700)
+			)
+		);
+	}
+	container GetProjectionBase: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionbase"
+	{
+		unit<fpoint>      ProjBase := GetProjectionBase(Source/rdc_100);
+		parameter<fpoint> bcpb := boundcenter(ProjBase);
+		parameter<fpoint> bcm := boundcenter(Source/rdc_meter);
+		parameter<bool>   test     := bcpb = bcm;
+	}
+/*	
+	container GetProjectionOffset: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionoffset"
+	{
+		parameter<dpoint> projOffset := GetProjectionOffset(Source/rdc_100);
+		parameter<bool>   test       := pointRow(projOffset) = 625000.0 && pointCol(projOffset) = 10000.0;
+	}
+	container GetProjectionFactor: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionfactor"
+	{
+		parameter<dpoint> projFactor := GetProjectionFactor(Source/rdc_100);
+		parameter<bool>   test       := pointRow(projFactor) = -100.0 && pointCol(projFactor) = 100.0;
+	}
+*/	
+}

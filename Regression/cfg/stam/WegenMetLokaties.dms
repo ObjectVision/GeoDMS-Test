@@ -1,0 +1,107 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS Operatoren/Functies met lange rekentijd              //
+//                                                                                                            //
+//                                       April 2018                                                           //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                      Configuratiebestand om aan gesloten netwerk                                           //
+//                         herkomst/bestemmingslocaties te koppelen                                           //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container WegenMetLokaties
+{
+	container PC4 := VerbindPuntenSet(Brondata/PC4_centroid);
+	container PC6 := VerbindPuntenSet(Brondata/PC6_centroid);
+
+	template VerbindPuntenSet
+	{
+		// begin case parameters
+		unit<uint32> locaties;
+		// end case parameters
+
+		/*container wegselectie
+		{
+			unit<uint32> pointset := sequence2points(WegenVerbonden/resultaat/geen_snelwegen/geometry)
+			{
+				attribute<float32> X := PointCol(point)[float32];
+				attribute<float32> Y := PointRow(point)[float32];
+				
+				attribute<bool> inSelectie := X >= brondata/PC4_centroid/x_min && X <= brondata/PC4_centroid/x_max && Y >= brondata/PC4_centroid/y_min && Y <= brondata/PC4_centroid/y_max;
+			}
+			unit<uint32> pointset_selected := Subset(pointset/inSelectie)
+			{
+				attribute<point_rd> point := pointset/point[nr_OrgEntity];
+				attribute<WegenVerbonden/resultaat/geen_snelwegen> SequenceNr := pointset/SequenceNr[nr_OrgEntity];
+			}
+			unit<uint32> result := Subset(isDefined(rlookup(id(WegenVerbonden/resultaat/geen_snelwegen), pointset_selected/SequenceNr)))
+			{
+				attribute<point_rd>       geometry (arc) := WegenVerbonden/resultaat/geen_snelwegen/geometry[nr_OrgEntity];
+				attribute<eenheden/km_hr> KMH            := WegenVerbonden/resultaat/geen_snelwegen/KMH[nr_OrgEntity];
+				attribute<s>              traveltime_s   := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[nr_OrgEntity];
+
+			}
+		}*/
+		unit<uint32> SubWegenMetVerbondenLocaties := connect(WegenVerbonden/resultaat/geen_snelwegen/geometry, locaties/geometry) // hiermee verbinden we de herkomst en bestemmingslocaties aan het wegenNetwerk
+		,	DialogData = "UnionData"
+		,	DialogType = "Map"
+//		,	StorageName = "%SourceDataDir%/OperatorLarge/PC6_connect.fss"
+		{
+			attribute<point_rd>       UnionData(arc);
+			attribute<eenheden/km_hr> KMH           := WegenVerbonden/resultaat/geen_snelwegen/KMH[nr_OrgEntity];
+			attribute<s>              traveltime_s  := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[nr_OrgEntity];
+		}
+		
+		container SubWegenMetVerbondenLocatiesInfo := connect_info(WegenVerbonden/resultaat/geen_snelwegen/geometry, locaties/geometry), DialogType = "Map", DialogData = "CutPoint"
+		{
+			attribute<point_rd> CutPoint (locaties);
+			attribute<float64> dist (locaties);
+		}
+		
+		unit<uint32> WegenMetVerbondenLocaties := union_unit(WegenVerbonden/resultaat/snelwegen,SubWegenMetVerbondenLocaties) // hiermee verbinden we de herkomst en bestemmingslocaties aan het wegenNetwerk
+		,	DialogData = "UnionData"
+		,	DialogType = "Map"
+		{
+			attribute<point_rd>           geometry(arc) := union_data(.,WegenVerbonden/resultaat/snelwegen/geometry     , SubWegenMetVerbondenLocaties/UnionData);
+			attribute<eenheden/km_hr> KMH           := union_data(.,WegenVerbonden/resultaat/snelwegen/KMH          , SubWegenMetVerbondenLocaties/KMH);
+			attribute<s>                  traveltime_s  := union_data(.,WegenVerbonden/resultaat/snelwegen/traveltime_s , SubWegenMetVerbondenLocaties/traveltime_s);
+		}
+
+		unit <uint32> LinkSet:= WegenMetVerbondenLocaties
+		,	DialogData = "geometry"
+		,	DialogType = "Map"
+		,	FreeData   = "False"
+		{
+			attribute<point_rd>                  geometry(arc)      := WegenMetVerbondenLocaties/geometry;
+			attribute<point_rd>                  point              := first_node(geometry);
+			attribute<point_rd>                  nextpoint          := last_node(geometry);
+
+			attribute<m>                         length_m           := (arc_length(geometry, float32)[m]);
+			attribute<km>                        length_km          := length_m / value(1000, m / km);
+			attribute<eenheden/km_hr>        KMH                := WegenMetVerbondenLocaties/KMH;
+			attribute<s>                         traveltime_s_wegen := WegenMetVerbondenLocaties/traveltime_s;
+			attribute<s>                         traveltime_s       := MakeDefined(traveltime_s_wegen, length_km / 10[km_hr] * value(3600, s / hr));
+
+			unit<uint32> pointset:= union_unit(LinkSet, LinkSet)
+			{
+				attribute<point_rd> point := union_data(pointset, LinkSet/point, LinkSet/nextpoint);
+			}
+		}
+
+		unit<uint32> NodeSet:= unique(linkset/pointset/point)
+		,	DialogData = "values"
+		,	DialogType = "Map"
+		{
+			attribute<point_rd> Values;
+		}
+
+		attribute<NodeSet> F1(LinkSet):= rlookup(LinkSet/point,     NodeSet/Values);
+		attribute<NodeSet> F2(LinkSet):= rlookup(LinkSet/nextpoint, NodeSet/Values);
+
+		attribute<NodeSet> nr_orgNode  (locaties):= rlookup(locaties/geometry, NodeSet/Values);
+		attribute<NodeSet> nr_destNode (locaties):= rlookup(locaties/geometry, NodeSet/Values);
+	}
+}

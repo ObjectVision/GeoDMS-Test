@@ -1,0 +1,31 @@
+container issue_xxx
+{
+	unit<fpoint> rdc_meter:
+		DialogData = "Geografie/top100/grid/Nl/achtergrond;Geografie/RegioIndelingen/Provincie/Shapes/Polygons",
+		Range      = "[{300000, 0}, {625000, 280000})";
+	unit<spoint> rdc_1000 := 
+		gridset(
+			rdc_meter, 
+			point(float32( -1000.0), float32(1000.0), rdc_meter), 
+			point(float32(625000.0), float32(10000.0), rdc_meter), 
+			spoint
+		);
+	unit<spoint> rdc_1000_domain:= range(rdc_1000,point(Int16(0), Int16(0)),point(Int16(325), Int16(270)))
+	{
+		attribute<int16> col := PointCol(id(.));
+	}
+	unit<uint32> selection := Subset(mod(rdc_1000_domain/col, 10s) == 0s), DialogType = "Map", DialogData = "basegrid"
+	{
+		attribute<selection> basegrid (rdc_1000_domain):= invert(nr_OrgEntity);
+		attribute<rdc_meter> geometry := nr_OrgEntity[rdc_meter]
+		{
+			parameter<float32> SymbolSize       := 32f            ,  DialogType = "SymbolSize";
+		}
+		attribute<uint32>    att      := const(0,.);
+	}
+	unit<uint32> refer_to_selection := selection
+	{
+		attribute<uint32>  att := const(0,.);
+		attribute<float32> col := PointCol(geometry);
+	}
+}

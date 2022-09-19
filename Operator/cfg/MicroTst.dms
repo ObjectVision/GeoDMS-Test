@@ -1,0 +1,2683 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS configuratie structuren                              //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       November 2010                                                        //
+//                                                                                                            //
+//                            Continue aanpassingen vanaf 2010                                                //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97", 
+{
+	unit<fpoint> point_rd := BackGroundLayer/point_rd;
+
+	Template MakeGrid
+	{
+		// begin case parameters
+		parameter<m> gridsize;
+		container bbox;
+		// einde case parameters
+
+		parameter<int16> nr_rows:= int16((bbox/right - bbox/left)   / gridsize);
+		parameter<int16> nr_cols:= int16((bbox/top   - bbox/bottom) / gridsize);
+
+		unit<spoint> untiled_domain:=
+			range(
+				 gridset(
+					 point_rd
+					,point(float32(-gridsize), float32(gridsize), point_rd)
+					,point(bbox/top,bbox/left,point_rd)
+					,spoint
+				)
+				,point(int16(0), int16(0))
+				,point(nr_cols,nr_rows)
+			)
+		,	DialogData = "point_rd";
+
+		unit<spoint> domain:= TiledUnit(point(int16(1024),int16(1024), untiled_domain))
+		{
+			parameter<m>                             size:          = gridsize;
+			attribute<.>                             id:            = id(.);
+			attribute<int16>                         row:           = PointRow(id);
+			attribute<int16>                         col:           = PointCol(id);		
+		}
+	}
+	
+	container buffering: Using = "geometries"
+	{
+		container Outer
+		{
+			unit<uint32> shape: nrofrows = 1
+			{
+				attribute<dpoint> left_top     := const(point(157500d, 461500d, dpoint),.);
+				attribute<dpoint> right_top    := const(point(158500d, 461500d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point(158500d, 460500d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point(157500d, 460500d, dpoint),.);
+			}
+
+			unit<uint32> pointset : nrofrows = 5
+			{
+				attribute<dpoint> point    := union_data(., shape/left_top, shape/left_bottom, shape/right_bottom, shape/right_top, shape/left_top);
+				attribute<shape>  sequence := const(0,., shape);
+				attribute<uint32> order    := id(.);
+			}
+
+			attribute<dpoint> geometry (poly, shape) := points2sequence(pointset/point, pointset/sequence, pointset/order);
+			attribute<dpoint> geometry_outer (poly, shape) := outer_multi_polygon(geometry);
+			
+			attribute<float64> area (shape) := area(geometry, float64);
+		}
+		
+		container Hole1: Using = "geometries"
+		{
+			unit<uint32> shape: nrofrows = 1
+			{
+				attribute<dpoint> left_top     := const(point(157800d, 461200d, dpoint),.);
+				attribute<dpoint> right_top    := const(point(158200d, 461200d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point(158200d, 460800d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point(157800d, 460800d, dpoint),.);
+			}
+
+			unit<uint32> pointset : nrofrows = 5
+			{
+				attribute<dpoint> point    := union_data(., shape/left_top, shape/left_bottom, shape/right_bottom, shape/right_top, shape/left_top);
+				attribute<shape>  sequence := const(0,., shape);
+				attribute<uint32> order    := id(.);
+			}
+
+			attribute<dpoint>  geometry (poly, shape) := points2sequence(pointset/point, pointset/sequence, pointset/order);
+			attribute<float64> area (shape) := area(geometry, float64);
+		}
+
+		container Hole2: Using = "geometries"
+		{
+			unit<uint32> shape: nrofrows = 1
+			{
+				attribute<dpoint> left_top     := const(point(158300d, 461450d, dpoint),.);
+				attribute<dpoint> right_top    := const(point(158400d, 461450d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point(158400d, 461300d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point(158300d, 461300d, dpoint),.);
+			}
+
+			unit<uint32> pointset : nrofrows = 5
+			{
+				attribute<dpoint> point    := union_data(., shape/left_top, shape/left_bottom, shape/right_bottom, shape/right_top, shape/left_top);
+				attribute<shape>  sequence := const(0,., shape);
+				attribute<uint32> order    := id(.);
+			}
+
+			attribute<dpoint>  geometry (poly, shape) := points2sequence(pointset/point, pointset/sequence, pointset/order);
+			attribute<float64> area (shape) := area(geometry, float64);
+		}
+
+		container IslandInHole: Using = "geometries"
+		{
+			unit<uint32> shape: nrofrows = 1
+			{
+				attribute<dpoint> left_top     := const(point(157950d, 461100d, dpoint),.);
+				attribute<dpoint> right_top    := const(point(158100d, 461100d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point(158100d, 460900d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point(157950d, 460900d, dpoint),.);
+			}
+
+			unit<uint32> pointset : nrofrows = 5
+			{
+				attribute<dpoint> point    := union_data(., shape/left_top, shape/left_bottom, shape/right_bottom, shape/right_top, shape/left_top);
+				attribute<shape>  sequence := const(0,., shape);
+				attribute<uint32> order    := id(.);
+			}
+
+			attribute<dpoint>  geometry (poly, shape) := points2sequence(pointset/point, pointset/sequence, pointset/order);
+			attribute<float64> area (shape) := area(geometry, float64);
+		}
+		
+		container WithOneHole
+		{
+			attribute<ipoint> geometry_ipoint (poly, Outer/shape) := Outer/geometry[ipoint] - value(Hole1/geometry[0], ipoint);
+			attribute<dpoint> geometry        (poly, Outer/shape) := geometry_ipoint[dpoint];	
+			
+			attribute<dpoint> geometry_buffer_m1   (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 1d, 8b);
+			attribute<dpoint> geometry_buffer_m10  (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 10d, 8b);
+			attribute<dpoint> geometry_buffer_m100 (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 100d, 32b);
+		}
+
+		container WithTwoHoles
+		{
+			attribute<ipoint> geometry_ipoint (poly, Outer/shape) := WithOneHole/geometry_ipoint - value(Hole2/geometry[0], ipoint);
+			attribute<dpoint> geometry        (poly, Outer/shape) := geometry_ipoint[dpoint];	
+			
+			attribute<dpoint> geometry_buffer_m1   (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 1d, 8b);
+			attribute<dpoint> geometry_buffer_m10  (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 10d, 8b);
+			attribute<dpoint> geometry_buffer_m100 (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 100d, 8b);
+		}
+
+		container WithHoleAndIsleInHole
+		{
+			attribute<ipoint> geometry_ipoint (poly, Outer/shape) := WithOneHole/geometry_ipoint + value(IslandInHole/geometry[0], ipoint);
+			attribute<dpoint> geometry        (poly, Outer/shape) := geometry_ipoint[dpoint];	
+			
+			attribute<dpoint> geometry_buffer_m1   (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 1d, 8b);
+			attribute<dpoint> geometry_buffer_m10  (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 10d, 8b);
+			attribute<dpoint> geometry_buffer_m100 (poly, Outer/shape) := bg_buffer_multi_polygon(geometry, 100d, 8b);
+		}
+	}
+
+	container DomainWithMetric
+	{
+		unit<uint32> provincie := Range(BaseUnit('Provincie', uint32), 0u, 12u)
+		{
+			attribute<uint32> modus_code := modus(neighboorhoud/code, neighboorhoud/Provincie_rel);
+			attribute<string> label := 'P_' + string(id(.));
+		}
+
+		unit<uint32> energieregio := Range(BaseUnit('Energieregio', uint32), 0u, 30u)
+		{
+			attribute<uint32> modus_code := modus(neighboorhoud/code, neighboorhoud/Energieregio_rel);
+		}
+
+		unit<uint32> neighboorhoud :=  Range(BaseUnit('neighboorhoud', uint32), 0u, 50u)
+		{
+			attribute<uint32>       code             := (id(.) / 10) / 1[neighboorhoud];
+			attribute<provincie>    provincie_rel    := value((id(.) / 2) * (1[provincie] / 1[neighboorhoud]), provincie);
+			attribute<energieregio> energieregio_rel := value((id(.) / 5) * (1[energieregio] / 1[neighboorhoud]), energieregio);
+			attribute<municipality> municipality_rel := value((id(.) / 2) * (1[municipality] / 1[neighboorhoud]), municipality);
+		}
+
+		unit<uint32> municipality  :=  Range(BaseUnit('municipality', uint32), 0u, 40u)
+		{
+			attribute<provincie>    modus_provincie_rel    := modus(neighboorhoud/provincie_rel, neighboorhoud/municipality_rel);
+			attribute<energieregio> modus_energieregio_rel := modus(neighboorhoud/energieregio_rel, neighboorhoud/municipality_rel);
+			attribute<provincie>    modus_energieregio_rel_error := modus(neighboorhoud/energieregio_rel, neighboorhoud/municipality_rel);
+		}
+	}
+	container CastNumeric
+	{
+		unit<uint32> src : StorageName = "%projdir%/data/CastNumeric.csv"
+		,	StorageType = "gdal.vect"
+		,	StorageReadOnly = "true"
+		
+		{
+			attribute<float32> attANum := float32(attA);
+			attribute<float32> attBNum := float32(attB);
+			attribute<float32> attCNum := float32(attC);
+			attribute<float32> attDNum := float32(attD);
+		}
+	}
+	parameter<string> abc := 'a' + 'b' + 'c';
+	container GridCoordinatesOutOfRange
+	{
+		unit<fpoint> rdc_base : DialogData = "ngr_layer";
+		unit<fpoint> rdc      := range(rdc_base, point(300000f, 0f), point(625000f, 280000f));
+
+		unit<spoint> rdc_1000m := 
+			range( 
+				gridset(rdc, point(-1000f, 1000f, rdc), point(625000f, 10000f, rdc), spoint)
+				,point(0s, 0s), point(650s, 550s)
+			)
+		{
+			attribute<float32> f1 := const(1f, rdc_1000m );
+		}
+
+		attribute<rdc_1000m> rdc_1000m_rel (centroids) := centroids/centroid[rdc_1000m];
+		attribute<float32> f1_noname       (centroids) := rdc_1000m/f1[rdc_1000m_rel];
+	}
+
+	container EmptyDijkstra
+	{
+		unit<uint32> linkset : nrofrows = 0
+		{
+			attribute<nodeset> f1 := const(0[nodeset],.);
+			attribute<nodeset> f2 := const(0[nodeset],.);
+		}
+		unit<uint32> nodeset : nrofrows = 0
+		{
+			
+		}
+		unit<uint32> e_dijkstra :=
+			dijkstra_m(
+				'directed;startPoint(Node_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel'
+				,const(1.0f, linkset)
+				,linkset/f1
+				,linkset/f2
+				,value(id(nodeset), nodeset)
+				,1000.0f
+			)
+		{
+			attribute<uint32> DstZone_rel;
+			attribute<uint32> OrgZone_rel;
+		}
+	}
+
+	container union
+	{
+		unit<fpoint> rdc_base : DialogData = "ngr_layer";
+		unit<fpoint> rdc      := range(rdc_base, point(0f, -1000000f), point(1000000f, 1000000f));
+		unit<ipoint> rdc_mm         := gridset(rdc, point(0.001, 0.001), point(0.0,0.0), ipoint), IsHidden = "True";
+
+		unit<uint32> quadrangle
+		:	StorageName  = "%ProjDir%/data/quadrangle.shp"
+		,	StorageType  = "gdal.vect"
+		{
+			attribute<rdc> geometry (poly);
+		}
+		
+	}
+	unit<uint32> combine
+	{
+		unit<uint32> place: nrofrows = 2
+		{
+			attribute<string> label : ['Amsterdam','Rotterdam'];
+		}
+		unit<uint32> time := range(uint32,2012,2014)
+		{
+			attribute<string> label := 'yr_' + string(id(.));
+		}
+		unit<uint32> place_time := combine(place, time)
+		{
+			attribute<place> nr_1;
+			attribute<time>  nr_2;
+
+			attribute<string> place_label := place/label[nr_1];
+			attribute<string> time_label  := time/label[nr_2];
+			
+		}
+	}
+	unit<uint32> noname: nrofrows = 2, DialogType = "map", DialogData = "geometry"
+	{
+		// geografische eenheden voor ruimtelijke data
+		unit<float32> m           := baseunit('m', float32)              ,label = "meter"                 ,cdf = "Klassificaties/cl/m/ClassBreaks";
+		unit<float32> ratio       := m / m                               ,label = "ratio";
+		unit<float32> coord_rd    := m;
+		unit<fpoint>  point_rd_wms:
+			Format     = "EPSG:28992",
+			DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
+		unit<fpoint>  point_rd    := range(point_rd_wms, point(0f,250000f), point(350000f,650000f)); 
+		unit<ipoint>  point_rd_mm := // for polygon functions
+			gridset(
+				 point_rd
+				,point(Float32(0.001),Float32(0.001),point_rd)
+				,point(Float32(0)    ,Float32(0)    ,point_rd)
+				,ipoint
+			);
+	
+		#include<ngr_layer.dms>
+		attribute<point_rd> geometry           := point(const(450000f,.),const(100000f,.), point_rd);
+		attribute<ratio> groep_per_woon_adres := const(1[ratio], .);
+	}
+	unit<uint32> ExplainValueError
+	{
+		container gemeente_src
+		{
+			parameter<string> dir := '%SourceDataDir%';
+			container j2017 := per_bron(dir + '/CBS/2017/gemeente.shp');
+
+			template per_bron
+			{
+				parameter<string> filename;
+	
+				unit<uint32> src
+				:	StorageName     = "=filename"
+				,	StorageType     = "gdal.vect"
+				,	StorageReadOnly = "True"
+				,	SyncMode        = "All"
+				{
+				attribute<gemeente> gemeente_rel := rlookup(GM_NAAM , gemeente/GM_NAAM);
+				attribute<string>   GM_CODE      := gemeente/GM_CODE[gemeente_rel];
+				attribute<string>   label        := GM_CODE;
+				}
+			}
+		}
+		container perGemeente:=  for_each_ne(gemeente_src/j2017/src/GM_CODE, 'selecteer_data_per_gemeente(' + quote(string(gemeente_src/j2017/src/GM_CODE))  + ')');
+
+		unit<uint32> att: nrofrows = 2
+		{
+			attribute<string> name: ['P_00_14_JR','P_15_24_JR'];
+		}
+
+		template selecteer_data_per_gemeente 
+		{
+			// begin case parameters
+			parameter<string> GM_code;
+			// end case parameters
+
+			container yr_2017 := verwerk_gemeente('2017',gemeente_src/j2017/src);
+		}
+
+		template verwerk_gemeente
+		{
+			// begin case parameters
+			parameter<string> yr_2017_lbl;
+			unit<uint32> yr_2017;
+			// end case parameters
+
+			container year_2017 := per_jaar(gemeente_src/j2017/src);
+		}
+
+		template per_jaar
+		{
+			// begin case parameters
+			unit<uint32> src;
+			// end case parameters
+	
+			parameter<int32> TresHold  := 30000i;
+			parameter<bool>  selGebied := True;
+	
+			unit<uint32> gem_sel: = = selGebied ? 'Subset(src/GM_code ==  GM_code) ' : 'Subset(src/OPP_TOT < ' + string(TresHold) + 'i)'
+			{
+				attribute<string> label := src/label[nr_OrgEntity];
+			}
+			container inst := for_each_ne(
+				att/name
+				,'selectie(' + quote(att/name) + ', gem_sel, float32(src/' + att/name + '[ gem_sel/nr_OrgEntity]))'
+			);
+		}
+		template selectie
+		{
+			parameter<string> name;
+			unit<uint32> gem_sel;
+
+			attribute<float32> hoek_sel (gem_sel);
+		}
+	}
+
+	container connect_issue
+	{
+		unit<uint32> arc : StorageName = "%projdir%/data/weg_connect_issue.shp"
+		,	StorageType = "gdal.vect"
+		,	DialogType = "Map"
+		,	DialogData = "geometry"
+		,	StorageReadOnly = "true"
+		{
+			attribute<fpoint> geometry (arc);
+		}
+
+		unit<uint32> point: nrofrows = 1
+		{
+			attribute<fpoint> geometry := const(point(100001f, 400001f, fpoint),.);
+		}
+		
+		unit<uint32> connected :=  connect( arc/geometry , point/geometry )
+		{
+			attribute<fpoint> UnionData(arc);
+		}
+
+	}
+	unit<uint32> OutOrRange: nrofrows = 1
+	{
+		attribute<uint32> TwoValues : [0,1];
+	}
+	container TargetTests
+	{
+		parameter<uint32> A := 0;
+		parameter<uint32> B := A + 1;
+		parameter<uint32> C := A, ExplicitSuppliers = "B";
+		parameter<uint32> D := A, cdf = "B";
+		parameter<uint32> E := ='A + 1';
+		
+		parameter<string> sub_expr :=
+			B == 1 ? 'D == 2' : B == 0 ? 'C <> 8' : ''
+			,	isHidden = "True";
+
+		parameter<bool> F:= = sub_expr;
+		
+		parameter<uint32> G:= A, DialogData = "B";
+		parameter<uint32> H:= A, IntegrityCheck = "B > 0";
+	}
+	container units
+	{
+		unit<float32>      m      := baseunit('m', float32);
+		parameter<float32> factor := 1000f;
+
+		unit<float32> km_1 := 1000  * m;
+		unit<float32> km_2 := 1000f * m;
+		unit<float32> km_3 := factor * m;
+
+		unit<float32> km_4 := m * 1000f;
+		unit<float32> km_5 := m * factor;
+	}
+	container LargeAsciiFile
+	{
+		parameter<string> XmlData
+		:	StorageName = "%SourceDataDir%/BRK/20170329/Perceel.gml"
+		,	StorageType = "str";
+
+		parameter<uint32> length_XmlData := strlen(XmlData), DisableStorage = "True";
+		
+		container schema// xml attributes are here modelled as sub units of the entity related unit.
+		{
+			unit<uint32> brk_krt_perceelMember
+			{
+				parameter<uint32> nr_rows := #.;
+				
+				attribute<string> brk_krt_namespace;
+				attribute<string> brk_krt_lokaalID;
+				attribute<string> brk_krt_logischTijdstipOntstaan;
+				attribute<string> brk_krt_AKRKadastraleGemeenteCode;
+				attribute<string> brk_krt_sectie;
+				attribute<string> brk_krt_perceelnummer;
+
+				unit<uint32> gml_Polygon { // 1-1 relationship is assumed/likely
+//						attribute<string> srsName;
+
+//						unit<uint32> gml_Exterior { // 1-1 relationship is prescibed by the gml schema
+//							unit<uint32> gml_LinearRing { // 1-1 relationship is prescibed by the gml schema
+							unit<uint32> gml_posList // 1-1 relationship is assumed/likely
+							{
+								attribute<string> srsDimension; // attribute, must only have the value 3
+								attribute<string> count;
+							}
+//							} // </gml_LinearRing>
+//						}
+					unit<uint32> gml_Interior {
+//							unit<uint32> gml_LinearRing { // 1-1 relationship is prescibed by the gml schema
+							unit<uint32> gml_posList // 1-1 relationship is assumed/likely
+							{
+								attribute<string> srsDimension; // attribute, must only have the value 3
+								attribute<string> count;
+							}
+//							} // </gml_LinearRing>
+					}
+				} // </gml_Polygon>
+
+				attribute<string> brk_krt_waarde;
+				attribute<string> brk_krt_perceelnummerRotatie;
+				attribute<string> brk_krt_deltaX;
+				attribute<string> brk_krt_deltaY;
+				attribute<string> gml_pos;
+			}
+		}
+		container ParsedXML  := parse_xml(XmlData, schema);
+		
+		parameter<UInt32> nr_rows := ParsedXML/brk_krt_perceelMember/nr_rows;
+	}
+	
+	container String
+	{
+		parameter<float64> version     := GeoDMSVersion();
+		parameter<string>  version_str := string(version);
+	}
+
+	unit<uint32> gemeente
+	:	StorageName     = "%SourceDataDir%/CBS/2017/gem_2017.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	,	DialogData      = "geometry"
+	,	DialogType      = "Map"
+	{
+		attribute<BackGroundLayer/point_rd> geometry (polygon);
+		attribute<BackGroundLayer/point_rd> simplified100(polygon) := bg_simplify(geometry, 100.0);
+		attribute<BackGroundLayer/point_rd> simplified010(polygon) := bg_simplify(geometry, 10.0);
+		attribute<BackGroundLayer/point_rd> simplified001(polygon) := bg_simplify(geometry, 1.0);
+		attribute<string>                   label              := GM_NAAM;
+		attribute<provincie_cbs>            provincie_cbs_rel  := point_in_polygon(centroid_or_mid(geometry), provincie_cbs/geometry);
+		attribute<string>                   provincie_naam     := provincie_cbs/PR_NAAM[provincie_cbs_rel];
+		attribute<provincie>                provincie_rel      := rlookup(provincie_naam, provincie/values);
+	}
+
+	unit<uint32> provincie:= unique(gemeente/provincie_naam)
+	,	DialogData  = "geometry"
+	,	DialogType  = "Map"
+	{
+		attribute<BackGroundLayer/point_rd> geometry (polygon): =
+			partitioned_union_polygon(
+				 ipolygon(gemeente/geometry)
+				,gemeente/provincie_rel
+			)[BackGroundLayer/point_rd];
+	}
+
+	unit<uint32> provincie_cbs
+	:	StorageName     = "%SourceDataDir%/CBS/provincie.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	,	DialogData      = "geometry"
+	,	DialogType      = "Map"
+	{
+		attribute<BackGroundLayer/point_rd> geometry (polygon);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_dpoint (polygon) := geometry[BackGroundLayer/point_rd_dpoint];
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_outer (polygon) := outer_multi_polygon(geometry_dpoint);
+
+		attribute<BackGroundLayer/point_rd> geometry_afgeleid_van_gemeente (polygon): =
+			partitioned_union_polygon(
+				 ipolygon(gemeente/geometry)
+				,gemeente/provincie_rel
+			)[BackGroundLayer/point_rd];
+
+		parameter<BackGroundLayer/point_rd> geometry_NL (polygon) :=
+			union_polygon(
+				 ipolygon(gemeente/geometry)
+			)[BackGroundLayer/point_rd];
+			
+
+		attribute<BackGroundLayer/point_rd> geometry_buffer_0m_fpoint (polygon) := bg_buffer_multi_polygon(geometry, 0.001, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_0m_dpoint (polygon) := bg_buffer_multi_polygon(geometry[BackGroundLayer/point_rd_dpoint], 0.001, 8b);
+
+
+		attribute<BackGroundLayer/point_rd> geometry_buffer_1m_fpoint (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m_dpoint (polygon) := bg_buffer_multi_polygon(geometry[BackGroundLayer/point_rd_dpoint], 1.0, 8b);
+
+		attribute<BackGroundLayer/point_rd> geometry_buffer_10m_fpoint (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m_dpoint (polygon) := bg_buffer_multi_polygon(geometry[BackGroundLayer/point_rd_dpoint], 10.0, 8b);
+		
+		attribute<BackGroundLayer/point_rd> geometry_buffer_100m_fpoint (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m_dpoint (polygon) := bg_buffer_multi_polygon(geometry[BackGroundLayer/point_rd_dpoint], 100.0, 8b);
+
+		attribute<BackGroundLayer/point_rd> geometry_buffer_1000m_fpoint (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m_dpoint (polygon) := bg_buffer_multi_polygon(geometry[BackGroundLayer/point_rd_dpoint], 1000.0, 8b);
+
+		attribute<BackGroundLayer/point_rd> geometry_buffer_10000m_fpoint (polygon) := bg_buffer_multi_polygon(geometry, 10000.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10000m_dpoint (polygon) := bg_buffer_multi_polygon(geometry[BackGroundLayer/point_rd_dpoint], 10000.0, 8b);
+
+		attribute<BackGroundLayer/point_rd> geometry_buffer_100000m_fpoint (polygon) := bg_buffer_multi_polygon(geometry, 100000.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100000m_dpoint (polygon) := bg_buffer_multi_polygon(geometry[BackGroundLayer/point_rd_dpoint], 100000.0, 8b);
+
+	}
+	
+	unit<uint32> limburg := Subset(provincie_cbs/PR_NAAM == 'Limburg')
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry (polygon)             := value(provincie_cbs/geometry[nr_OrgEntity],BackGroundLayer/point_rd_dpoint);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		
+	}
+	unit<uint32> brabant := Subset(provincie_cbs/PR_NAAM == 'Noord-Brabant')
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_org      (polygon)   := value(provincie_cbs/geometry[nr_OrgEntity],BackGroundLayer/point_rd_dpoint);
+		attribute<ipoint>                          geometry_ipolygon (polygon)   := ipolygon(geometry_org);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry          (polygon)   := value(geometry_ipolygon,BackGroundLayer/point_rd_dpoint);
+
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		
+		container Studiegebied
+		{
+			parameter<m> left   :=  70700[m];
+			parameter<m> right  := 202500[m];
+			parameter<m> bottom := 357000[m]; 
+			parameter<m> top    := 430000[m]; 
+		}	
+		container m5: = MakeGrid(5[m], Studiegebied);
+		
+		attribute<.> per_grid_m5 (m5/Domain) := poly2grid(geometry_org[point_rd], m5/Domain);
+	}
+	unit<uint32> brabant_simplified := brabant
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry (polygon)            := bg_simplify_polygon(brabant/geometry, 25.0);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		
+	}
+	unit<uint32> brabant_zonder_ehv := brabant
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry (polygon)            := value(ipolygon(brabant/geometry) - ipolygon(eindhoven/geometry[0]), BackGroundLayer/point_rd_dpoint);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		
+	}
+	unit<uint32> baarle_nassau := Subset(gemeente/GM_CODE  == 'GM0744')
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry (polygon)             := value(gemeente/geometry[nr_OrgEntity],BackGroundLayer/point_rd_dpoint);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		
+	}
+	unit<uint32> eindhoven := Subset(gemeente/GM_CODE  == 'GM0772')
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry (polygon)             := value(gemeente/geometry[nr_OrgEntity],BackGroundLayer/point_rd_dpoint);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		
+	}
+	unit<uint32> brabant_cleaned_bp := brabant
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry    (polygon)           := value(ipolygon(brabant/geometry) * ipolygon(brabant/geometry), BackGroundLayer/point_rd_dpoint);
+		attribute<brabant>                         per_grid_m5 (brabant/m5/Domain) := poly2grid(geometry[point_rd], m5/Domain);
+
+		container bg_buffer_multi_polygon
+		{
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon, brabant_cleaned_bp) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon, brabant_cleaned_bp) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon, brabant_cleaned_bp) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon, brabant_cleaned_bp) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		}
+		
+		container bg_buffer_polygon
+		{
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon, brabant_cleaned_bp) := bg_buffer_polygon(geometry, 1.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon, brabant_cleaned_bp) := bg_buffer_polygon(geometry, 10.0, 8b);
+
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon, brabant_cleaned_bp) := bg_buffer_polygon(geometry, 100.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon, brabant_cleaned_bp) := bg_buffer_polygon(geometry, 1000.0, 8b);
+		}
+	}
+	unit<uint32> brabant_cleaned_bg := brabant
+	{
+		//attribute<BackGroundLayer/point_rd_dpoint> geometry (polygon)            := bg_simplify_polygon(brabant/geometry, 10.0);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry    (polygon)           := bg_simplify_polygon(ipolygon(brabant/geometry), 10.0)[BackGroundLayer/point_rd_dpoint];
+		attribute<brabant>                         per_grid_m5 (brabant/m5/Domain) := poly2grid(geometry[point_rd], m5/Domain);
+
+		container bg_buffer_multi_polygon
+		{
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon, brabant_cleaned_bg) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon, brabant_cleaned_bg) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon, brabant_cleaned_bg) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon, brabant_cleaned_bg) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		}
+		
+		container bg_buffer_polygon
+		{
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m  (polygon, brabant_cleaned_bg) := bg_buffer_polygon(geometry, 1.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m (polygon, brabant_cleaned_bg) := bg_buffer_polygon(geometry, 10.0, 8b);
+
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m (polygon, brabant_cleaned_bg) := bg_buffer_polygon(geometry, 100.0, 8b);
+			attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon, brabant_cleaned_bg) := bg_buffer_polygon(geometry, 1000.0, 8b);
+		}
+	}
+
+	unit<uint32> provincie_cleaned := provincie
+	{
+		attribute<BackGroundLayer/point_rd_dpoint> geometry (polygon)            := value(ipolygon(provincie/geometry) * ipolygon(provincie/geometry), BackGroundLayer/point_rd_dpoint);
+		
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_outer (polygon) := outer_multi_polygon(geometry);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1m    (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_10m   (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_100m  (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_multi_1m    (polygon) := bg_buffer_multi_polygon(geometry, 1.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_multi_10m   (polygon) := bg_buffer_multi_polygon(geometry, 10.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_multi_100m  (polygon) := bg_buffer_multi_polygon(geometry, 100.0, 8b);
+		attribute<BackGroundLayer/point_rd_dpoint> geometry_buffer_multi_1000m (polygon) := bg_buffer_multi_polygon(geometry, 1000.0, 8b);
+		
+	}
+	unit<uint32> split_provincie_cbs : =
+		split_union_polygon(
+			 ipolygon(provincie_cbs/geometry)
+		);
+
+	unit<uint32> split_geometry_NL : =
+		split_polygon(
+			 ipolygon(provincie_cbs/geometry_NL)
+		);
+
+	unit<uint32> split_geometry_afgeleid_van_gemeente : =
+		split_partitioned_union_polygon(
+			 ipolygon(gemeente/geometry)
+			,gemeente/provincie_rel
+		);
+
+	container ExplainValue
+	{
+		unit<uint32> setA: StorageName = "%SourceDataDir%/BAG/snapshots.ext/20180101/pand.fss"
+		{
+			attribute<string> identificatie;
+		}
+		unit<uint32> setB: StorageName = "%SourceDataDir%/BAG/snapshots.ext/20180101/standplaats.fss"
+		{
+			attribute<string> identificatie;
+		}
+		unit<uint32> sets := union_unit(setA, setB)
+		{
+			attribute<string> identificatie:= union_data(.,setA/identificatie, setB/identificatie);
+			attribute<string> i_824 := union_data(.,setA/identificatie);
+		}
+	}
+
+	container special_characters
+	{
+		container system
+		{
+			parameter<string> tab         := '\t';
+			parameter<string> emptystring := '';
+			parameter<string> newline     := '\n';
+			parameter<string> DQoute      := '\"';
+			parameter<string> SQoute      := '\''';
+			parameter<string> comma       := ',';
+			parameter<string> semicolon   := ';';
+			parameter<string> point       := '.';
+			parameter<string> percent     := '%';
+			parameter<string> hyphen      := '-';
+			parameter<uint32> transparant := 4294967295;
+			parameter<uint32> transparant2:= 0 / 0;
+			parameter<uint8>  nullb       := 0b / 0b;
+			parameter<uint8>  nullb2      := 255b;
+		}
+	}
+	container labelissue
+	{
+		unit<uint32> woonplaats: nrofrows = 4
+		{
+			attribute<string> label: ['Amsterdam','rotterdam','Den Haag','Åmsterdam'];
+		}
+		unit<uint32> wijk: nrofrows = 4
+		{
+			attribute<string> label:['wijk1','wijk2','wijk3','wijk4'];
+			attribute<woonplaats> woonplaats_rel:[0,1,2,3];
+		}
+		parameter<string> copy:['ëéà£€'];
+	}
+		
+	container geometries
+	{
+		unit<fpoint> rdc_base;
+		unit<fpoint> rdc    := range(rdc_base, point(300000f,0f), point(625000f,280000f));
+		unit<ipoint> rdc_mm := gridset(rdc, point(0.001,0.001), point(0.0, 0.0), ipoint);
+	}
+
+	container VisualisePointData
+	{
+		unit<uint32> testdomain2: nrofrows = 2
+		{
+			attribute<float64> xFout :[130005.0,130005.0];
+			attribute<float64> yFout :[454005.0,454005.0];
+			
+			attribute<float64> x :[130005.0,130025.0];
+			attribute<float64> y :[454005.0,454004.0];
+
+			attribute<geometries/rdc_mm> geometry_mm      := point(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
+			attribute<geometries/rdc_mm> geometry_mm_fout := point(Round(yFout * 1000.0), Round(xFout * 1000.0), geometries/rdc_mm);
+		}
+		parameter<float64> x := testdomain2/x[0];
+
+		unit<uint32> testdomain1: nrofrows = 1
+		{
+			attribute<float64> x :[130005.0];
+			attribute<float64> y :[454005.0];
+			attribute<geometries/rdc_mm> geometry_mm      := point(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
+		}
+		unit<uint32> testdomain_null:= Subset(id(testdomain1) > 1)
+		{
+			attribute<geometries/rdc_mm> geometry_mm := testdomain1/geometry_mm[nr_OrgEntity];
+		}
+	}
+	container Poly2grid
+	{
+		parameter<float32> x_min := 10000f;
+		parameter<float32> x_max := 280000f;
+		parameter<float32> y_min := 300000f;
+		parameter<float32> y_max := 625000f;
+
+		parameter<int16> nr_cols := int16((x_max - x_min) / 100f);
+		parameter<int16> nr_rows := int16((y_max - y_min) / 100f);
+
+		unit<spoint> griddomain_100:=
+			range(
+				 gridset(
+					 geometries/rdc
+					,point(-100f, 100f, geometries/rdc)
+					,point(y_max, x_min,geometries/rdc)
+					,spoint
+				)
+				,point(0s, 0s)
+				,point(nr_rows, nr_cols)
+			)
+		,	DialogData = "geometries/rdc"
+		{
+			attribute<uint32> grey     := const(rgb(200,200,200),.), DialogType = "BrushColor";
+			attribute<pand>   pand_rel := poly2grid(pand/geometry_mm, .); 
+		}
+
+		unit<uint32> pand : StorageName= "%SourceDataDir%/BAG/snapshots.ext/20170908/pand.fss"
+		{
+			attribute<geometries/rdc_mm> geometry_mm (polygon);
+		}
+		
+		
+	}
+
+	unit<uint32> centroids
+	:	StorageName     = "%projdir%/data/vreemde_centroids.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	,	DialogType      = "Map"
+	,	DialogData      = "geometry"
+	{
+		attribute<fpoint> geometry    (poly);
+		
+		attribute<fpoint> centroid        := centroid(geometry);
+		attribute<fpoint> mid             := mid(geometry);
+		attribute<fpoint> centroid_or_mid := centroid_or_mid(geometry);
+		attribute<string> is_c_or_m := ((centroid == centroid_or_mid) ? 'CENTR' : '     ')+'-'+((mid == centroid_or_mid) ? 'MID' : '   ');
+		
+	}
+	unit<uint32> stranger_centroids := subset(id(centroids)==17[centroids]) {
+		attribute<fpoint> geometry(poly)  := centroids/geometry[nr_OrgEntity];
+		
+		attribute<fpoint> centroid        := centroid(geometry);
+		attribute<fpoint> mid             := mid(geometry);
+		attribute<fpoint> centroid_or_mid := centroid_or_mid(geometry);
+		attribute<string> is_c_or_m := ((centroid == centroid_or_mid) ? 'CENTR' : '     ')+'-'+((mid == centroid_or_mid) ? 'MID' : '   ');
+	
+	}
+	
+	container DivByZero
+	{
+		unit<uint32> pand: nrofrows = 1, IntegrityCheck = "False"
+//		,	StorageName = "='%LocalDataProjDir%/bladen/'+ AHNSet +'/pand/' + bladname + '.fss'"
+		{
+			attribute<string> identificatie   : ['1'];
+			attribute<uint16> hoogte          := const(0w / 0w,.);
+			attribute<uint16> hoogte_nok      := const(0w / 0w,.);
+
+			attribute<uint32> nr_vlakken      := sum(pand_vlak/nr_vlakken, pand_vlak/pand_rel);
+		}
+		unit<uint32> pand_points  := Subset(isDefined(pand/hoogte))
+		{
+			attribute<string> pand_key := string(id(pand)[nr_OrgEntity]);
+			attribute<pand> pand_rel := rlookup(pand_key, string(id(pand)));
+			attribute<uint32> vlak_id  := const(0,.);
+			attribute<string> pand_vlak_key := string(pand_rel) + '_' + string(vlak_id);
+			attribute<pand_vlak> pand_vlak_rel := rlookup(pand_vlak_key, pand_vlak/values);
+			
+		}
+		unit<uint32> pand_vlak := unique(pand_points/pand_vlak_key)
+		{
+			attribute<uint32>  nr_vlakken           := const(1,.);
+			attribute<pand>    pand_rel             := modus(pand_points/pand_rel, pand_points/pand_vlak_rel);
+			attribute<string>  pand_identificatie   := pand/identificatie[pand_rel];
+		}
+	}
+	container iploygon_projection
+	{
+		unit<float32> coord_rd    := m;
+		unit<fpoint>  point_rd;
+		unit<ipoint>  point_rd_mm := // for polygon functions
+			gridset(
+				 point_rd
+				,point(Float32(0.001),Float32(0.001),point_rd)
+				,point(Float32(0)    ,Float32(0)    ,point_rd)
+				,ipoint
+		
+			);
+
+		unit<uint32> ligplaats
+		:	StorageName     = "%projdir%/data/ligplaats.fss"
+		,	StorageReadOnly = "True"
+		,	DialogType      = "Map"
+		,	DialogData      = "geometry"
+		{
+			attribute<point_rd_mm> geometry_mm (poly);
+			attribute<point_rd>    geometry    (poly) := geometry_mm[point_rd];
+			attribute<ipoint>      geometry_ip (poly) := ipolygon(geometry);
+			
+		}
+		unit<uint32> buurt
+		:	StorageName     = "%projdir%/data/buurt.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		,	DialogType      = "Map"
+		,	DialogData      = "geometry"
+		{
+			attribute<point_rd> geometry    (poly);
+			attribute<ipoint>   geometry_ip (poly) := ipolygon(geometry);
+		}
+		unit<uint32> intersect_perceel_pand_plus : = overlay_polygon(ligplaats/geometry_ip, buurt/geometry_ip);
+	}
+
+	container csv
+	{
+		unit<uint32> src
+		:	StorageName     = "%projdir%/data/proeftuintafels.csv"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		,	SyncMode        = "all"
+		{
+			attribute<themas>            themas_rel     := rlookup(thema , themas/values);
+
+			unit<uint32> themas := unique(thema)
+			{
+				attribute<string> name := replace(values, ' ','_', '&','');
+			}
+
+		}
+		container per_thema :=
+			for_each_ne(
+				src/themas/name
+				,'ThemaTemplate(' + string(id(src/themas)) + '[csv/src/themas])' 
+			)
+		{
+			template ThemaTemplate
+			{
+				// begin case parameters
+				parameter<csv/src/themas> thema_rel;
+				// end case parameters
+				parameter<string> thema_name:= csv/src/themas/name[thema_rel];
+
+				unit<uint32> src := Subset(uint32(csv/src/themas_rel) == thema_rel)
+				{
+					//attribute<string>            Projectnr         := csv/src/Projectnr[nr_OrgEntity];
+					//attribute<string>            Projectnaam       := csv/src/Projectnaam[nr_OrgEntity];
+					//attribute<string>            NaamOpdrachtgever := csv/src/NaamOpdrachtgever[nr_OrgEntity];
+					attribute<string>            Plaats            := csv/src/Plaats[nr_OrgEntity];
+					//attribute<string>            Projectleider     := csv/src/Projectleider[nr_OrgEntity];
+					//attribute<string>            Thema             := csv/src/Thema[nr_OrgEntity];
+					//attribute<string>            pdf               := csv/src/url[nr_OrgEntity]+ '.pdf' +'$' + Projectnaam;
+				}
+			}
+		}
+	}
+
+	template f {
+		parameter<float32> x;
+		parameter<float32> result := x*x;
+	}
+	
+	container call := f(3f);
+	container ref := call;
+	parameter<float32> refres := subitem(ref, 'result');
+	
+		
+	container seqtest
+	{
+		parameter<Float64> x: expr = "value('33.9', Float64)";
+	}
+	container UndefTest {
+		parameter<Float32> Undef: Expr = "Float32( 0 / 0 )";
+		parameter<Float32> t1: expr = "min_elem(Undef, Float32(3))"; // 3
+		parameter<Float32> t2: expr = "min_elem(Float32(3), Undef)"; // undef
+		parameter<Float32> t3: expr = "max_elem(Undef, Float32(3))"; // 3
+		parameter<Float32> t4: expr = "max_elem(Float32(3), Undef)"; // undef
+	}
+	container DrawArrows
+	{
+		unit<fpoint> point_rd;
+		unit<uint32> clients: nrofrows = 5
+		{
+//			attribute<point_rd> startpoint: [{432327,78929}];
+			
+//			attribute<float32>  deltaX:       expr = "PointCol(endpoint) - PointCol(startpoint)";
+//			attribute<float32>  deltaY:       expr = "PointRow(endpoint) - PointRow(startpoint)";
+			
+			// 90 graden
+			//attribute<float32>  deltaX:       expr = "const(-500,.,float32)";
+			//attribute<float32>  deltaY:       expr = "const(500,.,float32)";
+			
+			// 45 graden
+			//attribute<float32>  deltaX:       expr = "const(500,.,float32)";
+			//attribute<float32>  deltaY:       expr = "const(500,.,float32)";
+
+//			attribute<float32>  deltaX:       expr = "const(250,.,float32)";
+//			attribute<float32>  deltaY:       expr = "const(500,.,float32)";
+
+			attribute<point_rd> endpoint:   expr = "startpoint + point(deltaY,deltaX,point_rd)";
+
+			attribute<point_rd> startpoint: [{432327,78929},{432107,78969},{432227,78949},{432300,78900},{432327,78959}];
+//			attribute<point_rd> endpoint:   [{432827,79400},{432827,79400},{432827,79400},{432600,78800},{433327,79000}];
+			attribute<float32>  deltaX:       [500,500,-500,-500,250];
+			attribute<float32>  deltaY:       [500,-500,-500,500,-500];
+			
+			attribute<point_rd> line (arc)
+			:	Expr = "points2sequence(pointset/point,pointset/sequence,pointset/ordinal)"
+			,	DialogData = "clients/LineA/line;clients/LineB/line";
+
+			attribute<float32>  dY_dX:        expr = "deltaY / deltaX";
+			attribute<float32>  AngleTOVX:    expr = "atan(dY_dX)";
+			attribute<float32>  AngleDegrees: expr = "(AngleTOVX / float32(pi())) * float32(180)";
+
+			parameter<float32>  SqrtHypo:     expr = "float32(10000)";
+			parameter<float32>  ExtraAngle:   expr = "float32(15)";
+			container LineA: expr = "AngleTemplate(AngleTOVX, ExtraAngle, deltaX)";
+			container LineB: expr = "AngleTemplate(AngleTOVX,-ExtraAngle, deltaX)";
+		}
+		container AngleTemplate: IsTemplate = "True"
+		{
+			// begin case parameters
+			attribute<float32> angle (clients);
+			parameter<float32> extraAngle;
+			attribute<float32> dX (clients);
+			
+			// end case paramaters
+			attribute<float32>  AngleArrowDegrees (clients): expr = "AngleDegrees + extraAngle";
+			
+			attribute<uint32>   quadrant (clients):     expr = 
+				"switch("
+					" case(dX >= float32(0) && AngleArrowDegrees >=float32(0) && !AngleArrowDegrees >float32(90), 1)"
+					",case(AngleArrowDegrees > float32(90) || (dX <  float32(0) && AngleArrowDegrees < float32(0)), 2)"
+					",case(dX <  float32(0) && AngleArrowDegrees >=float32(0), 3)"
+					",4"
+				")";
+
+			attribute<float32>  AngleArrowDegreesMax90 (clients): expr = "AngleArrowDegrees > float32(90) ? float32(90) - extraAngle : AngleArrowDegrees";
+			
+			attribute<float32>  AngleArrow        (clients): expr = "abs(AngleArrowDegreesMax90) * float32(pi()) / float32(180) ";
+			attribute<float32>  deltaY_deltaX     (clients): expr = "tan(AngleArrow)";
+			attribute<float32>  deltaX            (clients): expr = "sqrt(SqrtHypo / (float32(1) + deltaY_deltaX*deltaY_deltaX))";
+			attribute<float32>  deltaY            (clients): expr = "sqrt(SqrtHypo - deltaX*deltaX)";
+
+			attribute<float32>  X                 (clients): expr = 
+				"PointCol(clients/endpoint)"
+				"+ ((quadrant == 1 || quadrant == 4) ? - deltaX : deltaX)";
+					
+			attribute<float32>  Y                 (clients): expr = 
+				"PointRow(clients/endpoint) "
+				"+ ((quadrant == 1 || quadrant == 2) ? - deltaY : deltaY)";
+
+			attribute<point_rd> endpoint          (clients): expr = "point(Y,X,point_rd)";
+			
+			attribute<point_rd> point             (pointset): expr = "union_data(pointset,clients/endpoint,endpoint)";
+
+			attribute<point_rd> line              (clients, arc): expr = "points2sequence(point,pointset/sequence,pointset/ordinal)";
+		}
+		parameter<uint32> nrrowsps: expr = "#clients * 2";
+		unit<uint32> pointset: expr = "Range(uint32,0,nrrowsps)"
+		{
+			attribute<point_rd> point:    expr = "union_data(.,clients/startpoint,clients/endpoint)";
+
+			attribute<clients>  sequence: expr = "value(union_data(.,id(clients),id(clients)), clients)";
+			attribute<uint32>   ordinal:  expr = "id(pointset) / #clients";
+		}
+	}
+// 	container ExportSettings: url = "='#'+ExportSettings/Docdata +'/ExportSettings.adms'"
+// 	{
+// 		container Impl: IsHidden = "true"
+// 		{
+// 			parameter<string> SLASH:     [ '/' ];
+// 			parameter<string> BACKSLASH: [ '\\' ];
+// 			parameter<string> ComSpec:   Expr = "Expand(., '%env:ComSpec%')";
+// 		}
+// 		container MetaInfo
+// 		{
+// 			parameter<String> FileName: Expr = "'%storageBaseName%.xml'";
+// 			parameter<String> FileType: Expr = "'xml'"; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
+// 			container Contents
+// 			{
+// 				container Software
+// 				{
+// 					parameter<String> GeoDmsVersion: [ '=String(GeoDmsVersion())' ];
+// 				}
+// 				container Config
+// 				{
+// 					parameter<String> FullName: Expr = "'=PropValue(this, '+Quote('FullName')+')'";
+// 					parameter<String> Expr:     Expr = "'=PropValue(this, '+Quote('Expr'    )+')'";
+// 					parameter<String> Rdc100m:  Expr = "Expand(., '%rdc_100m_version%')";
+// 				}
+// 				container Environment
+// 				{
+// 					parameter<String> Processor:    Expr = "Expand(., '%env:PROCESSOR_IDENTIFIER%')";
+// 					parameter<String> User:         Expr = "Expand(., '%env:USERNAME%')";
+// 					parameter<String> ComputerName: Expr = "Expand(., '%env:COMPUTERNAME%')";
+// 				}
+// 				container Svn
+// 				{
+// 					parameter<String> RevisionInfoCmd: Expr = "Replace(Expand(., 'SubWCRev %projDir% > %projDir%/SubWCRevData.str'), Impl/SLASH, Impl/BACKSLASH)";
+// 					container RevisionInfoWriter: Expr = "exec(Impl/ComSpec, '/c ' + RevisionInfoCmd, Expand(., '%projdir%'))";
+// 					parameter<string> RevisionInfo: Storagename = "%projDir%/SubWCRevData.str", ExplicitSuppliers = "RevisionInfoWriter";
+// 				}
+// 			}
+// 		}
+// 	}
+
+	container issue422 {
+		parameter<string> Name: [ 'RestWarmte' ];
+		parameter<string> label: DialogType = "LabelText", Expr = "Name";
+	}
+	
+	container issue1134 {
+		parameter<float32> max_elem1 := max_elem (0f / 0f, 3f);
+		parameter<float32> max_elem2 := max_elem (3f, 0f / 0f);
+		parameter<float32> max_elem3 := max_elem (0f , 3f);
+		parameter<float32> max_elem4 := max_elem (3f, 0f );
+		parameter<float32> min_elem1 := min_elem (0f / 0f, 3f);
+		parameter<float32> min_elem2 := min_elem (3f, 0f / 0f);
+		parameter<float32> min_elem3 := min_elem (0f , 3f);
+		parameter<float32> min_elem4 := min_elem (3f, 0f );
+		
+		parameter<uint32> argmax1 := argmax(0f / 0f, 3f);
+		parameter<uint32> argmax2 := argmax(3f, 0f / 0f);
+		parameter<uint32> argmax3 := argmax(0f , 3f);
+		parameter<uint32> argmax4 := argmax(3f,  0f);
+		parameter<uint32> argmin1 := argmin(0f / 0f, 3f);
+		parameter<uint32> argmin2 := argmin(3f, 0f / 0f);
+		parameter<uint32> argmin3 := argmin(0f , 3f);
+		parameter<uint32> argmin4 := argmin(3f,  0f);
+		
+		parameter<uint32> argmaxfast1 := argmax_fast(0f / 0f, 3f, 4f); //0
+		parameter<uint32> argmaxfast2 := argmax_fast(3f, 0f / 0f, 4f); //0
+		parameter<uint32> argmaxfast3 := argmax_fast(3f, 4f, 0f / 0f); //1
+		parameter<uint32> argmaxfast4 := argmax_fast(3f, 4f, 0f / 0f, 5f, 0f / 0f); //1
+		
+		parameter<float32> max_elem_fast1 := max_elem_fast (0f / 0f, 3f);
+		parameter<float32> max_elem_fast2 := max_elem_fast (3f, 0f / 0f);
+		
+	}
+	container integrity_check {
+		parameter<float64> x := 1.0, IntegrityCheck = "false";
+	}
+	container issue1131 {
+		parameter<float32> negZero := 0f * -1f;
+		parameter<bool> eqZero := negZero == 0f;
+		parameter<bool> ltZero := negZero <  0f;
+		parameter<bool> leZero := negZero <= 0f;
+		parameter<bool> gtZero := negZero >  0f;
+		parameter<bool> geZero := negZero >= 0f;
+		parameter<bool> neZero := negZero != 0f;
+	}
+	
+	container poly_test 
+	{
+		parameter<String> x: [ 'xxx' ];
+		
+		container str {
+			parameter<string> p1str: [ '{5: {10, 10} {10, 20} {20, 20} {20, 10} {10, 10}}' ];
+			parameter<string> p2str: [ '{5: {15, 15} {15, 25} {25, 25} {25, 15} {15, 15}}' ];
+			parameter<string> p3str: [ '{5: {15, 15} {15, 35} {35, 35} {35, 15} {15, 15}}' ];
+			parameter<ipoint> p1(poly) := ipolygon(p1str);
+			parameter<ipoint> p2(poly) := ipolygon(p2str);
+			parameter<ipoint> p3(poly) := ipolygon(p3str);
+
+			container poly2grid {
+				unit<fpoint> TestCoord;
+				unit<spoint> TestGrid :=
+					range(
+						gridset(
+							 TestCoord
+							,point(10f, 10f, TestCoord)
+							,point( 0f,  0f, TestCoord)
+							, spoint
+						)
+						, point(0s, 0s), point(7s, 7s)
+					)
+				{
+					attribute<bool> p2g_p3 := poly2grid(value(p3, TestCoord), .);
+					attribute<TestCoord> tc := id(.)[TestCoord]+point(5f, 5f, TestCoord);
+//					attribute<bool> pip_p3 := point_in_polygon(tc, union_data(bool, value(p3, TestCoord), value(p2, TestCoord)));
+					attribute<bool> pip_p3 := point_in_polygon(tc, value(p3, TestCoord));
+				}
+			}
+//			parameter<string> pNLstr: [ '{5: {10000, 325000} {290000, 325000} {290000, 650000} {10000, 650000} {10000, 325000}}' ];
+			parameter<string> pNLstr: [ '{5: {10000, 325000} {10000, 650000} {290000, 650000}  {290000, 325000} {10000, 325000}}' ];
+			parameter<string> p400str: [ 
+				'{12: '
+					'{101355, 449914} {101315, 449875} {101279, 449910} {101319, 449950} {101338, 449931} {101355, 449914} '
+					'{101312, 449889} {101339, 449915} {101318, 449935} {101291, 449910} {101312, 449889} {101355, 449914}}' 
+				];
+			// 23637;4;  367329
+			// {11: {101354627, 449914166} {101337612, 449931259} {101319409, 449949541} {101279151, 449909697} {101314909, 449874666} {101354627, 449914166} 
+			// {101338940, 449915291} {101312409, 449888759} {101291487, 449909697} {101318010, 449935103} {101338940, 449915291}}
+			
+			parameter<string> p500str: [ 
+				'{33: '
+					'{101170, 448619} '
+						'{101177, 448618} '
+						'{101186, 448620} '
+						'{101161, 448590} '
+						'{101137, 448567} '
+						'{101084, 448515} '
+						'{100945, 448566} '
+						'{100919, 448575} '
+						'{100907, 448580} '
+						'{100993, 448666} '
+						'{101054, 448727} '
+						'{101058, 448731} '
+						'{101065, 448726} '
+						'{101166, 448622} '
+					'{101170, 448619} '
+						'{101009, 448559} '
+							'{101027, 448541} '
+							'{101038, 448537} '
+							'{101040, 448539} '
+							'{101015, 448564} '
+						'{101009, 448559} '
+							'{101042, 448536} '
+								'{101079, 448522} '
+								'{101054, 448547} '
+							'{101042, 448536} '
+								'{100925, 448582} '
+									'{100993, 448557} '
+									'{101000, 448563} '
+									'{100952, 448609} '
+								'{100925, 448582} '
+							'{101042, 448536} '
+						'{101009, 448559} '
+					'{101170, 448619}'
+				'}'
+			];
+			// {33: 
+			//	{101185682, 448619634} 
+			//		{101160651, 448590103} 
+			//		{101137073, 448566853} 
+			//		{101084049, 448514572} 
+			//		{100945018, 448565541} 
+			//		{100918549, 448575259} 
+			//		{100907174, 448579853} 
+			//		{100993417, 448666166} 
+			//		{101054479, 448727228} 
+			//		{101057987, 448730728} 
+			//		{101064995, 448726134} 
+			//		{101165878, 448621853} 
+			//		{101170362, 448618884} 
+			//		{101177463, 448618134} 
+			//	{101185682, 448619634} 
+			//		{100999971, 448562541} 
+				//		{100952151, 448609259} 
+				//		{100924495, 448581603} 
+				//		{100993463, 448556759} 
+			//		{100999971, 448562541} 
+			//		{101039932, 448539009} 
+				//		{101014823, 448564228} 
+				//		{101009487, 448559009} 
+				//		{101026878, 448541072} 
+				//		{101038190, 448537041} 
+			//		{101039932, 448539009} 
+			//		{101078760, 448522134} 
+				//		{101053526, 448547384} 
+				//		{101041995, 448535728} 
+			//		{101078760, 448522134} 
+			//		{101078760, 448522134} 
+			//		{101039932, 448539009} 
+			//	{101185682, 448619634}} 
+			
+			parameter<fpoint> pf400(poly): Expr = "FPolygon(p400str)";
+			parameter<ipoint> pi400(poly): Expr = "IPolygon(p400str)";
+			parameter<ipoint> piNL (poly): Expr = "IPolygon(pNLstr)";
+		}
+		
+		unit<uint32> ClipResult: Expr = "overlay_polygon(str/p1, str/p2)",
+			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
+			
+		unit<uint32> ClipResultNL: Expr = "overlay_polygon(str/pi400, str/piNL)",
+			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
+		unit<uint32> ClipResultNL2: Expr = "overlay_polygon(str/piNL, str/piNL)",
+			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
+		unit<uint32> ClipResultNL4: Expr = "overlay_polygon(ClipResultNL2/Geometry, ClipResultNL2/Geometry)",
+			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
+	}
+	
+	parameter<UInt32> x: expr = "2+3";
+	unit<float32> m;
+	unit<float32> impedance;
+	
+	unit<fpoint> TestCoord;
+	unit<spoint> TestGrid :=
+		range(
+			gridset(
+				 TestCoord
+				,point(250f, -250f, TestCoord)
+				,point(340025f, 159900f + 250f * 2025f, TestCoord)
+				, spoint
+			)
+			, point(0s, 0s), point(1990s, 2025s)
+		)
+	{
+		parameter<fpoint>  ProjFactor: expr = "fpoint(GetProjectionFactor(.))";
+		parameter<fpoint>  ProjOffset: expr = "fpoint(GetProjectionOffset(.))";
+
+		attribute<bool>    Selection:   expr = 
+			"   (PointRow(id(.)) == int16( 800)  && PointCol(id(.)) == int16(800))"
+			"|| (PointRow(id(.)) == int16(1250)  && PointCol(id(.)) == int16(1250))";
+			
+		attribute<bool> AllTrue  : expr = "const(True,.,bool)";
+		attribute<bool> PartlyTrue: = PointCol(id(.)) % int16(2) == int16(0) && PointRow(id(.)) % int16(2) == int16(0)
+		,	StorageName = "%ProjDir%/data/een_bit.tif";
+	}
+
+// 	unit<spoint> een_bit:StorageName = "%ProjDir%/data/een_bit.tif"
+// 	{
+// 		attribute<bool> GridData;
+// 	}
+
+	unit<spoint> een_bit_gdal
+	:	StorageName = "%ProjDir%/data/een_bit.tif"
+	,	StorageType = "gdal.grid"
+	{
+		attribute<bool>  GridData;
+		attribute<bool>  GridData1;
+ 		attribute<uint2> GridData2;
+ 		attribute<uint4> GridData4;
+		attribute<uint8> GridData8;
+	}
+	container Kernel
+	{
+		unit<uint32> Dist2Range;
+		unit<spoint> pot500: expr = 
+			"range("
+				" spoint"
+				",point(-int16(500),-int16(500)),point(int16(510),int16(510))"
+			")"
+		{
+			attribute<Dist2Range> distMatr:  expr =  "dist2(point(int16(0), int16(0), .), Dist2Range)";
+			attribute<float32>    AbsWeight: expr = "MakeDefined(distMatr <= uint32(250000) ? float32(10000) / float32(distMatr) : float32(0), float32(0))";
+		}
+	}
+
+	unit<spoint> TestGridLarge: expr =
+		"range("
+			"gridset("
+				" TestCoord"
+				",point("
+					" float32(250.0)"
+					",float32(-250.0)"
+					",TestCoord"
+				" )"
+				",point("
+					" float32(340025)"
+					",float32(159900) + float32(250.0) * float32(10000)"
+					",TestCoord"
+				")"
+				", spoint"
+			")"
+			",point("
+				" Int16(0)"
+				",Int16(0)"
+			")"
+			",point("
+				" Int16(10000)"
+				",Int16(10000)"
+			")"
+		")"
+	{
+		attribute<float32> test:      expr = "float32(pointcol(id(TestGridLarge))) % float32(50) + float32(pointrow(id(TestGridLarge))) % float32(50) - 30f";
+		attribute<float32> potential: expr = "potential(test, Kernel/pot500/AbsWeight)";
+	}
+	container resistance
+	{
+		attribute<float32> grid (TestGrid): expr = "const(1,TestGrid,impedance)";
+	}
+	container Test
+	{
+		parameter<string> gdalData: Expr = "Expand(., '%env:GDAL_DATA%')";
+		unit<int16> pointset: nrofrows = 100
+		{
+			attribute<TestGrid> gridnr: expr = "point(id(.),id(.),TestGrid)";
+		}
+	}
+	attribute<float32> DistTo (TestGrid): expr =
+		"GridDist("
+			" resistance/grid"
+			",Test/PointSet/gridnr"
+			",const(0, Test/PointSet, impedance)"
+		")"
+	, FreeData = "False";
+
+	container TestInCalcCache
+	{
+		attribute<float32> stored_ok    (TestGrid): expr = "DistTo - float32(10000) ", FreeData = "False", StoreData = "True";
+		attribute<float32> stored_error (TestGrid): expr = "DistTo", FreeData = "False";
+	}
+	container gdal_vect_CalcCache
+	{
+		unit<uint32> file
+		:	StorageName = "%ProjDir%/data/gdal_vect.csv"
+		,	StorageType = "gdal.vect";
+
+		parameter<bool>   test_param     := uint32(file/HeaderA[0]) + uint32(file/HeaderB[1]) + uint32(file/HeaderC[2]) == 14, StoreData = "True",FreeData ="False";
+		attribute<uint32> test_att (file):= uint32(file/HeaderA)    + uint32(file/HeaderB)    + uint32(file/HeaderC)         , StoreData = "True",FreeData ="False";
+	}
+	
+	container AsciiGridOsStructuredException
+	{
+		unit<fpoint> rdc: Range = "[{300000, 0}, {625000, 280000})";
+
+		unit<spoint> rdc_100m_monolith
+		:	Descr = "rdCoords/100m van NW naar SE (3250 rows, 2700 cols)"
+		,	Expr  =
+				"range("
+					"gridset("
+						" rdc"
+						",point(Float32( - 100), Float32(  100), rdc)"
+						",point(Float32(625000), Float32(10000), rdc)"
+						",spoint"
+					")"
+					",point(Int16(0)   , Int16(0))"
+					",point(Int16(3250), Int16(2700))"
+				")";
+		unit<spoint> rdc_100m_tiled
+		:	Descr = "rdCoords/100m van NW naar SE (3250 rows x 2700 cols in 5x5 tiles of 650 rows x 540 cols each)"
+		,	Expr  = "TiledUnit(point(Int16(650), Int16(540), rdc_100m_monolith))";
+		attribute<float32> Woningen_TotaalNettoWoongebiedBasisjaar         (rdc_100m_tiled):    StorageName = "//OVSRV02/SourceData/LUMOS/TestData/Woningen_TotaalNettoWoongebiedBasisjaar.asc";
+		attribute<float32> Woningen_TotaalNettoWoongebiedBasisjaar_untiled (rdc_100m_monolith): StorageName = "//OVSRV02/SourceData/LUMOS/TestData/Woningen_TotaalNettoWoongebiedBasisjaar.asc";
+	}
+	container PropValues
+	{
+		parameter<Float32> paramA: expr = "value(10, float32)";
+		parameter<string> ValuesUnitA: expr = "PropValue(paramA, 'ValuesUnit')";
+		
+		unit<uint32> SubItem  : Expr = "SubItem_PropValues(AsciiGridOsStructuredException, 'Name')";
+		unit<uint32> Inherited: Expr = "Inherited_PropValues(AsciiGridOsStructuredException, 'Name')";
+		unit<uint32> Inherited2: Expr = "Inherited_PropValues(ambiguous/Error, 'Name')";
+	}
+
+/* REMOVE	
+	unit<UInt32> TestSet: Expr = "TiledUnit(value(1000000, Range(UInt32, 0, 2000000)))"
+	{
+		attribute<UInt32> Sqr: Expr = "ID(.)*ID(.)";
+	}
+	unit<UInt32> SubSet: Expr = "SubSet(ID(TestSet) > 5)"
+	{
+		attribute<UInt32> Sqr: Expr = "TestSet/Sqr[nr_OrgEntity]";
+	}
+	// Deze test laat zien hoe je templates kan instantieren met variabele domeinen (variabel in de zin van verschillende value types)
+	// Dit moet eigenlijk als bug gezien worden
+	container VarDomainTest
+	{
+		container Templ: isTemplate = "True"
+		{
+			container DomainHolder {
+				unit<UInt32> Domain: Expr = "DomainRef";
+			}
+			// end of parameters
+			attribute<DomainHolder/Domain> ID(DomainHolder/Domain): Expr = "ID(DomainHolder/Domain)";
+		}
+		container CaseP1 {
+			Unit<UInt32> Domain: Expr = "Range(UINt32, 0, 10)";
+		}
+		container CaseP2 {
+			Unit<UInt8> Domain: Expr = "Range(UInt8, 0[UInt8], 20[UInt8])";
+		}
+		container CaseP3 {
+//			Unit<IPoint> Domain: Expr = "Range(UPoint, Point(Int32(0),Int32(0), IPoint), Point(Int32(5),Int32(5), IPoint))";  // upoint not supported as domain
+//			Unit<UPoint> Domain: Expr = "Range(UPoint, Point(0, 0), Point(5, 5))";                                            // ipoint not supported as domain
+//			Unit<SPoint> Domain: Expr = "Range(SPoint, Point(Int16(0),Int16(0), SPoint), Point(Int16(5),Int16(5), SPoint))";  // spoint is supported as domain
+			Unit<WPoint> Domain: Expr = "Range(WPoint, Point(UInt16(0),UInt16(0), WPoint), Point(UInt16(5),UInt16(5), WPoint))";  // wpoint is supported as domain
+		}
+		container Inst1: Expr = "Templ(CaseP1)";
+		container Inst2: Expr = "Templ(CaseP2)";
+		container Inst3: Expr = "Templ(CaseP3)";
+	}
+	container MetricConversions
+	{
+		unit<Float32> sec: expr = "baseUnit('sec', Float32)";
+		unit<Float32> min: expr = "60*sec";
+		unit<Float32> hr:  expr = "60*min";
+		
+		parameter<Hr>  WorkTime: Expr = "8[Hr]";
+		parameter<min> WorkTimeExtra: Expr = "(WorkTime+2[Hr])[min]";
+		parameter<min>  WorkTime2: Expr = "8[Hr][Min]";
+		
+		unit<Float32> Ratio: expr= "sec / sec";
+		unit<Float32> Percent: expr = "0.01 * ratio";
+		
+		parameter<Float32> F3: Expr = "Float32(3.0)";    // should be 3.0
+		parameter<Ratio  > R3: Expr = "3.0[Ratio]";      // should be 3.0
+		parameter<Percent> P3:  Expr = "3[Percent]";     // should be 3.0[Percent]
+		parameter<Percent> P3b: Expr = "F3[Percent]";    // should be 3.0[Percent]
+		parameter<Percent> P3c: Expr = "R3[Percent]";    // should be 300.0[Percent]
+		parameter<Float32> RP3:  Expr = "P3 [Ratio]";    // should be 0.03[Ratio]
+		parameter<Float32> RP3b: Expr = "P3b[Ratio]";    // should be 0.03[Ratio]
+		parameter<Float32> RP3c: Expr = "P3c[Ratio]";    // should be 3.00[Ratio]
+		parameter<Float32> RP3d: Expr = "P3c[Float32][Ratio]";    // should be 300.0[Ratio]
+	}
+	
+	container Regex {
+//		parameter<String> FulePathPattern: [ '\a:\\~\\+' ];
+		parameter<String> BadNumericPattern: [ '[0-9]+(.[0-9]+?' ];
+		parameter<String> NumericPattern: [ '[0-9]+(.[0-9]+)?' ];
+		attribute <String> data(UInt2) : [ 'abc23.5s', "Toys 'R4Us", "3.14", null];
+		
+		attribute<String> regex_search (UInt2): Expr = "regex_search (data, NumericPattern)";
+		attribute<Bool>   regex_match  (UInt2): Expr = "regex_match  (data, NumericPattern)";
+		attribute<String> regex_replace(UInt2): Expr = "regex_replace(data, NumericPattern, 'Some')";
+		attribute<String> regex_replaceFrac(UInt2): Expr = "regex_replace(data, NumericPattern, '$1')";
+		
+		parameter<String> Line: [ '1	1	53 	12 	4 	26 	3 	0 	0 	1 	40 	40 	28 	Oost-Groningen'];
+		parameter<String>  LinesSearch: expr = "regex_search(Line, ' *(?:[0-9]+)(?: *[,\t] *[0-9]+){9}')";
+			
+	}
+	
+	container TestInterestDecrement
+	{
+		container RewriteLabel : expr = "rjoin(label, b, c)"; // Test this for interestcount decrement bug after failure
+	}
+	
+	container RewriteLabel
+	{
+		unit<uint32> org: nrofrows = 2
+		{
+			attribute<string> key: ['a','b'];
+			attribute<uint32> X:   [1,2];
+			
+		}
+		unit<uint32> dest: nrofrows = 4
+		{
+			attribute<string> label: ['a','b','b','a'];
+			attribute<uint32> X:     expr = "rjoin(label, org/key, org/X)";
+		}
+	}
+	*/
+	container BackGroundLayer
+	{
+		container ngr_layer {
+		
+			parameter<uint32> nr_att := 8;
+			parameter<uint32> nr_row := 15;
+
+			unit<uint32> TileMatrixElems := range(uint32, 0, nr_att * nr_row)
+			{
+				attribute<string> values:
+				//name          , ScaleDen , Top        , Left     ,Width ,Height, MatrixWidth,MatrixHeight
+				[
+				 'EPSG:28992:0' ,'12288000','-285401.92','903402.0','256' ,'256' ,    '1'     ,    '1'
+				,'EPSG:28992:1' , '6144000','-285401.92','903402.0','256' ,'256' ,    '2'     ,    '2'
+				,'EPSG:28992:2' , '3072000','-285401.92','903402.0','256' ,'256' ,    '4'     ,    '4'
+				,'EPSG:28992:3' , '1536000','-285401.92','903402.0','256' ,'256' ,    '8'     ,    '8'
+				,'EPSG:28992:4' ,  '768000','-285401.92','903402.0','256' ,'256' ,   '16'     ,   '16'
+				,'EPSG:28992:5' ,  '384000','-285401.92','903402.0','256' ,'256' ,   '32'     ,   '32'
+				,'EPSG:28992:6' ,  '192000','-285401.92','903402.0','256' ,'256' ,   '64'     ,   '64'
+				,'EPSG:28992:7' ,   '96000','-285401.92','903402.0','256' ,'256' ,  '128'     ,  '128'
+				,'EPSG:28992:8' ,   '48000','-285401.92','903402.0','256' ,'256' ,  '256'     ,  '256'
+				,'EPSG:28992:9' ,   '24000','-285401.92','903402.0','256' ,'256' ,  '512'     ,  '512'
+				,'EPSG:28992:10',   '12000','-285401.92','903402.0','256' ,'256' , '1024'     , '1024'
+				,'EPSG:28992:11',    '6000','-285401.92','903402.0','256' ,'256' , '2048'     , '2048'
+				,'EPSG:28992:12',    '3000','-285401.92','903402.0','256' ,'256' , '4096'     , '4096'
+				,'EPSG:28992:13',    '1500','-285401.92','903402.0','256' ,'256' , '8192'     , '8192'
+				,'EPSG:28992:14',     '750','-285401.92','903402.0','256' ,'256' ,'16384'     ,'16384'
+				];
+			}
+		
+			unit<uint32> TileMatrix := range(uint32, 0, nr_row)
+			{
+				attribute<.>       id                := id(.);
+		
+				attribute<string>  name              :=         TileMatrixElems/values[value(id * nr_att + 0, TileMatrixElems)];
+				attribute<float64> ScaleDenominator  := float64(TileMatrixElems/values[value(id * nr_att + 1, TileMatrixElems)]);
+				attribute<float64> LeftCoord         := float64(TileMatrixElems/values[value(id * nr_att + 2, TileMatrixElems)]);
+				attribute<float64> TopCoord          := float64(TileMatrixElems/values[value(id * nr_att + 3, TileMatrixElems)]);
+				attribute<uint16>  TileWidth         :=  uint16(TileMatrixElems/values[value(id * nr_att + 4, TileMatrixElems)]);
+				attribute<uint16>  TileHeight        :=  uint16(TileMatrixElems/values[value(id * nr_att + 5, TileMatrixElems)]);
+				attribute<uint32>  MatrixWidth       :=  uint32(TileMatrixElems/values[value(id * nr_att + 6, TileMatrixElems)]);
+				attribute<uint32>  MatrixHeight      :=  uint32(TileMatrixElems/values[value(id * nr_att + 7, TileMatrixElems)]);
+			}
+		
+			parameter<string> target_png := '/wmts/?SERVICE=WMTS&REQUEST=GetTile'
+				'&VERSION=1.0.0'
+				'&LAYER=' + layer + 
+				'&TILEMATRIXSET=EPSG%3A28992'
+				'&TILEMATRIX=@TM@'+
+				'&TILEROW=@TR@'
+				'&TILECOL=@TC@'
+				'&FORMAT=image%2Fpng8';
+
+			parameter<string> target_jpeg := '/luchtfoto/rgb/wmts'
+				'?&LAYER=' + layer + 
+				'&TILEMATRIXSET=EPSG%3A28992'
+				'&SERVICE=WMTS&REQUEST=GetTile'
+				'&VERSION=1.0.0'
+				'&Format=image%2Fjpeg&TILEMATRIX=@TM@&TILEROW=@TR@&TILECOL=@TC@';
+				
+			parameter<string> target2 := layer = 'Actueel_ortho25' ? target_jpeg : target_png;
+			
+			// Different examples of tested layers
+			parameter<string> layer  := 'grijs';
+			parameter<string> host   := 'service.pdok.nl';
+
+			parameter<string> target := '/brt/achtergrondkaart/wmts/v2_0'
+				'?service=WMTS'
+				'&request=gettile'
+				'&version=1.0.0'
+				'&layer=' + layer + 
+				'&tilematrixset=EPSG:28992'
+				'&tilematrix=@TM@'
+				'&tilerow=@TR@'
+				'&tilecol=@TC@'
+				'&format=image/png'
+/*				
+https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
+?service=WMTS
+&request=gettile
+&version=1.0.0
+&layer=grijs
+&tilematrixset=EPSG:28992
+&tilematrix=3
+&tilerow=4
+&tilecol=3
+&format=image/png				
+	*/			
+				
+				
+				
+			;
+		}
+		unit<fpoint> point_rd: DialogData = "ngr_layer";
+		unit<dpoint> point_rd_dpoint: DialogData = "ngr_layer";
+
+		unit<uint8> hoek_classes: nrofrows = 4
+		{
+			attribute<uint32> classBreaks: DialogType = "Classification",
+				[0,200,500,1000];
+			attribute<uint32> BrushColor: DialogType = "BrushColor",
+				[rgb(254,240,217),rgb(253,187,132),rgb(239,101,72),rgb(153,0,0)];
+			attribute<uint32> PenColor: DialogType = "PenColor", expr = "BrushColor";
+			attribute<uint32> SymbolColor: DialogType = "SymbolColor", expr = "BrushColor";
+			attribute<int16>  PenWidth: DialogType = "PenWidth", expr = "const(1,.,int16)";
+			
+			unit<uint8> selectie:= Subset(classBreaks > 100);
+		}
+		container source
+		{
+			unit<uint32> pointset: nrofrows = 177
+			{
+				attribute<point_rd> point:
+				[
+					 {403025,113810},{402552,113711},{402558,113646},{402428,113636},{402448,113472},{402480,113244},{402503,113057},{402570,112883},{402576,112884},{402578,112876},{402647,112740},{402697,112555},{402698,112554},{402973,112471},{402977,112473},{403544,112312},{403552,112612},{403434,112809},{403298,113032},{403171,113401},{403025,113810}
+					,{400990,113269},{400888,113291},{400886,113192},{400883,113120},{400916,112666},{400893,112424},{400817,112176},{400864,112187},{401157,112293},{401322,112404},{401494,112519},{401597,112589},{401558,112840},{401553,112888},{401288,112945},{401065,113187},{400990,113269}
+					,{401238,115099},{401047,115164},{400978,114523},{400965,114314},{400926,113796},{400919,113685},{400888,113291},{400990,113269},{401065,113187},{401288,112945},{401553,112888},{401510,113137},{401550,113377},{401602,113684},{401642,113915},{401567,114437},{401475,114991},{401462,115075},{401238,115099}
+					,{402174,113703},{402076,113691},{402076,113690},{401742,113655},{401723,113659},{401602,113684},{401510,113137},{401553,112888},{402697,112555},{402647,112740},{402578,112876},{402577,112876},{402576,112884},{402570,112883},{402503,113057},{402480,113244},{402448,113472},{402446,113472},{402428,113636},{402426,113634},{402414,113716},{402281,113770},{402174,113703}
+					,{401531,114646},{401567,114437},{401642,113915},{401602,113684},{401723,113659},{401742,113655},{402077,113690},{402076,113691},{402076,113690},{402077,113690},{402174,113703},{402281,113770},{402272,113831},{402263,113896},{402199,114330},{402194,114374},{402223,114390},{402197,114497},{402086,114462},{402049,114612},{401988,114592},{401980,114626},{401803,114574},{401790,114655},{401765,114673},{401757,114803},{401545,114739},{401567,114983},{401475,114991},{401531,114646}
+					,{402757,114546},{402404,114445},{402317,114418},{402192,114373},{402263,113896},{402281,113770},{402414,113716},{402428,113636},{402558,113646},{402552,113711},{403025,113810},{402870,114237},{402757,114546}
+					,{405282,113562},{405282,113561},{405183,113537},{404996,113582},{404923,113297},{404776,113283},{404669,113160},{404669,113068},{404576,113022},{404353,113116},{404300,112976},{404256,112989},{404154,112857},{404063,112893},{403939,112611},{403770,112450},{403792,112379},{403544,112312},{402977,112473},{402973,112471},{402698,112554},{402697,112555},{401553,112888},{401558,112840},{401597,112589},{401494,112519},{401322,112404},{401157,112293},{400943,112215},{401063,111873},{401234,111711},{401477,111716},{401653,111646},{402133,111453},{402382,111433},{402859,111567},{403372,111821},{403701,111952},{403834,112009},{403934,112040},{404010,112054},{404157,112066},{404271,112054},{404555,111996},{404649,111969},{404664,111986},{404631,112040},{404620,112098},{405013,112720},{405495,113478},{405454,113512},{405415,113601},{405353,113625},{405282,113562}
+				];
+				attribute<district> districtnr:
+				[
+					0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+					3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+					4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+					5,5,5,5,5,5,5,5,5,5,5,5,5,
+					6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
+				];
+				attribute<uint32> ordinal:
+				[
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53
+				];
+			}
+			unit<uint32> pointsetBB: nrofrows = 5, DialogType = "Map", DialogData = "point"
+			{
+				attribute<point_rd> point:
+				[
+					 {405550,111100},{405550,115500},{401000,115500},{401000,111100},{405550,111100}
+				];
+				attribute<string> label := id(.) == 4 ? string(1) : string(id(.) + 1), DialogType = "LabelText";
+				attribute<point_rd> point_revers:= reverse(point);
+			}
+		}
+
+		unit<uint32>box : nrofrows = 1
+		{
+			attribute<point_rd> geometry         (polygon) := points2sequence(source/pointsetBB/point, const(0[box], source/pointsetBB), id(source/pointsetBB));
+			attribute<point_rd> geometry_reverse (polygon) := points2sequence(source/pointsetBB/point_revers, const(0[box], source/pointsetBB), id(source/pointsetBB));
+
+			attribute<float32>  area               := area (geometry, float32);
+			attribute<float32>  area_reverse       := area (geometry_reverse, float32);
+			
+		}
+
+// 		attribute<point_rd> border (.,polygon)
+// //		:	expr       = "points2sequence(source/pointset/point, \r\nsource/pointset/districtnr, \r\nsource/pointset/ordinal)"
+// 		:=	points2sequence(
+// 				source/pointset/point, 
+// 				source/pointset/districtnr, source/pointset/ordinal
+// 			);
+
+		unit<uint32> district
+		:	nrofrows = 7
+		,	DialogData = "border"
+		,	DialogType = "Map"
+		{
+			attribute<point_rd> border (.,polygon)
+//			:	expr       = "points2sequence(source/pointset/point, \r\nsource/pointset/districtnr, \r\nsource/pointset/ordinal)"
+			:=	points2sequence(
+					source/pointset/point, 
+					source/pointset/districtnr, source/pointset/ordinal
+				)
+			{
+				parameter<uint32> BrushColor: expr = "rgb(200,0,0)", DialogType = "BrushColor";
+				parameter<uint32> PenColor:   expr = "rgb(100,0,0)", DialogType = "PenColor";
+			}
+
+			attribute<string> label
+			:	['gebied1','gebied2','gebied3','gebied4','gebied5','gebied6','gebied7']
+			,	DialogData = "hoek_centroid"
+			{
+				parameter<uint32> LabelColor
+				:	DialogType = "LabelColor"
+				,	expr       = "rgb(0,0,0)";
+				parameter<uint32> LabelBackColor
+				:	DialogType = "LabelBackColor"
+				,	expr       = "rgb(245,245,245)";
+				parameter<float32> LabelSize
+				:	DialogType = "LabelSize"
+				,	expr       = "float32(8)";
+				parameter<string>  LabelFont
+				:	DialogType = "LabelFont"
+				,	expr       = "'Tahoma'";
+			}
+//			attribute<uint32> hoek:          [100,300,500,700,900,1200,1500], DialogType = "LabelAngle", cdf = "hoek_classes/classBreaks";
+			attribute<int32> hoek:          [-100,-300,500,700,900,1200,1500];
+			
+			attribute<float32> SymbolSize:      DialogType = "SymbolSize",
+				expr = "float32(3) * sqrt(float32(hoek))";
+			attribute<float32>  SymbolWorldSize: DialogType = "SymbolWorldSize", 
+				expr = "float32(2) * float32(sqrt(hoek))";
+
+			attribute<int32> hoek_centroid: expr = "hoek", cdf = "hoek_classes/classBreaks"
+			{
+				parameter<int16>    SymbolIndex: DialogType = "SymbolIndex", expr = "int16(66)";
+				attribute<point_rd> lokatie (district): expr = "centroid(border)", DialogType = "feature";
+			}
+			attribute<point_rd> hoek_centroid_wingdings := hoek_centroid/lokatie
+			{
+				parameter<string> SymbolFont  := 'wingdings', DialogType = "SymbolFont";
+				parameter<int16>  SymbolIndex := 71s,              DialogType = "SymbolIndex";
+				parameter<uint32> SymbolColor := rgb(0,0,0),       DialogType = "SymbolColor";
+			}
+			attribute<point_rd> hoek_centroid_arimo := hoek_centroid/lokatie
+			{
+				parameter<string> SymbolFont := 'Arimo',  DialogType = "SymbolFont";
+				parameter<int16> SymbolIndex := 75s,  DialogType = "SymbolIndex";
+				parameter<uint32> SymbolColor := rgb(0,0,0),  DialogType = "SymbolColor";
+			}
+			attribute<string> labelcode: ['code1','code2','code1','code2','code3','code1','code2'];
+
+			attribute<point_rd> kader(.,polygon): expr = "border"
+			{
+				parameter<uint32> BrushColor: expr = "4294967295"    , DialogType = "BrushColor";
+			}
+		}
+
+		unit<uint32> district_no_background
+		:	nrofrows = 7
+		,	DialogData = "border"
+		,	DialogType = "Map"
+		{
+			attribute<fpoint> border (.,polygon)
+			:=	points2sequence(
+					source/pointset/point, 
+					source/pointset/districtnr[district_no_background], source/pointset/ordinal
+				)
+			{
+				parameter<uint32> BrushColor: expr = "rgb(200,0,0)", DialogType = "BrushColor";
+				parameter<uint32> PenColor:   expr = "rgb(100,0,0)", DialogType = "PenColor";
+			}
+
+			attribute<string> label
+			:	['gebied1','gebied2','gebied3','gebied4','gebied5','gebied6','gebied7']
+			,	DialogData = "hoek_centroid"
+			{
+				parameter<uint32> LabelColor
+				:	DialogType = "LabelColor"
+				,	expr       = "rgb(0,0,0)";
+				parameter<uint32> LabelBackColor
+				:	DialogType = "LabelBackColor"
+				,	expr       = "rgb(245,245,245)";
+				parameter<float32> LabelSize
+				:	DialogType = "LabelSize"
+				,	expr       = "float32(8)";
+				parameter<string>  LabelFont
+				:	DialogType = "LabelFont"
+				,	expr       = "'Tahoma'";
+			}
+			attribute<uint32> hoek:          [100,300,500,700,900,1200,1500];
+		}
+
+		unit<uint32> district_kader
+		:	expr       = "district"
+		,	DialogData = "border"
+		,	DialogType = "Map"
+		{
+			attribute<point_rd> kader(.,polygon): expr = "district/border"
+			{
+				parameter<uint32> BrushColor: expr = "4294967295"    , DialogType = "BrushColor";
+				parameter<int16>  PenWidth:   expr = "int16(5)"      , DialogType = "PenWidth";
+				parameter<uint32> PenColor:   expr = "rgb( 50,50,50)", DialogType = "PenColor";
+			}
+			attribute<point_rd> WithTransp(.,polygon): expr = "district/border"
+			{
+				parameter<uint32> BrushColor: expr = "4294967295"    , DialogType = "BrushColor";
+				parameter<int16>  PenWidth:   expr = "int16(5)"      , DialogType = "PenWidth";
+				parameter<uint32> PenColor:   expr = "rgb( 50,50,50)", DialogType = "PenColor";
+			}
+		}
+
+		unit<uint32> district_transparant
+		:	expr       = "district"
+		,	DialogData = "border"
+		,	DialogType = "Map"
+		{
+//			attribute<uint32> Brusholor : [rgb(255,255,255),rgb(255,0,0),rgb(0,255,0),null,null,null], DialogType = "BrushColor";
+			attribute<uint32> NoData : [0,1,2,3,null,null,null];
+		}
+
+		unit<uint32> pointset: nrofrows = 2
+		{
+			attribute<point_rd> point:
+			[
+				 {402000,113000},
+				 {402084, 113193}
+			]
+			{
+				parameter<float32> SymbolSize:  DialogType = "SymbolSize",  expr = "float32(32)";
+				parameter<int16>   SymbolIndex: DialogType = "SymbolIndex", expr = "int16(66)";
+			}
+
+		}
+	}
+	unit<uint32> styles
+	:	nrofrows = 7
+	,	DialogData = "border"
+	,	DialogType = "Map"
+	{
+		attribute<BackGroundLayer/point_rd> border (polygon)
+		:	expr       = "points2sequence(BackGroundLayer/source/pointset/point, BackGroundLayer/source/pointset/districtnr[styles], BackGroundLayer/source/pointset/ordinal)"
+		,	DialogData = "district_kader/kader" 
+		{
+			parameter<uint32> BrushColor: expr = "rgb(200,0,0)", DialogType = "BrushColor";
+			parameter<uint32> PenColor:   expr = "rgb(100,0,0)", DialogType = "PenColor";
+			parameter<int16>  PenStyle:   expr = "int16(3)", DialogType = "PenStyle";
+			parameter<int16>  PenWidth:   expr = "int16(4)", DialogType = "PenWidth";
+		}
+		attribute<BackGroundLayer/point_rd> lokatie: expr = "centroid(border)"
+		{
+			parameter<uint32> SymbolColor 
+			:	DialogType = "SymbolColor"
+			,	expr       = "rgb(0,0,100)";
+			parameter<float32> SymbolSize
+			:	DialogType = "SymbolSize"
+			,	expr       = "float32(48)";
+			parameter<m> SymbolWorldSize
+			:	DialogType = "SymbolWorldSize"
+			,	expr       = "value(10, m)";
+			parameter<int16> SymbolIndex
+			:	DialogType = "SymbolIndex"
+			,	expr       = "int16(61)";
+		}
+		attribute<string> label: ['a','b','c','d','e','f','g'], DialogType = "LabelText"
+		{
+			parameter<uint32> LabelColor
+			:	DialogType = "LabelColor"
+			,	expr       = "rgb(100,100,100)";
+			parameter<uint32> LabelBackColor
+			:	DialogType = "LabelBackColor"
+			,	expr       = "rgb(0,255,0)";
+			parameter<float32> LabelSize
+			:	DialogType = "LabelSize"
+			,	expr       = "float32(42)";
+			parameter<m> LabelWorldSize
+			:	DialogType = "LabelWorldSize"
+			,	expr       = "value(10, m)";
+			parameter<string>  LabelFont
+			:	DialogType = "LabelFont"
+			,	expr       = "'Tahoma'";
+		}
+	}
+	container Tiff_GUI
+	{
+		container units
+		{
+			unit<uint32> color;
+		}
+		container TrueColor
+		{
+			parameter<string> dir := '%projdir%/data';
+			unit<spoint> Grid: 
+				StorageName     = "= dir + '/tiff_tc.tif'",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<units/color> GridData:   DialogType = "BrushColor";
+			}
+			unit<spoint> IncorrectUint32Domain:
+				StorageName     = "= dir + '/tiff_tc.tif'",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<units/color> GridData:   DialogType = "BrushColor";
+			}
+		}
+		container Palette
+		{
+			unit<uint4> colorindex: isHidden = "True"
+			{
+				attribute<units/color> palette: DialogType = "BrushColor", expr = "Grid/PaletteData";
+			}
+
+			unit<spoint> Grid:
+				StorageName     = "%projdir%/data/tiff_pa.tif", 
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<colorindex>  GridData;
+				attribute<units/color> PaletteData (colorindex);
+			}
+
+			container OtherValuesUnits
+			{
+				attribute<uint2>  uint2  (Grid): expr = "uint2(Grid/GridData)";
+				attribute<uint8>  uint8  (Grid): expr = "uint8(Grid/GridData)";
+				attribute<uint16> uint16 (Grid): expr = "uint16(Grid/GridData)";
+				attribute<uint32> uint32 (Grid): expr = "uint32(Grid/GridData)";
+				attribute<uint64> uint64 (Grid): expr = "uint64(Grid/GridData)";
+
+				attribute<int8>  int8  (Grid): expr = "int8(Grid/GridData)";
+				attribute<int16> int16 (Grid): expr = "int16(Grid/GridData)";
+				attribute<int32> int32 (Grid): expr = "int32(Grid/GridData)";
+				attribute<int64> int64 (Grid): expr = "int64(Grid/GridData)";
+
+				attribute<float32> float32 (Grid): expr = "float32(Grid/GridData)";
+				attribute<float64> float64 (Grid): expr = "float64(Grid/GridData)";
+
+				attribute<bool> bool (Grid): expr = "bool(Grid/GridData)";
+
+			}
+		}
+	}
+	container Tiff_error
+	{
+		container GeoDMSDriver
+		{
+			unit<spoint> Grid: 
+				StorageName     = "%SourceDataDir%/EuClueScanner/Test/permeability100.tif",
+				//DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<uint32> GridData;
+			}
+
+		}
+		container GDALDriver
+		{
+			unit<ipoint> Grid: 
+				StorageName     = "%SourceDataDir%/EuClueScanner/Test/permeability100.tif",
+				StorageType = "gdal.grid",
+				//DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<int32> GridData;
+			}
+		}
+	}
+	container IssueExportShapeFiles
+	{
+		unit<uint32> gemeente
+		:	StorageName     = "%projdir%/data/kennemerland_direct.dbf"
+		,	StorageReadOnly = "True"
+		,	DialogData      = "grens"
+		,	DialogType      = "Map"
+		,	SyncMode        = "None"
+		{
+			attribute<fpoint> grens (polygon): StorageName = "%projdir%/data/kennemerland_direct.shp";
+			attribute<string> GM_NAAM;
+		}
+	}
+	container StringLiteral
+	{
+		parameter<String> AsHex :  Expr = "AsHex(300)";
+		parameter<String> blabla:  Expr = "UrlDecode('blabla')";
+		parameter<String> Asterisk:  Expr = "UrlDecode('%32')";
+		parameter<String> CyrillicBeta:  Expr = "UrlDecode('%D0%91')"; // U+0411
+		parameter<String> ChineseSymbol: Expr = "UrlDecode('%ED%84%9E')"; // U+D11E
+		parameter<String> CyrillicBetalHex: Expr = "AsHex(CyrillicBeta)";
+		parameter<String> ChineseSymbolHex: Expr = "AsHex(ChineseSymbol)";
+		parameter<String> BelgieANSI := 'Belgi'+ UrlDecode('%EB');
+		parameter<String> BelgieUTF8 := to_utf(BelgieANSI);
+		parameter<String> BelgieUSASCII := from_utf(BelgieUTF8);
+		parameter<bool> test: expr = "'Inwoner' == 'INWONER'";	
+		parameter<string> LangeString := aslist(string(id(range(uint32, 0, 1000))), ' ');
+	}
+	
+	container RelativePaths
+	{
+		container fileset
+		{
+			unit<uint32> pand: nrofrows = 5
+			{
+				attribute<string> key : expr = "string(id(.))";
+
+			}
+		}
+		unit<uint32> pand: expr = "RelativePaths/fileset/pand"
+		{
+			attribute<string> key : expr = "'I' + string(id(.))";
+			attribute<string> key2: expr = "'II' + string(id(RelativePaths/fileset/pand))";
+			container later {
+			unit<uint32> pand_sel: expr = "Subset(id(RelativePaths/fileset/pand) <= 3)"
+			{
+				attribute<string> key:  expr = "pand/key[nr_OrgEntity]";
+				attribute<string> key2: expr = "pand/key2[nr_OrgEntity]";
+			}
+			}
+			
+			container hide {
+			container hide {
+//				attribute<string> key_ref(...) : expr = "pand/key", Using = "UndefTest";
+				container T: IsTemplate = "True";
+				container TI: Expr  = "T(xxx)";
+			}}
+
+		}
+	}
+	container PotentialLargeGrids
+	{
+		unit<uint32> Dist2Range;
+		unit<spoint> pot2: expr = "range(spoint, point(int16(-2), int16(-2)), point(int16(3),int16(3)))"
+		{
+			attribute<Dist2Range> distMatr:  expr = "dist2(point(int16(0), int16(0), pot2), Dist2Range)";
+			attribute<float32> AbsWeight: expr = "distMatr <= uint32(4) ? Float32(1.0) : Float32(0.0)";
+		}
+
+		container Potential
+		{
+			unit<spoint> i69dn2
+			:	StorageName     = "%SourceDataDir%/AHN/cm50_grid_opgevuld/i69dn2.tif"
+			,	StorageType     = "gdal.grid"
+			,	DialogData      = "Geografie/point_rd"
+			,	StorageReadOnly = "True"
+			{
+				attribute<float32> GridData:   DialogType = "BrushColor";
+				attribute<float32> potential_2: expr = "potential(GridData < float32(0) ? float32(0) : GridData ,pot2/AbsWeight)";
+			}
+		}
+	}
+	container export
+	{
+/*	
+		attribute<uint32> GridData      (Tiff_GUI/TrueColor/Grid): expr = "Tiff_GUI/TrueColor/Grid/GridData";
+		attribute<uint32> mod_255       (Tiff_GUI/TrueColor/Grid): expr = "GridData % 255";
+		attribute<uint32> GridData_grey (Tiff_GUI/TrueColor/Grid)
+		:	expr         = "rgb(mod_255,mod_255,mod_255)"
+		,	StorageName  = "%projdir%/data/tiff_grey.tif";
+*/		
+		template TableComposer
+		{
+		   parameter<string> zone_name;
+		   unit<uint32> 	domain;
+		   parameter<string> context;
+		   parameter<String> Fieldlist;
+		   
+		   // ExportDomain is a domain unit 
+		   // with two attributes as subitems configured: id & Dist
+		   parameter<String> FieldSeperator := ';';
+		   parameter<String> FileName       := '%LocalDataProjDir%/'+ zone_name +'.csv';
+
+		   unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
+		   {
+			  attribute<string> Name := ReadArray(FieldList,.,string,0);
+		   }
+		   parameter<string> NewLine := '\n';
+		   parameter<String> Header  := FieldList;
+		   
+		   //attribute<String> Body (domain) : expr = "= AsList('String(' + context + Field/Name + ')', ';')";
+			  
+			 attribute<String> Body (domain) := 
+				=AsList(
+				 +'String(' + context + Field/Name+')',' + '+Quote(FieldSeperator)+' +'
+			  );
+		  
+		   parameter<String> Result:= Header + NewLine + AsList(Body, NewLine)
+		   ,  StorageName = "=FileName"
+		   ,  StorageType = "str";
+		}
+		
+		unit<uint32> bigset  := range(uint32, 0, 300000000)
+		{
+			attribute<uint32> x := id(.);
+			attribute<uint32> x2 := x*2;
+		}
+		container writetable := TableComposer('bigsettest', bigset, 'bigset/', 'x;x2');
+		parameter<string> readback: StorageName = "%localdataprojdir%/bigsettest.csv", storagetype = "str", storagereadonly = "TRUE";
+		parameter<string> right := right(readback, 300);
+		parameter<string> rightResult := right(writetable/Result, 300);
+		
+	}
+	container ambiguous
+	{
+		unit<spoint> Error
+		:	Expr            = "Tiff_GUI/TrueColor/Grid"
+		,	StorageName     = "%projdir%/data/tiff_grey.tif"
+		,	DialogData      = "units/point_rd"
+		,	StorageReadOnly = "True"
+		{
+			attribute<uint32> GridData: DialogType = "BrushColor";
+		}
+		container OK
+		//:	Expr            = "Tiff_GUI/TrueColor/Grid"
+		:	StorageName     = "%projdir%/data/tiff_grey.tif"
+		,	DialogData      = "units/point_rd"
+		,	StorageReadOnly = "True"
+		{
+			attribute<uint32> GridData (Tiff_GUI/TrueColor/Grid): DialogType = "BrushColor";
+		}
+	}
+	container issue599_unique_exportnames
+	{
+		container export1
+		{
+			parameter<uint32> A:[1];
+			parameter<uint32> B:[2];
+			parameter<uint32> C:[3];
+		}
+		container export2
+		{
+			container export1
+			{
+				parameter<uint32> B:[4];
+			}
+		}
+		container export3
+		{
+			parameter<uint32> C:[5];
+		}
+	}
+	container MultipleGeoTypes
+	{
+		container db_with_3_layers
+		:	StorageName = "%projdir%/data/test_multiple_geotypes.gml"
+		,	StorageType = "gdal.vect"
+		,	SyncMode    = "AllTables";
+	}
+	container ExportSettings
+	{
+		parameter<float64> width:  [25.52];
+		parameter<float64> height: [19.14];
+
+		parameter<DPoint>  PaperSize: expr = "Point(width / 100.0 , height / 100.0)", url ="about:papersize is <B>defined</B> as height * width";
+
+		parameter<Float64> ScaleDenom: [30000];
+		parameter<Float64> Scale:      expr = "1.0 / ScaleDenom";
+		
+		parameter<float64> dwsc:        [null];
+		parameter<DPoint>  DotWorldSize: expr = "Point(dwsc,dwsc)";
+
+		parameter<UInt32 > NrSubDotsPerDot: [1];                               // alternative spec for nrSubDotsPerDot, default = 2
+
+		parameter<Float64> dpi:        [400.0];                                // alternative spec for dotSize in dots per inch (default: 600 pdi)
+		parameter<DPoint>  DotSize:    expr = " Point(0.0254/dpi,0.0254/dpi)"; // size of dot on paper in m (default 600 dpi)
+		parameter<Float64> ViewFactor: [1.0];                                  // paper view distance relative to screen view distance
+
+		parameter<IPoint>  MaxNrSubDotsPerTile: [(4096, 4096)];
+	}
+	container ExprNewSyntax
+	{
+		parameter<float64> OK: expr =
+			"  ExportSettings/width"
+//			"+ ExportSettings/height"
+			"+ ExportSettings/width"
+			;
+		parameter<float64> NotOk:=
+			  ExportSettings/width
+//			+ ExportSettings/height
+			+ ExportSettings/width
+			;
+	}
+	container UnitsWithoutData
+	{
+		unit<uint32> ligplaats
+		{
+			attribute<string> LIG_ID := string(id(.));
+		}
+	}
+	container gdal_header
+	{
+		unit<uint32> header_met_nr: StorageName = "%ProjDir%/Data/header_met_nr.csv", StorageType = "gdal.vect";
+	}
+	
+	container gdal_quote_in_header
+	{
+		unit<uint32> header_met_quote: StorageName = "%ProjDir%/Data/header_met_quote.csv", StorageType = "gdal.vect";
+	}
+	
+	container substr
+	{
+		unit<uint32> table: nrofrows = 15
+		{
+			attribute<string> label:
+			[
+				 'Wijk 00 Onderbanken'
+				,'Wijk 00 Schaesberg'
+				,'Wijk 01 Nieuwenhagen'
+				,'Wijk 02 Ubach over Worms'
+				,'Wijk 00 Beek - Spaubeek'
+				,'Wijk 01 Beek-Zuid'
+				,'Wijk 00 Reuver'
+				,'Wijk 01 Beesel'
+				,'Aijen'
+				,'Oud-Bergen'
+				,'Nieuw-Bergen'
+				,'Afferden'
+				,'Siebengewald'
+				,'Well'
+				,'Wellerlooi'
+			];
+			attribute<string> test := substr(label,8,strlen(label) - 8); 
+		}
+	}
+	container ChangingReferences
+	{
+		unit<uint32> buurt: nrofrows = 2
+		{
+			attribute<uint32> inw  : [200,500];
+
+			unit<uint32> selectie := subset(buurt/inw > 300)
+			{
+				attribute<uint32> inw  := buurt/inw[nr_OrgEntity];
+			}
+		}
+		container Cases
+		{
+			unit<uint32> zichtjaren: nrOfrows = 2
+			{
+				attribute<string> label : ['j2014', 'j2018'];
+			}
+
+			unit<uint32> buurt := ChangingReferences/buurt/selectie // ,	FreeData   = "False"
+			{
+				container per_zichtjaar :=
+					for_each_ne(zichtjaren/Label
+						, 'Template(buurt)'
+					)
+				{
+					Template template
+					{
+						unit<uint32> domain;
+					}
+				}
+			}
+		}
+	}
+
+	container SubItemFunctionsData
+	{
+		parameter<string> dir         := "%LocalDataProjDir%/test";
+		parameter<uint32> Transparent := 4294967295;
+
+		unit<uint32> file
+		:	StorageName     = "=dir + '/CBS/gemeente.dbf'"
+		,	StorageType     = "gdal.vect"
+		{
+			attribute<uint32> att := const(Transparent,.) , DialogType = "BrushColor";
+		}
+
+//		parameter <Brondata/wijk/StudieGebied> wijk_rel;
+	}
+
+	container Inherited_PropValues
+	{
+		unit<uint32> name        := Inherited_PropValues(SubItemFunctionsData, 'name');
+		unit<uint32> StorageName := Inherited_PropValues(Tiff_GUI/TrueColor, 'StorageName');
+		unit<uint32> both        := Inherited_PropValues(SubItemFunctionsData, union_data(bool, 'name', 'StorageName'));
+	}
+	container SubItem_PropValues
+	{
+		container level1
+		{
+			container level2
+			{
+				container level3
+				{
+					unit<uint32> name := SubItem_PropValues(SubItem_PropValues,'name');
+				}
+			}
+		}
+	}
+	
+	container FullNameTest
+	{
+		template export
+		{
+			parameter<uint32> n;
+
+			unit<uint32> i := range(uint32, 0, n)
+			,	StorageName = "= '%LocalDataProjDir%' + PropValue(., 'FullName') + '/i.dbf'"
+			{
+				attribute<uint32>  sqr  := id(i)*id(i);
+				attribute<float64> sqrt := sqrt(float64(sqr));
+			}
+		}
+
+		container exports
+		{
+			container a := export(30);
+			container b := export(40);
+		}
+		parameter<string> FullName := PropValue(exports/a, 'full_name');
+	}
+	
+	container Overlap
+	{
+		unit<float32> coord_rd    := baseunit('m', float32);
+		unit<fpoint>  point_rd; //    := baseunit('m', fpoint);
+		unit<ipoint>  point_rd_mm := // for polygon functions
+			gridset(
+				 point_rd
+				,point(Float32(0.001),Float32(0.001),point_rd)
+				,point(Float32(0)    ,Float32(0)    ,point_rd)
+				,ipoint
+			);
+
+		unit<uint32> buurt :
+			StorageName = "%SourceDataDir%/CBS/buurt_overlap.shp"
+		//	StorageName = "%projdir%/data/buurt_overlap.shp"
+		,	StorageType    = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<string>   BU_code;
+			attribute<string>   BU_naam;
+			attribute<point_rd> geometry (poly);
+		}
+
+		unit<uint32> reverse := buurt
+		{
+			attribute<point_rd> geometry   (polygon) := buurt/geometry[#buurt - (id(buurt) + 1)];
+			attribute<buurt>    buurt_rel           := #buurt - (id(buurt) + 1);
+		}
+		
+		container met_overlap_grid := uniqueOverlap(buurt, reverse);
+		
+		unit<uint32> overlap_vector := polygon_connectivity(ipolygon(buurt/geometry[point_rd_mm]))
+		{
+			attribute<point_rd> geometry_F1 (poly) := buurt/geometry[F1];
+			attribute<point_rd> geometry_F2 (poly) := buurt/geometry[F2];
+
+			attribute <ipoint>  intersect   (poly) :=  ipolygon(geometry_F1[point_rd_mm]) * ipolygon(geometry_F2[point_rd_mm]);
+			attribute<float32>  area      := area(intersect[point_rd], float32);
+		}
+
+		unit<uint32> met_overlap_vector := Subset(overlap_vector/area > 0f)
+		{
+			attribute<point_rd> geometry (poly) := value(overlap_vector/intersect[nr_OrgEntity], point_rd);
+		}
+
+		container Grid
+		{
+			attribute<point_rd> lowerbound (buurt) := lower_bound(buurt/geometry);
+			attribute<point_rd> upperbound (buurt) := upper_bound(buurt/geometry);
+	
+			parameter<m> x_min := 13871.5[m]; //min(PointCol(lowerbound)[m]);
+			parameter<m> x_max := 278026[m]; // max(PointCol(upperbound)[m]);
+	
+			parameter<m> y_min := 306846[m]; // min(PointRow(lowerbound)[m]);
+			parameter<m> y_max := 619328[m]; //max(PointRow(upperbound)[m]);
+		
+			parameter<m> gridsize:= 10[m];
+
+			parameter<int16> nr_cols := int16((x_max - x_min) / gridsize);
+			parameter<int16> nr_rows := int16((y_max - y_min) / gridsize);
+
+			unit<spoint> untiled_domain :=
+				range(
+					 gridset(
+						 point_rd
+						,point(float32(-gridsize), float32(gridsize), point_rd)
+						,point(y_max, x_min, point_rd)
+						,spoint
+					)
+					,point(0s, 0s)
+					,point(nr_rows, nr_cols)
+				)
+			,	DialogData = "point_rd";
+
+			unit<spoint> domain := TiledUnit(point(1024s, 1024s, untiled_domain))
+			{
+				parameter<m>     size := gridsize;
+				attribute<.>     id   := id(.);
+				attribute<int16> row  := PointRow(id);
+				attribute<int16> col  := PointCol(id);
+			}
+		}
+		
+		Template uniqueOverlap
+		{
+			// begin case parameters
+			unit<uint32> buurt;
+			unit<uint32> reverse;
+			// end case parameters
+	
+			attribute<buurt>   buurt_rel         (grid/Domain) := poly2grid(buurt/geometry, grid/domain);
+			attribute<reverse> reverse_rel       (grid/Domain) := poly2grid(reverse/geometry, grid/domain);
+			attribute<buurt>   reverse_buurt_rel (grid/Domain) := reverse/buurt_rel[reverse_rel];
+			attribute<bool>    hasOverlap        (grid/Domain) := buurt_rel <> reverse_buurt_rel;
+	
+			unit<uint32> overlap := Subset(hasOverlap)
+			{
+				attribute<buurt>  dom_rel := buurt_rel[nr_OrgEntity];
+				attribute<string> BU_code := buurt/BU_code[dom_rel];
+				attribute<string> BU_naam := buurt/BU_naam[dom_rel];
+	
+				attribute<buurt>  rev_rel := reverse_buurt_rel[nr_OrgEntity];
+				attribute<string> BU_code_overlap := buurt/BU_code[rev_rel];
+				attribute<string> BU_naam_overlap := buurt/BU_naam[rev_rel];
+				
+			}
+			unit<uint32> buurtI := unique(overlap/dom_rel)
+			,	DialogType = "map"
+			,	DialogData = "geometry"
+			{
+				attribute<string>   BU_code         := buurt/bu_code[values];
+				attribute<string>   BU_naam         := buurt/bu_naam[values];
+				attribute<point_rd> geometry (poly) := buurt/geometry[values];
+			}
+			
+			unit<uint32> buurtII := unique(overlap/rev_rel)
+			,	DialogType = "map"
+			,	DialogData = "geometry"
+			{
+				attribute<string>   BU_code         := buurt/bu_code[values];
+				attribute<string>   BU_naam         := buurt/bu_naam[values];
+				attribute<point_rd> geometry (poly) := buurt/geometry[values];
+			}
+
+			unit<uint32> buurt_alle := union_unit(buurtI, buurtII)
+			,	DialogType = "map"
+			,	DialogData = "geometry"
+			{
+				attribute<string>   BU_code         := union_data(., buurtI/bu_code,  buurtII/bu_code);
+				attribute<string>   BU_naam         := union_data(., buurtI/BU_naam,  buurtII/BU_naam);
+				attribute<point_rd> geometry (poly) := union_data(., buurtI/geometry, buurtII/geometry);
+			}
+
+			container pointset_per_buurt := 
+				for_each_nex(
+					 buurt_alle/BU_code
+					,'sequence2points(buurt_alle/geometry[' + string(id(buurt_alle)) + '])'
+					,uint32
+				);
+				
+			container BU16580300_BU16580308
+			{
+				unit<uint32> overlappende_intermediates:= Subset(isDefined(rlookup(pointset_per_buurt/BU16580308/Point, pointset_per_buurt/BU16580300/Point)))
+				{
+					attribute<point_rd> geometry  := pointset_per_buurt/BU16580308/Point[nr_OrgEntity];
+				}
+			}
+		}
+	}
+	container replace
+	{
+		parameter<string> file_name_part  := replace('\test/','\','/');
+	}
+	
+	container table
+	{
+		unit<fpoint>  point_rd    := baseunit('m', fpoint);
+
+		unit<uint32> adres_nl
+		:	StorageName     = "='%SourceDataDir%/BAG/snapshots.ext/20170908/adres.fss'"
+		,	StorageReadOnly = "True"
+		,	DialogData      = "geometry"
+		,	DialogType      = "Map"
+		{
+			attribute<point_rd> geometry;
+			attribute<string>   nummeraanduiding_id;
+			attribute<string>   postcode;
+
+		}
+
+		unit<uint32> adres := 
+		  Subset(isDefined(adres_nl/geometry) && strlen(trim(adres_nl/postcode))==6)
+		,	DialogData      = "geometry"
+		,	DialogType      = "Map"
+		{
+			attribute<point_rd> geometry            := adres_nl/geometry[nr_OrgEntity];
+			attribute<string>   nummeraanduiding_id := adres_nl/nummeraanduiding_id[nr_OrgEntity];
+			attribute<string>   postcode            := adres_nl/postcode[nr_OrgEntity];
+			attribute<float32>  X_rd                := PointCol(geometry);
+			attribute<float32>  Y_rd                := PointRow(geometry);
+			attribute<pc6>      pc6_rel             := rlookup(postcode, pc6/values);
+		}
+
+		unit<UInt32> wijk_2016:
+			DialogData = "geometry",
+			DialogType = "Map",
+			StorageName = "='%SourceDataDir%/CBS/2016/wijk_2016.shp'",
+			StorageReadOnly = "True",
+			StorageType = "gdal.vect",
+			SyncMode = "all"
+		{
+			attribute<point_rd> Geometry(.,poly);
+		}
+
+		unit<uint32> pc6 := unique(adres/postcode)
+		{
+			attribute<m>        x        := mean(adres/X_rd[m], adres/pc6_rel);
+			attribute<m>        y        := mean(adres/Y_rd[m], adres/pc6_rel);
+			attribute<point_rd> geometry := point(y, x, point_rd);
+
+			attribute<string>   WK_code  := wijk_2016/WK_code[point_in_polygon(geometry, wijk_2016/geometry)];
+			attribute<string>   WK_label := wijk_2016/WK_NAAM[point_in_polygon(geometry, wijk_2016/geometry)];
+		}
+	}
+	container folderinfo
+	{
+		container impl
+		{
+			parameter<string> DataDir         := '%projdir%/data';
+			
+			parameter<string> Slash           : [ '/' ];
+			parameter<string> BackSlash       : [ '\\' ];
+			parameter<string> NewLine         : [ '\n' ];
+
+			parameter<string> ComSpec         := Expand(., '%env:ComSpec%');
+			parameter<string> FileNameDirInfo := '%LocalDataProjDir%/dirinfo.str';
+
+			parameter<string> DirCmdOrg       := Expand(., 'Dir '+ DataDir +'/*.* > ' + FileNameDirInfo);
+			parameter<string> DirCmd          := Replace(DirCmdOrg, Slash, BackSlash) + ' /B';
+		}
+
+		container writer  := exec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataProjDir%'));
+		parameter<string> WrittenFile := do(writer, impl/FileNameDirInfo), KeepData="True";
+		parameter<string> bestand: Storagename = "=WrittenFile", StorageReadOnly = "True";
+
+		container bestand_selectie
+		{
+			unit<uint32> alle_regels := range(uint32, 0, strcount(bestand,impl/NewLine))
+			{
+				attribute<string> inhoud := uppercase(readLines(bestand, ., 0));
+			}
+		}
+	}
+	
+	container DomainCastings
+	{
+		unit<uint32> direction_uint32: nrofrows = 4
+		{
+			attribute<string> label: ['North','East','West','South'];
+		}
+		unit<uint8> direction_uint8 := uint8(direction_uint32)
+		{
+			attribute<string> label := union_data(., direction_uint32/label);
+		}
+	}
+	container crossTab
+	{
+		unit<float32>nr_persons;
+		unit<float32>degrees_celsius;
+
+		unit<uint32> state: NrOfRows = 5
+		{
+			attribute<string> label: ['StateI','StateII','StateII','StateIII','StateV'];
+			attribute<string> name := label;
+		}
+
+		unit<uint32> time: NrOfRows = 2
+		{
+			attribute<string> label: ['2000','2010'];
+			attribute<string> name := 'j' + label;
+		}
+
+		unit<uint32> RegionTime: NrOfRows = 5
+		{
+			attribute<string>          districtname      : ['RegA','RegB','regC','RegD','RegX'];
+			attribute<nr_persons>      nr_inhabitants    : [100,200,150,50,250];
+			attribute<degrees_celsius> AverageTemperature: [17,22,25,13,19];
+			attribute<string>          statename         : ['StateI','StateII','StateII','StateIII','StateV'];
+			attribute<string>          year              : ['2000','2000','2000','2000','2010'];
+			attribute<state>           state_rel         := rlookup(statename, state/label);
+			attribute<time>            time_rel          := rlookup(year, time/label);
+		}
+		container CrossTab_SumInhabitants :=
+		   for_each_nedv(
+		        time/name
+		      ,'sum(RegionTime/time_rel == ' + string(id(time)) +'[time] 
+		         ? RegionTime/nr_inhabitants : 0[nr_persons], RegionTime/state_rel)'
+		      ,state
+		      ,nr_persons
+		);
+		container CrossTab_MeanTempeture :=
+		   for_each_nedv(
+		        time/name
+		      ,'mean(RegionTime/time_rel == ' + string(id(time)) +'[time] 
+		         ? RegionTime/AverageTemperature : (0 / 0)[degrees_celsius], RegionTime/state_rel)'
+		      ,state
+		      ,degrees_celsius
+		);
+	}
+	unit<uint32> testExports := BackGroundLayer/district
+	{
+		attribute<string> id    := BackGroundLayer/district/label;
+		attribute<uint32> hoek  := BackGroundLayer/district/hoek;
+	}
+	template TemplTempl {
+		parameter<float32> x;
+		
+		template InnerTempl {
+			parameter<float32> y;
+			parameter<float32> r := x * y;			
+		}
+		container Mul3 := InnerTempl(3.0f);
+		container Mul4 := InnerTempl(4.0f);
+	}
+	container TemplTemplInst := TemplTempl(5.0f);
+	
+	container ShowExpressioninDetailPage
+	{
+		unit<uint32> class: nrofrows = 3
+		{
+			attribute<string> name     := 'n' + string(id(.));
+			attribute<string> argument :=  string(id(.) * 5 + 2 + 21 +4 - (id(.) * 2));
+		}
+
+		template Ok
+		{
+			parameter<string> label;
+		}
+
+		template withError
+		{
+			parameter<m4> label;
+		}
+
+		container Show    := for_each_ne(class/name, 'Ok(' + quote(class/argument) + ')');
+		container NoShow := for_each_ne(class/name, 'withError(' + quote(class/argument) + ')');
+	}
+}

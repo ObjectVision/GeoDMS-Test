@@ -1,0 +1,20 @@
+container must_not_write
+{
+	unit<uint32> data : nrofrows = 3
+	{
+		attribute<uint32> A    :[1,2,3];
+		attribute<uint32> test := A, IntegrityCheck = "sum(A) == 5";
+		attribute<uint32> test_ref := test;
+		attribute<uint32> test_p1  := test + 1;
+	}
+	parameter<string> export := string(mean(data/test) + 1), storagename = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_not_write_result.txt", StorageType = "str";
+
+
+	parameter<string> read_result := ExistingFile('not exists', '%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_not_write_result.txt'); 
+
+	parameter<string> test_log := strcount(read_result,'not exists') > 0
+		? '' 
+		: 'integrity check must NOT write test: ' + expand(., '%configDir%') + '.dms ' + PropValue(read_result, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_not_write.txt";
+}

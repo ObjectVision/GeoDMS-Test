@@ -1,0 +1,24 @@
+container CalcCache
+{
+	unit<float32> m        := baseunit('m', float32);
+	unit<fpoint>  point_rd_base;
+	unit<fpoint>  point_rd := range(point_rd_base, point(300000[m],0[m]), point(625000[m],280000[m]));
+
+	unit<uint32> PointSet: nrofrows = 750
+	{
+		attribute<point_rd> geometry     := point(id(.)[m],id(.)[m],point_rd);
+		attribute<point_rd> geometry_arc := point(const(max(id(.)),.)[m],id(.)[m],point_rd);
+		
+		attribute<arcset>   sequence := value(id(.) / 2, arcset);
+		attribute<uint32>   ordinal  := id(.) % 2;
+		
+	}
+	unit<uint32> arcset := range(uint32,0,#PointSet / 2)
+	{
+		attribute<point_rd> geometry(arc) := points2sequence(PointSet/geometry_arc, PointSet/sequence, PointSet/ordinal);
+	}
+	unit<uint32> connect := connect(arcset/geometry, PointSet/geometry), FreeData = "False"
+	{
+		attribute<m> UnionData_length := arc_length(UnionData, m);
+	}
+}

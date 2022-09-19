@@ -1,0 +1,54 @@
+container issue_241
+{
+	unit<float32> m;
+	unit<float32> coord_rd := m;
+	unit<fpoint>  point_rd_wms:
+		Format     = "EPSG:28992",
+		DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
+	unit<fpoint>  point_rd    := range(point_rd_wms, point(0f,250000f), point(350000f,650000f)); 
+
+	parameter<m> gridsize := 5[m];
+
+	parameter<m> minX  :=  99454[m];
+	parameter<m> maxX  := 107270[m];
+	parameter<m> minY  := 391989[m];
+	parameter<m> maxY  := 405650[m];
+
+	parameter<point_rd> TopLeftCoord :=  point(maxY, minX, point_rd);
+
+	parameter<int16> nrofrows := int16((maxY - minY) / gridsize);
+	parameter<int16> nrofcols := int16((maxX - minX) / gridsize);
+
+	unit<spoint> m5grid_src := range(
+			 gridset(
+				 point_rd
+				,point(-gridsize, gridsize, point_rd)
+				,TopLeftCoord
+				,spoint
+			 )
+			,point(int16(0), int16(0))
+			,point(nrofrows, nrofcols)
+		);
+
+	unit<spoint> m5grid := TiledUnit(point(1024s, 1024s, m5grid_src))
+	{
+		attribute<uint32> att := const(1,.);
+	}
+
+	unit<spoint> isWeg_grid: StorageName = "%projDir%/data/weg.tif"
+	,	StorageType = "gdal.grid" 
+	,	DialogData  = "point_rd" 
+	{
+		attribute<uint8> GridData;
+		attribute<uint8> ReadData (m5grid);
+	}
+	
+	unit<spoint> kernel_5_5_cells := range(spoint, point(-2s, -2s), point(3s, 3s))
+	{
+		attribute<uint32>  distMatr    := dist2(point(0s, 0s, .), uint32);
+		attribute<float32> absWeight   := distMatr < 5 ? 1f : 0f;
+		attribute<float32> relWeight   := absWeight / sum(absWeight);
+	}
+	attribute<float32> isWegpot (m5grid):= potential(float32(isWeg_grid/ReadData), kernel_5_5_cells/absWeight);
+
+}

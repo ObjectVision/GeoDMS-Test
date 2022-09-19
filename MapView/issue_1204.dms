@@ -1,0 +1,15 @@
+container issue_1204
+{
+	container Countries
+	{
+		unit<uint8> Country
+		:	StorageName     = "%SourceDataDir%/Mondiaal/landen/countries_GADM_2012_UCD_v5.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<dpoint>  Geometry(polygon);
+			attribute<string>  Name;
+			attribute<float64> area := area(Geometry, float64);
+		}
+	}
+}

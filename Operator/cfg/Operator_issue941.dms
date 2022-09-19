@@ -1,0 +1,212 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van de DMS Operatoren/Functies                               //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       Februari 2004                                                        //
+//                                                                                                            //
+//                             Continue aanpassingen voor nieuwe operatoren                                   //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
+{
+	// gebruikte domain units
+	unit<uint32> HDomain: nrofrows = 4;
+	unit<uint32> ADomain: nrofrows = 5;
+	unit<uint32> RDomain: nrofrows = 7;
+	unit<uint32> LDomain: nrofrows = 8;
+
+	unit<uint32> RoadDomain:   nrofrows = 3;
+
+	unit<fpoint>  point_rd;//:= baseunit('m', fpoint);
+	unit<spoint> gridcel_1km :=
+		 range(
+			gridset(
+				 point_rd
+				,point(float32(-1000.0)  , float32(1000.0) , point_rd )
+				,point(float32(405600), float32(111300), point_rd )
+				,spoint
+			)
+			,point(int16(0), int16(0))
+			,point(int16(5), int16(4))
+		);
+	unit<uint32>  color           :Range = "[0, 16777217)";
+	unit<int16>   fontsize;
+	unit<float32> m               := baseunit('m', float32), label = "meter", cdf = "classifications/m_4K/classes";
+	unit<float32> s               := baseunit('s', float32), label = "seconde";
+	
+	container Network
+	{
+		container UnTiled := Template(RDomain,      RoadDomain,      ADomain,      HDomain      ,LDomain);
+		Template Template
+		{
+			unit<uint32> RDomain;
+			unit<uint32> RoadDomain;
+			unit<uint32> ODomain;
+			unit<uint32> DDomain;
+			unit<uint32> LDomain;
+
+			container Source
+			{
+				unit<uint32> RoadCoordinates := RDomain,
+					DialogData  = "point",
+					DialogType  = "Map"
+				{
+					attribute<float32>  x: [112631,111866,111866,111924,111524,114921,114823];
+					attribute<float32>  y: [399246,398599,398599,399495,401801,401529,398584];
+					attribute<point_rd> point := point(y, x, /point_rd), Label = "RoadPoints";
+					attribute<road>     SequenceNr: [0,0,1,1,1,2,2];
+					attribute<uint32>   Ordinal:    [0,1,0,1,2,0,1];
+				}
+				unit<uint32> road := RoadDomain,
+					DialogData  = "line",
+					DialogType  = "Map"
+				{
+					attribute<point_rd> line (arc) := points2sequence(RoadCoordinates/Point, RoadCoordinates/SequenceNr, RoadCoordinates/Ordinal);
+					attribute<point_rd> node_first : [{399246, 112631}, {398599, 111866}, {401529, 114921}];
+					attribute<point_rd> node_last  : [{398599, 111866}, {401801, 111524}, {398584, 114823}];
+					
+					attribute<uint32> streetcode: [null,0,1];
+				}
+				unit<uint32> origin := ODomain
+				,	DialogData  = "location"
+				,	DialogType  = "Map"
+				{
+					attribute<float32>  x: [115135,111803,114903,111353,111741];
+					attribute<float32>  y: [401331,399476,399289,401729,398696];
+					attribute<point_rd> location := point(y, x, point_rd), Label = "Origins"
+					{
+						parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(0,0,0);
+						parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(20, fontsize);
+						parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(20, m);
+					}
+					attribute<destination> service_area:        [0,1,2,3,1];
+					attribute<uint32>      connect_points:      [0,1,2,3,1];
+					//attribute<origin>      connect_neighbour: [2,4,2,3,4];
+					attribute<origin>      connect_neighbour:   [2,4,0,1,1];
+					attribute<uint32>      SpatialIndex:        [0,1,10,63,86];
+					attribute<uint32>      capacitated_connect: [2,1,2,1,1];
+				}
+				unit<uint32> destination := DDomain
+				,	DialogData  = "location"
+				,	DialogType  = "Map"
+				{
+					attribute<float32>  x: [115135,112601,114903,112156];
+					attribute<float32>  y: [401331,399138,398600,401729];
+
+					attribute<point_rd> location := point(y, x, point_rd), Label = "Destinations"
+					{
+						parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(255,0,0),        DisableStorage = "True";
+						parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(30, fontsize), DisableStorage = "True";
+						parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(25, m),        DisableStorage = "True";
+					}
+					attribute<string>   destinationnr_str := string(id(destination)), DialogType = "LabelText"
+					{
+						parameter<float32> LabelSize: DialogType = "LabelSize", = float32(14);
+					}
+				}
+				unit<uint32> location := LDomain
+				,	DialogData = "location"
+				,	DialogType = "Map"
+				{
+					attribute<float32>  x: [115135,111803,114903,111353,111741,112601,114903,112156];
+					attribute<float32>  y: [401331,399476,399289,401729,398696,399138,398600,401729];
+					attribute<point_rd> location                       := point(y, x, point_rd);
+					attribute<point_rd> location_with_undefined_values := id(.) == 1 || id(.) == 4 ? point(0f / 0f, 0f / 0f, point_rd) : location;
+
+					attribute<UInt32>   streetcode : [0,0,0,0,0,0,null,0];
+				}
+			}
+			
+	
+			unit<uint32> connect := connect(source/road/line, source/location/location)
+			,	url  = "http://www.objectvision.nl/dms/Operator/connect.htm"
+			{
+				attribute<point_rd> UnionData(arc);
+			}
+
+			container connected
+			{
+				unit <uint32> LinkSet_org := arc2segm(connect/UnionData)
+				,	DialogData = "segments"
+				,	DialogType = "Map"
+				{
+					attribute<bool> isConnectionToLocation := 
+						   IsDefined(
+							  rlookup(
+								  point
+								, source/location/location
+							  )
+						)
+						|| IsDefined(
+							  rlookup(
+								  nextpoint
+								, source/location/location
+							  )
+						);
+
+					attribute<point_rd> point;
+					attribute<point_rd> nextpoint;
+				}
+				unit <uint32> LinkSet_extra // bedoeld om de verbindingen die door de connect zijn gemaakt naar de locations dubbel op te nemen voor de dijkstra_directed
+				:= subset(LinkSet_org/isConnectionToLocation)
+				,	DialogData = "segments"
+				,	DialogType = "Map"
+				{
+					attribute<point_rd> point     := LinkSet_org/nextpoint[nr_OrgEntity];
+					attribute<point_rd> nextpoint := LinkSet_org/point[nr_OrgEntity];
+				}
+				
+				unit <uint32> LinkSet := Union_Unit(LinkSet_org,LinkSet_extra)
+				,	DialogData = "segments"
+				,	DialogType = "Map"
+				{
+					attribute<point_rd> point     := Union_Data(.,LinkSet_org/point    ,LinkSet_extra/point);
+					attribute<point_rd> nextpoint := Union_Data(.,LinkSet_org/nextpoint,LinkSet_extra/nextpoint);
+		
+					unit<uint32> pointset := Union(point, nextpoint)
+					{
+						attribute<point_rd> UnionData;
+						attribute<LinkSet>  ArcID  := value(ID(pointset) % nrofrows(LinkSet), LinkSet);
+						attribute<uint32>   VolgNr := ID(pointset) / nrofrows(LinkSet);
+					}
+					attribute<point_rd> segments(arc) := points2sequence(pointset/UnionData, pointset/ArcID, pointset/VolgNr);
+					attribute<m>        dist          := value(dist(point, nextpoint), /m);
+				}
+				unit<uint32> NodeSet := unique(SubItem(union(LinkSet/point, LinkSet/nextpoint), 'UnionData')),
+					DialogData = "Values",
+					DialogType = "Map"
+				{
+					attribute<point_rd> Values;
+				}
+		
+				attribute<NodeSet> F1(LinkSet) := rlookup(LinkSet/point,     NodeSet/Values),IsHidden = "True";
+				attribute<NodeSet> F2(LinkSet) := rlookup(LinkSet/nextpoint, NodeSet/Values),IsHidden = "True";
+		
+				attribute<NodeSet> nr_OriginNode      (source/origin)      := rlookup(source/origin/location, NodeSet/Values);
+				attribute<NodeSet> nr_DestinationNode (source/destination) := rlookup(source/destination/location, NodeSet/Values);
+			}
+			unit<uint32> dijkstra_OD_maxtime_alt_imp :=
+				dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+					, connected/LinkSet/dist * 1[s / m]
+					, connected/F1
+					, connected/F2
+					, connected/nr_OriginNode
+					, connected/nr_DestinationNode
+					, 1000[s]
+					, connected/LinkSet/dist
+				)
+			{
+//				attribute<float32> impedance; // issue 941
+				attribute<int32>   impedance_min := round(impedance / 60f);
+				attribute<float32> alt_imp_km    := float32(round(alt_imp / 100f)) / 10f;
+
+				attribute<m>       imp_ok        : [0, 824.535, 928.425];
+				attribute<s>       alt_imp_ok    : [0, 824.535, 928.425];
+			}
+		}
+	}
+}

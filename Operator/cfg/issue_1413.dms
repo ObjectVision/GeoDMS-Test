@@ -1,0 +1,43 @@
+container MetaInfo
+{
+	//parameter <string> TestDbName := '%projdir%/data/OperatorTest.mdb';
+	container OperatorList := DocData()
+	;
+/*	
+	// Structuur wordt hier herhaald om afleidingen te doen
+	{
+		unit<uint32> ObjectTypes
+		{
+			attribute<string> Name;
+		}
+		unit<uint32> OperatorGroups
+		{
+			attribute<string> Name;
+		}
+		unit<uint32> Operators
+		{
+			attribute<OperatorGroups> nr_Group;
+			attribute<ObjectTypes>    nr_ResType;
+
+			attribute<string> GroupName   := OperatorGroups/Name[nr_Group];
+			attribute<string> ResTypeName := ObjectTypes/Name[nr_ResType];
+		}
+		unit<uint32> OperatorArgs
+		{
+			attribute<Operators>      nr_Operator;
+			attribute<ObjectTypes>    nr_ArgType;
+			attribute<OperatorGroups> nr_Group    := Operators/nr_Group[nr_Operator];
+			attribute<string>         GroupName   := OperatorGroups/Name[nr_Group];
+			attribute<string>         ArgTypeName := ObjectTypes/Name[nr_ArgType];
+		}
+	}
+*/	
+//	container StorageManagersInfo := DocStorageManagers();
+	
+	container results
+	{
+		parameter<bool> test := #OperatorList/OperatorArgs > 10000 
+//		&& #StorageManagersInfo/StorageManagers > 15
+		;
+	}
+}

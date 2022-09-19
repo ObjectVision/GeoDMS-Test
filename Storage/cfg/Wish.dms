@@ -1,0 +1,289 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                                    Storage Manager Test                                                    //
+//                                                                                                            //
+//                  Configuratie voor het testen van de DMS Storage Managers                                  //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       Juli 2009                                                            //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// KNOWN ISSUES:
+// 1 boolean in dbf files, see dbf/wish
+// null files in string files, see strfiles/wish
+// xdb werkt niet, see xdb
+// ASCII grid, write for a unit_derived grid, OS Structured Exception, see /ASCIIgrid/Write/GridData_d
+// bmp truecolor leest verkeerde waarden uit, zie /bmp/TrueColor/grid/GridData
+// bmp palette based leest geen palette information, zie /bmp/Palette/grid/PaletteData
+// tiff truecolor geeft verkeerde waarde bij wegschrijven, zie: Tiff/TrueColor/Write/GridData
+
+container StorageManagerWishTest
+{
+	container units:  isHidden = "True"
+	{
+		unit<uint32>  color;
+		unit<float32> m:        expr  = "baseunit('m', float32)";
+		unit<fpoint>  point_rd: expr  = "baseunit('m', fpoint)";
+	}
+	container results
+	{
+		parameter<bool> read:
+			expr = "    dbf/results/all "
+				   "&&  xdb/results/all "
+				   "&&  StrFiles/results/all "
+				   "&&  bmp/TrueColor/results/all"
+				   "&&  bmp/Palette/results/all";
+
+		parameter<string> read_str:
+			StorageType = "str",
+			storagename = "%localDataProjDir%/regr_results/read_wish.txt",
+			expr        = "String(read)";
+	}
+
+	parameter <float32> Dif_all_float32:   expr = "float32(0.99)";
+	parameter <float64> Dif_all_float64:   expr = "0.99";
+	parameter <float32> Dif_pconv_float32: expr = "float32(1.000001)";
+	parameter <float64> Dif_pconv_float64: expr = "1.000001";
+
+	container TableReference
+	{
+		attribute<int32>   IntegerAtt      (ODBC/MsAccess/Table):[0,1,256,-100,9999];
+		attribute<int32>   IntegerAttNull  (ODBC/MsAccess/Table):[null,1,256,-100,9999];
+
+		attribute<float32> FloatAtt        (ODBC/MsAccess/Table):[0,1,9999999,-2.5,99.9];
+		attribute<float32> FloatAttNull    (ODBC/MsAccess/Table):[null,1,9999999,-2.5,99.9];
+
+		attribute<bool>    BoolAtt         (ODBC/MsAccess/Table):[False, True, True, False, True];
+		attribute<string>  StringAtt       (ODBC/MsAccess/Table):['Hello','Test',null,'Two words','88a'];
+		attribute<string>  StringAttNoNull (ODBC/MsAccess/Table):['Hello','Test','12345','Two words','88a'];
+	}
+	container ODBC
+	{
+		container MsAccess:
+			StorageName = "%projdir%/data/ODBC.mdb",
+			Source      = "ODBC test database",
+			SyncMode    = "None"
+		{
+			unit<uint32> Table: Sqlstring = "SELECT * FROM TestTable ORDER BY ID";
+		}
+	}
+	container dbf
+	{
+		// boolean data items 
+		container Table:
+			StorageName     = "%projDir%/data/DBF_wish.dbf",
+			SyncMode        = "None",
+			Source          = "dbf example source",
+			SyncMode        = "None",
+			StorageReadOnly = "True"
+		{
+			attribute<int32>   IntegerAtt  (ODBC/MsAccess/Table);
+			attribute<float32> FloatAtt    (ODBC/MsAccess/Table);
+			attribute<bool>    BoolAtt     (ODBC/MsAccess/Table);
+			attribute<string>  StringAtt   (ODBC/MsAccess/Table);
+		}
+		container Test
+		{
+			attribute<bool>    IntegerAtt (ODBC/MsAccess/Table): expr = "eq_or_both_null(Table/IntegerAtt, TableReference/IntegerAttNull)";
+			attribute<bool>    FloatAtt   (ODBC/MsAccess/Table): expr = "eq_or_both_null(Table/FloatAtt,   TableReference/FloatAttNull)";
+			attribute<bool>    BoolAtt    (ODBC/MsAccess/Table): expr = "Table/BoolAtt = TableReference/BoolAtt";
+			attribute<bool>    StringAtt  (ODBC/MsAccess/Table): expr = "eq_or_both_null(Table/StringAtt, TableReference/StringAtt)";
+		}
+		container Results
+		{
+			parameter<bool>    IntegerAtt:  expr = "all(Test/IntegerAtt)";
+			parameter<bool>    FloatAtt:    expr = "all(Test/FloatAtt)";
+			parameter<bool>    BoolAtt:     expr = "all(Test/BoolAtt)";
+			parameter<bool>    StringAtt:   expr = "all(Test/StringAtt)";
+			parameter<bool>    all:         expr = "IntegerAtt && FloatAtt && BoolAtt && StringAtt";
+		}
+		container Write: StorageName = "%localDataProjDir%/regr_results/dbf_wish.dbf"
+		{
+			attribute<int32>   IntegerAtt (ODBC/MsAccess/Table): expr = "Table/IntegerAtt";
+			attribute<float32> FloatAtt   (ODBC/MsAccess/Table): expr = "Table/FloatAtt";
+			attribute<string>  StringAtt  (ODBC/MsAccess/Table): expr = "Table/StringAtt";
+			attribute<bool>    BoolAtt    (ODBC/MsAccess/Table): expr = "Table/BoolAtt";
+		}
+	}
+//*  DEFECT SINCE revision 499, TODO, REMOVE
+	container xdb // ASCII Table
+	{
+		container Table: StorageName = "%projDir%/data/XDB.xdb"
+		{
+			attribute<int32>   IntegerAtt (ODBC/MsAccess/Table);
+			attribute<float32> FloatAtt   (ODBC/MsAccess/Table);
+			attribute<bool>    BoolAtt    (ODBC/MsAccess/Table);
+			attribute<string>  StringAtt  (ODBC/MsAccess/Table);
+		}
+		container Test
+		{
+			attribute<bool>    IntegerAtt (ODBC/MsAccess/Table): expr = "Table/IntegerAtt = TableReference/IntegerAtt";
+			attribute<bool>    FloatAtt   (ODBC/MsAccess/Table): expr = "Table/FloatAtt   = TableReference/FloatAtt";
+			attribute<bool>    BoolAtt    (ODBC/MsAccess/Table): expr = "Table/BoolAtt    = TableReference/BoolAtt";
+			attribute<bool>    StringAtt  (ODBC/MsAccess/Table): expr = "eq_or_both_null(Table/StringAtt, TableReference/StringAtt)";
+		}
+		container Results
+		{
+			parameter<bool>    IntegerAtt:  expr = "all(Test/IntegerAtt)";
+			parameter<bool>    FloatAtt:    expr = "all(Test/FloatAtt)";
+			parameter<bool>    BoolAtt:     expr = "all(Test/BoolAtt)";
+			parameter<bool>    StringAtt:   expr = "all(Test/StringAtt)";
+			parameter<bool>    all:         expr = "IntegerAtt && FloatAtt && BoolAtt && StringAtt";
+		}
+		container Write: StorageName = "%localDataDir%/tst/regr_results/xdb.xdb"
+		{
+			attribute<int32>   IntAtt     (ODBC/MsAccess/Table): expr = "Table/IntegerAtt";
+			attribute<float32> FloatAtt   (ODBC/MsAccess/Table): expr = "Table/FloatAtt";
+			attribute<bool>    BoolAtt    (ODBC/MsAccess/Table): expr = "Table/BoolAtt";
+			attribute<string>  StringAtt  (ODBC/MsAccess/Table): expr = "Table/StringAtt";
+		}
+	}
+//*/ REMOVE
+	container StrFiles // ASCII String files
+	{
+		container FileSet
+		{
+			attribute<string>  StringAtt  (ODBC/MsAccess/Table): StorageType = "strfiles", StorageName = "%projDir%/data/StrFiles/wish";
+			attribute<string>  FileName   (ODBC/MsAccess/Table): ['file01.txt','file02.txt','file03.txt','file04.txt','file05.txt'];
+		}
+		container Test
+		{
+			attribute<bool>   StringAtt  (ODBC/MsAccess/Table): expr = "eq_or_both_null(FileSet/StringAtt, TableReference/StringAtt)";
+		}
+		container results
+		{
+			parameter<bool>    all: expr = "all(Test/StringAtt)";
+		}
+		container Write
+		{
+			attribute<string>  FileName   (ODBC/MsAccess/Table): ['file01.txt','file02.txt','file03.txt','file04.txt','file05.txt'];
+			attribute<string>  StringAtt  (ODBC/MsAccess/Table): expr = "FileSet/StringAtt", StorageType = "strfiles", StorageName = "%localDataProjDir%/regr_results/strfiles/wish";  
+		}
+	}
+	container bmp
+	{
+		container TrueColor
+		{
+			unit<spoint> Grid: 
+				StorageName     = "%projdir%/data/bmp_tc.bmp",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<units/color> GridData:   DialogType = "BrushColor"; // DIT IS NIET GOED !!!!!!!!!!!!!!!!!
+			}
+			container reference
+			{
+				attribute<units/color> GridData (Grid): 
+					[rgb(252,254,252),rgb(252,254,252),rgb(244,182,100),rgb(244,182,100),rgb(244,182,100),
+					 rgb(196,190,212),rgb(  4,  2,  4),rgb(  4,  2,  4),rgb(  4,  2,  4),rgb( 84, 86, 84),
+					 rgb( 36, 38, 36),rgb(244,182,100),rgb(244,182,100),rgb(244,182,100),rgb( 36, 38, 36),
+					 rgb( 36, 38, 36),rgb( 84, 86, 84),rgb( 84, 86, 84),rgb( 84, 86, 84),rgb( 36, 38, 36),
+					 rgb(  0,  0,  0),rgb(  0,  0,  0),rgb(  0,  0,  0),rgb(  0,  0,  0),rgb(  0,  0,  0)],
+					DialogType = "BrushColor";
+				attribute<bool> test (Grid): expr = "Grid/GridData =  reference/GridData"; 
+			}
+			container Results
+			{
+				parameter<bool> all: expr = "all(reference/test)";
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/bmp_tc.bmp"
+			{
+				attribute<units/color> GridData (Grid):   expr = "Grid/GridData";
+			}
+		}
+		container Palette
+		{
+			unit<uint4> colorindex: isHidden = "True"
+			{
+				attribute<units/color> palette: DialogType = "Palette", expr = "Grid/PaletteData";
+			}
+			unit<spoint> Grid: 
+				StorageName     = "%projdir%/data/bmp_pa.bmp",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<colorindex>  GridData;
+				attribute<units/color> PaletteData (colorindex);
+			}
+			container reference
+			{
+				attribute<colorindex> GridData (Grid): [2, 2, 6, 6, 6, 4, 0, 0, 0, 3, 5, 6, 6, 6, 5, 5, 3, 3, 3, 5, 11, 11, 11, 11, 11];
+				attribute<bool>       test     (Grid): expr = "Grid/GridData =  reference/GridData"; 
+			}
+			container Results
+			{
+				parameter<bool> all: expr = "all(reference/test)";
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/bmp_pa.bmp"
+			{
+				attribute<colorindex>  GridData    (Grid):   expr = "Grid/GridData";
+				attribute<units/color> PaletteData (colorindex);
+			}
+		}
+		container GeoReference
+		{
+			//parameter<bool> test: expr = "PropValue(TrueColor/Grid, 'Projection') = '{-40.5, 40.5}*point_rd+{384000, 216000}'";
+			parameter<bool> test: expr = "PropValue(Palette/Grid, 'Projection') = '{-40.5, 40.5}*point_rd+{384000, 216000}'";
+		}
+	}
+	container Tiff
+	{
+		container TrueColor
+		{
+			unit<spoint> Grid: 
+				StorageName     = "%projdir%/data/tiff_tc.tif",
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<units/color> GridData:   DialogType = "BrushColor";
+			}
+			container reference
+			{
+				attribute<units/color> GridData (Grid): [0, 4202720, 12607552, 4243488, 65535, 8405088, 49376, 12624096, 16777215, 12639424, 4219040, 8437920, 12624064, 8421504, 4210752, 8446176];
+				attribute<bool>        test     (Grid): expr = "Grid/GridData =  reference/GridData"; 
+			}
+			container Results
+			{
+				parameter<bool> all: expr = "all(reference/test)";
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/tiff_tc.tif"
+			{
+				attribute<units/color> GridData (Grid):   expr = "Grid/GridData";
+			}
+		}
+		container Palette
+		{
+			unit<uint4> colorindex: isHidden = "True"
+			{
+				attribute<units/color> palette: DialogType = "BrushColor", expr = "Grid/PaletteData";
+			}
+			unit<spoint> Grid: 
+				StorageName     = "%projdir%/data/tiff_pa.tif", 
+				DialogData      = "units/point_rd",
+				StorageReadOnly = "True"
+			{
+				attribute<colorindex>  GridData;
+				attribute<units/color> PaletteData (colorindex);
+			}
+			container reference
+			{
+				attribute<colorindex> GridData (Grid): [2, 2, 6, 6, 6, 4, 0, 0, 0, 3, 5, 6, 6, 6, 5, 5, 3, 3, 3, 5, 11, 11, 11, 11, 11];
+				attribute<bool>       test     (Grid): expr = "Grid/GridData =  reference/GridData"; 
+			}
+			container Results
+			{
+				parameter<bool> all: expr = "all(reference/test)";
+			}
+			container Write: StorageName = "%localDataProjDir%/regr_results/tiff_pa.tif"
+			{
+				attribute<colorindex>  GridData    (Grid):         expr = "Grid/GridData";
+				attribute<units/color> PaletteData (colorindex):   expr = "Grid/PaletteData";
+			}
+		}
+		container GeoReference
+		{
+			parameter<bool> test: expr = "PropValue(TrueColor/Grid, 'Projection') = '{-40.5, 40.5}*point_rd+{384000, 216000}' && PropValue(Palette/Grid, 'Projection') = '{-40.5, 40.5}*point_rd+{384000, 216000}'";
+		}
+	}
+}

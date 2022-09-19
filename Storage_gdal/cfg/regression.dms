@@ -1,0 +1,2141 @@
+container regression
+{
+	parameter <float32> Dif_all_float32   := 0.99f;
+	
+	parameter<string> export_all := 'OK'
+	,	ExplicitSuppliers = 
+		"dbf/Write/export;"
+		"csv/write/basic/Export;csv/write/semicolon/Export;csv/write/comma/Export;csv/write/sublevel_container/Export;csv/write/sublevel_unit/Export;csv/write/sublevel_container_unit/Export;"
+		"csv/write/one_column/Export;csv/write/Geometry/polygon/Export;csv/write/Geometry/arc/Export;csv/write/Geometry/Point/Export;csv/write/Grid/Export;"
+		"EsriShape/Point/write/Export;EsriShape/arc/write/Export;EsriShape/polygon/write/Export;EsriShape/extra_level/Export;EsriShape/with_index/Export;"
+		"gml/write/poly/export;"
+		"geoJSON/write/export/mask_ettenleur;"
+		
+		"geopackage/write/single_layer/polygon;geopackage/write/multi_layer;"
+		//"geoJSON/write/export"
+		"Tiff/write/export"
+		;
+
+	container results
+	{
+		parameter<bool> vect_read_all := 
+			   dbf/read/results/all && csv/read/results/all 
+			&& EsriShape/Point/read/results/all && EsriShape/arc/read/results/all && EsriShape/Polygon/read/results/all
+			&& gml/read/poly/results/all
+			&& fgdb/read/results/all
+			&& pbf/read/tests/all
+			&& geopackage/read/tests/results/all
+			&& geoJSON/read/tests/all;
+
+		parameter<string> vect_read_str := String(vect_read_all)
+		,	StorageType = "str"
+		,	storagename = "%localDataProjDir%/regr_results/vect_read_regr.txt";
+
+		parameter<string> unit_test_vect_read_log := vect_read_all
+			? '' 
+			: 'Storage Read GDAL vector formats: ' + expand(., '%configDir%') + '.dms ' + PropValue(vect_read_all, 'fullname') + ' result: not OK'
+		,	StorageType = "str"
+		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_gdal_vect_formats.txt";
+
+
+		parameter<bool> vect_write_all := 
+			   dbf/write/results/all && csv/write/results/all
+			&& EsriShape/Point/write/results/all && EsriShape/arc/write/results/all && EsriShape/polygon/write/results/all && EsriShape/extra_level/results/all 
+			//&& EsriShape/with_index/Test/All 
+			&& gml/write/results/all  
+			&& geoJSON/write/tests/all 
+			&& geopackage/write/tests/results/all;
+
+		parameter<string> vect_write_str := String(vect_write_all)
+		,	StorageType = "str"
+		,	storagename = "%localDataProjDir%/regr_results/vect_write_regr.txt";
+
+		parameter<bool> grid_read_all := Tiff/read/results/all;
+
+		parameter<string> grid_read_str := String(grid_read_all)
+		,	StorageType = "str"
+		,	storagename = "%localDataProjDir%/regr_results/grid_read_regr.txt";
+		
+		parameter<string> unit_test_grid_read_log := grid_read_all
+			? '' 
+			: 'Storage Read GDAL grid formats: ' + expand(., '%configDir%') + '.dms ' + PropValue(grid_read_all, 'fullname') + ' result: not OK'
+		,	StorageType = "str"
+		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_gdal_grid_formats.txt";
+		
+		
+		parameter<bool> grid_write_all := Tiff/write/results/all ;
+
+		parameter<string> grid_write_str := String(grid_write_all)
+		,	StorageType = "str"
+		,	storagename = "%localDataProjDir%/regr_results/grid_write_regr.txt";
+	}
+	
+	container units
+	{
+		#include<wmts_layer.dms>
+		unit<float32> m         := baseunit('m', float32);
+		unit<fpoint>  point_rd_base : 
+			DialogData = "wmts_layer" 
+		,	Format     = "EPSG:28992";
+		unit<fpoint> point_rd      := range(point_rd_base, point(300000[m],0[m]), point(625000[m],280000[m]));
+	}
+
+	unit<uint32> reference: nrofrows = 5
+	{
+		attribute<int32>   IntegerAtt           : [0,1,256,-100,9999];
+		attribute<int32>   IntegerAttNull       : [null,1,256,-100,9999];
+		attribute<uint32>  UIntegerAtt          := uint32(IntegerAtt);
+		attribute<int64>   Int64Att             := int64(IntegerAtt);
+		attribute<uint64>  UInt64Att            := uint64(IntegerAtt);
+		attribute<uint2>   UInt2Att             := uint2(IntegerAtt);
+		attribute<uint4>   UInt4Att             := uint4(IntegerAtt);
+		attribute<uint8>   UInt8Att             := uint8(IntegerAtt);
+
+		attribute<float32> FloatAtt             : [0,1,9999999,-2.5,99.9];
+		attribute<float32> FloatAttNull         : [null,1,9999999,-2.5,99.9];
+		attribute<float64> Float64Att           := Float64(FloatAtt);
+		attribute<fpoint>  FPointAtt            := point(FloatAtt, FloatAtt, fpoint);
+
+		attribute<bool>    BoolAtt              : [False, True, True, False, True];
+		attribute<string>  StringAtt            : ['Hello','Test',null,'Two words','88a'];
+		attribute<string>  StringAttSingleEmpty : ['Hello','Test','','Two words','88a'];
+		attribute<string>  StringAttEmpty       : ['Hello','Test','','','88a'];
+		attribute<string>  StringAttNull        : ['Hello','Test',null, null,'88a'];
+
+		attribute<string>  StringAttNoNull      : ['Hello','Test','12345','Two words','88a'];
+
+		unit<uint32> point: nrofrows = 5
+		{
+			attribute<fpoint> geometry :[{401331, 115135},{399476, 111803},{399289, 114903},{401729, 111353},{398696, 111741}];
+			attribute<string> label    := 'point_' + string(id(.));
+			attribute<string> wkt      : 
+				[
+					 'POINT (115135 401331)'
+					,'POINT (111803 399476)'
+					,'POINT (114903 399289)'
+					,'POINT (111353 401729)'
+					,'POINT (111741 398696)'
+				];
+		}
+
+		unit<uint32> arc: nrofrows = 3
+		{
+			unit<uint32> pointset: nrofrows = 8
+			{
+				attribute<fpoint> geometry : [{411022, 120157},{413887, 120487},{414205, 120584},{410929, 119680},{411022, 120157},{410640, 120123},{410900, 120146},{411022, 120157}];
+				attribute<arc>    seq_nr   : [0,0,0,1,1,2,2,2];
+				attribute<uint32> ordinal  : [0,1,2,0,1,0,1,2];
+			}
+			attribute<fpoint> geometry (arc) := points2sequence(pointset/geometry, pointset/seq_nr, pointset/ordinal);
+			attribute<string> label          : ['A27;E311','A59','A27;E311'];
+			attribute<string> wkt            : 
+				[
+					 'LINESTRING (120157 411022,120487 413887,120584 414205)'
+					,'LINESTRING (119680 410929,120157 411022)'
+					,'LINESTRING (120123 410640,120146 410900,120157 411022)'
+				];
+		}
+
+		unit<uint32> polygon: nrofrows = 3
+		{
+			unit<uint32> pointset: nrofrows = 8
+			{
+				attribute<fpoint>  geometry : [{411022, 120157},{413887, 120487},{414205, 120584},{411022, 120157},{410640, 120123},{410900, 120146},{411022, 120157},{410640, 120123}];
+				attribute<polygon> seq_nr   : [0,0,0,0,2,2,2,2];
+				attribute<uint32>  ordinal  : [0,1,2,3,0,1,2,3];
+			}
+			attribute<fpoint> geometry (poly) := points2sequence(pointset/geometry, pointset/seq_nr, pointset/ordinal);
+			attribute<string> label           : ['A27;E311','A59','A27;E311'];
+			attribute<string> wkt             : 
+				[
+					 'MULTIPOLYGON (((120157 411022,120487 413887,120584 414205,120157 411022)))'
+					,'MULTIPOLYGON EMPTY'
+					,'MULTIPOLYGON (((120123 410640,120146 410900,120157 411022,120123 410640)))'
+				];
+		}
+
+		unit<spoint> grid := Tiff/read/Grid_uint32
+		{
+			attribute<uint32>  GridData_uint32  : [0, 100, 12607552, 2000, 65535, 8405088, 49376, 1, 16777215, 12639424, 17, 8437920, 12624064, 4294967294, 4294967295, null];
+			attribute<uint8>   GridData_uint8   : [0, 254, 100, 200, 55, 1, 200, 10, 125, 37, 189, 5, 150, 800, 255, null];
+			attribute<float32> GridData_float32 : [0, 254.5628, 100.0, 200.5, 55, 10101, 2, -10, -125.87, 37, 189.0000001, 5, -150, 175, null, null];
+			attribute<bool>    GridData_bool    : [true, true, false, true, false, true, true, true, true, true, false, false, true, false, true, null];
+			
+		}
+
+		unit<spoint> gridsel := Tiff/gridsel 
+		{
+			attribute<uint32>  ReadData_uint32  : [8405088, 49376, 12639424, 17];
+			attribute<uint8>   ReadData_uint8   : [1, 200, 37, 189];
+			attribute<float32> ReadData_float32 : [10101, 2, 37, 189];
+		}
+	}
+
+	container dbf
+	{
+		container read
+		{
+			container src:
+				StorageName     = "%projDir%/data/vect/dbf.dbf",
+				StorageType     = "gdal.vect",
+				SyncMode        = "None",
+				StorageReadOnly = "True"
+			{
+				attribute<int32>   IntegerAtt (reference);
+				attribute<float32> FloatAtt   (reference);
+				attribute<string>  StringAtt  (reference);
+			}
+
+			container tests
+			{
+				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, Int32(0 / 0)), reference/IntegerAttNull);
+				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, Float32(0 / 0)), reference/FloatAttNull);
+				attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
+			}
+
+			container results
+			{
+				parameter<bool> IntegerAtt := all(tests/IntegerAtt);
+				parameter<bool> FloatAtt   := all(tests/FloatAtt);
+				parameter<bool> StringAtt  := all(tests/StringAtt);
+				parameter<bool> all        := IntegerAtt && FloatAtt && StringAtt;
+			}
+		}
+
+		container write 
+		{
+			unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/dbf/gdal.dbf", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+			{
+				attribute<int32>   IntegerAtt  := reference/IntegerAtt;
+				attribute<uint32>  UIntegerAt  := reference/UIntegerAtt;
+				attribute<int64>   Int64Att    := reference/Int64Att;
+				attribute<uint64>  UInt64Att   := reference/UInt64Att;
+				attribute<UInt2>   UInt2Att    := reference/UInt2Att;
+				attribute<UInt4>   UInt4Att    := reference/UInt4Att;
+				attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+				attribute<float32> FloatAtt    := reference/FloatAtt;
+				//attribute<fpoint>  FpointAtt   := reference/FpointAtt;
+
+				attribute<float64> Float64Att  := reference/Float64Att;
+				attribute<string>  StringAtt   := reference/StringAtt;
+				attribute<bool>    BoolAtt     := reference/BoolAtt;
+			}
+			container reread
+			{
+				unit<uint32> export
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_vect/dbf/gdal.dbf"
+				, StorageType     = "gdal.vect"
+				, StorageReadOnly = "True"
+				{
+					attribute<int32>   IntegerAtt;
+					attribute<uint32>  UIntegerAt;
+					attribute<int64>   Int64Att;
+					attribute<uint64>  UInt64Att;
+					attribute<UInt2>   UInt2Att;
+					attribute<UInt4>   UInt4Att;
+					attribute<UInt8>   UInt8Att;
+					attribute<float32> FloatAtt;
+					attribute<float64> Float64Att;
+					attribute<string>  StringAtt;
+					attribute<bool>    BoolAtt;
+				}
+			}
+
+			container tests
+			{
+				attribute<bool> IntegerAtt  (reference) := eq_or_both_null(union_data(reference, reread/export/IntegerAtt), reference/IntegerAtt);
+				attribute<bool> UIntegerAtt (reference) := eq_or_both_null(union_data(reference, reread/export/UIntegerAt), reference/UIntegerAtt);
+				attribute<bool> Int64Att    (reference) := eq_or_both_null(union_data(reference, reread/export/Int64Att),   reference/Int64Att);
+				attribute<bool> UInt64Att   (reference) := eq_or_both_null(union_data(reference, reread/export/UInt64Att),  reference/UInt64Att);
+				attribute<bool> UInt2Att    (reference) := eq_or_both_null(union_data(reference, reread/export/UInt2Att),   reference/UInt2Att);
+				attribute<bool> UInt4Att    (reference) := eq_or_both_null(union_data(reference, reread/export/UInt4Att),   reference/UInt4Att);
+				attribute<bool> UInt8Att    (reference) := eq_or_both_null(union_data(reference, reread/export/UInt8Att),   reference/UInt8Att);
+				attribute<bool> FloatAtt    (reference) := eq_or_both_null(union_data(reference, reread/export/FloatAtt),   reference/FloatAtt);
+				attribute<bool> Float64Att  (reference) := eq_or_both_null(union_data(reference, reread/export/Float64Att), reference/Float64Att);
+				attribute<bool> StringAtt   (reference) := eq_or_both_null(union_data(reference, reread/export/StringAtt),  reference/StringAtt);
+				attribute<bool> BoolAtt     (reference) := eq_or_both_null(union_data(reference, reread/export/BoolAtt),    reference/BoolAtt);
+			}
+
+			container results
+			{
+				parameter<bool>   IntegerAtt  := all(tests/IntegerAtt);
+				parameter<bool>   UIntegerAtt := all(tests/UIntegerAtt);
+				parameter<bool>   Int64Att    := all(tests/Int64Att);
+				parameter<bool>   UInt64Att   := all(tests/UInt64Att);
+				parameter<bool> UInt2Att    := all(tests/UInt2Att);
+				parameter<bool> UInt4Att    := all(tests/UInt4Att);
+				parameter<bool>   UInt8Att    := all(tests/UInt8Att);
+				parameter<bool>   FloatAtt    := all(tests/FloatAtt);
+				parameter<bool>   Float64Att  := all(tests/Float64Att);
+				parameter<bool>   StringAtt   := all(tests/StringAtt);
+				parameter<bool>   BoolAtt     := all(tests/BoolAtt);
+
+				parameter<bool>    all        := 
+					IntegerAtt && Int64Att && FloatAtt && Float64Att && StringAtt && UIntegerAtt && UInt64Att && BoolAtt && UInt2Att && UInt4Att && UInt8Att;
+			}
+		}
+	}
+	container csv
+	{
+		container read
+		{
+			container src
+			{
+				unit<uint32> basic
+				: StorageName     = "%projdir%/data/vect/csv/csv_basic.csv"
+				, StorageType     = "gdal.vect"
+				, StorageReadOnly = "True";
+
+				unit<uint32> comma
+				:	StorageName     = "%projdir%/data/vect/csv/csv_comma.csv"
+				,	StorageType     = "gdal.vect"
+				,	StorageReadOnly = "True";
+
+				unit<uint32> noheader
+				:	StorageName     = "%projdir%/data/vect/csv/csv_noheader.csv"
+				,	StorageType     = "gdal.vect"
+				,	StorageReadOnly = "True";
+
+				unit<uint32> emptyvalues
+				:	StorageName     = "%projdir%/data/vect/csv/csv_with_emptyvalues.csv"
+				,	StorageType     = "gdal.vect"
+				,	StorageReadOnly = "True";
+
+				unit<uint32> onecolumn
+				:	StorageName     = "%projdir%/data/vect/csv/csv_with_one_column.csv"
+				,	StorageType     = "gdal.vect"
+				,	StorageReadOnly = "True";
+				
+				unit<uint32> explicitvaluesunit
+				: StorageName     = "%projdir%/data/vect/csv/csv_basic.csv"
+				, StorageType     = "gdal.vect"
+				, StorageReadOnly = "True"
+				{
+					attribute<uint32>  IntegerAtt;
+					attribute<float32> FloatAtt;
+					attribute<bool>    BoolAtt;
+				}
+
+				container optionset_header
+				{
+					unit<uint32> optionSet := range(uint32, 0, 1);
+					attribute<string> GDAL_Options(optionSet) : [ 'HEADERS=NO'];
+
+					unit<uint32> ignoreheader_org
+					:	StorageName     = "%projdir%/data/vect/csv/csv_basic.csv"
+					,	StorageType     = "gdal.vect"
+					,	StorageReadOnly = "True";
+
+					unit<uint32> ignoreheader := Subset(id(ignoreheader_org) > 0)
+					{
+						attribute<string> IntegerAtt := ignoreheader_org/field_2[nr_OrgEntity];
+						attribute<string> FloatAtt   := ignoreheader_org/field_3[nr_OrgEntity];
+						attribute<string> BoolAtt    := ignoreheader_org/field_4[nr_OrgEntity];
+						attribute<string> StringAtt  := ignoreheader_org/field_5[nr_OrgEntity];
+					}
+				}
+
+				container optionset_emptyvalues
+				{
+					unit<uint32> optionSet := range(uint32, 0, 1);
+					attribute<string> GDAL_Options(optionSet) : [ 'EMPTY_STRING_AS_NULL=YES'];
+
+					unit<uint32> empty_string_as_null
+					:	StorageName     = "%projdir%/data/vect/csv/csv_with_emptyvalues.csv"
+					,	StorageType     = "gdal.vect"
+					,	StorageReadOnly = "True";
+				}
+			}
+
+			container tests
+			{
+				container basic
+				{
+					attribute<bool> IntegerAtt (reference) := union_data(reference, int32(src/basic/IntegerAtt)) == reference/IntegerAtt;
+					attribute<bool> FloatAtt   (reference) := union_data(reference, float32(src/basic/FloatAtt)) == reference/FloatAtt;
+					attribute<bool> BoolAtt    (reference) := union_data(reference, bool(src/basic/BoolAtt))     == reference/BoolAtt;
+					attribute<bool> StringAtt  (reference) := union_data(reference, src/basic/StringAtt)         == MakeDefined(reference/StringAtt,'');
+
+					parameter<bool> all                    := all(IntegerAtt) && all(FloatAtt) && all(BoolAtt) && all(StringAtt);
+				}
+				container comma
+				{
+					attribute<bool> IntegerAtt (reference) := union_data(reference, int32(src/comma/IntegerAtt)) == reference/IntegerAtt;
+					attribute<bool> FloatAtt   (reference) := union_data(reference, float32(src/comma/FloatAtt)) == reference/FloatAtt;
+					attribute<bool> BoolAtt    (reference) := union_data(reference, bool(src/comma/BoolAtt))     == reference/BoolAtt;
+					attribute<bool> StringAtt  (reference) := union_data(reference, src/comma/StringAtt)         == MakeDefined(reference/StringAtt,'');
+
+					parameter<bool> all                    := all(IntegerAtt) && all(FloatAtt) && all(BoolAtt) && all(StringAtt);
+				}
+				container noheader
+				{
+					attribute<bool> IntegerAtt (reference) := union_data(reference, int32(src/noheader/field_2))   == reference/IntegerAtt;
+					attribute<bool> FloatAtt   (reference) := union_data(reference, float32(src/noheader/field_3)) == reference/FloatAtt;
+					attribute<bool> BoolAtt    (reference) := union_data(reference, bool(src/noheader/field_4))    == reference/BoolAtt;
+					attribute<bool> StringAtt  (reference) := union_data(reference, src/noheader/field_5)          == MakeDefined(reference/StringAtt,'');
+
+					parameter<bool> all                    := all(IntegerAtt) && all(FloatAtt) && all(BoolAtt) && all(StringAtt);
+				}
+				container emptyvalues 
+				{
+					attribute<bool> IntegerAtt (reference) := eq_or_both_null(union_data(reference, int32(src/emptyvalues/IntegerAtt)), reference/IntegerAttNull);
+					attribute<bool> FloatAtt   (reference) := union_data(reference, float32(src/emptyvalues/FloatAtt)) == reference/FloatAtt;
+					attribute<bool> BoolAtt    (reference) := union_data(reference, bool(src/emptyvalues/BoolAtt))     == reference/BoolAtt;
+					attribute<bool> StringAtt  (reference) := eq_or_both_null(union_data(reference, src/emptyvalues/StringAtt), reference/StringAttEmpty);
+
+					parameter<bool> all                    := all(IntegerAtt) && all(FloatAtt) && all(BoolAtt) && all(StringAtt);
+				}
+				container onecolumn 
+				{
+					attribute<bool> Att (reference) := union_data(reference, int32(src/onecolumn/Att)) == reference/IntegerAtt;
+					parameter<bool> all             := all(Att);
+				}
+				container ignoreheader
+				{
+					attribute<bool> IntegerAtt (reference) := union_data(reference, int32(src/optionset_header/ignoreheader/IntegerAtt)) == reference/IntegerAtt;
+					attribute<bool> FloatAtt   (reference) := union_data(reference, float32(src/optionset_header/ignoreheader/FloatAtt)) == reference/FloatAtt;
+					attribute<bool> BoolAtt    (reference) := union_data(reference, bool(src/optionset_header/ignoreheader/BoolAtt))     == reference/BoolAtt;
+					attribute<bool> StringAtt  (reference) := union_data(reference, src/optionset_header/ignoreheader/StringAtt)         == MakeDefined(reference/StringAtt,'');
+
+					parameter<bool> all                    := all(IntegerAtt) && all(FloatAtt) && all(BoolAtt) && all(StringAtt);
+				}
+				container nullvalues 
+				{
+					attribute<bool> IntegerAtt (reference) := eq_or_both_null(union_data(reference, int32(src/optionset_emptyvalues/empty_string_as_null/IntegerAtt)), reference/IntegerAttNull);
+					attribute<bool> FloatAtt   (reference) := union_data(reference, float32(src/optionset_emptyvalues/empty_string_as_null/FloatAtt)) == reference/FloatAtt;
+					attribute<bool> BoolAtt    (reference) := union_data(reference, bool(src/optionset_emptyvalues/empty_string_as_null/BoolAtt))     == reference/BoolAtt;
+					attribute<bool> StringAtt  (reference) := eq_or_both_null(union_data(reference, src/optionset_emptyvalues/empty_string_as_null/StringAtt), reference/StringAttNull);
+
+					parameter<bool> all                    := all(IntegerAtt) && all(FloatAtt) && all(BoolAtt) && all(StringAtt);
+				}
+			}
+			container results
+			{
+				parameter<bool> all := tests/basic/all && tests/comma/all && tests/noheader/all && tests/emptyvalues/all && tests/onecolumn/all && tests/ignoreheader/all && tests/nullvalues/all;
+			}
+		}
+
+		container Write: Using = "csv/read"
+		{
+			container basic
+			{
+				unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_default.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+				{
+					attribute<int32>   IntegerAtt  := reference/IntegerAtt;
+					attribute<uint32>  UIntegerAtt := reference/UIntegerAtt;
+					attribute<int64>   Int64Att    := reference/Int64Att;
+					attribute<uint64>  UInt64Att   := reference/UInt64Att;
+					attribute<float32> FloatAtt    := reference/FloatAtt;
+					attribute<float64> Float64Att  := reference/Float64Att;
+					attribute<string>  StringAtt   := reference/StringAtt;
+					attribute<bool>    BoolAtt     := reference/BoolAtt;
+					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
+					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
+					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+				}
+
+				container reread
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_default.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all";
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_default.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)          , int32(ReRead/gdal/IntegerAtt));
+					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)         , uint32(ReRead/gdal/UIntegerAtt));
+					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)            , int64(ReRead/gdal/Int64Att));
+					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)           , uint64(ReRead/gdal/UInt64Att));
+					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)            , float32(ReRead/gdal/FloatAtt));
+					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)          , float64(ReRead/gdal/Float64Att));
+					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty), string(ReRead/gdal/StringAtt));
+					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)             , bool(ReRead/gdal/BoolAtt));
+					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)         , uint2(ReRead/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)          , uint4(ReRead/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)            , uint8(ReRead/gdal/UInt8Att));
+					parameter<uint32> nr_comma := strcount(ReRead/str,',');
+				}
+
+				container results
+				{
+					parameter<bool> all := 
+						   all(tests/IntegerAtt) && all(tests/UIntegerAtt)  && all(tests/Int64Att)  && all(tests/UInt64Att) 
+						&& all(tests/FloatAtt)   && all(tests/Float64Att)   && all(tests/StringAtt) && all(tests/BoolAtt) 
+						&& all(tests/UInt8Att)
+						&& tests/nr_comma == 60;
+				}
+			}
+			container semicolon
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 3);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["STRING_QUOTING=IF_NEEDED", "CREATE_CSVT=YES", "SEPARATOR=SEMICOLON"];
+
+				unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_semicolon.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+				{
+					attribute<int32>   IntegerAtt  := reference/IntegerAtt;
+					attribute<uint32>  UIntegerAtt := reference/UIntegerAtt;
+					attribute<int64>   Int64Att    := reference/Int64Att;
+					attribute<uint64>  UInt64Att   := reference/UInt64Att;
+					attribute<float32> FloatAtt    := reference/FloatAtt;
+					attribute<float64> Float64Att  := reference/Float64Att;
+					attribute<string>  StringAtt   := reference/StringAtt;
+					attribute<bool>    BoolAtt     := reference/BoolAtt;
+					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
+					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
+					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+				}
+
+				container reread
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_semicolon.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all"
+					{
+						attribute<int32>   IntegerAtt  ;
+						attribute<uint32>  UIntegerAtt ;
+						attribute<int64>   Int64Att    ;
+						attribute<uint64>  UInt64Att   ;
+						attribute<float32> FloatAtt    ;
+						attribute<float64> Float64Att  ;
+						attribute<string>  StringAtt   ;
+						attribute<bool>    BoolAtt     ;
+						//attribute<UInt2>   UInt2Att    ;
+						//attribute<UInt4>   UInt4Att    ;
+						attribute<UInt8>   UInt8Att    ;
+					}
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_semicolon.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
+					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
+					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
+					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
+					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+				}
+
+				container results
+				{
+					parameter<bool> all := 
+						   all(tests/IntegerAtt) && all(tests/UIntegerAtt)  && all(tests/Int64Att)  && all(tests/UInt64Att) 
+						&& all(tests/FloatAtt)   && all(tests/Float64Att)   && all(tests/StringAtt) && all(tests/BoolAtt) 
+						&& all(tests/UInt8Att)
+						&& tests/nr_semicolon == 60;
+				}
+			}
+			container comma
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 3);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["STRING_QUOTING=IF_NEEDED", "CREATE_CSVT=YES", "SEPARATOR=COMMA"];
+
+				unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_comma.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+				{
+					attribute<int32>   IntegerAtt  := reference/IntegerAtt;
+					attribute<uint32>  UIntegerAtt := reference/UIntegerAtt;
+					attribute<int64>   Int64Att    := reference/Int64Att;
+					attribute<uint64>  UInt64Att   := reference/UInt64Att;
+					attribute<float32> FloatAtt    := reference/FloatAtt;
+					attribute<float64> Float64Att  := reference/Float64Att;
+					attribute<string>  StringAtt   := reference/StringAtt;
+					attribute<bool>    BoolAtt     := reference/BoolAtt;
+					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
+					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
+					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+				}
+
+				container reread
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_comma.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all"
+					{
+						attribute<int32>   IntegerAtt  ;
+						attribute<uint32>  UIntegerAtt ;
+						attribute<int64>   Int64Att    ;
+						attribute<uint64>  UInt64Att   ;
+						attribute<float32> FloatAtt    ;
+						attribute<float64> Float64Att  ;
+						attribute<string>  StringAtt   ;
+						attribute<bool>    BoolAtt     ;
+						//attribute<UInt2>   UInt2Att    ;
+						//attribute<UInt4>   UInt4Att    ;
+						attribute<UInt8>   UInt8Att    ;
+					}
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_comma.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
+					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
+					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
+					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
+					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
+					parameter<uint32> nr_comma := strcount(ReRead/str,',');
+				}
+
+				container results
+				{
+					parameter<bool> all := 
+						   all(tests/IntegerAtt) && all(tests/UIntegerAtt)  && all(tests/Int64Att)  && all(tests/UInt64Att) 
+						&& all(tests/FloatAtt)   && all(tests/Float64Att)   && all(tests/StringAtt) && all(tests/BoolAtt) 
+						&& all(tests/UInt8Att)
+						&& tests/nr_comma == 60;
+				}
+			}
+			container sublevel_container
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 3);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["STRING_QUOTING=IF_NEEDED", "CREATE_CSVT=YES", "SEPARATOR=SEMICOLON"];
+
+				unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_container.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+				{
+					attribute<int32>  IntegerAtt  := reference/IntegerAtt;
+					attribute<uint32> UIntegerAtt := reference/UIntegerAtt;
+					attribute<int64>  Int64Att    := reference/Int64Att;
+					attribute<uint64> UInt64Att   := reference/UInt64Att;
+					container extracontainer
+					{
+						attribute<float32> FloatAtt   (export) := reference/FloatAtt;
+						attribute<float64> Float64Att (export) := reference/Float64Att;
+						attribute<string>  StringAtt  (export) := reference/StringAtt;
+						attribute<bool>    BoolAtt    (export) := reference/BoolAtt;
+						attribute<UInt2>   UInt2Att   (export) := reference/UInt2Att;
+						attribute<UInt4>   UInt4Att   (export) := reference/UInt4Att;
+						attribute<UInt8>   UInt8Att   (export) := reference/UInt8Att;
+					}
+				}
+				container reread
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_container.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all"
+					{
+						attribute<int32>   IntegerAtt  ;
+						attribute<uint32>  UIntegerAtt ;
+						attribute<int64>   Int64Att    ;
+						attribute<uint64>  UInt64Att   ;
+						attribute<float32> FloatAtt    ;
+						attribute<float64> Float64Att  ;
+						attribute<string>  StringAtt   ;
+						attribute<bool>    BoolAtt     ;
+						//attribute<UInt2>   UInt2Att    ;
+						//attribute<UInt4>   UInt4Att    ;
+						attribute<UInt8>   UInt8Att    ;
+					}
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_container.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
+					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
+					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
+					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
+					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+				}
+		
+				container results
+				{
+					parameter<bool> all := 
+						   all(tests/IntegerAtt) && all(tests/UIntegerAtt)  && all(tests/Int64Att)  && all(tests/UInt64Att) 
+						&& all(tests/FloatAtt)   && all(tests/Float64Att)   && all(tests/StringAtt) && all(tests/BoolAtt) 
+						&& all(tests/UInt8Att)
+						&& tests/nr_semicolon == 60;
+				}
+			}
+
+			container sublevel_unit
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 3);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["STRING_QUOTING=IF_NEEDED", "CREATE_CSVT=YES", "SEPARATOR=SEMICOLON"];
+
+				unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_unit.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+				{
+					attribute<int32>  IntegerAtt  := reference/IntegerAtt;
+					attribute<uint32> UIntegerAtt := reference/UIntegerAtt;
+					attribute<int64>  Int64Att    := reference/Int64Att;
+					attribute<uint64> UInt64Att   := reference/UInt64Att;
+					container extracontainer
+					{
+						attribute<float32> FloatAtt   (export) := reference/FloatAtt;
+						attribute<float64> Float64Att (export) := reference/Float64Att;
+						attribute<string>  StringAtt  (export) := reference/StringAtt;
+						attribute<bool>    BoolAtt    (export) := reference/BoolAtt;
+						attribute<UInt2>   UInt2Att   (export) := reference/UInt2Att;
+						attribute<UInt4>   UInt4Att   (export) := reference/UInt4Att;
+						attribute<UInt8>   UInt8Att   (export) := reference/UInt8Att;
+					}
+				}
+				container reread
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_unit.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all"
+					{
+						attribute<int32>   IntegerAtt  ;
+						attribute<uint32>  UIntegerAtt ;
+						attribute<int64>   Int64Att    ;
+						attribute<uint64>  UInt64Att   ;
+						attribute<float32> FloatAtt    ;
+						attribute<float64> Float64Att  ;
+						attribute<string>  StringAtt   ;
+						attribute<bool>    BoolAtt     ;
+						//attribute<UInt2>   UInt2Att    ;
+						//attribute<UInt4>   UInt4Att    ;
+						attribute<UInt8>   UInt8Att    ;
+					}
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_unit.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
+					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
+					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
+					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
+					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+				}
+
+				container results
+				{
+					parameter<bool> all := 
+						   all(tests/IntegerAtt) && all(tests/UIntegerAtt)  && all(tests/Int64Att)  && all(tests/UInt64Att) 
+						&& all(tests/FloatAtt)   && all(tests/Float64Att)   && all(tests/StringAtt) && all(tests/BoolAtt) 
+						&& all(tests/UInt8Att)
+						&& tests/nr_semicolon == 60;
+				}
+			}
+
+			container sublevel_container_unit
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 3);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["STRING_QUOTING=IF_NEEDED", "CREATE_CSVT=YES", "SEPARATOR=SEMICOLON"];
+
+				unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_container_unit.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+				{
+					attribute<int32>  IntegerAtt  := reference/IntegerAtt;
+					attribute<uint32> UIntegerAtt := reference/UIntegerAtt;
+					attribute<int64>  Int64Att    := reference/Int64Att;
+					attribute<uint64> UInt64Att   := reference/UInt64Att;
+					container extracontainer
+					{
+						attribute<float32> FloatAtt   (export) := reference/FloatAtt;
+						attribute<float64> Float64Att (export) := reference/Float64Att;
+						attribute<string>  StringAtt  (export) := reference/StringAtt;
+						attribute<bool>    BoolAtt    (export) := reference/BoolAtt;
+						attribute<UInt2>   UInt2Att   (export) := reference/UInt2Att;
+						attribute<UInt4>   UInt4Att   (export) := reference/UInt4Att;
+						attribute<UInt8>   UInt8Att   (export) := reference/UInt8Att;
+					}
+				}
+
+				container reread
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_container_unit.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all"
+					{
+						attribute<int32>   IntegerAtt  ;
+						attribute<uint32>  UIntegerAtt ;
+						attribute<int64>   Int64Att    ;
+						attribute<uint64>  UInt64Att   ;
+						attribute<float32> FloatAtt    ;
+						attribute<float64> Float64Att  ;
+						attribute<string>  StringAtt   ;
+						attribute<bool>    BoolAtt     ;
+						//attribute<UInt2>   UInt2Att    ;
+						//attribute<UInt4>   UInt4Att    ;
+						attribute<UInt8>   UInt8Att    ;
+					}
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_extra_level_container_unit.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
+					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
+					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
+					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
+					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+				}
+
+				container results
+				{
+					parameter<bool> all := 
+						   all(tests/IntegerAtt) && all(tests/UIntegerAtt)  && all(tests/Int64Att)  && all(tests/UInt64Att) 
+						&& all(tests/FloatAtt)   && all(tests/Float64Att)   && all(tests/StringAtt) && all(tests/BoolAtt) 
+						&& all(tests/UInt8Att)
+						&& tests/nr_semicolon == 60;
+				}
+			}
+			container one_column
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 3);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["STRING_QUOTING=IF_NEEDED", "CREATE_CSVT=YES", "SEPARATOR=SEMICOLON"];
+
+				unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_one_column.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+				{
+					attribute<int32> IntegerAtt := reference/IntegerAtt;
+				}
+
+				container reread
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_one_column.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all"
+					{
+						attribute<int32> IntegerAtt;
+					}
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_one_column.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)  , ReRead/gdal/IntegerAtt);
+					parameter<uint32> nr_semicolon := strcount(reread/str,';');
+				}
+
+				container results
+				{
+					parameter<bool> all := all(tests/IntegerAtt) && tests/nr_semicolon == 1;
+				}
+			}
+			container geometry
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 4);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["GEOMETRY=AS_WKT", "GEOMETRY_NAME=GEOMETRY", "CREATE_CSVT=YES", "SEPARATOR=SEMICOLON"];
+
+				container polygon
+				{
+					unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_poly.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+					{
+						attribute<fPoint> geometry (poly) := reference/Polygon/Geometry ;
+						attribute<string> label           := reference/Polygon/Label ;
+					}
+
+					container reread
+					{
+						unit<uint32> gdal:
+							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_poly.csv",
+							StorageType     = "gdal.vect",
+							StorageReadOnly = "True",
+							SyncMode        = "all"
+						{
+							attribute<string> geometry;
+							attribute<string> label;
+						}
+
+						parameter<string> str:
+							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_poly.csv",
+							StorageType     = "str",
+							StorageReadOnly = "True";
+					}
+
+					container tests
+					{
+						attribute<bool> test_WKT   (ReRead/gdal) := ReRead/gdal/geometry == union_data(ReRead/gdal, reference/Polygon/WKT);
+						attribute<bool> test_label (ReRead/gdal) := ReRead/gdal/label    == union_data(ReRead/gdal, reference/Polygon/label);
+
+						parameter<uint32> nr_semicolon := strcount(reread/str,';');
+					}
+
+					container results
+					{
+						parameter<bool> all := all(tests/test_WKT) && all(tests/test_label) && tests/nr_semicolon == 6;
+					}
+				}
+
+				container arc
+				{
+					unit<uint32> export := reference/arc, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_arc.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+					{
+						attribute<fPoint> geometry (arc) := reference/arc/Geometry ;
+						attribute<string> label          := reference/arc/Label ;
+					}
+
+					container ReRead
+					{
+						unit<uint32> gdal:
+							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_arc.csv",
+							StorageType     = "gdal.vect",
+							StorageReadOnly = "True",
+							SyncMode        = "all"
+						{
+							attribute<string> geometry;
+							attribute<string> label;
+						}
+
+						parameter<string> str:
+							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_arc.csv",
+							StorageType     = "str",
+							StorageReadOnly = "True";
+					}
+
+					container tests
+					{
+						attribute<bool> test_WKT   (ReRead/gdal) := ReRead/gdal/geometry == union_data(ReRead/gdal, reference/arc/WKT);
+						attribute<bool> test_label (ReRead/gdal) := ReRead/gdal/label    == union_data(ReRead/gdal, reference/arc/label);
+
+						parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+					}
+
+					container results
+					{
+						parameter<bool> all := all(tests/test_WKT) && all(tests/test_label) && tests/nr_semicolon == 6;
+					}
+				}
+
+				container point
+				{
+					unit<uint32> export := reference/point, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_point.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+					{
+						attribute<fPoint> geometry := reference/point/Geometry ;
+						attribute<string> label    := reference/point/Label ;
+					}
+
+					container ReRead
+					{
+						unit<uint32> gdal:
+							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_point.csv",
+							StorageType     = "gdal.vect",
+							StorageReadOnly = "True",
+							SyncMode        = "all"
+						{
+							attribute<string> geometry;
+							attribute<string> label;
+						}
+
+						parameter<string> str:
+							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_point.csv",
+							StorageType     = "str",
+							StorageReadOnly = "True";
+					}
+					
+					container tests
+					{
+						attribute<bool> test_WKT   (ReRead/gdal) := ReRead/gdal/geometry == union_data(ReRead/gdal, reference/point/WKT);
+						attribute<bool> test_label (ReRead/gdal) := ReRead/gdal/label    == union_data(ReRead/gdal, reference/point/label);
+
+						parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+					}
+
+					container results
+					{
+						parameter<bool> all := all(tests/test_WKT) && all(tests/test_label) && tests/nr_semicolon == 6;
+					}
+				}
+			}
+			container grid
+			{
+				unit<uint32> optionSet:= range(uint32, 0, 2);
+				attribute<string> GDAL_LayerCreationOptions(optionSet) : ["CREATE_CSVT=YES", "SEPARATOR=SEMICOLON"];
+
+				unit<fpoint> point_rd;
+				unit<spoint> export :=
+				 range(
+					gridset(
+						 point_rd
+						,point(float32(-1000.0)  , float32(1000.0) , point_rd )
+						,point(float32(405600), float32(111300), point_rd )
+						,spoint
+					)
+					,point(int16(0), int16(0))
+					,point(int16(5), int16(4))
+				), StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_spoint.csv"
+				 , StorageType = "gdalwrite.vect"
+				 , StorageReadOnly = "false"
+				{
+					attribute<.>     id  := id(.);
+					attribute<int16> col := pointCol(id);
+				}
+				container ReRead
+				{
+					unit<uint32> gdal:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_spoint.csv",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True",
+						SyncMode        = "all"
+					{
+						attribute<export> id; 
+						attribute<int16>  col; 
+					}
+
+					parameter<string> str:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_spoint.csv",
+						StorageType     = "str",
+						StorageReadOnly = "True";
+				}
+				container tests
+				{
+					attribute<bool> id  (ReRead/gdal) := ReRead/gdal/id  == union_data(ReRead/gdal, id(export));
+					attribute<bool> col (ReRead/gdal) := ReRead/gdal/col == union_data(ReRead/gdal, pointCol(id(export)));
+
+					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+				}
+
+				container results
+				{
+					parameter<bool> all := all(tests/col) && tests/nr_semicolon == 1;
+				}
+			}
+			container results
+			{
+				parameter <bool> all:= 
+				    basic/results/all && semicolon/results/all && comma/results/all 
+				 && sublevel_container/results/all && sublevel_unit/results/all && sublevel_container_unit/results/all && one_column/results/all 
+				 && Geometry/polygon/results/all && Geometry/arc/results/all && Geometry/Point/results/all && grid/results/all;
+			}
+		}
+
+	}
+	container EsriShape
+	{
+		container Point
+		{
+			container read
+			{
+				unit<uint32> PointSet:
+					StorageName     = "%projdir%/data/vect/point/point.shp",
+					StorageType     = "gdal.vect",
+					StorageReadOnly = "True"
+				{
+					attribute<fpoint> geometry;
+					attribute<string> name; 
+				}
+
+				container tests
+				{
+					attribute<bool> geometry (PointSet) := Union_Data(Pointset, reference/Point/Geometry) == PointSet/geometry;
+					attribute<bool> name     (PointSet) := Union_Data(Pointset, reference/Point/label)    == PointSet/name;
+				}
+
+				container results
+				{
+					parameter<bool> all := all(tests/geometry) && all(tests/name);
+				}
+			}
+			container Write
+			{
+				unit<uint32> export := reference/Point, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/point.shp", StorageType = "gdalwrite.vect"
+				{
+					attribute<fpoint> geometry := reference/Point/Geometry;
+					attribute<string> name     := reference/Point/label;
+				}
+				container ReRead
+				{
+					unit<uint32> export:
+						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/point.shp",
+						StorageType     = "gdal.vect",
+						StorageReadOnly = "True"
+					{
+						attribute<fpoint> geometry;
+						attribute<string> name; 
+					}
+				}
+				container tests
+				{
+					attribute<bool> geometry (ReRead/export) := Union_Data(ReRead/export, reference/Point/Geometry) == ReRead/export/geometry;
+					attribute<bool> name     (ReRead/export) := Union_Data(ReRead/export, reference/Point/label)    == ReRead/export/name;
+				}
+
+				container results
+				{
+					parameter<bool> all := all(tests/geometry) && all(tests/name);
+				}
+			}
+		}
+
+		container Arc
+		{
+			container read
+			{
+				unit<uint32> ArcSet:
+					StorageName     = "%projdir%/data/vect/arc/road.shp",
+					StorageType     = "gdal.vect",
+					StorageReadOnly = "True"
+				{
+					attribute<fpoint> geometry (arc);
+					attribute<string> label;
+				}
+				container tests
+				{
+					unit<uint32> PointSet: = Sequence2Points(ArcSet/geometry);
+	
+					attribute<fpoint> point_ref  (PointSet) := union_data(Pointset, reference/arc/pointset/geometry);
+					attribute<bool>   test_point (PointSet) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (PointSet) := pointset/sequenceNr ==  union_data(Pointset, reference/arc/pointset/seq_nr);
+					attribute<bool>   test_ord   (PointSet) := pointset/ordinal ==  union_data(Pointset, reference/arc/pointset/ordinal);
+
+					attribute<bool>   test_label (ArcSet)   := ArcSet/label == union_data(ArcSet, reference/arc/label);
+				}
+				container results
+				{
+					parameter<bool> all := all(tests/test_point) && all(tests/test_seq) && all(tests/test_ord) && all(tests/test_label);
+				}
+			}
+
+			container Write
+			{
+				unit<uint32> export := reference/arc, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/arc.shp", StorageType = "gdalwrite.vect"
+				{
+					attribute<fpoint> geometry (arc) := reference/arc/geometry;
+					attribute<string> name           := reference/arc/label;
+				}
+				container ReRead
+				{
+					unit<uint32> Export
+					: StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/arc.shp"
+					, StorageType     = "gdal.vect"
+					, StorageReadOnly = "True"
+					{
+						attribute<fpoint> geometry (arc);
+						attribute<string> name; 
+					}
+				}
+				container tests
+				{
+					unit<uint32> PointSet: = Sequence2Points(ReRead/Export/geometry);
+	
+					attribute<fpoint> point_ref  (PointSet) := union_data(Pointset, reference/arc/pointset/geometry);
+					attribute<bool>   test_point (PointSet) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (PointSet) := pointset/sequenceNr ==  union_data(Pointset, reference/arc/pointset/seq_nr);
+					attribute<bool>   test_ord   (PointSet) := pointset/ordinal ==  union_data(Pointset, reference/arc/pointset/ordinal);
+
+					attribute<bool>   test_label (ReRead/Export)   := ReRead/Export/name == union_data(ReRead/Export, reference/arc/label);
+				}
+				container results
+				{
+					parameter<bool> all := all(tests/test_point) && all(tests/test_seq) && all(tests/test_ord) && all(tests/test_label);
+				}
+			}
+		}
+
+		container Polygon
+		{
+			container read
+			{
+				unit<uint32> PolygonSet:
+					StorageName     = "%projdir%/data/vect/polygon/area.shp",
+					StorageType     = "gdal.vect",
+					StorageReadOnly = "True"
+				{
+					attribute<fpoint> geometry (poly);
+					attribute<string> label;
+				}
+				container tests
+				{
+					unit<uint32> PointSet: = Sequence2Points(PolygonSet/geometry);
+	
+					attribute<fpoint> point_ref  (PointSet)   := union_data(Pointset,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref   (PolygonSet) := union_data(PolygonSet, reference/polygon/label);
+	
+					attribute<bool>   test_point (PointSet)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (PointSet)   := pointset/sequenceNr == union_data(Pointset, reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   (PointSet)   := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (PolygonSet) := PolygonSet/label    == name_ref;
+				}
+				container results
+				{
+					parameter<bool> all := all(tests/test_point) && all(tests/test_seq) && all(tests/test_ord) && all(tests/test_label);
+				}
+			}
+
+			container Write
+			{
+				unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly.shp", StorageType = "gdalwrite.vect"
+				{
+					attribute<fpoint> geometry (polygon) := reference/Polygon/geometry;
+					attribute<string> name               := reference/Polygon/label;
+				}
+				container ReRead
+				{
+					unit<uint32> export 
+					: StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/poly.shp"
+					, StorageType     = "gdal.vect"
+					, StorageReadOnly = "True"
+					{
+						attribute<fpoint> geometry (polygon);
+						attribute<string> name; 
+					}
+				}
+				container tests
+				{
+					unit<uint32> PointSet: = Sequence2Points(ReRead/export/geometry);
+	
+					attribute<fpoint> point_ref  (PointSet)      := union_data(Pointset,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref   (ReRead/export) := union_data(ReRead/export, reference/polygon/label);
+	
+					attribute<bool>   test_point (PointSet)      := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (PointSet)      := pointset/sequenceNr == union_data(Pointset, reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   (PointSet)      := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (ReRead/export) := ReRead/export/name  == name_ref;
+				}
+				container results
+				{
+					parameter<bool> all := all(tests/test_point) && all(tests/test_seq) && all(tests/test_ord) && all(tests/test_label);
+				}
+			}
+		}
+		container MultiGeometry
+		{
+			unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/geom_multi.shp", StorageType = "gdalwrite.vect"
+			{
+				attribute<fpoint> geometry_poly  (polygon) := reference/polygon/Geometry;
+				attribute<fpoint> geometry_arc   (arc)     := union_data(., reference/arc/Geometry);
+				attribute<fpoint> geometry_point           := centroid(geometry_poly);
+				attribute<string> name                     := reference/polygon/label;
+			}
+			container ReRead
+			{
+				unit<uint32> export := Polygon/read/PolygonSet
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/geom_multi.shp"
+				, StorageType     = "gdal.vect"
+				, StorageReadOnly = "True"
+				{
+					attribute<fpoint> geometry (polygon);
+					attribute<string> name; 
+				}
+			}
+			container tests
+			{
+				unit<uint32> PointSet: = Sequence2Points(ReRead/export/geometry);
+
+				attribute<units/point_rd> point_ref  (PointSet)   := union_data(Pointset,   reference/point/geometry);
+				attribute<string>         name_ref   (PolygonSet) := union_data(PolygonSet, reference/point/name);
+
+				attribute<bool>           test_point (PointSet)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+				attribute<bool>           test_seq   (PointSet)   := pointset/sequenceNr ==  union_data(Pointset, /EsriShape/polygon/reference/sequence);
+				attribute<bool>           test_ord   (PointSet)   := pointset/ordinal ==  union_data(Pointset, /EsriShape/polygon/reference/ordinal);
+				attribute<bool>           test_label (PolygonSet) := PolygonSet/label == name_ref;
+			}
+
+			container results
+			{
+				parameter<bool> all := all(tests/test_point) && all(tests/test_seq) && all(tests/test_ord) && all(tests/test_label);
+			}
+		}
+		container extra_level
+		{
+			unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_mulev.shp", StorageType = "gdalwrite.vect"
+			{
+				attribute<fpoint> geometry (polygon) := reference/Polygon/geometry;
+				attribute<string> name               := reference/Polygon/label;
+
+				container extracontainer
+				{
+					unit<uint32> exta_unit: nrofrows = 2;
+
+					attribute<float32> area    (export) := area(geometry, float32);
+					attribute<string>  name_4  (export) :=left(name,4);
+				}
+			}
+			container ReRead
+			{
+				unit<uint32> export:
+					StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_mulev.shp",
+					StorageType     = "gdal.vect",
+					StorageReadOnly = "True",
+					SyncMode        = "all";
+			}
+			
+			container tests
+			{
+				unit<uint32> PointSet: = Sequence2Points(ReRead/export/geometry);
+
+				attribute<fpoint> point_ref  (PointSet)      := union_data(Pointset     , reference/polygon/pointset/geometry);
+				attribute<string> name_ref   (ReRead/export) := union_data(ReRead/export, reference/polygon/label);
+
+				attribute<bool>   test_point (PointSet)      := point_isNearby(fpoint(pointset/point), point_ref, Dif_all_float32);
+				attribute<bool>   test_seq   (PointSet)      := pointset/sequenceNr == union_data(Pointset, reference/polygon/pointset/seq_nr);
+				attribute<bool>   test_ord   (PointSet)      := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
+				attribute<bool>   test_label (ReRead/export) := ReRead/export/name   == name_ref;
+				attribute<bool>   area       (ReRead/export) := float32(ReRead/export/area)   == area(fpolygon(ReRead/export/geometry), float32);
+				attribute<bool>   name_4     (ReRead/export) := ReRead/export/name_4 == left(name_ref,4);
+			}
+
+			container results
+			{
+				parameter<bool> all := all(tests/test_point) && all(tests/test_seq) && all(tests/test_ord) && all(tests/test_label) && all(tests/test_label) && all(tests/test_label);
+			}
+		}
+		container with_index
+		{
+			unit<uint32> optionSet:= range(uint32, 0, 1);
+			attribute<string> GDAL_LayerCreationOptions(optionSet) : ["SPATIAL_INDEX=YES"];
+
+			unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_index.shp", StorageType = "gdalwrite.vect"
+			{
+				attribute<fpoint> geometry (polygon) := reference/Polygon/geometry;
+				attribute<string> name               := reference/Polygon/label;
+			}
+
+			container test
+			{
+				parameter<string> ExistingIndexFile := 
+					ExistingFile('missing','%localDataProjDir%/regr_results/gdal_vect/shp/poly_index.qix')
+				,	ExplicitSuppliers = "with_index/export/geometry";
+				parameter<bool>   all               := strcount(ExistingIndexFile,'missing') == 0;
+			}
+		}
+		
+	}
+	container gml
+	{
+		container read
+		{
+			container poly
+			{
+				container src
+				:	StorageName     = "%projdir%/data/vect/gml/waterdeel.gml"
+				,	StorageType     = "gdal.vect"
+				,	StorageReadOnly = "True"
+				,	SyncMode        = "AllTables"
+				{
+					attribute<int32> area (waterdeel) := round(area(waterdeel/geometry,float64));
+				}
+
+				container Test
+				{
+					parameter<bool> area                   := sum(src/area) == 435432i && src/area[0] == 594i && src/area[100] == 747i;
+					attribute<bool> status (src/waterdeel) := src/waterdeel/BGT_STATUS == const('bestaand',src/waterdeel);
+				}
+				container results
+				{
+					parameter<bool>    status  := all(Test/status);
+					parameter<bool>    all     := Test/area && status;
+				}
+			}
+		}
+		container write
+		{
+			container poly
+			{
+				unit<uint32> export := read/poly/src/waterdeel, StorageName = "%localDataProjDir%/regr_results/gdal_vect/gml/waterdeel.gml", StorageType = "gdalwrite.vect"
+				{
+					attribute<dpoint> geometry (polygon) := read/poly/src/waterdeel/Geometry;
+					attribute<string> type               := read/poly/src/waterdeel/plus_type ;
+				}
+			}
+			container ReRead
+			{
+				unit<uint32> src
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_vect/gml/waterdeel.gml"
+				, StorageType     = "gdal.vect"
+				, StorageReadOnly = "True"
+				{
+					attribute<fpoint> geometry (polygon);
+					attribute<string> type; 
+					attribute<int32>  area  := round(area(geometry,float32));
+				}
+				parameter<string> xsd: StorageName = "%localDataProjDir%/regr_results/gdal_vect/gml/waterdeel.xsd", StorageType = "str";
+			}
+			container Test
+			{
+				parameter<bool> area   := sum(ReRead/src/area) == 435438i && ReRead/src/area[0] == 594i && ReRead/src/area[100] == 748i;
+				parameter<bool> status := sum(strcount(ReRead/src/type, 'sloot')) == 156;
+				#include<gml_xsd_reference.dms>
+				parameter<bool> xsd    := replace(ReRead/xsd,' ','') == replace(gml_xsd_reference/xsd,' ','');
+			}
+			
+			container results
+			{
+				parameter<bool> status  := all(Test/status);
+				parameter<bool> all     := Test/area && status && Test/xsd;
+			}
+		}
+	}
+
+	container fgdb
+	{
+		container read
+		{
+			container src: // test db with multiple layers with polymorph geometries, taken from http://trac.osgeo.org/gdal/wiki/FileGDB where 'jmckenna' added this.
+				StorageName     = "%projdir%/data/vect/test_fgdb.gdb",
+				StorageType     = "gdal.vect",
+				StorageReadOnly = "True",
+				SyncMode        = "AllTables"
+			{
+				unit<uint32> Query
+					:	SqlString = "SELECT * FROM base_table1 WHERE OBJECTID_1 <= 3"
+					,	IntegrityCheck  = "GeoDmsVersion() >= 6.045";
+
+				unit<uint32> Query_no_data
+					:	SqlString = "SELECT * FROM base_table1 WHERE OBJECTID_1 <= 0"
+					,	IntegrityCheck  = "GeoDmsVersion() >= 6.045";
+			}
+			container tests
+			{
+				parameter<bool> cardinalities := 
+					   #src/basetable_2 == 3 && #src/basetable == 2       && #src/base_table1 == 14
+					&& #src/test_lines  == 2 && #src/more_test_lines == 2 && #src/test_points == 2
+					&& #src/test_areas  == 2 && #src/Query  == 6          && #src/Query_no_data == 0;
+				attribute<bool> vert_accur (src/test_lines) := src/test_lines/VERT_ACCUR == const(0.01, src/test_lines);
+				parameter<bool> sum_submission := sum(src/base_table1/SUBMISSION_ID ) == 2685.0;
+				parameter<bool> random_values  := src/Query/PROJTYP_ID[3] == 3.0 && src/more_test_lines/UP_RIVER_M[0] == 114.6 && src/basetable/SYSTEM_NAME[1] == 'Some Other System';  
+			}
+			container results
+			{
+				parameter<bool> vert_accur := all(tests/vert_accur);
+				parameter<bool> all        := tests/cardinalities && vert_accur && tests/sum_submission && tests/random_values;
+			}
+		}
+	}
+
+	container pbf
+	{
+		container read
+		{
+			container src
+			:	StorageName     = "%projdir%/data/vect/pbf/liechtenstein.pbf"
+			,	StorageType     = "gdal.vect"
+			,	StorageReadOnly = "True"
+			,	SyncMode        = "AllTables"
+			{
+			}
+			container tests
+			{
+				parameter<uint32> nrrows_points           := #src/Points;
+				parameter<uint32> nrrows_lines            := #src/lines;
+				parameter<uint32> nrrows_multilinestrings := #src/multilinestrings;
+				parameter<uint32> nrrows_multipolygons    := #src/multipolygons;
+				parameter<uint32> nrrows_other_relations  := #src/other_relations;
+
+				parameter<uint32> strcount_crossing       := sum(strcount(src/Points/highway,'crossing'));
+
+				parameter<bool> cardinalities := nrrows_points == 22882 && nrrows_lines == 8591 && nrrows_multilinestrings == 311 && nrrows_multipolygons == 21701 && nrrows_other_relations == 253;
+				parameter<bool> contents      := strcount_crossing == 557;
+				parameter<bool> all           := cardinalities && contents;
+			}
+		}
+	}
+	container geoJSON
+	{
+		container read
+		{
+			container src : StorageName = "%projdir%/data/vect/GeoJSON/mask_ettenleur.geojson", StorageType = "gdal.vect", SyncMode = "AllTables";
+			container src_shp
+			{
+				unit<uint32> mask_ettenleur: StorageName = "%projdir%/data/vect/GeoJSON/mask.shp", StorageType = "gdal.vect";
+			}
+			container tests
+			{
+				unit<uint32> PointSet_geojson := Sequence2Points(src/mask_ettenleur/Geometry);
+				unit<uint32> PointSet_shp     := Sequence2Points(src_shp/mask_ettenleur/Geometry);
+
+				attribute<bool> test_point (PointSet_geojson)   := point_isNearby(union_data(PointSet_geojson, fpoint(PointSet_shp/point)), fPoint(PointSet_geojson/point), Dif_all_float32);
+				attribute<bool> test_seq   (PointSet_geojson)   := union_data(PointSet_geojson, PointSet_shp/sequenceNr)     == PointSet_geojson/sequenceNr;
+				attribute<bool> test_ord   (PointSet_geojson)   := union_data(PointSet_geojson, PointSet_shp/ordinal)        == PointSet_geojson/ordinal;
+				attribute<bool> test_id    (src/mask_ettenleur) := union_data(src/mask_ettenleur, int32(src_shp/mask_ettenleur/id)) == int32(src/mask_ettenleur/id);
+				
+				parameter<bool> all := all(test_point) && all(test_seq) && all(test_ord) && all(test_id);
+			}
+		}
+		container write
+		{
+			container export: StorageName = "%localDataProjDir%/regr_results/gdal_vect/geoJSON/mask_ettenleur.geojson", StorageType = "gdalwrite.vect"
+			{
+				unit<uint32> mask_ettenleur := read/src/mask_ettenleur
+				{
+					attribute<dpoint> geometry (polygon) := read/src/mask_ettenleur/Geometry;
+					attribute<int32>  id                 := read/src/mask_ettenleur/id;
+				}
+			}
+
+			container reread : StorageName = "%localDataProjDir%/regr_results/gdal_vect/geoJSON/mask_ettenleur.geojson", StorageType = "gdal.vect", SyncMode = "AllTables";
+
+			container tests
+			{
+				unit<uint32> PointSet_geojson := Sequence2Points(reread/mask_ettenleur/Geometry);
+
+				attribute<bool> test_point (PointSet_geojson)      := point_isNearby(union_data(PointSet_geojson, fpoint(read/tests/PointSet_shp/point)), fPoint(PointSet_geojson/point), Dif_all_float32);
+				attribute<bool> test_seq   (PointSet_geojson)      := union_data(PointSet_geojson, read/tests/PointSet_shp/sequenceNr)      == PointSet_geojson/sequenceNr;
+				attribute<bool> test_ord   (PointSet_geojson)      := union_data(PointSet_geojson, read/tests/PointSet_shp/ordinal)         == PointSet_geojson/ordinal;
+				attribute<bool> test_id    (reread/mask_ettenleur) := union_data(reread/mask_ettenleur, int32(read/src_shp/mask_ettenleur/id)) == int32(reread/mask_ettenleur/id);
+				
+				parameter<bool> all := all(test_point) && all(test_seq) && all(test_ord) && all(test_id);
+			}
+		}
+	}
+	container geopackage
+	{
+		container read
+		{
+			unit<uint32> single_polygon_layer : StorageName = "%projdir%/data/vect/gpkg/single_polygon_layer.gpkg", StorageType = "gdal.vect";
+			container multi_layer:              StorageName = "%projdir%/data/vect/gpkg/multi_layer.gpkg"         , StorageType = "gdal.vect", SyncMode = "AllTables";
+
+			container tests
+			{
+				unit<uint32> PointSet_single_polygon_layer : = Sequence2Points(single_polygon_layer/geometry)
+				{
+					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref (single_polygon_layer) := union_data(single_polygon_layer, reference/polygon/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
+					attribute<bool>   test_seq   := sequenceNr == union_data(., reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (single_polygon_layer) := single_polygon_layer/label == name_ref;
+				}
+				unit<uint32> PointSet_multi_layer_point : = multi_layer/point
+				{
+					attribute<fpoint> point_ref  := union_data(., reference/point/geometry);
+					attribute<string> name_ref   := union_data(., reference/point/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(multi_layer/point/geometry), point_ref, Dif_all_float32);
+					attribute<bool>   test_label := multi_layer/point/name == name_ref;
+				}
+				unit<uint32> PointSet_multi_layer_arc : = Sequence2Points(multi_layer/arc/geometry)
+				{
+					attribute<fpoint> point_ref  := union_data(.,   reference/arc/pointset/geometry);
+					attribute<string> name_ref (multi_layer/arc) := union_data(multi_layer/arc, reference/arc/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
+					attribute<bool>   test_seq   := sequenceNr == union_data(., reference/arc/pointset/seq_nr);
+					attribute<bool>   test_ord   := ordinal    == union_data(., reference/arc/pointset/ordinal);
+					attribute<bool>   test_label (multi_layer/arc) := multi_layer/arc/name == name_ref;
+				}
+				unit<uint32> PointSet_multi_layer_polygon : = Sequence2Points(multi_layer/polygon/geometry)
+				{
+					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref (multi_layer/polygon) := union_data(multi_layer/polygon, reference/polygon/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
+					attribute<bool>   test_seq   := sequenceNr == union_data(., reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (multi_layer/polygon) := multi_layer/polygon/name == name_ref;
+				}
+				unit<uint32> no_geometry := reference
+				{
+					attribute<bool> IntegerAtt  := eq_or_both_null(union_data(reference, multi_layer/no_geometry/IntegerAtt), reference/IntegerAtt);
+					//attribute<bool> UIntegerAtt := eq_or_both_null(union_data(reference, multi_layer/no_geometry/UIntegerAt), reference/UIntegerAtt);
+					attribute<bool> Int64Att    := eq_or_both_null(union_data(reference, multi_layer/no_geometry/Int64Att),   reference/Int64Att);
+					//attribute<bool> UInt64Att   := eq_or_both_null(union_data(reference, multi_layer/no_geometry/UInt64Att),  reference/UInt64Att);
+					//attribute<bool> UInt2Att    := eq_or_both_null(union_data(reference, multi_layer/no_geometry/UInt2Att),   reference/UInt2Att);
+					//attribute<bool> UInt4Att    := eq_or_both_null(union_data(reference, multi_layer/no_geometry/UInt4Att),   reference/UInt4Att);
+					//attribute<bool> UInt8Att    := eq_or_both_null(union_data(reference, multi_layer/no_geometry/UInt8Att),   reference/UInt8Att);
+					//attribute<bool> UInt8Att    := eq_or_both_null(union_data(reference, multi_layer/no_geometry/UInt8Att),   reference/UInt8Att);
+					attribute<bool> FloatAtt    := eq_or_both_null(union_data(reference, multi_layer/no_geometry/FloatAtt),   reference/FloatAtt);
+					attribute<bool> Float64Att  := eq_or_both_null(union_data(reference, multi_layer/no_geometry/Float64Att), reference/Float64Att);
+					attribute<bool> StringAtt   := eq_or_both_null(union_data(reference, multi_layer/no_geometry/StringAtt),  reference/StringAtt);
+					attribute<bool> BoolAtt     := eq_or_both_null(union_data(reference, multi_layer/no_geometry/BoolAtt),    reference/BoolAtt);
+				}
+
+				container results
+				{
+					parameter<bool> all := 
+						all(PointSet_single_polygon_layer/test_point) && all(PointSet_single_polygon_layer/test_seq) && all(PointSet_single_polygon_layer/test_ord) && all (PointSet_single_polygon_layer/test_label)
+					&&  all(PointSet_multi_layer_point/test_point)                                                                                                  && all (PointSet_multi_layer_point/test_label)
+					&&  all(PointSet_multi_layer_arc/test_point)      && all(PointSet_multi_layer_arc/test_seq)      && all(PointSet_multi_layer_arc/test_ord)      && all (PointSet_multi_layer_arc/test_label)
+					&&  all(PointSet_multi_layer_polygon/test_point)  && all(PointSet_multi_layer_polygon/test_seq)  && all(PointSet_multi_layer_polygon/test_ord)  && all (PointSet_multi_layer_polygon/test_label)
+					&&  all(no_geometry/IntegerAtt) && all(no_geometry/Int64Att) && all(no_geometry/FloatAtt) && all(no_geometry/Float64Att) && all(no_geometry/StringAtt) && all(no_geometry/BoolAtt);
+				}
+			}
+		}
+		
+		container write
+		{
+			container single_layer
+			{
+				unit<uint32> polygon := reference/polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/gpkg/single_polygon_layer.gpkg", StorageType = "gdalwrite.vect"
+				{
+					attribute<fpoint> geometry (polygon) := reference/polygon/Geometry;
+					attribute<string> label              := reference/polygon/Label  ;
+				}
+			}
+			container multi_layer: StorageName = "%localDataProjDir%/regr_results/gdal_vect/gpkg/multi_layer.gpkg", StorageType = "gdalwrite.vect"
+			{
+				unit<uint32> point := reference/Point 
+				{
+					attribute<fpoint> geometry := reference/Point/Geometry;
+					attribute<string> name     := reference/Point/Label;
+				}
+
+				unit<uint32> arc := reference/arc
+				{
+					attribute<fpoint> geometry (arc) := reference/arc/Geometry;
+					attribute<string> name           := reference/arc/Label;
+				}
+				
+				unit<uint32> polygon := reference/polygon 
+				{
+					attribute<fpoint> geometry (poly) := reference/polygon/Geometry;
+					attribute<string> name            := reference/polygon/Label;
+				}
+				unit<uint32> no_geometry := reference
+				{
+					attribute<int32>   IntegerAtt  := reference/IntegerAtt;
+					attribute<uint32>  UIntegerAt  := reference/UIntegerAtt;
+					attribute<int64>   Int64Att    := reference/Int64Att;
+					attribute<uint64>  UInt64Att   := reference/UInt64Att;
+					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
+					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
+					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+					attribute<float32> FloatAtt    := reference/FloatAtt;
+
+					attribute<float64> Float64Att  := reference/Float64Att;
+					attribute<string>  StringAtt   := reference/StringAtt;
+					attribute<bool>    BoolAtt     := reference/BoolAtt;
+				}
+			}
+			container reread
+			{
+				unit<uint32> single_polygon_layer : StorageName = "%localDataProjDir%/regr_results/gdal_vect/gpkg/single_polygon_layer.gpkg", StorageType = "gdal.vect";
+				container multi_layer:              StorageName = "%localDataProjDir%/regr_results/gdal_vect/gpkg/multi_layer.gpkg"         , StorageType = "gdal.vect", SyncMode = "AllTables";
+			}
+			container tests
+			{
+				unit<uint32> PointSet_single_polygon_layer : = Sequence2Points(reread/single_polygon_layer/geometry)
+				{
+					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref (reread/single_polygon_layer) := union_data(reread/single_polygon_layer, reference/polygon/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
+					attribute<bool>   test_seq   := sequenceNr == union_data(., reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (reread/single_polygon_layer) := reread/single_polygon_layer/label == name_ref;
+				}
+				unit<uint32> PointSet_multi_layer_point : = reread/multi_layer/point
+				{
+					attribute<fpoint> point_ref  := union_data(., reference/point/geometry);
+					attribute<string> name_ref   := union_data(., reference/point/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(reread/multi_layer/point/geometry), point_ref, Dif_all_float32);
+					attribute<bool>   test_label := reread/multi_layer/point/name == name_ref;
+				}
+				unit<uint32> PointSet_multi_layer_arc : = Sequence2Points(reread/multi_layer/arc/geometry)
+				{
+					attribute<fpoint> point_ref  := union_data(.,   reference/arc/pointset/geometry);
+					attribute<string> name_ref (reread/multi_layer/arc) := union_data(reread/multi_layer/arc, reference/arc/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
+					attribute<bool>   test_seq   := sequenceNr == union_data(., reference/arc/pointset/seq_nr);
+					attribute<bool>   test_ord   := ordinal    == union_data(., reference/arc/pointset/ordinal);
+					attribute<bool>   test_label (reread/multi_layer/arc) := reread/multi_layer/arc/name == name_ref;
+				}
+				unit<uint32> PointSet_multi_layer_polygon : = Sequence2Points(reread/multi_layer/polygon/geometry)
+				{
+					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref (reread/multi_layer/polygon) := union_data(reread/multi_layer/polygon, reference/polygon/label);
+
+					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
+					attribute<bool>   test_seq   := sequenceNr == union_data(., reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (reread/multi_layer/polygon) := reread/multi_layer/polygon/name == name_ref;
+				}
+				unit<uint32> no_geometry := reference
+				{
+					attribute<bool> IntegerAtt  := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/IntegerAtt), reference/IntegerAtt);
+					//attribute<bool> UIntegerAtt := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/UIntegerAt), reference/UIntegerAtt);
+					attribute<bool> Int64Att    := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/Int64Att),   reference/Int64Att);
+					//attribute<bool> UInt64Att   := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/UInt64Att),  reference/UInt64Att);
+					//attribute<bool> UInt2Att    := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/UInt2Att),   reference/UInt2Att);
+					//attribute<bool> UInt4Att    := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/UInt4Att),   reference/UInt4Att);
+					//attribute<bool> UInt8Att    := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/UInt8Att),   reference/UInt8Att);
+					//attribute<bool> UInt8Att    := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/UInt8Att),   reference/UInt8Att);
+					attribute<bool> FloatAtt    := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/FloatAtt),   reference/FloatAtt);
+					attribute<bool> Float64Att  := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/Float64Att), reference/Float64Att);
+					attribute<bool> StringAtt   := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/StringAtt),  reference/StringAtt);
+					attribute<bool> BoolAtt     := eq_or_both_null(union_data(reference, reread/multi_layer/no_geometry/BoolAtt),    reference/BoolAtt);
+				}
+
+				container results
+				{
+					parameter<bool> all := 
+						all(PointSet_single_polygon_layer/test_point) && all(PointSet_single_polygon_layer/test_seq) && all(PointSet_single_polygon_layer/test_ord) && all (PointSet_single_polygon_layer/test_label)
+					&&  all(PointSet_multi_layer_point/test_point)                                                                                                  && all (PointSet_multi_layer_point/test_label)
+					&&  all(PointSet_multi_layer_arc/test_point)      && all(PointSet_multi_layer_arc/test_seq)      && all(PointSet_multi_layer_arc/test_ord)      && all (PointSet_multi_layer_arc/test_label)
+					&&  all(PointSet_multi_layer_polygon/test_point)  && all(PointSet_multi_layer_polygon/test_seq)  && all(PointSet_multi_layer_polygon/test_ord)  && all (PointSet_multi_layer_polygon/test_label)
+					&&  all(no_geometry/IntegerAtt) && all(no_geometry/Int64Att) && all(no_geometry/FloatAtt) && all(no_geometry/Float64Att) && all(no_geometry/StringAtt) && all(no_geometry/BoolAtt);
+				}
+			}
+		}
+	}
+	container Tiff
+	{
+		unit<spoint> gridsel :=
+			range(
+				gridset(
+					 units/point_rd
+					,point(-40f, 40f, units/point_rd)
+					,point(383960,216040)
+					,spoint
+				)
+				,point(0s, 0s)
+				,point(2s, 2s)
+			)
+		{
+			attribute<.> id := id(.);
+		}
+		unit<uint4> colorindex
+		{
+			attribute<uint32> palette := Read/grid_palet/PaletteData, DialogType = "BrushColor";
+		}
+		unit<uint8> cl_lu: nrofrows = 9
+		{
+			attribute<string> label      : ['residential','industrial','recreation','agriculture','nature','buildinglot','infrastructure','water','exterior'];
+			attribute<uint32> BrushColor : [rgb(225,0,0), rgb(128,0,255),rgb(255,228,0),rgb(192,255,128),rgb(100,192,100),rgb(128,128,128),rgb(128,0,0),rgb(159,255,255),rgb(255,255,228)], DialogType = "BrushColor";
+		}
+
+		container Read
+		{
+			unit<spoint> grid_uint32
+			: StorageName     = "%projdir%/data/grid/tiff/uint32.tif"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint32> GridData           ;
+				attribute<uint32> ReadData (gridsel) ;
+			}
+			
+			unit<spoint> grid_uint8_nth_band
+			: StorageName     = "%projdir%/data/grid/tiff/uint32.tif"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint8> Red           : SqlString="BANDS=1";
+				attribute<uint8> Blue          : SqlString="BANDS=2";
+				attribute<uint8> Green         : SqlString="BANDS=3";
+				attribute<uint8> Magenta       : SqlString="BANDS=4";
+				attribute<uint32> ReadData (gridsel) ;
+			}
+			
+			unit<spoint> grid_uint32_native
+			: StorageName     = "%projdir%/data/grid/tiff/uint32.tif"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint32> GridData           ;
+				attribute<uint32> ReadData (gridsel) ;
+			}
+			
+			unit<spoint> grid_uint8
+			: StorageName     = "%projdir%/data/grid/tiff/uint8.tif"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint8> GridData           ;
+				attribute<uint8> ReadData (gridsel) ;
+			}
+			unit<spoint> grid_float32
+			: StorageName     = "%projdir%/data/grid/tiff/float32.tif"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<float32> GridData           ;
+				attribute<float32> ReadData (gridsel) ;
+			}
+			unit<spoint> grid_bool
+			: StorageName     = "%projdir%/data/grid/tiff/bool.tif"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<bool> GridData           ;
+				attribute<bool> ReadData (gridsel) ;
+			}
+
+			unit<spoint> grid_palet
+			: StorageName     = "%projdir%/data/grid/tiff/palet.tif"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<colorindex>  GridData;
+				attribute<uint32>      PaletteData (colorindex);
+			}
+
+			unit<spoint> grid_palet_native
+			: StorageName     = "%projdir%/data/grid/tiff/palet.tif"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<colorindex>  GridData;
+				attribute<uint32>      PaletteData (colorindex);
+			}
+
+			unit<spoint> nl_lu_2010
+			: StorageName     = "%projdir%/data/grid/tiff/nl_lu_2010.tif"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<cl_lu>  GridData;
+			}
+
+			container tests
+			{
+				attribute<bool> GridData_uint32 (Grid_uint32)  := eq_or_both_null(Grid_uint32/GridData, reference/Grid/GridData_uint32);
+				attribute<bool> ReadData_uint32 (Tiff/gridsel) := eq_or_both_null(Grid_uint32/ReadData, reference/gridsel/ReadData_uint32);
+
+				attribute<bool> GridData_uint8  (Grid_uint8)   := eq_or_both_null(Grid_uint8/GridData, union_data(Grid_uint8, reference/Grid/GridData_uint8));
+				attribute<bool> ReadData_uint8  (Tiff/gridsel) := eq_or_both_null(Grid_uint8/ReadData, reference/gridsel/ReadData_uint8);
+
+				attribute<bool> GridData_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, Float32(0 / 0)), union_data(Grid_float32, reference/Grid/GridData_float32));
+				attribute<bool> ReadData_float32 (Tiff/gridsel) := eq_or_both_null(Grid_float32/ReadData, reference/gridsel/ReadData_float32);
+
+
+				container nl_lu_2020
+				{
+					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point(0s,0s,nl_lu_2010)];     //7
+					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point(275s,223s,nl_lu_2010)]; //0
+					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point(378s,342s,nl_lu_2010)]; //6
+
+					parameter<uint32> nr_cells_water           := sum(nl_lu_2010/GridData == 7b ? 1 :0);
+					parameter<uint32> nr_cells_residential     := sum(nl_lu_2010/GridData == 0b ? 1 :0);
+					parameter<uint32> nr_cells_infrastructure  := sum(nl_lu_2010/GridData == 6b ? 1 :0);
+
+					parameter<units/point_rd> rd_coord_0_0     := point(0s,0s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_274_233 := point(275s,223s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_378_342 := point(378s,342s,nl_lu_2010)[units/point_rd];
+
+					parameter<bool> all := 
+						GridData_0_0 == 7[cl_lu] && GridData_274_233 == 0[cl_lu] && GridData_378_342 == 6[cl_lu]
+					 && nr_cells_water == 113235 && nr_cells_residential == 11864  && nr_cells_infrastructure == 372
+					 && pointRow(rd_coord_0_0)     == 625000f && pointCol(rd_coord_0_0)     == 10000f
+					 && pointRow(rd_coord_274_233) == 487500f && pointCol(rd_coord_274_233) == 121500f
+					 && pointRow(rd_coord_378_342) == 436000f && pointCol(rd_coord_378_342) == 181000f
+					 ;
+				}
+				//attribute<bool> test_float32 (Grid_float32)  := eq_or_both_null(Grid_float32/GridData, union_data(Grid_float32, GridReference/GridData_float32));
+				//attribute<bool> test_bool    (Grid_bool)     := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
+
+			}
+
+			container Results
+			{
+				parameter<bool> all := 
+				//all(tests/GridData_uint32) && all(tests/ReadData_uint32);
+
+				   all(tests/GridData_uint8)   && all(tests/ReadData_uint8)
+				&& all(tests/GridData_float32) && all(tests/ReadData_float32)
+				&& tests/nl_lu_2020/all
+				;
+				//&& all(tests/test_uint8) && all(tests/test_float32) && all(tests/test_uint32) && all (tests/test_sel); 
+			}	
+		}
+		container Write
+		{
+			container export
+			{
+				parameter<string> GDAL_Driver : ['GTiff'];
+				unit<uint32> optionSet := range(uint32, 0, 3);
+				attribute<string> GDAL_Options(optionSet) : [ 'NUM_THREADS=ALL_CPUS', 'COMPRESS=LZW', 'PREDICTOR=2'];
+
+				unit<spoint> grid_uint32 := Tiff/read/Grid_uint32
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint32.tif"
+				, StorageType     = "gdalwrite.grid"
+				, StorageReadOnly = "false"
+				{
+					attribute<uint32> GridData := Tiff/read/Grid_uint32/GridData;
+				}
+
+				unit<spoint> grid_uint8 := Tiff/read/Grid_uint8
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint8.tif"
+				, StorageType     = "gdalwrite.grid"
+				, StorageReadOnly = "false"
+				{
+					attribute<uint8> GridData := Tiff/read/Grid_uint8/GridData;
+				}
+
+				unit<spoint> grid_float32 := Tiff/read/Grid_float32
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_float32.tif"
+				, StorageType     = "gdalwrite.grid"
+				, StorageReadOnly = "false"
+				{
+					attribute<float32> GridData := Tiff/read/Grid_float32/GridData;
+				}
+				
+				/*
+				unit<spoint> nl_lu_2010 := Tiff/read/nl_lu_2010
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_nl_lu_2010.tif"
+				, StorageType     = "gdalwrite.grid"
+				, StorageReadOnly = "false"
+				{
+					attribute<uint8> GridData := Tiff/read/nl_lu_2010/GridData;
+				}
+				*/
+
+				/*
+				unit<spoint> grid_bool := Tiff/read/Grid_bool
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_bool.tif"
+				, StorageType     = "gdalwrite.grid"
+				, StorageReadOnly = "false"
+				{
+					attribute<uint32> GridData := Tiff/read/Grid_bool/GridData;
+				}
+				*/
+			}
+
+			container ReRead
+			{
+				unit<spoint> grid_uint32
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint32.tif"
+				, StorageType     = "gdal.grid"
+				, DialogData      = "units/point_rd"
+				, StorageReadOnly = "True"
+				{
+					attribute<uint32> GridData;
+				}
+				unit<spoint> grid_uint8
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint8.tif"
+				, StorageType     = "gdal.grid"
+				, DialogData      = "units/point_rd"
+				, StorageReadOnly = "True"
+				{
+					attribute<uint8> GridData;
+				}
+				unit<spoint> grid_float32
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_float32.tif"
+				, StorageType     = "gdal.grid"
+				, DialogData      = "units/point_rd"
+				, StorageReadOnly = "True"
+				{
+					attribute<float32> GridData;
+				}
+				/*
+				unit<spoint> grid_bool
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/bool.tif"
+				, StorageType     = "gdal.grid"
+				, DialogData      = "units/point_rd"
+				, StorageReadOnly = "True"
+				{
+					attribute<bool> GridData;
+				}
+				*/
+				unit<spoint> nl_lu_2010
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_nl_lu_2010.tif"
+				, StorageType     = "gdal.grid"
+				, DialogData      = "units/point_rd"
+				, StorageReadOnly = "True"
+				{
+					attribute<cl_lu>  GridData;
+				}
+			}
+
+			container tests
+			{
+				attribute<bool> GridData_uint32  (reread/Grid_uint32)  := eq_or_both_null(reread/Grid_uint32/GridData, union_data(reread/Grid_uint32, reference/Grid/GridData_uint32));
+				attribute<bool> GridData_uint8   (reread/Grid_uint8)   := eq_or_both_null(reread/Grid_uint8/GridData, union_data(reread/Grid_uint8, reference/Grid/GridData_uint8));
+				attribute<bool> GridData_float32 (reread/Grid_float32) := eq_or_both_null(replace_value(reread/Grid_float32/GridData, -9999f, Float32(0 / 0)), union_data(reread/Grid_float32, reference/Grid/GridData_float32));
+
+				container nl_lu_2020
+				{
+					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point(0s,0s,nl_lu_2010)];     //7
+					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point(275s,223s,nl_lu_2010)]; //0
+					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point(378s,342s,nl_lu_2010)]; //6
+
+					parameter<uint32> nr_cells_water           := sum(nl_lu_2010/GridData == 7b ? 1 :0);
+					parameter<uint32> nr_cells_residential     := sum(nl_lu_2010/GridData == 0b ? 1 :0);
+					parameter<uint32> nr_cells_infrastructure  := sum(nl_lu_2010/GridData == 6b ? 1 :0);
+
+					parameter<units/point_rd> rd_coord_0_0     := point(0s,0s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_274_233 := point(275s,223s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_378_342 := point(378s,342s,nl_lu_2010)[units/point_rd];
+
+					parameter<bool> all := 
+						GridData_0_0 == 7[cl_lu] && GridData_274_233 == 0[cl_lu] && GridData_378_342 == 6[cl_lu]
+					 && nr_cells_water == 113235 && nr_cells_residential == 11864  && nr_cells_infrastructure == 372
+					 && pointRow(rd_coord_0_0)     == 625000f && pointCol(rd_coord_0_0)     == 10000f
+					 && pointRow(rd_coord_274_233) == 487500f && pointCol(rd_coord_274_233) == 121500f
+					 && pointRow(rd_coord_378_342) == 436000f && pointCol(rd_coord_378_342) == 181000f
+					 ;
+				}
+			}
+
+			container Results
+			{
+				parameter<bool> all := 
+				//all(tests/GridData_uint32) && all(tests/ReadData_uint32);
+				   all(tests/GridData_uint8)
+				&& all(tests/GridData_float32)
+				//&& tests/nl_lu_2020/all
+				;
+			}
+		}
+	}
+	container bmp
+	{
+		container Read
+		{
+			//parameter<string> GDAL_Driver : ['BMP'];
+			unit<spoint> grid_uint32
+			: StorageName     = "%projdir%/data/grid/bmp/2_1.bmp"
+			, StorageType     = "gdal.grid"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint32> data;
+			}
+			unit<spoint> nl_lu_2010
+			: StorageName     = "%projdir%/data/grid/bmp/nl_lu_2010.bmp"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<tiff/cl_lu> data;
+			}
+		}
+		container Write
+		{
+			container export
+			{
+				parameter<string> GDAL_Driver : ['BMP'];
+
+				unit<spoint> nl_lu_2010 := Tiff/read/nl_lu_2010
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/bmp/gdal_nl_lu_2010.bmp"
+				, StorageType     = "gdalwrite.grid"
+				, StorageReadOnly = "false"
+				{
+					attribute<uint8> GridData := Tiff/read/nl_lu_2010/GridData;
+				}
+			}
+
+			container ReRead
+			{
+				unit<spoint> nl_lu_2010
+				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/bmp/gdal_nl_lu_2010.bmp"
+				, StorageType     = "gdal.grid"
+				, DialogData      = "units/point_rd"
+				, StorageReadOnly = "True"
+				{
+					attribute<cl_lu>  GridData;
+				}
+			}
+
+			container tests
+			{
+				container nl_lu_2020
+				{
+					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point(0s,0s,nl_lu_2010)];     //7
+					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point(275s,223s,nl_lu_2010)]; //0
+					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point(378s,342s,nl_lu_2010)]; //6
+
+					parameter<uint32> nr_cells_water           := sum(nl_lu_2010/GridData == 7b ? 1 :0);
+					parameter<uint32> nr_cells_residential     := sum(nl_lu_2010/GridData == 0b ? 1 :0);
+					parameter<uint32> nr_cells_infrastructure  := sum(nl_lu_2010/GridData == 6b ? 1 :0);
+
+					parameter<units/point_rd> rd_coord_0_0     := point(0s,0s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_274_233 := point(275s,223s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_378_342 := point(378s,342s,nl_lu_2010)[units/point_rd];
+
+					parameter<bool> all := 
+						GridData_0_0 == 7[cl_lu] && GridData_274_233 == 0[cl_lu] && GridData_378_342 == 6[cl_lu]
+					 && nr_cells_water == 113235 && nr_cells_residential == 11864  && nr_cells_infrastructure == 372
+					 && pointRow(rd_coord_0_0)     == 625000f && pointCol(rd_coord_0_0)     == 10000f
+					 && pointRow(rd_coord_274_233) == 487500f && pointCol(rd_coord_274_233) == 121500f
+					 && pointRow(rd_coord_378_342) == 436000f && pointCol(rd_coord_378_342) == 181000f
+					 ;
+				}
+			}
+
+			container Results
+			{
+				parameter<bool> all := tests/nl_lu_2020/all;
+			}
+		}
+	}
+	container png
+	{
+		container Read
+		{
+			unit<spoint> grid_uint32
+			: StorageName     = "%projdir%/data/grid/png/2_1.png"
+			, StorageType     = "gdal.grid"
+			//, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint32> data;
+			}
+			unit<uint8> colorindex
+			{
+				attribute<uint32> palette := Read/grid_palet/PaletteData, DialogType = "BrushColor";
+			}
+			unit<spoint> nl_lu_2010
+			: StorageName     = "%projdir%/data/grid/png/nl_lu_2010.png"
+			, StorageType     = "gdal.grid"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint32> data;
+				attribute<uint32> PaletteData (colorindex);
+			}
+		}
+	}
+}
+
+
