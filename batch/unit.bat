@@ -76,6 +76,7 @@ Call Unit\Instance.bat %TstDir%\Unit\other\cfg\CombineRangeAndExprTest.dms test_
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\TemplateInstAsArg.dms test_log %ResultDir%\unit\other\TemplateInstAsArg.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\InstantiateDataBlock.dms test_log %ResultDir%\unit\other\InstantiateDataBlock.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\GridFromTemplate.dms test_log %ResultDir%\unit\other\GridFromTemplate.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Namespaces\cfg\TemplDefinition.dms test_log %ResultDir%\unit\Namespaces\TemplDefinition.txt S1 S2
 
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\CloseGUIIssue1.dms test_log %ResultDir%\unit\other\CloseGUIIssue1.txt S1 S2
 

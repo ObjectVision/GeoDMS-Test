@@ -1,0 +1,35 @@
+container TemplDefinition
+{
+	container extra_values
+	{
+		parameter<Float64> y := 5.0;
+	}
+	
+	container definition_container
+	{
+		parameter<Float64> y := 3.0;
+	
+		template f {
+			parameter<Float64> x;
+			parameter<Float64> result := x*x*y;
+		}
+		
+	}
+	
+	container instantion_container: using = "extra_values"
+	{
+		parameter<Float64> y := 7.0;
+		
+		container f1 := definition_container/f(1.0);
+		container f2 := definition_container/f(2.0);
+		
+	}
+	
+	parameter<bool> test := (instantion_container/f1/result == definition_container/y);
+
+	parameter<string> test_log := test
+		? '' 
+		: 'Namespaces/TemplDefinition Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/Namespaces/TemplDefinition.txt";
+}
