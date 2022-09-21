@@ -1,0 +1,16 @@
+container src_indirect
+{
+	parameter<string> dir := 'D:/Programs/ObjectVision/DataSets/2022_04_01/';
+
+	unit<uint32> pand: StorageName = "=dir + 'pand.fss'"
+	{
+		attribute<string> identificatie;
+	}
+	parameter<bool> test :=  isDefined(#pand);
+
+	parameter<string> test_log := test
+		? '' 
+		: 'Storage Source Indirect Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/src_indirect.txt";
+}

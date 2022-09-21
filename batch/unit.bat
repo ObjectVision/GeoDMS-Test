@@ -63,6 +63,8 @@ REM TO DO: WRITE FORMATS
 Call Unit\Instance.bat %TstDir%\storage\cfg\regression.dms results/unit_test_log                  %ResultDir%\unit\storage\read_geodms_formats.txt S1 S2
 Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_vect_read_log   %ResultDir%\unit\storage\read_gdal_vect_formats.txt S1 S2
 Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_grid_read_log   %ResultDir%\unit\storage\read_gdal_grid_formats.txt S1 S2
+Call Unit\instance.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log                        %ResultDir%\unit\storage\src_indirect.txt S1 S2
+
 
 REM SECTION OTHER 
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\DoubleInstantiation.dms test_log %ResultDir%\unit\other\DoubleInstantiation.txt S1 S2
