@@ -2975,6 +2975,80 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
 			}
+			container reg_count_uint16: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			{
+				container units
+				{
+					unit<uint32> Domain: nrofrows = 10;
+					unit<uint8>  RegioA: nrofrows = 5;
+					unit<uint8>  RegioB: nrofrows = 3;
+					unit<uint8>  Class:  nrofrows = 4
+					{
+						attribute<string> label: ['class1','class2','class3','class4'];
+					}
+				}
+				container Regios
+				{
+					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+				}
+				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+	
+				container references // expected results
+				{
+					attribute<uint16> class1 (units/regioA):[1,1,0,1,0];
+					attribute<uint16> class2 (units/regioA):[2,0,1,0,0];
+					attribute<uint16> class3 (units/regioB):[0,1,1];
+					attribute<uint16> class4 (units/regioA):[1,1,0,0,0];
+				}
+				container attributes := reg_count_uint16(src, units/Class/label, Regios, refs);
+				container tests
+				{
+					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+				}
+				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
+			}
+			container reg_count_uint8: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			{
+				container units
+				{
+					unit<uint32> Domain: nrofrows = 10;
+					unit<uint8>  RegioA: nrofrows = 5;
+					unit<uint8>  RegioB: nrofrows = 3;
+					unit<uint8>  Class:  nrofrows = 4
+					{
+						attribute<string> label: ['class1','class2','class3','class4'];
+					}
+				}
+				container Regios
+				{
+					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+				}
+				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+	
+				container references // expected results
+				{
+					attribute<uint8> class1 (units/regioA):[1,1,0,1,0];
+					attribute<uint8> class2 (units/regioA):[2,0,1,0,0];
+					attribute<uint8> class3 (units/regioB):[0,1,1];
+					attribute<uint8> class4 (units/regioA):[1,1,0,0,0];
+				}
+				container attributes := reg_count_uint8(src, units/Class/label, Regios, refs);
+				container tests
+				{
+					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+				}
+				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
+			}
 			container reg_count_empty: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
 			{
 				container units
@@ -3059,6 +3133,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& all/test_attr 
 					&& any/test_attr 
 					&& reg_count/test_attr
+					&& reg_count_uint16/test_attr
+					&& reg_count_uint8/test_attr
 					&& reg_count_empty/test_attr;
 				parameter<bool> tests := test_params && test_attr;
 			}
@@ -5347,6 +5423,28 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<origin>  seq: [];
 					attribute<uint32>  ord: [];
 					attribute<m_int16> z:   [];
+					attribute<bool>    test      := point(y,x,ipoint) = ipoint(point) && SequenceNr = seq && Ordinal = ord;
+					parameter<bool>    test_attr := all(test);
+				}
+			}
+			container dyna_segment:
+				Using = "source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/dyna_point"
+			{
+				attribute<float32> xp        (ADomain): [371391, 371384, 371378, 371369, 371364];
+				attribute<float32> yp        (ADomain): [ 13732,  13738,  13746,  13758,  13764];
+				attribute<float32> xn        (ADomain): [371384, 371378, 371369, 371364, 371360];
+				attribute<float32> yn        (ADomain): [ 13738,  13746,  13758,  13764,  13768];
+				attribute<fpoint>  point     (ADomain) := point(yp,xp,fpoint);
+				attribute<fpoint>  nextpoint (ADomain) := point(yn,xn,fpoint);
+				parameter<float32> CalcDist            := float32(5);
+				unit<uint32> CalcPoint                 := dyna_segment(point, nextpoint, CalcDist), DialogType = "Map", DialogData = "point"
+				{
+					attribute<int32>   x:   [371391,371387,371383,371380,371377,371374,371371,371368,371365,371361];
+					attribute<int32>   y:   [ 13732,13735,13738,13742,13746,13750,13754,13758,13762,13766];
+					attribute<origin>  seq: [0,0,1,1,2,2,2,3,3,4];
+					attribute<uint32>  ord: [0,1,0,1,0,1,2,0,1,0];
+					attribute<m_int16> z:   [10,30,20,15,20,0,20,60,15, null];
 					attribute<bool>    test      := point(y,x,ipoint) = ipoint(point) && SequenceNr = seq && Ordinal = ord;
 					parameter<bool>    test_attr := all(test);
 				}
