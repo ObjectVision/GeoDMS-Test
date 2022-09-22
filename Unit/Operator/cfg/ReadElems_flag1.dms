@@ -2,6 +2,8 @@ container ReadElems_flag1
 {
 	parameter<string> csv_filename := '%projdir%/data/ReadElems.csv';
 
+	parameter<uint32> CommaAsDecimalSeparator_flag := 1;
+	
 	container TableChopper
 	{
 		unit<uint32>      domain         := range(uint32, 0, count_rows);
@@ -11,27 +13,24 @@ container ReadElems_flag1
 		,  StorageName = "=csv_filename"
 		,  StorageReadOnly = "true";
 
-		parameter<string> filedata   := replace(filedata_src, ',', '', '\''','');
-		parameter<uint32> count_rows := strcount(filedata, '\n') - 1; //   4136157 
+		parameter<uint32> count_rows := strcount(filedata_src, '\n') - 1; //   4136157 
 
-		parameter<string> headerline := readLines(filedata, void, 0);
+		parameter<string> headerline := readLines(filedata_src, void, 0);
 
 		unit<uint32> field := Range(uint32, 0, strcount(headerline, fieldseparator) + 1)
 		{
 			attribute<string> name := ReadArray(headerline , field, string, 0);
 		}
 
-		attribute<string> bodylines (domain) := readLines(filedata, domain, headerline/ReadPos);
+		attribute<string> bodylines (domain) := readLines(filedata_src, domain, headerline/ReadPos);
 
 		container data :=
 			for_each_nedv(
 				field/name
-				,'ReadElems(
-					BodyLines
-					,string
-					,'+ MakeDefined(field/name[id(field)-1] + '/ReadPos','const(0, domain)')+'
-					,1
-				)'
+				,	'ReadElems(BodyLines,string, ' 
+					+ MakeDefined(field/name[id(field)-1] + '/ReadPos','const(0, domain)')
+					+',CommaAsDecimalSeparator_flag'
+					')'
 				,domain
 				,string
 			);
