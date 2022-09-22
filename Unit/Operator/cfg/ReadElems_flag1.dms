@@ -1,6 +1,6 @@
 container ReadElems_flag1
 {
-	parameter<string> csv_filename := '%projdir%/data/ReadElems.csv';
+	parameter<string> csv_filename := '%projdir%/data/ReadElemsHuisNummer.csv';
 
 	parameter<uint32> CommaAsDecimalSeparator_flag := 1;
 	
@@ -27,16 +27,16 @@ container ReadElems_flag1
 		container data :=
 			for_each_nedv(
 				field/name
-				,	'ReadElems(BodyLines,string, ' 
+				,	'ReadElems(BodyLines,float32, ' 
 					+ MakeDefined(field/name[id(field)-1] + '/ReadPos','const(0, domain)')
 					+',CommaAsDecimalSeparator_flag'
 					')'
 				,domain
-				,string
+				,float32
 			);
 	}
 
-	parameter<bool> test := float32(TableChopper/data/huisnr[6]) == 2f && float32(TableChopper/data/huisnr[7]) == 2.2f;
+	parameter<bool> test := TableChopper/data/huisnr[1] == 2f && TableChopper/data/huisnr[2] == 2.2f;
 
 	parameter<string> test_log := test
 		? '' 
