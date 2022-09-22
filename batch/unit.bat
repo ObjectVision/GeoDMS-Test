@@ -33,7 +33,9 @@ REM REMOVE OLD RESULTS
 del %ResultDir%\unit\operator\*.txt 2>nul
 del %ResultDir%\unit\storage\*.txt 2>nul
 del %ResultDir%\unit\integrity_check\*.txt 2>nul
+del %ResultDir%\unit\Namespaces\*.txt 2>nul
 del %ResultDir%\unit\other\*.txt 2>nul
+
 del %ResultFileName% 2>nul
 
 REM pause
@@ -56,15 +58,16 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\centroid_or_mid_complex.dms te
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\subitem_of_unit.dms test_log %ResultDir%\unit\operator\subitem_of_unit.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\subset.dms test_log %ResultDir%\unit\operator\subset.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\merge_indirect_domainunit.dms test_log %ResultDir%\unit\operator\merge_indirect_domainunit.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log %ResultDir%\unit\operator\ReadElems_flag24.txt S1 S2
 
 
 REM SECTION STORAGE 
 REM TO DO: WRITE FORMATS
-Call Unit\Instance.bat %TstDir%\storage\cfg\regression.dms results/unit_test_log                  %ResultDir%\unit\storage\read_geodms_formats.txt S1 S2
-Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_vect_read_log   %ResultDir%\unit\storage\read_gdal_vect_formats.txt S1 S2
-Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_grid_read_log   %ResultDir%\unit\storage\read_gdal_grid_formats.txt S1 S2
-Call Unit\instance.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log                        %ResultDir%\unit\storage\src_indirect.txt S1 S2
-
+Call Unit\Instance.bat %TstDir%\storage\cfg\regression.dms results/unit_test_log                %ResultDir%\unit\storage\read_geodms_formats.txt S1 S2
+Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_vect_read_log %ResultDir%\unit\storage\read_gdal_vect_formats.txt S1 S2
+Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_grid_read_log %ResultDir%\unit\storage\read_gdal_grid_formats.txt S1 S2
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log             %ResultDir%\unit\storage\src_indirect_check_file.txt S1 S2
+Call Unit\instance.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log_file_is_written      %ResultDir%\unit\storage\src_indirect.txt S1 S2
 
 REM SECTION OTHER 
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\DoubleInstantiation.dms test_log %ResultDir%\unit\other\DoubleInstantiation.txt S1 S2

@@ -6,11 +6,19 @@ container src_indirect
 	{
 		attribute<string> identificatie;
 	}
-	parameter<bool> test :=  isDefined(#pand);
+	parameter<bool> test := isDefined(#pand);
 
 	parameter<string> test_log := test
 		? '' 
 		: 'Storage Source Indirect Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/src_indirect_check_file.txt";
+	
+	parameter<string> log_file_written := ExistingFile('missing','%localDataDir%/GeoDMSTestResults/unit/storage/src_indirect_check_file.txt');
+
+	parameter<string> test_log_file_is_written := strcount(log_file_written, 'missing') > 0
+		? '' 
+		: 'Storage Source Indirect Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: result log file is written which is not OK'
 	,	StorageType = "str"
 	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/src_indirect.txt";
 }
