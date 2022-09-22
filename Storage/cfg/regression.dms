@@ -44,7 +44,6 @@ container StorageManagerTest
 //			   odbc/MsAccess/results/all 
 //			&& odbc/MsExcel/results/all 
 			 dbf/results/all 
-			&& xdb/results/all 
 			&& str/results/all 
 			&& strfiles/results/all 
 			&& ASCIIgrid/results/all 
@@ -201,31 +200,6 @@ container StorageManagerTest
 		}
 	}
 
-	container xdb // ASCII reference
-	{
-		container src: StorageName = "%projDir%/data/XDB.xdb"
-		{
-			attribute<int32>   IntegerAtt (reference);
-			attribute<float32> FloatAtt   (reference);
-		}
-		container Tests
-		{
-			attribute<bool> IntegerAtt (reference) := src/IntegerAtt == reference/IntegerAtt;
-			attribute<bool> FloatAtt   (reference) := src/FloatAtt   == reference/FloatAtt;
-		}
-		container Results
-		{
-			parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
-			parameter<bool> FloatAtt   := all(Tests/FloatAtt);
-			parameter<bool> all        := IntegerAtt && FloatAtt;
-		}
-		// In Maintenace
-		//container Write: StorageName = "C:/temp/XDB.xdb"
-		//{
-		//	attribute<int32>   IntAtt     (xdb/reference): expr = "reference/IntegerAtt";
-		//	attribute<float32> FloatAtt   (xdb/reference): expr = "reference/FloatAtt";
-		//}
-	}
 	container Str // ASCII String file
 	{
 		unit<uint8> Five: NrOfRows = 5;
