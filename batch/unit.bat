@@ -58,6 +58,7 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\centroid_or_mid_complex.dms te
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\subitem_of_unit.dms test_log %ResultDir%\unit\operator\subitem_of_unit.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\subset.dms test_log %ResultDir%\unit\operator\subset.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\merge_indirect_domainunit.dms test_log %ResultDir%\unit\operator\merge_indirect_domainunit.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag1.dms test_log %ResultDir%\unit\operator\ReadElems_flag1.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log %ResultDir%\unit\operator\ReadElems_flag24.txt S1 S2
 
 

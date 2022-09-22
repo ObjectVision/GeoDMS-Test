@@ -1,0 +1,48 @@
+container ReadElems_flag1
+{
+	parameter<string> csv_filename := '%projdir%/data/ReadElems.csv';
+
+	container TableChopper
+	{
+		unit<uint32>      domain         := range(uint32, 0, count_rows);
+		parameter<string> fieldseparator := ';';
+		parameter<string> filedata_src
+		:  StorageType   = "str"
+		,  StorageName = "=csv_filename"
+		,  StorageReadOnly = "true";
+
+		parameter<string> filedata   := replace(filedata_src, ',', '', '\''','');
+		parameter<uint32> count_rows := strcount(filedata, '\n') - 1; //   4136157 
+
+		parameter<string> headerline := readLines(filedata, void, 0);
+
+		unit<uint32> field := Range(uint32, 0, strcount(headerline, fieldseparator) + 1)
+		{
+			attribute<string> name := ReadArray(headerline , field, string, 0);
+		}
+
+		attribute<string> bodylines (domain) := readLines(filedata, domain, headerline/ReadPos);
+
+		container data :=
+			for_each_nedv(
+				field/name
+				,'ReadElems(
+					BodyLines
+					,string
+					,'+ MakeDefined(field/name[id(field)-1] + '/ReadPos','const(0, domain)')+'
+					,1
+				)'
+				,domain
+				,string
+			);
+	}
+
+	parameter<bool> test := float32(TableChopper/data/huisnr[6]) == 2f && float32(TableChopper/data/huisnr[7]) == 2.2f;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'ReadElems flag1 Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/ReadElems_flag1.txt";
+	
+}
