@@ -724,8 +724,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<uint32>  ParamA := 5;
 			parameter<uint32>  ParamB := 7;
 
-			attribute<float32> A      (Domain): [0,1,2.5,-100,999,null,null,0, null,100];
-			attribute<float32> B      (Domain): [0,2,2.5,100,-999,0,null,null, 100,null];
+			attribute<float32> A        (Domain): [0,1,2.5,-100,999,null,null,0, null,100];
+			attribute<float32> B        (Domain): [0,2,2.5,100,-999,0,null,null, 100,null];
+			attribute<float32> B_nearby (Domain): [0,2,2.49,98,998.5,0.1,null,null, 100,null];
+			
 			attribute<bool>    AisB   (Domain): [-1,0,-1,0,0,0,0,0,0,0];
 			attribute<bool>    eqAB   (Domain): [-1,0,-1,0,0,0,-1,0,0,0];
 			attribute<bool>    AltB   (Domain): [0,-1,0,-1,0,0,0,0,0,0];
@@ -740,6 +742,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<bool>    neAB   (Domain): [0,-1,0,-1,-1,-1,0,-1,-1,-1];
 			attribute<float32> sortA  (Domain): [null,null,null,-100,0,0,1,2.5,100,999]; 
 			attribute<float32> revA   (Domain): [100,null,0,null,null,999,-100,2.5,1,0]; 
+			attribute<bool>    flNAB  (Domain): [1,0,1,0,1,0,1,0,0,0]; 
 		}
 		template Esource
 		{
@@ -752,6 +755,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			attribute<float32> A      (Domain): [];
 			attribute<float32> B      (Domain): [];
+			attribute<float32> B_nearby (Domain): [];
 			attribute<bool>    AisB   (Domain): [];
 			attribute<bool>    eqAB   (Domain): [];
 			attribute<bool>    AltB   (Domain): [];
@@ -766,6 +770,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<bool>    neAB   (Domain): [];
 			attribute<float32> sortA  (Domain): []; 
 			attribute<float32> revA   (Domain): []; 
+			attribute<bool>    flNAB  (Domain): [];
 		}
 
 		template domsource
@@ -1299,6 +1304,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>    test(Domain) := eq_or_both_null(Source/RevA, att);
 				parameter<bool>    test_attr    := all(test) && uint8Domain/test_attr;
 			}
+			container float_is_nearby
+			{
+				attribute<bool> att  (Domain) := float_isNearby(Source/A, Source/B_nearby, 0.99f);
+				attribute<bool> test (Domain) := att == Source/flNAB;
+				parameter<bool> test_attr     := all(test);
+			}
 			container results
 			{
 				parameter<bool> test_params := 
@@ -1344,15 +1355,16 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& ne_or_one_null/test_attr
 					&& argmax/test_attr
 					&& argmax_uint16/test_attr
-					&& argmax_uint8/test_attr					
+					&& argmax_uint8/test_attr
 					&& argmin/test_attr 
 					&& argmin_uint16/test_attr 
-					&& argmin_uint8/test_attr					
+					&& argmin_uint8/test_attr
 					&& max_elem/test_attr 
 					&& min_elem/test_attr 
 					&& median/test_attr
 					&& sort/test_attr 
-					&& reverse/test_attr;
+					&& reverse/test_attr
+					&& float_is_nearby/test_attr;
 				parameter<bool> test_case_sensitive :=
 					   eq/test_case_sensitive 
 					&& eq_or_both_null/test_case_sensitive 
