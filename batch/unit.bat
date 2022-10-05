@@ -81,6 +81,8 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms test_log %ResultD
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms export %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms test_log %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
 
+REM SECTION GRID 
+Call Unit\Instance.bat %TstDir%\Unit\grid\cfg\spoint_nrElements.dms test_log %ResultDir%\unit\grid\spoint_nrElements.txt S1 S2
 
 REM SECTION OTHER 
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\DoubleInstantiation.dms test_log %ResultDir%\unit\other\DoubleInstantiation.txt S1 S2
