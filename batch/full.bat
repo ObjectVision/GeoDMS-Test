@@ -53,3 +53,4 @@ Call Full\Operator_tests.bat
 Call Full\Project_tests.bat
 
 Call Full\MakeReport.bat
+

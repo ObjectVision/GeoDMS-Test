@@ -65,6 +65,7 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\merge_indirect_domainunit.dms 
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag1.dms test_log %ResultDir%\unit\operator\ReadElems_flag1.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log %ResultDir%\unit\operator\ReadElems_flag24.txt S1 S2
 
+Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log %ResultDir%\unit\operator\operator.txt S1 S2
 
 REM SECTION STORAGE READ
 Call Unit\Instance.bat %TstDir%\storage\cfg\regression.dms results/unit_test_log                %ResultDir%\unit\storage\read_geodms_formats.txt S1 S2
