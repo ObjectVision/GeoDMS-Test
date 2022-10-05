@@ -1,0 +1,35 @@
+// Test based on version 7411, updating test item resulted in a memmory leak, application did not close correctly
+
+container Write_dbf
+{
+	unit<uint32> reference: nrofrows = 5
+	{
+		attribute<int32>   IntegerAtt : [0,1,256,-100,9999];
+		attribute<float32> FloatAtt   : [0,1,9999999,-2.5,99.9];
+		attribute<string>  StringAtt  : ['Hello','Test',null,'Two words','88a'];
+	}
+
+	container export: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteDbf.dbf"
+	{
+		attribute<int32>   IntegerAtt (reference) := reference/IntegerAtt;
+		attribute<float32> FloatAtt   (reference) := reference/FloatAtt;
+		attribute<string>  StringAtt  (reference) := reference/StringAtt;
+	}
+
+	container reRead: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteDbf.dbf"
+	{
+		attribute<int32>   IntegerAtt (reference);
+		attribute<float32> FloatAtt   (reference);
+		attribute<string>  StringAtt  (reference);
+	}
+
+	attribute<bool> test (reference) := 
+		reRead/IntegerAtt == union_data(reference, reference/IntegerAtt) && float_isNearby(reRead/FloatAtt, union_data(reference, reference/FloatAtt),0.99f ) 
+		&& eq_or_both_null(reRead/StringAtt, union_data(reference, reference/StringAtt));
+
+	parameter<string> test_log := all(test) 
+		? '' 
+		: 'Write Storage dbf Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteDbf.txt";
+}

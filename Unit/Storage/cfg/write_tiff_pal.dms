@@ -1,0 +1,47 @@
+// Test based on version 7411, updating test item resulted in a memmory leak, application did not close correctly
+
+container Write_tiff_pal
+{
+	unit<fpoint> rdc_m := range(fpoint, point(300000f,0f), point(625000f,280000f));
+
+	unit<uint4> colorindex 
+	{
+		attribute<uint32> palette : [262660,8684164,16580348,5527124,13942468,2369060,6600436,7798784,13795952,15991021,15794194,0,16646800,16711680,16711680,16711680];
+	}
+
+	unit<spoint> grid := range(
+		  gridset(
+			  rdc_m
+			 ,point(     -100f,     100f, rdc_m)
+			 ,point(625000f, 10000f, rdc_m)
+			 ,spoint
+		  )
+		  ,point(0s, 0s)
+		  ,point(5s, 5s)
+	   )
+	{
+		attribute<colorindex> data :[2,2,6,6,6,4,0,0,0,3,5,6,6,6,5,5,3,3,3,5,11,11,11,11,11];
+	}
+
+	container Export: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/tiff_pa.tif", explicitSuppliers = "grid"
+	{
+		attribute<colorindex> GridData    (Grid)       := grid/data;
+		attribute<uint32>     PaletteData (colorindex) := colorindex/palette;
+	}
+
+	unit<spoint> reRead: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/tiff_pa.tif" 
+	{
+		attribute<colorindex> GridData                 ;
+ 		attribute<uint32>     PaletteData (colorindex) ;
+	}
+
+	attribute<bool> test_griddata (reRead)     := reRead/GridData    == union_data(reRead, grid/data);
+	attribute<bool> test_palette  (colorindex) := reRead/PaletteData == colorindex/palette;
+	parameter<bool> test                       := all(test_griddata) && all(test_palette);
+
+	parameter<string> test_log := test
+		? '' 
+		: 'Write Tiff with Palette Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteTiff_pal.txt";
+}
