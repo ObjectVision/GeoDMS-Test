@@ -1,0 +1,64 @@
+container spoint_ZeroElements
+{
+	unit<float32> m             := baseunit('m', float32);
+	unit<fpoint>  point_rd_base : Format = "EPSG:28992";
+	unit<fpoint>  point_rd      := range(point_rd_base, point(300000[m], 0[m]), point(625000[m], 280000[m]));
+
+	parameter<int16> nr_cols := int16(632);
+	parameter<int16> nr_rows := int16(778);
+	parameter<m>     gridsize:= 10[m];
+
+	unit<spoint> untiled_domain:=
+		range(
+			 gridset(
+				 point_rd
+				,point(float32(gridsize), float32(-gridsize), point_rd)
+				,point(89849.8[m], 466895[m], point_rd)
+				,spoint
+			)
+			,point(int16(0), int16(0))
+			,point(nr_cols,nr_rows)
+		)
+	,	DialogData = "point_rd"
+	{				
+		attribute<.>     id  := id(.);
+		attribute<int16> row := PointRow(id);
+		attribute<int16> row_def := MakeDefined(row, int16(0));
+	}
+
+	unit<spoint> tiled_domain:= TiledUnit(point(int16(1024),int16(1024), untiled_domain))
+	{
+		attribute<.>     id  := id(.);
+		attribute<int16> row := PointRow(id);
+	}
+
+	parameter<uint32> untiled_nrElements := count(untiled_domain/row_def);
+	parameter<uint32> tiled_nrElements := count(tiled_domain/row);
+	parameter<bool>   test     := tiled_nrElements == 0 ;
+	parameter<string> test_log := test 
+		? '' 
+		: 'Spoint Zero Elements Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/grid/spoint_ZeroElements.txt";
+	
+	unit<spoint> src
+	: StorageName     = "%projdir%/data/test.tif"
+	, StorageType     = "gdal.grid" 
+	, StorageReadOnly = "True"
+	, DialogData      = "point_rd"
+	{
+		attribute<uint8> GridData;
+		attribute<.>     src_rel_m10 (tiled_domain):= id(tiled_domain)[.];
+	}
+
+	attribute<uint8> DefinedTif  (tiled_domain) := isDefined(tiled_domain/row)
+		? src/GridData[src/src_rel_m10]
+		: 0b / 0b
+	, StorageName = "%LocalDataProjDir%/GeoDMSTestResults/unit/grid/spoint_NullElements.tif";
+	
+	parameter<string> test_log_to_tiff := sum(DefinedTif) == 0b
+		? '' 
+		: 'Spoint Zero Elements To Tiff Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/grid/spoint_ZeroElementsToTiff.txt";
+}
