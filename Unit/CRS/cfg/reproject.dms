@@ -1,0 +1,23 @@
+container reproject
+{
+	#include <Units.dms>
+	#include <Geography.dms>
+	
+	// points
+	parameter<Geography/rdc_meter_base> rdc_point  := point(390390, 111612, Geography/rdc_meter_base);
+	parameter<Geography/wgs84_base> wgs_point 	   := point(4.76232572, 51.5008628, Geography/wgs84_base);
+	parameter<Geography/point_be_base> be_point    := point(243550, 177331, Geography/point_be_base);
+	
+	// conversion
+	parameter<Geography/wgs84_base> rdc_wgs84_conv_point := convert(rdc_point, Geography/wgs84_base);
+	parameter<Geography/rdc_meter_base>  be_rdc_conv_point    := convert(be_point, Geography/rdc_meter_base);
+	parameter<Geography/rdc_meter_base>  wgs84_rdc_conv_point := convert(wgs_point, Geography/rdc_meter_base);
+	
+	// test
+	//parameter<bool> check1 := upoint(rdc_wgs84_conv_point*point(10000.0, 10000.0, dpoint) == upoint(wgs_point*point(10000.0, 10000.0, dpoint));
+	parameter<bool> check2 := PointRow(be_rdc_conv_point)    == PointRow(rdc_point);
+	parameter<bool> check3 := PointRow(wgs84_rdc_conv_point) == PointRow(rdc_point);
+	
+	// test all
+	parameter<bool> check_all := check2 && check3;
+}
