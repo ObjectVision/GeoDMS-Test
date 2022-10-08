@@ -1,0 +1,38 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS configuratie structuren                              //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       November 2010                                                        //
+//                                                                                                            //
+//                            Continue aanpassingen vanaf 2010                                                //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97", 
+{
+
+	container geography
+	{
+		unit<fpoint> rdc;
+	}
+	
+	unit<uint32> selectie_polygoon : nrofrows = 1
+	{
+		parameter<geography/rdc> top_left := point(110000f, 500000f, geography/rdc);
+		parameter<geography/rdc> top_right := point(135000f, 500000f, geography/rdc);
+		parameter<geography/rdc> bottom_left := point(110000f, 475000f, geography/rdc);
+		parameter<geography/rdc> bottom_right := point(135000f, 475000f, geography/rdc);
+		
+		unit<uint32> point_set : nrofrows = 5
+		{
+			attribute<geography/rdc> point := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+			attribute<selectie_polygoon> sequence_rel := const(0, .);
+			attribute<.> ordinal := id(.);
+		}
+		
+		attribute<geography/rdc> polygon (polygon) := points2sequence(point_set/point, point_set/sequence_rel, point_set/ordinal);		
+	}
+}
