@@ -808,7 +808,17 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			attribute<float64> x :[130005.0];
 			attribute<float64> y :[454005.0];
-			attribute<geometries/rdc_mm> geometry_mm      := point(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
+			attribute<geometries/rdc_mm> geometry_mm  := point(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
+
+			attribute<geometries/rdc_mm> geometry_mm_windmolen_symbol1      := geometry_mm
+			{
+				parameter<int16> SymbolIndex := int16(82), DialogType = "SymbolIndex";
+			}
+			attribute<geometries/rdc_mm> geometry_mm_windmolen_symbol2      := geometry_mm
+			{
+				parameter<int16> SymbolIndex := int16(83), DialogType = "SymbolIndex";
+			}
+			
 		}
 		unit<uint32> testdomain_null:= Subset(id(testdomain1) > 1)
 		{
