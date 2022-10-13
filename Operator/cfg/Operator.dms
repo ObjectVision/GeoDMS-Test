@@ -10800,7 +10800,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		parameter<uint8>  param_uint8  := 255b;
 		parameter<uint16> param_uint16 := 65535w;
 		parameter<uint32> param_uint32 := 4294967295;
+		
+		parameter<uint64> param_uint64_1 := 4294967295u64;
+		parameter<uint64> param_uint64_2 := 42949672950000u64;
+		parameter<uint64> param_uint64_3 := 18446744073709551614u64;
+		parameter<uint64> param_uint64_4 := 18446744073709551615u64;
 
+		parameter<int64> param_int64_1 := 9223372036854775806i64;
+		parameter<int64> param_int64_2 := 9223372036854775807i64;
+		
 		parameter<int8>   param_int8  := -128c;
 		parameter<int16>  param_int16 :=  -32768s;
 		parameter<int32>  param_int32 := -2147483648i;
@@ -10808,10 +10816,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		parameter<bool>   test_uint8  := eq_or_both_null(param_uint8,  0b / 0b);
 		parameter<bool>   test_uint16 := eq_or_both_null(param_uint16, 0w / 0w);
 		parameter<bool>   test_uint32 := eq_or_both_null(param_uint32, 0 / 0);
+		parameter<bool>   test_uint64 := eq_or_both_null(param_uint64_4, 0u64 / 0u64);
 
 		parameter<bool>   test_int8  := eq_or_both_null(param_int8,  0c / 0c);
 		parameter<bool>   test_int16 := eq_or_both_null(param_int16, 0s / 0s);
 		parameter<bool>   test_int32 := eq_or_both_null(param_int32, 0i / 0i);
+		parameter<bool>   test_int64 := eq_or_both_null(param_int64_2, 0i64 / 0i64);
 		
 		parameter<bool>   tests      := test_uint8 && test_uint16 && test_uint32 && test_int8 && test_int16 && test_int32;
 	}
