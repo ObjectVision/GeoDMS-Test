@@ -108,24 +108,28 @@ def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_c
     while (psutil.pid_exists(pid)):
         timestamp_start = datetime.now()
 
-        with p.oneshot():
-            cur_time = datetime.now()
-            log["time"].append(cur_time)
-            log["dtime"].append((cur_time-start_time).total_seconds()-delta_start_time)
-            cpu_percent = p.cpu_percent() / psutil.cpu_count()
-            cpu_curr_time += cpu_percent / 100.0
-            log["cpu_percent"].append(cpu_percent)
-            log["cpu_curr_time"].append(cpu_curr_time)
-            log["memory_percent"].append(p.memory_percent())
-            memory_info = p.memory_info()
-            log["rss"].append(memory_info.rss * 10.0**-9.0) # GB
-            log["vms"].append(memory_info.vms * 10.0**-9.0) # GB
-            log["num_threads"].append(p.num_threads())
-            io_counters = p.io_counters()
-            log["read_bytes"].append((io_counters.read_bytes-prev_io_counters.read_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
-            log["write_bytes"].append((io_counters.write_bytes-prev_io_counters.write_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
-            log["total_read_bytes"].append(io_counters.read_bytes/10.0**9) # mb
-            log["total_write_bytes"].append(io_counters.write_bytes/10.0**9) # mb       
+        try:
+            with p.oneshot():
+                cur_time = datetime.now()
+                log["time"].append(cur_time)
+                log["dtime"].append((cur_time-start_time).total_seconds()-delta_start_time)
+                cpu_percent = p.cpu_percent() / psutil.cpu_count()
+                cpu_curr_time += cpu_percent / 100.0
+                log["cpu_percent"].append(cpu_percent)
+                log["cpu_curr_time"].append(cpu_curr_time)
+                log["memory_percent"].append(p.memory_percent())
+                memory_info = p.memory_info()
+                log["rss"].append(memory_info.rss * 10.0**-9.0) # GB
+                log["vms"].append(memory_info.vms * 10.0**-9.0) # GB
+                log["num_threads"].append(p.num_threads())
+                io_counters = p.io_counters()
+                log["read_bytes"].append((io_counters.read_bytes-prev_io_counters.read_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
+                log["write_bytes"].append((io_counters.write_bytes-prev_io_counters.write_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
+                log["total_read_bytes"].append(io_counters.read_bytes/10.0**9) # mb
+                log["total_write_bytes"].append(io_counters.write_bytes/10.0**9) # mb
+        except:
+            break
+
         prev_io_counters = io_counters
         
         timestamp_end = datetime.now()
@@ -136,6 +140,7 @@ def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_c
         
         if sleep_time > 0.0:
             time.sleep(sleep_time)
+            
     return log, start_time, cpu_curr_time
 
 def getPerformanceBatch(batch_cmd, sampling_rate=1.0):
