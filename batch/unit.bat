@@ -35,6 +35,12 @@ del %ResultDir%\unit\storage\*.txt 2>nul
 del %ResultDir%\unit\storage\*.dbf 2>nul
 del %ResultDir%\unit\storage\*.tif 2>nul
 del %ResultDir%\unit\storage\*.tfw 2>nul
+del %ResultDir%\unit\storage\OneRecord.fss\*.dmsdata 2>nul
+del %ResultDir%\unit\storage\OneRecord.fss\*.fss 2>nul
+del %ResultDir%\unit\storage\ZeroRecord.fss\*.dmsdata 2>nul
+del %ResultDir%\unit\storage\ZeroRecord.fss\*.fss 2>nul
+
+pause
 
 del %ResultDir%\unit\integrity_check\*.txt 2>nul
 del %ResultDir%\unit\Namespaces\*.txt 2>nul
@@ -80,6 +86,12 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms export %ResultDir
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms test_log %ResultDir%\unit\storage\WriteDbf.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms export %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms test_log %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms write_data %ResultDir%\unit\storage\fss_one_record.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms test_log %ResultDir%\unit\storage\fss_one_record.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms write_data %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms test_log %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
+
+
 
 REM SECTION GRID 
 Call Unit\Instance.bat %TstDir%\Unit\grid\cfg\spoint_nrElements.dms test_log %ResultDir%\unit\grid\spoint_nrElements.txt S1 S2
