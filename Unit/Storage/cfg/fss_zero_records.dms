@@ -1,0 +1,49 @@
+container fss_zero_records
+{
+	unit<uint32> csv
+	: StorageName     = "%projdir%/data/emptycsv.csv"
+	, StorageType     = "gdal.vect"
+	, StorageReadOnly = "True";
+
+	unit<uint32> attribute := SubItem_PropValues(csv,'name');
+
+	container write_domain : StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/ZeroRecord.fss"
+	{
+		unit<uint32> domain := csv;
+	}
+
+	container write_data :=
+		for_each_nedv(
+			attribute/name
+			, 'csv/' + attribute/name
+			, write_domain/domain
+			, string
+		),	StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/ZeroRecord.fss"
+	{
+		unit<uint32> domain := write_domain/domain;
+	}
+
+	container read_domain
+	: StorageName     = "%localDataDir%/GeoDMSTestResults/unit/storage/ZeroRecord.fss"
+	, StorageReadOnly = "True"
+	{
+		unit<uint32> domain;
+	}
+
+	container read_data := 
+		for_each_ndv(
+			  attribute/name
+			, read_domain/domain
+			, string
+		)
+	, StorageName     = "%localDataDir%/GeoDMSTestResults/unit/storage/ZeroRecord.fss"
+	, StorageReadOnly = "True";
+
+	parameter<bool> test := #read_domain/domain == 1;
+
+	parameter<string> test_log := all(test) 
+		? '' 
+		: 'FSS with zero elements test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/fss_zero_record.txt";
+}
