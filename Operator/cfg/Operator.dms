@@ -2674,6 +2674,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>   test      (Region) := att = Region/pcountRegionNr;
 				parameter<bool>   test_attr          := all(test);
 			}
+			container has_any: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/has_any"
+			{
+				attribute<bool>   att       (Region) := has_any(City/RegionNr);
+				attribute<bool>   test      (Region) := att == (Region/pcountRegionNr > 0);
+				parameter<bool>   test_attr          := all(test);
+			}
 			container min: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/min"
 			{
 				parameter<bool>   test_param_uint32 := min(City/NrInhabitants) = params/minNrInhabitants ;
@@ -3178,6 +3184,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_attr := 
 					   count/test_attr
 					&& pcount/test_attr
+					&& has_any/test_attr
 					&& min/test_attr
 					&& min_index/test_attr
 					&& max/test_attr
