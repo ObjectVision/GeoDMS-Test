@@ -364,7 +364,7 @@ def RunExperiments(experiments, sampling_rate=1.0):
                 exp.result["log"],start_time,_ = getPerformance(exe_name, sampling_rate)
 
         # LOG
-        if os.path.exists(log_fn):
+        if os.path.exists(log_fn) and not "GeoDmsCaller.exe" in exp.exe_fldr: # TODO: manually implement gui log
             exp.result["cpu_percent"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_percent")
             exp.result["cpu_curr_time"]  = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_curr_time")
             exp.result["memory_percent"] = getLogInfoForPlotting(exp.result["log"], log_fn, "memory_percent")
