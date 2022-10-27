@@ -1,0 +1,38 @@
+container ReadFullTemplate
+{
+	unit<uint32> meter;
+
+	container berekenOppervlakEnOmtrekContainer
+	{
+		// begin case parameters
+		parameter<meter> lengte  := 2[meter];
+		parameter<meter> breedte := 3[meter];
+		// end case parameters
+
+		parameter<meter2> opp := lengte * breedte;
+
+		parameter<meter> omtrek := lengte + lengte + breedte + breedte;
+	}
+
+	container berekenOppervlakEnOmtrekViaTemplate := berekenOppervlakEnOmtrek(2[meter], 3[meter]);
+
+	template berekenOppervlakEnOmtrek
+	{
+		// begin case parameters
+		parameter<meter> lengte;
+		parameter<meter> breedte;
+		// end case parameters
+
+		parameter<meter2> opp := lengte * breedte;
+
+		parameter<meter> omtrek := lengte + lengte + breedte + breedte;
+	}
+
+	parameter<bool> test := berekenOppervlakEnOmtrekContainer/omtrek == 10[meter] && berekenOppervlakEnOmtrekViaTemplate/omtrek == berekenOppervlakEnOmtrekContainer/omtrek;
+
+	parameter<string> test_log := all(test) 
+		? '' 
+		: 'Read full template test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/tempale/ReadFullTemplate.txt";
+}

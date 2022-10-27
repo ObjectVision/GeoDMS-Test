@@ -40,7 +40,7 @@ del %ResultDir%\unit\storage\OneRecord.fss\*.fss 2>nul
 del %ResultDir%\unit\storage\ZeroRecord.fss\*.dmsdata 2>nul
 del %ResultDir%\unit\storage\ZeroRecord.fss\*.fss 2>nul
 
-pause
+rem pause
 
 del %ResultDir%\unit\integrity_check\*.txt 2>nul
 del %ResultDir%\unit\Namespaces\*.txt 2>nul
@@ -91,7 +91,8 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms test_log %Re
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms write_data %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms test_log %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
 
-
+REM SECTION TEMPLATE 
+Call Unit\Instance.bat %TstDir%\Unit\Template\cfg\read_full.dms test_log %ResultDir%\unit\Template\ReadFullTemplate.txt S1 S2
 
 REM SECTION GRID 
 Call Unit\Instance.bat %TstDir%\Unit\grid\cfg\spoint_nrElements.dms test_log %ResultDir%\unit\grid\spoint_nrElements.txt S1 S2
