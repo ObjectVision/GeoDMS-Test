@@ -441,8 +441,12 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	unit<uint32> HC := range(uint32, 0, 30)
 	{
+		attribute<string> Label := 'HC '+string(id(.));
 		attribute<string> HC_group_key := string(ID(.)/3);
-		unit<uint32> HC_group := unique(HC_group_key);
+		unit<uint32> HC_group := unique(HC_group_key)
+		{
+			attribute<string> Label := 'HC_Group '+values;
+		}
 		attribute<HC> HC_Group_Rel := rlookup(HC_group_key, HC_group/values);
 	}	
 	container LargeAsciiFile
