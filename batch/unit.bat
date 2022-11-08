@@ -53,6 +53,7 @@ rem pause
 Echo Unit Test Results (specific operators, all operators, storage read, other) for: %GeoDmsRunCmdBase% >> %ResultFileName%
 Echo.>> %ResultFileName%
 
+
 REM SECTION OPERATOR 
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\subitem.dms   test_log %ResultDir%\unit\operator\subitem.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\connect.dms   test_log %ResultDir%\unit\operator\connect_point_arc.txt S1 S2
@@ -132,6 +133,10 @@ Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms test
 REM WriteStorageIndirect in two steps, first export results, second read exported results
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms export %ResultDir%\unit\other\WriteStorageIndirect.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms test_log %ResultDir%\unit\other\CloseGUIIssue1.txt S1 S2
+
+REM SECTION GUI 
+Call ..\Unit\GUI\bat\DPGeneral_explicit_supplier_error.bat
+Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms test_log %ResultDir%\unit\gui\DPGeneral_ES_error.txt S1 S2
 
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
