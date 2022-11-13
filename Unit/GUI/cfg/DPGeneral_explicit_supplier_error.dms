@@ -1,0 +1,19 @@
+container subitem
+{
+	container DPGeneral_explicit_supplier_error
+	{
+		parameter<uint32> A := 1;
+		container test: explicitsuppliers = "B";
+	}
+
+	parameter<string> result : StorageName = "%localDataDir%/GeoDMSTestResults/Unit/GUI/DPGeneral_explicit_supplier_error.tmp", StorageType = "str";
+	parameter<string> norm   : StorageName = "%projdir%/Norm/DPGeneral_explicit_supplier_error.txt", StorageType = "str";
+	
+	parameter<bool>   test     := trim(result) == trim(norm);
+	parameter<string> test_log := test 
+		? '' 
+		: 'Detail Page General Explicit Supplier Error test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK, result: ' + expand(., '%localDataDir%') 
+		  + '/GeoDMSTestResults/Unit/GUI/DPGeneral_explicit_supplier_error.tmp differs from ' + expand(., '%projdir%')  + 'Norm/DPGeneral_explicit_supplier_error.txt'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/gui/DPGeneral_ES_error.txt";
+}

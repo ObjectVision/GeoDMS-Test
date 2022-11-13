@@ -2674,6 +2674,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>   test      (Region) := att = Region/pcountRegionNr;
 				parameter<bool>   test_attr          := all(test);
 			}
+			container has_any: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/has_any"
+			{
+				attribute<bool>   att       (Region) := has_any(City/RegionNr);
+				attribute<bool>   test      (Region) := att == (Region/pcountRegionNr > 0);
+				parameter<bool>   test_attr          := all(test);
+			}
 			container min: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/min"
 			{
 				parameter<bool>   test_param_uint32 := min(City/NrInhabitants) = params/minNrInhabitants ;
@@ -2781,11 +2787,67 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>    test_F32   (Region) := eq_or_both_null(att_F32, Float32(Region/sumNrInhabitants));
 				parameter<bool>    test_attr           := all(test) && all(test_F32);
 			}
+			container sum_uint64: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<uint16>  NrInhabitants_uint16(City) := uint16(City/NrInhabitants);
+				attribute<uint64>  att        (Region) := sum_uint64(NrInhabitants_uint16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, uint64(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
 			container sum_uint32: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
 			{
 				attribute<uint16>  NrInhabitants_uint16(City) := uint16(City/NrInhabitants);
 				attribute<uint32>  att        (Region) := sum_uint32(NrInhabitants_uint16, City/RegionNr);
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/sumNrInhabitants);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_uint16: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>   NrInhabitants_int16(City) := int16(City/NrInhabitants);
+				attribute<uint16>  att        (Region) := sum_uint16(NrInhabitants_int16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, uint16(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_uint8: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int8>    NrInhabitants_int8(City) := int8(float32(City/NrInhabitants) / 10f);
+				attribute<uint8>   att        (Region) := sum_uint8(NrInhabitants_int8, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, uint8(float32(Region/sumNrInhabitants) / 10f ));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_int64: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>  NrInhabitants_uint16(City) := int16(City/NrInhabitants);
+				attribute<int64>  att         (Region) := sum_int64(NrInhabitants_uint16, City/RegionNr);
+				attribute<bool>   test        (Region) := eq_or_both_null(att, int64(Region/sumNrInhabitants));
+				parameter<bool>   test_attr            := all(test);
+			}
+			container sum_int32: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>   NrInhabitants_uint16(City) := int16(City/NrInhabitants);
+				attribute<int32>   att        (Region) := sum_int32(NrInhabitants_uint16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, int32(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_int16: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>   NrInhabitants_int16(City) := int16(City/NrInhabitants);
+				attribute<int16>   att        (Region) := sum_int16(NrInhabitants_int16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, int16(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_int8: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int8>    NrInhabitants_int8(City) := int8(float32(City/NrInhabitants) / 10f);
+				attribute<int8>    att        (Region) := sum_int8(NrInhabitants_int8, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, int8(float32(Region/sumNrInhabitants) / 10f ));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_float64: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<float32>  NrInhabitants_float32(City) := float32(City/NrInhabitants);
+				attribute<float64> att        (Region) := sum_float64(NrInhabitants_float32, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, float64(Region/sumNrInhabitants));
 				parameter<bool>    test_attr           := all(test);
 			}
 			container cumulate: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/cumulate" // requires GeoDMS 6.061
@@ -3122,6 +3184,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_attr := 
 					   count/test_attr
 					&& pcount/test_attr
+					&& has_any/test_attr
 					&& min/test_attr
 					&& min_index/test_attr
 					&& max/test_attr
@@ -3131,6 +3194,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& mean/test_attr
 					&& sum/test_attr
 					&& sum_uint32/test_attr
+					&& sum_uint16/test_attr
+					&& sum_uint8/test_attr
+					&& sum_uint64/test_attr
+					&& sum_int32/test_attr
+					&& sum_int16/test_attr
+					&& sum_int8/test_attr
+					&& sum_int64/test_attr
+					&& sum_float64/test_attr
+					
 					&& modus/test_attr
 					&& modus_weighted/test_attr
 					&& cumulate/test_attr
@@ -10800,7 +10872,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		parameter<uint8>  param_uint8  := 255b;
 		parameter<uint16> param_uint16 := 65535w;
 		parameter<uint32> param_uint32 := 4294967295;
+		
+		parameter<uint64> param_uint64_1 := 4294967295u64;
+		parameter<uint64> param_uint64_2 := 42949672950000u64;
+		parameter<uint64> param_uint64_3 := 18446744073709551614u64;
+		parameter<uint64> param_uint64_4 := 18446744073709551615u64;
 
+		parameter<int64> param_int64_1 := 9223372036854775806i64;
+		parameter<int64> param_int64_2 := 9223372036854775807i64;
+		
 		parameter<int8>   param_int8  := -128c;
 		parameter<int16>  param_int16 :=  -32768s;
 		parameter<int32>  param_int32 := -2147483648i;
@@ -10808,10 +10888,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		parameter<bool>   test_uint8  := eq_or_both_null(param_uint8,  0b / 0b);
 		parameter<bool>   test_uint16 := eq_or_both_null(param_uint16, 0w / 0w);
 		parameter<bool>   test_uint32 := eq_or_both_null(param_uint32, 0 / 0);
+		parameter<bool>   test_uint64 := eq_or_both_null(param_uint64_4, 0u64 / 0u64);
 
 		parameter<bool>   test_int8  := eq_or_both_null(param_int8,  0c / 0c);
 		parameter<bool>   test_int16 := eq_or_both_null(param_int16, 0s / 0s);
 		parameter<bool>   test_int32 := eq_or_both_null(param_int32, 0i / 0i);
+		parameter<bool>   test_int64 := eq_or_both_null(param_int64_2, 0i64 / 0i64);
 		
 		parameter<bool>   tests      := test_uint8 && test_uint16 && test_uint32 && test_int8 && test_int16 && test_int32;
 	}

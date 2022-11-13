@@ -35,6 +35,12 @@ del %ResultDir%\unit\storage\*.txt 2>nul
 del %ResultDir%\unit\storage\*.dbf 2>nul
 del %ResultDir%\unit\storage\*.tif 2>nul
 del %ResultDir%\unit\storage\*.tfw 2>nul
+del %ResultDir%\unit\storage\OneRecord.fss\*.dmsdata 2>nul
+del %ResultDir%\unit\storage\OneRecord.fss\*.fss 2>nul
+del %ResultDir%\unit\storage\ZeroRecord.fss\*.dmsdata 2>nul
+del %ResultDir%\unit\storage\ZeroRecord.fss\*.fss 2>nul
+
+rem pause
 
 del %ResultDir%\unit\integrity_check\*.txt 2>nul
 del %ResultDir%\unit\Namespaces\*.txt 2>nul
@@ -46,6 +52,7 @@ rem pause
 
 Echo Unit Test Results (specific operators, all operators, storage read, other) for: %GeoDmsRunCmdBase% >> %ResultFileName%
 Echo.>> %ResultFileName%
+
 
 REM SECTION OPERATOR 
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\subitem.dms   test_log %ResultDir%\unit\operator\subitem.txt S1 S2
@@ -80,6 +87,13 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms export %ResultDir
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms test_log %ResultDir%\unit\storage\WriteDbf.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms export %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms test_log %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms write_data %ResultDir%\unit\storage\fss_one_record.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms test_log %ResultDir%\unit\storage\fss_one_record.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms write_data %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms test_log %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
+
+REM SECTION TEMPLATE 
+Call Unit\Instance.bat %TstDir%\Unit\Template\cfg\read_full.dms test_log %ResultDir%\unit\Template\ReadFullTemplate.txt S1 S2
 
 REM SECTION GRID 
 Call Unit\Instance.bat %TstDir%\Unit\grid\cfg\spoint_nrElements.dms test_log %ResultDir%\unit\grid\spoint_nrElements.txt S1 S2
@@ -119,6 +133,10 @@ Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms test
 REM WriteStorageIndirect in two steps, first export results, second read exported results
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms export %ResultDir%\unit\other\WriteStorageIndirect.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms test_log %ResultDir%\unit\other\CloseGUIIssue1.txt S1 S2
+
+REM SECTION GUI 
+Call ..\Unit\GUI\bat\DPGeneral_explicit_supplier_error.bat
+Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms test_log %ResultDir%\unit\gui\DPGeneral_ES_error.txt S1 S2
 
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
