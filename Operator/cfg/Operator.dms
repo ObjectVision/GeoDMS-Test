@@ -7815,7 +7815,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	Using = "source"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/connect"
 			{
-				attribute<LDomain> att  (ODomain) := connect(destination/location, origin/location);
+				attribute<DDomain> att  (ODomain) := connect(destination/location, origin/location);
 				attribute<bool>    test (ODomain) := att == origin/connect_points;
 				parameter<bool>    test_attr      := all(test);
 				
@@ -7826,7 +7826,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container connect_neighbour
 			{
 				unit<uint32>       origin        := source/origin;
-				attribute<LDomain> att  (ODomain) := connect_neighbour(origin/location);
+				attribute<ODomain> att  (ODomain) := connect_neighbour(origin/location);
 				attribute<bool>    test (ODomain) := att == origin/connect_neighbour;
 				parameter<bool>    test_attr     := all(test);
 			}
