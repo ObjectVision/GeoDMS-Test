@@ -78,6 +78,7 @@ Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log 
 REM SECTION STORAGE READ
 Call Unit\Instance.bat %TstDir%\storage\cfg\regression.dms results/unit_test_log                %ResultDir%\unit\storage\read_geodms_formats.txt S1 S2
 Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_vect_read_log %ResultDir%\unit\storage\read_gdal_vect_formats.txt S1 S2
+Call Unit\instance.bat %TstDir%\Unit\storage\cfg\tiff_configured_domain.dms test_log            %ResultDir%\unit\storage\read_tiff_configured_domain_error.txt S1 S2
 Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_grid_read_log %ResultDir%\unit\storage\read_gdal_grid_formats.txt S1 S2
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log             %ResultDir%\unit\storage\src_indirect_check_file.txt S1 S2
 Call Unit\instance.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log_file_is_written      %ResultDir%\unit\storage\src_indirect.txt S1 S2
