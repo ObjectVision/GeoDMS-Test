@@ -1,0 +1,44 @@
+container background_layer_test
+{
+	unit<fpoint> point_rd;
+
+	container background
+	{
+		unit<uint32> pointset: nrofrows = 5
+		{
+			attribute<point_rd> point      : [{400000,10000},{400000,150000},{500000,150000},{500000,10000},{400000,10000}];
+			attribute<poly>     sequenceNr := const(0[poly], .);
+			attribute<uint32>   ordinal    := reverse(id(.));
+		}
+
+		unit<uint32> poly: nrofrows = 1
+		{
+			attribute<point_rd> geometry (poly):= points2sequence(pointset/point, pointset/sequenceNr, pointset/ordinal);
+		}
+	}
+	
+	container layer
+	{
+		unit<uint32> pointset: nrofrows = 5
+		{
+			attribute<point_rd> point      : [{440000,60000},{440000,90000},{470000,90000},{470000,60000},{440000,60000}];
+			attribute<poly>     sequenceNr := const(0[poly], .);
+			attribute<uint32>   ordinal    := reverse(id(.));
+		}
+
+		unit<uint32> poly: nrofrows = 1
+		{
+			attribute<point_rd> geometry (poly):= points2sequence(pointset/point, pointset/sequenceNr, pointset/ordinal), DialogData = "background/poly/geometry";
+		}
+	}
+	
+	parameter<string>  layer_dialog_data := PropValue(layer/poly/geometry, 'DialogData'); 
+	parameter<float32> layer_area        := sum(area(layer/poly/geometry, float32)) / 10000000f + sum(area(background/poly/geometry, float32)) / 10000000f; 
+
+	parameter<bool>   test     := layer_dialog_data == 'background/poly/geometry' && layer_area == 1490f ;
+	parameter<string> test_log := test 
+		? '' 
+		: 'Background Layer Error test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK.'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/gui/background_layer_error.txt";
+}

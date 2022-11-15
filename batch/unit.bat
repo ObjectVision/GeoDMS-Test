@@ -39,6 +39,7 @@ del %ResultDir%\unit\storage\OneRecord.fss\*.dmsdata 2>nul
 del %ResultDir%\unit\storage\OneRecord.fss\*.fss 2>nul
 del %ResultDir%\unit\storage\ZeroRecord.fss\*.dmsdata 2>nul
 del %ResultDir%\unit\storage\ZeroRecord.fss\*.fss 2>nul
+del %ResultDir%\unit\GUI\*.txt 2>nul
 
 rem pause
 
@@ -140,6 +141,8 @@ Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.d
 
 Call ..\Unit\GUI\bat\DPGeneral_missing_file_error.bat
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms test_log %ResultDir%\unit\gui\DPGeneral_MF_error.txt S1 S2
+
+Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\background_layer.dms test_log %ResultDir%\unit\GUI\background_layer_error.txt S1 S2
 
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
