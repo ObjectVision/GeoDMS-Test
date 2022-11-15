@@ -1,0 +1,15 @@
+container item_names_equal
+{
+	unit<uint32> domain := nrofrows = 2; 
+	attribute<uint32> A1_GE_Discr (domain) := const(1, domain);
+	parameter<uint32> sum_A1_GE_Discr  := sum(uint32(A1_GE_Discr)); 
+	parameter<uint32> sum_A1_GE_Discr  := sum(isDefined(A1_GE_Disc));
+
+	parameter<bool>   test     := #domain == 2 ;
+	parameter<string> test_log := test 
+		? '' 
+		: 'Item names equal test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK.'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/item_names_equal.txt";
+
+}
