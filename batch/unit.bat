@@ -118,7 +118,7 @@ Call Unit\Instance.bat %TstDir%\Unit\other\cfg\GridFromTemplate.dms test_log %Re
 Call Unit\Instance.bat %TstDir%\Unit\Namespaces\cfg\TemplDefinition.dms test_log %ResultDir%\unit\Namespaces\TemplDefinition.txt S1 S2
 
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\CloseGUIIssue1.dms test_log %ResultDir%\unit\other\CloseGUIIssue1.txt S1 S2
-Call Unit\Instance.bat %TstDir%\Unit\other\cfg\item_names_equal.dms test_log %ResultDir%\unit\other\item_names_equal.txt S1 S2
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\other\cfg\item_names_equal.dms test_log %ResultDir%\unit\other\item_names_equal.txt S1 S2
 
 
 
