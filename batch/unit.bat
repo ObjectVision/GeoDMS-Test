@@ -123,20 +123,23 @@ Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\container.dms test_log 
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\primary_key_unique.dms test_log %ResultDir%\unit\integrity_check\primary_key_unique.txt S1 S2
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\Integrity_check\cfg\primary_key_not_unique.dms test_log %ResultDir%\unit\integrity_check\primary_key_not_unique.txt S1 S2
 
-REM Integrity Check Section for writing results that should or should not be written, in two steps, first to write and second to read the resulting data
+REM SECTION Integrity Check for writing results that should or should not be written, in two steps, first to write and second to read the resulting data
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_write.dms export %ResultDir%\unit\integrity_check\must_write.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_write.dms test_log %ResultDir%\unit\integrity_check\must_write.txt S1 S2
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms export %ResultDir%\unit\integrity_check\must_not_write.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms test_log %ResultDir%\unit\integrity_check\must_not_write.txt S1 S2
 
 
-REM WriteStorageIndirect in two steps, first export results, second read exported results
+REM SECTION WriteStorageIndirect in two steps, first export results, second read exported results
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms export %ResultDir%\unit\other\WriteStorageIndirect.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms test_log %ResultDir%\unit\other\CloseGUIIssue1.txt S1 S2
 
 REM SECTION GUI 
 Call ..\Unit\GUI\bat\DPGeneral_explicit_supplier_error.bat
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms test_log %ResultDir%\unit\gui\DPGeneral_ES_error.txt S1 S2
+
+Call ..\Unit\GUI\bat\DPGeneral_missing_file_error.bat
+Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms test_log %ResultDir%\unit\gui\DPGeneral_MF_error.txt S1 S2
 
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
