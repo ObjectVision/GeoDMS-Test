@@ -1,0 +1,43 @@
+container test_connect_points
+{
+	unit<fpoint> point_rd;
+	unit<uint32> origin : nrofrows = 5
+	{
+		attribute<float32>  x: [115135,111803,114903,111353,111741];
+		attribute<float32>  y: [401331,399476,399289,401729,398696];
+		attribute<point_rd> geometry := point(y, x, point_rd), Label = "Origins"
+		{
+			parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(0,0,0);
+			parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(20, fontsize);
+			parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(20, m);
+		}
+		//attribute<destination> service_area:        [0,1,2,3,1];
+		attribute<uint32>      connect_points:      [0,1,2,3,1];
+		//attribute<origin>      connect_neighbour: [2,4,2,3,4];
+		attribute<origin>      connect_neighbour:   [2,4,0,1,1];
+		attribute<uint32>      SpatialIndex:        [0,1,10,63,86];
+		attribute<uint32>      capacitated_connect: [2,1,2,1,1];
+	}
+
+	unit<uint32> destination : nrofrows = 5
+	{
+		attribute<float32>  x: [115135,112601,114903,112156];
+		attribute<float32>  y: [401331,399138,398600,401729];
+
+		attribute<point_rd> geometry := point(y, x, point_rd), Label = "Destinations"
+		{
+			parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(255,0,0),        DisableStorage = "True";
+			parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(30, fontsize), DisableStorage = "True";
+			parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(25, m),        DisableStorage = "True";
+		}
+		attribute<string>   destinationnr_str := string(id(destination)), DialogType = "LabelText"
+		{
+			parameter<float32> LabelSize: DialogType = "LabelSize", = float32(14);
+		}
+	}
+
+	container connect_points
+	{
+		attribute<destination> att  (origin) := connect(destination/geometry, origin/geometry);
+	}
+}
