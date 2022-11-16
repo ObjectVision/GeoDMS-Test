@@ -133,6 +133,7 @@ Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_write.dms export %
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_write.dms test_log %ResultDir%\unit\integrity_check\must_write.txt S1 S2
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms export %ResultDir%\unit\integrity_check\must_not_write.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms test_log %ResultDir%\unit\integrity_check\must_not_write.txt S1 S2
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\Integrity_check\cfg\CompareFloat64WithInteger.dms test_log %ResultDir%\unit\Integrity_check\CompareFloat64WithInteger.txt S1 S2
 
 
 REM SECTION WriteStorageIndirect in two steps, first export results, second read exported results
