@@ -8402,7 +8402,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				attribute<bool> T1 := P0 == P2;
 				attribute<bool> T4 := P0 == P4;
-				attribute<bool> T5 := P5 == id(.);
+				attribute<bool> T5 := P5[GridDomain3000] == id(.);
 			}
 			unit<spoint> GridDomain15 := 
 				range(
@@ -10644,7 +10644,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				{
 					attribute<spoint> plus      (result)               := result/nr + result/nr;
 					attribute<spoint> plus_org  (gridunit/gridcel_1km) := id(gridunit/gridcel_1km) + id(gridunit/gridcel_1km);
-					attribute<bool>   test      (result)               := rlookup(plus, plus_org[result]) == result/nr;
+					attribute<bool>   test      (result)               := rlookup(plus, plus_org[result])[result ] == result/nr;
 					parameter<bool>   test_attr                        := all(test);
 				}
 			}
