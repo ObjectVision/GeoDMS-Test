@@ -51,6 +51,7 @@ Echo START TESTING
 Call Full\GUI_tests.bat
 Call Full\Operator_tests.bat
 Call Full\Project_tests.bat
+REM  Call Full\Project_tests_alleenRS.bat
 
 Call Full\MakeReport.bat
 

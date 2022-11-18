@@ -26,6 +26,8 @@ Set SawecRunPath=%prj_snapshotsDir%\Sawec\Runs\ReferentiePerJaar.dms
 Set TwoUPRunPath=%prj_snapshotsDir%\2UP\cfg\stam.dms
 Set DynaPopPath=%prj_snapshotsDir%\100m_DynaPop\cfg\StatusQuo.dms
 Set RSLight_2021Path=%prj_snapshotsDir%\RSLight2021_ontwikkel_2
+Set RSLight2021_ontwikkel_3Path=%prj_snapshotsDir%\RSLight2021_ontwikkel_3
+
 Set BAG20MakeSnapShotPath=%prj_snapshotsDir%\BAG20\cfg\BAG20_MakeSnaphot.dms
 
 Rem Brondata voor projecten
