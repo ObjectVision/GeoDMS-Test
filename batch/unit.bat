@@ -118,7 +118,7 @@ Call Unit\Instance.bat %TstDir%\Unit\other\cfg\GridFromTemplate.dms test_log %Re
 Call Unit\Instance.bat %TstDir%\Unit\Namespaces\cfg\TemplDefinition.dms test_log %ResultDir%\unit\Namespaces\TemplDefinition.txt S1 S2
 
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\CloseGUIIssue1.dms test_log %ResultDir%\unit\other\CloseGUIIssue1.txt S1 S2
-Call Unit\Instance.bat %TstDir%\Unit\other\cfg\item_names_equal.dms test_log %ResultDir%\unit\other\item_names_equal.txt S1 S2
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\other\cfg\item_names_equal.dms test_log %ResultDir%\unit\other\item_names_equal.txt S1 S2
 
 
 
@@ -133,6 +133,7 @@ Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_write.dms export %
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_write.dms test_log %ResultDir%\unit\integrity_check\must_write.txt S1 S2
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms export %ResultDir%\unit\integrity_check\must_not_write.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\must_not_write.dms test_log %ResultDir%\unit\integrity_check\must_not_write.txt S1 S2
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\Integrity_check\cfg\CompareFloat64WithInteger.dms test_log %ResultDir%\unit\Integrity_check\CompareFloat64WithInteger.txt S1 S2
 
 
 REM SECTION WriteStorageIndirect in two steps, first export results, second read exported results
