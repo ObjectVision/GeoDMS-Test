@@ -25,7 +25,8 @@ Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %LusDemoRunPath% /test/Use
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\LUSDemo2022
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %LusDemoRunPath2022% t611_lus_demo_2022_results_test/result_html t611_lus_demo_2022_results_test
 
-Call Full\RsLight_2021_Instances_WithFileCompare.bat %Setting1% %Setting2% t625_RSLight_2021_ontwikkel_2
+REM Call Full\RsLight_2021_Instances_WithFileCompare.bat %Setting1% %Setting2% t625_RSLight_2021_ontwikkel_2
+Call Full\RsLight_2021_Ontwikkel_3.bat %Setting1% %Setting2% t630_RSLight_2021_ontwikkel_3
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\2UP
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %TwoUPRunPath% test_2UP_indicator_results/result_html_zonder_calcache t710_2UP_indicator_results_zonder_CalCache
