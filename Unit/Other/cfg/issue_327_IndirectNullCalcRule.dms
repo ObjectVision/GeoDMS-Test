@@ -4,5 +4,12 @@ container Issue327_IndirectNullCalcRule
 {
 	parameter<string> CalcRule := string( 0 / 0);
 	parameter<string> ErrorTarget :=  =CalcRule;
-	
+
+	parameter<bool>   test     := isDefined(ErrorTarget)  ;
+	parameter<string> test_log := test 
+		? '' 
+		: 'Indirect Null Calcculation Rule test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK.'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/issue_327_IndirectNullCalcRule.txt";
+
 }
