@@ -85,11 +85,10 @@ set VariantDataOntkoppeld=TRUE
 
 Call full/EchoAndExecute.bat %1 %2 %RSLight2021_ontwikkel_3Path%\Runs\casus.dms /Analysis/Allocatie/Zichtjaren/Y2050/Impl/Generate
 Echo %time% 
-Call full/EchoAndExecute.bat %1 %2 %RSLight2021_ontwikkel_3Path%\Runs\casus.dms /t630_RSLight_2021_ontwikkel_3_indicator_results_test/result_html
+Call full/EchoAndExecute.bat %1 %2 %RSLight2021_ontwikkel_3Path%\Runs\casus.dms /RegressieTestIndicatoren/t630_3_RSLight_2021_ontwikkel_3_indicator_results_test/result_html
 Echo %time% 
 
 Call full/SetEndTime.bat
 Call full/WriteTimeStamps.bat %results_folder%\t630_3_RSLight_2021_ontwikkel_3_indicator_results_test.txt
-
 
 
