@@ -1,0 +1,19 @@
+container UniqueStr
+{
+	container Source
+	{
+		unit<uint8> Person := range(uint8, 0b, 10b)
+		{
+			attribute<string> Name : [ 'Maarten', 'Ana', 'Martin', 'martin', 'Jip', 'Jip', 'Eric', 'Eric', 'Ana', 'Maarten'];
+		}
+		unit<uint8> UniqueNames := unique(Person/Name);
+	}
+	
+	parameter<bool>   test     := #UniqueNames == 5b;
+	
+	parameter<string> test_log := test 
+		? '' 
+		: 'UniqueStr Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/UniqueStr.txt";
+}
