@@ -7,13 +7,16 @@ container subitem
 	}
 
 	parameter<string> result : StorageName = "%localDataDir%/GeoDMSTestResults/Unit/GUI/DPGeneral_explicit_supplier_error.tmp", StorageType = "str";
-	parameter<string> norm   : StorageName = "%projdir%/Norm/DPGeneral_explicit_supplier_error.txt", StorageType = "str";
-	
+
+	parameter<string> norm_with_replace_characters  : StorageName = "%projdir%/Norm/DPGeneral_explicit_supplier_error.txt", StorageType = "str";
+	parameter<string> ProjDir_local_path            := expand(.,'%projdir%');
+	parameter<string> norm                          := replace(norm_with_replace_characters,'@projdir@',ProjDir_local_path);
+
 	parameter<bool>   test     := trim(result) == trim(norm);
 	parameter<string> test_log := test 
 		? '' 
 		: 'Detail Page General Explicit Supplier Error test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK, result: ' + expand(., '%localDataDir%') 
-		  + '\\GeoDMSTestResults\\Unit\\GUI\\DPGeneral_explicit_supplier_error.tmp differs from ' + expand(., '%projdir%')  + '\\norm\\DPGeneral_explicit_supplier_error.txt'
+		  + '/GeoDMSTestResults/Unit/GUI/DPGeneral_explicit_supplier_error.tmp differs from ' + expand(., '%projdir%')  + '/norm/DPGeneral_explicit_supplier_error.txt'
 	,	StorageType = "str"
 	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/gui/DPGeneral_ES_error.txt";
 }
