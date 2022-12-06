@@ -799,7 +799,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<uint32>  argmaxFloatDEF     (DomDomain): [2,0,0,2,1];
 			attribute<uint32>  argmaxNull         (DomDomain): [0,1,2,0,0];
 			attribute<uint32>  certain_argmaxNull (DomDomain): [null,null,null,null,0];
-			
+			attribute<uint32>  known_argmaxNull   (DomDomain): [0,1,2,null,0];
+
 			attribute<uint32>  argminIntABC       (DomDomain): [0,1,0,1,2];
 			attribute<uint32>  argminFloatDEF     (DomDomain): [0,1,1,1,0];
 			attribute<uint32>  argminNull         (DomDomain): [2,0,1,0,0];
@@ -838,6 +839,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<uint32>  argmaxFloatDEF     (DomDomain): [];
 			attribute<uint32>  argmaxNull         (DomDomain): [];
 			attribute<uint32>  certain_argmaxNull (DomDomain): [];
+			attribute<uint32>  known_argmaxNull   (DomDomain): [];
 
 			attribute<uint32>  argminIntABC       (DomDomain): [];
 			attribute<uint32>  argminFloatDEF     (DomDomain): [];
@@ -1049,16 +1051,16 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container argmax: url = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/argmax"
 			{
-				parameter<bool>   test_param                := argmax(DomSource/paramA, DomSource/paramB, DomSource/paramC) = 2;
+				parameter<bool>   test_param                := argmax(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2;
 				attribute<uint32> att_int        (DomDomain) := argmax(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
-				attribute<bool>   test_int       (DomDomain) := att_int = DomSource/argmaxIntABC;
+				attribute<bool>   test_int       (DomDomain) := att_int == DomSource/argmaxIntABC;
 				attribute<uint32> att_float      (DomDomain) := argmax(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
-				attribute<bool>   test_float     (DomDomain) := att_float = DomSource/argmaxFloatDEF;
+				attribute<bool>   test_float     (DomDomain) := att_float == DomSource/argmaxFloatDEF;
 				attribute<uint32> att_with_null  (DomDomain) := argmax(DomSource/A_null, DomSource/B_null, DomSource/C_null);
 				attribute<uint32> attA_with_null (DomDomain) := argmax(DomSource/A_null, const(Int32(0 / 0), DomDomain));
 				attribute<bool>   test_with_null (DomDomain) := att_with_null == DomSource/argmaxNull;
 
-				attribute<bool>   test          (DomDomain) := test_int && test_float && test_with_null;
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
 
 				attribute<uint32> att_all_defined       (DomDomain) := argmax(0     , const( 0,DomDomain));
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
@@ -1072,20 +1074,20 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32> att_both_undefined    (DomDomain) := argmax(0 / 0 , const( 0 / 0,DomDomain));
 				attribute<bool>   test_both_undefined   (DomDomain) := att_both_undefined == 0;
 
-				parameter<bool>    test_attr              := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container argmax_uint16
 			{
-				parameter<bool>   test_param                 := argmax_uint16(DomSource/paramA, DomSource/paramB, DomSource/paramC) = 2w;
+				parameter<bool>   test_param                 := argmax_uint16(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2w;
 				attribute<uint16> att_int        (DomDomain) := argmax_uint16(DomSource/A, MakeDefined(DomSource/B, 0i), DomSource/C);
-				attribute<bool>   test_int       (DomDomain) := att_int = uint16(DomSource/argmaxIntABC);
+				attribute<bool>   test_int       (DomDomain) := att_int == uint16(DomSource/argmaxIntABC);
 				attribute<uint16> att_float      (DomDomain) := argmax_uint16(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
-				attribute<bool>   test_float     (DomDomain) := att_float = uint16(DomSource/argmaxFloatDEF);
+				attribute<bool>   test_float     (DomDomain) := att_float == uint16(DomSource/argmaxFloatDEF);
 				attribute<uint16> att_with_null  (DomDomain) := argmax_uint16(DomSource/A_null, DomSource/B_null, DomSource/C_null);
 				attribute<uint16> attA_with_null (DomDomain) := argmax_uint16(DomSource/A_null, const(Int32(0 / 0), DomDomain));
 				attribute<bool>   test_with_null (DomDomain) := att_with_null == uint16(DomSource/argmaxNull);
 
-				attribute<bool>   test          (DomDomain) := test_int && test_float && test_with_null;
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
 
 				attribute<uint16> att_all_defined       (DomDomain) := argmax_uint16(0     , const( 0,DomDomain));
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0w;
@@ -1099,49 +1101,47 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint16> att_both_undefined    (DomDomain) := argmax_uint16(0 / 0 , const( 0 / 0,DomDomain));
 				attribute<bool>   test_both_undefined   (DomDomain) := att_both_undefined == 0w;
 
-				parameter<bool>    test_attr              := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
-
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container argmax_uint8
 			{
-				parameter<bool>   test_param                 := argmax_uint8(DomSource/paramA, DomSource/paramB, DomSource/paramC) = 2b;
-				attribute<uint8> att_int        (DomDomain) := argmax_uint8(DomSource/A, MakeDefined(DomSource/B, 0i), DomSource/C);
-				attribute<bool>   test_int       (DomDomain) := att_int = uint8(DomSource/argmaxIntABC);
-				attribute<uint8> att_float      (DomDomain) := argmax_uint8(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
-				attribute<bool>   test_float     (DomDomain) := att_float = uint8(DomSource/argmaxFloatDEF);
-				attribute<uint8> att_with_null  (DomDomain) := argmax_uint8(DomSource/A_null, DomSource/B_null, DomSource/C_null);
-				attribute<uint8> attA_with_null (DomDomain) := argmax_uint8(DomSource/A_null, const(Int32(0 / 0), DomDomain));
+				parameter<bool>   test_param                 := argmax_uint8(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2b;
+				attribute<uint8>  att_int        (DomDomain) := argmax_uint8(DomSource/A, MakeDefined(DomSource/B, 0i), DomSource/C);
+				attribute<bool>   test_int       (DomDomain) := att_int == uint8(DomSource/argmaxIntABC);
+				attribute<uint8>  att_float      (DomDomain) := argmax_uint8(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
+				attribute<bool>   test_float     (DomDomain) := att_float == uint8(DomSource/argmaxFloatDEF);
+				attribute<uint8>  att_with_null  (DomDomain) := argmax_uint8(DomSource/A_null, DomSource/B_null, DomSource/C_null);
+				attribute<uint8>  attA_with_null (DomDomain) := argmax_uint8(DomSource/A_null, const(Int32(0 / 0), DomDomain));
 				attribute<bool>   test_with_null (DomDomain) := att_with_null == uint8(DomSource/argmaxNull);
 
-				attribute<bool>   test          (DomDomain) := test_int && test_float && test_with_null;
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
 
-				attribute<uint8> att_all_defined       (DomDomain) := argmax_uint8(0     , const( 0,DomDomain));
+				attribute<uint8>  att_all_defined       (DomDomain) := argmax_uint8(0     , const( 0,DomDomain));
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0b;
 
-				attribute<uint8> att_first_undefined   (DomDomain) := argmax_uint8(0 / 0 , const( 0,DomDomain));
+				attribute<uint8>  att_first_undefined   (DomDomain) := argmax_uint8(0 / 0 , const( 0,DomDomain));
 				attribute<bool>   test_first_undefined  (DomDomain) := att_first_undefined == 1b;
 
-				attribute<uint8> att_second_undefined  (DomDomain) := argmax_uint8(0     , const( 0 / 0,DomDomain));
+				attribute<uint8>  att_second_undefined  (DomDomain) := argmax_uint8(0     , const( 0 / 0,DomDomain));
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0b;
 
-				attribute<uint8> att_both_undefined    (DomDomain) := argmax_uint8(0 / 0 , const( 0 / 0,DomDomain));
+				attribute<uint8>  att_both_undefined    (DomDomain) := argmax_uint8(0 / 0 , const( 0 / 0,DomDomain));
 				attribute<bool>   test_both_undefined   (DomDomain) := att_both_undefined == 0b;
 
-				parameter<bool>    test_attr              := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
-
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container certain_argmax
 			{
-				parameter<bool>   test_param                 := certain_argmax(DomSource/paramA, DomSource/paramB, DomSource/paramC) = 2;
+				parameter<bool>   test_param                 := certain_argmax(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2;
 				attribute<uint32> att_int        (DomDomain) := certain_argmax(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
-				attribute<bool>   test_int       (DomDomain) := att_int = DomSource/argmaxIntABC;
+				attribute<bool>   test_int       (DomDomain) := att_int == DomSource/argmaxIntABC;
 				attribute<uint32> att_float      (DomDomain) := certain_argmax(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
-				attribute<bool>   test_float     (DomDomain) := att_float = DomSource/argmaxFloatDEF;
+				attribute<bool>   test_float     (DomDomain) := att_float == DomSource/argmaxFloatDEF;
 				attribute<uint32> att_with_null  (DomDomain) := certain_argmax(DomSource/A_null, DomSource/B_null, DomSource/C_null);
 				attribute<uint32> attA_with_null (DomDomain) := certain_argmax(DomSource/A_null, const(Int32(0 / 0), DomDomain));
 				attribute<bool>   test_with_null (DomDomain) := eq_or_both_null(att_with_null, DomSource/certain_argmaxNull);
 
-				attribute<bool>   test          (DomDomain) := test_int && test_float && test_with_null;
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
 
 				attribute<uint32> att_all_defined       (DomDomain) := certain_argmax(0     , const( 0,DomDomain));
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
@@ -1155,20 +1155,20 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32> att_both_undefined    (DomDomain) := certain_argmax(0 / 0 , const( 0 / 0,DomDomain));
 				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
 
-				parameter<bool>    test_attr              := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container certain_argmax_uint16
 			{
-				parameter<bool>   test_param                 := certain_argmax_uint16(DomSource/paramA, DomSource/paramB, DomSource/paramC) = 2w;
+				parameter<bool>   test_param                 := certain_argmax_uint16(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2w;
 				attribute<uint16> att_int        (DomDomain) := certain_argmax_uint16(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
-				attribute<bool>   test_int       (DomDomain) := att_int = uint16(DomSource/argmaxIntABC);
+				attribute<bool>   test_int       (DomDomain) := att_int == uint16(DomSource/argmaxIntABC);
 				attribute<uint16> att_float      (DomDomain) := certain_argmax_uint16(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
-				attribute<bool>   test_float     (DomDomain) := att_float = uint16(DomSource/argmaxFloatDEF);
+				attribute<bool>   test_float     (DomDomain) := att_float == uint16(DomSource/argmaxFloatDEF);
 				attribute<uint16> att_with_null  (DomDomain) := certain_argmax_uint16(DomSource/A_null, DomSource/B_null, DomSource/C_null);
 				attribute<uint16> attA_with_null (DomDomain) := certain_argmax_uint16(DomSource/A_null, const(Int32(0 / 0), DomDomain));
 				attribute<bool>   test_with_null (DomDomain) := eq_or_both_null(att_with_null, uint16(DomSource/certain_argmaxNull));
 
-				attribute<bool>   test          (DomDomain) := test_int && test_float && test_with_null;
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
 
 				attribute<uint16> att_all_defined       (DomDomain) := certain_argmax_uint16(0     , const( 0,DomDomain));
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0w;
@@ -1182,15 +1182,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint16> att_both_undefined    (DomDomain) := certain_argmax_uint16(0 / 0 , const( 0 / 0,DomDomain));
 				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
 
-				parameter<bool>    test_attr              := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container certain_argmax_uint8
 			{
-				parameter<bool>   test_param                 := certain_argmax_uint8(DomSource/paramA, DomSource/paramB, DomSource/paramC) = 2b;
+				parameter<bool>   test_param                 := certain_argmax_uint8(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2b;
 				attribute<uint8>  att_int        (DomDomain) := certain_argmax_uint8(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
-				attribute<bool>   test_int       (DomDomain) := att_int = uint8(DomSource/argmaxIntABC);
+				attribute<bool>   test_int       (DomDomain) := att_int == uint8(DomSource/argmaxIntABC);
 				attribute<uint8>  att_float      (DomDomain) := certain_argmax_uint8(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
-				attribute<bool>   test_float     (DomDomain) := att_float = uint8(DomSource/argmaxFloatDEF);
+				attribute<bool>   test_float     (DomDomain) := att_float == uint8(DomSource/argmaxFloatDEF);
 				attribute<uint8>  att_with_null  (DomDomain) := certain_argmax_uint8(DomSource/A_null, DomSource/B_null, DomSource/C_null);
 				attribute<uint8>  attA_with_null (DomDomain) := certain_argmax_uint8(DomSource/A_null, const(Int32(0 / 0), DomDomain));
 				attribute<bool>   test_with_null (DomDomain) := eq_or_both_null(att_with_null, uint8(DomSource/certain_argmaxNull));
@@ -1209,15 +1209,88 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint8>  att_both_undefined    (DomDomain) := certain_argmax_uint8(0 / 0 , const( 0 / 0,DomDomain));
 				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
 
-				parameter<bool>    test_attr              := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
+			}
+			container known_argmax
+			{
+				parameter<bool>   test_param                 := known_argmax(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2;
+				attribute<uint32> att_int        (DomDomain) := known_argmax(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
+				attribute<bool>   test_int       (DomDomain) := att_int == DomSource/argmaxIntABC;
+				attribute<uint32> att_float      (DomDomain) := known_argmax(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
+				attribute<bool>   test_float     (DomDomain) := att_float == DomSource/argmaxFloatDEF;
+				attribute<uint32> att_with_null  (DomDomain) := known_argmax(DomSource/A_null, DomSource/B_null, DomSource/C_null);
+				attribute<uint32> attA_with_null (DomDomain) := known_argmax(DomSource/A_null, const(Int32(0 / 0), DomDomain));
+				attribute<bool>   test_with_null (DomDomain) := eq_or_both_null(att_with_null, DomSource/known_argmaxNull);
+
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
+
+				attribute<uint32> att_all_defined       (DomDomain) := known_argmax(0     , const( 0,DomDomain));
+				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
+
+				attribute<uint32> att_first_undefined   (DomDomain) := known_argmax(0 / 0 , const( 0,DomDomain));
+				attribute<bool>   test_first_undefined  (DomDomain) := att_first_undefined == 1;
+
+				attribute<uint32> att_second_undefined  (DomDomain) := known_argmax(0     , const( 0 / 0,DomDomain));
+				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
+
+				attribute<uint32> att_both_undefined    (DomDomain) := known_argmax(0 / 0 , const( 0 / 0,DomDomain));
+				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
+			}
+			container known_argmax_uint16
+			{
+				parameter<bool>   test_param                 := known_argmax_uint16(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2w;
+				attribute<uint16> att_int        (DomDomain) := known_argmax_uint16(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
+				attribute<bool>   test_int       (DomDomain) := att_int == uint16(DomSource/argmaxIntABC);
+				attribute<uint16> att_float      (DomDomain) := known_argmax_uint16(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
+				attribute<bool>   test_float     (DomDomain) := att_float == uint16(DomSource/argmaxFloatDEF);
+				attribute<uint16> att_with_null  (DomDomain) := known_argmax_uint16(DomSource/A_null, DomSource/B_null, DomSource/C_null);
+				attribute<uint16> attA_with_null (DomDomain) := known_argmax_uint16(DomSource/A_null, const(Int32(0 / 0), DomDomain));
+				attribute<bool>   test_with_null (DomDomain) := eq_or_both_null(att_with_null, uint16(DomSource/known_argmaxNull));
+
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
+
+				attribute<uint16> att_all_defined       (DomDomain) := known_argmax_uint16(0     , const( 0,DomDomain));
+				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0w;
+
+				attribute<uint16> att_first_undefined   (DomDomain) := known_argmax_uint16(0 / 0 , const( 0,DomDomain));
+				attribute<bool>   test_first_undefined  (DomDomain) := att_first_undefined == 1w;
+
+				attribute<uint16> att_second_undefined  (DomDomain) := known_argmax_uint16(0     , const( 0 / 0,DomDomain));
+				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0w;
+
+				attribute<uint16> att_both_undefined    (DomDomain) := known_argmax_uint16(0 / 0 , const( 0 / 0,DomDomain));
+				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container known_argmax_uint8
 			{
-				parameter<uint8> result0 := known_argmax_uint8(0f / 0f, 0f / 0f);
-				parameter<uint8> result1 := known_argmax_uint8(0f / 0f, 3f);
-				parameter<uint8> result2 := known_argmax_uint8(2f, 3f);
-				parameter<uint8> result3 := known_argmax_uint8(3f, 0f / 0f);
-				parameter<uint8> result4 := known_argmax_uint8(3f, 2f);
+				parameter<bool>   test_param                 := known_argmax_uint8(DomSource/paramA, DomSource/paramB, DomSource/paramC) == 2b;
+				attribute<uint8>  att_int        (DomDomain) := known_argmax_uint8(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
+				attribute<bool>   test_int       (DomDomain) := att_int == uint8(DomSource/argmaxIntABC);
+				attribute<uint8>  att_float      (DomDomain) := known_argmax_uint8(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
+				attribute<bool>   test_float     (DomDomain) := att_float == uint8(DomSource/argmaxFloatDEF);
+				attribute<uint8>  att_with_null  (DomDomain) := known_argmax_uint8(DomSource/A_null, DomSource/B_null, DomSource/C_null);
+				attribute<uint8>  attA_with_null (DomDomain) := known_argmax_uint8(DomSource/A_null, const(Int32(0 / 0), DomDomain));
+				attribute<bool>   test_with_null (DomDomain) := eq_or_both_null(att_with_null, uint8(DomSource/known_argmaxNull));
+
+				attribute<bool>   test           (DomDomain) := test_int && test_float && test_with_null;
+
+				attribute<uint8>  att_all_defined       (DomDomain) := known_argmax_uint8(0     , const( 0,DomDomain));
+				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0b;
+
+				attribute<uint8>  att_first_undefined   (DomDomain) := known_argmax_uint8(0 / 0 , const( 0,DomDomain));
+				attribute<bool>   test_first_undefined  (DomDomain) := att_first_undefined == 1b;
+
+				attribute<uint8>  att_second_undefined  (DomDomain) := known_argmax_uint8(0     , const( 0 / 0,DomDomain));
+				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0b;
+
+				attribute<uint8>  att_both_undefined    (DomDomain) := known_argmax_uint8(0 / 0 , const( 0 / 0,DomDomain));
+				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container certain_argmin_uint8
 			{
@@ -1475,6 +1548,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& certain_argmax/test_param 
 					&& certain_argmax_uint16/test_param
 					&& certain_argmax_uint8/test_param
+					&& known_argmax/test_param 
+					&& known_argmax_uint16/test_param
+					&& known_argmax_uint8/test_param
 					&& argmin/test_param 
 					&& max_elem/test_param 
 					&& min_elem/test_param ;
@@ -1502,6 +1578,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& certain_argmax/test_attr
 					&& certain_argmax_uint16/test_attr
 					&& certain_argmax_uint8/test_attr
+					&& known_argmax/test_attr
+					&& known_argmax_uint16/test_attr
+					&& known_argmax_uint8/test_attr
 					&& argmin/test_attr 
 					&& argmin_uint16/test_attr 
 					&& argmin_uint8/test_attr
