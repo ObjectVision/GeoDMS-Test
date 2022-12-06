@@ -815,6 +815,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			attribute<int32>   min_elemIntABC       (DomDomain): [0,-1,-2,0,-5];
 			attribute<float32> min_elemFloatDEF     (DomDomain): [1,-1,1,-3.5,-2];
+			attribute<int32>   min_elemNull         (DomDomain): [1,0,1,null,1];
+			attribute<int32>   certain_min_elemNull (DomDomain): [null,null,null,null,1];
+			attribute<int32>   known_min_elemNull   (DomDomain): [1,0,1,null,1];
+
 			attribute<int32>   medianIntABC         (DomDomain): [1, 1,2,4,111];
 			attribute<float32> medianFloatDEF       (DomDomain): [1.5,0,2,3,9998.9];
 		}
@@ -860,6 +864,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			
 			attribute<int32>   min_elemIntABC       (DomDomain): [];
 			attribute<float32> min_elemFloatDEF     (DomDomain): [];
+			attribute<int32>   min_elemNull         (DomDomain): [];
+			attribute<int32>   certain_min_elemNull (DomDomain): [];
+			attribute<int32>   known_min_elemNull   (DomDomain): [];
+
 			attribute<int32>   medianIntABC         (DomDomain): [];
 			attribute<float32> medianFloatDEF       (DomDomain): [];
 		}
@@ -1622,12 +1630,16 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container min_elem: url = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/min_elem"
 			{
-				parameter<bool>    test_param             := min_elem(DomSource/paramA, DomSource/paramB, DomSource/paramC) = -3.9;
-				attribute<int32>   att_int    (DomDomain) := min_elem(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
-				attribute<bool>    test_int   (DomDomain) := att_int = DomSource/min_elemIntABC;
-				attribute<float32> att_float  (DomDomain) := min_elem(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
-				attribute<bool>    test_float (DomDomain) := att_float = DomSource/min_elemFloatDEF;
-				attribute<bool>    test       (DomDomain) := test_int && test_float;
+				parameter<bool>    test_param                 := min_elem(DomSource/paramA, DomSource/paramB, DomSource/paramC) == -3.9;
+				attribute<int32>   att_int        (DomDomain) := min_elem(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
+				attribute<bool>    test_int       (DomDomain) := att_int == DomSource/min_elemIntABC;
+				attribute<float32> att_float      (DomDomain) := min_elem(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
+				attribute<bool>    test_float     (DomDomain) := att_float == DomSource/min_elemFloatDEF;
+				
+				attribute<int32>   att_with_null  (DomDomain) := min_elem(DomSource/A_null, DomSource/B_null, DomSource/C_null);
+				attribute<bool>    test_with_null (DomDomain) := eq_or_both_null(att_with_null, DomSource/min_elemNull);
+
+				attribute<bool>    test           (DomDomain) := test_int && test_float && test_with_null;
 
 				attribute<uint32> att_all_defined       (DomDomain) := min_elem(0     , const( 0,DomDomain));
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
@@ -1641,24 +1653,62 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32> att_both_undefined    (DomDomain) := min_elem(0 / 0 , const( 0 / 0,DomDomain));
 				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
 
-				parameter<bool>    test_attr              := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 
 			container certain_min_elem
 			{
-				parameter<float32> result0 := certain_min_elem(0f / 0f, 0f / 0f);
-				parameter<float32> result1 := certain_min_elem(0f / 0f, 3f);
-				parameter<float32> result2 := certain_min_elem(2f, 3f);
-				parameter<float32> result3 := certain_min_elem(3f, 0f / 0f);
-				parameter<float32> result4 := certain_min_elem(3f, 2f);
+				parameter<bool>    test_param                 := certain_min_elem(DomSource/paramA, DomSource/paramB, DomSource/paramC) == -3.9;
+				attribute<int32>   att_int        (DomDomain) := certain_min_elem(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
+				attribute<bool>    test_int       (DomDomain) := att_int == DomSource/min_elemIntABC;
+				attribute<float32> att_float      (DomDomain) := certain_min_elem(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
+				attribute<bool>    test_float     (DomDomain) := att_float == DomSource/min_elemFloatDEF;
+				
+				attribute<int32>   att_with_null  (DomDomain) := certain_min_elem(DomSource/A_null, DomSource/B_null, DomSource/C_null);
+				attribute<bool>    test_with_null (DomDomain) := eq_or_both_null(att_with_null, DomSource/certain_min_elemNull);
+
+				attribute<bool>    test           (DomDomain) := test_int && test_float && test_with_null;
+
+				attribute<uint32> att_all_defined       (DomDomain) := certain_min_elem(0     , const( 0,DomDomain));
+				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
+
+				attribute<uint32> att_first_undefined   (DomDomain) := certain_min_elem(0 / 0 , const( 0,DomDomain));
+				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+
+				attribute<uint32> att_second_undefined  (DomDomain) := certain_min_elem(0     , const( 0 / 0,DomDomain));
+				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+
+				attribute<uint32> att_both_undefined    (DomDomain) := certain_min_elem(0 / 0 , const( 0 / 0,DomDomain));
+				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container known_min_elem
 			{
-				parameter<float32> result0 := known_min_elem(0f / 0f, 0f / 0f);
-				parameter<float32> result1 := known_min_elem(0f / 0f, 3f);
-				parameter<float32> result2 := known_min_elem(2f, 3f);
-				parameter<float32> result3 := known_min_elem(3f, 0f / 0f);
-				parameter<float32> result4 := known_min_elem(3f, 2f);
+				parameter<bool>    test_param                 := known_min_elem(DomSource/paramA, DomSource/paramB, DomSource/paramC) == -3.9;
+				attribute<int32>   att_int        (DomDomain) := known_min_elem(DomSource/A, MakeDefined(DomSource/B, int32(0)), DomSource/C);
+				attribute<bool>    test_int       (DomDomain) := att_int == DomSource/min_elemIntABC;
+				attribute<float32> att_float      (DomDomain) := known_min_elem(MakeDefined(DomSource/D, float32(0.0)), DomSource/EE, MakeDefined(DomSource/F, float32(0.0)));
+				attribute<bool>    test_float     (DomDomain) := att_float == DomSource/min_elemFloatDEF;
+				
+				attribute<int32>   att_with_null  (DomDomain) := known_min_elem(DomSource/A_null, DomSource/B_null, DomSource/C_null);
+				attribute<bool>    test_with_null (DomDomain) := eq_or_both_null(att_with_null, DomSource/known_min_elemNull);
+
+				attribute<bool>    test           (DomDomain) := test_int && test_float && test_with_null;
+
+				attribute<uint32> att_all_defined       (DomDomain) := known_min_elem(0     , const( 0,DomDomain));
+				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
+
+				attribute<uint32> att_first_undefined   (DomDomain) := known_min_elem(0 / 0 , const( 0,DomDomain));
+				attribute<bool>   test_first_undefined  (DomDomain) := att_first_undefined == 0;
+
+				attribute<uint32> att_second_undefined  (DomDomain) := known_min_elem(0     , const( 0 / 0,DomDomain));
+				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
+
+				attribute<uint32> att_both_undefined    (DomDomain) := known_min_elem(0 / 0 , const( 0 / 0,DomDomain));
+				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+
+				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 			container median
 			{
@@ -1758,7 +1808,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& max_elem/test_param 
 					&& certain_max_elem/test_param 
 					&& known_max_elem/test_param 
-					&& min_elem/test_param ;
+					&& min_elem/test_param 
+					&& certain_min_elem/test_param 
+					&& known_min_elem/test_param;
 				parameter<bool> test_attrs := 
 					   eq/test_attr 
 					&& eq_or_both_null/test_attr 
@@ -1798,7 +1850,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& max_elem/test_attr 
 					&& certain_max_elem/test_attr 
 					&& known_max_elem/test_attr 
-					&& min_elem/test_attr 
+					&& min_elem/test_attr
+					&& certain_min_elem/test_attr 
+					&& known_min_elem/test_attr
 					&& median/test_attr
 					&& sort/test_attr 
 					&& reverse/test_attr
