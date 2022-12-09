@@ -4722,6 +4722,43 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 9;
 			}
+			
+			container select_many
+			{
+				unit<uint32> selection := select_many(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+			}
+			container select_many_uint32
+			{
+				unit<uint32> selection := select_many_uint32(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+			}
+			container select_many_uint16
+			{
+				unit<uint16> selection := select_many_uint16(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+			}
+			container select_many_uint8
+			{
+				unit<uint8> selection := select_many_uint8(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+			}
 
 			container unique: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unique"
 			{
@@ -4973,6 +5010,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& select_afew_uint32/test
 				&& select_afew_uint32/test
 				&& select_afew_uint32/test
+				&& select_many/test
+				&& select_many_uint32/test
+				&& select_many_uint32/test
+				&& select_many_uint32/test
 				&& unique/test 
 				&& union/test_attr 
 				&& union_unit/test 
