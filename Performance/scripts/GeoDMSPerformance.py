@@ -316,8 +316,20 @@ def RunExperiments(experiments, sampling_rate=1.0):
                 experiments[i] = None
                 continue
             experiments[i] = loadExperimentFromPickleFile(None, exp_fn=exp_fn)
-        if type(exp) is str:
             fn_no_ext = exp[:-4].split('\\')
+            print(f"Experiment: {fn_no_ext[-1]}, rev: {getSvnVersion(experiments[i])}, flags: {experiments[i].flags}, cfg: {experiments[i].cfg}, item: {experiments[i].item}")
+            continue
+            
+        if type(exp) is tuple:
+            exp_fn = exp[0]
+            if not os.path.exists(exp_fn): # check if experiment exists
+                print(f"Experiment file: {exp_fn} does not exist, skipping experiment.")
+                experiments[i] = None
+                continue
+            experiments[i] = loadExperimentFromPickleFile(None, exp_fn=exp_fn)
+            experiments[i].storage_fldr = exp[1]
+            
+            fn_no_ext = exp[0][:-4].split('\\')
             print(f"Experiment: {fn_no_ext[-1]}, rev: {getSvnVersion(experiments[i])}, flags: {experiments[i].flags}, cfg: {experiments[i].cfg}, item: {experiments[i].item}")
             continue
         
@@ -589,7 +601,9 @@ def InitExperimentsFromCsvFile(fn):
                 flags        = line_split[4]
                 fullname     = line_split[5].replace("\n", "").replace("\t","").replace(" ","")
                 
-                if fullname:
+                if fullname and storage_fldr:
+                    experiments.append((fullname,storage_fldr))
+                elif fullname:
                     experiments.append(fullname)
                 else:
                     experiments.append(Experiment(name=name, svn=svn, exe_fldr=exe_fldr, ld_fldr=ld_fldr, storage_fldr=storage_fldr, cfg=cfg, item=item, flags=flags))
