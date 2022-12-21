@@ -3353,7 +3353,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container cumulate_as_id: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/cumulate" // requires GeoDMS 6.061
 			{
-				attribute<uint32>  att (City)     := cumulate(const(1,City,uint32));
+				attribute<uint32>  att (City)     := cumulate(const(1,City,City));
 				attribute<uint32>  nr (City)      := id(City);
 				attribute<bool>    test(City)     := att == nr;
 				parameter<bool>    test_param     := all(test);
@@ -4133,7 +4133,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<DegreesCelsius> AvgDailyTemperature:     [12,11,null,14,13];
 				attribute<RegionEK>       RegionCode:              [100,200,300,400,500];
 				attribute<uint32>         indexTemp:               [2,1,0,4,3];
-				attribute<uint32>         invertRegion:            [1,4,3,7,null];
+				attribute<City>           invertRegion:            [1,4,3,7,null];
 				attribute<m>              length:                  [120,1750,500,null,1499];
 				attribute<string>         year:                    ['1995','2005','2015','2025','2035'];
 				attribute<uint32>         uniqueTst:               [100,200,300,400];
@@ -4191,7 +4191,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<DegreesCelsius> AvgDailyTemperature:     [];
 				attribute<RegionEK>       RegionCode:              [];
 				attribute<uint32>         indexTemp:               [];
-				attribute<uint32>         invertRegion:            [];
+				attribute<City>           invertRegion:            [];
 				attribute<m>              length:                  [];
 				attribute<string>         year:                    [];
 				attribute<uint32>         uniqueTst:               [];
@@ -4350,8 +4350,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container invert: url  = "http://www.objectvision.nl/geodms/operators-a-functions/invert"
 			{
 				attribute<City>   att  (Region) := invert(Source/City/RegionNr);
-				attribute<bool>   test        (Region) := eq_or_both_null(att, Source/Region/invertRegion);
-				parameter<bool>   test_attr          := all(test);
+				attribute<bool>   test (Region) := eq_or_both_null(att, Source/Region/invertRegion);
+				parameter<bool>   test_attr     := all(test);
 			}
 			/*
 			container invert_all: url  = "http://www.objectvision.nl/dms/Operator/invert_all.htm"
@@ -4393,21 +4393,21 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<.> id := id(.);
 				}
 
-				unit<uint8> s_uint8 := subset(id(u_uint8) == 0b)
+				unit<uint8> s_uint8 := subset(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0b;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint16> s_uint16 := subset(id(u_uint16) == 0w)
+				unit<uint16> s_uint16 := subset(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0w;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint64> s_uint64 := subset(id(u_uint64) == 0u64)
+				unit<uint64> s_uint64 := subset(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0u64;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
@@ -4472,21 +4472,21 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<.> id := id(.);
 				}
 
-				unit<uint32> s_uint8 := subset_uint32(id(u_uint8) == 0b)
+				unit<uint32> s_uint8 := subset_uint32(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0b;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint32> s_uint16 := subset_uint32(id(u_uint16) == 0w)
+				unit<uint32> s_uint16 := subset_uint32(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0w;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint32> s_uint64 := subset_uint32(id(u_uint64) == 0u64)
+				unit<uint32> s_uint64 := subset_uint32(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0u64;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
@@ -4551,21 +4551,21 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<.> id := id(.);
 				}
 
-				unit<uint16> s_uint8 := subset_uint16(id(u_uint8) == 0b)
+				unit<uint16> s_uint8 := subset_uint16(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0b;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint16> s_uint16 := subset_uint16(id(u_uint16) == 0w)
+				unit<uint16> s_uint16 := subset_uint16(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0w;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint16> s_uint64 := subset_uint16(id(u_uint64) == 0u64)
+				unit<uint16> s_uint64 := subset_uint16(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0u64;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
@@ -4630,21 +4630,21 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<.> id := id(.);
 				}
 
-				unit<uint8> s_uint8 := subset_uint8(id(u_uint8) == 0b)
+				unit<uint8> s_uint8 := subset_uint8(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0b;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint8> s_uint16 := subset_uint8(id(u_uint16) == 0w)
+				unit<uint8> s_uint16 := subset_uint8(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0w;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint8> s_uint64 := subset_uint8(id(u_uint64) == 0u64)
+				unit<uint8> s_uint64 := subset_uint8(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0u64;
+					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
@@ -5373,7 +5373,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>  att1 (City) := normalize(City/NrInhabitants, 1, 10 );
 				attribute<uint32>  att5 (City) := normalize(City/NrInhabitants, 5, 10 );
 				attribute<float32> att  (City) := normalize(float32(City/NrInhabitants), float32(0), float32(1));
-				attribute<bool>    test (City) := iif(id(City) <= 6, float_isNearby(att, City/NormalizeNrInhabitants, Dif_all_float32), IsNull(att)); 
+				attribute<bool>    test (City) := iif(id(City) <= 6[City], float_isNearby(att, City/NormalizeNrInhabitants, Dif_all_float32), IsNull(att)); 
 				parameter<bool>    test_attr   := all(test);
 			}
 			container interpolate_linear: url  = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/interpolate_linear"
@@ -5749,7 +5749,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(20, fontsize);
 					parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(20, m);
 				}
-				attribute<uint32> point_in_ranked_polygon_ok : [0,3,18,15];
+				attribute<pand > point_in_ranked_polygon_ok : [0,3,18,15];
 			}
 			unit<uint32> pand_pointset := PandPointsDomain
 			{
@@ -5781,10 +5781,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			unit<uint32> pand := PandDomain
 			{
-				attribute<point_rd> geometry (.,polygon) := points2sequence(pand_pointset/point, pand_pointset/pand_rel, pand_pointset/ordinal);
-				attribute<uint32>   first_rel_OK  : [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,3,3];
-				attribute<uint32>   second_rel_OK : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19,15,20];
-				attribute<float32>  rank          := abs(1f / area(geometry, float32));
+				attribute<point_rd>   geometry (.,polygon) := points2sequence(pand_pointset/point, pand_pointset/pand_rel, pand_pointset/ordinal);
+				attribute<HDomain>    first_rel_OK  : [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,3,3];
+				attribute<PandDomain> second_rel_OK : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19,15,20];
+				attribute<float32>    rank          := abs(1f / area(geometry, float32));
 			}
 		}
 		template ESource
@@ -5863,15 +5863,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> vbo := district
 			{
 				attribute<point_rd> geometry : [];
-				attribute<uint32> point_in_ranked_polygon_ok: [];
+				attribute<pand> point_in_ranked_polygon_ok: [];
 			}
 			unit<uint32> pand := district
 			{
 				attribute<point_rd> geometry (poly) := district/border;
 				attribute<float32>  rank            := 1f / area(geometry, float32);
 
-				attribute<uint32>   first_rel_OK:    [];
-				attribute<uint32>   second_rel_OK: [];
+				attribute<EDomain>  first_rel_OK:    [];
+				attribute<EDomain>  second_rel_OK: [];
 			}
 
 		}
@@ -5980,7 +5980,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				unit<uint32> vbo_pand_rel := point_in_all_polygons(vbo/geometry, pand/geometry)
 				{
 				}
-				attribute<bool>            test (vbo_pand_rel) := vbo_pand_rel/first_rel == union_data(vbo_pand_rel, pand/first_rel_OK)  && vbo_pand_rel/second_rel == union_data(vbo_pand_rel, pand/second_rel_OK);
+				attribute<bool>            test (vbo_pand_rel) := vbo_pand_rel/first_rel == union_data(vbo_pand_rel, convert(pand/first_rel_OK, vbo)) && vbo_pand_rel/second_rel == union_data(vbo_pand_rel, convert(pand/second_rel_OK, pand));
 				parameter<bool>            test_attr     := all(test);
 			}
 			container point_in_ranked_polygon
@@ -6946,7 +6946,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				
 				attribute<float32> area (orgdomain) := area(set, float32);
 				
-				unit<uint32> subset := subset(id(orgdomain) <  75000)
+				unit<uint32> subset := subset(id(orgdomain) <  75000orgdomain)
 				{
 					attribute<ipoint>  set  (polygon) := ipolygon(make_large_polygonset/set[nr_OrgEntity]);
 				}
@@ -7878,7 +7878,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container bg_buffer_multi_point: Using = "source"
 			{
-				unit<uint32> road_sel := Subset(id(RoadDomain) < 1)
+				unit<uint32> road_sel := Subset(id(RoadDomain) < 1RoadDomain )
 				{
 					attribute<point_rd> geometry (arc) := road/line[nr_OrgEntity];
 					unit<uint32> pointset := Sequence2points(geometry);
@@ -8065,12 +8065,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float32>  x: [115135,111803,114903,111353,111741,112601,114903,112156];
 				attribute<float32>  y: [401331,399476,399289,401729,398696,399138,398600,401729];
 				attribute<point_rd> location                       := point(y, x, point_rd);
-				attribute<point_rd> location_with_undefined_values := id(.) == 1 || id(.) == 4 ? point(0f / 0f, 0f / 0f, point_rd) : location;
+				attribute<point_rd> location_with_undefined_values := id(.) == 1[.] || id(.) == 4[.]? point(0f / 0f, 0f / 0f, point_rd) : location;
 
 				attribute<UInt32>   streetcode : [0,0,0,0,0,0,null,0];
 				
 				attribute<float64>  ci_dis : [220.466762,119.519942,56.5086196,180.789468,131.004833,63.0891738,79.4236098,610.39593];
-				attribute<uint32>   ci_arc : [2,1,2,1,1,0,2,1];
+				attribute<RoadDomain> ci_arc : [2,1,2,1,1,0,2,1];
 				attribute<float32>  ci_x   : [114915,111922,114847,111531,111872,112560,114824,111555];
 				attribute<float32>  ci_y   : [401338,399468,399291,401760,398688,399186,398603,401625];
 				attribute<bool>     ci_inA : [True,True,True,True,True,True,True,True];
@@ -8078,7 +8078,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>   ci_seg : [0,0,0,1,0,0,0,1];
 				
 				attribute<float64>  ce_dis : [3477.54413,119.519942,2986.08514,180.789468,131.004833,698.647152,79.4236098,610.39593];
-				attribute<uint32>   ce_arc : [1,1,1,1,1,1,2,1];
+				attribute<RoadDomain> ce_arc : [1,1,1,1,1,1,2,1];
 				attribute<float32>  ce_x   : [111709,111922,111923,111531,111872,111904,114824,111555];
 				attribute<float32>  ce_y   : [400737,399468,399482,401760,398688,399183,398603,401625];
 				attribute<bool>     ce_inA : [True,True,True,True,True,True,True,True];
@@ -8086,7 +8086,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>   ce_seg : [1,0,0,1,0,0,0,1];
 
 				attribute<float64>  cn_dis : [220.466762,710.305647,56.5086196,2792.59252,158.221364,63.0891738,79.4236098,2528.02571];
-				attribute<uint32>   cn_arc : [2,0,2,0,0,0,2,0];
+				attribute<RoadDomain> cn_arc : [2,0,2,0,0,0,2,0];
 				attribute<float32>  cn_x   : [114915,111922,114847,112631,111872,112560,114824,111555];
 				attribute<float32>  cn_y   : [401338,399468,399291,399426,398688,399186,398603,401625];
 				attribute<bool>     cn_inA : [True,True,True,False,False,True,True,False];
@@ -8193,12 +8193,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float32>  x: [];
 				attribute<float32>  y: [];
 				attribute<point_rd> location                       := point(y, x, point_rd);
-				attribute<point_rd> location_with_undefined_values := id(.) == 1 || id(.) == 4 ? point(0f / 0f, 0f / 0f, point_rd) : location;
+				attribute<point_rd> location_with_undefined_values := id(.) == 1[.] || id(.) == 4[.] ? point(0f / 0f, 0f / 0f, point_rd) : location;
 
 				attribute<UInt32>   streetcode : [];
 				
 				attribute<float64>  ci_dis : [];
-				attribute<uint32>   ci_arc : [];
+				attribute<EDomain>   ci_arc : [];
 				attribute<float32>  ci_x   : [];
 				attribute<float32>  ci_y   : [];
 				attribute<bool>     ci_inA : [];
@@ -8206,7 +8206,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>   ci_seg : [];
 
 				attribute<float64>  ce_dis : [];
-				attribute<uint32>   ce_arc : [];
+				attribute<EDomain>   ce_arc : [];
 				attribute<float32>  ce_x   : [];
 				attribute<float32>  ce_y   : [];
 				attribute<bool>     ce_inA : [];
@@ -8214,7 +8214,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>   ce_seg : [];
 
 				attribute<float64>  cn_dis : [];
-				attribute<uint32>   cn_arc : [];
+				attribute<EDomain>   cn_arc : [];
 				attribute<float32>  cn_x   : [];
 				attribute<float32>  cn_y   : [];
 				attribute<bool>     cn_inA : [];
@@ -8253,7 +8253,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container connect_info := connect_info(Network/srcDomain/Road/line , point/ResultUnitTiled/dyna_point_tiled/CalcPoint/point)
 			{
-				parameter<bool> test_attr := float_isNearby(mean(float32(dist)), 462516.269f, dif_all_float32) && count(ArcId) == 476867 && all(ArcID == 2);
+				parameter<bool> test_attr := float_isNearby(mean(float32(dist)), 462516.269f, dif_all_float32) && count(ArcId) == 476867 && all(ArcID == 2[RoadDomain]);
 			}
 		}
 
@@ -8359,7 +8359,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<point_rd> cpo(LDomain) := point(source/location/ci_y, source/location/ci_x, point_rd);
 				attribute<bool>     test(LDomain):=    
-					   float_isNearby(dist, source/location/ci_dis, Dif_all_float64) && arcID == source/location/ci_arc 
+					   float_isNearby(dist, source/location/ci_dis, Dif_all_float64) && arcID == convert(source/location/ci_arc , source/Road)
 					&& point_isNearby(CutPoint, cpo,Dif_all_float32) && source/location/ci_inA == inArc 
 					&& inSegm == source/location/ci_inS && SegmID == source/location/ci_seg;
 				parameter<bool> test_attr := all(test);
@@ -8367,10 +8367,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container connected_info_eq := connect_info_eq(source/road/line, source/road/streetcode, source/location/location, source/location/streetcode), Using = "source"
 			{
 				attribute<point_rd> cpo(LDomain) := point(source/location/ce_y,source/location/ce_x,point_rd);
-				attribute<bool>     test(LDomain):= 
-					   float_isNearby(dist, source/location/ce_dis, Dif_all_float64)    && arcID == source/location/ce_arc 
-					&& point_isNearby(CutPoint, cpo,Dif_all_float32) && source/location/ce_inA == inArc 
-					&& inSegm == source/location/ce_inS && SegmID == source/location/ce_seg;
+				attribute<bool>     testA(LDomain):= float_isNearby(dist, source/location/ce_dis, Dif_all_float64);
+				attribute<bool>     testB(LDomain):= arcID == convert(source/location/ce_arc, source/road);
+				attribute<bool>     testC(LDomain):= point_isNearby(CutPoint, cpo,Dif_all_float32);
+				attribute<bool>     testD(LDomain):= source/location/ce_inA == inArc;
+				attribute<bool>     testE(LDomain):= inSegm == source/location/ce_inS; 
+				attribute<bool>     testF(LDomain):= SegmID == source/location/ce_seg;
+					
+				attribute<bool>     test(LDomain):= testA && testB && testC && testD && testE && testF;
 				parameter<bool> test_attr := all(test);
 			}
 			container connected_info_eq_shapefile := 
@@ -8380,7 +8384,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<point_rd> cpo  (LDomain) := point(source/location/cn_y,source/location/cn_x,point_rd);
 				attribute<bool>     test (LDomain):= 
-					   float_isNearby(dist, source/location/cn_dis, Dif_all_float64)    && arcID = source/location/cn_arc 
+					   float_isNearby(dist, source/location/cn_dis, Dif_all_float64)    && arcID = convert(source/location/cn_arc, source/road) 
 					&& point_isNearby(CutPoint, cpo,Dif_all_float32) && source/location/cn_inA = inArc 
 					&& inSegm = source/location/cn_inS && SegmID = source/location/cn_seg;
 				parameter<bool> test_attr := all(test);
@@ -8390,7 +8394,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/connect"
 			{
 				attribute<DDomain> att  (ODomain) := connect(destination/location, origin/location);
-				attribute<bool>    test (ODomain) := att == origin/connect_points;
+				attribute<bool>    test (ODomain) := att == convert(origin/connect_points, DDomain);
 				parameter<bool>    test_attr      := all(test);
 				
 				attribute<Grid/units/GridDomain3000> att_pointdomain  (Grid/units/GridDomain) := connect(Grid/units/GridDomain3000/P, Grid/units/GridDomain/P);
@@ -8411,7 +8415,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float64> cap  (DDomain) := = #DDomain == 0 ? 'cap_without_values' : 'cap_with_values';
 				
 				attribute<DDomain> att  (ODomain) := capacitated_connect(destination/location, cap, origin/location, const(60D,origin));
-				attribute<bool>    test (ODomain) := att == origin/capacitated_connect;
+				attribute<bool>    test (ODomain) := att == convert(origin/capacitated_connect, DDomain);
 				parameter<bool>    test_attr     := all(test);
 			}
 
@@ -8739,11 +8743,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				container without_values
 				{
 					attribute<m>      ok        (..): [];
-					attribute<uint32> ok_uint32 (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
 				}
 
 				attribute<bool> test := = #. == 0
-					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == without_values/ok_uint32  && DstZone_rel == without_values/ok_uint32'
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
 					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
 					   ;
 
@@ -8770,11 +8774,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				container without_values
 				{
 					attribute<m>      ok        (..): [];
-					attribute<uint32> ok_uint32 (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
 				}
 
 				attribute<bool> test := = #. == 0
-					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == without_values/ok_uint32  && DstZone_rel == without_values/ok_uint32'
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
 					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
 					   ;
 				parameter<bool> test_attr := all(test);
