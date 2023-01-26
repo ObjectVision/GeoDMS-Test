@@ -4676,7 +4676,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
 			}
-
+			container select_orgrel
+			{
+				unit<uint32> s_uint32 := select_orgrel(Source/City/RegionCode = 200)
+				{
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					parameter<bool> test := all(att);
+				}
+			}
 			container select_unit: url  = "http://www.objectvision.nl/geodms/operators-a-functions/select_unit"
 			{
 				unit<uint32> ZHCities := select_unit(Source/City/RegionCode = 200)
@@ -5006,6 +5013,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& subset_uint16/test 
 				&& subset_uint8/test 
 				&& select_unit/test
+				&& select_orgrel/s_uint32/test
 				&& select_afew/test
 				&& select_afew_uint32/test
 				&& select_afew_uint32/test
