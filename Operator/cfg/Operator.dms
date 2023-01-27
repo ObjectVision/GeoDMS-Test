@@ -4766,7 +4766,18 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 8;
 			}
-
+			container relate_attr
+			{
+				unit<uint32> selection := select_afew(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				container related_attributes := relate_attr(Source/City, selection, selection/org_rel)
+				{
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(related_attributes,'name'); 
+				parameter<bool> test := #select_subitems == 7 && (#selection == 0 ? sum(related_attributes/area) == 0f : sum(related_attributes/area) == 675f);
+			}
 			container unique: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unique"
 			{
 				unit<uint32>      Regions       := unique(Source/City/RegionCode)
@@ -5022,6 +5033,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& select_many_uint32/test
 				&& select_many_uint32/test
 				&& select_many_uint32/test
+				&& relate_attr/test
 				&& unique/test 
 				&& union/test_attr 
 				&& union_unit/test 
