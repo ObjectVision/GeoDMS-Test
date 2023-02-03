@@ -93,6 +93,7 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms write_data %
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms test_log %ResultDir%\unit\storage\fss_one_record.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms write_data %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms test_log %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\csv_with_euro.dms test_log %ResultDir%\unit\storage\csv_with_euro.txt S1 S2
 
 REM SECTION TEMPLATE 
 Call Unit\Instance.bat %TstDir%\Unit\Template\cfg\read_full.dms test_log %ResultDir%\unit\Template\ReadFullTemplate.txt S1 S2
