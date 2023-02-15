@@ -1,7 +1,10 @@
 container poly_outline
 {
-	unit<fpoint>  point_rd;
-
+	unit<float32> m             := baseunit('meter', float32);
+	//unit<fpoint>  point_rd_base : Format = "EPSG:28992";
+	unit<fpoint>  point_rd_base : SpatialReference = "EPSG:28992";
+	
+	unit<fpoint>  point_rd      := range(point_rd_base , point(300000[m], 0[m]), point(625000[m],280000[m])) ;
 	container src
 	{
 		unit<uint32> pointset : nrofrows = 177
@@ -16,6 +19,8 @@ container poly_outline
 				,{402757,114546},{402404,114445},{402317,114418},{402192,114373},{402263,113896},{402281,113770},{402414,113716},{402428,113636},{402558,113646},{402552,113711},{403025,113810},{402870,114237},{402757,114546}
 				,{405282,113562},{405282,113561},{405183,113537},{404996,113582},{404923,113297},{404776,113283},{404669,113160},{404669,113068},{404576,113022},{404353,113116},{404300,112976},{404256,112989},{404154,112857},{404063,112893},{403939,112611},{403770,112450},{403792,112379},{403544,112312},{402977,112473},{402973,112471},{402698,112554},{402697,112555},{401553,112888},{401558,112840},{401597,112589},{401494,112519},{401322,112404},{401157,112293},{400943,112215},{401063,111873},{401234,111711},{401477,111716},{401653,111646},{402133,111453},{402382,111433},{402859,111567},{403372,111821},{403701,111952},{403834,112009},{403934,112040},{404010,112054},{404157,112066},{404271,112054},{404555,111996},{404649,111969},{404664,111986},{404631,112040},{404620,112098},{405013,112720},{405495,113478},{405454,113512},{405415,113601},{405353,113625},{405282,113562}
 			];
+			//attribute<point_rd> point := point(PointCol(point_XY_wrong), PointRow(point_XY_wrong), point_rd);
+
 			attribute<district> districtnr:
 			[
 				0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -54,6 +59,16 @@ container poly_outline
 			   parameter<float32> ZoomInLimit  := 25f       , DialogType = "MinPixSize";
 			   parameter<float32> ZoomOutLimit := 25000f    , DialogType = "MaxPixSize";
 			}
+		}
+	}
+	unit<uint32> district_PenWorldWith := district
+	{
+		attribute<point_rd> geometry (.,polygon) := points2sequence(src/pointset/point, src/pointset/districtnr, src/pointset/ordinal)
+		{
+			parameter<uint32> Brushcolor        := rgb(0,255,0), DialogType = "BrushColor";
+			parameter<uint32> Pencolor          := rgb(0,0,0)  , DialogType = "PenColor";
+			parameter<m>      PenWorldWidth     := 0.01m       , DialogType = "PenWidth";
+			parameter<int16>  PenWidth          := 0s          , DialogType = "PenWidth";
 		}
 	}
 }
