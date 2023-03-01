@@ -1,0 +1,87 @@
+container ligplaats
+{
+	parameter<int32> prik_datum := 20230101i;
+
+	unit<uint32> src
+	: StorageName     = "%projdir%/data/ligplaats_sel.fss"
+	, StorageReadOnly = "True"
+	{
+		attribute<ipoint> geometry_mm (polygon);
+		attribute<string> identificatie;
+		attribute<string> nummeraanduiding_id;
+
+		container meta := meta_src_template(src);
+	}
+
+	container impl:= ='datum_selectie(src, prik_datum, false)'
+	{
+		unit<uint32> selectie
+		{
+			attribute<result> result_rel := rlookup(identificatie, result/values);
+			attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
+		}
+	}
+
+	unit<uint32> result := unique(impl/selectie/identificatie)
+	{
+		attribute<uint32> count                 := pcount(impl/selectie/result_rel), DisableStorage = "True";
+		attribute<ipoint> geometry_mm (polygon) := rjoin(key, impl/selectie/key, impl/selectie/geometry_mm);
+
+		attribute<string> values                : DisableStorage = "True";
+		attribute<string> identificatie         := values;
+		attribute<string> key                   := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";
+
+		attribute<string> nummeraanduiding_id   := rjoin(key, impl/selectie/key, impl/selectie/nummeraanduiding_id);
+	}
+
+	unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName = "%LocalDataDir%/GeoDMSTestResults/unit/storage/select_org_rel.fss"
+	{
+		attribute<uint32> count   : DisableStorage = "True";
+		attribute<string> values  : DisableStorage = "True";
+		attribute<result> org_rel : DisableStorage = "True";
+	}
+
+	template datum_selectie
+	{
+		// begin case parameters
+		unit<uint32>     domain;
+		parameter<int32> prik_datum;
+		parameter<bool>  overig_filter_actief;
+		attribute<bool>  overig_filter (domain) := const(true, domain);
+		// einde case parameters
+
+		attribute<bool> WasGestart   (domain) := domain/meta/BEGINDATUM <= prik_datum;
+		attribute<bool> WasBeeindigd (domain) := domain/meta/EINDDATUM  <= prik_datum && domain/meta/EINDDATUM > 0i;
+
+		unit<uint32> selectie :=
+			= 'select_afew(src, WasGestart && not(WasBeeindigd) ' + 
+				(overig_filter_actief 
+					? '&& overig_filter' 
+					: '') 
+			+ ')'
+		{
+			container meta := relate_attr(src/meta, selectie, selectie/org_rel);
+		}
+	}
+
+	template meta_src_template // Voor het inlezen van de generieke BAG attributen
+	{
+		// begin case parameters
+		unit<uint32> domain;
+		// end case parameters
+
+		attribute<string> STATUS                 (domain);
+
+		attribute<int32>  BEGINDATUM             (domain);
+		attribute<int32>  EINDDATUM              (domain);
+		attribute<uint32> VOORKOMENIDENTIFICATIE (domain);
+
+		attribute<string> TIJDSTIPREGISTRATIE    (domain);
+		attribute<string> EINDREGISTRATIE        (domain);
+
+		attribute<int32>  DOCUMENTDATUM          (domain);
+		attribute<string> DOCUMENTNUMMER         (domain);
+
+		attribute<bool>   IS_GECONSTATEERD       (domain);
+	}
+}
