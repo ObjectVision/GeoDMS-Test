@@ -49,6 +49,7 @@ del %ResultDir%\unit\other\*.txt 2>nul
 
 del %ResultFileName% 2>nul
 
+
 rem pause
 
 Echo Unit Test Results (specific operators, all operators, storage read, other) for: %GeoDmsRunCmdBase% >> %ResultFileName%
@@ -148,6 +149,10 @@ Call ..\Unit\GUI\bat\DPGeneral_missing_file_error.bat
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms test_log %ResultDir%\unit\gui\DPGeneral_MF_error.txt S1 S2
 
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\background_layer.dms test_log %ResultDir%\unit\GUI\background_layer_error.txt S1 S2
+
+"%GeoDmsImGuiPath%"
+
+IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsImGuiPath%" FAILED >> %ResultFileName%
 
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
