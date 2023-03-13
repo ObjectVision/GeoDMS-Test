@@ -27,6 +27,8 @@ Set TwoUPRunPath=%prj_snapshotsDir%\2UP\cfg\stam.dms
 Set DynaPopPath=%prj_snapshotsDir%\100m_DynaPop\cfg\StatusQuo.dms
 Set RSLight_2021Path=%prj_snapshotsDir%\RSLight2021_ontwikkel_2
 Set RSLight2021_ontwikkel_3Path=%prj_snapshotsDir%\RSLight2021_ontwikkel_3
+Set RSLight2021_ontwikkel_3_compacted_untiledPath=%prj_snapshotsDir%\RSLight2021_ontwikkel_3_compacted
+Set RSLight2021_ontwikkel_3_compacted_untiled_all_truePath=%prj_snapshotsDir%\RSLight2021_ontwikkel_3_compacted_alltrue
 
 Set BAG20MakeSnapShotPath=%prj_snapshotsDir%\BAG20\cfg\BAG20_MakeSnaphot.dms
 
