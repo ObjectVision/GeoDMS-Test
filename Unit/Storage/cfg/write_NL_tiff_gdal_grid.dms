@@ -26,9 +26,9 @@ container Write_NL_tiff_gdal_grid
 		attribute<int16> GridData (rdc_100) := rdc_100/RowCol, StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/NL_tiff_gdal_grid.tif", StorageType = "gdalwrite.grid",	DialogData = "rdc_m";
 	}
 
-	unit<spoint> reRead: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/NL_tiff_gdal_grid.tif", StorageName = "gdal.grid", StorageReadOnly = "True"
+	unit<spoint> reRead: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/NL_tiff_gdal_grid.tif", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "rdc_m"
 	{
-		attribute<colorindex> GridData;
+		attribute<int16> GridData;
 	}
 
 	attribute<bool> test_griddata (reRead) := reRead/GridData == union_data(reRead, rdc_100/data);
