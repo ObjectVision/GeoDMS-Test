@@ -4676,53 +4676,53 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
 			}
-			container select_orgrel
+			container select_with_org_rel
 			{
-				unit<uint32> s_uint32 := select_orgrel(Source/City/RegionCode = 200)
+				unit<uint32> s_uint32 := select_with_org_rel(Source/City/RegionCode = 200)
 				{
 					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 			}
-			container select_unit: url  = "http://www.objectvision.nl/geodms/operators-a-functions/select_unit"
+			container select: url  = "http://www.objectvision.nl/geodms/operators-a-functions/select"
 			{
-				unit<uint32> ZHCities := select_unit(Source/City/RegionCode = 200)
+				unit<uint32> ZHCities := select(Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := const(200, ., uint32) = select_data(., Source/City/RegionCode = 200, Source/City/RegionCode);
 				}
 				parameter<bool> test := all(ZHCities/att);
 			}
 
-			container select_afew
+			container select_with_attr_by_org_rel
 			{
-				unit<uint32> selection := select_afew(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 9;
 			}
-			container select_afew_uint32
+			container select_uint32_with_attr_by_org_rel
 			{
-				unit<uint32> selection := select_afew_uint32(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_uint32_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 9;
 			}
-			container select_afew_uint16
+			container select_uint16_with_attr_by_org_rel
 			{
-				unit<uint16> selection := select_afew_uint16(Source/City, Source/City/RegionCode = 200)
+				unit<uint16> selection := select_uint16_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 9;
 			}
-			container select_afew_uint8
+			container select_uint8_with_attr_by_org_rel
 			{
-				unit<uint8> selection := select_afew_uint8(Source/City, Source/City/RegionCode = 200)
+				unit<uint8> selection := select_uint8_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -4730,49 +4730,49 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test := all(selection/att) && #select_subitems == 9;
 			}
 			
-			container select_many
+			container select_with_attr_by_cond
 			{
-				unit<uint32> selection := select_many(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 8;
 			}
-			container select_many_uint32
+			container select_uint32_with_attr_by_cond
 			{
-				unit<uint32> selection := select_many_uint32(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_uint32_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 8;
 			}
-			container select_many_uint16
+			container select_uint16_with_attr_by_cond
 			{
-				unit<uint16> selection := select_many_uint16(Source/City, Source/City/RegionCode = 200)
+				unit<uint16> selection := select_uint16_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 8;
 			}
-			container select_many_uint8
+			container select_uint8_with_attr_by_cond
 			{
-				unit<uint8> selection := select_many_uint8(Source/City, Source/City/RegionCode = 200)
+				unit<uint8> selection := select_uint8_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
 				parameter<bool> test := all(selection/att) && #select_subitems == 8;
 			}
-			container relate_attr
+			container collect_attr_by_org_rel
 			{
 				unit<uint32> selection := select_afew(Source/City, Source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
-				container related_attributes := relate_attr(Source/City, selection, selection/org_rel)
+				container related_attributes := collect_attr_by_org_rel(Source/City, selection, selection/org_rel)
 				{
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(related_attributes,'name'); 
@@ -5023,17 +5023,17 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& subset_uint32/test 
 				&& subset_uint16/test 
 				&& subset_uint8/test 
-				&& select_unit/test
-				&& select_orgrel/s_uint32/test
-				&& select_afew/test
-				&& select_afew_uint32/test
-				&& select_afew_uint32/test
-				&& select_afew_uint32/test
-				&& select_many/test
-				&& select_many_uint32/test
-				&& select_many_uint32/test
-				&& select_many_uint32/test
-				&& relate_attr/test
+				&& select/test
+				&& select_with_org_rel/s_uint32/test
+				&& select_with_attr_by_org_rel/test
+				&& select_uint32_with_attr_by_org_rel/test
+				&& select_uint16_with_attr_by_org_rel/test
+				&& select_uint8_with_attr_by_org_rel/test
+				&& select_with_attr_by_cond/test
+				&& select_uint32_with_attr_by_cond/test
+				&& select_uint16_with_attr_by_cond/test
+				&& select_uint8_with_attr_by_cond/test
+				&& collect_attr_by_org_rel/test
 				&& unique/test 
 				&& union/test_attr 
 				&& union_unit/test 
