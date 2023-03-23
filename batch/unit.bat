@@ -90,6 +90,10 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms export %ResultDir
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms test_log %ResultDir%\unit\storage\WriteDbf.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms export %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms test_log %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
+
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_NL_tiff_gdal_grid.dms export %ResultDir%\unit\storage\WriteNLTiff_gdal.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_NL_tiff_gdal_grid.dms test_log %ResultDir%\unit\storage\WriteNLTiff_gdal.txt S1 S2
+
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms write_data %ResultDir%\unit\storage\fss_one_record.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms test_log %ResultDir%\unit\storage\fss_one_record.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms write_data %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
