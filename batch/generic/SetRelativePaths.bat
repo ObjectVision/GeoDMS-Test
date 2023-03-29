@@ -35,4 +35,5 @@ Set BAG20MakeSnapShotPath=%prj_snapshotsDir%\BAG20\cfg\BAG20_MakeSnaphot.dms
 Rem Brondata voor projecten
 Set RslDataDir=%RegressionTestsSourceDataDir%\RSL
 Set HestiaDataDir=%RegressionTestsSourceDataDir%\Hestia
+Set CusaRunPath=%prj_snapshotsDir%\geodms_africa_cusa2\cfg\africa.dms
 
