@@ -52,9 +52,10 @@ Call Full\GUI_tests.bat
 Call Full\Operator_tests.bat
 Call Full\Project_tests.bat
 
-REM Call Full\Project_tests_alleenRS.bat
+REM Full\Project_tests_alleenRS.bat
 REM Full\InstanceTimeStamp.bat %Setting1% %Setting2% %RegressionPath% results/t300_xml_ReadParse/result_html t300_xml_ReadParse
 REM Call Full\InstanceTimeStampStatistics.bat %Setting1% %Setting2% %OperatorPath% /Arithmetics/UnTiled/add/attr t1742_command_statistics "%TstDir%\norm\Statistics_AUAA.txt"
+
 
 Call Full\MakeReport.bat
 

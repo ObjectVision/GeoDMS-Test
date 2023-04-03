@@ -49,6 +49,7 @@ del %ResultDir%\unit\other\*.txt 2>nul
 
 del %ResultFileName% 2>nul
 
+
 rem pause
 
 Echo Unit Test Results (specific operators, all operators, storage read, other) for: %GeoDmsRunCmdBase% >> %ResultFileName%
@@ -75,6 +76,12 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log 
 
 Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log %ResultDir%\unit\operator\operator.txt S1 S2
 
+REM SECTION UNITS // ACTIVATE AFTER SOLVING ISSUE 199
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/b    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+REM Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/C    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+REM Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms sub/D    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+Call Unit\Instance.bat          %TstDir%\Unit\unit\cfg\categorical_unit.dms test_log %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+
 REM SECTION STORAGE READ
 Call Unit\Instance.bat %TstDir%\storage\cfg\regression.dms results/unit_test_log                %ResultDir%\unit\storage\read_geodms_formats.txt S1 S2
 Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_vect_read_log %ResultDir%\unit\storage\read_gdal_vect_formats.txt S1 S2
@@ -89,6 +96,10 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms export %ResultDir
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms test_log %ResultDir%\unit\storage\WriteDbf.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms export %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms test_log %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2
+
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_NL_tiff_gdal_grid.dms export %ResultDir%\unit\storage\WriteNLTiff_gdal.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_NL_tiff_gdal_grid.dms test_log %ResultDir%\unit\storage\WriteNLTiff_gdal.txt S1 S2
+
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms write_data %ResultDir%\unit\storage\fss_one_record.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_one_record.dms test_log %ResultDir%\unit\storage\fss_one_record.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\fss_zero_records.dms write_data %ResultDir%\unit\storage\fss_zero_record.txt S1 S2
@@ -117,6 +128,9 @@ Call Unit\Instance.bat %TstDir%\Unit\other\cfg\TemplateInstAsArg.dms test_log %R
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\InstantiateDataBlock.dms test_log %ResultDir%\unit\other\InstantiateDataBlock.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\GridFromTemplate.dms test_log %ResultDir%\unit\other\GridFromTemplate.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Namespaces\cfg\TemplDefinition.dms test_log %ResultDir%\unit\Namespaces\TemplDefinition.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\other\cfg\CombineDefinedRange.dms test_log %ResultDir%\unit\other\CombineDefinedRange.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\other\cfg\select_with_attr_by_org_rel_nested.dms test_log %ResultDir%\unit\other\select_with_attr_by_org_rel_nested.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\other\cfg\propvalue_inherited_no_subitems.dms test_log %ResultDir%\unit\other\propvalue_inherited_no_subitems.txt S1 S2
 
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\CloseGUIIssue1.dms test_log %ResultDir%\unit\other\CloseGUIIssue1.txt S1 S2
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\other\cfg\item_names_equal.dms test_log %ResultDir%\unit\other\item_names_equal.txt S1 S2
@@ -148,6 +162,10 @@ Call ..\Unit\GUI\bat\DPGeneral_missing_file_error.bat
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms test_log %ResultDir%\unit\gui\DPGeneral_MF_error.txt S1 S2
 
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\background_layer.dms test_log %ResultDir%\unit\GUI\background_layer_error.txt S1 S2
+
+"%GeoDmsImGuiPath%"
+
+IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsImGuiPath%" FAILED >> %ResultFileName%
 
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++

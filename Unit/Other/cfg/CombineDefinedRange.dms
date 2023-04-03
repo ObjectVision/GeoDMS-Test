@@ -1,0 +1,20 @@
+container CombineDefinedRange
+{
+	unit<uint32> jaar := range(uint32,2014,2016)
+	{
+		attribute<string> name := 'yr_' + string(id(.));
+	}
+	unit<uint32> region : nrofrows = 2
+	{
+		attribute<string> name : ['R1','R2'];
+	}
+	unit<uint32> region_name := combine(region, jaar);
+
+	parameter<bool> test := sum(region_name/nr_2) == 8058;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'Combine Defined Range Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	, StorageType = "str"
+	, Storagename = "%localDataDir%/GeoDMSTestResults/unit/other/CombineDefinedRange.txt";
+}

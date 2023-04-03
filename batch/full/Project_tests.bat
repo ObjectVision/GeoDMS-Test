@@ -38,6 +38,9 @@ Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %TwoUPRunPath% test_2UP_in
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\100m_DynaPop
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %DynaPopPath% t810_ValLuisa_Czech_LU_POP/result_html t810_ValLuisa_Czech_LU_POP 
 
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Cusa
+Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %CusaRunPath% t910_cusa2_Africa_test/result_html t910_cusa2_Africa_test
+
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Storage
 Call Full\InstanceTimeStampWithFileCompare.bat %Setting1% %Setting2% %StoragePath% EsriShape/polygon/Write t050_Storage_Write_Shape_Polygon_Folder_Compare  %LocalDataDir%\Regression\Storage\regr_results\polygon\area.* %TstDir%\Storage\data\polygon\area.*
 

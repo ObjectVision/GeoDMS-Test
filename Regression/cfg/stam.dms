@@ -298,7 +298,6 @@ container Regression:	FreeData = "True"
 			parameter<string> version     := '<version>'    + GeoDMSVersion       + '</version>';
 			parameter<string> BuildConfig := '<buildconfig>'+ GeoDmsBuildConfig() + '</buildconfig>';
 			parameter<string> platform    := '<platform>'   + GeoDmsPlatform()    + '</platform>';
-			parameter<string> TypeModel   := '<typemodel>'  + GeoDmsTypeModel()   + '</typemodel>';
 			parameter<string> StatusFlag  := '<statusflag>' + StatusFlags/file    + '</statusflag>';
 
 			container StatusFlags
@@ -325,7 +324,7 @@ container Regression:	FreeData = "True"
 				parameter<string> file:= expand(., results_folder), Storagename = "= TempDir + '/results_folder.txt'", StorageType = "str";
 			}
 
-			parameter<string> all := version + BuildConfig + platform + TypeModel// + StatusFlag
+			parameter<string> all := version + BuildConfig + platform // + StatusFlag
 			,	ExplicitSuppliers = "ver_key/file;results_folder/file"
 			,	StorageType       = "str"
 			,	storagename       = "= TempDir + '/GeoDMSVersionInfo.txt'";
