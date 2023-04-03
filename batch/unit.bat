@@ -76,6 +76,12 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log 
 
 Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log %ResultDir%\unit\operator\operator.txt S1 S2
 
+REM SECTION UNITS // ACTIVATE AFTER SOLVING ISSUE 199
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/b    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+REM Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/C    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+REM Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms sub/D    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+Call Unit\Instance.bat          %TstDir%\Unit\unit\cfg\categorical_unit.dms test_log %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+
 REM SECTION STORAGE READ
 Call Unit\Instance.bat %TstDir%\storage\cfg\regression.dms results/unit_test_log                %ResultDir%\unit\storage\read_geodms_formats.txt S1 S2
 Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_vect_read_log %ResultDir%\unit\storage\read_gdal_vect_formats.txt S1 S2
