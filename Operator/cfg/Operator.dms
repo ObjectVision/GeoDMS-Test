@@ -3188,7 +3188,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				parameter<uint32> test := min_index(City/NrInhabitants);
 
-				parameter<bool>   test_tuint32 := eq_or_both_null(min_index(City/NrInhabitants), params/minIndex);
+				parameter<bool>   test_tuint32 := eq_or_both_null(min_index(City/NrInhabitants), params/minIndex[City]);
 //NYI			parameter<bool>   test_string := min_index(City/CityName) == 'Amsterdam';
 				parameter<bool>   test_param := test_tuint32;
 	
@@ -3214,7 +3214,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container max_index: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
 			{
-				parameter<bool>   test_tuint32 := eq_or_both_null(max_index(City/NrInhabitants), params/maxIndex);
+				parameter<bool>   test_tuint32 := eq_or_both_null(max_index(City/NrInhabitants), params/maxIndex[City]);
 				parameter<bool>   test_param   := test_tuint32;
 	
 				attribute<City>   att_uint32          (Region) := max_index(City/NrInhabitants, City/RegionNr);

@@ -25,8 +25,10 @@ container categorical_unit
 
 	unit<uint32> src : nrofrows = 5
 	{
+	
 		attribute<uint32>           A_kw           : [201304, 201210, 201704, 201801, 202207];
 		attribute<Kwartalen>        A              := rlookup(a_kw, Kwartalen/value); 
+		attribute<Kwartalen_nodata> AA              := rlookup(a_kw, Kwartalen/value); 
 		attribute<bool>             selection_attr := A > 3;
 		attribute<Kwartalen_nodata> B              := A;
 		attribute<Kwartalen_nodata> C              := 1 * A;
@@ -36,6 +38,9 @@ container categorical_unit
 	unit<uint32> sub := select_with_org_rel(src/selection_attr)
 	{
 		attribute<Kwartalen_nodata> D := org_rel -> A;
+		attribute<Kwartalen_nodata> E := src/A[org_rel];
+		attribute<Kwartalen> F := src/A[org_rel];
+		attribute<Kwartalen_nodata> G := F;
 	}
 
 	parameter<bool> test := sum(src/E) == 95;
@@ -45,4 +50,5 @@ container categorical_unit
 		: 'Categorical Unit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
 	,	StorageType = "str"
 	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/unit/categorical_unit.txt";
+
 }
