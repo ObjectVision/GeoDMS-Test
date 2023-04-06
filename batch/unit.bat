@@ -78,8 +78,8 @@ Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log 
 
 REM SECTION UNITS // ACTIVATE AFTER SOLVING ISSUE 199
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/b    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
-REM Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/C    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
-REM Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms sub/D    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/C    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms sub/D    %ResultDir%\unit\unit\categorical_unit.txt S1 S2
 Call Unit\Instance.bat          %TstDir%\Unit\unit\cfg\categorical_unit.dms test_log %ResultDir%\unit\unit\categorical_unit.txt S1 S2
 
 REM SECTION STORAGE READ
