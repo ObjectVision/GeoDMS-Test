@@ -531,7 +531,7 @@ def VisualizeExperiments(experiments, vgroups):
         legend_items.append(LegendItem(label=labels[i], renderers=[renderer for renderer in renderers if renderer.glyph.line_color==color]))
     
     ## Use a dummy figure for the LEGEND
-    dum_fig = plotting.figure(plot_width=600,plot_height=600,outline_line_alpha=0,tools="pan,wheel_zoom,box_zoom,reset,save,hover",toolbar_location=None)
+    dum_fig = plotting.figure(width=600,height=600,outline_line_alpha=0,tools="pan,wheel_zoom,box_zoom,reset,save,hover",toolbar_location=None)
     # set the components of the figure invisible
     for fig_component in [dum_fig.grid[0],dum_fig.ygrid[0],dum_fig.xaxis[0],dum_fig.yaxis[0]]:
         fig_component.visible = False
