@@ -73,6 +73,7 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\subset.dms test_log %ResultDir
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\merge_indirect_domainunit.dms test_log %ResultDir%\unit\operator\merge_indirect_domainunit.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag1.dms test_log %ResultDir%\unit\operator\ReadElems_flag1.txt S1 S2
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log %ResultDir%\unit\operator\ReadElems_flag24.txt S1 S2
+Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\true_function_in_select_by_cond.dms test_log %ResultDir%\unit\operator\select_with_attr_by_cond_true_function.txt S1 S2
 
 Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log %ResultDir%\unit\operator\operator.txt S1 S2
 
