@@ -1,0 +1,21 @@
+container subitem
+{
+	container DPGeneral_missing_file_error
+	{
+		parameter<string> test   : StorageName = "%projdir%/missing/ThisFileDoesNotExists.txt", StorageType = "str";
+	}
+
+	parameter<string> result : StorageName = "%localDataDir%/GeoDMSTestResults/Unit/GUI/DPGeneral_missing_file_error.tmp", StorageType = "str";
+
+	parameter<string> norm_with_replace_characters : StorageName = "%projdir%/Norm/DPGeneral_missing_file_error.txt", StorageType = "str";
+	parameter<string> ProjDir_local_path           := expand(.,'%projdir%');
+	parameter<string> norm                         := replace(norm_with_replace_characters,'@projdir@',ProjDir_local_path);
+
+	parameter<bool>   test     := trim(result) == trim(norm);
+	parameter<string> test_log := test 
+		? '' 
+		: 'Detail Page General Missing file Error test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK, result: ' + expand(., '%localDataDir%') 
+		  + '/GeoDMSTestResults/Unit/GUI/DPGeneral_missing_file_error.tmp differs from ' + expand(., '%projdir%')  + '/Norm/DPGeneral_missing_file_error.txt'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/gui/DPGeneral_MF_error.txt";
+}

@@ -21,8 +21,8 @@ container connect
 		attribute<SourceData/arc> arc_rel  := rjoin(id(.), SourceData/point/key, SourceData/point/arc_rel);
 
 		attribute<bool> isOK  := switch(
-			  case(id(.) < 3892                , nr_OrgEntity == id(.))
-			, case(id(.) > 3891 && id(.) < 3902, isNull(nr_OrgEntity))
+			  case(id(.)[SourceData/arc] < 3892[.]                , nr_OrgEntity == id(.)[SourceData/arc])
+			, case(id(.)[SourceData/arc] > 3891[.] && id(.) < 3902[.], isNull(nr_OrgEntity))
 			, nr_OrgEntity == arc_rel
 			);
 	}

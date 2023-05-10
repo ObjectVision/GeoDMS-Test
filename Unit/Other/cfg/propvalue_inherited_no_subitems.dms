@@ -1,0 +1,24 @@
+container propvalue_inherited_no_subitems
+{
+	unit<uint32> srcA: nrofrows = 3
+	{
+		attribute<.> id;
+		attribute<.> id_plus_1 := id + 1;
+	}
+	unit<uint32> srcB := srcA;
+	unit<uint32> srcC := srcA
+	{
+		attribute<.> id_plus_2 := id + id_plus_1;
+	}
+
+	unit<uint32> nameB := Inherited_PropValues(srcB,'name');
+	unit<uint32> nameC := Inherited_PropValues(srcC,'name');
+
+	parameter<bool> test := #(nameB) == 2;
+
+	parameter<string> test_log := test
+	 ? '' 
+	 : 'Propvalue_Inherited no subitems: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	, StorageType = "str"
+	, Storagename = "%localDataDir%/GeoDMSTestResults/unit/other/propvalue_inherited_no_subitems.txt";
+}

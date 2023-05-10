@@ -23,8 +23,8 @@ set /p ver_range=<%LogFileDir%/temp_ver_range.txt
 
 set GeoDMSReportFile=%GeoDMSReportBaseFolder%\reports\!ver_range!.html
 
-Echo Removing CalcCache files %LocalDataDirRegression%\*.dmsdata
-Del /S %LocalDataDirRegression%\*.dmsdata 2>nul
+REM Echo Removing CalcCache files %LocalDataDirRegression%\*.dmsdata
+REM Del /S %LocalDataDirRegression%\*.dmsdata 2>nul
 
 Echo.
 Echo ************************

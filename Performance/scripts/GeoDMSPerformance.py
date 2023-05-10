@@ -108,24 +108,28 @@ def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_c
     while (psutil.pid_exists(pid)):
         timestamp_start = datetime.now()
 
-        with p.oneshot():
-            cur_time = datetime.now()
-            log["time"].append(cur_time)
-            log["dtime"].append((cur_time-start_time).total_seconds()-delta_start_time)
-            cpu_percent = p.cpu_percent() / psutil.cpu_count()
-            cpu_curr_time += cpu_percent / 100.0
-            log["cpu_percent"].append(cpu_percent)
-            log["cpu_curr_time"].append(cpu_curr_time)
-            log["memory_percent"].append(p.memory_percent())
-            memory_info = p.memory_info()
-            log["rss"].append(memory_info.rss * 10.0**-9.0) # GB
-            log["vms"].append(memory_info.vms * 10.0**-9.0) # GB
-            log["num_threads"].append(p.num_threads())
-            io_counters = p.io_counters()
-            log["read_bytes"].append((io_counters.read_bytes-prev_io_counters.read_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
-            log["write_bytes"].append((io_counters.write_bytes-prev_io_counters.write_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
-            log["total_read_bytes"].append(io_counters.read_bytes/10.0**9) # mb
-            log["total_write_bytes"].append(io_counters.write_bytes/10.0**9) # mb       
+        try:
+            with p.oneshot():
+                cur_time = datetime.now()
+                log["time"].append(cur_time)
+                log["dtime"].append((cur_time-start_time).total_seconds()-delta_start_time)
+                cpu_percent = p.cpu_percent() / psutil.cpu_count()
+                cpu_curr_time += cpu_percent / 100.0
+                log["cpu_percent"].append(cpu_percent)
+                log["cpu_curr_time"].append(cpu_curr_time)
+                log["memory_percent"].append(p.memory_percent())
+                memory_info = p.memory_info()
+                log["rss"].append(memory_info.rss * 10.0**-9.0) # GB
+                log["vms"].append(memory_info.vms * 10.0**-9.0) # GB
+                log["num_threads"].append(p.num_threads())
+                io_counters = p.io_counters()
+                log["read_bytes"].append((io_counters.read_bytes-prev_io_counters.read_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
+                log["write_bytes"].append((io_counters.write_bytes-prev_io_counters.write_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
+                log["total_read_bytes"].append(io_counters.read_bytes/10.0**9) # mb
+                log["total_write_bytes"].append(io_counters.write_bytes/10.0**9) # mb
+        except:
+            break
+
         prev_io_counters = io_counters
         
         timestamp_end = datetime.now()
@@ -136,6 +140,7 @@ def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_c
         
         if sleep_time > 0.0:
             time.sleep(sleep_time)
+            
     return log, start_time, cpu_curr_time
 
 def getPerformanceBatch(batch_cmd, sampling_rate=1.0):
@@ -311,8 +316,20 @@ def RunExperiments(experiments, sampling_rate=1.0):
                 experiments[i] = None
                 continue
             experiments[i] = loadExperimentFromPickleFile(None, exp_fn=exp_fn)
-        if type(exp) is str:
             fn_no_ext = exp[:-4].split('\\')
+            print(f"Experiment: {fn_no_ext[-1]}, rev: {getSvnVersion(experiments[i])}, flags: {experiments[i].flags}, cfg: {experiments[i].cfg}, item: {experiments[i].item}")
+            continue
+            
+        if type(exp) is tuple:
+            exp_fn = exp[0]
+            if not os.path.exists(exp_fn): # check if experiment exists
+                print(f"Experiment file: {exp_fn} does not exist, skipping experiment.")
+                experiments[i] = None
+                continue
+            experiments[i] = loadExperimentFromPickleFile(None, exp_fn=exp_fn)
+            experiments[i].storage_fldr = exp[1]
+            
+            fn_no_ext = exp[0][:-4].split('\\')
             print(f"Experiment: {fn_no_ext[-1]}, rev: {getSvnVersion(experiments[i])}, flags: {experiments[i].flags}, cfg: {experiments[i].cfg}, item: {experiments[i].item}")
             continue
         
@@ -359,7 +376,7 @@ def RunExperiments(experiments, sampling_rate=1.0):
                 exp.result["log"],start_time,_ = getPerformance(exe_name, sampling_rate)
 
         # LOG
-        if os.path.exists(log_fn):
+        if os.path.exists(log_fn) and not "GeoDmsCaller.exe" in exp.exe_fldr: # TODO: manually implement gui log
             exp.result["cpu_percent"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_percent")
             exp.result["cpu_curr_time"]  = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_curr_time")
             exp.result["memory_percent"] = getLogInfoForPlotting(exp.result["log"], log_fn, "memory_percent")
@@ -514,7 +531,7 @@ def VisualizeExperiments(experiments, vgroups):
         legend_items.append(LegendItem(label=labels[i], renderers=[renderer for renderer in renderers if renderer.glyph.line_color==color]))
     
     ## Use a dummy figure for the LEGEND
-    dum_fig = plotting.figure(plot_width=600,plot_height=600,outline_line_alpha=0,tools="pan,wheel_zoom,box_zoom,reset,save,hover",toolbar_location=None)
+    dum_fig = plotting.figure(width=600,height=600,outline_line_alpha=0,tools="pan,wheel_zoom,box_zoom,reset,save,hover",toolbar_location=None)
     # set the components of the figure invisible
     for fig_component in [dum_fig.grid[0],dum_fig.ygrid[0],dum_fig.xaxis[0],dum_fig.yaxis[0]]:
         fig_component.visible = False
@@ -584,7 +601,9 @@ def InitExperimentsFromCsvFile(fn):
                 flags        = line_split[4]
                 fullname     = line_split[5].replace("\n", "").replace("\t","").replace(" ","")
                 
-                if fullname:
+                if fullname and storage_fldr:
+                    experiments.append((fullname,storage_fldr))
+                elif fullname:
                     experiments.append(fullname)
                 else:
                     experiments.append(Experiment(name=name, svn=svn, exe_fldr=exe_fldr, ld_fldr=ld_fldr, storage_fldr=storage_fldr, cfg=cfg, item=item, flags=flags))

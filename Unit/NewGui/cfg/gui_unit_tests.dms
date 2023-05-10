@@ -1,0 +1,19 @@
+container GuiUnitTests
+{
+	parameter<string> GeoDMSImGui_exe := "C:/Users/Cicada/dev/geodms/branches/GeoDMS/bin/Debug/x64/GeoDmsImGui.exe";
+	
+	container tests
+	{
+		// open window tests
+		parameter<bool> t1_1 := exec_ec(GeoDMSImGui_exe + expand(., " /script %projDir%/data/scripts/open_treeview_window.txt")) == 0;
+		
+		// open new configuration tests
+		parameter<bool> t2_1 := exec_ec(GeoDMSImGui_exe + expand(., " /script %projDir%/data/scripts/open_config.txt")) == 0;
+		
+		// new current item tests
+		parameter<bool> t2_2 := exec_ec(GeoDMSImGui_exe + expand(., " /script %projDir%/data/scripts/new_current_item.txt")) == 0;
+		parameter<bool> t2_3 := exec_ec(GeoDMSImGui_exe + expand(., " /script %projDir%/data/scripts/new_current_item_1.txt")) == 0;
+
+		parameter<bool> test_all := t1_1 && t2_1 && t2_2 && t2_3;
+	}
+}

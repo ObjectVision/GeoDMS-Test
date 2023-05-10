@@ -1,0 +1,8 @@
+container CompareFloat64WithInteger: IntegrityCheck = "3.1 > 4"
+{
+	parameter<string> test_log := test 
+		? '' 
+		: 'Intergrity Check Compare Float64 With Integer Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/Integrity_check/CompareFloat64WithInteger.txt";
+}

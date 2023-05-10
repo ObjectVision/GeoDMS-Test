@@ -1,0 +1,128 @@
+container read_tiff_configured_domain
+{
+	container Classifications
+	{
+		// =========== landusesTypering
+		unit<uint8> ggModel: NrOfRows = 9 // @USERINPUT: keep in sync with the actual nr of model classes
+		{	
+			parameter<uint32> nrAttr := 16; // @USERINPUT: keep in sync with nr of Text-Element attributes in the next lines
+			unit<uint32>      Elements:= Range(uint32, 0, nrAttr*#ggModel)
+			{
+				attribute<String> Text: [ // @USERINPUT
+				//'Name',			'Label',			'Descr',			'IsExogenous',	'r','g','b',		'Claimregion',	'IsUrbaan',	'IsOpenlandscape',	'LandPrice_A1',	'LandPrice_A2',	'LandPrice_B1',	'LandPrice_B2',	'NrInhPerHa',	'MaxDamagePerHa',
+				'exterior',			'exterior',			'exterior',			'TRUE',			'255','255','228',	'',				'FALSE',	'FALSE',			'25',			'24',			'23',			'22',			'0',			'0',
+				'residential',		'residential',		'residential',		'FALSE',		'225','0','0',		'RstIntPer',	'TRUE',		'FALSE',			'40',			'35',			'34',			'30',			'35',			'4',
+				'industrial',		'industrial',		'industrial',		'FALSE',		'128','0','255',	'RstIntPer',	'TRUE',		'FALSE',			'36',			'31',			'32',			'28',			'0',			'6',
+				'recreation',		'recreation',		'recreation',		'FALSE',		'255','228','0',	'RstIntPer',	'FALSE',	'FALSE',			'30',			'28',			'26',			'24',			'0',			'0.3',
+				'agriculture',		'agriculture',		'agriculture',		'FALSE',		'192','255','128',	'RstIntPer',	'FALSE',	'FALSE',			'32',			'27',			'30',			'26',			'0',			'0.1',
+				'nature',			'nature',			'nature',			'FALSE',		'100','192','100',	'RstIntPer',	'FALSE',	'TRUE',				'34',			'29',			'31',			'27',			'0',			'0.2',
+				'buildinglot',		'buildinglot',		'buildinglot',		'FALSE',		'128','128','128',	'RstIntPer',	'FALSE',	'FALSE',			'30',			'28',			'26',			'24',			'0',			'1.3',
+				'infrastructure',	'infrastructure',	'infrastructure',	'TRUE',			'128','0','0',		'',				'FALSE',	'FALSE',			'38',			'33',			'33',			'29',			'0',			'1.9',
+				'water',			'water',			'water',			'TRUE',			'159','255','255',	'',				'FALSE',	'FALSE',			'30',			'28',			'26',			'24',			'0',			'0'
+				];
+			}
+			attribute<string>     Lnr:          = string(ID(.)+1b);
+			attribute<String>     Name:         = Elements/Text[value(UInt32(ID(.))* nrAttr +  0, Elements)];
+			attribute<String>     Label:        = Elements/Text[value(UInt32(ID(.))* nrAttr +  1, Elements)], DialogType = "LabelText";
+			attribute<String>     Descr:        = Elements/Text[value(UInt32(ID(.))* nrAttr +  2, Elements)];
+			attribute<Bool>       IsExogenous:  = bool(Elements/Text[value(UInt32(ID(.))* nrAttr +  3, Elements)]);
+
+			attribute<uint32>     BrushColor:   = rgb(R,G / 256,B / 256 / 256), DialogType = "BrushColor";
+
+			unit<uint32>            ColorCoord;
+			attribute<ColorCoord>   r:                = value(Elements/Text[value(UInt32(ID(.))* nrAttr +  4, Elements)], ColorCoord);
+			attribute<ColorCoord>   g:                = value(Elements/Text[value(UInt32(ID(.))* nrAttr +  5, Elements)], ColorCoord)*256;
+			attribute<ColorCoord>   b:                = value(Elements/Text[value(UInt32(ID(.))* nrAttr +  6, Elements)], ColorCoord)*256*256;
+			attribute<String>       Claimregion:      = Elements/Text[value(UInt32(ID(.))* nrAttr +  7, Elements)];
+			attribute<Bool>         IsUrban:          = bool(Elements/Text[value(UInt32(ID(.))* nrAttr + 8, Elements)]);
+			attribute<Bool>         IsOpenLandscape:  = bool(Elements/Text[value(UInt32(ID(.))* nrAttr + 9, Elements)]);
+		}
+
+		unit<uint8> LUclasses := Range(ggModel,uint8(0),uint8(nrofrows(ggModel)))
+		{
+			attribute<ggModel>      NrOrg          := convert(ID(LUclasses), ggModel);
+			attribute<UInt32>       BrushColor     := lookup(NrOrg, ggModel/BrushColor), DialogType = "BrushColor";
+			attribute<String>       Label          := lookup(NrOrg, ggModel/Label), DialogType = "LabelText";
+			attribute<String>       Name           := lookup(NrOrg, ggModel/Name);
+			//attribute<mEUR_ha>      MaxDamagePerHa := lookup(NrOrg, ggModel/MaxDamagePerHa);
+		}
+	}
+
+	container geography
+	{
+		unit<float32> meter := baseunit('m', float32);
+		unit<fpoint> rdc_base : Format = "EPSG:28992";
+		unit<FPoint> rdc_meter := range(rdc_base, point(300000f,0f), point(625000f,280000f));
+
+		parameter<meter> gridsize_100m := 100[meter];
+		parameter<meter> gridsize_500m := 500[meter];
+		parameter<meter> x_min := 0[meter];
+		parameter<meter> x_max := 280000[meter];
+		parameter<meter> y_min := 300000[meter];
+		parameter<meter> y_max := 625000[meter];
+
+		parameter<int16> nr_cols_100m := int16((x_max - x_min) / gridsize_100m);
+		parameter<int16> nr_rows_100m := int16((y_max - y_min) / gridsize_100m);
+		parameter<int16> nr_cols_500m := int16((x_max - x_min) / gridsize_500m);
+		parameter<int16> nr_rows_500m := int16((y_max - y_min) / gridsize_500m);
+
+		unit<SPoint> rdc_500lu :=
+				range(
+					gridset(
+						  rdc_meter
+						, point(-gridsize_500m, gridsize_500m, rdc_meter)
+						, point(y_max, x_min, rdc_meter)
+						, spoint
+					)
+					,point(0s, 0s)
+					, point(nr_rows_500m, nr_cols_500m)
+				)
+				, DialogData = "rdc_meter"
+		{
+			parameter<ha> NrHaPerCell: [25];
+			attribute<domain>    domain_rel := id(.)[domain];
+		}
+
+		unit<SPoint> rdc_100lu :=
+				range(
+					gridset(
+						  rdc_meter
+						, point(-gridsize_100m, gridsize_100m, rdc_meter)
+						, point(y_max, x_min, rdc_meter)
+						, spoint
+					)
+					,point(0s, 0s)
+					, point(nr_rows_100m, nr_cols_100m)
+				)
+				, DialogData = "rdc_meter"
+		{
+			attribute<rdc_500lu>    rdc_500lu_rel := id(.)[rdc_500lu];
+			parameter<ha> NrHaPerCell: [1];
+		}
+	}
+
+	unit<SPoint> domain_org := =ModelParameters/ModelResolution == '100m' ? 'Geography/rdc_100lu' : 'Geography/rdc_500lu', IsHidden = "true";
+	unit<SPoint> domain := TiledUnit(point(3250s, 2800s, domain_org))
+	{
+		attribute<Geography/rdc_100lu> rdc_100lu_rel := id(.)[Geography/rdc_100lu];
+		attribute<Geography/rdc_500lu> rdc_500lu_rel := id(.)[Geography/rdc_500lu];
+	}
+	container ModelParameters
+	{
+		parameter<string> ModelResolution := '100m'; // '100m' '500m'
+	}
+	
+	attribute<classifications/LUclasses> A1_GE_Discr   (domain): Storagename = "%projDir%/data/A1_GE_Discr.tif";
+
+	parameter<uint32> def_A1_GE_Discr  := sum(uint32(isDefined(A1_GE_Discr))); 
+	parameter<uint32> sum_A1_GE_Discr  := sum(uint32(A1_GE_Discr)); 
+
+	parameter<bool>   test     := def_A1_GE_Discr == 9100000 && sum_A1_GE_Discr == 37816332;
+	parameter<string> test_log := test 
+		? '' 
+		: 'Read Tiff with configured_domaintest: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK.'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_tiff_configured_domain_error.txt";
+
+
+}

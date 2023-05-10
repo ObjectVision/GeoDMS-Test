@@ -1,0 +1,25 @@
+container select_with_attr_by_org_rel_nested
+{
+	unit<uint32> src: NrOfRows = 10 
+	{
+		attribute<uint32> A := id(src);
+	}
+
+	unit<uint32> selectie1 := select_with_attr_by_org_rel(src, src/A > 5)
+	{
+		attribute<src> src_rel := org_rel;
+	}
+
+	unit<uint32> selectie2 := select_with_attr_by_org_rel(selectie1, selectie1/A % 2 == 0)
+	{
+		parameter<string> org_rel_vu := PropValue(org_rel, 'ValuesUnit');
+	}
+
+	parameter<bool> test := selectie2/org_rel_vu == '/selectie1';
+
+	parameter<string> test_log := test
+		? '' 
+		: 'select_with_attr_by_org_rel nested: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	, StorageType = "str"
+	, Storagename = "%localDataDir%/GeoDMSTestResults/unit/other/select_with_attr_by_org_rel_nested.txt";
+}

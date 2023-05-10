@@ -1,0 +1,59 @@
+container select_with_attr_by_org_rel
+{
+	container units
+	{
+		unit<float32> m  := baseunit('m', float32);
+		unit<float32> m2 := m * m;
+		unit<float32> ha := 10000 * m2;
+	}
+	container geography
+	{
+		unit<fpoint>  rdc_base : SpatialReference = "EPSG:28992";
+		unit<fpoint>  rdc      := range(rdc_base, point(0[units/m],300000[units/m]), point(280000[units/m],625000[units/m]));
+		unit<ipoint>  rdc_mm   := 
+			gridset(
+				 rdc
+				,point(Float32(0.001),Float32(0.001),rdc)
+				,point(Float32(0)    ,Float32(0)    ,rdc)
+				,ipoint
+			);
+	}
+	unit<uint32> src: nrofrows = 5
+	{
+		container Square: Using = "Units;Geography"
+		{
+			unit<uint32> shape: nrofrows = 1
+			{
+				attribute<rdc> left_top     := const(point(461500f,157500f, rdc),.);
+				attribute<rdc> right_top    := const(point(461500f,158500f, rdc),.);
+				attribute<rdc> right_bottom := const(point(460500f,158500f, rdc),.);
+				attribute<rdc> left_bottom  := const(point(460500f,157500f, rdc),.);
+			}
+			unit<uint32> pointset : nrofrows = 5
+			{
+				attribute<rdc>    point    := union_data(., shape/left_top, shape/right_top, shape/right_bottom, shape/left_bottom, shape/left_top);
+				attribute<shape>  sequence := const(0,., shape);
+				attribute<uint32> order    := id(.);
+			}
+			attribute<rdc_mm> geometry (poly, shape) := points2sequence(pointset/point, pointset/sequence, pointset/order)[rdc_mm];
+		}
+	}
+
+	unit<uint32> split := split_union_polygon(src/Square/geometry)
+	{
+		attribute<Geography/rdc_mm> deflate_100m (poly) := bg_buffer_multi_polygon(geometry, -100d, 16b);
+		attribute<units/ha>         area                := area(deflate_100m[Geography/rdc], units/m2) / 10000 [units/m2 / units/ha];
+	}
+	
+	unit<uint32> selectie := select_with_attr_by_org_rel(split, split/area > 0[units/ha])
+	{
+		attribute<Geography/rdc> geometry (poly) := deflate_100m;
+	}
+
+//	parameter<bool>   test     := selection/name[0] == 'name_0' &&  selection/name[1] == 'name_1';
+//	parameter<string> test_log := test 
+//		? '' 
+//		: 'Select with attr by org rel Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+//	,	StorageType = "str"
+//	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/select_with_attr_by_org_rel.txt";
+}

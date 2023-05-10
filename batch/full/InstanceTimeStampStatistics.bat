@@ -11,7 +11,7 @@ Call full/SetStartTime.bat
 Echo.
 Echo Execute: %GeoDmsRunCmdBaseLarge% /%1 /%2 %3 @statistics %4 @file %LogFileDir%\%5_stat.txt
 
-%GeoDmsRunCmdBaseLarge% /%1 /%2 %3 @statistics %4 @file %LogFileDir%\%5_stat.txt  >> !LogFileDir!\GeoDMSlog.txt
+%GeoDmsRunCmdBaseLarge% /%1 /%2 /CH %3 @statistics %4 @file %LogFileDir%\%5_stat.txt  >> !LogFileDir!\GeoDMSlog.txt
 
 Set resultfile=%results_folder%\%5.txt
 

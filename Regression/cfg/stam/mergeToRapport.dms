@@ -17,7 +17,7 @@ container mergeToRapport
 	{
 		attribute<eenheden/day_u64 > days                        : [0,31,28,31,30,31,30,31,31,30,31,30];
 		attribute<eenheden/day_u64 > cumulate_days               := cumulate(days);
-		attribute<eenheden/day_u64 > cumulate_days_schrikkeljaar := cumulate_days + (id(.) > 2b ? 1u64 : 0u64);
+		attribute<eenheden/day_u64 > cumulate_days_schrikkeljaar := cumulate_days + (id(.) > 2[DaysInMonth] ? 1u64 : 0u64);
 	}
 
 	parameter<string> dirinfo : Storagename = "=TempDir + '/dirinfo.str'", StorageReadOnly = "True";
@@ -136,7 +136,7 @@ container mergeToRapport
 		{
 			attribute<string> total (test_all):= =AsList(ver/name,' + ');
 		}
-		attribute<string> bgcolor := id(.) == 0 ? 'fff497': uint8(substr(name,1,1)) % 2b = 0b ? 'EEEEFF': 'F8F8FF';
+		attribute<string> bgcolor := id(.) == 0[test_all] ? 'fff497': uint8(substr(name,1,1)) % 2b = 0b ? 'EEEEFF': 'F8F8FF';
 		attribute<string> firstcolum: ='<tr style="background-color: #' + bgcolor + '"><td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><H3>' + name + '</H3></TD>';
 		attribute<string> regel:= firstcolum + html/total + '</TR>';
 	}
@@ -247,7 +247,9 @@ container mergeToRapport
 
 		attribute<bool>                       IsSchrikkeljaar      (rapport) := impl/year % 4u64 == 0u64 && impl/year % 100u64 <> 0u64;
 		attribute<mergeToRapport/DaysInMonth> DaysInMonth_rel      (rapport) := impl/month[mergeToRapport/DaysInMonth];
-		attribute<eenheden/day_u64>           DaysinFinishedMonths (rapport) := IsSchrikkeljaar ? DaysinMonth/cumulate_days_schrikkeljaar[DaysInMonth_rel - 1b] : DaysinMonth/cumulate_days[DaysInMonth_rel - 1b];
+		attribute<eenheden/day_u64>           DaysinFinishedMonths (rapport) := IsSchrikkeljaar 
+			? DaysinMonth/cumulate_days_schrikkeljaar[DaysInMonth_rel - 1b] 
+			: DaysinMonth/cumulate_days[DaysInMonth_rel - 1b];
 
 		attribute<eenheden/s_u64> result (rapport) := 
 			impl/s

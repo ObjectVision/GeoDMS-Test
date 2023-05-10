@@ -1,0 +1,69 @@
+container Classifications: KeepData = "True"
+{
+	unit<uint8> HardheidK: NrOfRows = 2
+	{
+		attribute<string> name: ['Hard', 'Zacht']; //, 'HardOfZacht'];
+	}
+	
+	unit<uint32> HardheidXLadderTreden := combine(HardheidK, Zonneladder/LadderTreden)
+	{
+		attribute<string> HardheidK_name := HardheidK/name[Nr_1];
+		attribute<string> Zonne_name := Zonneladder/LadderTreden/name[Nr_2];
+		attribute<string> name := HardheidK_name+'/'+Zonne_name;
+		
+//		attribute<HardheidK> h_rel := nr_1;
+		attribute<Zonneladder/LadderTreden> L_rel := union_data(., nr_2);
+		
+		container Hardheid := relate_attr( HardheidK, ., nr_1);
+		container LadderTreden := relate_attr( Zonneladder/LadderTreden, ., L_rel);
+	}
+	
+	container Zonneladder
+	{
+		unit<uint32> LadderTreden : NrOfRows = 11, url = "https://www.gnmf.nl/wp-content/uploads/2019/01/Constructieve-Zonneladder-NMFs-januari-2019.pdf"
+		{
+			parameter<uint32> nrAttr := 7;
+			
+			unit<uint32> Elements := Range(uint32, 0, nrAttr*#.)
+			{
+				attribute<String> Text:
+				[
+					// Nr, hoofdtrede,                    , subtrede,           , subsubtrede,           fractie, argg,fullnamesubtrede
+					// '1', 'Huidig'                         ,'zonnepark'          ,'zonnepark'           ,'null'  ,'zon op land (nog)verwaarloosbaar','',
+					// '2', 'NoRegret'                       ,'dak'                ,'dak'                 ,'null'  ,'exogeen onderzoek tech. pot. dak','a. Daken: woningen, scholen, bedrijven, kassen, loodsen, gemeentepanden.',
+					'2', 'NoRegret'                       ,'OnbenutBebouwd'     ,'Overkappingen'       ,'0.7'   ,'','b. Onbenutte bebouwde locaties: overkappingen parkeerterreinen en andere locaties, oude vuilstortplaat-sen, bluswatervijvers, gietwaterbassins, verweesde (bedrijven)terreinen.',
+					'2', 'NoRegret'                       ,'OnbenutBebouwd'     ,'Parkeerterreinen'    ,'0.8'   ,'','b. Onbenutte bebouwde locaties: overkappingen parkeerterreinen en andere locaties, oude vuilstortplaatsen, bluswatervijvers, gietwaterbassins, verweesde (bedrijven)terreinen.',
+					'2', 'NoRegret'                       ,'OnbenutBebouwd'     ,'Vuilstortplaatsen'   ,'0.6'   ,'','b. Onbenutte bebouwde locaties: overkappingen parkeerterreinen en andere locaties, oude vuilstortplaat-sen, bluswatervijvers, gietwaterbassins, verweesde (bedrijven)terreinen.',
+					'2', 'NoRegret'                       ,'OnbenutBebouwd'     ,'BassinsGltb'         ,'0.4'   ,'','b. Onbenutte bebouwde locaties: overkappingen parkeerterreinen en andere locaties, oude vuilstortplaat-sen, bluswatervijvers, gietwaterbassins, verweesde (bedrijven)terreinen.',
+					'2', 'NoRegret'                       ,'OpInfraWerken'      ,'Geluidsschermen'     ,'0.8'   ,'','c. Op infrastructurele werken: geluidsschermen, vliegvelden.',
+					'2', 'NoRegret'                       ,'OpInfraWerken'      ,'Vliegvelden'         ,'0.7'   ,'','c. Op infrastructurele werken: geluidsschermen, vliegvelden.',
+					'3', 'ZorgvuldigInpassen'             ,'LangsInfraWerken'   ,'Wegbermen'           ,'0.5'    ,'','d. Langs infrastructurele werken: wegbermen, dijktaluds.',
+					// '3', 'ZorgvuldigInpassen'             ,'LangsInfraWerken'   ,'dijktaluds'         ,'0.5'    ,'','d. Langs infrastructurele werken: wegbermen, dijktaluds.',
+					'3', 'ZorgvuldigInpassen'             ,'IndustrielePlassen' ,'IndustrielePlassen'  ,'0.25'   ,'feitelijke bedekking beperkt','e. Industriele plassen: bijvoorbeeld operatieve zandwinplassen.',
+					// '3', 'ZorgvuldigInpassen'             ,'pauze'              ,'pauze'              ,'null'   ,'geen info','f. Pauzelandschappen: gebieden die tijdelijk een energiebestemming kunnen krijgen.',
+					// '4', 'CombiGevoeligeLocaties'         ,'rand'               ,'rand'               ,'0.5'    ,'','g. Langs stads- of dorpsrand: bijv. gecombineerd met recreatie- en natuurfunctie.',
+					// '4', 'CombiGevoeligeLocaties'         ,'melbgr'             ,'melbgr'             ,'null'   ,'geen info','h. Minder efficiente landbouwgrond: inefficiente terreinen of met dubbel ruimtegebruik.',
+					'4', 'CombiGevoeligeLocaties'         ,'AnderePlassen'      ,'AnderePlassen'       ,'0.25'   ,'','i. Andere plassen: waterberging zonder belangrijke natuurfunctie, recreatieplassen.',
+					'4', 'CombiGevoeligeLocaties'         ,'Bufferntr'          ,'Bufferntr'           ,'null'   ,'','j. Buffer rondom natuurgebieden: ter vervanging van agrarisch gebruik, zodat er geen mest meer wordt opgebracht en het grondwaterpeil omhoog kan.',
+					// '4', 'CombiGevoeligeLocaties'         ,'recr'               ,'recr'               ,'null'   ,'geen info','k. Recreatiegebieden: o.a. landgoederen, uitloopgebieden, parken en tuinen.',
+					'5', 'GrootschaligEnkelvoudig'        ,'Landbouw'           ,'Landbouw'            ,'0.9','bijna volledig te benutten, klein deel voor onsluiting en onderhoud nodig','l. Productieve landbouwgrond'
+				];
+			}
+			
+			attribute<uint32> id := id(.);
+			attribute<uint8> hoofdtredeNr := value(Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], uint8);
+			attribute<string> hoofdtrede        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+			attribute<string> subtrede          := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+			attribute<string> subsubtrede       := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)]; //noodzakelijk omdat er verschillende fracties geoperationaliseerd moeten worden
+			attribute<float32> fractie    := value(Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)], float32); // Jip, wat is de bron hiervan?
+			attribute<string> arg               := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)];
+			attribute<string> fullnamesubtrede  := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)];
+			attribute<string> name := subsubtrede, DialogType = "LabelText";
+			attribute<bool> TeAlloceren: [false, true, true, true, false, true, true, true, true, true, true];
+			attribute<bool> DoetHetNiet: [false, false, true, true, false, true, true, false, false, false, false];
+			
+			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+			// container V2 := for_each_nedv(subsubtrede, String(ID(.))+'[..]', void, .);
+		}
+	}
+}

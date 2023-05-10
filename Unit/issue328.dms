@@ -1,0 +1,62 @@
+container Issue328 
+{ 
+	unit<fpoint> rdc_base
+	:	Format     = "EPSG:28992";
+	// , 	DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
+	unit<fpoint> rdc     := range(rdc_base, point(0f,300000f), point(280000f,625000f));
+	unit<float32>  	m                     := BaseUnit('Meter', float32);
+	
+	container NL_grid
+	{
+		unit<uint32> Gridsizes : nrofrows = 1
+		{
+			attribute<m>      size : [100];
+			attribute<string> name := 'size_'+string(size)+'m';
+		}
+		
+		unit<spoint> domain       := perGridsize/size_100m/domain;
+
+		parameter<m> x_min := 0[m];
+		parameter<m> x_max := 280000[m];
+		parameter<m> y_min := 300000[m];
+		parameter<m> y_max := 625000[m];
+		
+		container perGridsize :=
+			for_each_ne(
+				Gridsizes/name
+				, 'Create_GridDomain_T('+string(Gridsizes/size)+'[m])'
+			);
+		
+		Template Create_GridDomain_T
+		{
+			parameter<m> gridsize;
+			
+			parameter<int16> nr_cols := int16((x_max - x_min) / gridsize);
+			parameter<int16> nr_rows := int16((y_max - y_min) / gridsize);
+			
+			unit<spoint> domain_untiled :=
+				range(
+					 gridset(
+						 rdc
+						,point(gridsize, -gridsize, rdc)
+						,point(x_min, y_max, rdc)
+						,spoint
+					)
+					,point(0s, 0s)
+					,point(nr_cols, nr_rows)
+				)
+			,	DialogData = "rdc"
+			{
+				attribute<NL_grid/domain>      grid_100m_rel    := id(.)[NL_grid/domain];
+			}
+
+			unit<spoint> domain := TiledUnit(Point(1000s, 1200s, domain_untiled))
+			{
+			}
+		}
+	} 
+	
+	attribute<uint32> test_uint32 (NL_grid/domain) := const(0, NL_grid/domain); //--> hele map is wit
+	attribute<uint8>  test_uint8  (NL_grid/domain) := test_uint32[uint8]; ///--> hele map is blauw
+	attribute<uint16> test_uint16 (NL_grid/domain) := test_uint32[uint16]; //--> hele map is wit
+}

@@ -1,0 +1,19 @@
+container true_function_in_select_by_cond
+{
+	unit<uint32> src: nrofrows  = 2
+	{
+		attribute<uint32> id := id(.);
+	}
+	attribute<bool> condition (src) := const(true, src);
+	unit<uint32>    sel_using_att   := select_with_attr_by_cond(src,condition );
+	unit<uint32>    sel             := select_with_attr_by_cond(src, const(true, src));
+	
+	parameter<bool> test := sum(sel/id) == 1;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'True function in select_with_attr_by_cond Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/select_with_attr_by_cond_true_function.txt";
+
+}

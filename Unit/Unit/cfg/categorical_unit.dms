@@ -1,0 +1,54 @@
+container categorical_unit
+{
+	unit<uint32> Kwartalen : nrofrows = 45
+	{
+		attribute<uint32> value        
+			: [201201 ,201204, 201207, 201210, 201301 ,201304, 201307, 201310, 201401, 201404, 201407, 201410
+			  ,201501, 201504, 201507, 201510, 201601, 201604, 201607, 201610, 201701, 201704, 201707, 201710
+			  ,201801, 201804, 201807, 201810, 201901, 201904, 201907, 201910, 202001, 202004, 202007, 202010
+			  ,202101, 202104, 202107, 202110, 202201, 202204, 202207, 202210, 202301];
+		attribute<string> label := 'Y' + string(value);
+	}
+
+	unit<uint32> NoData: NrOfrows = 1
+	{
+		attribute<uint32> value := const(0,.);
+		attribute<uint32> year  : [null];
+		attribute<string> Label : ['NA'];
+	}
+
+	unit<uint32> Kwartalen_nodata := union_unit(NoData, Kwartalen)
+	{
+		attribute<string> Label := union_data(., NoData/Label, Kwartalen/Label), DialogType = "LabelText";
+		attribute<uint32> value := union_data(., NoData/value, Kwartalen/value);
+	}
+
+	unit<uint32> src : nrofrows = 5
+	{
+	
+		attribute<uint32>           A_kw           : [201304, 201210, 201704, 201801, 202207];
+		attribute<Kwartalen>        A              := rlookup(a_kw, Kwartalen/value); 
+		attribute<Kwartalen_nodata> AA              := rlookup(a_kw, Kwartalen/value); 
+		attribute<bool>             selection_attr := A > 3;
+		attribute<Kwartalen_nodata> B              := A;
+		attribute<Kwartalen_nodata> C              := 1 * A;
+		attribute<uint32>           E              := 1 * A;
+	}
+
+	unit<uint32> sub := select_with_org_rel(src/selection_attr)
+	{
+		attribute<Kwartalen_nodata> D := org_rel -> A;
+		attribute<Kwartalen_nodata> E := src/A[org_rel];
+		attribute<Kwartalen> F := src/A[org_rel];
+		attribute<Kwartalen_nodata> G := F;
+	}
+
+	parameter<bool> test := sum(src/E) == 95;
+
+	parameter<string> test_log := test
+		? '' 
+		: 'Categorical Unit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/unit/categorical_unit.txt";
+
+}

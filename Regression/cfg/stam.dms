@@ -289,16 +289,15 @@ container Regression:	FreeData = "True"
 			parameter<uint32>  GeoDMSVersionLength  := strlen(GeoDMSVersionString);
 
 			parameter<string> GeoDMSVersion := 
-				GeoDMSVersionLength == 3 
+				GeoDMSVersionLength == 4 
 					? GeoDMSVersionString + '00' 
-					: GeoDMSVersionLength == 4 
+					: GeoDMSVersionLength == 5 
 						? GeoDMSVersionString + '0' 
 						: GeoDMSVersionString;
 
 			parameter<string> version     := '<version>'    + GeoDMSVersion       + '</version>';
 			parameter<string> BuildConfig := '<buildconfig>'+ GeoDmsBuildConfig() + '</buildconfig>';
 			parameter<string> platform    := '<platform>'   + GeoDmsPlatform()    + '</platform>';
-			parameter<string> TypeModel   := '<typemodel>'  + GeoDmsTypeModel()   + '</typemodel>';
 			parameter<string> StatusFlag  := '<statusflag>' + StatusFlags/file    + '</statusflag>';
 
 			container StatusFlags
@@ -325,7 +324,7 @@ container Regression:	FreeData = "True"
 				parameter<string> file:= expand(., results_folder), Storagename = "= TempDir + '/results_folder.txt'", StorageType = "str";
 			}
 
-			parameter<string> all := version + BuildConfig + platform + TypeModel// + StatusFlag
+			parameter<string> all := version + BuildConfig + platform // + StatusFlag
 			,	ExplicitSuppliers = "ver_key/file;results_folder/file"
 			,	StorageType       = "str"
 			,	storagename       = "= TempDir + '/GeoDMSVersionInfo.txt'";
@@ -653,8 +652,8 @@ container Regression:	FreeData = "True"
 				'<description>compare detail page statistics info on geometry</description>'+
 				'<result>'
 					+ (test 
-						? '   OK, identical to version 7.234' 
-						: 'FALSE, not identical to version 7.234'
+						? '   OK, identical to version 8.042' 
+						: 'FALSE, not identical to version 8.042'
 					) + 
 				'</result>' + 
 				'<issue>1438</issue>' 

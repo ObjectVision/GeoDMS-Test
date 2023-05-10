@@ -1,0 +1,21 @@
+container csv_with_euro
+{
+	unit<uint32> csv
+	: StorageName     = "%projdir%/data/euro.csv"
+	, StorageType     = "gdal.vect"
+	, StorageReadOnly = "True"
+	{
+		attribute<uint32> EuroAtt;
+		attribute<uint32> €Att;
+	}
+
+	attribute<uint32> EuroPlusEuro (csv) := csv/EuroAtt + csv/€Att;
+
+	parameter<bool> test := sum(EuroPlusEuro) == 1;
+
+	parameter<string> test_log := all(test) 
+		? '' 
+		: 'CSV with euro character test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/csv_with_euro.txt";
+}
