@@ -6,13 +6,13 @@ container modus_large_grid
 	,	Format     = "EPSG:28992";
 	unit<fpoint> point_rd  := range(point_rd_base, point(0[m],300000[m]), point(280000[m],625000[m]));
 
-	unit<ipoint> src: storagename = "%SourceDataDir%/WoonZorgNL/2023/lgn/LGN2021_uint8_m5.tif"
+	unit<ipoint> src: storagename = "%SourceDataDir%/lgn/LGN2021_uint8_m5.tif"
 	, StorageType     = "gdal.grid"
 	, storagereadonly = "True"
 	, DialogData      = "point_rd"
 	{
 		attribute<class> GridData;
-		attribute<m25>   m25_rel := id(.)[m25];
+		attribute<m25>   m25_rel := mapping(., m25);
 	}
 	unit<ipoint> m25 :=
 		range(
