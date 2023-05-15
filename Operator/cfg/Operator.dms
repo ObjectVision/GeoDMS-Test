@@ -6073,6 +6073,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<bool>    test_attr := all(test);
 				}
 			}
+
 			container dyna_point_tiled:
 				Using = "source",
 				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/dyna_point"
@@ -6130,14 +6131,84 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<float32> CalcDist            := float32(5);
 				unit<uint32> CalcPoint                 := dyna_segment(point, nextpoint, CalcDist), DialogType = "Map", DialogData = "point"
 				{
-					attribute<int32>   x:   [371391,371387,371383,371380,371377,371374,371371,371368,371365,371361];
-					attribute<int32>   y:   [ 13732,13735,13738,13742,13746,13750,13754,13758,13762,13766];
-					attribute<origin>  seq: [0,0,1,1,2,2,2,3,3,4];
-					attribute<uint32>  ord: [0,1,0,1,0,1,2,0,1,0];
+					attribute<int32>   xp:   [371387,371383,371380,371377,371374,371371,371368,371365,371361];
+					attribute<int32>   yp:   [ 13735,13738,13742,13746,13750,13754,13758,13762,13766];
+					attribute<ipoint>  point_ref := point(yp,xp,ipoint);
+					attribute<int32>   xn:   [371391,371387,371383,371380,371377,371374,371371,371368,371365];
+					attribute<int32>   yn:   [ 13732,13735,13738,13742,13746,13750,13754,13758,13762];
+					attribute<ipoint>  nextpoint_ref := point(yn,xn,ipoint);
+
+					attribute<origin>  seq: [0,1,1,2,2,2,3,3,4];
+					attribute<uint32>  ord: [0,0,1,0,1,2,0,1,0];
 					attribute<m_int16> z:   [10,30,20,15,20,0,20,60,15, null];
-					attribute<bool>    test      := point(y,x,ipoint) = ipoint(point) && SequenceNr = seq && Ordinal = ord;
+
+					attribute<ipoint>  point_ipoint     := ipoint(point);
+					attribute<ipoint>  nextpoint_ipoint := ipoint(nextpoint);
+					attribute<bool>    test_point       := point_ref     == point_ipoint; 
+					attribute<bool>    test_nextpoint   := nextpoint_ref == nextpoint_ipoint; 
+
+					attribute<bool>    test         := test_point && test_nextpoint; // && SequenceNr = seq && Ordinal = ord;
+					parameter<bool>    test_attr    := all(test);
+				}
+			}
+			container dyna_segment_empty:
+				Using = "source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/dyna_point"
+			{
+				attribute<float32> xp        (EDomain) : [];
+				attribute<float32> yp        (EDomain) : [];
+				attribute<float32> xn        (EDomain) : [];
+				attribute<float32> yn        (EDomain) : [];
+				attribute<fpoint>  point     (EDomain) := point(yp,xp,fpoint);
+				attribute<fpoint>  nextpoint (EDomain) := point(yn,xn,fpoint);
+				parameter<float32> CalcDist            := float32(5);
+				unit<uint32> CalcPoint                 := dyna_segment(point, nextpoint, CalcDist)
+				{
+					attribute<int32>   x:   [];
+					attribute<int32>   y:   [];
+					attribute<origin>  seq: [];
+					attribute<uint32>  ord: [];
+					attribute<m_int16> z:   [];
+					attribute<bool>    test      := point(y,x,ipoint) = ipoint(point); // && SequenceNr = seq; // && Ordinal = ord;
 					parameter<bool>    test_attr := all(test);
 				}
+			}
+			container dyna_segment_with_ends:
+				Using = "source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/dyna_point"
+			{
+				attribute<float32> xp        (RoadDomain ): [371391, 371384, 371378];
+				attribute<float32> yp        (RoadDomain ): [ 13732,  13738,  13746];
+				attribute<float32> xn        (RoadDomain ): [371384, 371378, 371369];
+				attribute<float32> yn        (RoadDomain ): [ 13738,  13746,  13758];
+				attribute<fpoint>  point     (RoadDomain ) := point(yp,xp,fpoint);
+				attribute<fpoint>  nextpoint (RoadDomain ) := point(yn,xn,fpoint);
+				parameter<float32> CalcDist            := float32(5);
+				unit<uint32> CalcPoint                 := dyna_segment_with_ends(point, nextpoint, CalcDist), DialogType = "Map", DialogData = "point"
+				{
+					attribute<int32>   xp:   [371387,371384,371381,371378,371375,371372,371369];
+					attribute<int32>   yp:   [ 13735,13738,13742,13746,13750,13754,13758];
+					attribute<ipoint>  point_ref := point(yp,xp,ipoint);
+					
+					attribute<int32>   xn:   [371391,371387,371387,371381,371378,371375,371372];
+					attribute<int32>   yn:   [ 13732,13735,13735,13742,13746,13750,13754];
+					attribute<ipoint>  nextpoint_ref := point(yn,xn,ipoint);
+										
+					attribute<origin>  seq: [0,0,1,1,2,2,2];
+					attribute<uint32>  ord: [0,1,0,1,0,1,2];
+					attribute<m_int16> z:   [10,30,20,15,20,0,20,60];
+					
+					attribute<ipoint>  point_ipoint     := ipoint(point);
+					attribute<ipoint>  nextpoint_ipoint := ipoint(nextpoint);
+					attribute<bool>    test_point       := point_ref     == point_ipoint; 
+					attribute<bool>    test_nextpoint   := nextpoint_ref == nextpoint_ipoint; 
+
+					attribute<bool>    test         := test_point && test_nextpoint; // && SequenceNr = seq && Ordinal = ord;
+					parameter<bool>    test_attr    := all(test);
+				}
+				
+
+
 			}
 			container RD2LatLongWgs84: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/rd2latlongwgs84"
 			{
@@ -6309,7 +6380,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& point_in_ranked_polygon/rank_constant/test_attr					
 					&& dyna_point/CalcPoint/test_attr 
 					&& dyna_point_tiled/CalcPoint/test_attr 
+					&& dyna_point_with_ends/CalcPoint/test_attr
 					&& dyna_point_empty/CalcPoint/test_attr 
+					&& dyna_segment/CalcPoint/test_attr 
+					&& dyna_segment_empty/CalcPoint/test_attr 
+					&& dyna_segment_with_ends/CalcPoint/test_attr 
 					&& RD2LatLongWgs84/test_param
 					&& RD2LatLongWgs84/test_attr
 					&& LatLongWgs842RD/test_param
