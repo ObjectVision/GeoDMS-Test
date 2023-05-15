@@ -74,20 +74,40 @@ def readLogAllocator(log_fn, start_time):
         log_alloc["uncommitted"].append(int(integers_in_entry[3])*10**-6) # [GB]
     return log_alloc
 
-def getProcessIdIfActive(name):
+def getProcessIdIfActive(names, parent_pid=None):
     pid = -1
+    if not type(names)== list:
+        names = [names]
+
+    # if parent pid is given, use this scope only
+    
+
+
+
     for i in range(10):
-        for proc in psutil.process_iter():
-            if(name.lower() in proc.name().lower()):
-                pid = proc.pid # assume only one exe_name is active at this time!
-                return pid
+        if parent_pid:
+            parent_process = psutil.Process(parent_pid)
+            for child_process in parent_process.children(recursive=True):
+                print(child_process.name())
+                for name in names:
+                    if(name.lower() in child_process.name().lower()):
+                        print(child_process.name())
+                        return child_process.pid
+        else:
+            for proc in psutil.process_iter():
+                for name in names:
+                    if(name.lower() in proc.name().lower()):
+                        pid = proc.pid # assume only one exe_name is active at this time!
+                        return pid
         time.sleep(0.5)
     return pid
 
-def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_curr_time=None, delta_start_time=0.0):
+def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_curr_time=None, delta_start_time=0.0, parent_pid=None):
+    print(f"PARENT PID {parent_pid}")
+
     if not log:
         log = {"time":[], "dtime":[], "cpu_percent":[], "cpu_curr_time":[], "memory_percent":[], "rss":[], "vms":[], "num_threads":[], "read_bytes":[], "write_bytes":[], "total_read_bytes":[], "total_write_bytes":[]} # rss=resident set size (aka physical non swapped memory in use by process), vms virtual memory size
-    pid = getProcessIdIfActive(exe_name)
+    pid = getProcessIdIfActive(exe_name, parent_pid)
     
     if pid == -1:
         print("Cannot find process id")
@@ -143,18 +163,25 @@ def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_c
             
     return log, start_time, cpu_curr_time
 
+#import shlex
+
 def getPerformanceBatch(batch_cmd, sampling_rate=1.0):
-    exe_name = "GeoDmsRun.exe"
+    exe_name = ["GeoDmsRun.exe", "Python.exe"] # TODO: implement less generic secondary argument
     log = None
     start_time = None
     cpu_curr_time = None
     batchfldr_name = os.path.dirname(batch_cmd)
+    #args = shlex.split(batch_cmd)
     p = subprocess.Popen(batch_cmd, cwd=batchfldr_name, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    #p = subprocess.Popen(args, creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+    print(f"ARENTPARENTPAERNt {p.pid}")
+
     while p.poll() is None:
         if not start_time:
-            log, start_time, cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time)
+            log, start_time, cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time, parent_pid=p.pid)
         else:
-            log,_,cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time)
+            log,_,cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time, parent_pid=p.pid)
     print(f"Finished profiling batchfile {batch_cmd}")
     return log, start_time
 
