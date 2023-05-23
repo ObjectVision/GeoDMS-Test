@@ -410,6 +410,19 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	{
 		attribute<uint32> TwoValues : [0,1];
 	}
+	
+	container Issue210 {
+		unit<uint32> A;
+		unit<uint8> B;
+		parameter<A> example1 := 0[B]; // generates error
+		
+		template F {
+			parameter<A> x;
+			parameter<A> R := x + x;
+		}
+		container Inst := F(0[B]); // should generate an error.
+	}
+	
 	container TargetTests
 	{
 		parameter<uint32> A := 0;
