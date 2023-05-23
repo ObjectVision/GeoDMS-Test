@@ -12,7 +12,9 @@ container modus_large_grid
 	, DialogData      = "point_rd"
 	{
 		attribute<class> GridData;
-		attribute<m25>   m25_rel := mapping(., m25);
+//		attribute<m25>   m25_rel := mapping(., m25);
+		attribute<m25>   m25_rel := id(.)[m25];
+		
 	}
 	unit<ipoint> m25 :=
 		range(
@@ -26,7 +28,11 @@ container modus_large_grid
 		  ,point(11200i, 13000i)
 	   )
 	{
-		attribute<class> GridData := modus(src/GridData,src/m25_rel);
+		attribute<class> GridData := modus(src/GridData,src/m25_rel)
+		,	Storagename     = "%LocalDataProjDir%/LGN2021_uint8_m25.tif"
+		,	StorageType     = "gdalwrite.grid"
+		,	Storagereadonly = "False";
+
 	}
 	
 	unit<uint8> class : nrofrows = 51
