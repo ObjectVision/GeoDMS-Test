@@ -1,4 +1,4 @@
-container regression
+container regression 
 {
 	parameter <float32> Dif_all_float32   := 0.99f;
 	
@@ -70,8 +70,8 @@ container regression
 		,	storagename = "%localDataProjDir%/regr_results/grid_write_regr.txt";
 	}
 	
-	container units
-	{
+	container units 
+	{ 
 		#include<wmts_layer.dms>
 		unit<float32> m         := baseunit('m', float32);
 		unit<fpoint>  point_rd_base : 
@@ -1070,7 +1070,8 @@ container regression
 				unit<uint32> PointSet:
 					StorageName     = "%projdir%/data/vect/point/point.shp",
 					StorageType     = "gdal.vect",
-					StorageReadOnly = "True"
+					StorageReadOnly = "True",
+					SyncMode = "AllTables"
 				{
 					attribute<fpoint> geometry;
 					attribute<string> name; 
@@ -1093,6 +1094,8 @@ container regression
 				{
 					attribute<fpoint> geometry := reference/Point/Geometry;
 					attribute<string> name     := reference/Point/label;
+					attribute<string> name2 := name, DisableStorage="true";
+					attribute<string> name3 := name;
 				}
 				container ReRead
 				{
@@ -1775,6 +1778,16 @@ container regression
 				attribute<uint32> ReadData (gridsel) ;
 			}
 			
+			unit<spoint> grid_uint32_vect
+			: StorageName     = "%projdir%/data/grid/tiff/uint32.tif"
+			, StorageType     = "gdal.vect"
+			, DialogData      = "units/point_rd"
+			, StorageReadOnly = "True"
+			{
+				attribute<uint32> GridData           ;
+				attribute<uint32> ReadData (gridsel) ;
+			}
+			
 			unit<spoint> grid_uint8_nth_band
 			: StorageName     = "%projdir%/data/grid/tiff/uint32.tif"
 			, StorageType     = "gdal.grid"
@@ -1919,6 +1932,15 @@ container regression
 				{
 					attribute<uint32> GridData := Tiff/read/Grid_uint32/GridData;
 				}
+				
+				unit<spoint> grid_uint64 := Tiff/read/Grid_uint32
+				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint64.tif"
+				, StorageType     = "gdalwrite.grid"
+				, StorageReadOnly = "false"
+				{
+					attribute<uint64> GridData := convert(Tiff/read/Grid_uint32/GridData, UInt64);
+				}
+
 
 				unit<spoint> grid_uint8 := Tiff/read/Grid_uint8
 				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint8.tif"
@@ -1927,7 +1949,6 @@ container regression
 				{
 					attribute<uint8> GridData := Tiff/read/Grid_uint8/GridData;
 				}
-
 				unit<spoint> grid_float32 := Tiff/read/Grid_float32
 				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_float32.tif"
 				, StorageType     = "gdalwrite.grid"
@@ -2063,6 +2084,7 @@ container regression
 			, StorageReadOnly = "True"
 			{
 				attribute<tiff/cl_lu> data;
+				attribute<string> data_2 := data;
 			}
 		}
 		container Write
