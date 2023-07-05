@@ -164,9 +164,9 @@ Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms te
 
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\background_layer.dms test_log %ResultDir%\unit\GUI\background_layer_error.txt S1 S2
 
-"%GeoDmsImGuiPath%"
+"%GeoDmsGuiQtPath%"
 
-IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsImGuiPath%" FAILED >> %ResultFileName%
+IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsGuiQtPath%" FAILED >> %ResultFileName%
 
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
