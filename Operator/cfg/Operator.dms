@@ -8671,12 +8671,42 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter <bool> test_attr := all(test);
 			}
+			container impedance_table: Using = "connected"
+			{
+				attribute<m> distance_nodeset (NodeSet) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, F1, F2, nr_DestinationNode)
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,824.535,928.425,1192.06];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
 			container dijkstra_directed
 			:	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra"
 			,	Using = "connected"
 			{
 //				attribute<m> distance_nodeset_directed (NodeSet) := dijkstra_directed(LinkSet/dist, F1, F2, nr_DestinationNode)"
 				attribute<m> distance_nodeset_directed (NodeSet) := dijkstra_s('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset_directed);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,2325.58,928.425,1192.06];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
+			container impedance_table_directed: Using = "connected"
+			{
+				attribute<m> distance_nodeset_directed (NodeSet) := impedance_table('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
 				{
 					attribute<LinkSet> TraceBack (NodeSet);
 				}
@@ -8707,7 +8737,21 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter <bool> test_attr := all(test);
 			}
+			container impedance_table_maxdist: Using = "connected"
+			{
+				attribute<m> distance_nodeset (NodeSet) :=  impedance_table('bidirectional;startPoint(Node_rel);cut(OrgZone_max_imp);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,null,824.535,928.425,null];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
 
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
 			unit<uint32> dijkstra_alt_impedance := dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 					, connected/LinkSet/dist
 					, connected/F1
@@ -8716,7 +8760,6 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					, connected/nr_DestinationNode
 					, connected/LinkSet/dist
 			);
-
 
 			unit<uint64> dijkstra_interaction := 
 				dijkstra_m64(
@@ -8731,13 +8774,31 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				)
 			{
 				parameter <bool> test_attr := float_isNearby(sum(M_ix), sum(M_xj), Dif_all_float32);
-				
 				attribute<float32> t_ij         := impedance < 1e+30f ? 1.0f : 0.0f;
 				attribute<float32> M_ij         := t_ij*D_i[OrgZone_rel]^-1.0f;
 				attribute<float32> M_i(ODomain) := sum(M_ij, OrgZone_rel);
 				attribute<float32> M_j(DDomain) := sum(M_ij, DstZone_rel);
-				
 			}
+
+			unit<uint64> impedance_matrix_interaction := 
+				impedance_matrix_od64(
+					'bidirectional;startPoint(Node_rel);endPoint(Node_rel);'
+					'cut(OrgZone_max_imp);'
+					'interaction(v_i,w_j,dist_decay):D_i,M_ix,C_j,M_xj,Link_flow;'
+					'od:impedance,OrgZone_rel,DstZone_rel,LinkSet',
+					connected/LinkSet/dist,       connected/F1                   , connected/F2,
+					connected/nr_OriginNode,  connected/nr_DestinationNode,
+					1000f, 
+					1.0f, 1.0f, 0.0f
+				)
+			{
+				parameter <bool> test_attr := float_isNearby(sum(M_ix), sum(M_xj), Dif_all_float32);
+				attribute<float32> t_ij         := impedance < 1e+30f ? 1.0f : 0.0f;
+				attribute<float32> M_ij         := t_ij*D_i[OrgZone_rel]^-1.0f;
+				attribute<float32> M_i(ODomain) := sum(M_ij, OrgZone_rel);
+				attribute<float32> M_j(DDomain) := sum(M_ij, DstZone_rel);
+			}
+
 			parameter<float32> distDecay    := 0.001f;
 			parameter<float32> demand_alpha := 1.0f;
 			parameter<float32> min_imp      := 0.0f;
@@ -8754,8 +8815,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float32> M_ij                   := D_i[OrgZone_rel] <= 0.0f ? 0.0f : t_ij*D_i[OrgZone_rel]^(demand_alpha-1.0f);
 				attribute<float32> M_i(connected/NodeSet) := sum(M_ij, OrgZone_rel);
 				attribute<float32> M_j(connected/NodeSet) := sum(M_ij, DstZone_rel);
-				
 			}
+
 			unit<uint64> dijkstra_all_route_count := 
 				dijkstra_m64(
 					'bidirectional;'
@@ -8835,7 +8896,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float32> per_dst (connected/NodeSet) := dijkstra_cut_link_count/M_xj / dijkstra_cut_route_count/M_xj;
 				attribute<float32> per_link(connected/LinkSet) := dijkstra_cut_link_count/Link_flow / dijkstra_cut_route_count/Link_flow;
 			}
-			
+
 			unit<uint32> dijkstra_OD :=
 			// 	dijkstra_od(
 				dijkstra_m('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
@@ -8859,6 +8920,30 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
 				parameter <bool> test_attr := all(test);
 			}
+
+			unit<uint32> impedance_matrix_OD :=
+				impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+					connected/LinkSet/dist,       connected/F1                   , connected/F2,
+					connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+					connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
+				)
+			,	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
+			{
+				attribute<m> att_ok_with_values:
+				[
+					 0   ,null   ,3037.1,null
+					,null,1962.96,null  ,2918.18     
+					,2325.58     ,null  ,824.535     ,null
+					,null,4349.73,null  ,928.425     
+					,null,1192.06,null  ,3712.05
+				];
+				attribute<m>     att_ok_without_values : [];
+				attribute<m>     att_ok                := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
+				parameter <bool> test_attr := all(test);
+			}
+
 			unit<uint32> dijkstra_OD_directed
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
@@ -8883,6 +8968,29 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
 				parameter <bool> test_attr := all(test);
 			}
+
+			unit<uint32> impedance_matrix_OD_directed: =
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
+					)
+			{
+				attribute<m> att_with_values:
+				[
+					 0           ,null,3037.1      ,null,null,null,null
+					,2918.18     ,null,null,824.535     ,null,null,null
+					,null,null,null,null,null,3712.05
+				];
+				attribute<m> att_ok_without_values : [];
+				
+				// WARNING: this code triggers dijkstra execution when the calculation rule for att_ok is determined; in production code, better provide the att as template parameter
+				attribute<m> att_ok := = #. = 0 ? 'att_ok_without_values' : 'att_with_values'; 
+				
+				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
+				parameter <bool> test_attr := all(test);
+			}
+
 			unit<uint32> dijkstra_OD_maxdist
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
@@ -8914,11 +9022,69 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter<bool> test_attr := all(test);
 			}
+
+			unit<uint32> impedance_matrix_OD_maxdist :=
+					impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
+						const(2500,source/origin,m)
+					)
+			{
+				container with_values
+				{
+					attribute<m>        imp_ok  (..): [0,1962.96,824.535,2325.58,928.425,1192.06];
+					attribute<ODomain>  src_ok  (..): [0,1,2,2,3,4];
+					attribute<DDomain > dest_ok (..): [0,1,2,0,3,1];
+				}
+
+				container without_values
+				{
+					attribute<m>      ok        (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
+				}
+
+				attribute<bool> test := = #. == 0
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
+					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
+					   ;
+
+				parameter<bool> test_attr := all(test);
+			}
+
 			unit<uint32> dijkstra_OD_maxdist_directed
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
 //					dijkstra_OD_maxdist_directed(
 					dijkstra_m('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
+						const(5000,source/origin,m)
+					)
+			{
+				container with_values
+				{
+					attribute<m>       imp_ok  (..): [0,3037.1,2918.18,824.535,3712.05];
+					attribute<ODomain> src_ok  (..): [0,0,1,2,4];
+					attribute<DDomain> dest_ok (..): [0,2,3,2,3];
+				}
+
+				container without_values
+				{
+					attribute<m>      ok        (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
+				}
+
+				attribute<bool> test := = #. == 0
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
+					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
+					   ;
+				parameter<bool> test_attr := all(test);
+			}
+
+			unit<uint32> impedance_matrix_OD_maxdist_directed :=
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
 						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
 						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
@@ -8957,6 +9123,33 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				)
 			{
 //				attribute<float32> impedance; // issue 941
+				attribute<int32>   impedance_min := round(impedance / 60f);
+				attribute<float32> alt_imp_km    := float32(round(alt_imp / 100f)) / 10f;
+
+				attribute<s>       imp_ok        : [0, 824.535, 928.425];
+				attribute<m>       alt_imp_ok    : [0, 824.535, 928.425];
+
+				attribute<s>       imp_no_values_ok  : [];
+				attribute<m>       alt_imp_no_values_ok  : [];
+
+				attribute<bool>    test          :=  = #. == 0
+					? 'float_isNearby(impedance, imp_no_values_ok , Dif_all_float32) && float_isNearby(alt_imp  , alt_imp_no_values_ok,  Dif_all_float32)'
+					: 'float_isNearby(impedance, imp_ok , Dif_all_float32) && float_isNearby(alt_imp  , alt_imp_ok,  Dif_all_float32)'
+					;
+				parameter<bool> test_attr := all(test);
+			}
+
+			unit<uint32> impedance_matrix_OD_maxtime_alt_imp :=
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+					, connected/LinkSet/dist * 1[s / m]
+					, connected/F1
+					, connected/F2
+					, connected/nr_OriginNode
+					, connected/nr_DestinationNode
+					, 1000[s]
+					, connected/LinkSet/dist
+				)
+			{
 				attribute<int32>   impedance_min := round(impedance / 60f);
 				attribute<float32> alt_imp_km    := float32(round(alt_imp / 100f)) / 10f;
 
@@ -9035,15 +9228,26 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					//&& connect_neighbour/test_attr 
 					&& connect_points/test_pointdomain_attr 
 					&& UnTiled/connect_neighbour/test_attr  // Dit moet nog aangepast worden, nu wordt alleen Untiled gecontroleerd
+
 					&& dijkstra/test_attr
-					&& dijkstra_interaction/test_attr
+					&& impedance_table/test_attr
 					&& dijkstra_directed/test_attr
+					&& impedance_table_directed/test_attr
 					&& dijkstra_maxdist/test_attr
+					&& impedance_table_maxdist/test_attr
+
+					&& dijkstra_interaction/test_attr
+					&& impedance_matrix_interaction/test_attr
 					&& dijkstra_od/test_attr
+					&& impedance_matrix_od/test_attr
 					&& dijkstra_od_directed/test_attr
+					&& impedance_matrix_od_directed/test_attr
 					&& dijkstra_od_maxdist/test_attr
+					&& impedance_matrix_od_maxdist/test_attr
 					&& dijkstra_od_maxdist_directed/test_attr
+					&& impedance_matrix_od_maxdist_directed/test_attr
 					&& dijkstra_od_maxtime_alt_imp/test_attr
+					&& impedance_matrix_od_maxtime_alt_imp/test_attr
 					&& avg_link_count_all/test_attr
 					&& traceback/test_attr
 					&& service_area/test_attr;

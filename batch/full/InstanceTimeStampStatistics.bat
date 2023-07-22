@@ -15,16 +15,19 @@ Echo Execute: %GeoDmsRunCmdBaseLarge% /%1 /%2 %3 @statistics %4 @file %LogFileDi
 
 Set resultfile=%results_folder%\%5.txt
 
-Echo ^<description^>%5%^<^/description^>^<result^> > %resultfile%
+
+Echo ^<description^>%5^</description^> > %resultfile%
 Echo.
 
 Echo FileCompare Execute: FC %LogFileDir%\%5_stat.txt %6
-FC %LogFileDir%\%5_stat.txt %6 > NUL && Echo OK >> %resultfile% || Echo False, difference(s) occur  >> %resultfile%
+FC %LogFileDir%\%5_stat.txt %6 > NUL && Echo ^<I^>result:^</I^> ^<B^>OK^</B^> >> %resultfile% || Echo ^<I^>result:^</I^> ^<B^>False^</B^> , difference(s) occur, errorcode: %errorlevel%  >> %resultfile%
 
 Echo ^<^/result^>^ >> %resultfile%
 
 Call full/SetEndTime.bat
 
 Call full/WriteTimeStamps.bat %results_folder%\%5.txt
+
+
 
 
