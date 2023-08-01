@@ -284,7 +284,7 @@ container Regression:	FreeData = "True"
 	{
 		container VersionInfo
 		{
-			parameter<float64> GeoDMSVersionFloat64 := GeoDMSVersion();
+			/*parameter<float64> GeoDMSVersionFloat64 := GeoDMSVersion();
 			parameter<String>  GeoDMSVersionString  := String(GeoDMSVersionFloat64);
 			parameter<uint32>  GeoDMSVersionLength  := strlen(GeoDMSVersionString);
 
@@ -293,7 +293,9 @@ container Regression:	FreeData = "True"
 					? GeoDMSVersionString + '00' 
 					: GeoDMSVersionLength == 5 
 						? GeoDMSVersionString + '0' 
-						: GeoDMSVersionString;
+						: GeoDMSVersionString;*/
+
+			parameter<string> GeoDMSVersion := string(GeoDmsMajorVersionNumber()) + '.' +  string(GeoDmsMinorVersionNumber()) + '.'  +  string(GeoDmsPatchNumber());
 
 			parameter<string> version     := '<version>'    + GeoDMSVersion       + '</version>';
 			parameter<string> BuildConfig := '<buildconfig>'+ GeoDmsBuildConfig() + '</buildconfig>';
