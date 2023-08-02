@@ -7,6 +7,7 @@ CLS
 set version=%1
 set Setting1=%2
 set Setting2=%3
+set Setting3=%4
 
 setlocal enabledelayedexpansion
 
@@ -35,7 +36,7 @@ Call Full\EchoFolders.bat
 Echo GeoDMS Version information
 Echo ************************
 
-Call Full\Header.bat %Setting1% %Setting2%
+Call Full\Header.bat %Setting1% %Setting2% %Setting3%
 Set /p results_folder=<%LogFileDir%/results_folder.txt
 Set results_folder=%results_folder:/=\%
 
@@ -52,10 +53,10 @@ Call Full\GUI_tests.bat
 Call Full\Operator_tests.bat
 Call Full\Project_tests.bat
 
-REM Full\Project_tests_alleenRS.bat
-REM Full\InstanceTimeStamp.bat %Setting1% %Setting2% %RegressionPath% results/t300_xml_ReadParse/result_html t300_xml_ReadParse
-REM Call Full\InstanceTimeStampStatistics.bat %Setting1% %Setting2% %OperatorPath% /Arithmetics/UnTiled/add/attr t1742_command_statistics "%TstDir%\norm\Statistics_AUAA.txt"
-
+timeout /t 3
 
 Call Full\MakeReport.bat
+
+
+
 

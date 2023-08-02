@@ -4,32 +4,32 @@ SETLOCAL EnableDelayedExpansion
 
 Echo.
 Echo ************************
-Echo Test: %5
+Echo Test: %6
 
 Call full/SetStartTime.bat
 
 Echo.
 
-Call full/EchoAndExecute.bat %1 %2 %3 %4 
+Call full/EchoAndExecute.bat %1 %2 %3 %4 %5 
 
 Call full/SetEndTime.bat
 
-Set resultfile=%results_folder%\%5.txt
+Set resultfile=%results_folder%\%6.txt
 Echo %resultfile%
 
 Echo write to %resultfile%
-Echo ^<description^>%5%:^<^/description^>^<result^> > %resultfile%
+Echo ^<description^>%6%:^<^/description^>^<result^> > %resultfile%
 Echo.
 
-FOR %%A IN (%6) DO (
+FOR %%A IN (%7) DO (
 	SET CFileSize=%%~zA
 )
-ECHO FileSize %6% : %CFileSize%
+ECHO FileSize %7 : %CFileSize%
 
-FOR %%B IN (%7) DO (
+FOR %%B IN (%8) DO (
 	SET RFileSize=%%~zB
 )
-ECHO FileSize %7% : %RFileSize%
+ECHO FileSize %8 : %RFileSize%
 
 Echo.
 

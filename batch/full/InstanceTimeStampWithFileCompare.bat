@@ -4,25 +4,25 @@ SETLOCAL EnableDelayedExpansion
 
 Echo.
 Echo ************************
-Echo Test: %5
+Echo Test: %6
 
 Call full/SetStartTime.bat
 
 Echo.
 
-Call full/EchoAndExecute.bat %1 %2 %3 %4 
+Call full/EchoAndExecute.bat %1 %2 %3 %4 %5 
 
 Call full/SetEndTime.bat
 
-Set resultfile=%results_folder%\%5.txt
+Set resultfile=%results_folder%\%6.txt
 Echo %resultfile%
 
 Echo write to %resultfile%
-Echo ^<description^>%5%:^<^/description^>^<result^> > %resultfile%
+Echo ^<description^>%6%:^<^/description^>^<result^> > %resultfile%
 
 Echo.
-Echo FileCompare Execute: FC %6 %7
-FC %6 %7 > NUL && Echo Ok, all files are identical >> %resultfile% || Echo False, difference(s) occur  >> %resultfile%
+Echo FileCompare Execute: FC %7 %8
+FC %7 %8 > NUL && Echo Ok, all files are identical >> %resultfile% || Echo False, difference(s) occur  >> %resultfile%
 
 Echo ^<^/result^>^ >> %resultfile%
 

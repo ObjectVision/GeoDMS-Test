@@ -7,9 +7,13 @@ del %logfile% 2>nul
 
 if exist %projDir%\regr_results\strfiles del %projDir%\regr_results\strfiles\*.txt
 
+if [%1] neq [] set MT1=%1
+if [%2] neq [] set MT2=%2
+if [%3] neq [] set MT3=%3
+
 echo "%GeoDmsGuiPath%" >> %logfile%
-echo GeoDmsGui" /MAX "%GeoDmsGuiPath%" "%projDir%\cfg\operator.dms"
-START	"GeoDmsGui" /MAX "%GeoDmsGuiPath%" "%projDir%\cfg\operator.dms"
+echo GeoDmsGui" /MAX "%GeoDmsGuiPath%" /%MT1% /%MT2% /%MT3% "%projDir%\cfg\operator.dms"
+START	"GeoDmsGui" /MAX "%GeoDmsGuiPath%" /%MT1% /%MT2% /%MT3% "%projDir%\cfg\operator.dms"
 
 REM Wait 1 secs (2 pings with 1 sec intervals between them to localhost)
 ping 127.0.0.1 -n 2 > nul
