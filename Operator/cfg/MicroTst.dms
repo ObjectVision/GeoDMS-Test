@@ -2389,6 +2389,21 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			attribute<point_rd> Geometry(.,poly);
 		}
+		
+		container statistics
+		{
+			unit<uint32> src 
+			:	StorageName     = "%ProjDir%/data/wijken_2023.csv"
+			,	StorageType     = "gdal.vect"
+			,	StorageReadOnly = "True";
+			
+			unit<uint32> result := src,	StorageName = "%LocalDataProjDir%/Website/2023/gem_focus.dbf"
+			{
+				attribute<string>    code          := src/code;
+				attribute<string>    label         := src/naam;
+				attribute<wijk_2016> wijk_2016_rel := rlookup(code, wijk_2016/WK_code);
+			}
+		}
 
 		unit<uint32> pc6 := unique(adres/postcode)
 		{
