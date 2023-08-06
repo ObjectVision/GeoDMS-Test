@@ -1,4 +1,4 @@
-container Write_gdal_csv
+container Write_gdal_csv: url = "https://github.com/ObjectVision/GeoDMS/issues/391"
 {
 	unit<uint32> reference: nrofrows = 5
 	{
@@ -12,7 +12,7 @@ container Write_gdal_csv
 		attribute<string> name : ['IntegerAtt', 'FloatAtt', 'StringAtt'];
 	}
 
-	container export:=
+	container export :=
 		for_each_ind('nedvat'
 			, att/name
 			, 'string(reference/' + att/name + ')'
@@ -20,8 +20,28 @@ container Write_gdal_csv
 			, string
 			, '%localDataDir%/GeoDMSTestResults/unit/storage/write_gdal_csv/' + att/name +  '.csv'
 			, 'gdalwrite.vect');
+		
+	unit<uint32> export_all := select_with_attr_by_cond(reference, isDefined(id(reference)))
+		, StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/write_gdal_csv/all.csv"
+		, StorageType =	"gdalwrite.vect";
 
-	container reRead: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteDbf.dbf"
+
+	container reRead_IntegerAtt: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/write_gdal_csv/IntegerAtt.csv", StorageType = "gdal.vect"
+	{
+		attribute<int32> IntegerAtt (reference);
+	}
+
+	container reRead_FloatAtt: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/write_gdal_csv/FloatAtt.csv", StorageType = "gdal.vect"
+	{
+		attribute<float32> FloatAtt (reference);
+	}
+
+	container reRead_StringAtt: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/write_gdal_csv/StringAtt.csv", StorageType = "gdal.vect"
+	{
+		attribute<string> StringAtt (reference);
+	}
+
+	container reRead_all: StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/write_gdal_csv/all.csv", StorageType = "gdal.vect"
 	{
 		attribute<int32>   IntegerAtt (reference);
 		attribute<float32> FloatAtt   (reference);
@@ -29,12 +49,18 @@ container Write_gdal_csv
 	}
 
 	attribute<bool> test (reference) := 
-		reRead/IntegerAtt == union_data(reference, reference/IntegerAtt) && float_isNearby(reRead/FloatAtt, union_data(reference, reference/FloatAtt),0.99f ) 
-		&& eq_or_both_null(reRead/StringAtt, union_data(reference, reference/StringAtt));
+		   reRead_IntegerAtt/IntegerAtt == reference/IntegerAtt
+		&& reRead_FloatAtt/FloatAtt     == reference/FloatAtt
+		&& reRead_StringAtt/StringAtt   == reference/StringAtt
+
+		&& reRead_all/IntegerAtt        == reference/IntegerAtt
+		&& reRead_all/FloatAtt          == reference/FloatAtt
+		&& reRead_all/StringAtt         == reference/StringAtt
+		;
 
 	parameter<string> test_log := all(test) 
 		? '' 
-		: 'Write Storage dbf Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'Write Storage gdal csv Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteDbf.txt";
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/Write_gdal_csv.txt";
 }
