@@ -3,8 +3,8 @@ Set RegrResult=OK
 
 Echo ****************
 Echo.
-Echo Test: GeoDMS Command: %GeoDmsRunCmdBase% /%4 /%5 %1 %2 
-%GeoDmsRunCmdBase% /%4 /%5 %1 %2
+Echo Test: GeoDMS Command: %GeoDmsRunCmdBase% /%4 /%5 /%6 %1 %2 
+%GeoDmsRunCmdBase% /%4 /%5 /%6 %1 %2
 Echo.
 
 rem pause

@@ -4,17 +4,16 @@ SETLOCAL EnableDelayedExpansion
 
 Echo.
 Echo ************************
-Echo Test: %5
+Echo Test: %6
 
 Call Full/SetStartTime.bat
 
 Echo.
-Echo Execute: %6  /%1 /%2 %3 %4 
+Echo Execute: %7  /%1 /%2 /%3 %4 %5 
 
-Call %6 %1 %2 %3 %4 %5
+Call %7 %1 %2 %3 %4 %5 %6
 
 Call Full/SetEndTime.bat
 
-Call Full/WriteTimeStamps.bat %results_folder%\%5.txt
-
+Call Full/WriteTimeStamps.bat %results_folder%\%6.txt
 

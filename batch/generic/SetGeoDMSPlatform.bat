@@ -15,7 +15,7 @@ IF %1 == D64 Set GeoDmsPath=%geodms_rootdir%\bin\Debug\x64
 IF %1 == R64 Set GeoDmsPath=%geodms_rootdir%\bin\Release\x64
 
 Set GeoDmsRunPath=%GeoDmsPath%\GeoDmsRun.exe
-Set GeoDmsGuiPath=%GeoDmsPath%\GeoDmsGui.exe
+Set GeoDmsGuiPath=%GeoDmsPath%\GeoDmsGuiDelphi.exe
 Set GeoDmsGuiQtPath=%GeoDmsPath%\GeoDmsGuiQt.exe
 Set GeoDmsCallerPath=%GeoDmsPath%\GeoDmsCaller.exe
 

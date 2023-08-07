@@ -6,20 +6,20 @@ del %logfile% 2>nul
 echo "%GeoDmsGuiPath%" >> %logfile%
 break
 
-set MT1=S1
-set MT2=S2
 set CONFIG=%RSLight_2020Path%
 set ITEM=t1630_expandtest/result_html
 if [%1] neq [] set MT1=%1
 if [%2] neq [] set MT2=%2
-if [%3] neq [] set CONFIG=%3
-if [%4] neq [] set ITEM=%4
+if [%3] neq [] set MT3=%3
+if [%4] neq [] set CONFIG=%4
+if [%5] neq [] set ITEM=%5
 
 REM START "GeoDmsGui" /MAX "%GeoDmsGuiPath%" "%RSLight_2020Path%"
 echo ****** Start test
 echo.
-echo GeoDMS Command: "GeoDmsGui" /MAX "%GeoDmsGuiPath%" /%MT1% /%MT2% "%CONFIG%"
-START "GeoDmsGui" /MAX "%GeoDmsGuiPath%" /%MT1% /%MT2% "%CONFIG%"
+echo GeoDMS Command: "GeoDmsGui" /MAX "%GeoDmsGuiPath%" /%MT1% /%MT2% /%MT3% "%CONFIG%"
+START "GeoDmsGui" /MAX "%GeoDmsGuiPath%" /%MT1% /%MT2% /%MT3% "%CONFIG%"
+
 
 REM Send cmd 2 (WM->Focus) with requires 3 subsequent integers representing code, WPARAM and LPARAM
 REM code 258 represents WM_CHAR, 13 = VK_RETURN; TreeView requires WM_CHAR

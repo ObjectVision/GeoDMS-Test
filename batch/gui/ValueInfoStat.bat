@@ -5,8 +5,12 @@ set CalcCacheDir=%ProjDir%\CalcCache
 set logfile=!LogFileDir!\ValueInfoStat.log
 del %logfile% 2>nul
 
-echo "%GeoDmsGuiPath%" >> %logfile%
-START	"GeoDmsGui" /MAX "%GeoDmsGuiPath%" "%projDir%\cfg\issue_1438.dms"
+if [%1] neq [] set MT1=%1
+if [%2] neq [] set MT2=%2
+if [%3] neq [] set MT3=%3
+
+echo "%GeoDmsGuiPath%"  /%MT1% /%MT2% /%MT3% >> %logfile%
+START	"GeoDmsGui" /MAX "%GeoDmsGuiPath%" /%MT1% /%MT2% /%MT3% "%projDir%\cfg\issue_1438.dms"
 
 REM Wait 1 secs (2 pings with 1 sec intervals between them to localhost)
 ping 127.0.0.1 -n 2 > nul

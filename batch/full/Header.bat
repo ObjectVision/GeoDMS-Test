@@ -2,7 +2,7 @@ Rem Algemene Informatie over de versie, OS, Computer weggeschreven en in gebruik
 FOR /F "tokens=2*" %%A IN ('REG QUERY "HKEY_CURRENT_USER\Control Panel\International" /v sShortDate 2^>NUL') DO SET DATEFORMAT=%%B
 
 Rem  Schrijf informatie over de computer uit het register weg naar de LogFileDir
-SET STATUSFLAGS=%1%2
+SET STATUSFLAGS=%1%2%3
 
 Rem deze informatie moet eerst weggeschreven worden omdat die de version key bepaalt.  
 Echo !COMPUTERNAME! > %LogFileDir%\computername.txt
