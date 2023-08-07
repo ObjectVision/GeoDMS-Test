@@ -23,6 +23,11 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	unit<fpoint> point_rd := BackGroundLayer/point_rd;
 
+	unit<uint8> TableWithUInt64Values := cat_range(uint8, 0b, 3b)
+	{
+		attribute<uint64> uint64_values: [ 0, 123456789012345678];
+	}
+	
 	Template MakeGrid
 	{
 		// begin case parameters
@@ -1232,6 +1237,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<dpoint> c := a * 5.6;
 		parameter<dpoint> d := 3.4 / a;
 		parameter<dpoint> e := a / 5.6;
+		parameter<dpoint> f := e*e;
 		
 		parameter<string> gdalData: Expr = "Expand(., '%env:GDAL_DATA%')";
 		unit<int16> pointset: nrofrows = 100
