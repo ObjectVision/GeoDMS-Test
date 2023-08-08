@@ -1,47 +1,16 @@
 container ExportSettings  : url = "='#'+ExportSettings/Docdata +'/ExportSettings.adms'"
 {
-	container SvnImpl
-	{
-		parameter<String> RevisionInfoCmd := Replace(Expand(., 'SubWCRev %projDir% > %projDir%/SubWCRevData.str'), '/', '\\');
-		parameter<uint32> WriteCode := exec_ec(Expand(., '%env:ComSpec%'), '/c ' + RevisionInfoCmd, Expand(., '%projdir%'));
-	}
-	
 	container MetaInfo 
 	{
 		parameter<string> FileName : ='%storageBaseName%.xml';
 		parameter<string> FileType : ='xml'; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
-		container Contents
-		{
-			container Software
-			{
-				parameter<string> GeoDmsVersion: [ '=string(GeoDmsVersion())' ];
-			}
-			container Config
-			{
-				parameter<string> FullName := '=PropValue(this, '+Quote('FullName')+')';
-				parameter<string> Expr     := '=PropValue(this, '+Quote('Expr'    )+')';
-			}
-			container Environment
-			{
-				parameter<string> Processor    := expand(., '%env:PROCESSOR_IDENTIFIER%');
-				parameter<string> User         := expand(., '%env:USERNAME%');
-				parameter<string> ComputerName := expand(., '%env:COMPUTERNAME%');
-			}
-			container Svn
-			{
-				parameter<string> RevisionInfo: Storagename = "=(SvnImpl/WriteCode==0)?'%projDir%/SubWCRevData.str':'Error '+String(SvnImpl/WriteCode)+' while producing %projDir%/SubWCRevData.str'";
-			}
-			container Parameters
-			{
-				parameter<string>    BGT_file_date                   := ModelParameters/BGT_file_date;
-				parameter<bool>      UseSimplify                     := ModelParameters/UseSimplify;
-				parameter<float64>   Simplify_Value                  := ModelParameters/Simplify_Value;
-				parameter<string>    bouwjaar_truncation_expr        := ModelParameters/bouwjaar_truncation_expr;
-				parameter<bool>      Use_BAG_VoorraadStatussen       := ModelParameters/Use_BAG_VoorraadStatussen;
-				parameter<int32>     VBO_opp_truncation              := ModelParameters/VBO_opp_truncation;
-				parameter<int32>     VBO_opp_truncation_lower        := ModelParameters/VBO_opp_truncation_lower;
-				parameter<int32>     VBO_opp_truncation_defaultvalue := ModelParameters/VBO_opp_truncation_defaultvalue;
-			}
-		}
 	}
+
+	parameter<bool>   test     := MetaInfo/FileType == 'xml';
+
+	parameter<string> test_log := test
+		? '' 
+		: 'ExportSettings url refering to adms file Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	, StorageType = "str"
+	, Storagename = "%localDataDir%/GeoDMSTestResults/unit/other/metainfo_url_adms.txt";
 }
