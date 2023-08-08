@@ -97,6 +97,10 @@ Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms test_log %ResultD
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms export %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_tiff_pal.dms test_log %ResultDir%\unit\storage\WriteTiff_pal.txt S1 S2 S3
 
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_gdal_csv.dms export %ResultDir%\unit\storage\Write_gdal_csv.txt S1 S2 S3
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_gdal_csv.dms export_all %ResultDir%\unit\storage\Write_gdal_csv.txt S1 S2 S3
+Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_gdal_csv.dms test_log %ResultDir%\unit\storage\Write_gdal_csv.txt S1 S2 S3
+
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_NL_tiff_gdal_grid.dms export %ResultDir%\unit\storage\WriteNLTiff_gdal.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\Write_NL_tiff_gdal_grid.dms test_log %ResultDir%\unit\storage\WriteNLTiff_gdal.txt S1 S2 S3
 
