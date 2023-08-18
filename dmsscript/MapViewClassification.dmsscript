@@ -1,8 +1,9 @@
-WAIT 10
 GOTO "/BackGroundLayer/district/hoek" 
 
 // code 5: dmfGeneral.miDefaultView.Click => PopupMenu."Default View"
 SEND 5 0
+
+WAIT 100 // let MapControl::UpdateView go first in order to populate the layer control
 
 // Send cmd 4 (WM_COPYDATA->MdiChild) => ActiveDataView.ActiveControl.PopupMenu."Edit Palette"
 // code 1 (activates popup menu on active control) and menu item list {11}: Edit Palette
@@ -28,5 +29,6 @@ SEND 4 5 0 6 1 1 3
 // menu item list {7}. Copy Palette
 SEND 4 2 1 7
 
+WAIT 10000
 // Send cmd 1 (WM->Main) 16 represents WM_CLOSE.
-//SEND 1 3 16 0 0
+SEND 1 3 16 0 0
