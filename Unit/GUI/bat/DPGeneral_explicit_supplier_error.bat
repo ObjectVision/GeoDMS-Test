@@ -2,12 +2,14 @@ Rem Unit Gui test for Error in general detail page with explicit suppliers
 
 Set RegrResult=OK
 
+Set command="GeoDmsGui" /MAX "%GeoDmsGuiPath%" "%TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms"
+
 Echo ****************
 Echo.
-Echo Test: GeoDMS Command: %GeoDmsGuiPath% %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms
+Echo Test: %command%
 Echo.
 
-START	"GeoDmsGui" /MAX "%GeoDmsGuiPath%" "%TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms"
+START %command%
 
 ping 127.0.0.1 -n 2 > nul
 "%GeoDmsCallerPath%" GOTO "/DPGeneral_explicit_supplier_error/test" 

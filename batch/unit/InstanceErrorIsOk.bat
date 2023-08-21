@@ -1,10 +1,11 @@
-Rem voer 1 instantie van de operator test uit
+Rem voer 1 instantie van de operator test uit, deze slaagt als er een error wordt opgegooid (verwacht gedrag)
 Set RegrResult=OK
 
+Set command=%GeoDmsRunCmdBase% /%4 /%5 /%6 %1 %2
 Echo ****************
 Echo.
-Echo Test: GeoDMS Command: %GeoDmsRunCmdBase% /%4 /%5 /%6 %1 %2
-%GeoDmsRunCmdBase% /%4 /%5 /%6 %1 %2
+Echo Test: GeoDMS Command: %command%
+%command%
 Echo.
 
 REM  pause

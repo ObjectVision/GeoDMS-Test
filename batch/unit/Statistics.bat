@@ -1,12 +1,12 @@
 Rem voer 1 instantie van de operator test uit
 Set RegrResult=OK
 
+Set command=%GeoDmsRunCmdBase% /S1 /S2 /S3 %TstDir%\Unit\operator\cfg\select_orgrel.dms @statistics full/id 
+
 Echo **************** Statistics 
 Echo.
-
-Echo Test: %GeoDmsRunCmdBase% /S1 /S2 /S3 %TstDir%\Unit\operator\cfg\select_orgrel.dms @statistics full/id 
-
-%GeoDmsRunCmdBase% /S1 /S2 /S3 %TstDir%\Unit\operator\cfg\select_orgrel.dms @statistics full/id 
+Echo Test: %command%
+%command%
 
 Echo.
 
