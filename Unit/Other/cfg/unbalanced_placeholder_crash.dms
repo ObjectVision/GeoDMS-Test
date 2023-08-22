@@ -1,0 +1,22 @@
+container test
+{
+	container	Configsettings
+	{	
+		container overridable 
+		{
+			parameter<string> WaardenlandSourceDataDir := 'D:/SourceData';
+		}
+	}
+	container vastgoed
+	{
+		parameter<string> BAG_folder := '%%WaardenlandSourceDataDir%/BAG/20230101';
+		
+		unit<uint32> pand
+		:	StorageName     = "= BAG_folder + '/pand.fss'"
+		,	StorageReadOnly = "True"
+		,	SyncMode        = "All"
+		{
+			attribute<point_rd_mm> geometry_mm (polygon);
+		}
+	}
+}
