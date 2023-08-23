@@ -1,4 +1,4 @@
-container test
+container unbalanced_placeholder_crash
 {
 	container	Configsettings
 	{	
@@ -7,6 +7,7 @@ container test
 			parameter<string> WaardenlandSourceDataDir := 'D:/SourceData';
 		}
 	}
+
 	container vastgoed
 	{
 		parameter<string> BAG_folder := '%%WaardenlandSourceDataDir%/BAG/20230101';
@@ -16,7 +17,15 @@ container test
 		,	StorageReadOnly = "True"
 		,	SyncMode        = "All"
 		{
-			attribute<point_rd_mm> geometry_mm (polygon);
+			attribute<fpoint> geometry_mm (polygon);
 		}
 	}
+
+	parameter<uint32> test    := all(vastgoed/pand/geometry_mm);
+	parameter<string> test_log := test == true
+		? '' 
+		: 'Unbalanced placeholder crash Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/unbalanced_placeholder_crash.txt";	
+
 }

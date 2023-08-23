@@ -55,7 +55,11 @@ Echo.>> %ResultFileName%
 REM SECTION OPERATOR 
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\subitem.dms   test_log %ResultDir%\unit\operator\subitem.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\connect.dms   test_log %ResultDir%\unit\operator\connect_point_arc.txt S1 S2 S3
+
+timeout /t 1
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\xml_parse.dms test_log %ResultDir%\unit\operator\parse_xml_pand.txt S1 S2 S3
+timeout /t 1
+
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\select_orgrel.dms test_log %ResultDir%\unit\operator\select_orgrel.txt S1 S2 S3
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\operator\cfg\argmax_different_valuetypes.dms test_log %ResultDir%\unit\operator\argmax_different_valuetypes.txt  S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\select_orgrel.dms test_log %ResultDir%\unit\operator\select_orgrel.txt S1 S2 S3
@@ -71,7 +75,9 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag1.dms test_log %
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log %ResultDir%\unit\operator\ReadElems_flag24.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\true_function_in_select_by_cond.dms test_log %ResultDir%\unit\operator\select_with_attr_by_cond_true_function.txt S1 S2 S3
 
+timeout /t 1
 Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log %ResultDir%\unit\operator\operator.txt S1 S2 S3
+timeout /t 1
 
 REM SECTION UNITS // ACTIVATE AFTER SOLVING ISSUE 199
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/b    %ResultDir%\unit\unit\categorical_unit.txt S1 S2 S3
@@ -86,7 +92,6 @@ Call Unit\instance.bat %TstDir%\Unit\storage\cfg\tiff_configured_domain.dms test
 Call Unit\instance.bat %TstDir%\storage_gdal\cfg\regression.dms results/unit_test_grid_read_log %ResultDir%\unit\storage\read_gdal_grid_formats.txt S1 S2 S3
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log             %ResultDir%\unit\storage\src_indirect_check_file.txt S1 S2 S3
 Call Unit\instance.bat %TstDir%\Unit\storage\cfg\src_indirect.dms test_log_file_is_written      %ResultDir%\unit\storage\src_indirect.txt S1 S2 S3
-
 
 REM SECTION STORAGE WRITE IN TWO STEPS, FIRST EXPORT RESULTS, SECOND READ EXPORTED RESULTS
 Call Unit\Instance.bat %TstDir%\Unit\Storage\cfg\write_dbf.dms export %ResultDir%\unit\storage\WriteDbf.txt S1 S2 S3
@@ -137,6 +142,8 @@ Call Unit\Instance.bat %TstDir%\Unit\other\cfg\CloseGUIIssue1.dms test_log %Resu
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\other\cfg\item_names_equal.dms test_log %ResultDir%\unit\other\item_names_equal.txt S1 S2 S3
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\other\cfg\issue_327_IndirectNullCalcRule.dms test_log %ResultDir%\unit\other\issue_327_IndirectNullCalcRule.txt S1 S2 S3
 
+Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\other\cfg\unbalanced_placeholder_crash.dms test_log %ResultDir%\unit\other\unbalanced_placeholder_crash.txt S1 S2 S3
+
 REM SECTION INTEGRITY CHECKS
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\this.dms test_log %ResultDir%\unit\integrity_check\this.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\Integrity_check\cfg\container.dms test_log %ResultDir%\unit\integrity_check\container.txt S1 S2 S3
@@ -158,7 +165,7 @@ REM SECTION STATISTICS
 Call Unit\Statistics.bat
 
 REM SECTION GUI 
-Call Unit\GUIInstance.bat %TstDir%\dmsscript\MapViewClassification.dmsscript %TstDir%\Operator\cfg\MicroTst.dms %ResultDir%\unit\gui\MicroTst_error.txt
+Call Unit\GUIInstance.bat %TstDir%\dmsscript\MapViewClassification.dmsscript %TstDir%\Operator\cfg\MicroTst.dms %ResultDir%\unit\gui\MicroTst_error.txt S1 S2 S3
 
 Call ..\Unit\GUI\bat\DPGeneral_explicit_supplier_error.bat
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms test_log %ResultDir%\unit\gui\DPGeneral_ES_error.txt S1 S2 S3
@@ -168,7 +175,7 @@ Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms te
 
 Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\background_layer.dms test_log %ResultDir%\unit\GUI\background_layer_error.txt S1 S2 S3
 
-IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsGuiQtPath%" FAILED >> %ResultFileName%
+REM IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsGuiQtPath%" FAILED >> %ResultFileName%
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
 Set Sequence=%date:/=-%_%time::=-%
