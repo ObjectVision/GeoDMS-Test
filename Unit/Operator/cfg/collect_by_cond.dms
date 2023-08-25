@@ -1,0 +1,19 @@
+container collect_by_condition
+{
+	unit<uint32> full: nrofrows = 10
+	{
+		attribute<uint32> id   := id(.);
+		attribute<string> name := 'name_' + string(id);
+		attribute<string> name_with_null := (id == 2 || id == 7) ? string(0 / 0) : name;
+		attribute<bool>   inselection := const(true, .);
+	}
+
+	unit<uint32> selection := select_with_attr_by_cond(full, full/inselection);
+
+	parameter<bool>   test     := any(isNull(selection/name_with_null));
+	parameter<string> test_log := test 
+		? '' 
+		: 'collect_by_condition Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	,	StorageType = "str"
+	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/collect_by_condition.txt";
+}
