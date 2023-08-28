@@ -1,0 +1,20 @@
+container issue_GH170
+{
+	unit<uint32> read_shp
+	: StorageName = "%projdir%/data/origin.shp"
+	, StorageType = "gdal.vect"
+	, StorageReadOnly = "true"
+	{
+		attribute<float32> data := value(id(.), float32);
+	}
+	
+	unit<uint32> something_happens_here := read_shp
+	{
+		attribute<float32> data_x_2 := data * 2f;
+	}
+
+	container store 
+	{
+		attribute<float32> export_this_attr  (read_shp):= something_happens_here/data_x_2, StorageName = "%LocalDataProjDir%/export.shp'", StorageType = "gdalwrite.vect";
+	}
+}
