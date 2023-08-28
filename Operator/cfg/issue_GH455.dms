@@ -1,0 +1,73 @@
+container issue_GH455
+{	
+	unit<ipoint> rdc_25m   := Geography/perGridsize/size_25m/domain;
+	unit<fpoint> rdc_meter := Geography/rdc_meter;
+	
+	container Units
+	{
+		unit<Float32> Meter:            Expr = "BaseUnit('m', float32)",        cdf = "Classifications/Altitude/m8K/Classes";
+	}
+
+	container Geography : using = "Units"
+	{
+		unit<fpoint> rdc_meter_base   : DialogData = "ngr_layer", SpatialReference = "EPSG:28992";
+		unit<fpoint> rdc_meter        := range(rdc_meter_base, point(y_min, x_min), point(y_max, x_max));
+		
+		unit<uint32> Gridsizes : nrofrows = 1
+		{
+			attribute<string>  size_str : ['25'];
+			attribute<Meter>   size     := size_str[Meter];
+			attribute<string>  name    := 'size_'+string(size)+'m';
+		}
+		
+
+		parameter<Meter> x_min := 0[Meter];
+		parameter<Meter> x_max := 280000[Meter];
+		parameter<Meter> y_min := 300000[Meter];
+		parameter<Meter> y_max := 625000[Meter];
+		
+		container perGridsize :=
+			for_each_ne(
+				Gridsizes/name
+				, 'Create_GridDomain_T('+string(Gridsizes/size)+'[Meter])'
+			);
+	
+		Template Create_GridDomain_T
+		{
+			parameter<Meter> gridsize;
+			parameter<int32> nr_cols := int32((x_max - x_min) / gridsize);
+			parameter<int32> nr_rows := int32((y_max - y_min) / gridsize);
+			
+			unit<ipoint> domain :=
+				range(
+					 gridset(
+						 rdc_meter
+						,point(-gridsize, gridsize, rdc_meter)
+						,point(y_max, x_min, rdc_meter)
+						,ipoint
+					)
+					,point(0i, 0i)
+					,point(nr_rows, nr_cols)
+				),	DialogData = "rdc_meter";
+		}
+		
+	}
+	
+	unit<uint32> provincie
+	: StorageName = "%projdir%/data/provincie_2021.shp"
+	, StorageType = "gdal.vect"
+	, StorageReadOnly = "true"
+	, DialogData = "rdc_meter"
+	{
+		attribute<.>       per_rdc_25m (rdc_25m) := poly2grid(geometry, rdc_25m);
+		attribute<float32> claim                           := const(1000f, .);
+	}
+
+	attribute<float32> geschiktheid (rdc_25m) := rnd_uniform(0, rdc_25m, range(float32, 0f, 1f));
+	
+	attribute<uint32>  nth_element (provincie) :=   nth_element(
+														  Geschiktheid
+														, provincie/claim
+														, provincie/per_rdc_25m
+													);
+}
