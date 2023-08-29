@@ -1,0 +1,28 @@
+container issue_GH478
+{
+	unit<uint32> A
+	: StorageName = "%projdir%/data/origin.shp"
+	, StorageType = "gdal.vect"
+	, StorageReadOnly = "true"
+	{
+		attribute<float32> impedance := value(id(.), float32);
+		attribute<uint32> F1        := id(.);
+		attribute<uint32> F2        := id(.);
+	}
+	
+	unit<uint32> B := A;
+	
+	unit<uint32> C := B;
+	
+	unit<uint64> Matrix :=
+		dijkstra_m64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);od:OrgZone_rel,DstZone_rel,impedance'
+			, C/impedance
+			, C/F1
+			, C/F2
+			///
+			, C/F1
+			, C/F1
+		)
+	{
+	}
+}
