@@ -1020,7 +1020,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/ge"
 			{
 				parameter<bool> test_param          := source/ParamB >= source/ParamB;
-				attribute<bool> attr (Domain)       := MakeDefined(Source/A, -9999f) >=  MakeDefined(Source/A, 9999f);
+				attribute<bool> attr (Domain)       := MakeDefined(Source/A, -9999f) >=  MakeDefined(Source/B, 9999f);
 				attribute<bool> test (Domain)       := attr = source/AgteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not('T' >= 't');
@@ -3491,7 +3491,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container all: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/all"
 			{
 				parameter<bool> test_param          := all(True);
-				attribute<bool> test_region(Region) := all(City/NrInhabitants < 500, City/RegionNr); // has region a city >= 500 [Inh]
+				attribute<bool> test_region(Region) := all(MakeDefined(City/NrInhabitants, 0) < 500, City/RegionNr); // has region a city >= 500 [Inh]
 				parameter<bool> test_attr := #(Region) > 0
 					?	 all(test_region == Region/allInh)
 						&& all(Region/condA) 
@@ -3502,7 +3502,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container any: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/any"
 			{
 				parameter<bool> test_param := any(True);
-				attribute<bool> test_region(Region) := any(City/NrInhabitants >= 500, City/RegionNr); // has region a city >= 500 [Inh]
+				attribute<bool> test_region(Region) := any(MakeDefined(City/NrInhabitants, 0) >= 500, City/RegionNr); // has region a city >= 500 [Inh]
 				parameter<bool> test_attr  := #(Region) > 0
 					?	 all(test_region ==  Region/anyInh)
 						&&     any(Region/condA) 
@@ -3978,14 +3978,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container iif_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/iif"
 			{
 				parameter<bool>    test_param    := source/Paramtrue && not(source/ParamFalse) ? true : false;
-				attribute<float32> att  (Domain) := source/floatA >= source/floatB ? float32(1) : float32(0);
+				attribute<float32> att  (Domain) := MakeDefined(source/floatA, -9999f) >= MakeDefined(source/floatB, 9999f) ? float32(1) : float32(0);
 				attribute<bool>    test (Domain) := att = source/iifA;
 				parameter<bool>    test_attr     := all(test);
 			}
 			container iif: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/iif"
 			{
 				parameter<bool>    test_param    := iif(source/Paramtrue && not(source/ParamFalse), true, false);
-				attribute<float32> att  (Domain) := iif(source/floatA >= source/floatB, float32(1), float32(0));
+				attribute<float32> att  (Domain) := iif(MakeDefined(source/floatA, -9999f) >= MakeDefined(source/floatB, 9999f), float32(1), float32(0));
 				attribute<bool>    test (Domain) := att = source/iifA;
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -4072,9 +4072,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<string> att (Domain)
 					 := switch(
-						  case( Source/floatA < Source/floatB, 'A<B')
-						, case( Source/floatA > Source/floatB, 'A>B')
-						, case( Source/floatA = Source/floatB, 'A=B')
+						  case( MakeDefined(Source/floatA, 9999f) < MakeDefined(Source/floatB, -9999f), 'A<B')
+						, case( MakeDefined(Source/floatA, -9999f) > MakeDefined(Source/floatB, 9999f), 'A>B')
+						, case( Source/floatA == Source/floatB, 'A==B')
 						, 'Missing'
 						);
 				attribute<bool> test (Domain) := att == source/switchcase;
