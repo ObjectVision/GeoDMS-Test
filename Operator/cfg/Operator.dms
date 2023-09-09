@@ -2941,8 +2941,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<uint32> lastNrInhabitants  : [175];
 				parameter<string> lastCityName       : ['Haarlem'];
 				parameter<bool>   lastisCapital      : [False];
-				parameter<uint32> meanNrInhabitants  : [375];
-				parameter<uint32> sumNrInhabitants   : [2250];
+				parameter<uint32> meanNrInhabitants  : [null];
+				parameter<uint32> sumNrInhabitants   : [null];
 				parameter<uint32> modusLifeStyleCode : [1];
 				parameter<uint32> modusNrSameValue   : [2];
 				parameter<uint32> modus_weightedLSC  : [0];
@@ -2976,18 +2976,18 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>         lastNrInhabitants:       [550,500,300,200,null];
 				attribute<string>         lastCityName:            ['Amsterdam','DenHaag','Utrecht','Eindhoven',null];
 				attribute<bool>           lastIsCapital:           [-1,0,0,0,0];
-				attribute<float32>        meanNrInhabitants:       [550,512.5,300,200,null];
+				attribute<float32>        meanNrInhabitants:       [550,512.5,300,null,null];
 				attribute<uint32>         rth_elemNrInhabitants:   [550,512,300, 200, null];
 				attribute<uint32>         nth_elemNrInhabitants:   [550,500,300, 200, null];
 				attribute<uint32>         nth_element_weightedNrIn:[1,3,null,null,null];
-				attribute<uint32>         sumNrInhabitants:        [550,1025,300,200,0];
+				attribute<uint32>         sumNrInhabitants:        [550,1025,300,null,0];
 				attribute<uint32>         modusCity:               [12,11,13,null,0];
 				attribute<uint32>         modusLifeStyle:          [2,0,1,1,null];
 				attribute<uint32>         modus_weightedLifeStyle: [1,0,2,null,0];
-				attribute<float32>        sdNrInhabitants:         [0,12.5,0,0,null];
-				attribute<float32>        varNrInhabitants:        [0,156.25,0,0,null];
+				attribute<float32>        sdNrInhabitants:         [0,12.5,0,null,null];
+				attribute<float32>        varNrInhabitants:        [0,156.25,0,null,null];
 				attribute<float32>        corrNrInhTemp:           [null,null,null,null,null];
-				attribute<float32>        covNrInhTemp:            [0,0,null,0,null];
+				attribute<float32>        covNrInhTemp:            [0,0,null,null,null];
 				attribute<bool>           condA:                   [-1,-1,-1,-1,-1];
 				attribute<bool>           condB:                   [-1, 0,-1, 0,-1];
 				attribute<bool>           condC:                   [ 0, 0, 0, 0, 0];
@@ -3207,11 +3207,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container max: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
 			{
-				parameter<bool>   test_param_uint32 := max(City/NrInhabitants) = params/maxNrInhabitants ;
+				parameter<uint32> param_uint32_value:= max(MakeDefined(City/NrInhabitants, 0));
+				parameter<bool>   test_param_uint32 := param_uint32_value == params/maxNrInhabitants ;
 				parameter<bool>   test_param_string := max(MakeDefined(City/CityName, '')) = params/maxCityName ;
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
 	
-				attribute<uint32> att_uint32          (Region) := max(City/NrInhabitants, City/RegionNr);
+				attribute<uint32> att_uint32          (Region) := max(MakeDefined(City/NrInhabitants, 0), City/RegionNr);
 				attribute<uint32> att_uint32_gridrel  (grid/units/GridDomain) := max(City/NrInhabitants, City/gridnr);
 				
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/maxNrInhabitants);
@@ -3279,7 +3280,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container sum: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
 			{
-				parameter<bool>    test_param          := sum(City/NrInhabitants) == params/sumNrInhabitants ;
+				parameter<bool>    test_param          := eq_or_both_null(sum(City/NrInhabitants),  params/sumNrInhabitants);
 				attribute<uint32>  att        (Region) := sum(City/NrInhabitants, City/RegionNr);
 				attribute<float32> att_F32    (Region) := sum(Float32(City/NrInhabitants), City/RegionNr);
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/sumNrInhabitants);
@@ -3492,7 +3493,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container all: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/all"
 			{
 				parameter<bool> test_param          := all(True);
-				attribute<bool> test_region(Region) := all(MakeDefined(City/NrInhabitants, 0) < 500, City/RegionNr); // has region a city >= 500 [Inh]
+				attribute<bool> test_region(Region) := all(MakeDefined(City/NrInhabitants, 9999) < 500, City/RegionNr); // has region a city >= 500 [Inh]
 				parameter<bool> test_attr := #(Region) > 0
 					?	 all(test_region == Region/allInh)
 						&& all(Region/condA) 
@@ -3930,7 +3931,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<bool>    notInt32A  (Domain): [-1,0,0,0,0];
 
 			attribute<bool>    none       (Domain): [0,0,0,0,0];
-			attribute<string>  switchcase (Domain): ['A<B','A<B','A=B','A>B','Missing'];
+			attribute<string>  switchcase (Domain): ['A<B','A<B','A==B','A>B','Missing'];
 			attribute<uint8>   bitandAB   (Domain): [0,0,2,2,null];
 			attribute<uint8>   bitorAB    (Domain): [2,3,2,3,null];
 
@@ -4892,7 +4893,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool>  test_uint64 := sum(id(unit_CityForEachYear_uint64)) == 300u64;
 				parameter<bool>  test_uint8_uint16  := sum(uint16(id(unit_CityForEachYear_uint8 ))) == 300w;
 				parameter<uint8> sum_uint8  := sum(id(unit_CityForEachYear_uint8 ));
-				parameter<bool>  test_uint8  := sum_uint8 == 44b;
+				parameter<bool>  test_uint8  := not(IsDefined(sum_uint8));
 				parameter<bool>  test_default := sum(unit_CityForEachYear/nr_1) == 50 && sum(unit_CityForEachYear/nr_2) == 50 && unit_CityForEachYear/nr_1[14]  ==  2 && unit_CityForEachYear/nr_2[14]  ==  4;
 				
 				parameter<bool> test        := #(unit_CityForEachYear) > 0 
@@ -5343,7 +5344,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<string>         RegionName:             ['NoordHolland','ZuidHolland','Utrecht','ZuidHolland','NoordBrabant',null,null];
 				attribute<Region>         RegionNr:               [0,1,2,1,3,null,3];
 				attribute<m2>             area:                   [400,350,300,325,250,null,200];
-				attribute<uint32>         scalesum2NrInhabitants: [120,105,90,97,75,null,60];
+				attribute<uint32>         scalesum2NrInhabitants: [120,105,90,97,75,0,60];
 				attribute<uint32>         scalesum3NrInhabitants: [550,531,300,493,111,null,88];
 				attribute<float32>        RescaleNrInhabitants:   [10,9.4,4,8.8,1.6,1,null];
 				attribute<float32>        NormalizeNrInhabitants: [1.12572,0.964901,-0.482451,0.804084,-1.12572,-1.28654,null];
@@ -5407,7 +5408,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container scalesum2: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/scalesum"
 			{
-				attribute<uint32> att  (City) := uint32(scalesum(City/Area, 550f));
+				attribute<uint32> att  (City) := uint32(scalesum(MakeDefined(City/Area, 0f), 550f));
 				attribute<bool>   test (City) := eq_or_both_null(att, City/scalesum2NrInhabitants); 
 				parameter<bool>   test_attr   := all(test);
 			}
@@ -8438,7 +8439,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		{
 			unit<uint32> connect := connect(Network/srcDomain/Road/line , point/ResultUnitTiled/dyna_point_tiled/CalcPoint/point)
 			{
-				parameter<bool> test_attr := sum(nr_orgEntity) == 3 && #. == 476870 && nr_orgEntity[2] == 2;
+				parameter<bool> test_attr := sum(MakeDefined(nr_orgEntity, 0)) == 3 && #. == 476870 && nr_orgEntity[2] == 2;
 			}
 			container connect_info := connect_info(Network/srcDomain/Road/line , point/ResultUnitTiled/dyna_point_tiled/CalcPoint/point)
 			{
@@ -10914,7 +10915,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				, True
 			);
 
-			parameter<bool> test := sum(griddata/NoordHolland) + sum(griddata/ZuidHolland) + sum(griddata/Utrecht) + sum(griddata/NoordBrabant) + sum(griddata/Gelderland) == 135b;
+			parameter<bool> test := not(IsDefined( sum(griddata/NoordHolland) + sum(griddata/ZuidHolland) + sum(griddata/Utrecht) + sum(griddata/NoordBrabant) + sum(griddata/Gelderland)));
 		}
 
 		container for_each_ind
@@ -11694,7 +11695,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		{
 			unit<uint32> ADomain := range(uint32, 0, 1000000);
 			attribute<Adomain> attr (Adomain) := rnd_permutation(0, Adomain);  
-			attribute<bool>    test (Adomain) := attr >= 0 && attr <= #Adomain  && Sum(attr) = Sum(id(Adomain));
+			attribute<bool>    test (Adomain) := attr >= 0 && attr <= #Adomain  && Sum_uint64(attr) == Sum_uint64(id(Adomain));
 			parameter<bool>    test_attr      := all(test);
 		}
 		container rnd_permutation_empty: url  = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/random-permutation"
