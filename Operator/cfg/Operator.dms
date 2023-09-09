@@ -896,7 +896,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			
 			
 			container eq_op
-			:	Descr = "Null = Null resulteert in false"
+			:	Descr = "Null = Null results in false"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/eq"
 			{
 				parameter<bool> test_param          := source/ParamB == 7;
@@ -906,7 +906,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_case_sensitive := 't' == 'T';
 			}
 			container eq
-			:	Descr = "Null = Null resulteert in false"
+			:	Descr = "Null = Null results in false"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/eq"
 			{
 				parameter<bool> test_param          := eq(source/ParamB, 7);
@@ -916,7 +916,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_case_sensitive := not(eq('t', 'T')) && ne('t', 'T');
 			}
 			container eq_or_both_null
-			:	Descr = "Null = Null resulteert in true"
+			:	Descr = "Null = Null results in true"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/eq_or_both_null"
 			{
 				parameter<bool> test_param          := eq_or_both_null(source/ParamB, 7);
@@ -926,81 +926,81 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_case_sensitive := not(eq_or_both_null('t', 'T'));
 			}
 			container lt_op
-			:	Descr = "lt means less then, i.e. <, Null < .. results in false"
+			:	Descr = "lt means less than, i.e. <, Null < .. results in false"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/lt"
 			{
 				parameter<bool> test_param          := source/ParamA < source/ParamB;
-				attribute<bool> attr (Domain)       := source/A < source/B; 
+				attribute<bool> attr (Domain)       := MakeDefined(source/A, 9999f) < MakeDefined(source/B, -9999f); 
 				attribute<bool> test (Domain)       := attr = source/AltB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := 'T' < 't';
 			}
 			container lt
-			:	Descr = "lt means less then, i.e. <, Null < .. results in false"
+			:	Descr = "lt means less than, i.e. <, Null < .. results in false"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/lt"
 			{
 				parameter<bool> test_param          := lt(source/ParamA, source/ParamB);
-				attribute<bool> attr (Domain)       := lt(source/A, source/B); 
+				attribute<bool> attr (Domain)       := lt(MakeDefined(source/A, 9999f), MakeDefined(source/B, -9999f)); 
 				attribute<bool> test (Domain)       := attr = source/AltB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := lt('T' , 't');
 			}
 			container lt_or_lhs_null
-			:	Descr = "lt_or_lhs_null means less then, i.e. <, Null < .. results in true, except for Null < Null"
+			:	Descr = "lt_or_lhs_null means less than, i.e. <, Null < .. results in true, except for Null < Null"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/lt_or_lhs_null"
 			{
 				parameter<bool> test_param          := lt_or_lhs_null(source/ParamA, source/ParamB);
-				attribute<bool> attr (Domain)       := lt_or_lhs_null(source/A, source/B);
+				attribute<bool> attr (Domain)       := lt_or_lhs_null(MakeDefined(source/A, -9999f), MakeDefined(source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/ltAB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := lt_or_lhs_null('T','t');
 			}
 			container le_op
-			:	Descr = "le means less then or equal, i.e. <=, Null <= .. results in false"
+			:	Descr = "le means less than or equal, i.e. <=, Null <= .. results in false"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/le"
 			{
 				parameter<bool> test_param          := source/ParamB <= source/ParamB;
-				attribute<bool> attr (Domain)       := Source/A <= source/B;
+				attribute<bool> attr (Domain)       := MakeDefined(Source/A, 9999f) <= MakeDefined(source/B, -9999f);
 				attribute<bool> test (Domain)       := attr = source/AlteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := 'T' <= 't';
 			}
 			container le
-			:	Descr = "le means less then or equal, i.e. <=, Null <= .. results in false"
+			:	Descr = "le means less than or equal, i.e. <=, Null <= .. results in false"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/le"
 			{
 				parameter<bool> test_param          := le(source/ParamB, source/ParamB);
-				attribute<bool> attr (Domain)       := le(Source/A, source/B);
+				attribute<bool> attr (Domain)       := le(MakeDefined(Source/A, 9999f), MakeDefined(source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/AlteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := le('T', 't');
 			}
 			container le_or_lhs_null
-			:	Descr = "le_or_lhs_null means less then or equal, i.e. <= , Null <= .. results in true"
+			:	Descr = "le_or_lhs_null means less than or equal, i.e. <= , Null <= .. results in true"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/le_or_lhs_null"
 			{
 				parameter<bool> test_param          := le_or_lhs_null(source/ParamA, source/ParamB);
-				attribute<bool> attr (Domain)       := le_or_lhs_null(source/A, source/B);
+				attribute<bool> attr (Domain)       := le_or_lhs_null(MakeDefined(source/A, -9999f), MakeDefined(source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/leAB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := le_or_lhs_null('T','t');
 			}
 			container gt_op
-			:	Descr = "gt means greater then, i.e. >"
+			:	Descr = "gt means greater than, i.e. >"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/gt"
 			{
 				parameter<bool> test_param          := source/ParamB > source/ParamA;
-				attribute<bool> attr (Domain)       := source/A > source/B;
+				attribute<bool> attr (Domain)       := MakeDefined(Source/A, -9999f) > MakeDefined(source/B, 9999f);
 				attribute<bool> test (Domain)       := attr = source/AgtB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not('T' > 't');
 			}
 			container gt
-			:	Descr = "gt means greater then, i.e. >"
+			:	Descr = "gt means greater than, i.e. >"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/gt"
 			{
 				parameter<bool> test_param          := gt(source/ParamB, source/ParamA);
-				attribute<bool> attr (Domain)       := gt(source/A, source/B);
+				attribute<bool> attr (Domain)       := gt(MakeDefined(Source/A, -9999f), MakeDefined(source/B, 9999f));
 				attribute<bool> test (Domain)       := attr = source/AgtB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(gt('T', 't'));
@@ -1010,17 +1010,17 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/gt_or_rhs_null"
 			{
 				parameter<bool> test_param          := gt_or_rhs_null(source/ParamB, source/ParamA);
-				attribute<bool> attr (Domain)       := gt_or_rhs_null(source/A, source/B);
+				attribute<bool> attr (Domain)       := gt_or_rhs_null(MakeDefined(Source/A, -9999f), MakeDefined(source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/gtAB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(gt_or_rhs_null('T','t'));
 			}
 			container ge_op
-			:	Descr = "gt means greater then or equal, i.e. >= "
+			:	Descr = "gt means greater than or equal, i.e. >= "
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/ge"
 			{
 				parameter<bool> test_param          := source/ParamB >= source/ParamB;
-				attribute<bool> attr (Domain)       := source/A >=  source/B;
+				attribute<bool> attr (Domain)       := MakeDefined(Source/A, -9999f) >=  MakeDefined(Source/A, 9999f);
 				attribute<bool> test (Domain)       := attr = source/AgteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not('T' >= 't');
@@ -1030,7 +1030,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/ge"
 			{
 				parameter<bool> test_param          := ge(source/ParamB, source/ParamB);
-				attribute<bool> attr (Domain)       := ge(source/A, source/B);
+				attribute<bool> attr (Domain)       := ge(MakeDefined(Source/A, -9999f), MakeDefined(Source/B, 9999f));
 				attribute<bool> test (Domain)       := attr = source/AgteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(ge('T', 't'));
@@ -1040,7 +1040,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/ge_or_rhs_null"
 			{
 				parameter<bool> test_param          := ge_or_rhs_null(source/ParamB, source/ParamA);
-				attribute<bool> attr (Domain)       := ge_or_rhs_null(source/A, source/B);
+				attribute<bool> attr (Domain)       := ge_or_rhs_null(MakeDefined(Source/A, -9999f), MakeDefined(Source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/geAB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(ge_or_rhs_null('T','t'));
