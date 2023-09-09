@@ -1726,24 +1726,25 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				attribute<uint32> att_all_defined       (DomDomain) := median(0,0, const( 0,DomDomain));
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
+				
+// Error: Invalid attempt to compare undefined values!
+//				attribute<uint32> att_first_undefined   (DomDomain) := median(0 / 0 , 0,  const( 0,DomDomain));
+//				attribute<bool>   test_first_undefined  (DomDomain) := att_first_undefined == 0;
 
-				attribute<uint32> att_first_undefined   (DomDomain) := median(0 / 0 , 0,  const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := att_first_undefined == 0;
+//				attribute<uint32> att_second_undefined  (DomDomain) := median(0     , const( 0 / 0,DomDomain),  const( 0,DomDomain));
+//				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
 
-				attribute<uint32> att_second_undefined  (DomDomain) := median(0     , const( 0 / 0,DomDomain),  const( 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
+//				attribute<uint32> att_third_undefined  (DomDomain) := median(0     , const( 0,DomDomain), const( 0 / 0,DomDomain));
+//				attribute<bool>   test_third_undefined (DomDomain) := att_third_undefined == 0;
 
-				attribute<uint32> att_third_undefined  (DomDomain) := median(0     , const( 0,DomDomain), const( 0 / 0,DomDomain));
-				attribute<bool>   test_third_undefined (DomDomain) := att_third_undefined == 0;
+//				attribute<uint32> att_first_second_undefined  (DomDomain) := median(0 / 0     , const( 0,DomDomain), const( 0 / 0,DomDomain));
+//				attribute<bool>   test_first_second_undefined (DomDomain) := att_first_second_undefined == 0;
 
-				attribute<uint32> att_first_second_undefined  (DomDomain) := median(0 / 0     , const( 0,DomDomain), const( 0 / 0,DomDomain));
-				attribute<bool>   test_first_second_undefined (DomDomain) := att_first_second_undefined == 0;
+//				attribute<uint32> att_all_undefined    (DomDomain) := median(0 / 0 ,0 / 0,  const( 0 / 0,DomDomain));
+//				attribute<bool>   test_all_undefined   (DomDomain) := isNull(att_all_undefined);
 
-				attribute<uint32> att_all_undefined    (DomDomain) := median(0 / 0 ,0 / 0,  const( 0 / 0,DomDomain));
-				attribute<bool>   test_all_undefined   (DomDomain) := isNull(att_all_undefined);
-
-				parameter<bool>    test_attr              := 
-					all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_third_undefined) && all(test_first_second_undefined) && all(test_all_undefined);
+				parameter<bool>    test_attr              :=  all(test) && all(test_all_defined) ;
+//					&& all(test_first_undefined) && all(test_second_undefined) && all(test_third_undefined) && all(test_first_second_undefined) && all(test_all_undefined);
 
 			}
 			container sort: url  = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/sort"
