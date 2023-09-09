@@ -3181,12 +3181,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container min: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/min"
 			{
 				parameter<bool>   test_param_uint32 := min(City/NrInhabitants) = params/minNrInhabitants ;
-				parameter<bool>   test_param_string := min(City/CityName) = params/minCityName ;
+				parameter<String> param_string_value:= min(MakeDefined(City/CityName, 'zzz'));
+				parameter<bool>   test_param_string := param_string_value == params/minCityName;
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
 	
-				attribute<uint32> att_uint32  (Region) := min(City/NrInhabitants, City/RegionNr);
+				attribute<uint32> att_uint32  (Region) := min(MakeDefined(City/NrInhabitants, 999999), City/RegionNr);
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/minNrInhabitants);
-				attribute<string> att_string  (Region) := min(City/CityName, City/RegionNr);
+				attribute<string> att_string  (Region) := min(MakeDefined(City/CityName, 'zzz'), City/RegionNr);
 				attribute<bool>   test_string (Region) := eq_or_both_null(att_string, Region/minCityName);
 				parameter<bool>   test_attr            := all(test_uint32) && all(test_string);
 			}
@@ -3207,14 +3208,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container max: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
 			{
 				parameter<bool>   test_param_uint32 := max(City/NrInhabitants) = params/maxNrInhabitants ;
-				parameter<bool>   test_param_string := max(City/CityName) = params/maxCityName ;
+				parameter<bool>   test_param_string := max(MakeDefined(City/CityName, '')) = params/maxCityName ;
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
 	
 				attribute<uint32> att_uint32          (Region) := max(City/NrInhabitants, City/RegionNr);
 				attribute<uint32> att_uint32_gridrel  (grid/units/GridDomain) := max(City/NrInhabitants, City/gridnr);
 				
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/maxNrInhabitants);
-				attribute<string> att_string  (Region) := max(City/CityName, City/RegionNr);
+				attribute<string> att_string  (Region) := max(MakeDefined(City/CityName, ''), City/RegionNr);
 				attribute<bool>   test_string (Region) := eq_or_both_null(att_string, MakeDefined(Region/maxCityName,''));
 				parameter<bool>   test_attr            := all(test_uint32) && all(test_string);
 			}
