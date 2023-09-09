@@ -1476,10 +1476,12 @@ container regression
 				parameter<uint32> nrrows_multipolygons    := #src/multipolygons;
 				parameter<uint32> nrrows_other_relations  := #src/other_relations;
 
-				parameter<uint32> strcount_crossing       := sum(strcount(src/Points/highway,'crossing'));
+				unit<uint32> points := src/points;
+				attribute<UInt32> strcount_crossing(points) := MakeDefined(strcount(src/Points/highway,'crossing'), 0);
+				parameter<uint32> total_strcount            := sum(strcount_crossing);
 
 				parameter<bool> cardinalities := nrrows_points == 22882 && nrrows_lines == 8591 && nrrows_multilinestrings == 311 && nrrows_multipolygons == 21701 && nrrows_other_relations == 253;
-				parameter<bool> contents      := strcount_crossing == 557;
+				parameter<bool> contents      := total_strcount == 557;
 				parameter<bool> all           := cardinalities && contents;
 			}
 		}
