@@ -1,0 +1,44 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+//                              Operator/Functie Test                                                         //
+//                                                                                                            //
+//                  Configuratie voor het testen van DMS configuratie structuren                              //
+//                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
+//                                                                                                            //
+//                                       November 2010                                                        //
+//                                                                                                            //
+//                            Continue aanpassingen vanaf 2010                                                //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container issue_314: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97", 
+{
+	unit<uint32> uint8_table := range(uint32, 0, 4)
+	{
+		attribute<uint8> a: [ 200, 100, 250, 0];
+		attribute<table> group_rel: [0, 0, 1, 1];
+		attribute<uint8> b: [ 2, 3, 0, 5];
+		attribute<uint8> aa := a+a;
+		attribute<uint8> axb:= a*b;
+		attribute<uint8> adivb:= a / b;
+		attribute<bool> compare := a>aa;
+		attribute<uint8> sum_a := sum(a, group_rel);
+	}
+	parameter<uint8> total_a8 := sum(uint8_table/a);
+	
+	
+	unit<uint32> uint4_table := range(uint32, 0, 4)
+	{
+		attribute<uint4> a: [ 2, 14, 15, 0];
+		attribute<table> group_rel: [0, 0, 1, 1];
+		attribute<uint4> b: [ 2, 3, 0, 5];
+		attribute<uint4> aa := a+a;
+		attribute<uint4> axb:= a*b;
+		attribute<uint4> adivb:= a / b;
+		attribute<bool> compare := a>aa;
+		attribute<uint4> sum_a := sum(a, group_rel);
+	}
+	parameter<uint4> total_a4 := sum(uint4_table/a);
+
+	
+}
