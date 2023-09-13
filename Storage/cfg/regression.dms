@@ -790,7 +790,7 @@ container StorageManagerTest
 			}
 			attribute<String> BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
 
-			container Data := for_each_nedv(Field/Name, 'ReadElems(BodyLines, string, '+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0, Domain)')+')', Domain, string)
+			container Data := for_each_nedv(Field/Name, 'ReadElems(BodyLines, string, '+MakeDefined(Field/Name[sub_or_null(ID(Field), 1)]+'/ReadPos','const(0, Domain)')+')', Domain, string)
 			{
 				attribute<float32> Max_elem (Domain) := Max_elem(float32(bedrijventerrein_min),float32(bedrijventerrein_max),float32(openbarevoorz_min),float32(openbarevoorz_max),float32(zeehaven_min),float32(zeehaven_max));
 			}
