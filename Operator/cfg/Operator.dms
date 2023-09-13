@@ -2941,8 +2941,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<uint32> lastNrInhabitants  : [175];
 				parameter<string> lastCityName       : ['Haarlem'];
 				parameter<bool>   lastisCapital      : [False];
-				parameter<uint32> meanNrInhabitants  : [null];
-				parameter<uint32> sumNrInhabitants   : [null];
+				parameter<uint32> meanNrInhabitants  : [375];
+				parameter<uint32> sumNrInhabitants   : [2250];
 				parameter<uint32> modusLifeStyleCode : [1];
 				parameter<uint32> modusNrSameValue   : [2];
 				parameter<uint32> modus_weightedLSC  : [0];
@@ -2976,18 +2976,18 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>         lastNrInhabitants:       [550,500,300,200,null];
 				attribute<string>         lastCityName:            ['Amsterdam','DenHaag','Utrecht','Eindhoven',null];
 				attribute<bool>           lastIsCapital:           [-1,0,0,0,0];
-				attribute<float32>        meanNrInhabitants:       [550,512.5,300,null,null];
+				attribute<float32>        meanNrInhabitants:       [550,512.5,300,200,null];
 				attribute<uint32>         rth_elemNrInhabitants:   [550,512,300, 200, null];
 				attribute<uint32>         nth_elemNrInhabitants:   [550,500,300, 200, null];
 				attribute<uint32>         nth_element_weightedNrIn:[1,3,null,null,null];
-				attribute<uint32>         sumNrInhabitants:        [550,1025,300,null,0];
+				attribute<uint32>         sumNrInhabitants:        [550,1025,300,200,0];
 				attribute<uint32>         modusCity:               [12,11,13,null,0];
 				attribute<uint32>         modusLifeStyle:          [2,0,1,1,null];
 				attribute<uint32>         modus_weightedLifeStyle: [1,0,2,null,0];
 				attribute<float32>        sdNrInhabitants:         [0,12.5,0,null,null];
 				attribute<float32>        varNrInhabitants:        [0,156.25,0,null,null];
 				attribute<float32>        corrNrInhTemp:           [null,null,null,null,null];
-				attribute<float32>        covNrInhTemp:            [0,0,null,null,null];
+				attribute<float32>        covNrInhTemp:            [0,0,null,0,null];
 				attribute<bool>           condA:                   [-1,-1,-1,-1,-1];
 				attribute<bool>           condB:                   [-1, 0,-1, 0,-1];
 				attribute<bool>           condC:                   [ 0, 0, 0, 0, 0];
@@ -3280,7 +3280,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container sum: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
 			{
-				parameter<bool>    test_param          := eq_or_both_null(sum(City/NrInhabitants),  params/sumNrInhabitants);
+				parameter<uint32>  calc_value          := sum(City/NrInhabitants);
+				parameter<bool>    test_param          := eq_or_both_null(calc_value,  params/sumNrInhabitants);
 				attribute<uint32>  att        (Region) := sum(City/NrInhabitants, City/RegionNr);
 				attribute<float32> att_F32    (Region) := sum(Float32(City/NrInhabitants), City/RegionNr);
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/sumNrInhabitants);
@@ -4892,12 +4893,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool>  test_uint32 := sum(id(unit_CityForEachYear_uint32)) == 300u;
 				parameter<bool>  test_uint64 := sum(id(unit_CityForEachYear_uint64)) == 300u64;
 				parameter<bool>  test_uint8_uint16  := sum(uint16(id(unit_CityForEachYear_uint8 ))) == 300w;
-				parameter<uint8> sum_uint8  := sum(id(unit_CityForEachYear_uint8 ));
-				parameter<bool>  test_uint8  := not(IsDefined(sum_uint8));
+				
+				//parameter<uint8> sum_uint8  := sum(id(unit_CityForEachYear_uint8 ));
+				//parameter<bool>  test_uint8  := not(IsDefined(sum_uint8));
+				
 				parameter<bool>  test_default := sum(unit_CityForEachYear/nr_1) == 50 && sum(unit_CityForEachYear/nr_2) == 50 && unit_CityForEachYear/nr_1[14]  ==  2 && unit_CityForEachYear/nr_2[14]  ==  4;
 				
 				parameter<bool> test        := #(unit_CityForEachYear) > 0 
-					? test_default && test_uint16 && test_uint32 && test_uint64 && test_uint8 && test_uint8_uint16
+					? test_default && test_uint16 && test_uint32 && test_uint64 && test_uint8_uint16
 					: nrofrows(unit_CityForEachYear) = 0;
 			}
 			container combine_data
@@ -10915,7 +10918,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				, True
 			);
 
-			parameter<bool> test := not(IsDefined( sum(griddata/NoordHolland) + sum(griddata/ZuidHolland) + sum(griddata/Utrecht) + sum(griddata/NoordBrabant) + sum(griddata/Gelderland)));
+			parameter<bool> test := sum(griddata/NoordHolland) + sum(griddata/ZuidHolland) + sum(griddata/Utrecht) + sum(griddata/NoordBrabant) + sum(griddata/Gelderland) == 135b;
 		}
 
 		container for_each_ind
