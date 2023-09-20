@@ -2984,8 +2984,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>         modusCity:               [12,11,13,null,0];
 				attribute<uint32>         modusLifeStyle:          [2,0,1,1,null];
 				attribute<uint32>         modus_weightedLifeStyle: [1,0,2,null,0];
-				attribute<float32>        sdNrInhabitants:         [0,12.5,0,null,null];
-				attribute<float32>        varNrInhabitants:        [0,156.25,0,null,null];
+				attribute<float32>        sdNrInhabitants:         [0,12.5,0,0,null];
+				attribute<float32>        varNrInhabitants:        [0,156.25,0,0,null];
 				attribute<float32>        corrNrInhTemp:           [null,null,null,null,null];
 				attribute<float32>        covNrInhTemp:            [0,0,null,0,null];
 				attribute<bool>           condA:                   [-1,-1,-1,-1,-1];
@@ -5438,7 +5438,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>  att1 (City) := normalize(City/NrInhabitants, 1, 10 );
 				attribute<uint32>  att5 (City) := normalize(City/NrInhabitants, 5, 10 );
 				attribute<float32> att  (City) := normalize(float32(City/NrInhabitants), float32(0), float32(1));
-				attribute<bool>    test (City) := iif(id(City) <= 6[City], float_isNearby(att, City/NormalizeNrInhabitants, Dif_all_float32), IsNull(att)); 
+				attribute<bool>    test (City) := float_isNearby(att, City/NormalizeNrInhabitants, Dif_all_float32);
 				parameter<bool>    test_attr   := all(test);
 			}
 			container interpolate_linear: url  = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/interpolate_linear"
@@ -10655,7 +10655,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		{
 			parameter<string> Exists     := lowercase(ExistingFile('NoFile', CopyFileMakeDir/file_org));
 			parameter<string> NotExists  := lowercase(ExistingFile('NoFile', CopyFileMakeDir/file_org + '___'));
-			parameter<bool>   test_param := Exists == lowercase(CopyFileMakeDir/file_org) && NotExists == lowercase(expand(.,'%ConfigDir%/NoFile'));
+			parameter<string> ExistsResult   := lowercase(CopyFileMakeDir/file_org);
+			parameter<string> NotExistResult := lowercase(expand(.,'%ConfigDir%/NoFile'));
+			parameter<bool>   test_param := Exists == ExistsResult && NotExists == NotExistResult;
 		}
 		container currentDir: url = "http://www.objectvision.nl/geodms/operators-a-functions/file/currentdir"
 		{
