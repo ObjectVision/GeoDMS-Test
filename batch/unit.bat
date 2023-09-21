@@ -56,9 +56,9 @@ REM SECTION OPERATOR
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\subitem.dms   test_log %ResultDir%\unit\operator\subitem.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\connect.dms   test_log %ResultDir%\unit\operator\connect_point_arc.txt S1 S2 S3
 
-timeout /t 1
+timeout /T 2 /NOBREAK
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\xml_parse.dms test_log %ResultDir%\unit\operator\parse_xml_pand.txt S1 S2 S3
-timeout /t 1
+REM timeout /T 2 /NOBREAK
 
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\select_orgrel.dms test_log %ResultDir%\unit\operator\select_orgrel.txt S1 S2 S3
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\operator\cfg\argmax_different_valuetypes.dms test_log %ResultDir%\unit\operator\argmax_different_valuetypes.txt  S1 S2 S3
@@ -75,9 +75,9 @@ Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag1.dms test_log %
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\ReadElems_flag24.dms test_log %ResultDir%\unit\operator\ReadElems_flag24.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\Operator\cfg\true_function_in_select_by_cond.dms test_log %ResultDir%\unit\operator\select_with_attr_by_cond_true_function.txt S1 S2 S3
 
-timeout /t 1
+timeout /T 2 /NOBREAK
 Call Unit\Instance.bat %TstDir%\Operator\cfg\operator.dms results/unit_test_log %ResultDir%\unit\operator\operator.txt S1 S2 S3
-timeout /t 1
+REM timeout /T 2 /NOBREAK
 
 REM SECTION UNITS // ACTIVATE AFTER SOLVING ISSUE 199
 Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\unit\cfg\categorical_unit.dms src/b    %ResultDir%\unit\unit\categorical_unit.txt S1 S2 S3
