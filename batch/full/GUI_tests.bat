@@ -22,5 +22,5 @@ Call Full\InstanceTimeStampGUI.bat %Setting1% %Setting2% %Setting3%  %OperatorPa
 timeout /t 3
 
 
-Call Full\InstanceTimeStampStatistics.bat %Setting1% %Setting2% %Setting3% %OperatorPath% /Arithmetics/UnTiled/add/attr t1742_command_statistics "%TstDir%\norm\Statistics_AUAA.txt"
+Call Full\InstanceTimeStampStatistics.bat %Setting1% %Setting2% %Setting3% %OperatorPath% /Arithmetics/UnTiled/add/attr t1742_command_statistics "%TstDir%\norm\Statistics_AUAA.html"
 

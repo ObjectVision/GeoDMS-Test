@@ -275,7 +275,7 @@ container Regression:	FreeData = "True"
 		{
 			attribute<string> part := substr(
 				size_str_org
-				, id(.) == 0 ? 0 : length_first_part + (id(.) -1) * 3 // startpos
+				, id(.) == 0 ? 0 : length_first_part + (sub_or_null(id(.), 1)) * 3 // startpos
 				, id(.) == 0 ? length_first_part : 3);// length
 		}
 		parameter<string> result := AsList(strparts/part,'.');

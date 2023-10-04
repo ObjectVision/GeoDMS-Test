@@ -26,13 +26,18 @@ REM "%GeoDmsCallerPath%" WAIT 10 >> %logfile%
 
 "%GeoDmsCallerPath%" GOTO "/Aggregations/UnTiled2UnTiled/min/att_string" >> %logfile%
 
+
+
 REM ping 127.0.0.1 -n 2 > nul
 "%GeoDmsCallerPath%" SEND 5 0 >> %logfile% && REM code 5: dmfGeneral.miDefaultView.Click;
 REM "%GeoDmsCallerPath%" SEND 11 0 >> %logfile% && REM code 11 dmfGeneral.miDataGridView.Click;
 REM "%GeoDmsCallerPath%" SEND 12 0 >> %logfile% && REM code 11 dmfGeneral.miDataGridView.Click;
 REM pause
 
+pause
+
 "%GeoDmsCallerPath%" SEND 3 3 256 36 0 >> %logfile% && REM 256=WM_KEYDOWN, 13=VK_HOME >> %logfile%
+
 
 
 REM Send cmd 0 (WM->null)
@@ -40,7 +45,6 @@ REM Send cmd 1 (WM->Main) 16 represents WM_COMMAND TB_INFO
 ping 127.0.0.1 -n 5 > nul
 "%GeoDmsCallerPath%" SEND 3 3 273 9 0 >> %logfile%
 
-REM pause
 
 REM Send cmd 0 (WM->null)
 REM Send cmd 1 (WM->Main) 16 represents WM_COMMAND TB_INFO

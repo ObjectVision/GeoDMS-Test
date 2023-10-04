@@ -16,6 +16,8 @@ Set StorageGDALPath=%TstDir%\Storage_gdal\cfg\Regression.dms
 
 Set RegressionPath=%TstDir%\Regression\cfg\stam.dms
 
+Set BLRDConversiePath=%prj_snapshotsDir%\bl_rd_conversie\cfg\root.dms
+
 Rem projecten uit de prj_snapshots 
 Set VestaRunPath=%prj_snapshotsDir%\VestaProductie\Runs\regression_test.dms
 Set LusDemoRunPath=%prj_snapshotsDir%\lus_demo\cfg\regression_test.dms

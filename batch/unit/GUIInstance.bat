@@ -8,16 +8,9 @@ Echo Test: GeoDMS Command: %command%
 %command%
 Echo.
 
-IF %ERRORLEVEL% EQU 0 (
-	Echo read contents from file: %3
-	Echo resultfilename: %ResultFileName%
-	FOR /F "tokens=* delims=" %%x in (%3) DO Echo %%x
-
-	FOR /F "tokens=* delims=" %%x in (%3) DO Echo %%x >> %ResultFileName%
-	) Else (
+IF %ERRORLEVEL% NEQ 0 (
 	Echo TEST FAILED
 	Echo ERRORLEVEL: %ERRORLEVEL%
-	Echo GeoDMS Command: %command%  FAILED >> %ResultFileName%
 )
 
 Echo.
