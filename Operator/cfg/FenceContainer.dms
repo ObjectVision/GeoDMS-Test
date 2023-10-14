@@ -1,0 +1,24 @@
+
+container FC
+{
+	container Task1
+	{
+		unit<uint32> line := range(uint32, 0, 20)
+		{
+			attribute<string> txt := 'Task 1.'+string(id(.));
+		}
+	}
+	container Task2
+	{
+		unit<uint32> line := range(uint32, 0, 30)
+		{
+			attribute<string> txt := 'Task 2.'+string(id(.));
+		}
+	}
+	container S1 := FenceContainer(Task1, Task1/line/txt);
+	container S2 := FenceContainer(Task1, Task2/line/txt);
+	unit<uint32> result := union_unit(S1/line, S2/line)
+	{
+		attribute<string> txt := union_data(., S1/line/txt, S2/line/txt);
+	}
+}
