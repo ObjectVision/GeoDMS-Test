@@ -12,10 +12,8 @@ Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t300_xml_ReadParse/result_html t300_xml_ReadParse
 
-REM CalcCache Section, first instance is used to add data to CalcCache, second instance to test if data is in CalcCache
-REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\operator
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t400_CalcCache_connect/result_html t400_CalcCache_connect
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t400_CalcCache_connect/result_html t400_CalcCache_connect
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\MetworkModel
+Call Full\NetworkModel.bat %Setting1% %Setting2% %Setting3% t405_2_NetworkModel_PBL_indicator_results_test
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Vesta
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %VestaRunPath% t510_indicator_results_test/result_html t510_vesta_indicator_results_test
@@ -29,8 +27,9 @@ Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\LUSDemo2022
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath2022% t611_lus_demo_2022_results_test/result_html t611_lus_demo_2022_results_test
 
-REM Call Full\RsLight_2021_Instances_WithFileCompare.bat %Setting1% %Setting2% t625_RSLight_2021_ontwikkel_2
-Call Full\RsLight_2021_Ontwikkel_3.bat %Setting1% %Setting2% %Setting3% t630_RSLight_2021_ontwikkel_3
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS
+REM Call Full\RsLight_2021_Ontwikkel_3.bat %Setting1% %Setting2% %Setting3% t630_RSLight_2021_ontwikkel_3
+Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\2UP
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_zonder_calcache t710_2UP_indicator_results_zonder_CalCache

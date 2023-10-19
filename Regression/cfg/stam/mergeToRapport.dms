@@ -22,14 +22,44 @@ container mergeToRapport
 
 	parameter<string> dirinfo : Storagename = "=TempDir + '/dirinfo.str'", StorageReadOnly = "True";
 
-	unit<uint32> testfiles := range(uint32, 0, strcount(dirinfo,NewLine))
+	unit<uint32> test_and_logfiles := range(uint32, 0, strcount(dirinfo,NewLine))
 	{
-		attribute<string> ver_test_full_path    := readLines(dirinfo, ., 0);
+		attribute<string> ver_test_full_path := readLines(dirinfo, ., 0);
+		attribute<bool>   is_tst_file        := strcount(ver_test_full_path, '\log\') == 0;
+	}
+
+	unit<uint32> logfiles := select_with_attr_by_org_rel(test_and_logfiles, !test_and_logfiles/is_tst_file)
+	{
 		attribute<string> ver_test_file         := substr(ver_test_full_path, strlen(expand(.,ResultDir))+1);
 		attribute<string> ver                   := left(ver_test_file , strpos(ver_test_file, BackSlash));
+		attribute<string> test                  := replace(substr(ver_test_file, strpos(ver_test_file, BackSlash) + 1),'.txt','','_',' ','log\\','');
+		attribute<string> key_string            := ver + '_' + test;
+		
+		attribute<string> contents              : StorageName = "=ResultDir", StorageType = "strfiles";
 
+		attribute<uint32> nr_mem_size_measured   := strcount(contents,'Highest PageFileUsage:');
+
+		attribute<uint32> pos_start_mem_size     := strpos(contents,'Highest PageFileUsage:');
+		attribute<string> contents_from_mem_size := substr(contents, pos_start_mem_size + 23);
+		attribute<string> mem_size               := 
+			switch(
+			  case (nr_mem_size_measured == 0, 'Not Measured')
+			, case (nr_mem_size_measured == 1, substr(contents_from_mem_size, 0, strpos(contents_from_mem_size, '[MB]') + 4))
+			, 'Multiple Measurements'
+			);
+		attribute<string> FileName               := ver_test_file;
+	}
+
+	unit<uint32> testfiles := select_with_attr_by_org_rel(test_and_logfiles, test_and_logfiles/is_tst_file)
+	{
+		//attribute<string> ver_test_full_path    := readLines(dirinfo, ., 0);
+		attribute<string> ver_test_file         := substr(ver_test_full_path, strlen(expand(.,ResultDir))+1);
+		attribute<string> ver                   := left(ver_test_file , strpos(ver_test_file, BackSlash));
 		attribute<string> test                  := replace(substr(ver_test_file, strpos(ver_test_file, BackSlash) + 1),'.txt','','_',' ');
-
+		attribute<string> key_string            := ver + '_' + test;
+		
+		attribute<string> mem_size              := rjoin(key_string, logfiles/key_string, logfiles/mem_size);
+		
 		attribute<mergeToRapport/ver>      ver_rel  := rlookup(ver, mergeToRapport/ver/values);
 		attribute<mergeToRapport/test_all> test_rel := rlookup(test, mergeToRapport/test_all/values);
 
@@ -65,6 +95,8 @@ container mergeToRapport
 		attribute<string> html_no_information_written  := testfiles/timestamps/startpos_startdate == 11 
 			? '<I>result</I>:<B>Test Failed, no results written by test</result></B><BR>' 
 			: '';
+
+		parameter<string> not_measured := 'Not (Yet) Measured';
 
 		attribute<string> html:= 
 			'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">' +
@@ -102,6 +134,7 @@ container mergeToRapport
 				+ '<I>test started at</I>: ' + duration_seconds/startSeconds/impl/formatted + '<BR>'
 				+ html_no_information_written
 				+ '<I>duration</I>: ' + duration_seconds/result_formatted
+				+ '<BR><I>highest PageFileUsage: </I><B>' + MakeDefined(mem_size , not_measured) + '</B>'
 			)
 			+ '</td>';
 	}

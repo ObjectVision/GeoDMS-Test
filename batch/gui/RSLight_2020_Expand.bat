@@ -1,5 +1,5 @@
 Rem Gui test of issue 887, expanding subitems of SourceData/Claims/ReadData of RSLight_2020 configuration
-set logfile=!LogFileDir!\RSLight_2020_expand.log
+set logfile=!tmpFileDir!\RSLight_2020_expand.log
 
 del %logfile% 2>nul
 

@@ -2,7 +2,7 @@ Rem Gui test of issue 887
 
 set ProjDir=..\Operator
 set CalcCacheDir=%ProjDir%\CalcCache
-set logfile=!LogFileDir!\ValueInfo.log
+set logfile=!tmpFileDir!\ValueInfo.log
 del %logfile% 2>nul
 
 if exist %projDir%\regr_results\strfiles del %projDir%\regr_results\strfiles\*.txt

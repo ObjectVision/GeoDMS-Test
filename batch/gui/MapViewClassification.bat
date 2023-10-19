@@ -2,7 +2,7 @@ Rem Gui test of issue 887
 
 REM set ProjDir=..\Operator
 REM set CalcCacheDir=%ProjDir%\CalcCache
-set logfile=!LogFileDir!\MapViewClassification.log
+set logfile=!tmpFileDir!\MapViewClassification.log
 del logile 2>nul
 
 REM if exist %projDir%\regr_results\strfiles del %projDir%\regr_results\strfiles\*.txt

@@ -1,13 +1,13 @@
 Rem Algemene Informatie over de versie, OS, Computer weggeschreven en in gebruik voor Header van de test
 FOR /F "tokens=2*" %%A IN ('REG QUERY "HKEY_CURRENT_USER\Control Panel\International" /v sShortDate 2^>NUL') DO SET DATEFORMAT=%%B
 
-Rem  Schrijf informatie over de computer uit het register weg naar de LogFileDir
+Rem  Schrijf informatie over de computer uit het register weg naar de tmpFileDir
 SET STATUSFLAGS=%1%2%3
 
 Rem deze informatie moet eerst weggeschreven worden omdat die de version key bepaalt.  
-Echo !COMPUTERNAME! > %LogFileDir%\computername.txt
-Echo !DATEFORMAT!   > %LogFileDir%\date_format.txt
-Echo !STATUSFLAGS!  > %LogFileDir%\statusflags.txt
+Echo !COMPUTERNAME! > %tmpFileDir%\computername.txt
+Echo !DATEFORMAT!   > %tmpFileDir%\date_format.txt
+Echo !STATUSFLAGS!  > %tmpFileDir%\statusflags.txt
 
 SETLOCAL EnableDelayedExpansion
 rem bepaal Operating System
@@ -20,18 +20,18 @@ if "%version%" == "6.0" Set OS=Windows Vista.
 
 Echo.
 Echo MakeVersionInfo with GeoDMS Command: %GeoDmsRunCmdBaseLarge% %RegressionPath% results/VersionInfo/all
+REM pause
+%GeoDmsRunCmdBaseLarge% %RegressionPath% results/VersionInfo/all >> %tmpFileDir%\GeoDmsTemp.txt
 
-%GeoDmsRunCmdBaseLarge% %RegressionPath% results/VersionInfo/all >> %GeoDmsLogFilePath%
-
-set /p ver_key=<%LogFileDir%/ver_key.txt
-set /p results_folder=<%LogFileDir%/results_folder.txt
+set /p ver_key=<%tmpFileDir%/ver_key.txt
+set /p results_folder=<%tmpFileDir%/results_folder.txt
 set results_folder=%results_folder:/=\%
 set results_file=%results_folder%\general.txt
 If NOT EXIST "%results_folder%" md %results_folder%
 
 Echo.
-Echo copy %LogFileDir%\GeoDMSVersionInfo.txt to %results_file%
-copy %LogFileDir%\GeoDMSVersionInfo.txt %results_file%
+Echo copy %tmpFileDir%\GeoDMSVersionInfo.txt to %results_file%
+copy %tmpFileDir%\GeoDMSVersionInfo.txt %results_file%
 Echo.
 
 Echo OS               : %OS% 

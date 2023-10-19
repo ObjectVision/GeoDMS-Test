@@ -7,15 +7,19 @@ Echo ************************
 Echo Test: %6
 
 Call full/SetStartTime.bat
-Set statfile=%LogFileDir%\%6_stat.html
+Set statfile=%tmpFileDir%\%6_stat.html
+Set GeoDmsLogFilePath=%results_log_folder%\%6.txt
 
-Set command=%GeoDmsRunCmdBaseLarge% /%1 /%2 /%3 %4 @statistics %5 @file %statfile%
+Set command=%GeoDmsRunCmdBaseLarge% /L"%GeoDmsLogFilePath%" /%1 /%2 /%3 %4 @statistics %5 @file %statfile%
 Echo.
 Echo Execute: %command%
 
 %command%
 
 Set resultfile=%results_folder%\%6.txt
+echo del %resultfile%
+del %resultfile%
+rem pause
 Echo ^<description^>%5^</description^> > %resultfile%
 Echo.
 

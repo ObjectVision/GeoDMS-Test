@@ -2,7 +2,7 @@ Rem Gui test of issue 887
 
 set ProjDir=..\Operator
 set CalcCacheDir=%ProjDir%\CalcCache
-set logfile=!LogFileDir!\ValueInfoStat.log
+set logfile=!tmpFileDir!\ValueInfoStat.log
 del %logfile% 2>nul
 
 if [%1] neq [] set MT1=%1

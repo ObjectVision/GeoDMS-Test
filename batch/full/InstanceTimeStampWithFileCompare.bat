@@ -6,6 +6,8 @@ Echo.
 Echo ************************
 Echo Test: %6
 
+Set GeoDmsLogFilePath=%results_log_folder%\%6.txt
+del %GeoDmsLogFilePath% 2>nul
 Call full/SetStartTime.bat
 
 Echo.
