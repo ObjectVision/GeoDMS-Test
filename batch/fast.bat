@@ -19,9 +19,9 @@ Call generic\SetSourceDataDir.bat
 
 Rem Sectie om de folder te bepalen voor de logging en de status bestanden die uit de batch en door de GeoDMS worden weggeschreven.
 Set LocalDataDirRegression=%LocalDataDir%\regression
-Set LogFileDir=%LocalDataDirRegression%\log
-If NOT EXIST "%LogFileDir%" md "%LogFileDir%"
-Set LogFilePath=%LogFileDir%\GeoDmsTemp.txt
+Set tmpFileDir=%LocalDataDirRegression%\log
+If NOT EXIST "%tmpFileDir%" md "%tmpFileDir%"
+Set LogFilePath=%tmpFileDir%\GeoDmsTemp.txt
 
 Call generic\SetGeoDMSPlatform.bat %version%
 Call generic\SetRegressionTestSourceDataDir.bat
@@ -100,11 +100,11 @@ Echo End Logging >> %LogFilePath%
 Set Sequence=%date:/=-%_%time::=-%
 SET LogFileFinalName=v%1_%RegrResult%_%Sequence%.txt
 RENAME "%LogFilePath%" "%LogFileFinalName%"
-Echo Log Information written to "%LogFileDir%\%LogFileFinalName%"
+Echo Log Information written to "%tmpFileDir%\%LogFileFinalName%"
 Echo.
 
 IF not %RegrResult% == OK (
-	"%ProgramFiles%\Notepad++\Notepad++.exe"  "%LogFileDir%\%LogFileFinalName%"
+	"%ProgramFiles%\Notepad++\Notepad++.exe"  "%tmpFileDir%\%LogFileFinalName%"
 )
 
 : End
