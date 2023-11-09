@@ -15,6 +15,9 @@ Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\MetworkModel
 Call Full\NetworkModel.bat %Setting1% %Setting2% %Setting3% t405_2_NetworkModel_PBL_indicator_results_test
 
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\MetworkModelEU
+Call Full\NetworkModelEU.bat %Setting1% %Setting2% %Setting3% t410_NetworkModel_EU_indicator_results_test
+
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Vesta
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %VestaRunPath% t510_indicator_results_test/result_html t510_vesta_indicator_results_test
 

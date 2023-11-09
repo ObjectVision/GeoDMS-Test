@@ -40,4 +40,5 @@ Set HestiaDataDir=%RegressionTestsSourceDataDir%\Hestia
 Set CusaRunPath=%prj_snapshotsDir%\geodms_africa_cusa2\cfg\africa.dms
 Set RSopen_RegressieTestPath=%prj_snapshotsDir%\RsOpen_regressietest\cfg
 Set Networkmodel_pbl_regressietest=%prj_snapshotsDir%\NetworkModel_PBL_RegressieTest\cfg
+Set Networkmodel_eu_regressietest=%prj_snapshotsDir%\networkmodel_eu_regressieTest\cfg
 

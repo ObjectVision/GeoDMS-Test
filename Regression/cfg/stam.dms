@@ -614,15 +614,19 @@ container Regression:	FreeData = "True"
 			,	StorageType = "str"
 			,	storagename = "= results/VersionInfo/results_folder + '/t400_CalcCache_connect.txt'";
 		}
-		container t1640_value_info_agg
+		container t1640_value_info
 		{
 			parameter<string> recorded:
-				storagename = "%RegressionDataDir%/t1640_value_info_agg_recorded.txt"
+				storagename = "%RegressionDataDir%/t1640_value_info_recorded.txt"
 			,	StorageType = "str";
+
+			parameter<string> TargetFile := = quote(results/VersionInfo/results_folder + '/t1640_value_info.tmp') ;
 			
-			parameter<string> generated:
-				storagename = "= results/VersionInfo/results_folder + '/t1640_value_info_agg.tmp'"
-			,	StorageType = "str";
+			parameter<string> CopyFile   := CopyFile('%LocalDataDir%/regression/t1640_value_info/t1640_value_info.tmp', TargetFile);
+
+			parameter<string> generated :
+			 Storagename        = "= TargetFile + left(CopyFile,0)"
+			, StorageType       = "str";
 
 			parameter<bool> test:= lowercase(recorded) == lowercase(generated);
 
@@ -630,22 +634,27 @@ container Regression:	FreeData = "True"
 				'<description>compare detail page value info on aggregations</description>'+
 				'<result>'
 					+ (test 
-						? '   OK, identical to version 7.233' 
-						: 'FALSE, not identical to version 7.233'
+						? '   OK, identical to version 14.5.0' 
+						: 'FALSE, not identical to version 14.5.0'
 					) + 
 				'</result>'  + 
 				'<issue>1434</issue>'
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t1640_value_info_agg.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t1640_value_info.txt'";
 		}
-		container t1642_value_info_stat
+		container t1642_value_info_group_by
 		{
 			parameter<string> recorded:
-				storagename = "%RegressionDataDir%/t1642_value_info_stat_recorded.txt"
+				storagename = "%RegressionDataDir%/t1642_value_info_group_by_recorded.txt"
 			,	StorageType = "str";
+
+			parameter<string> TargetFile := = quote(results/VersionInfo/results_folder + '/t1642_value_info_group_by.tmp') ;
 			
+			parameter<string> CopyFile   := CopyFile('%LocalDataDir%/regression/t1642_value_info_group_by/t1642_value_info_group_by.tmp', TargetFile);
+
+
 			parameter<string> generated:
-				storagename = "= results/VersionInfo/results_folder + '/t1642_value_info_stat.tmp'"
+				storagename = "= TargetFile + left(CopyFile,0)"
 			,	StorageType = "str";
 
 			parameter<bool> test:= lowercase(recorded) == lowercase(generated);
@@ -654,14 +663,14 @@ container Regression:	FreeData = "True"
 				'<description>compare detail page statistics info on geometry</description>'+
 				'<result>'
 					+ (test 
-						? '   OK, identical to version 8.042' 
-						: 'FALSE, not identical to version 8.042'
+						? '   OK, identical to version 14.5.0' 
+						: 'FALSE, not identical to version 14.5.0'
 					) + 
 				'</result>' + 
 				'<issue>1438</issue>' 
 				
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t1642_value_info_stat.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t1642_value_info_group_by.txt'";
 		}
 	}
 	#include<mergeToRapport.dms>

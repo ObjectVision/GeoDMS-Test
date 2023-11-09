@@ -29,6 +29,7 @@ Call generic\SetRegressionTestSourceDataDir.bat
 Call generic\SetRelativePaths.bat
 
 Set GeoDmsRunCmdBaseLarge="%GeoDmsRunPath%"
+Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
 
 Call Full\DeletePreviousFiles.bat
 Call Full\EchoFolders.bat
@@ -46,25 +47,22 @@ Echo resultaat folder : %results_folder%
 Echo resultaat log folder : %results_log_folder%
 Echo.
 
+pause
+
 CLS
 
 Echo START TESTING
 
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\MetworkModelEU
+REM Full\NetworkModelEU.bat %Setting1% %Setting2% %Setting3% t410_NetworkModel_EU_indicator_results_test
+
+REM timeout /t 3
+
 Call Full\GUI_tests.bat
-REM Call Full\Operator_tests.bat
-REM Call Full\Project_tests.bat
-
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %DynaPopPath% t810_ValLuisa_Czech_LU_POP/result t810_ValLuisa_Czech_LU_POP 
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %DynaPopPath% Runs/Czechia/CaseData/JrcFactorData/TiffData/Erodibility  t810_ValLuisa_Czech_LU_POP 
-
-REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Vesta
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %VestaRunPath% t510_indicator_results_test/result_html t510_vesta_indicator_results_test
-
-
-REM Call Full\InstanceTimeStampStatistics.bat %Setting1% %Setting2% %Setting3% %OperatorPath% /Arithmetics/UnTiled/add/attr t1742_command_statistics "%TstDir%\norm\Statistics_AUAA.html"
+Call Full\Operator_tests.bat
+Call Full\Project_tests.bat
 
 timeout /t 3
-REM Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_RSopen
 
 Call Full\MakeReport.bat
 
