@@ -36,5 +36,14 @@ container issue_GH478
 	container cube_pi := cube(3.14);
 	
 	parameter<float64> pi_cubed := cube_pi/result;
+	container issue_308
+	{
+		unit<uint32> Digits := range(uint32, 0, 10)
+		{
+			attribute<uint32> prevprev := ID(.) - 2;
+		}
+		
+		unit<uint32> set := unique(Digits/prevprev);
+	}
 	
 }
