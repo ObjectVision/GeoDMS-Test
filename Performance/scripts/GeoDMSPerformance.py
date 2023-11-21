@@ -35,6 +35,7 @@ def readLog(log_filename, filter=None):
         return ret
 
     with open(log_filename, "r") as f:
+        date_end = 19
         while (True):
             line = f.readline()
             if not line:
@@ -47,10 +48,12 @@ def readLog(log_filename, filter=None):
                 if filter and not filter in line:
                     continue
 
-                date  = line[0:17]
-                datet = datetime.strptime(date, "%m/%d/%y-%H:%M:%S")
+                date  = line[0:date_end]
+
+                #2023-11-15 09:39:22
+                datet = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
                 ret["time"].append(datet)
-                ret["text"].append(f"{line[17:]}<br>")
+                ret["text"].append(f"{line[date_end:]}<br>")
     return ret
 
 def readLogAllocator(log_fn, start_time):
@@ -64,7 +67,7 @@ def readLogAllocator(log_fn, start_time):
         print(alloc_log["time"][ind], alloc_log["text"][ind])  
 
         integers_in_entry = re.findall(r"\d+", alloc_log["text"][ind])[1:]
-        assert(len(integers_in_entry)==4)
+        assert(len(integers_in_entry)==4) # TODO: hard assumption no longer valid, rework
         
         log_alloc["time"].append(alloc_log["time"][ind])
         log_alloc["dtime"].append((alloc_log["time"][ind]-start_time).total_seconds())
@@ -80,12 +83,12 @@ def getProcessIdIfActive(names, parent_pid=None):
         names = [names]
 
     # if parent pid is given, use this scope only
-    
-
-
-
     for i in range(10):
         if parent_pid:
+            if not psutil.pid_exists(parent_pid):
+                time.sleep(0.5)
+                continue
+            
             parent_process = psutil.Process(parent_pid)
             for child_process in parent_process.children(recursive=True):
                 print(child_process.name())
@@ -163,19 +166,13 @@ def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_c
             
     return log, start_time, cpu_curr_time
 
-#import shlex
-
 def getPerformanceBatch(batch_cmd, sampling_rate=1.0):
-    exe_name = ["GeoDmsRun.exe", "Python.exe"] # TODO: implement less generic secondary argument
+    exe_name = ["GeoDmsRun.exe", "Python.exe"]
     log = None
     start_time = None
     cpu_curr_time = None
     batchfldr_name = os.path.dirname(batch_cmd)
-    #args = shlex.split(batch_cmd)
     p = subprocess.Popen(batch_cmd, cwd=batchfldr_name, creationflags=subprocess.CREATE_NEW_CONSOLE)
-    #p = subprocess.Popen(args, creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-    print(f"ARENTPARENTPAERNt {p.pid}")
 
     while p.poll() is None:
         if not start_time:
@@ -216,19 +213,23 @@ def getClosestLog(t, log, param):
     ind_chosen = -1
     for ts in log["time"]:
         dt = abs((t-ts).total_seconds())
-        #print(dt)
         if dt < smallest_dt:
             smallest_dt = dt
             ind_chosen = ind
         ind+=1
-    
     return (ind_chosen, log[param][ind_chosen])
 
 def getClosestLogForRLog(log, rlog, param):
     xy = {"ind":[], "x":[], "y":[]}
-    for t in rlog["time"]:
-        if t < log["time"][0] or t > log["time"][-1]: # log entry time is outside experiment time
+    for i,t in enumerate(rlog["time"]):
+
+        time_diff_start_t = (t-log['time'][0]).total_seconds()
+        time_diff_t_end   = (log['time'][-1]-t).total_seconds()
+
+        if time_diff_start_t < -1.0 or time_diff_t_end < -1.0: # log entry time is outside experiment time
+            print(f"No match for line {rlog['text'][i]} {time_diff_start_t} {time_diff_t_end}")
             continue
+        #print(f"No match for line {rlog['text'][i]}")
         (ind, y) = getClosestLog(t, log, param)
         xy["ind"].append(ind)
         xy["x"].append(log["dtime"][ind])
@@ -403,7 +404,7 @@ def RunExperiments(experiments, sampling_rate=1.0):
                 exp.result["log"],start_time,_ = getPerformance(exe_name, sampling_rate)
 
         # LOG
-        if os.path.exists(log_fn) and not "GeoDmsCaller.exe" in exp.exe_fldr: # TODO: manually implement gui log
+        if os.path.exists(log_fn):
             exp.result["cpu_percent"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_percent")
             exp.result["cpu_curr_time"]  = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_curr_time")
             exp.result["memory_percent"] = getLogInfoForPlotting(exp.result["log"], log_fn, "memory_percent")
@@ -416,7 +417,8 @@ def RunExperiments(experiments, sampling_rate=1.0):
             exp.result["total_write_bytes"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "total_write_bytes")
 
         # Get allocator state from log
-        log_alloc = readLogAllocator(log_fn, start_time)
+        #log_alloc = readLogAllocator(log_fn, start_time) # temporarily disable allocator logging
+        log_alloc = None
         if log_alloc:
             exp.result["log_alloc"] = log_alloc
         else: 
