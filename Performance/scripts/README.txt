@@ -59,6 +59,10 @@ storage_fldr;D:\GeoDMS_experiments\batch\
 name;svn;exe_fldr;ld_fldr;flags;fullname
 7412;;C:\prj\tst\batch\fast.bat 7412;;;
 
+Or add the logfile at the flags position:
+7412;;C:\prj\tst\batch\fast.bat;;C:\LocalData\trace.log;
+
+
 # GeoDMSGui
 7214_gui;;C:\"Program Files"\ObjectVision\GeoDms7412\GeoDmsCaller.exe;C:\LocalData\100m_DynaPop_v8;/S1 /S2;
 
