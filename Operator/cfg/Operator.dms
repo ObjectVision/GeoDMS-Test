@@ -5262,7 +5262,23 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
 				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container ClassifyNonZeroEqualInterval: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualInterval"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
 
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualInterval);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,53,107,161,215,269,323,377,431,485,539,593,647,701,755,809,863,917,971,1024];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
 			}
 			container ClassifyJenksFisher: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyJenksFisher"
 			{
