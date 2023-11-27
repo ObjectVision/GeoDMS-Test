@@ -11572,6 +11572,26 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					max(pointrow_unit_grid_test) = int16(14) &&
 					nrofrows(unit_grid)          =       30; 
 			}
+			container cat_range
+			{
+				unit<uint32> unit_regions := cat_range(uint32, 1, 13)
+				{
+					attribute<unit_regions> id := id(unit_regions);
+				}
+				unit<spoint> unit_grid := cat_range(spoint, point(int16(10),int16(14)), point(int16(15), int16(20)))
+				{
+					attribute<unit_grid> id := id(unit_grid);
+				}
+				attribute<int16> pointrow_unit_grid_test (unit_grid) := pointrow(ID(unit_grid));
+				attribute<int16> pointcol_unit_grid_test (unit_grid) := pointcol(ID(unit_grid));
+				parameter<bool> test_param :=
+					nrofrows(unit_regions)       =       12  &&
+					min(pointcol_unit_grid_test) = int16(14) &&
+					min(pointrow_unit_grid_test) = int16(10) &&
+					max(pointcol_unit_grid_test) = int16(19) &&
+					max(pointrow_unit_grid_test) = int16(14) &&
+					nrofrows(unit_grid)          =       30; 
+			}
 			container gridset: Descr ="to make a projection", url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/gridset"
 			{
 				unit<fpoint> rdc_meter:
@@ -11741,6 +11761,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& nrofrows_op/test
 					&& nrofrows/test
 					&& range/test_param
+					&& cat_range/test_param
 					&& gridset/test_param
 					&& boundaries/test_param
 					&& BoundCenter/test_param
