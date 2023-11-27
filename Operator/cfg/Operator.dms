@@ -5246,6 +5246,23 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
 			}
+			container ClassifyNonzeroEqualCount: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualCount"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualCount);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
 			container ClassifyEqualInterval: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualInterval"
 			{
 				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyEqualInterval(District/NrInhabitants, ClassDomainOneClass);
@@ -5339,6 +5356,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					   Classify/test_attr 
 					&& ClassifyUniqueValues/test_attr 
 					&& ClassifyEqualCount/test_attr 
+					&& ClassifyNonzeroEqualCount/test_attr 
 					&& ClassifyEqualInterval/test_attr 
 					&& ClassifyJenksFisher/test_attr 
 					&& ClassifyLogInterval/test_attr ;
