@@ -374,15 +374,20 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<int32>  ParamD := int32(5);
 
 			attribute<float32> A     (Domain): [0,1,-2,3.6,999];
+			attribute<uint8>   A1    (Domain): [0,1,200,50,222];
+			attribute<uint8>   A2    (Domain): [0,1,2,5,2];
+
 			attribute<float32> B     (Domain): [1,-1,2,1.44,111];
+			attribute<uint8>   B1    (Domain): [1,null,54,100,111];
+			
 			attribute<int32>   C     (Domain): [0,1,4,7,-5];
 			attribute<int32>   D     (Domain): [1,1,2,3,-2];
 			attribute<float32> AddABC(Domain): [1,1,4,12.04,1105];
-			attribute<uint8>   Add_or_nullAB (Domain): [1,null,null,4,null];
+			attribute<uint8>   Add_or_nullAB (Domain): [1,null,254,150,null];
 			attribute<float32> AsubB (Domain): [-1,2,-4,2.16,888];
-			attribute<int8>    Sub_or_nullAB (Domain): [-1,2,-4,2,null];
+			attribute<uint8>   Sub_or_nullAB (Domain): [null,null,146,null,111];
 			attribute<float32> mulABC(Domain): [0,-1,-16,36.288,-554445];
-			attribute<uint8>   Mul_or_nullAB (Domain): [0,1,null,3,null];
+			attribute<uint8>   Mul_or_nullAB (Domain): [0,null,108,null,222];
 			attribute<float32> AdivB (Domain): [0,-1,-1,2.5,9];
 			attribute<int32>   CmodD (Domain): [0,0,0,1,-1];
 //			attribute<float64> CPowD (Domain): [0,1,16,343,0.04];
@@ -405,13 +410,18 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<int32>  ParamD := int32(5);
 
 			attribute<float32> A     (Domain): [];
+			attribute<uint8>   A1    (Domain): [];
+			attribute<uint8>   A2    (Domain): [];
+
 			attribute<float32> B     (Domain): [];
+			attribute<uint8>   B1    (Domain): [];
+
 			attribute<int32>   C     (Domain): [];
 			attribute<int32>   D     (Domain): [];
 			attribute<float32> AddABC(Domain): [];
 			attribute<uint8>   Add_or_nullAB (Domain): [];
 			attribute<float32> AsubB (Domain): [];
-			attribute<int8>    Sub_or_nullAB (Domain): [];
+			attribute<uint8>   Sub_or_nullAB (Domain): [];
 			attribute<float32> mulABC(Domain): [];
 			attribute<uint8>   Mul_or_nullAB (Domain): [];
 			attribute<float32> AdivB (Domain): [];
@@ -458,7 +468,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<uint8>   param         := add_or_null(uint8(source/ParamA * 50), uint8(source/ParamB));
 				parameter<bool>    test_param    := isNull(param);
 
-				attribute<uint8>   attr (Domain) := add_or_null(uint8(source/A), uint8(source/B));
+				attribute<uint8>   attr (Domain) := add_or_null(source/A1, source/B1);
 				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Add_or_nullAB);
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -481,7 +491,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<uint8>   param         := sub_or_null(uint8(source/ParamA), uint8(source/ParamB));
 				parameter<bool>    test_param    := isNull(param);
 
-				attribute<int8>    attr (Domain) := sub_or_null(int8(source/A), int8(source/B));
+				attribute<uint8>    attr (Domain) := sub_or_null(source/A1, source/B1);
 				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Sub_or_nullAB);
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -503,7 +513,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<uint8>   param         := mul_or_null(uint8(source/ParamA * 10), uint8(source/ParamB));
 				parameter<bool>    test_param    := isNull(param);
 
-				attribute<uint8>   attr (Domain) := mul_or_null(uint8(source/A), uint8(abs(source/B)));
+				attribute<uint8>   attr (Domain) := mul_or_null(source/A2, source/B1);
 				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Mul_or_nullAB);
 				parameter<bool>    test_attr     := all(test);
 			}
