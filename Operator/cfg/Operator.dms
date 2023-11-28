@@ -378,8 +378,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<int32>   C     (Domain): [0,1,4,7,-5];
 			attribute<int32>   D     (Domain): [1,1,2,3,-2];
 			attribute<float32> AddABC(Domain): [1,1,4,12.04,1105];
+			attribute<uint8>   Add_or_nullAB (Domain): [1,null,null,4,null];
 			attribute<float32> AsubB (Domain): [-1,2,-4,2.16,888];
+			attribute<int8>    Sub_or_nullAB (Domain): [-1,2,-4,2,null];
 			attribute<float32> mulABC(Domain): [0,-1,-16,36.288,-554445];
+			attribute<uint8>   Mul_or_nullAB (Domain): [0,1,null,3,null];
 			attribute<float32> AdivB (Domain): [0,-1,-1,2.5,9];
 			attribute<int32>   CmodD (Domain): [0,0,0,1,-1];
 //			attribute<float64> CPowD (Domain): [0,1,16,343,0.04];
@@ -406,8 +409,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<int32>   C     (Domain): [];
 			attribute<int32>   D     (Domain): [];
 			attribute<float32> AddABC(Domain): [];
+			attribute<uint8>   Add_or_nullAB (Domain): [];
 			attribute<float32> AsubB (Domain): [];
+			attribute<int8>    Sub_or_nullAB (Domain): [];
 			attribute<float32> mulABC(Domain): [];
+			attribute<uint8>   Mul_or_nullAB (Domain): [];
 			attribute<float32> AdivB (Domain): [];
 			attribute<int32>   CmodD (Domain): [];
 //			attribute<float64> CPowD (Domain): [];
@@ -447,6 +453,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>    test (Domain) := attr = source/AddABC;
 				parameter<bool>    test_attr     := all(test);
 			}
+			container add_or_null
+			{
+				parameter<uint8>   param         := add_or_null(uint8(source/ParamA * 50), uint8(source/ParamB));
+				parameter<bool>    test_param    := isNull(param);
+
+				attribute<uint8>   attr (Domain) := add_or_null(uint8(source/A), uint8(source/B));
+				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Add_or_nullAB);
+				parameter<bool>    test_attr     := all(test);
+			}
 			container sub_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/sub"
 			{
 				parameter<bool>    test_param    := int32(source/ParamA) - int32(source/ParamB) = -2;
@@ -461,6 +476,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>    test (Domain) := float_isNearby(attr, source/AsubB, Dif_all_float32) ;
 				parameter<bool>    test_attr     := all(test);
 			}
+			container sub_or_null
+			{
+				parameter<uint8>   param         := sub_or_null(uint8(source/ParamA), uint8(source/ParamB));
+				parameter<bool>    test_param    := isNull(param);
+
+				attribute<int8>    attr (Domain) := sub_or_null(int8(source/A), int8(source/B));
+				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Sub_or_nullAB);
+				parameter<bool>    test_attr     := all(test);
+			}
 			container mul_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mul"
 			{
 				parameter<bool>    test_param    :=source/ParamA * source/ParamB = 35;
@@ -472,6 +496,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<float32> attr (Domain) := mul(source/A,source/B,float32(source/C));
 				attribute<bool>    test (Domain) := float_isNearby(attr, Source/mulABC, Dif_all_float32);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container mul_or_null
+			{
+				parameter<uint8>   param         := mul_or_null(uint8(source/ParamA * 10), uint8(source/ParamB));
+				parameter<bool>    test_param    := isNull(param);
+
+				attribute<uint8>   attr (Domain) := mul_or_null(uint8(source/A), uint8(abs(source/B)));
+				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Mul_or_nullAB);
 				parameter<bool>    test_attr     := all(test);
 			}
 			container div_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/div"
@@ -576,9 +609,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_params :=
 					   add_op/test_param 
 					&& add/test_param 
+					&& add_or_null/test_param 
 					&& sub_op/test_param 
 					&& sub/test_param 
+					&& sub_or_null/test_param 
 					&& mul_op/test_param 
+					&& mul_or_null/test_param 
 					&& div_op/test_param 
 					&& div/test_param 
 					&& mod_op/test_param 
@@ -593,10 +629,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_attrs :=
 					   add_op/test_attr 
 					&& add/test_attr 
+					&& add_or_null/test_attr 
 					&& sub_op/test_attr 
 					&& sub/test_attr 
+					&& sub_or_null/test_attr 
 					&& mul_op/test_attr 
 					&& mul/test_attr 
+					&& mul_or_null/test_attr 
 					&& div_op/test_attr 
 					&& div/test_attr 
 					&& mod_op/test_attr 
@@ -5246,6 +5285,23 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
 			}
+			container ClassifyNonzeroEqualCount: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualCount"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualCount);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
 			container ClassifyEqualInterval: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualInterval"
 			{
 				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyEqualInterval(District/NrInhabitants, ClassDomainOneClass);
@@ -5262,7 +5318,23 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
 				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container ClassifyNonZeroEqualInterval: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualInterval"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
 
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualInterval);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,53,107,161,215,269,323,377,431,485,539,593,647,701,755,809,863,917,971,1024];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
 			}
 			container ClassifyJenksFisher: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyJenksFisher"
 			{
@@ -5323,6 +5395,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					   Classify/test_attr 
 					&& ClassifyUniqueValues/test_attr 
 					&& ClassifyEqualCount/test_attr 
+					&& ClassifyNonzeroEqualCount/test_attr 
 					&& ClassifyEqualInterval/test_attr 
 					&& ClassifyJenksFisher/test_attr 
 					&& ClassifyLogInterval/test_attr ;
@@ -11572,6 +11645,26 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					max(pointrow_unit_grid_test) = int16(14) &&
 					nrofrows(unit_grid)          =       30; 
 			}
+			container cat_range
+			{
+				unit<uint32> unit_regions := cat_range(uint32, 1, 13)
+				{
+					attribute<unit_regions> id := id(unit_regions);
+				}
+				unit<spoint> unit_grid := cat_range(spoint, point(int16(10),int16(14)), point(int16(15), int16(20)))
+				{
+					attribute<unit_grid> id := id(unit_grid);
+				}
+				attribute<int16> pointrow_unit_grid_test (unit_grid) := pointrow(ID(unit_grid));
+				attribute<int16> pointcol_unit_grid_test (unit_grid) := pointcol(ID(unit_grid));
+				parameter<bool> test_param :=
+					nrofrows(unit_regions)       =       12  &&
+					min(pointcol_unit_grid_test) = int16(14) &&
+					min(pointrow_unit_grid_test) = int16(10) &&
+					max(pointcol_unit_grid_test) = int16(19) &&
+					max(pointrow_unit_grid_test) = int16(14) &&
+					nrofrows(unit_grid)          =       30; 
+			}
 			container gridset: Descr ="to make a projection", url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/gridset"
 			{
 				unit<fpoint> rdc_meter:
@@ -11741,6 +11834,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& nrofrows_op/test
 					&& nrofrows/test
 					&& range/test_param
+					&& cat_range/test_param
 					&& gridset/test_param
 					&& boundaries/test_param
 					&& BoundCenter/test_param
