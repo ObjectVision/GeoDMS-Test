@@ -58,23 +58,25 @@ def readLog(log_filename, filter=None):
 
 def readLogAllocator(log_fn, start_time):
     log_alloc = {"time":[], "dtime":[], "reserved":[], "allocated":[], "freed":[], "uncommitted":[]}
-    alloc_log = readLog(log_fn, filter="Reserved in Blocks")
+    alloc_log = readLog(log_fn, filter="]Reserved in Blocks")
 
     if len(alloc_log["time"]) == 0:
         return None
 
     for ind in range(len(alloc_log["time"])):
         print(alloc_log["time"][ind], alloc_log["text"][ind])  
-
+        # 2023-11-21 14:10:50[1]Reserved in Blocks 63532[MB]; allocated: 0[MB]; freed: 62532[MB]; uncommitted: 999[MB]; PageFileUsage: 62767[MB]
         integers_in_entry = re.findall(r"\d+", alloc_log["text"][ind])[1:]
-        assert(len(integers_in_entry)==4) # TODO: hard assumption no longer valid, rework
+        print(integers_in_entry)
+        assert(len(integers_in_entry)==5)
         
         log_alloc["time"].append(alloc_log["time"][ind])
         log_alloc["dtime"].append((alloc_log["time"][ind]-start_time).total_seconds())
-        log_alloc["reserved"].append(int(integers_in_entry[0])*10**-6)    # [GB]
-        log_alloc["allocated"].append(int(integers_in_entry[1])*10**-6)   # [GB]
-        log_alloc["freed"].append(int(integers_in_entry[2])*10**-6)       # [GB]
-        log_alloc["uncommitted"].append(int(integers_in_entry[3])*10**-6) # [GB]
+        log_alloc["reserved"].append(int(integers_in_entry[0])*10**-6)      # [GB]
+        log_alloc["allocated"].append(int(integers_in_entry[1])*10**-6)     # [GB]
+        log_alloc["freed"].append(int(integers_in_entry[2])*10**-6)         # [GB]
+        log_alloc["uncommitted"].append(int(integers_in_entry[3])*10**-6)   # [GB]
+        log_alloc["PageFileUsage"].append(int(integers_in_entry[3])*10**-6) # [GB]
     return log_alloc
 
 def getProcessIdIfActive(names, parent_pid=None):
@@ -417,7 +419,7 @@ def RunExperiments(experiments, sampling_rate=1.0):
             exp.result["total_write_bytes"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "total_write_bytes")
 
         # Get allocator state from log
-        #log_alloc = readLogAllocator(log_fn, start_time) # temporarily disable allocator logging
+        log_alloc = readLogAllocator(log_fn, start_time) # temporarily disable allocator logging
         log_alloc = None
         if log_alloc:
             exp.result["log_alloc"] = log_alloc
