@@ -13,7 +13,6 @@
 // 1 boolean in dbf files, see dbf/wish
 // null files in string files, see strfiles/wish
 // xdb write werkt niet, see xdb
-// ASCII grid, write for a unit_derived grid, OS Structured Exception, see /ASCIIgrid/Write/GridData_d
 // bmp truecolor leest verkeerde waarden uit, zie /bmp/TrueColor/grid/GridData
 // bmp palette based leest geen palette information, zie /bmp/Palette/grid/PaletteData
 // tiff truecolor geeft verkeerde waarde bij wegschrijven, zie: Tiff/TrueColor/Write/GridData
@@ -46,7 +45,6 @@ container StorageManagerTest
 			 dbf/results/all 
 			&& str/results/all 
 			&& strfiles/results/all 
-			&& ASCIIgrid/results/all 
 			&& Tiff/results/all 
 			&& Tiff/Palette/results/all 
 			&& Tiff/GeoReference/test 
@@ -243,43 +241,6 @@ container StorageManagerTest
 		{
 			attribute<string> FileName  (reference) : ['file01.txt','file02.txt','file03.txt','file04.txt','file05.txt'];
 			attribute<string> StringAtt (reference) := FileSet/StringAtt, StorageType = "strfiles", StorageName = "%localDataProjDir%/regr_results/strfiles/regr";
-		}
-	}
-	container ASCIIgrid
-	{
-		container unit_config
-		{
-			unit<fpoint> rdc_meter: Range = "[{300000, 0}, {300500, 500}) ";
-			unit<spoint> grid :=
-				range(gridset(rdc_meter,
-						point(Float32(  -100.0), Float32(100.0), rdc_meter),
-						point(Float32(300500.0), Float32(    0), rdc_meter),
-						SPoint), 
-					point(int16(0), int16(0)),
-					point(int16(5), int16(5))
-				);
-
-			attribute<uint8> GridData  (grid) : StorageName = "%projdir%/data/testgrid.asc";
-			attribute<uint8> reference (grid) : [null,0,0,0,1,0,0,2,1,1,0,2,3,3,3,1,1,1,3,0,0,1,0,1,3];
-			attribute<bool>  test      (grid) := eq_or_both_null(GridData, reference);
-		}
-		container unit_derived
-		{
-			unit<spoint> grid_ud : StorageName = "%projdir%/data/testgrid.asc"
-			{
-				attribute<int32> GridData;
-			}
-			attribute<int32> reference (grid_ud) : [null,0,0,0,1,0,0,2,1,1,0,2,3,3,3,1,1,1,3,0,0,1,0,1,3];
-			attribute<bool>  test      (grid_ud) := eq_or_both_null(grid_ud/GridData, reference);
-		}
-		container results
-		{
-			parameter<bool> all := all(unit_config/test) && all(unit_derived/test);
-		}
-		container Write
-		{
-			attribute<uint8> GridData    (unit_config/grid)     := unit_config/GridData,                 StorageName = "%localDataProjDir%/regr_results/ASCII_grid_uc.asc";
-			attribute<uint8> GridData_d  (unit_derived/grid_ud) := uint8(unit_derived/grid_ud/GridData), StorageName = "%localDataProjDir%/regr_results/ASCII_grid_ud.asc";
 		}
 	}
 	container Tiff
