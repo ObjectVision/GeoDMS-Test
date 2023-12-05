@@ -657,9 +657,31 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			attribute<geometries/rdc_mm> geometry_mm (polygon);
 		}
-		
-		
 	}
+	
+	container line2grid
+	{
+		unit<uint32> points : nrOfrows = 5
+		{
+			attribute<float32> X:[100000,110000,130000,135000,150000];
+			attribute<float32> Y:[550000,530000,510000,530000,510000];
+			attribute<geometries/rdc> point := point(Y,X,geometries/rdc);
+		}
+		unit<uint32> arc: nrofrows = 1
+		{
+			attribute<geometries/rdc> geometry (arc) := points2sequence(points/point, const(0[arc],points) ,id(points));
+		}
+		unit<uint32> segments:= arc2segm(arc/geometry);
+
+		unit<uint32> dyna_point := dyna_point_with_ends(segments/point, segments/nextpoint, 50f)
+		{
+			attribute<poly2grid/griddomain_100> griddomain_100_rel := point[poly2grid/griddomain_100];
+		}
+		attribute<dyna_point> dyna_point_rel (Poly2grid/griddomain_100):= invert(dyna_point/griddomain_100_rel);
+		attribute<segments>   segments_rel   (Poly2grid/griddomain_100):= dyna_point/sequence_rel[dyna_point_rel];
+		attribute<arc>        arc_rel        (Poly2grid/griddomain_100):= segments/sequence_rel[segments_rel];
+	}
+
 
 	unit<uint32> centroids
 	:	StorageName     = "%projdir%/data/vreemde_centroids.shp"
@@ -2596,45 +2618,104 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<int32> pcol5k:= pointcol(id(.)) / int32(5);
 		}
 	}
-	container value_info_parameter
+	container value_info
 	{
-		container result
+		container parameter
 		{
-			parameter<uint32> R := inbetween/s4 * inbetween/s5;
+			container result
+			{
+				parameter<float64> pi := pi();
+				parameter<uint32>  R  := inbetween/s4 * inbetween/s5;
+			}
+			container inbetween
+			{
+				parameter<uint32> s4 := src/s1 * src/s2;
+				parameter<uint32> s5 := s4 + src/s3 ;
+			}
+			container src
+			{
+				parameter<uint32> s1 := 3;
+				parameter<uint32> s2 := 6;
+				parameter<uint32> s3 := 16;
+			}
 		}
-		container inbetween
+		
+		unit<UInt32> value_info_unit       : nrofrows = 3;
+		unit<UInt32> value_info_unit_large : nrofrows = 25;
+
+		unit<Float32> s := BaseUnit('s', Float32);
+		unit<Float32> m_s := m / s;
+		
+		container attribute_artithmetic
 		{
-			parameter<uint32> s4 := src/s1 * src/s2;
-			parameter<uint32> s5 := s4 + src/s3 ;
+			container result
+			{
+				attribute<m_s> R (value_info_unit):= inbetween/s4 + inbetween/s5;
+			}
+			container inbetween
+			{
+				attribute<m_s> s4(value_info_unit) := src/s1 / src/s2;
+				attribute<m_s> s5(value_info_unit) := s4 + src/s3 ;
+			}
+			container src
+			{
+				attribute<m> s1(value_info_unit) : [1.0, 2.0, 3.0];
+				attribute<s> s2(value_info_unit) : [6, 9, 12];
+				attribute<m_s> s3(value_info_unit) : [16, 20, 25];
+			}
 		}
-		container src
+		container attribute_aggregations
 		{
-			parameter<uint32> s1 := 3;
-			parameter<uint32> s2 := 6;
-			parameter<uint32> s3 := 16;
+			container result
+			{
+				parameter<m> sumS1 := sum(src/s1);
+				parameter<s> sumS2 := sum(src/s2);
+				attribute<s> sumS1_per_value_info_unit (value_info_unit) := sum(src/s2, src/value_info_unit_rel);
+
+				parameter<m> maxS1 := max(src/s1);
+				parameter<s> maxS2 := max(src/s2);
+				attribute<s> maxS1_per_value_info_unit (value_info_unit) := max(src/s2, src/value_info_unit_rel);
+			}
+			container src
+			{
+				attribute<m>               s1                  (value_info_unit)       :  [1.0, 2.0, 3.0];
+				attribute<s>               s2                  (value_info_unit_large) := (id(value_info_unit_large)[s] + 1[s]) * 2f ;
+				attribute<value_info_unit> value_info_unit_rel (value_info_unit_large) := mod(s2, 3f)[value_info_unit] ;
+			}
 		}
-	}
-	
-	unit<UInt32> value_info_unit : nrofrows = 3;
-	unit<Float32> s := BaseUnit('s', Float32);
-	unit<Float32> m_s := m / s;
-	
-	container value_info_attribute
-	{
-		container result
+		container relational
 		{
-			attribute<m_s> R (value_info_unit):= inbetween/s4 + inbetween/s5;
-		}
-		container inbetween
-		{
-			attribute<m_s> s4(value_info_unit) := src/s1 / src/s2;
-			attribute<m_s> s5(value_info_unit) := s4 + src/s3 ;
-		}
-		container src
-		{
-			attribute<m> s1(value_info_unit) : [1.0, 2.0, 3.0];
-			attribute<s> s2(value_info_unit) : [6, 9, 12];
-			attribute<m_s> s3(value_info_unit) : [16, 20, 25];
+			container result
+			{
+				attribute<uint32>  nr_inwoners_gemeente  (src/wijk)  := rjoin(src/wijk/GM_code, src/gem/code, src/gem/nr_inwoners);
+				attribute<bool>    ligtin_grote_gemeente (src/buurt) := rjoin(src/buurt/GM_code, src/gem/code, src/gem/isGroteGemeente);
+				attribute<src/gem> gem_rel               (src/wijk)  := rlookup(src/wijk/GM_code, src/gem/code); 
+			}
+
+			container src
+			{
+				unit<uint32> gem : nrofrows = 300
+				{
+					attribute<string> label           := 'gemeente_' + string(id(.));
+					attribute<string> code            := 'GM_' + string(id(.));
+					attribute<bool>   isGroteGemeente := mod(id(.), 2) == 1;
+					attribute<uint32> nr_inwoners     := id(.) * 20000;
+				}
+				unit<uint32> wijk : nrofrows = 4000
+				{
+					attribute<string> label    := 'wijk_' + string(id(.));
+					attribute<string> code    := 'WK_' + string(id(.));
+					attribute<string> GM_code := 'GM_' + string(round(float32(id(.)) / 10f)); 
+				}
+				unit<uint32> buurt : nrofrows = 10000
+				{
+					attribute<string> label    := 'buurt' + string(id(.));
+					attribute<string> code    := 'BU_' + string(id(.));
+					attribute<string> WK_code := 'WK_' + string(round(float32(id(.)) / 10f)); 
+					attribute<string> GM_code := 'GM_' + string(round(float32(id(.)) / 40f)); 
+				}
+			}
+
 		}
 	}
 }
