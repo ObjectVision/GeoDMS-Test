@@ -44,21 +44,23 @@ def readLog(log_filename, filter=None):
             if len(line) <= 26: # empty line, no information
                 continue
                  
-            if line[0].isnumeric():
-                if filter and not filter in line:
-                    continue
+            if not line[0].isnumeric():
+                continue
+                
+            if filter and not filter in line:
+                continue
 
-                date  = line[0:date_end]
+            date  = line[0:date_end]
 
-                #2023-11-15 09:39:22
-                datet = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-                ret["time"].append(datet)
-                ret["text"].append(f"{line[date_end:]}<br>")
+            #2023-11-15 09:39:22
+            datet = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            ret["time"].append(datet)
+            ret["text"].append(f"{line[date_end:]}<br>")
     return ret
 
 def readLogAllocator(log_fn, start_time):
-    log_alloc = {"time":[], "dtime":[], "reserved":[], "allocated":[], "freed":[], "uncommitted":[]}
-    alloc_log = readLog(log_fn, filter="]Reserved in Blocks")
+    log_alloc = {"time":[], "dtime":[], "reserved":[], "allocated":[], "freed":[], "uncommitted":[], "PageFileUsage":[]}
+    alloc_log = readLog(log_fn, filter="Reserved in Blocks")
 
     if len(alloc_log["time"]) == 0:
         return None
@@ -72,11 +74,11 @@ def readLogAllocator(log_fn, start_time):
         
         log_alloc["time"].append(alloc_log["time"][ind])
         log_alloc["dtime"].append((alloc_log["time"][ind]-start_time).total_seconds())
-        log_alloc["reserved"].append(int(integers_in_entry[0])*10**-6)      # [GB]
-        log_alloc["allocated"].append(int(integers_in_entry[1])*10**-6)     # [GB]
-        log_alloc["freed"].append(int(integers_in_entry[2])*10**-6)         # [GB]
-        log_alloc["uncommitted"].append(int(integers_in_entry[3])*10**-6)   # [GB]
-        log_alloc["PageFileUsage"].append(int(integers_in_entry[3])*10**-6) # [GB]
+        log_alloc["reserved"].append(int(integers_in_entry[0])*10**-3)      # [GB]
+        log_alloc["allocated"].append(int(integers_in_entry[1])*10**-3)     # [GB]
+        log_alloc["freed"].append(int(integers_in_entry[2])*10**-3)         # [GB]
+        log_alloc["uncommitted"].append(int(integers_in_entry[3])*10**-3)   # [GB]
+        log_alloc["PageFileUsage"].append(int(integers_in_entry[4])*10**-3) # [GB]
     return log_alloc
 
 def getProcessIdIfActive(names, parent_pid=None):
@@ -420,7 +422,6 @@ def RunExperiments(experiments, sampling_rate=1.0):
 
         # Get allocator state from log
         log_alloc = readLogAllocator(log_fn, start_time) # temporarily disable allocator logging
-        log_alloc = None
         if log_alloc:
             exp.result["log_alloc"] = log_alloc
         else: 
@@ -448,8 +449,8 @@ def vgroupToLabel(vgroup):
         label = "total read bytes (GB)"
     elif vgroup[0] == "total_write_bytes":
         label = "total written bytes (GB)"    
-    elif type(vgroup[0]) is tuple:
-        label = "rss (--), vms (-) and freelist alloc (^) (GB)"
+    elif type(vgroup[0]) is tuple or vgroup[0]=="vms":
+        label = "Committed and and freelist allocated memory (^) (GB)"
     
     return label
     
@@ -497,13 +498,6 @@ def VisualizeExperiments(experiments, vgroups):
                     exp_ds_logs[vgroup[0][1]]   = exp.result[vgroup[0][1]]["y"]
                 exp_ds_graphs[vgroup[0][0]] = exp.result["log"][vgroup[0][0]]
                 exp_ds_graphs[vgroup[0][1]] = exp.result["log"][vgroup[0][1]]
-
-                if exp.result["log_alloc"]:
-                    exp_ds_alloc["time"] = exp.result["log_alloc"]["dtime"] 
-                    exp_ds_alloc["allocated"] = exp.result["log_alloc"]["allocated"]
-                    for i in range(len(exp.result["log_alloc"]["dtime"])):
-                        exp_ds_alloc["text"].append(f"A: {exp.result['log_alloc']['allocated'][i]}, R: {exp.result['log_alloc']['reserved'][i]}, F: {exp.result['log_alloc']['freed'][i]}, U: {exp.result['log_alloc']['uncommitted'][i]}")
-
             else:
                 if not "time" in exp_ds_logs and ExpHasLogAvailable(exp, vgroup[0]):
                     exp_ds_logs["time"] = exp.result[vgroup[0]]["x"]
@@ -511,6 +505,13 @@ def VisualizeExperiments(experiments, vgroups):
                 if ExpHasLogAvailable(exp, vgroup[0]):
                     exp_ds_logs[vgroup[0]]  = exp.result[vgroup[0]]["y"]
                 exp_ds_graphs[vgroup[0]] = exp.result["log"][vgroup[0]]
+            if vgroup[0]=="vms": # allocator log only added to committed memory figure
+                if exp.result["log_alloc"]:
+                    exp_ds_alloc["time"] = exp.result["log_alloc"]["dtime"] 
+                    exp_ds_alloc["allocated"] = exp.result["log_alloc"]["allocated"]
+                    for i in range(len(exp.result["log_alloc"]["dtime"])):
+                        exp_ds_alloc["text"].append(f"A: {exp.result['log_alloc']['allocated'][i]}, R: {exp.result['log_alloc']['reserved'][i]}, F: {exp.result['log_alloc']['freed'][i]}, U: {exp.result['log_alloc']['uncommitted'][i]}")
+
         exps_ds.append([exp_ds_graphs, exp_ds_logs, exp_ds_alloc])
         
     for ii, vgroup in enumerate(vgroups):
@@ -538,14 +539,17 @@ def VisualizeExperiments(experiments, vgroups):
                     renderers.append(p.scatter('time', vgroup[0][1], size=5, color=color, source=exps_ds[i][1]))
 
                 if exps_ds[i][2]: # allocation log was available
-                    renderers.append(p.line('time', "allocated", color=color, source=exps_ds[i][2]))
+                    renderers.append(p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
                     renderers.append(p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
             else:
                 renderers.append(p.line('time', vgroup[0],            color=color, source=exps_ds[i][0]))
                 if ExpHasLogAvailable(exp, vgroup[0]):
                     renderers.append(p.scatter('time', vgroup[0], size=5, color=color, source=exps_ds[i][1]))       
-        
-
+            if vgroup[0]=="vms": # allocator log only added to committed memory figure
+                renderers.append(p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
+                renderers.append(p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
+                print(exps_ds[i][2])
+                
         p.xaxis.axis_label = 'time (s)'
         #p.xaxis.axis_label_text_font_size = '15px'
         #p.yaxis.axis_label_text_font_size = '15px'
@@ -750,7 +754,7 @@ def Run(config_fn, sampling_rate=1.0):
     #    return
     
     # visualize    
-    vgroups = [("cpu_percent", (0,100)), ("cpu_curr_time", False), (("rss", "vms"), False), ("num_threads", False), ("total_read_bytes", False), ("total_write_bytes", False)]
+    vgroups = [("cpu_percent", (0,100)), ("cpu_curr_time", False), ("vms", False), ("num_threads", False), ("total_read_bytes", False), ("total_write_bytes", False)]
     VisualizeExperiments(experiments, vgroups)
 
     return
