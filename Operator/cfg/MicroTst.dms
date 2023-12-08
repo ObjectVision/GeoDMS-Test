@@ -670,16 +670,22 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		unit<uint32> arc: nrofrows = 1
 		{
 			attribute<geometries/rdc> geometry (arc) := points2sequence(points/point, const(0[arc],points) ,id(points));
+			attribute<uint8>          wegtype        := const(1b,.); 
 		}
-		unit<uint32> segments:= arc2segm(arc/geometry);
+		unit<uint32> segments:= arc2segm(arc/geometry)
+		{
+			attribute<uint8> wegtype := arc/wegtype[sequence_rel];
+		}
 
 		unit<uint32> dyna_point := dyna_point_with_ends(segments/point, segments/nextpoint, 50f)
 		{
 			attribute<poly2grid/griddomain_100> griddomain_100_rel := point[poly2grid/griddomain_100];
+			attribute<uint8>                    wegtype            := segments/wegtype[sequence_rel];
 		}
 		attribute<dyna_point> dyna_point_rel (Poly2grid/griddomain_100):= invert(dyna_point/griddomain_100_rel);
-		attribute<segments>   segments_rel   (Poly2grid/griddomain_100):= dyna_point/sequence_rel[dyna_point_rel];
-		attribute<arc>        arc_rel        (Poly2grid/griddomain_100):= segments/sequence_rel[segments_rel];
+
+		attribute<bool>       is_weg         (Poly2grid/griddomain_100):= has_any(dyna_point/griddomain_100_rel);
+		attribute<uint8>      wegtype        (Poly2grid/griddomain_100):= modus(dyna_point/wegtype, dyna_point/griddomain_100_rel);
 	}
 
 
@@ -2716,6 +2722,13 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 				}
 			}
 
+		}
+	}
+	container template_unknown_unit
+	{
+		template t
+		{
+			attribute<unit_unknown> B;
 		}
 	}
 }
