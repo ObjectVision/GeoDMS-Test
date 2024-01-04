@@ -3286,11 +3286,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				parameter<uint32> param_uint32 := first(City/NrInhabitants);
 				parameter<string> param_string := first(City/CityName);
+				parameter<fpoint> param_fpoly(poly) := first(/Sequence/srcDomain/district/border);
+
 
 				parameter<bool>   test_param_uint32 := eq_or_both_null(param_uint32, params/firstNrInhabitants);
 				parameter<bool>   test_param_string := eq_or_both_null(param_string, params/firstCityName);
 				parameter<bool>   test_param_bool   := first(City/isCapital)     == params/firstisCapital ;
-				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool;
+				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool && IsDefined(param_fpoly);
 	
 				attribute<uint32> att_uint32  (Region) := first(City/NrInhabitants, City/RegionNr);
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/firstNrInhabitants);
