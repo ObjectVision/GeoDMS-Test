@@ -1,0 +1,41 @@
+container FenceTest 
+
+{
+	parameter<uint32> a := 3;
+	parameter<uint32> b := 4;
+	parameter<uint32> c := 5;
+	
+	template Say_t
+	{
+		parameter<uint32> x;
+		parameter<string> txt;
+		
+		container cx {
+			parameter<uint32> r := x;
+		}
+		container fx := FenceContainer(cx, txt);
+		parameter<uint32> r := fx/r;
+	}
+	container calc {
+		container dont_prescan {
+			container ca {
+				container SayX := Say_t(a*a, 'read a');
+				parameter<uint32> r := SayX/r;
+			}
+			
+			container cb {
+				container SayX := Say_t(b*b, 'read b');
+				parameter<uint32> r := SayX/r;
+			}
+			
+			container cc {
+				container SayX := say_t(c*c, 'read c');
+				parameter<uint32> r := SayX/r;
+			}
+		}
+		container fa := Say_t(dont_prescan/ca/r, 'calc a');
+		container fb := Say_t(dont_prescan/cb/r, 'calc b');
+		container fc := Say_t(dont_prescan/cc/r, 'calc c');
+	}
+	parameter<uint32> r := calc/fa/r + calc/fb/r + calc/fc/r;
+}
