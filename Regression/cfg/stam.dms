@@ -648,13 +648,14 @@ container Regression:	FreeData = "True"
 				storagename = "%RegressionDataDir%/t1642_value_info_group_by_recorded.txt"
 			,	StorageType = "str";
 
-			parameter<string> TargetFile := = quote(results/VersionInfo/results_folder + '/t1642_value_info_group_by.tmp') ;
+			parameter<string> TargetFile1 := = quote(results/VersionInfo/results_folder + '/t1642_value_info_group_by.tmp') ;
+			parameter<string> TargetFile2 := = quote(results/VersionInfo/results_folder + '/t1642_value_info_group_by_inh.tmp') ;
 			
-			parameter<string> CopyFile   := CopyFile('%LocalDataDir%/regression/t1642_value_info_group_by/t1642_value_info_group_by.tmp', TargetFile);
-
+			parameter<string> CopyFile1   := CopyFile('%LocalDataDir%/regression/t1642_value_info_group_by/t1642_value_info_group_by.tmp', TargetFile1);
+			parameter<string> CopyFile2   := CopyFile('%LocalDataDir%/regression/t1642_value_info_group_by/t1642_value_info_group_by_inh.tmp', TargetFile2);
 
 			parameter<string> generated:
-				storagename = "= TargetFile + left(CopyFile,0)"
+				storagename = "= TargetFile1 + left(CopyFile1,0) + left(CopyFile2,0)"
 			,	StorageType = "str";
 
 			parameter<bool> test:= lowercase(recorded) == lowercase(generated);
