@@ -9855,8 +9855,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container potential: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/potential"
 			{
 				attribute<float32> grid (GridDomain) := potential(float32(source/src), units/pot3Range/RelWeight);
-				attribute<bool>    test (GridDomain) := float_isNearby(grid, source/potentialOk, Dif_all_float32) ;
-				parameter<bool>    test_grid         := all(test);
+				attribute<float64> grid64 (GridDomain) := potential(float64(source/src), float64(units/pot3Range/RelWeight));
+				attribute<bool>    test  (GridDomain) := float_isNearby(grid, source/potentialOk, Dif_all_float32) ;
+				attribute<bool>    test64(GridDomain) := float_isNearby(float32(grid64), source/potentialOk, Dif_all_float32) ;
+				parameter<bool>    test_grid         := all(test) && all(test64);
 			}
 			container proximity: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/proximity"
 			{
