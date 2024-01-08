@@ -30,6 +30,7 @@ container mergeToRapport
 
 	unit<uint32> logfiles := select_with_attr_by_org_rel(test_and_logfiles, !test_and_logfiles/is_tst_file)
 	{
+		attribute<string> search_string_mem     := uint32(left(ver, 2))  < 15 ? 'Highest PageFileUsage:' : 'Highest CommitCharge:';
 		attribute<string> ver_test_file         := substr(ver_test_full_path, strlen(expand(.,ResultDir))+1);
 		attribute<string> ver                   := left(ver_test_file , strpos(ver_test_file, BackSlash));
 		attribute<string> test                  := replace(substr(ver_test_file, strpos(ver_test_file, BackSlash) + 1),'.txt','','_',' ','log\\','');
@@ -37,10 +38,10 @@ container mergeToRapport
 		
 		attribute<string> contents              : StorageName = "=ResultDir", StorageType = "strfiles";
 
-		attribute<uint32> nr_mem_size_measured   := strcount(contents,'Highest PageFileUsage:');
+		attribute<uint32> nr_mem_size_measured   := strcount(contents, search_string_mem);
 
-		attribute<uint32> pos_start_mem_size     := strpos(contents,'Highest PageFileUsage:');
-		attribute<string> contents_from_mem_size := substr(contents, pos_start_mem_size + 23);
+		attribute<uint32> pos_start_mem_size     := strpos(contents, search_string_mem);
+		attribute<string> contents_from_mem_size := substr(contents, pos_start_mem_size + strlen(search_string_mem) + 1);
 		attribute<string> mem_size               := 
 			switch(
 			  case (nr_mem_size_measured == 0, 'Not Measured')
@@ -134,7 +135,7 @@ container mergeToRapport
 				+ '<I>test started at</I>: ' + duration_seconds/startSeconds/impl/formatted + '<BR>'
 				+ html_no_information_written
 				+ '<I>duration</I>: ' + duration_seconds/result_formatted
-				+ '<BR><I>highest PageFileUsage: </I><B>' + MakeDefined(mem_size , not_measured) + '</B>'
+				+ '<BR><I>Highest CommitCharge: </I><B>' + MakeDefined(mem_size , not_measured) + '</B>'
 			)
 			+ '</td>';
 	}

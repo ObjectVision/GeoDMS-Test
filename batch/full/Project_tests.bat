@@ -18,21 +18,30 @@ Call Full\NetworkModel.bat %Setting1% %Setting2% %Setting3% t405_2_NetworkModel_
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\MetworkModelEU
 Call Full\NetworkModelEU.bat %Setting1% %Setting2% %Setting3% t410_NetworkModel_EU_indicator_results_test
 
-SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Vesta
-Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %VestaRunPath% t510_indicator_results_test/result_html t510_vesta_indicator_results_test
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Vesta
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %VestaRunPath% t510_indicator_results_test/result_html t510_vesta_indicator_results_test
 
-SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Sawec
-Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %SawecRunPath% Tellingen/t520_sawec_tellingen_results_test/result_html t520_sawec_tellingen_results_test
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Sawec
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %SawecRunPath% Tellingen/t520_sawec_tellingen_results_test/result_html t520_sawec_tellingen_results_test
 
-SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\LUSDemo
-Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath% /test/UseReference/t610_lus_demo_results_test/result_html t610_lus_demo_results_test
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Hestia
+Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %HestiaRunPath% t530_hestia2024/result_html t530_hestia2024
 
-SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\LUSDemo2022
-Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath2022% t611_lus_demo_2022_results_test/result_html t611_lus_demo_2022_results_test
+REM  SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\LUSDemo
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath% /test/UseReference/t610_lus_demo_results_test/result_html t610_lus_demo_results_test
+
+REM  SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\LUSDemo2022
+REM  Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath2022% t611_lus_demo_2022_results_test/result_html t611_lus_demo_2022_results_test
+
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\LUSDemo2023
+Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath2023% t611_lus_demo_2023_results_test/result_html t611_lus_demo_2023_results_test
+
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS
 REM Call Full\RsLight_2021_Ontwikkel_3.bat %Setting1% %Setting2% %Setting3% t630_RSLight_2021_ontwikkel_3
 Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+REM Call Full\RSOpenWithFence.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\2UP
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_zonder_calcache t710_2UP_indicator_results_zonder_CalCache

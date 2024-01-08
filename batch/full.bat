@@ -62,6 +62,15 @@ Call Full\GUI_tests.bat
 Call Full\Operator_tests.bat
 Call Full\Project_tests.bat
 
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Hestia
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %HestiaRunPath% t530_hestia2024/result_html t530_hestia2024
+
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\100m_DynaPop
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %DynaPopPath% t810_ValLuisa_Czech_LU_POP/result_html t810_ValLuisa_Czech_LU_POP 
+
+REM Call Full\RSOpenWithFence.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+REM Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+
 timeout /t 3
 
 Call Full\MakeReport.bat
