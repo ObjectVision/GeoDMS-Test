@@ -48,9 +48,10 @@ container xml_parse
 		parameter<bool> poslist       := ParsedXML/bag_LVC_pand/gml_Polygon/gml_posList/_ValuesTable/Values[0] = 
 			'237037.507 438780.781 0.0 237039.05 438780.447 0.0 237040.341 438780.167 0.0 237041.241 438785.24 0.0 237038.439 438785.859 0.0 237037.507 438780.781 0.0';
 
-		parameter<bool> area_polygon := round(area(fpolygon(geoBuilder/result[0]), float32)) == 14909184i ;
+		parameter<float32> area_polygon := area(fpolygon(geoBuilder/result[0]), float32);
+		parameter<bool> area_polygon_cond:= round(area_polygon) == 14909184i;
 
-		parameter<bool> all := identificatie && bouwjaar && count_poslist && poslist && area_polygon;
+		parameter<bool> all := identificatie && bouwjaar && count_poslist && poslist && area_polygon_cond;
 	}
 
 	parameter<string> test_log := tests/all 
