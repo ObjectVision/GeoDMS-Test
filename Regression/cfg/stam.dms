@@ -183,6 +183,50 @@ container Regression:	FreeData = "True"
 		//,StorageName = "%RegressionDataDir%/PC4_impedance.fss";
 		
 		container netwerk_PC6:= netwerk/WegenMetLokaties/PC6;
+		unit<uint32> PC6_sparse_count :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+				, 1f, 1f, 1f, 1f
+			)
+		{
+			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
+		}
+		unit<uint32> PC6_sparse_altcount :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+				, netwerk_PC6/LinkSet/length_m
+				, 1f, 1f, 1f, 1f
+			)
+		{
+			attribute<eenheden/m> avg_altimp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
+		}
+		
+		unit<uint32> PC6_sparse_link_attrcount :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_attr):link_attr;interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp,SumLinkAttr'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+				, netwerk_PC6/LinkSet/length_m
+				, 1f, 1f, 1f, 1f
+			)
+		{
+			attribute<eenheden/s> avg_sumimp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
+			attribute<eenheden/m> avg_sumlinkattr(netwerk_PC6/locaties) := OrgZone_SumLinkAttr / M_ix;
+		}
+		
 		unit<uint32> PC6_sparse :=
 			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 				, netwerk_PC6/LinkSet/traveltime_s
@@ -192,6 +236,32 @@ container Regression:	FreeData = "True"
 				, netwerk_PC6/nr_destNode
 				, 120[eenheden/s]
 				, netwerk_PC6/LinkSet/length_m
+			)
+			,	StorageName = "%RegressionDataDir%/PC6_impedance.fss"
+		{
+			attribute<eenheden/m> alt_imp;
+			attribute<eenheden/s> impedance;
+			attribute<uint32>     OrgZone_rel;
+			attribute<uint32>     DstZone_rel;
+			
+			attribute<uint32> OrgZone_NrDstZones(netwerk_PC6/locaties) := pcount(OrgZone_rel);
+			attribute<float32> M_ij :=  1f / impedance;
+			
+			attribute<float32>    M_ix(netwerk_PC6/locaties)       := sum(M_ij, OrgZone_rel);
+			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties)    := sum(impedance * M_ij, OrgZone_rel) / M_ix;
+			attribute<eenheden/m> avg_altimp(netwerk_PC6/locaties) := sum(alt_imp   * M_ij, OrgZone_rel) / M_ix;
+		}
+		
+		unit<uint32> PC6_sparse_precounted :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od(precalculateted_NrDstZones):impedance,OrgZone_rel,DstZone_rel'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+				, netwerk_PC6/LinkSet/length_m
+				, PC6_sparse_count/OrgZone_NrDstZones
 			)
 			,	StorageName = "%RegressionDataDir%/PC6_impedance.fss"
 		{
