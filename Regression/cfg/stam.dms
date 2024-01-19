@@ -184,6 +184,28 @@ container Regression:	FreeData = "True"
 		
 		container netwerk_PC6:= netwerk/WegenMetLokaties/PC6;
 		unit<uint32> PC6_sparse_count :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones,D_i,M_ix,SumImp'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+			)
+		{
+			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
+		}
+		unit<uint32> PC6_sparse_count2 :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+			);
+			
+		unit<uint32> PC6_sparse_avg_imp_a1 :=
 			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
@@ -192,6 +214,31 @@ container Regression:	FreeData = "True"
 				, netwerk_PC6/nr_destNode
 				, 120[eenheden/s]
 				, 1f, 1f, 1f, 1f
+			)
+		{
+			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
+		}
+		unit<uint32> PC6_sparse_avg_imp_ad :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(dist_decay):NrDstZones,D_i,M_ix,SumImp'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
+				, 1f
+			)
+		{
+			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
+		}
+		unit<uint32> PC6_sparse_avg_imp_ad_nodecay :=
+			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones,D_i,M_ix,SumImp'
+				, netwerk_PC6/LinkSet/traveltime_s
+				, netwerk_PC6/F1
+				, netwerk_PC6/F2
+				, netwerk_PC6/nr_orgNode
+				, netwerk_PC6/nr_destNode
+				, 120[eenheden/s]
 			)
 		{
 			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
