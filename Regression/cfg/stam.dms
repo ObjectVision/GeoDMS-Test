@@ -299,6 +299,9 @@ container Regression:	FreeData = "True"
 			attribute<eenheden/m> avg_altimp(netwerk_PC6/locaties) := sum(alt_imp   * M_ij, OrgZone_rel) / M_ix;
 		}
 		
+		//check that /OD/PC6_sparse/avg_imp == /OD/PC6_sparse_count/avg_imp
+		//check that /OD/PC6_sparse/avg_altimp == /OD/PC6_sparse_count/avg_linkattr
+
 		unit<uint32> PC6_sparse_precounted :=
 			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od(precalculateted_NrDstZones):impedance,OrgZone_rel,DstZone_rel'
 				, netwerk_PC6/LinkSet/traveltime_s
