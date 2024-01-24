@@ -3286,11 +3286,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				parameter<uint32> param_uint32 := first(City/NrInhabitants);
 				parameter<string> param_string := first(City/CityName);
+				parameter<fpoint> param_fpoly(poly) := first(/Sequence/srcDomain/district/border);
+
 
 				parameter<bool>   test_param_uint32 := eq_or_both_null(param_uint32, params/firstNrInhabitants);
 				parameter<bool>   test_param_string := eq_or_both_null(param_string, params/firstCityName);
 				parameter<bool>   test_param_bool   := first(City/isCapital)     == params/firstisCapital ;
-				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool;
+				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool && IsDefined(param_fpoly);
 	
 				attribute<uint32> att_uint32  (Region) := first(City/NrInhabitants, City/RegionNr);
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/firstNrInhabitants);
@@ -4926,6 +4928,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<string> CityNames                  (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames);
 				attribute<bool>   test                       (union_unit/unit_ProvCity) := CityNames == CityNamesSrc;
 				parameter<bool>   test_attr                                             := all(test);
+				attribute<string> GhosttownNames             (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity); // should emit diagnostic, see https://github.com/ObjectVision/GeoDMS/issues/534
 			}
 			container union_data_single
 			{
@@ -9853,8 +9856,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container potential: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/potential"
 			{
 				attribute<float32> grid (GridDomain) := potential(float32(source/src), units/pot3Range/RelWeight);
-				attribute<bool>    test (GridDomain) := float_isNearby(grid, source/potentialOk, Dif_all_float32) ;
-				parameter<bool>    test_grid         := all(test);
+				attribute<float64> grid64 (GridDomain) := potential(float64(source/src), float64(units/pot3Range/RelWeight));
+				attribute<bool>    test  (GridDomain) := float_isNearby(grid, source/potentialOk, Dif_all_float32) ;
+				attribute<bool>    test64(GridDomain) := float_isNearby(float32(grid64), source/potentialOk, Dif_all_float32) ;
+				parameter<bool>    test_grid         := all(test) && all(test64);
 			}
 			container proximity: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/proximity"
 			{

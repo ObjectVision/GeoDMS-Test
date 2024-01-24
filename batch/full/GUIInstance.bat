@@ -10,6 +10,7 @@ Echo.
 Echo Test: %command%
 %command%
 Echo.
+Echo ERRORLEVEL: %ERRORLEVEL%
 
 Call full/SetEndTime.bat
 

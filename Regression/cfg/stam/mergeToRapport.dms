@@ -30,6 +30,7 @@ container mergeToRapport
 
 	unit<uint32> logfiles := select_with_attr_by_org_rel(test_and_logfiles, !test_and_logfiles/is_tst_file)
 	{
+		attribute<string> search_string_mem     := uint32(left(ver, 2))  < 15 ? 'Highest PageFileUsage:' : 'Highest CommitCharge:';
 		attribute<string> ver_test_file         := substr(ver_test_full_path, strlen(expand(.,ResultDir))+1);
 		attribute<string> ver                   := left(ver_test_file , strpos(ver_test_file, BackSlash));
 		attribute<string> test                  := replace(substr(ver_test_file, strpos(ver_test_file, BackSlash) + 1),'.txt','','_',' ','log\\','');
@@ -37,10 +38,10 @@ container mergeToRapport
 		
 		attribute<string> contents              : StorageName = "=ResultDir", StorageType = "strfiles";
 
-		attribute<uint32> nr_mem_size_measured   := strcount(contents,'Highest PageFileUsage:');
+		attribute<uint32> nr_mem_size_measured   := strcount(contents, search_string_mem);
 
-		attribute<uint32> pos_start_mem_size     := strpos(contents,'Highest PageFileUsage:');
-		attribute<string> contents_from_mem_size := substr(contents, pos_start_mem_size + 23);
+		attribute<uint32> pos_start_mem_size     := strpos(contents, search_string_mem);
+		attribute<string> contents_from_mem_size := substr(contents, pos_start_mem_size + strlen(search_string_mem) + 1);
 		attribute<string> mem_size               := 
 			switch(
 			  case (nr_mem_size_measured == 0, 'Not Measured')
@@ -55,6 +56,34 @@ container mergeToRapport
 		//attribute<string> ver_test_full_path    := readLines(dirinfo, ., 0);
 		attribute<string> ver_test_file         := substr(ver_test_full_path, strlen(expand(.,ResultDir))+1);
 		attribute<string> ver                   := left(ver_test_file , strpos(ver_test_file, BackSlash));
+		
+		attribute<string> majorversion            := left(ver , strpos(ver, '_'));
+		attribute<string> ver_zonder_majorversion := substr(ver , strlen(majorversion) + 1);
+		
+		attribute<string> minorversion            := left(ver_zonder_majorversion , strpos(ver_zonder_majorversion, '_'));
+		attribute<string> ver_zonder_minorversion := substr(ver_zonder_majorversion , strlen(minorversion) + 1);
+
+		attribute<string> patchnummber            := left(ver_zonder_minorversion , strpos(ver_zonder_minorversion, '_'));
+		attribute<string> ver_zonder_patchnummber := substr(ver_zonder_minorversion , strlen(patchnummber) + 1);
+
+		attribute<string> ver_met_voorlopnullen
+			:= switch(
+				case(strlen(majorversion) = 1, '00' + majorversion),
+				case(strlen(majorversion) = 2,  '0' + majorversion),
+				(majorversion)
+			)+ '_' +
+			switch(
+				case(strlen(minorversion) = 1, '00' + minorversion),
+				case(strlen(minorversion) = 2,  '0' + minorversion),
+				(majorversion)
+			)+ '_' +
+			switch(
+				case(strlen(patchnummber) = 1, '00' + patchnummber),
+				case(strlen(patchnummber) = 2,  '0' + patchnummber),
+				(majorversion)
+			)+ '_' + ver_zonder_patchnummber;
+			
+
 		attribute<string> test                  := replace(substr(ver_test_file, strpos(ver_test_file, BackSlash) + 1),'.txt','','_',' ');
 		attribute<string> key_string            := ver + '_' + test;
 		
@@ -134,25 +163,30 @@ container mergeToRapport
 				+ '<I>test started at</I>: ' + duration_seconds/startSeconds/impl/formatted + '<BR>'
 				+ html_no_information_written
 				+ '<I>duration</I>: ' + duration_seconds/result_formatted
-				+ '<BR><I>highest PageFileUsage: </I><B>' + MakeDefined(mem_size , not_measured) + '</B>'
+				+ '<BR><I>Highest CommitCharge: </I><B>' + MakeDefined(mem_size , not_measured) + '</B>'
 			)
 			+ '</td>';
 	}
 
-	unit<uint32> ver_wrong_order:= unique(testfiles/ver)
+	unit<uint32> ver_wrong_order:= unique(testfiles/ver_met_voorlopnullen)
 	{
-		attribute<string> name:= 'ver_' + values;
+		attribute<string> name       := 'ver_' + values_ver;
+		attribute<string> values_ver := rjoin(values, testfiles/ver_met_voorlopnullen, testfiles/ver);
 	}
 
 	unit<uint32> ver := range(uint32,0,#ver_wrong_order)
 	{
-		attribute<string> values        := union_data(.,reverse(ver_wrong_order/values));
+		attribute<string> values                     := union_data(.,reverse(ver_wrong_order/values_ver));
+		//attribute<string> values_met_voorloopnullen  := union_data(.,reverse(ver_wrong_order/values));
+
 		attribute<string> name          := 'ver_' + values;
 
 		attribute<uint32> version_pos   := (IsDefined(strpos(lowercase(values),'x64')) ? strpos(lowercase(values),'x64') : strpos(lowercase(values),'win32')) - 1;
 		attribute<string> version       := left(values, version_pos);
+		attribute<string> version_met_voorlopnullen := rjoin(values, ver_wrong_order/values_ver, ver_wrong_order/values);
+		
 
-		parameter<string> version_range := max(version) + '___' + min(ver/version);
+		parameter<string> version_range := rjoin(max(version_met_voorlopnullen),version_met_voorlopnullen, version) + '___' + rjoin(min(version_met_voorlopnullen),version_met_voorlopnullen, version);
 	}
 
 	unit<uint32> test_all:= unique(testfiles/test)
