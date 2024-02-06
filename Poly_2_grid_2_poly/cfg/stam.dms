@@ -30,6 +30,47 @@ container Poly_2_grid_2_poly
 		unit<spoint> domain_grid;
 		attribute<uint32> zone_rel(domain_grid);
 		
+		// Segments := horizontale raster-randjes met ongelijke boven en onder zones + verticale raster-randjes met ongelijke linker en rechter zones
+		unit<int16> rows := range(uint32, pointrow(lowerbound(domain_grid)), pointrow(upperbound(domain_grid)));
+		unit<int16> cols := range(uint32, pointcol(lowerbound(domain_grid)), pointcol(upperbound(domain_grid)));
+		
+		unit<int16>  HorizontalLines := range(int16, lowerbound(rows), upperbound(rows)+1s);
+		unit<int16>  VerticalLines   := range(int16, lowerbound(cols), upperbound(cols)+1s);
+		
+		unit<uint32> HorizontalSegments := combine(cols, HorizontalLines)
+		{
+			attribute<domain_grid> left  := point_xy(first_rel   , second_rel, domain_grid);
+			attribute<domain_grid> right := point_xy(first_rel+1s, second_rel, domain_grid);
+			attribute<bool> isBoundary := MakeDefined(left->zone_rel, max(zone_rel)+1) != MakeDefined(right->zone_rel, max(zone_rel)+1);
+		}
+		unit<uint32> VerticalSegments := combine(VerticalLines, rows)
+		{
+			attribute<domain_grid> left  := point_xy(first_rel, second_rel, domain_grid);
+			attribute<domain_grid> right := point_xy(first_rel, second_rel+1s, domain_grid);
+			attribute<bool> isBoundary := MakeDefined(left->zone_rel, max(zone_rel)+1) != MakeDefined(right->zone_rel, max(zone_rel)+1);
+		}
+		unit<uint32> HorizontalBoundarySegments := select(HorizontalSegments/isBoundary);
+		unit<uint32> VerticalBoundarySegments := select(verticalSegments/isBoundary);
+		
+		unit<uint32> BoundarySegments := union_unit(HorizontalBoundarySegments, VerticalBoundarySegments)
+		{
+			attribute<domain_grid> left  := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/left) , collect_by_cond(VerticalBoundarySegments, VerticalSegments/left));
+			attribute<domain_grid> right := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/right), collect_by_cond(VerticalBoundarySegments, VerticalSegments/right));
+		}
+		
+		// JFN := raster-hoekpunten waarop 2 segments uit komen
+		// JFL := Segments die 2 JFN verbinden
+		// JFS := serie verbonden JFL
+		// JFS/Linestring := d.m.v. impedance_single van alle begin JFS naar eind JFS routes, traceback, flow voor ordinal t.b.v. points2sequence
+		// Junction := raster-hoekpunt waarop meer dan 2 segmenten uit komen (1 komt niet voor)
+		// Connector := Segment tussen een Junction en een JFN
+		// JFS/Linestring := begin connector + result(5) + end connector; eventueel deze simplifyen
+		// ZoneJunction := kruistabel met junctions en zones;
+		// ZoneBorder := link tussen 2 junctions bij een zone die door een segment of JFS/Linestring verbonden zijn
+		// bepaal per zone de 1e ZoneJunction en 1 via een ZoneBorder verbonden 2e ZoneJunction
+		// routeer de andere ZoneJunctions min of meer conform stap 5.
+		// gebruik 12 om resultaten van 9 achter elkaar te plakken per zone.
+		
 	}
 	
 	container applications {
