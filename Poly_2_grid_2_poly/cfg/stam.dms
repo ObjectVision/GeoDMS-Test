@@ -1,0 +1,28 @@
+container Poly_2_grid_2_poly
+{
+	#include <eenheden.dms>
+	#include <geografie.dms>
+
+	container SourceData
+	{
+		unit<uint32> gemeente : StorageName = "%SourceDatadir%/CBS/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
+		{
+			attribute<geografie/point_rd> geometry (poly);
+			attribute<string> label := GM_NAAM;
+		}
+	}
+	
+	container GridData
+	{
+		attribute<SourceData/gemeente> m100 (Geografie/gridcel_100m/domain) := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_100m/domain);
+		attribute<SourceData/gemeente> m25  (Geografie/gridcel_25m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_25m/domain);
+		attribute<SourceData/gemeente> m10  (Geografie/gridcel_10m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_10m/domain);
+
+		container districts
+		{
+			unit<uint32> m100 := district(GridData/m100);
+			unit<uint32> m25  := district(GridData/m25);
+			unit<uint32> m10  := district(GridData/m10);
+		}
+	}
+}

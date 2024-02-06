@@ -1,0 +1,65 @@
+container Geografie: Using = "Eenheden"
+{
+	#include<ngr_layer.dms>
+
+	unit<fpoint>  point_rd_base:
+		DialogData       = "ngr_layer" 
+	,	SpatialReference = "EPSG:28992";
+
+	unit<fpoint> point_rd    := range(point_rd_base, point_xy(0[m],300000[m]), point_xy(280000[m],625000[m]));
+	unit<ipoint> point_rd_mm := // for polygon functions
+		gridset(
+			 point_rd
+			,point_xy(Float32(0.001),Float32(0.001),point_rd)
+			,point_xy(Float32(0)    ,Float32(0)    ,point_rd)
+			,ipoint
+		);
+
+	container Studiegebied
+	{
+		parameter<m> left   :=  10000[m];
+		parameter<m> right  := 280000[m];
+		parameter<m> bottom := 300000[m]; 
+		parameter<m> top    := 625000[m]; 
+	}
+
+	container gridcel_100m:= Schemas/Grid(100[m], Studiegebied);
+	container gridcel_50m: = Schemas/Grid( 50[m], Studiegebied);
+	container gridcel_25m: = Schemas/Grid( 25[m], Studiegebied);
+	container gridcel_10m: = Schemas/Grid( 10[m], Studiegebied);
+
+	container Schemas
+	{
+		template Grid
+		{
+			// begin case parameters
+			parameter<m> gridsize;
+			container bbox;
+			// einde case parameters
+
+			parameter<int16> nr_cols:= int16((bbox/right - bbox/left)   / gridsize);
+			parameter<int16> nr_rows:= int16((bbox/top   - bbox/bottom) / gridsize);
+
+			unit<spoint> untiled_domain:=
+				range(
+					 gridset(
+						 point_rd
+						,point_xy(float32(gridsize), float32(-gridsize), point_rd)
+						,point_xy(bbox/left,bbox/top,point_rd)
+						,spoint
+					)
+					,point_xy(int16(0), int16(0))
+					,point_xy(nr_cols,nr_rows)
+				)
+			,	DialogData = "point_rd";
+
+			unit<spoint> domain:= TiledUnit(point_xy(int16(1024),int16(1024), untiled_domain))
+			{
+				parameter<m>     size := gridsize;
+				attribute<.>     id   := id(.);
+				attribute<int16> X    := get_X(id);
+				attribute<int16> Y    := get_Y(id);
+			}
+		}
+	}
+}
