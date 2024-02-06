@@ -5,7 +5,7 @@ container Poly_2_grid_2_poly
 
 	container SourceData
 	{
-		unit<uint32> gemeente : StorageName = "%SourceDatadir%/CBS/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
+		unit<uint32> gemeente : StorageName = "%CbsSourceDatadir%/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
 			attribute<geografie/point_rd> geometry (poly);
 			attribute<string> label := GM_NAAM;
@@ -23,6 +23,27 @@ container Poly_2_grid_2_poly
 			unit<uint32> m100 := district(GridData/m100);
 			unit<uint32> m25  := district(GridData/m25);
 			unit<uint32> m10  := district(GridData/m10);
+		}
+	}
+	
+	template vectorize {
+		unit<spoint> domain_grid;
+		attribute<uint32> zone_rel(domain_grid);
+		
+	}
+	
+	container applications {
+		container d100 := vectorize(Geografie/gridcel_100m/domain, GridData/districts/m100/Districts);
+		container d50  := vectorize(Geografie/gridcel_25m/domain,  GridData/districts/m25/Districts);
+		container d10  := vectorize(Geografie/gridcel_10m/domain,  GridData/districts/m10/Districts);
+		
+		container m100 := vectorize(Geografie/gridcel_100m/domain, GridData/m100);
+		container m50  := vectorize(Geografie/gridcel_25m/domain,  GridData/m25);
+		container m10  := vectorize(Geografie/gridcel_10m/domain,  GridData/m10);
+	}
+	container ConfigSettings {
+		container Overridable {
+			parameter<string> CbsSourceDatadir := '%SourceDatadir%/CBS';
 		}
 	}
 }
