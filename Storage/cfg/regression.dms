@@ -179,16 +179,16 @@ container StorageManagerTest
 		}
 		container Tests
 		{
-			attribute<bool> IntegerAtt (reference) := eq_or_both_null(src/IntegerAtt, reference/IntegerAtt);
-			attribute<bool> FloatAtt   (reference) := eq_or_both_null(src/FloatAtt, reference/FloatAtt);
-			attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
+			attribute<bool> IntegerAttr (reference) := eq_or_both_null(src/IntegerAtt, reference/IntegerAtt);
+			attribute<bool> FloatAttr   (reference) := eq_or_both_null(src/FloatAtt, reference/FloatAtt);
+			attribute<bool> StringAttr  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
 		}
 		container Results
 		{
-			parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
-			parameter<bool> FloatAtt   := all(Tests/FloatAtt);
-			parameter<bool> StringAtt  := all(Tests/StringAtt);
-			parameter<bool> all        := IntegerAtt && FloatAtt && StringAtt;
+			parameter<bool> IntegerAttr := all(Tests/IntegerAttr);
+			parameter<bool> FloatAttr   := all(Tests/FloatAttr);
+			parameter<bool> StringAttr  := all(Tests/StringAttr);
+			parameter<bool> all        := IntegerAttr && FloatAttr && StringAttr;
 		}
 		container Write: StorageName = "%localDataProjDir%/regr_results/dbf.dbf"
 		{
@@ -196,6 +196,24 @@ container StorageManagerTest
 			attribute<float32> FloatAtt   (reference) := reference/FloatAtt;
 			attribute<string>  StringAtt  (reference) := reference/StringAtt;
 		}
+	}
+	container mmd
+	{
+		container src := FenceContainer(dbf/src, 'Read dbf and stored in MMD'), StorageName = "%projdir%/data/mmd", StorageType = "MMD"
+		{
+			unit<uint8> scenario := range(uint8, 0b, 10b)
+			{
+				/* Strings aren't stored in .MMD yet. !!?!	
+					attribute<String> naam(.): [ 'referentie', 'hoog', 'laag'];
+					attribute<String> NAAM_(.);
+				*/
+				attribute<uint8> squares := ID(.) * ID(.);
+			}
+			
+			attribute<float32> result(reference) := float32(integerAtt)+float32(floatAtt);
+		}
+		
+		container dst: StorageName = "%projdir%/data/mmd", StorageType = "MMD", StorageReadOnly = "True";
 	}
 
 	container Str // ASCII String file

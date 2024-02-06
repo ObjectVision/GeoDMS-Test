@@ -4317,12 +4317,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			
 			unit<uint32> combine := combine(src, ATiledDomain)
 			{
-				parameter<float32> mean_nr_1 : =mean(float32(nr_1));
-				parameter<bool> test_attr := sum(nr_2) = 5000000 && float_isNearby(mean(float32(nr_1)), 250000f, dif_all_float32) && #. == 2500000 && nr_1[2265850] == 453170 && nr_2[2265850] == 0;
+				parameter<float32> mean_nr_1 : =mean(float32(first_rel));
+				parameter<bool> test_attr := sum(second_rel) = 5000000 && float_isNearby(mean(float32(first_rel)), 250000f, dif_all_float32) && #. == 2500000 && first_rel[2265850] == 453170 && second_rel[2265850] == 0;
 			}
 			unit<uint32> join_equal_values:= join_equal_values(src/ATiledDomain_rel , id(ATiledDomain))
 			{
-				parameter<bool> test_attr := sum(nr_2_rel) = 1000000 && float_isNearby(mean(float32(nr_1_rel)), 249999.5f, dif_all_float32) && #. == 500000;
+				parameter<bool> test_attr := sum(second_rel) = 1000000 && float_isNearby(mean(float32(first_rel)), 249999.5f, dif_all_float32) && #. == 500000;
 			}
 		}
 
@@ -4886,6 +4886,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				{
 					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
 				}
+				unit<uint32>      RegionStrings       := unique(string(Source/City/RegionCode))
+				{
+					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+				}
 				parameter<bool>   test          := all(Regions/Values == Regions/att);
 			}
 			container union: url  = "http://www.objectvision.nl/geodms/operators-a-functions/union"
@@ -4959,7 +4963,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				//parameter<uint8> sum_uint8  := sum(id(unit_CityForEachYear_uint8 ));
 				//parameter<bool>  test_uint8  := not(IsDefined(sum_uint8));
 				
-				parameter<bool>  test_default := sum(unit_CityForEachYear/nr_1) == 50 && sum(unit_CityForEachYear/nr_2) == 50 && unit_CityForEachYear/nr_1[14]  ==  2 && unit_CityForEachYear/nr_2[14]  ==  4;
+				parameter<bool>  test_default := sum(unit_CityForEachYear/first_rel) == 50 && sum(unit_CityForEachYear/second_rel) == 50 && unit_CityForEachYear/first_rel[14]  ==  2 && unit_CityForEachYear/second_rel[14]  ==  4;
 				
 				parameter<bool> test        := #(unit_CityForEachYear) > 0 
 					? test_default && test_uint16 && test_uint32 && test_uint64 && test_uint8_uint16
@@ -4968,7 +4972,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container combine_data
 			{
 				attribute<combine/unit_CityForEachYear> CityForEachYear_rel (combine/unit_CityForEachYear) := 
-					combine_data(combine/unit_CityForEachYear, combine/unit_CityForEachYear/nr_2, combine/unit_CityForEachYear/nr_1);
+					combine_data(combine/unit_CityForEachYear, combine/unit_CityForEachYear/second_rel, combine/unit_CityForEachYear/first_rel);
 
 				attribute<combine/unit_CityForEachYear> att_two_bools (combine/unit_two_bools) := 
 					combine_data(combine/unit_two_bools, combine/unit_two_bools/A, combine/unit_two_bools/B);
@@ -5026,9 +5030,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<uint32> nr_2_rel_empty_OK: [];
 					attribute<uint32> nr_X_rel_empty_OK: [];
 
-					attribute<bool> test_nr_1_rel := = isEmpty ? 'nr_1_rel == nr_1_rel_empty_OK' : 'nr_1_rel == nr_1_rel_OK';
-					attribute<bool> test_nr_2_rel := = isEmpty ? 'nr_2_rel == nr_2_rel_empty_OK' : 'nr_2_rel == nr_2_rel_OK';
-					attribute<bool> test_nr_X_rel := = isEmpty ? 'nr_X_rel == nr_X_rel_empty_OK' : 'nr_X_rel == nr_X_rel_OK';
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
 
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
@@ -5045,9 +5049,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<uint32> nr_2_rel_empty_OK: [];
 					attribute<uint32> nr_X_rel_empty_OK: [];
 
-					attribute<bool> test_nr_1_rel := = isEmpty ? 'nr_1_rel == nr_1_rel_empty_OK' : 'nr_1_rel == nr_1_rel_OK';
-					attribute<bool> test_nr_2_rel := = isEmpty ? 'nr_2_rel == nr_2_rel_empty_OK' : 'nr_2_rel == nr_2_rel_OK';
-					attribute<bool> test_nr_X_rel := = isEmpty ? 'nr_X_rel == nr_X_rel_empty_OK' : 'nr_X_rel == nr_X_rel_OK';
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
 					
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
@@ -5064,9 +5068,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<uint32> nr_2_rel_empty_OK: [];
 					attribute<uint32> nr_X_rel_empty_OK: [];
 
-					attribute<bool> test_nr_1_rel := = isEmpty ? 'nr_1_rel == nr_1_rel_empty_OK' : 'nr_1_rel == nr_1_rel_OK';
-					attribute<bool> test_nr_2_rel := = isEmpty ? 'nr_2_rel == nr_2_rel_empty_OK' : 'nr_2_rel == nr_2_rel_OK';
-					attribute<bool> test_nr_X_rel := = isEmpty ? 'nr_X_rel == nr_X_rel_empty_OK' : 'nr_X_rel == nr_X_rel_OK';
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
 					
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
@@ -5083,9 +5087,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<uint32> nr_2_rel_empty_OK: [];
 					attribute<uint32> nr_X_rel_empty_OK: [];
 
-					attribute<bool> test_nr_1_rel := = isEmpty ? 'nr_1_rel == nr_1_rel_empty_OK' : 'nr_1_rel == nr_1_rel_OK';
-					attribute<bool> test_nr_2_rel := = isEmpty ? 'nr_2_rel == nr_2_rel_empty_OK' : 'nr_2_rel == nr_2_rel_OK';
-					attribute<bool> test_nr_X_rel := = isEmpty ? 'nr_X_rel == nr_X_rel_empty_OK' : 'nr_X_rel == nr_X_rel_OK';
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
 
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
@@ -5102,9 +5106,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<uint32> nr_2_rel_empty_OK: [];
 					attribute<uint32> nr_X_rel_empty_OK: [];
 
-					attribute<bool> test_nr_1_rel := = isEmpty ? 'nr_1_rel == nr_1_rel_empty_OK' : 'nr_1_rel == nr_1_rel_OK';
-					attribute<bool> test_nr_2_rel := = isEmpty ? 'nr_2_rel == nr_2_rel_empty_OK' : 'nr_2_rel == nr_2_rel_OK';
-					attribute<bool> test_nr_X_rel := = isEmpty ? 'nr_X_rel == nr_X_rel_empty_OK' : 'nr_X_rel == nr_X_rel_OK';
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
 
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
@@ -8137,14 +8141,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					{
 						attribute<point_rd> point :=
 							point(
-								 pointcol(shape/centre_point[nr_1]) + radius * float32(circle/template/x[nr_2])
-								,pointrow(shape/centre_point[nr_1]) + radius * float32(circle/template/y[nr_2])
+								 pointcol(shape/centre_point[first_rel]) + radius * float32(circle/template/x[second_rel])
+								,pointrow(shape/centre_point[first_rel]) + radius * float32(circle/template/y[second_rel])
 								,point_rd
 							);
-						attribute<uint32> ordinal := #pointset - nr_2 - 1;
+						attribute<uint32> ordinal := #pointset - second_rel - 1;
 					}
-					attribute<point_rd> geometry     (poly, shape) := points2sequence(pointset/point, pointset/nr_1, pointset/ordinal);
-					attribute<point_rd> geometry_arc (arc, shape)  := points2sequence(pointset/point, pointset/nr_1, pointset/ordinal)
+					attribute<point_rd> geometry     (poly, shape) := points2sequence(pointset/point, pointset/first_rel, pointset/ordinal);
+					attribute<point_rd> geometry_arc (arc, shape)  := points2sequence(pointset/point, pointset/first_rel, pointset/ordinal)
 					{
 						parameter<int16>  PenWidth      := 2s          , DialogType = "PenWidth";
 					}
