@@ -37,18 +37,31 @@ container Poly_2_grid_2_poly
 		unit<int16>  HorizontalLines := range(int16, lowerbound(rows), upperbound(rows)+1s);
 		unit<int16>  VerticalLines   := range(int16, lowerbound(cols), upperbound(cols)+1s);
 		
+		unit<uint32> Point := combine(VerticalLines, HorizontalLines)
+		{
+			attribute<domain_grid> domain_grid_rel := point_xy(first_rel, second_rel, domain_grid); // the RasterCell NorthEast of this Point
+			attribute<uint32> NrBoundarySegments := pcount(BoundarySegments/F1) + pcount(BoundarySegments/F2);
+		}
+		
 		unit<uint32> HorizontalSegments := combine(cols, HorizontalLines)
 		{
 			attribute<domain_grid> left  := point_xy(first_rel   , second_rel, domain_grid);
 			attribute<domain_grid> right := point_xy(first_rel+1s, second_rel, domain_grid);
 			attribute<bool> isBoundary := MakeDefined(left->zone_rel, max(zone_rel)+1) != MakeDefined(right->zone_rel, max(zone_rel)+1);
+			attribute<Point> F1 := combine_data(Point,  first_rel    [VerticalLines], second_rel);
+			attribute<Point> F2 := combine_data(Point, (first_rel+1s)[VerticalLines], second_rel);
 		}
+		
 		unit<uint32> VerticalSegments := combine(VerticalLines, rows)
 		{
-			attribute<domain_grid> left  := point_xy(first_rel, second_rel, domain_grid);
+			attribute<domain_grid> left  := point_xy(first_rel, second_rel   , domain_grid);
 			attribute<domain_grid> right := point_xy(first_rel, second_rel+1s, domain_grid);
 			attribute<bool> isBoundary := MakeDefined(left->zone_rel, max(zone_rel)+1) != MakeDefined(right->zone_rel, max(zone_rel)+1);
+			attribute<Point> F1 := combine_data(Point, first_rel,  second_rel    [HorizontalLines]);
+			attribute<Point> F2 := combine_data(Point, first_rel, (second_rel+1s)[HorizontalLines]);
 		}
+		
+		
 		unit<uint32> HorizontalBoundarySegments := select(HorizontalSegments/isBoundary);
 		unit<uint32> VerticalBoundarySegments := select(verticalSegments/isBoundary);
 		
@@ -56,10 +69,17 @@ container Poly_2_grid_2_poly
 		{
 			attribute<domain_grid> left  := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/left) , collect_by_cond(VerticalBoundarySegments, VerticalSegments/left));
 			attribute<domain_grid> right := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/right), collect_by_cond(VerticalBoundarySegments, VerticalSegments/right));
+			attribute<Point> F1 := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/F1), collect_by_cond(VerticalBoundarySegments, VerticalSegments/F1));
+			attribute<Point> F2 := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/F2), collect_by_cond(VerticalBoundarySegments, VerticalSegments/F2));
 		}
 		
 		// JFN := raster-hoekpunten waarop 2 segments uit komen
+		
+		unit<uint32> JFN := select(Point/NrBoundarySegments == 2);
+		
 		// JFL := Segments die 2 JFN verbinden
+		unit<uint32> JFL := select(BoundarySegments/F1->NrBoundarySegments == 2 && BoundarySegments/F2->NrBoundarySegments == 2);
+		
 		// JFS := serie verbonden JFL
 		// JFS/Linestring := d.m.v. impedance_single van alle begin JFS naar eind JFS routes, traceback, flow voor ordinal t.b.v. points2sequence
 		// Junction := raster-hoekpunt waarop meer dan 2 segmenten uit komen (1 komt niet voor)
