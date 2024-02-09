@@ -8309,7 +8309,30 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
-			container outer_polygon
+			container outer_multi_polygon_square
+			{
+				parameter<point_rd>    src  (poly) := value(srcDomain/square/boundary_dif[0],point_rd);
+				parameter<float32>     area        := area(src,float32);
+			
+				parameter<point_rd>    att  (poly) := outer_multi_polygon(src);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[
+						{158100, 461110},{157950, 461110},{157946, 461109},{157943, 461107},{157941, 461104},{157940, 461100},{157940, 460900},
+						{157941, 460896},{157943, 460893},{157946, 460891},{157950, 460890},{158100, 460890},{158104, 460891},{158107, 460893}, 
+						{158109, 460896},{158110, 460900},{158110, 461100},{158109, 461104},{158107, 461107},{158104, 461109},{158100, 461110}, 
+						{158500, 461510},{157500, 461510},{157496, 461509},{157493, 461507},{157491, 461504},{157490, 461500},{157490, 460500}, 
+						{157491, 460496},{157493, 460493},{157496, 460491},{157500, 460490},{158500, 460490},{158504, 460491},{158507, 460493}, 
+						{158509, 460496},{158510, 460500},{158510, 461500},{158509, 461504},{158507, 461507},{158504, 461509},{158500, 461510}, 
+						{158190, 460810},{157810, 460810},{157810, 461190},{158190, 461190},{158190, 460810},{158500, 461510},{158100, 461110}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+			container outer_polygon_lake_island
 			{
 				attribute<point_rd>    src  (poly, SDomain) := Source/bg_buffer_multi_polygon/poly/geometry;
 			
