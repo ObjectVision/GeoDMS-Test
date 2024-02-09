@@ -28,61 +28,183 @@ container Poly_2_grid_2_poly
 	
 	template vectorize {
 		unit<spoint> domain_grid;
-		attribute<uint32> zone_rel(domain_grid);
+		unit<uint32> Zone;
+		attribute<Zone> zone_rel(domain_grid);
+		
+		parameter<Zone> NoZone := #Zone+lowerbound(Zone); // outside study area indicator
 		
 		// Segments := horizontale raster-randjes met ongelijke boven en onder zones + verticale raster-randjes met ongelijke linker en rechter zones
 		unit<int16> rows := range(uint32, pointrow(lowerbound(domain_grid)), pointrow(upperbound(domain_grid)));
 		unit<int16> cols := range(uint32, pointcol(lowerbound(domain_grid)), pointcol(upperbound(domain_grid)));
 		
-		unit<int16>  HorizontalLines := range(int16, lowerbound(rows), upperbound(rows)+1s);
-		unit<int16>  VerticalLines   := range(int16, lowerbound(cols), upperbound(cols)+1s);
+		unit<int16>  HorizontalLine := range(int16, lowerbound(rows), upperbound(rows)+1s);
+		unit<int16>  VerticalLine   := range(int16, lowerbound(cols), upperbound(cols)+1s);
 		
-		unit<uint32> Point := combine(VerticalLines, HorizontalLines)
+		unit<uint32> Point := combine(VerticalLine, HorizontalLine)
 		{
+			attribute<geografie/point_rd> geometry := domain_grid_rel[geografie/point_rd];
 			attribute<domain_grid> domain_grid_rel := point_xy(first_rel, second_rel, domain_grid); // the RasterCell NorthEast of this Point
-			attribute<uint32> NrBoundarySegments := pcount(BoundarySegments/F1) + pcount(BoundarySegments/F2);
+			attribute<bool> isBoundaryPoint := has_any(BoundarySegment/F1) || has_any(BoundarySegment/F2);
+			attribute<BoundaryPoint> BoundaryPoint_rel := invert(BoundaryPoint/org_rel);
 		}
-		
-		unit<uint32> HorizontalSegments := combine(cols, HorizontalLines)
+		unit<uint32> BoundaryPoint := select_with_org_rel(Point/isBoundaryPoint)
 		{
-			attribute<domain_grid> left  := point_xy(first_rel   , second_rel, domain_grid);
-			attribute<domain_grid> right := point_xy(first_rel+1s, second_rel, domain_grid);
-			attribute<bool> isBoundary := MakeDefined(left->zone_rel, max(zone_rel)+1) != MakeDefined(right->zone_rel, max(zone_rel)+1);
-			attribute<Point> F1 := combine_data(Point,  first_rel    [VerticalLines], second_rel);
-			attribute<Point> F2 := combine_data(Point, (first_rel+1s)[VerticalLines], second_rel);
+			attribute<geografie/point_rd> geometry := org_rel->geometry;
+			attribute<uint32> NrBoundarySegments := pcount(BoundarySegment/bp_F1) + pcount(BoundarySegment/bp_F2);
+			attribute<JFS> JFS_rel := JFS/PartNr;
+			
+			attribute<uint32> NrJFL := pcount(JFL/F1) + pcount(JFL/F2);
 		}
 		
-		unit<uint32> VerticalSegments := combine(VerticalLines, rows)
+		unit<uint32> HorizontalSegment := combine(cols, HorizontalLine)
 		{
-			attribute<domain_grid> left  := point_xy(first_rel, second_rel   , domain_grid);
-			attribute<domain_grid> right := point_xy(first_rel, second_rel+1s, domain_grid);
-			attribute<bool> isBoundary := MakeDefined(left->zone_rel, max(zone_rel)+1) != MakeDefined(right->zone_rel, max(zone_rel)+1);
-			attribute<Point> F1 := combine_data(Point, first_rel,  second_rel    [HorizontalLines]);
-			attribute<Point> F2 := combine_data(Point, first_rel, (second_rel+1s)[HorizontalLines]);
+			attribute<domain_grid> South  := point_xy(first_rel, second_rel-1s, domain_grid);
+			attribute<domain_grid> North  := point_xy(first_rel, second_rel   , domain_grid);
+			attribute<bool> isBoundarySegment := MakeDefined(south->zone_rel, NoZone) != MakeDefined(North->zone_rel, NoZone);
+			attribute<Point> F1 := combine_data(Point,  first_rel    [VerticalLine], second_rel);
+			attribute<Point> F2 := combine_data(Point, (first_rel+1s)[VerticalLine], second_rel);
 		}
 		
-		
-		unit<uint32> HorizontalBoundarySegments := select(HorizontalSegments/isBoundary);
-		unit<uint32> VerticalBoundarySegments := select(verticalSegments/isBoundary);
-		
-		unit<uint32> BoundarySegments := union_unit(HorizontalBoundarySegments, VerticalBoundarySegments)
+		unit<uint32> VerticalSegment := combine(VerticalLine, rows)
 		{
-			attribute<domain_grid> left  := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/left) , collect_by_cond(VerticalBoundarySegments, VerticalSegments/left));
-			attribute<domain_grid> right := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/right), collect_by_cond(VerticalBoundarySegments, VerticalSegments/right));
-			attribute<Point> F1 := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/F1), collect_by_cond(VerticalBoundarySegments, VerticalSegments/F1));
-			attribute<Point> F2 := union_data(., collect_by_cond(HorizontalBoundarySegments, HorizontalSegments/F2), collect_by_cond(VerticalBoundarySegments, VerticalSegments/F2));
+			attribute<domain_grid> West := point_xy(first_rel-1s, second_rel, domain_grid);
+			attribute<domain_grid> East := point_xy(first_rel   , second_rel, domain_grid);
+			attribute<bool> isBoundarySegment := MakeDefined(West->zone_rel, max(zone_rel)+1) != MakeDefined(East->zone_rel, max(zone_rel)+1);
+			attribute<Point> F1 := combine_data(Point, first_rel,  second_rel    [HorizontalLine]);
+			attribute<Point> F2 := combine_data(Point, first_rel, (second_rel+1s)[HorizontalLine]);
 		}
 		
-		// JFN := raster-hoekpunten waarop 2 segments uit komen
+		unit<uint32> HorizontalBoundarySegment := select(HorizontalSegment/isBoundarySegment);
+		unit<uint32> VerticalBoundarySegment := select(verticalSegment/isBoundarySegment);
 		
-		unit<uint32> JFN := select(Point/NrBoundarySegments == 2);
+		unit<uint32> BoundarySegment := union_unit(HorizontalBoundarySegment, VerticalBoundarySegment)
+		{
+			attribute<domain_grid> left  := union_data(., collect_by_cond(HorizontalBoundarySegment, HorizontalSegment/North), collect_by_cond(VerticalBoundarySegment, VerticalSegment/West));
+			attribute<domain_grid> right := union_data(., collect_by_cond(HorizontalBoundarySegment, HorizontalSegment/South), collect_by_cond(VerticalBoundarySegment, VerticalSegment/East));
+			attribute<Point> F1 := union_data(., collect_by_cond(HorizontalBoundarySegment, HorizontalSegment/F1), collect_by_cond(VerticalBoundarySegment, VerticalSegment/F1));
+			attribute<Point> F2 := union_data(., collect_by_cond(HorizontalBoundarySegment, HorizontalSegment/F2), collect_by_cond(VerticalBoundarySegment, VerticalSegment/F2));
+			attribute<BoundaryPoint> bp_F1 := F1->BoundaryPoint_rel; 
+			attribute<BoundaryPoint> bp_F2 := F2->BoundaryPoint_rel; 
+			attribute<bool> isJFL := bp_F1->NrBoundarySegments == 2 && bp_F2->NrBoundarySegments == 2;
+			
+			attribute<Zone> leftZone_rel  := zone_rel[left];
+			attribute<Zone> rightZone_rel := zone_rel[right];
+		}
 		
-		// JFL := Segments die 2 JFN verbinden
-		unit<uint32> JFL := select(BoundarySegments/F1->NrBoundarySegments == 2 && BoundarySegments/F2->NrBoundarySegments == 2);
+		// JFN (aka Junction Free Nodes) := raster-hoekpunten waarop 2 segments uit komen
+		unit<uint32> JFN := select(BoundaryPoint/NrBoundarySegments == 2);
 		
-		// JFS := serie verbonden JFL
-		// JFS/Linestring := d.m.v. impedance_single van alle begin JFS naar eind JFS routes, traceback, flow voor ordinal t.b.v. points2sequence
+		// JFL (aka Junction Free Links) := Segments die 2 JFN verbinden
+		unit<uint32> JFL := select(BoundarySegment/isJFL)
+		{
+			attribute<BoundaryPoint> F1 := collect_by_cond(JFL, BoundarySegment/bp_F1);
+			attribute<BoundaryPoint> F2 := collect_by_cond(JFL, BoundarySegment/bp_F2);
+		}
+		
+		unit<uint32> FromJunctionLink := select(BoundarySegment/bp_F1->NrBoundarySegments > 2)
+		{
+			attribute<BoundaryPoint> F1 := collect_by_cond(FromJunctionLink, BoundarySegment/bp_F1);
+///			attribute<BoundaryPoint> F2 := collect_by_cond(JFL, BoundarySegment/bp_F2);
+			
+			attribute<Zone> leftZone_rel  := collect_by_cond(FromJunctionLink, BoundarySegment/leftZone_rel);
+			attribute<Zone> rightZone_rel := collect_by_cond(FromJunctionLink, BoundarySegment/rightZone_rel);
+			
+			attribute<Junction> Junction_rel := Junction/per_node[F1];
+		}
+		unit<uint32> ToJunctionLink := select(BoundarySegment/bp_F2->NrBoundarySegments > 2)
+		{
+//			attribute<BoundaryPoint> F1 := collect_by_cond(JFL, BoundarySegment/bp_F1);
+			attribute<BoundaryPoint> F2 := collect_by_cond(ToJunctionLink, BoundarySegment/bp_F2);
+			attribute<Junction> Junction_rel := Junction/per_node[F2];
+			
+			attribute<Zone> leftZone_rel  := collect_by_cond(ToJunctionLink, BoundarySegment/leftZone_rel);
+			attribute<Zone> rightZone_rel := collect_by_cond(ToJunctionLink, BoundarySegment/rightZone_rel);
+		}
+		
+		// JFS (aka Junction Free Section) := serie verbonden JFL
+		unit<uint32> JFS := connected_parts(JFL/F1, JFL/F2)
+		{
+			attribute<uint32> nrParts := pcount(PartNr);
+		}
+		unit<uint32> JFSS := select_with_org_rel(JFS/nrParts > 1)
+		{
+			attribute<JFS> JFS_rel := org_rel;
+			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFS/PartNr];
+			
+			unit<uint32> JFLP := union_unit(JFL, JFL) 
+			{ 
+				attribute<BoundaryPoint> BP_rel  := union_data(., JFL/F1, JFL/F2);
+				attribute<JFSS>          JFSS_rel := PartNr[BP_rel];
+				attribute<bool> isEndOfJSF := BP_rel->NrJFL == 1;
+			} 
+			attribute<uint8> NrEnds := sum_uint8(JFLP/isEndOfJSF, JFLP/JFSS_rel);
+			attribute<bool> isLineString := NrEnds == 2b; // it could also be a ring without any Junction
+			
+			unit<uint32> Connector := select_with_org_rel(JFLP/isEndOfJSF);
+		
+			attribute<uint32> nrParts := pcount(PartNr);
+			attribute<BoundaryPoint> first_BP_rel := first(Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel);
+			attribute<BoundaryPoint> last_BP_rel  := last (Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel);
+			
+				
+		}
+		unit<uint32> JFLS := select_with_org_rel(JFSS/isLineString) // JunctionFree LineString
+		{
+			attribute<BoundaryPoint> first_BP_rel := collect_by_cond(JFLS, JFSS/first_BP_rel);
+			attribute<BoundaryPoint> last_BP_rel  := collect_by_cond(JFLS, JFSS/last_BP_rel);
+			
+			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFSS/PartNr];
+/*		
+			attribute<uint32> nrParts := collect_by_cond(JFLS, JFSS/nrParts);
+			attribute<JFLSP> first_JFLSP_rel := cumulate(nrParts) - nrParts;
+			unit<uint32> JFLSP := range(uint32, 0, sum(nrParts))
+			{
+				attribute<JFLS> JFLS_rel := classify(id(.), first_JFLSP_rel);
+				attribute<uint32> ordinal := id(.) - JFLS_rel->first_JFLSP_rel;
+				attribute<uint32> BP_key := TraceBack;
+			}
+*/			
+			// JFS/Linestring := d.m.v. impedance_single van alle begin JFS naar eind JFS routes t.b.v. points2sequence
+			attribute<uint32> dist_from_first_BP(BoundaryPoint) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack'
+					, const(1, JFL), JFL/F1, JFL/F2, JFLS/first_BP_rel)
+			{
+//				attribute<BoundaryPoint> Prev_rel(BoundaryPoint) := TraceBack->F1 == ID(BoundaryPoint) ? JFL/F2 : JFL/F1;
+			}
+			unit<uint32> JFLSP := select(IsDefined(dist_from_first_BP))
+			{
+				attribute<Geografie/point_rd> geometry := collect_by_cond(JFLSP, BoundaryPoint/Geometry);
+				attribute<JFLS> sequence_rel := collect_by_cond(JFLSP, PartNr);
+				attribute<uint32> ordinal := collect_by_cond(JFLSP, dist_from_first_BP);
+				
+			}
+			attribute<Geografie/point_rd> LineString(arc) := points2sequence(JFLSP/geometry, JFLSP/sequence_rel, JFLSP/ordinal);
+		}
+		
 		// Junction := raster-hoekpunt waarop meer dan 2 segmenten uit komen (1 komt niet voor)
+		unit<uint32> Junction := select_with_org_rel(BoundaryPoint/NrBoundarySegments > 2)
+		{
+			attribute<geografie/point_rd> geometry := collect_by_cond(Junction, BoundaryPoint/geometry);
+			attribute<.> per_node(BoundaryPoint) := invert(org_rel);
+		}
+		unit<uint32> JunctionZoneCode := combine(Junction, Zone)
+		{
+			unit<uint32> JunctionLinks := union_unit(FromJunctionLink, ToJunctionLink, FromJunctionLink, ToJunctionLink)
+			{
+				attribute<JunctionZoneCode> values := union_data(JunctionLinks
+					, combine_data(JunctionZoneCode, FromJunctionLink/Junction_rel, FromJunctionLink/leftZone_rel )
+					, combine_data(JunctionZoneCode, FromJunctionLink/Junction_rel, FromJunctionLink/rightZone_rel)
+					, combine_data(JunctionZoneCode,   ToJunctionLink/Junction_rel,   ToJunctionLink/leftZone_rel )
+					, combine_data(JunctionZoneCode,   ToJunctionLink/Junction_rel,   ToJunctionLink/rightZone_rel)
+				);
+			}
+		}
+		unit<uint32> JunctionZone := unique(JunctionZoneCode/JunctionLinks/values)
+		{
+			attribute<Junction> Junction_rel := values->first_rel;
+			attribute<Zone    > Zone_rel     := values->second_rel;
+		}
+		
+		
 		// Connector := Segment tussen een Junction en een JFN
 		// JFS/Linestring := begin connector + result(5) + end connector; eventueel deze simplifyen
 		// ZoneJunction := kruistabel met junctions en zones;
@@ -94,13 +216,13 @@ container Poly_2_grid_2_poly
 	}
 	
 	container applications {
-		container d100 := vectorize(Geografie/gridcel_100m/domain, GridData/districts/m100/Districts);
-		container d50  := vectorize(Geografie/gridcel_25m/domain,  GridData/districts/m25/Districts);
-		container d10  := vectorize(Geografie/gridcel_10m/domain,  GridData/districts/m10/Districts);
+		container d100 := vectorize(Geografie/gridcel_100m/domain, GridData/districts/m100, GridData/districts/m100/Districts);
+		container d50  := vectorize(Geografie/gridcel_25m/domain,  GridData/districts/m25 , GridData/districts/m25/Districts);
+		container d10  := vectorize(Geografie/gridcel_10m/domain,  GridData/districts/m10 , GridData/districts/m10/Districts);
 		
-		container m100 := vectorize(Geografie/gridcel_100m/domain, GridData/m100);
-		container m50  := vectorize(Geografie/gridcel_25m/domain,  GridData/m25);
-		container m10  := vectorize(Geografie/gridcel_10m/domain,  GridData/m10);
+		container m100 := vectorize(Geografie/gridcel_100m/domain, /SourceData/gemeente, GridData/m100);
+		container m50  := vectorize(Geografie/gridcel_25m/domain,  /SourceData/gemeente, GridData/m25);
+		container m10  := vectorize(Geografie/gridcel_10m/domain,  /SourceData/gemeente, GridData/m10);
 	}
 	container ConfigSettings {
 		container Overridable {
