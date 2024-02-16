@@ -4295,13 +4295,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<uint32> att_large (UDomain1) := const(2,UDomain1);
 		}
 
-		container UnTiled2UnTiled  := Template(srcUnTiled2UnTiledDomain/Region, srcUnTiled2UnTiledDomain/City, srcUnTiled2UnTiledDomain/Years, srcUnTiled2UnTiledDomain);
-		container UnTiled2Tiled    := Template(srcUnTiled2TiledDomain/Region  , srcUnTiled2TiledDomain/City  , srcUnTiled2TiledDomain/Years  , srcUnTiled2TiledDomain);
-		container Tiled2UnTiled    := Template(srcTiled2UnTiledDomain/Region  , srcTiled2UnTiledDomain/City  , srcTiled2UnTiledDomain/Years  , srcTiled2UnTiledDomain);
-		container Tiled2Tiled      := Template(srcTiled2TiledDomain/Region    , srcTiled2TiledDomain/City    , srcTiled2TiledDomain/Years    , srcTiled2TiledDomain);
+		container UnTiled2UnTiled  := Template(srcUnTiled2UnTiledDomain/Region, srcUnTiled2UnTiledDomain/City, srcUnTiled2UnTiledDomain/Years, srcUnTiled2UnTiledDomain, False);
+		container UnTiled2Tiled    := Template(srcUnTiled2TiledDomain/Region  , srcUnTiled2TiledDomain/City  , srcUnTiled2TiledDomain/Years  , srcUnTiled2TiledDomain, False);
+		container Tiled2UnTiled    := Template(srcTiled2UnTiledDomain/Region  , srcTiled2UnTiledDomain/City  , srcTiled2UnTiledDomain/Years  , srcTiled2UnTiledDomain, False);
+		container Tiled2Tiled      := Template(srcTiled2TiledDomain/Region    , srcTiled2TiledDomain/City    , srcTiled2TiledDomain/Years    , srcTiled2TiledDomain, False);
 
-		container EunTiled         := Template(EDomain, EDomain, EDomain, srcEDomain);
-		container ETiled           := Template(ETiledDomain, ETiledDomain, ETiledDomain, srcETiledDomain);
+		container EunTiled         := Template(EDomain, EDomain, EDomain, srcEDomain, True);
+		container ETiled           := Template(ETiledDomain, ETiledDomain, ETiledDomain, srcETiledDomain, True);
 
 		container ResultUnitTiled
 		{
@@ -4333,6 +4333,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> City;
 			unit<uint32> Years;
 			container Source;
+			parameter<bool> isEmpty;
 			// end case parameters
 
 			container id: url  = "http://www.objectvision.nl/geodms/operators-a-functions/id"
@@ -4898,7 +4899,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				{
 					attribute<string> CityNamesWithEntries:   ['Amsterdam','Haarlem','Alkmaar','Zaanstad','Purmerend','Rotterdam','DenHaag','Leiden','Dordrecht','Leiden'];
 					attribute<string> CityNamesWithoutEntries:[];
-					attribute<string> CityNames:= = #(.) > 0 ? 'CityNamesWithEntries' : 'CityNamesWithoutEntries';
+					attribute<string> CityNames:= = IsEmpty ? 'CityNamesWithoutEntries' : 'CityNamesWithEntries';
 				}
 				attribute<bool> test (unit_ProvCity) := unit_ProvCity/UnionData = unit_ProvCity/CityNames;
 				parameter<bool> test_attr            := all(test);
@@ -4927,7 +4928,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<string> CityNamesSrcWithEntries    (union_unit/unit_ProvCity) : ['Amsterdam','Haarlem','Alkmaar','Zaanstad','Purmerend','Rotterdam','DenHaag','Leiden','Dordrecht','Leiden'];
 				attribute<string> CityNamesSrcWithoutEntries (union_unit/unit_ProvCity) : [];
-				attribute<string> CityNamesSrc               (union_unit/unit_ProvCity) := = #(union_unit/unit_ProvCity) > 0 ? 'CityNamesSrcWithEntries' : 'CityNamesSrcWithoutEntries';
+				attribute<string> CityNamesSrc               (union_unit/unit_ProvCity) := = isEmpty ? 'CityNamesSrcWithoutEntries' : 'CityNamesSrcWithEntries';
 
 				attribute<string> CityNames                  (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames);
 				attribute<bool>   test                       (union_unit/unit_ProvCity) := CityNames == CityNamesSrc;
@@ -4979,7 +4980,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				attribute<uint32> okWithEntries    (combine/unit_CityForEachYear) : [0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24];
 				attribute<uint32> okWithoutEntries (combine/unit_CityForEachYear) : [];
-				attribute<uint32> ok               (combine/unit_CityForEachYear) := = #(combine/unit_CityForEachYear) > 0 ? 'okWithEntries' : 'okWithoutEntries';
+				attribute<uint32> ok               (combine/unit_CityForEachYear) := = isEmpty ? 'okWithoutEntries' : 'okWithEntries';
 
 				attribute<bool>   test_attr        (combine/unit_CityForEachYear) := CityForEachYear_rel == ok;
 				parameter<bool>   test                                     := all(test_attr);
@@ -5020,8 +5021,6 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				unit<uint32> Region_City := join_equal_values(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
 				{
-					parameter<bool> isEmpty := #Region_City == 0;
-
 					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
 					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
 					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
@@ -5235,10 +5234,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 		}
 
-		container UnTiled2UnTiled := Template(DistrictDomain      , ClassDomainManyClasses, srcDomain);
-		container Tiled2UnTiled   := Template(DistrictTiledDomain , ClassDomainManyClasses, srcTiledDomain);
+		container UnTiled2UnTiled := Template(DistrictDomain      , ClassDomainManyClasses, srcDomain, False);
+		container Tiled2UnTiled   := Template(DistrictTiledDomain , ClassDomainManyClasses, srcTiledDomain, False);
 		
-		container EUntiled := Template(EDomain, uint8(EDomain), srcEDomain);
+		container EUntiled := Template(EDomain, uint8(EDomain), srcEDomain, True);
 
 		container ResultUnitTiled
 		{
@@ -5250,8 +5249,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 		Template Template
 		{
+			// begin case parameters
 			unit<uint32> DistrictDomain;
 			unit<uint8>  ClassDomainManyClasses;
+			parameter<bool> isEmpty;
+			// end case parameters
 
 			container src;
 			unit<uint32> District            := src/District;
@@ -5263,7 +5265,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<ClassDomain> att                 (District) := classify(District/NrInhabitants, ClassDomain/Classes);
 				attribute<ClassDomain> att_okwithvalues    (District) : [2,3,2,1,0,null,2,0,0,0,3,3,3,1,2];
 				attribute<ClassDomain> att_okwithoutvalues (District) : [];
-				attribute<ClassDomain> att_ok              (District) := = #District == 0 ? 'att_okwithoutvalues' : 'att_okwithvalues';
+				attribute<ClassDomain> att_ok              (District) := = isEmpty ? 'att_okwithoutvalues' : 'att_okwithvalues';
 				
 				attribute<bool>        test   (District) := eq_or_both_null(att, att_ok); 
 				parameter<bool>        test_attr         := all(test);
@@ -5279,7 +5281,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyUniqueValues(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -5296,7 +5298,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyEqualCount(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -5313,7 +5315,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -5330,7 +5332,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyEqualInterval(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,53,107,161,215,269,323,377,431,485,539,593,647,701,755,809,863,917,971,1024];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -5347,7 +5349,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,53,107,161,215,269,323,377,431,485,539,593,647,701,755,809,863,917,971,1024];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -5364,7 +5366,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyJenksFisher(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -5382,7 +5384,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonzeroJenksFisher (District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -5400,7 +5402,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyLogInterval(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,5,10,20,50,100,200,500,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
-				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = #District == 0 ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
 				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
 
@@ -6140,15 +6142,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 
 		}
-		container UnTiled2Untiled := Template(ADomain,      HDomain,      DistrictPointsDomain,      RDomain       ,HDomain ,PandDomain      , srcUnTiled2Untiled);
-		container Tiled2Untiled   := Template(ATiledDomain, HDomain,      DistrictPointsTiledDomain, RDomain       ,HDomain ,PandDomain      , srcTiled2Untiled);
-		container UnTiled2Tiled   := Template(ADomain,      HTiledDomain, DistrictPointsDomain,      RTiledDomain  ,HDomain ,PandTiledDomain , srcUnTiled2Tiled);
-		container Tiled2Tiled     := Template(ATiledDomain, HTiledDomain, DistrictPointsTiledDomain, RTiledDomain  ,HDomain ,PandTiledDomain , srcTiled2Tiled);
+		container UnTiled2Untiled := Template(ADomain,      HDomain,      DistrictPointsDomain,      RDomain       ,HDomain ,PandDomain      , srcUnTiled2Untiled, False);
+		container Tiled2Untiled   := Template(ATiledDomain, HDomain,      DistrictPointsTiledDomain, RDomain       ,HDomain ,PandDomain      , srcTiled2Untiled  , False);
+		container UnTiled2Tiled   := Template(ADomain,      HTiledDomain, DistrictPointsDomain,      RTiledDomain  ,HDomain ,PandTiledDomain , srcUnTiled2Tiled  , False);
+		container Tiled2Tiled     := Template(ATiledDomain, HTiledDomain, DistrictPointsTiledDomain, RTiledDomain  ,HDomain ,PandTiledDomain , srcTiled2Tiled    , False);
 
-		container EUnTiled2Untiled := Template(EDomain     , EDomain,      EDomain,      EDomain      , EDomain , EDomain        , EsrcUnTiled2Untiled);
-		container ETiled2Untiled   := Template(ETiledDomain, EDomain,      ETiledDomain, EDomain      , EDomain , EDomain        , EsrcTiled2Untiled);
-		container EUnTiled2Tiled   := Template(EDomain,      ETiledDomain, EDomain,      ETiledDomain , ETiledDomain , ETiledDomain   , EsrcUnTiled2Tiled);
-		container ETiled2Tiled     := Template(ETiledDomain, ETiledDomain, ETiledDomain, ETiledDomain , ETiledDomain , ETiledDomain   , EsrcTiled2Tiled);
+		container EUnTiled2Untiled := Template(EDomain     , EDomain,      EDomain,      EDomain      , EDomain      , EDomain        , EsrcUnTiled2Untiled  , True);
+		container ETiled2Untiled   := Template(ETiledDomain, EDomain,      ETiledDomain, EDomain      , EDomain      , EDomain        , EsrcTiled2Untiled    , True);
+		container EUnTiled2Tiled   := Template(EDomain,      ETiledDomain, EDomain,      ETiledDomain , ETiledDomain , ETiledDomain   , EsrcUnTiled2Tiled    , True);
+		container ETiled2Tiled     := Template(ETiledDomain, ETiledDomain, ETiledDomain, ETiledDomain , ETiledDomain , ETiledDomain   , EsrcTiled2Tiled      , True);
 		
 		container ResultUnitTiled
 		{
@@ -6185,6 +6187,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> pand;
 
 			container source;
+			parameter<bool> isEmpty;
 			// begin case parameters
 
 			container point
@@ -6465,7 +6468,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<dpoint> att_ok_without_values:
 					[
 					];
-					attribute<dpoint> att_ok := = #DistrictDomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+					attribute<dpoint> att_ok := = isEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 				}
 				parameter<bool> test_attr := all(pointset/test);
 			}
@@ -6491,7 +6494,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<dpoint> att_ok_without_values:
 					[
 					];
-					attribute<dpoint> att_ok := = #DistrictDomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+					attribute<dpoint> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				}
 				parameter<bool> test_attr := all(pointset/test);
@@ -6518,7 +6521,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<dpoint> att_ok_without_values:
 					[
 					];
-					attribute<dpoint> att_ok := = #DistrictDomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+					attribute<dpoint> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				}
 				parameter<bool> test_attr := all(pointset/test);
@@ -6546,7 +6549,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<dpoint> att_ok_without_values:
 					[
 					];
-					attribute<dpoint> att_ok := = #DistrictDomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+					attribute<dpoint> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				}
 				parameter<bool> test_attr := all(pointset/test);
@@ -6573,7 +6576,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<dpoint> att_ok_without_values:
 					[
 					];
-					attribute<dpoint> att_ok := = #DistrictDomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+					attribute<dpoint> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				}
 				parameter<bool> test_attr := all(pointset/test);
@@ -6594,7 +6597,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					 {398696, 111691},{398731, 111706},{398746, 111741},{398731, 111776},{398696, 111791}
 					];
 					attribute<point_rd> ok_empty: [];
-					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+					attribute<bool> test  := = IsEmpty? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
@@ -6634,11 +6637,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Sequence
 	{
-		container srcDomain         := source(DistrictPointsDomain, RDomain, RoadDomain, HDomain, BuildingDomain);
-		container srcTemplateDomain := source(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain);
+		container srcDomain         := source(DistrictPointsDomain, RDomain, RoadDomain, HDomain, BuildingDomain, False);
+		container srcTemplateDomain := source(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, False);
 
-		container srcEDomain        := Esource(EDomain, EDomain, EDomain, EDomain, EDomain);
-		container srcETiledDomain   := Esource(ETiledDomain, ETiledDomain, ETiledDomain, EDomain,EDomain);
+		container srcEDomain        := Esource(EDomain, EDomain, EDomain, EDomain, EDomain, True);
+		container srcETiledDomain   := Esource(ETiledDomain, ETiledDomain, ETiledDomain, EDomain,EDomain, True);
 
 		template source
 		{
@@ -6648,6 +6651,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> RoadDomain;
 			unit<uint32> HDomain;
 			unit<uint32> BuildingDomain;
+			parameter<bool> isEmpty;
 			// end case parameters
 
 			unit<uint32> pointset := DistrictPointsDomain
@@ -6941,6 +6945,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> RoadDomain;
 			unit<uint32> HDomain;
 			unit<uint32> BuildingDomain;
+			parameter<bool> isEmpty;
 			// end case parameters
 
 			unit<uint32> pointset := DistrictPointsDomain
@@ -7120,7 +7125,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 			}
 		}
-		container UnTiled := Template(DistrictPointsDomain, RDomain, RoadDomain, HDomain,BuildingDomain, SDomain, srcDomain)
+		container UnTiled := Template(DistrictPointsDomain, RDomain, RoadDomain, HDomain,BuildingDomain, SDomain, srcDomain, False)
 		{
 			container canyon: Using = "source"
 			{
@@ -7256,10 +7261,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 		}
 
-		container EUnTiled := Template(EDomain, EDomain, EDomain, EDomain,EDomain,EDomain, srcEDomain);
+		container EUnTiled := Template(EDomain, EDomain, EDomain, EDomain,EDomain,EDomain, srcEDomain, True);
 
-		container  Tiled := Template(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, SDomain, srcTemplateDomain);
-		container ETiled := Template(ETiledDomain, ETiledDomain, ETiledDomain, EDomain, EDomain, EDomain, srcETiledDomain);
+		container  Tiled := Template(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, SDomain, srcTemplateDomain, False);
+		container ETiled := Template(ETiledDomain, ETiledDomain, ETiledDomain, EDomain, EDomain, EDomain, srcETiledDomain, True);
 
 		container ResultUnitTiled
 		{
@@ -7315,6 +7320,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> Building;
 			unit<uint32> SingleDomain;
 			container source;
+			parameter<bool> isEmpty;
 			// end case parameters
 
 			container conversions
@@ -7340,7 +7346,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<RoadDomain> seq:[0,0,1,1,1,2,2];
 				attribute<uint32>     ord:[0,1,0,1,2,0,1];
 				attribute<bool>       test      := point = poi && SequenceNr = seq && Ordinal = ord;
-				parameter<bool>       test_attr := = #RoadDomain == 0 ? '#sequence2points == 0' : 'all(test)';
+				parameter<bool>       test_attr := = isEmpty ? '#sequence2points == 0' : 'all(test)';
 			}
 			unit<uint32> sequence2points_param := Sequence2Points(Source/road/line[0]);
 
@@ -7500,7 +7506,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					];
 					attribute<bool> test := point == att_ok;
 				}
-				parameter<bool> test_attr := = #District = 0 ? '#pointset == 0' : 'all(pointset/test)';
+				parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(pointset/test)';
 			}
 			container partitioned_union_polygon
 			{
@@ -7531,7 +7537,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					];
 					attribute<bool> test := point == att_ok;
 				}
-				parameter<bool> test_attr := = #District = 0 ? '#pointset == 0' : 'all(pointset/test)';
+				parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(pointset/test)';
 			}
 			container overlay_polygon
 			{
@@ -7552,7 +7558,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
 					
 					attribute<bool>   test_attr := sorted == testAtt; 
-					parameter<bool>   test      := =(#building == 0 && #district == 0) ? '#intersect == 0' :  'all(test_attr)';
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
 				}
 			}
 			container split
@@ -7568,7 +7574,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<uint32> ok: [0,0,0,1,1,2,3];
 
 					attribute<bool>   test_attr := nr_OrgEntity == ok;
-					parameter<bool>   test      := = #district == 0 ? '#single_polygons == 0' : 'all(test_attr)';
+					parameter<bool>   test      := = isEmpty ? '#single_polygons == 0' : 'all(test_attr)';
 				}
 			}
 			container inflate
@@ -7642,7 +7648,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402137, 113511},{402191, 113457},{402268, 113457},{402546, 113474},{402600, 113528},{402600, 113605},{402569, 113921},{402515, 113975}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_i_4D100 := sequence2points(building_inflated_i_4D100)
 				{
@@ -7667,7 +7673,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402602, 113595},{402571, 113911},{402546, 113936},{402530, 113952},{402505, 113977}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_i_4D100 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_i_4D100 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_i_8D100 := sequence2points(building_inflated_i_8D100)
 				{
@@ -7692,7 +7698,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402602, 113538},{402602, 113595},{402571, 113911},{402563, 113928},{402522, 113969},{402505, 113977}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_i_8D100 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_i_8D100 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_i_16D100 := sequence2points(building_inflated_i_16D100)
 				{
@@ -7726,7 +7732,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402514, 113975},{402505, 113977}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_i_16D100 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_i_16D100 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_i4D75 := sequence2points(building_polygon_i4D75)
 				{
@@ -7740,7 +7746,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402508, 113492},{402583, 113567},{402552, 113883},{402477, 113958}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_i4D75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_i4D75 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_i8D75 := sequence2points(building_polygon_i8D75)
 				{
@@ -7756,7 +7762,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402177, 113497},{402230, 113475},{402508, 113492},{402561, 113514},{402583, 113567},{402552, 113883},{402530, 113936},{402477, 113958}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_i8D75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_i8D75 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_i16D75 := sequence2points(building_polygon_i16D75)
 				{
@@ -7776,7 +7782,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402577, 113539},{402583, 113567},{402552, 113883},{402546, 113911},{402530, 113936},{402505, 113952},{402477, 113958}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_i16D75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_i16D75 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_i4HV75 := sequence2points(building_polygon_i4HV75)
 				{
@@ -7790,7 +7796,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402552, 113958}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_i4HV75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_i4HV75 == 0' : 'all(test)';
 				}
 			}
 			container deflate
@@ -7856,7 +7862,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402238, 112719},{402433, 113829},{402262, 113812},{402274, 113599},{402454, 113610},{402433, 113829}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d_4D50 := sequence2points(building_deflated_d_4D50)
 				{
@@ -7871,7 +7877,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402245, 113584},{402260, 113569},{402470, 113582},{402485, 113597},{402461, 113845},{402446, 113860}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_d_4D50 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d_4D50 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d_8D50 := sequence2points(building_deflated_d_8D50)
 				{
@@ -7889,7 +7895,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402260, 113569},{402470, 113582},{402480, 113587},{402485, 113597},{402461, 113845},{402456, 113855},{402446, 113860}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_d_8D50 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d_8D50 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d_16D50 := sequence2points(building_deflated_d_16D50)
 				{
@@ -7914,7 +7920,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402459, 113850},{402456, 113855},{402451, 113858},{402446, 113860}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_d_16D50 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d_16D50 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d4D75 := sequence2points(building_polygon_d4D75)
 				{
@@ -7924,7 +7930,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402267, 112690},{402267, 112664},{402305, 112669},{402311, 112690},{402410, 113801},{402291, 113789},{402300, 113629},{402426, 113636},{402410, 113801}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_d4D75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d4D75 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d8D75 := sequence2points(building_polygon_d8D75)
 				{
@@ -7934,7 +7940,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402267, 112690},{402267, 112664},{402305, 112669},{402311, 112690},{402410, 113801},{402291, 113789},{402300, 113629},{402426, 113636},{402410, 113801}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_d8D75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d8D75 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d16D75 := sequence2points(building_polygon_d16D75)
 				{
@@ -7944,7 +7950,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402267, 112690},{402267, 112664},{402303, 112669},{402309, 112690},{402410, 113801},{402291, 113789},{402300, 113629},{402426, 113636},{402410, 113801}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_d16D75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d16D75 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d4HV75 := sequence2points(building_polygon_d4HV75)
 				{
@@ -7954,7 +7960,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{402403, 113792},{402296, 113781},{402304, 113634},{402418, 113641},{402403, 113792}
 					];
 					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = #building == 0 ? '#pointset_d4HV75 == 0' : 'all(test)';
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d4HV75 == 0' : 'all(test)';
 				}
 			}
 			container connectivity
@@ -8008,7 +8014,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					];
 					attribute<bool> test := point == att_ok;
 				}
-				parameter<bool> test_param := =#District = 0 ? '#pointset == 0'  : 'all(pointset/test)';
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
 			}
 			container multiply
 			{
@@ -8026,7 +8032,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					];
 					attribute<bool> test := point == att_ok;
 				}
-				parameter<bool> test_param := =#District = 0 ? '#pointset == 0'  : 'all(pointset/test)';
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
 				
 				parameter<ipoint> mul_arc (arc) := ipolygon(Source/road/line_cross[1]) * ipolygon(Source/road/line_cross[2]);
 
@@ -8043,7 +8049,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					];
 					attribute<bool> test := point == att_ok;
 				}
-				parameter<bool> test_param := =#District = 0 ? '#pointset == 0'  : 'all(pointset/test)';
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
 			}
 			container StringToSequence
 			{
@@ -8242,7 +8248,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						,{398670, 111795},{398691, 111828},{398699, 111866},{398691, 111904},{398670, 111937},{398637, 111958},{398599, 111966},{399246, 112731}
 					];
 					attribute<point_rd> ok_empty: [];
-					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
@@ -8260,7 +8266,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					 {398587, 114723},{401532, 114821},{401570, 114830},{401602, 114853},{401623, 114886},{401629, 114924},{401620, 114962},{401597, 114994},{401564, 115015},{401526, 115021}
 					];
 					attribute<point_rd> ok_empty: [];
-					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
@@ -8282,7 +8288,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{158190, 460810},{157810, 460810},{157810, 461190},{158190, 461190},{158190, 460810},{158500, 461510},{158100, 461110}
 					];
 					attribute<point_rd> ok_empty: [];
-					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
@@ -8305,7 +8311,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{158190, 460810},{157810, 460810},{157810, 461190},{158190, 461190},{158190, 460810},{158500, 461510},{158100, 461110}
 					];
 					attribute<point_rd> ok_empty: [];
-					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
@@ -8328,7 +8334,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{158190, 460810},{157810, 460810},{157810, 461190},{158190, 461190},{158190, 460810},{158500, 461510},{158100, 461110}
 					];
 					attribute<point_rd> ok_empty: [];
-					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
@@ -8350,7 +8356,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						{158190, 460810},{157810, 460810},{157810, 461190},{158190, 461190},{158190, 460810},{158500, 461510},{158100, 461110}
 					];
 					attribute<point_rd> ok_empty: [];
-					attribute<bool> test  := = #pointset == 0 ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
@@ -8656,10 +8662,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 		}
 
-		container UnTiled  := Template(RDomain,      RoadDomain,      ADomain,      HDomain      ,LDomain     , srcDomain);
-		container Tiled    := Template(RTiledDomain, RoadTiledDomain, ATiledDomain, HTiledDomain ,LTiledDomain, srcTiledDomain);
-		container EUnTiled := Template(EDomain,      EDomain,         EDomain,      EDomain      ,EDomain     , srcEDomain);
-		container ETiled   := Template(ETiledDomain, ETiledDomain,    ETiledDomain, ETiledDomain ,ETiledDomain, srcETiledDomain);
+		container UnTiled  := Template(RDomain,      RoadDomain,      ADomain,      HDomain      ,LDomain     , srcDomain       , False);
+		container Tiled    := Template(RTiledDomain, RoadTiledDomain, ATiledDomain, HTiledDomain ,LTiledDomain, srcTiledDomain  , False);
+		container EUnTiled := Template(EDomain,      EDomain,         EDomain,      EDomain      ,EDomain     , srcEDomain      , True);
+		container ETiled   := Template(ETiledDomain, ETiledDomain,    ETiledDomain, ETiledDomain ,ETiledDomain, srcETiledDomain , True);
 
 		container ResultUnitTiled
 		{
@@ -8683,6 +8689,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> LDomain;
 
 			container Source;
+			parameter<bool> isEmpty;
 			// end case parameters
 
 			container first_node: url = "http://www.objectvision.nl/geodms/operators-a-functions/network/first_node"
@@ -8829,7 +8836,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<float64> cap_with_values     (DDomain) :[40,90,60,40];
 				attribute<float64> cap_without_values  (DDomain) :[];
-				attribute<float64> cap  (DDomain) := = #DDomain == 0 ? 'cap_without_values' : 'cap_with_values';
+				attribute<float64> cap  (DDomain) := = IsEmpty ? 'cap_without_values' : 'cap_with_values';
 				
 				attribute<DDomain> att  (ODomain) := capacitated_connect(destination/location, cap, origin/location, const(60D,origin));
 				attribute<bool>    test (ODomain) := att == convert(origin/capacitated_connect, DDomain);
@@ -8903,7 +8910,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				{
 					attribute<uint32> par_with_values    (nodeset) : [0,1,0,0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,1,1,1];
 					attribute<uint32> par_without_values (nodeset) : [];
-					attribute<uint32> par                (nodeset) := =#nodeset == 0 ? 'par_without_values' : 'par_with_values';
+					attribute<uint32> par                (nodeset) := = isEmpty ? 'par_without_values' : 'par_with_values';
 					
 					attribute<bool>   test(nodeset) := Partnr = par;
 					parameter<bool>   test_attr     := all(test);
@@ -8921,7 +8928,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
 				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,824.535,928.425,1192.06];
 				attribute<m>     att_ok_without_values (ODomain) : [];
-				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 				
 				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
 
@@ -8936,7 +8943,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
 				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,824.535,928.425,1192.06];
 				attribute<m>     att_ok_without_values (ODomain) : [];
-				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 				
 				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
 
@@ -8954,7 +8961,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset_directed);
 				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,2325.58,928.425,1192.06];
 				attribute<m>     att_ok_without_values (ODomain) : [];
-				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
 
@@ -8969,7 +8976,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset_directed);
 				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,2325.58,928.425,1192.06];
 				attribute<m>     att_ok_without_values (ODomain) : [];
-				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
 
@@ -8987,7 +8994,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
 				attribute<m>     att_ok_with_values    (ODomain) : [0,null,824.535,928.425,null];
 				attribute<m>     att_ok_without_values (ODomain) : [];
-				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
 
@@ -9002,7 +9009,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
 				attribute<m>     att_ok_with_values    (ODomain) : [0,null,824.535,928.425,null];
 				attribute<m>     att_ok_without_values (ODomain) : [];
-				attribute<m>     att_ok                (ODomain) := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
 
@@ -9171,7 +9178,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					,null,1192.06,null  ,3712.05
 				];
 				attribute<m>     att_ok_without_values : [];
-				attribute<m>     att_ok                := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
 				parameter <bool> test_attr := all(test);
@@ -9194,7 +9201,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					,null,1192.06,null  ,3712.05
 				];
 				attribute<m>     att_ok_without_values : [];
-				attribute<m>     att_ok                := = #ODomain == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<m>     att_ok                := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
 				parameter <bool> test_attr := all(test);
@@ -9219,7 +9226,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m> att_ok_without_values : [];
 				
 				// WARNING: this code triggers dijkstra execution when the calculation rule for att_ok is determined; in production code, better provide the att as template parameter
-				attribute<m> att_ok := = #. = 0 ? 'att_ok_without_values' : 'att_with_values'; 
+				attribute<m> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_with_values'; 
 				
 				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
 				parameter <bool> test_attr := all(test);
@@ -9241,7 +9248,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m> att_ok_without_values : [];
 				
 				// WARNING: this code triggers dijkstra execution when the calculation rule for att_ok is determined; in production code, better provide the att as template parameter
-				attribute<m> att_ok := = #. = 0 ? 'att_ok_without_values' : 'att_with_values'; 
+				attribute<m> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_with_values'; 
 				
 				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
 				parameter <bool> test_attr := all(test);
@@ -9271,7 +9278,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<EDomain> ok_uint32 (..): [];
 				}
 
-				attribute<bool> test := = #. == 0
+				attribute<bool> test := = IsEmpty
 					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
 					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
 					   ;
@@ -9300,7 +9307,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<EDomain> ok_uint32 (..): [];
 				}
 
-				attribute<bool> test := = #. == 0
+				attribute<bool> test := = IsEmpty
 					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
 					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
 					   ;
@@ -9332,7 +9339,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<EDomain> ok_uint32 (..): [];
 				}
 
-				attribute<bool> test := = #. == 0
+				attribute<bool> test := = IsEmpty
 					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
 					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
 					   ;
@@ -9360,7 +9367,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<EDomain> ok_uint32 (..): [];
 				}
 
-				attribute<bool> test := = #. == 0
+				attribute<bool> test := = IsEmpty
 					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
 					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
 					   ;
@@ -9439,7 +9446,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					, nr_won);
 				attribute<nr_won> att_ok_with_values    (Linkset) : [0,2,0,0,0,0,0,0,2,1,1,0,0,0,1,0,1,2,0,1,0,1,1,1,1,0,0,0];
 				attribute<nr_won> att_ok_without_values (Linkset) : [];
-				attribute<nr_won> att_ok                (Linkset) := = #(Linkset) == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<nr_won> att_ok                (Linkset) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 
 				attribute<bool>   test   (Linkset) := att_ok == att;
 				parameter<bool>   test_attr        := all(test);
@@ -9460,7 +9467,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<DDomain> att                   (ODomain) := lookup(nr_OriginNode, nodeset);
 				attribute<DDomain> att_ok_with_values    (ODomain) : [0,1,2,3,1];
 				attribute<DDomain> att_ok_without_values (ODomain) : [];
-				attribute<DDomain> att_ok                (ODomain) := = #(ODomain) == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<DDomain> att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
 				attribute<bool>    test                  (ODomain) := att_ok == att;
 				parameter<bool>    test_attr              := all(test);
 			}
@@ -9643,10 +9650,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		container srcEDomain      := Esource(units/EGridDomain);
 		container srcETiledDomain := Esource(units/EGridTiledDomain);
 		
-		container UnTiled  := Template(false, units/GridDomain,       srcDomain);
-		container Tiled    := Template(false, units/GridTiledDomain,  srcTiledDomain);
-		container ETiled   := Template(true,  units/EGridDomain,      srcEDomain);
-		container EUnTiled := Template(true,  units/EGridTiledDomain, srcETiledDomain);
+		container UnTiled  := Template(units/GridDomain,       srcDomain      , False);
+		container Tiled    := Template(units/GridTiledDomain,  srcTiledDomain , False);
+		container ETiled   := Template(units/EGridDomain,      srcEDomain     , True);
+		container EUnTiled := Template(units/EGridTiledDomain, srcETiledDomain, True);
 
 		template source
 		{
@@ -9834,9 +9841,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		Template Template
 		{
 			// begin case parameters
-			parameter<bool> isEmpty;
 			unit<spoint> GridDomain;
 			container source;
+			parameter<bool> isEmpty;
 			// end case parameters
 
 			container district: url  = "http://www.objectvision.nl/geodms/operators-a-functions/grid/district"
@@ -10460,10 +10467,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 		}
 
-		container UnTiled  := Template(ADomain       ,Prov_nrd, srcDomain );
-		container Tiled    := Template(ATiledDomain  ,Prov_nrd, srcTiledDomain );
-		container EUnTiled := Template(EDomain      ,EProv_nrd, srcEDomain );
-		container ETiled   := Template(ETiledDomain ,EProv_nrd, srcETiledDomain );
+		container UnTiled  := Template(ADomain       ,Prov_nrd , srcDomain      , False);
+		container Tiled    := Template(ATiledDomain  ,Prov_nrd , srcTiledDomain , False);
+		container EUnTiled := Template(EDomain       ,EProv_nrd, srcEDomain     , True);
+		container ETiled   := Template(ETiledDomain  ,EProv_nrd, srcETiledDomain, True);
 
 		Template Template
 		{
@@ -10471,6 +10478,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> domain;
 			unit<uint32> prov;
 			container source;
+			parameter<bool> isEmpty;
 			// end case parameters
 
 			container concatenation: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/concatenation"
@@ -10659,9 +10667,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				url   ="http://www.objectvision.nl/geodms/operators-a-functions/string/add_str"
 			{
 			
-				attribute<string> att_with_values     (Domain) := = #(Regions) > 0 ? 'add('+asItemList(Regions/regionnames)+')' : 'const('''',Domain)', DisableStorage = "True";
+				attribute<string> att_with_values     (Domain) := = IsEmpty ? 'const('''',Domain)' : 'add('+asItemList(Regions/regionnames)+')', DisableStorage = "True";
 				attribute<string> att_without_values  (Domain) :[];
-				attribute<string> att                 (Domain) := = #(Regions) == 0 ? 'att_without_values' : 'att_with_values' ;
+				attribute<string> att                 (Domain) := = isEmpty ? 'att_without_values' : 'att_with_values' ;
 				
 				attribute<bool>   test (Domain) := att = source/SumProv;
 				parameter<bool>   test_attr     := all(test);
@@ -10671,7 +10679,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<string> param_att := asList(source/A, ';');
 				parameter<string> param_exp_with_values    := 'Test;88hallo99;+);twee woorden; test met spatie';
 				parameter<string> param_exp_without_values := '';
-				parameter<string> param_exp                := = #Domain == 0 ? 'param_exp_without_values' : 'param_exp_with_values';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
 				
 				attribute<string> att_asList (Prov) := asList(source/Steden_nrd/Stad, ';' , source/Steden_nrd/Provincie);
 				attribute<bool>   test       (Prov) := att_asList = source/Prov_nrd/src_asList;
@@ -10683,7 +10691,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<string> param_att  := asExprList(source/A);
 				parameter<string> param_exp_with_values    := quote('Test') +';' + quote ('88hallo99') + ';' + quote('+)') +';'+ quote('twee woorden') +';'+quote(' test met spatie');
 				parameter<string> param_exp_without_values := '';
-				parameter<string> param_exp                := = #Domain == 0 ? 'param_exp_without_values' : 'param_exp_with_values';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
 
 				attribute<string> att_asexprList (Prov) := asExprList(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
 				attribute<bool>   test           (Prov) := att_asexprList = source/Prov_nrd/src_asexprList;
@@ -10695,7 +10703,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<string> param_att  := asItemList(source/A);
 				parameter<string> param_exp_with_values    := 'Test' +',' + '88hallo99' + ',' + '+)' +','+ 'twee woorden'+','+' test met spatie';
 				parameter<string> param_exp_without_values := '';
-				parameter<string> param_exp                := = #Domain == 0 ? 'param_exp_without_values' : 'param_exp_with_values';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
 				attribute<string> att_asItemList (Prov) := asItemList(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
 				attribute<bool>   test           (Prov) := att_asItemList = source/Prov_nrd/src_asItemList;
 				parameter<bool>   test_attr  := param_att = param_exp && all(test);
@@ -10717,7 +10725,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						+ quote('Hoogeveen') 
 					+']';
 				parameter<string> param_exp_without_values := '[]';
-				parameter<string> param_exp                := = #Domain == 0 ? 'param_exp_without_values' : 'param_exp_with_values';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
 
 				parameter<bool> test_attr := param_att == param_exp;
 			}
