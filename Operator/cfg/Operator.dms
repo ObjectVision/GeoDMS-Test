@@ -8271,6 +8271,28 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> test_attr   := all(pointset/test);
 			}
 
+			container bg_buffer_single_polygon
+			{
+				parameter<point_rd>    src  (poly) := value(Source/square/boundary_dif[0],point_rd);
+				parameter<float32>     area        := area(src,float32);
+			
+				parameter<point_rd>    att  (poly) := bg_buffer_single_polygon(src, 10d, 16b);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[
+						{400000, 109990},{406000, 109990},{406004, 109991},{406007, 109993},{406009, 109996},
+						{406010, 110000},{406010, 116000},{406009, 116004},{406007, 116007},{406004, 116009},
+						{406000, 116010},{400000, 116010},{399996, 116009},{399993, 116007},{399991, 116004},
+						{399990, 116000},{399990, 110000},{399991, 109996},{399993, 109993},{399996, 109991},
+						{400000, 109990}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+
 			container bg_buffer_multi_polygon
 			{
 				attribute<point_rd>    src  (poly, SDomain) := Source/bg_buffer_multi_polygon/poly/geometry;
@@ -8376,6 +8398,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& bg_simplify/tests/Circle/test_attr 
 					&& bg_buffer_multi_point/test_attr
 					&& bg_buffer_linestring/test_attr
+					&& bg_buffer_single_polygon/test_attr
 					&& bg_buffer_multi_polygon/test_attr
 					&& bg_outer_single_polygon/test_attr
 					&& bg_outer_multi_polygon/test_attr;
