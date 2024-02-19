@@ -6198,6 +6198,22 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>     test (origin) := point_isNearby(att, source/origin/location, Dif_all_float32);
 				parameter<bool>     test_attr     := all(test);
 			}
+			container point_xy
+			:	Using = "source"
+			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/point"
+			{
+				attribute<point_rd> att  (origin) := point_xy(origin/x, origin/y, point_rd);
+				attribute<bool>     test (origin) := point_isNearby(att, source/origin/location, Dif_all_float32);
+				parameter<bool>     test_attr     := all(test);
+			}
+			container point_yx
+			:	Using = "source"
+			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/point"
+			{
+				attribute<point_rd> att  (origin) := point_yx(origin/y, origin/x, point_rd);
+				attribute<bool>     test (origin) := point_isNearby(att, source/origin/location, Dif_all_float32);
+				parameter<bool>     test_attr     := all(test);
+			}
 			container PointRow
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
@@ -6212,6 +6228,22 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<float32> att  (origin) := pointCol(point/att);
 				attribute<bool>    test (origin) := att = source/origin/x;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container Get_X
+			:	Using = "source"
+			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
+			{
+				attribute<float32> att  (origin) := Get_X(point/att);
+				attribute<bool>    test (origin) := att = origin/x;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container Get_Y
+			:	Using = "source"
+			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointcol"
+			{
+				attribute<float32> att  (origin) := Get_Y(point/att);
+				attribute<bool>    test (origin) := att = source/origin/y;
 				parameter<bool>    test_attr     := all(test);
 			}
 			container dist
@@ -6605,7 +6637,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container results
 			{
 				parameter<bool> tests :=
-					   point/test_attr 
+					   point/test_attr
+					&& point_xy/test_attr
+					&& point_yx/test_attr
 					&& PointRow/test_attr 
 					&& PointCol/test_attr 
 					&& dist/test_attr 
@@ -6613,7 +6647,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& point_in_polygon/test_attr 
 					&& point_in_all_polygons/test_attr 
 					&& point_in_ranked_polygon/test_attr 
-					&& point_in_ranked_polygon/rank_constant/test_attr					
+					&& point_in_ranked_polygon/rank_constant/test_attr
 					&& dyna_point/CalcPoint/test_attr 
 					&& dyna_point_tiled/CalcPoint/test_attr 
 					&& dyna_point_with_ends/CalcPoint/test_attr
