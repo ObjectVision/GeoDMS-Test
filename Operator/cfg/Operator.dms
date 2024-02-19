@@ -8336,7 +8336,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<point_rd>    src  (poly, SDomain) := Source/bg_buffer_multi_polygon/poly/geometry;
 			
-				attribute<point_rd>    att  (poly, SDomain) := outer_polygon(src);
+				attribute<point_rd>    att_with_island_as_lake  (poly, SDomain) := outer_multi_polygon(src);
+				attribute<point_rd>    att  (poly, SDomain) := outer_multi_polygon(att_with_island_as_lake);
 				unit<uint32> pointset := Sequence2points(att)
 				{
 					attribute<point_rd> ok:
@@ -11723,6 +11724,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						spoint
 					);
 				unit<spoint> rdc_100_domain:= range(rdc_100,point(Int16(0), Int16(0)),point(Int16(3250), Int16(2700)));
+				parameter<uint32> nrRows := nrofrows(rdc_100_domain); 
 				parameter<bool> test_param := nrofrows(rdc_100_domain) = 3250 * 2700; 
 			}
 			container boundaries
