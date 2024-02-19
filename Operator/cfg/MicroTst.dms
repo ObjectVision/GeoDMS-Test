@@ -40,6 +40,13 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<float64> ComplicatedExpr :=  exp(3.0 + 5.0 * 7.0) * exp (2.0 + 3.0 * 4.0);
 	}
 	
+	container Cbs
+	{
+		unit<uint32> Provincie : StorageName = "e:/SourceData/CBS/Provincie.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
+		{
+			attribute<dpoint> outer_rings(poly) := bg_outer_multi_polygon(geometry);
+		}
+	}
 	container configsettings
 	{
 		container overridable {
@@ -328,7 +335,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		unit<float32> ratio       := m / m                               ,label = "ratio";
 		unit<float32> coord_rd    := m;
 		unit<fpoint>  point_rd_wms:
-			Format     = "EPSG:28992",
+			SpatialReference     = "EPSG:28992",
 			DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
 		unit<fpoint>  point_rd    := range(point_rd_wms, point(0f,250000f), point(350000f,650000f)); 
 		unit<ipoint>  point_rd_mm := // for polygon functions
