@@ -60,8 +60,8 @@ container Poly_2_grid_2_poly
 		
 		unit<uint32> HorizontalSegment := combine(cols, HorizontalLine)
 		{
-			attribute<domain_grid> South  := point_xy(first_rel, second_rel-1s, domain_grid);
-			attribute<domain_grid> North  := point_xy(first_rel, second_rel   , domain_grid);
+			attribute<domain_grid> North  := point_xy(first_rel, second_rel-1s, domain_grid);
+			attribute<domain_grid> South  := point_xy(first_rel, second_rel   , domain_grid);
 			attribute<bool> isBoundarySegment := MakeDefined(south->zone_rel, NoZone) != MakeDefined(North->zone_rel, NoZone);
 			attribute<Point> F1 := combine_data(Point,  first_rel    [VerticalLine], second_rel);
 			attribute<Point> F2 := combine_data(Point, (first_rel+1s)[VerticalLine], second_rel);
@@ -110,6 +110,9 @@ container Poly_2_grid_2_poly
 		{
 			attribute<BoundaryPoint> F1 := collect_by_cond(JFL, BoundarySegment/bp_F1);
 			attribute<BoundaryPoint> F2 := collect_by_cond(JFL, BoundarySegment/bp_F2);
+			
+			attribute<Zone> left_Zone_rel := collect_by_cond(JFL, BoundarySegment/left_Zone_rel);
+			attribute<Zone> rightZone_rel := collect_by_cond(JFL, BoundarySegment/rightZone_rel);
 		}
 		
 		unit<uint32> FromJunctionLink := select_with_org_rel(BoundarySegment/f1IsJunction)
@@ -129,8 +132,8 @@ container Poly_2_grid_2_poly
 		{
 			attribute<BoundarySegment> BoundarySegment_rel := org_rel;
 			
-			attribute<BoundaryPoint> F2 := collect_by_cond(ToJunctionLink, BoundarySegment/bp_F2);
 			attribute<BoundaryPoint> F1 := collect_by_cond(ToJunctionLink, BoundarySegment/bp_F1);
+			attribute<BoundaryPoint> F2 := collect_by_cond(ToJunctionLink, BoundarySegment/bp_F2);
 			
 			attribute<Junction> Junction_rel := Junction/per_node[F2];
 			
@@ -177,6 +180,16 @@ container Poly_2_grid_2_poly
 			
 				
 		}
+		unit<uint32> JFR  := select_with_org_rel(not(JFSS/isLineString))// JunctionFreeRing
+		{
+			attribute<JFSS> JFSS_rel := org_rel;
+			attribute<JFS>  JFS_rel  := JFSS_rel->JFS_rel;
+			
+			// use the fact that the first segment of a ring is always West to East and therefore right is inside.
+			attribute<Zone> left_Zone_rel := rlookup(JFS_rel, first(JFL/left_Zone_rel, JFS/PartNr));
+			attribute<Zone> rightZone_rel := rlookup(JFS_rel, first(JFL/rightZone_rel, JFS/PartNr));
+		}
+		
 		unit<uint32> JFLS := select_with_org_rel(JFSS/isLineString) // JunctionFree LineString
 		{
 			attribute<BoundaryPoint> firstBP_rel := collect_by_cond(JFLS, JFSS/firstBP_rel);
@@ -237,12 +250,30 @@ container Poly_2_grid_2_poly
 		{
 			attribute<Junction> Junction_rel := values->first_rel;
 			attribute<Zone    > Zone_rel     := values->second_rel;
-			attribute<JunctionLink> in_Link := rlookup(values, JunctionLink/left_JunctionZoneCode );
+			attribute<JunctionLink> in_Link := rlookup(values, JunctionLink/left_JunctionZoneCode);
 			attribute<JunctionLink> outLink := rlookup(values, JunctionLink/rightJunctionZoneCode);
 			attribute<JFLS> in_JFLS := rlookup(in_Link, JFLS/last_JL_rel);
 			attribute<JFLS> outJFLS := rlookup(outLink, JFLS/firstJL_rel);
+			
+			attribute<.> next_rel_direct := rlookup(combine_data(JunctionZoneCode, rlookup(outlink->F2, Junction/org_rel), Zone_rel), values);
+			attribute<.> prev_rel_direct := rlookup(combine_data(JunctionZoneCode, rlookup(in_link->F2, Junction/org_rel), Zone_rel), values);
+			
+			attribute<.> next_rel_with2 := rlookup(outLink->F2, in_link->F2);
+			attribute<.> prev_rel_with2 := rlookup(in_Link->F2, outlink->F2);
+			
+			attribute<.> prev_rel_ls := rlookup(in_JFLS->firstJL_rel, outLink);
+			attribute<.> next_rel_ls := rlookup(outJFLS->last_JL_rel, in_Link);
+			
+			attribute<.> prev_rel := MakeDefined(prev_rel_ls, prev_rel_direct, prev_rel_with2);
+			attribute<.> next_rel := MakeDefined(next_rel_ls, next_rel_direct, next_rel_with2);	
 		}
-		
+		unit<uint32> ZoneRing := connected_parts(ID(JunctionZone), JunctionZone/next_rel)
+		{
+			attribute<.> per_JunctionZone(JunctionZone) := PartNr;
+			attribute<Zone> Zone_rel := first(JunctionZone/Zone_rel, per_JunctionZone);
+			attribute<uint32> nrRingsPerZone(Zone) := pcount(Zone_rel);
+			attribute<uint32> nrJunctions := pcount(per_JunctionZone);
+		}
 		
 		// Connector := Segment tussen een Junction en een JFN
 		// JFS/Linestring := begin connector + result(5) + end connector; eventueel deze simplifyen
