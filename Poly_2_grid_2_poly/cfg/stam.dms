@@ -231,7 +231,9 @@ container Poly_2_grid_2_poly
 			attribute<Geografie/point_rd> LineStringWithConnectors(arc) := points2sequence(JFLSPwithConnectors/geometry, JFLSPwithConnectors/sequence_rel, JFLSPwithConnectors/ordinal);
 			attribute<Geografie/point_rd> SimplifiedLineStringWithConnectors(arc) := bg_simplify_linestring(LineStringWithConnectors, simplifyFactor);
 			unit<uint32> SimplifiedJFLSP := sequence2points(SimplifiedLineStringWithConnectors);
-			attribute<uint32> NrSimplifiedPoints := max(SimplifiedJFLSP/ordinal, SimplifiedJFLSP/Sequence_rel)+1;
+			attribute<uint32> SimplifiedPointOrdinalMax := max(SimplifiedJFLSP/ordinal, SimplifiedJFLSP/Sequence_rel);
+			attribute<uint32> NrSimplifiedPoints := SimplifiedPointOrdinalMax+1;
+			attribute<NrSimplifiedPoints> SimplifiedPointBase := value(cumulate(NrSimplifiedPoints) - NrSimplifiedPoints, SimplifiedJFLSP);
 		}
 		
 		unit<uint32> JunctionZoneCode := combine(Junction, Zone)
@@ -251,6 +253,16 @@ container Poly_2_grid_2_poly
 			attribute<JunctionLink> JL_rel    := union_data(., JFLS/firstJL_rel, JFLS/last_JL_rel);
 			attribute<uint32>       NrSimplifiedPoints := union_data(., JFLS/NrSimplifiedPoints, JFLS/NrSimplifiedPoints);
 			attribute<JunctionLink> Other_rel := union_data(., JFLS/last_JL_rel, JFLS/firstJL_rel);
+			attribute<JFLS2_Point>  JFLS2_Point_Base := cumulate(NrSimplifiedPoints) - NrSimplifiedPoints;
+		}
+		unit<uint32> JFLS2_Point := range(uint32, 0, sum(JFLS2/NrSimplifiedPoints))
+		{
+			attribute<JFLS2> JFLS2_rel := classify(ID(.), JFLS2/JFLS2_Point_Base);
+			attribute<uint32> ordinal := ID(.) - JFLS2_rel;
+			attribute<JFLS/SimplifiedJFLSP> SimplifiedPoint_rel := union_data(.
+				, SimplifiedPointBase[NrSimplifiedPoints/Sequence_rel] + ordinal
+				, (SimplifiedPointBase+SimplifiedPointOrdinalMax)[NrSimplifiedPoints/Sequence_rel] - ordinal);
+			attribute<Geografie/point_rd> geometry  := SimplifiedPoint_rel->Point;
 		}
 		unit<uint32> JunctionZone := unique(JunctionZoneCode/JunctionLinks/values)
 		{
@@ -277,11 +289,12 @@ container Poly_2_grid_2_poly
 		unit<uint32> ZoneRing := connected_parts(ID(JunctionZone), JunctionZone/next_rel)
 		{
 			attribute<.> per_JunctionZone(JunctionZone) := PartNr;
-			attribute<uint32> index(JunctionZone) :=  index(PartNr);
-			attribute<uint32> ordinal(JunctionZone) := index - per_JunctionZone->FirstJunctionZone_rel->index;
+			attribute<JunctionZone> index(JunctionZone) :=  index(PartNr);
+			attribute<JunctionZone> order(JunctionZone) := invert(index);
+			attribute<uint32> ordinal(JunctionZone) := order - order[per_JunctionZone->FirstJunctionZone_rel];
 			
 			attribute<Zone> FirstZone_rel := min(JunctionZone/Zone_rel, per_JunctionZone);
-			attribute<JunctionZone> FirstJunctionZone_rel := first(ID(JunctionZone), per_JunctionZone);
+			attribute<JunctionZone> FirstJunctionZone_rel := first(order, per_JunctionZone);
 			
 			// attribute<uint32> nrRingsPerZone(Zone) := pcount(Zone_rel);
 			
@@ -291,23 +304,29 @@ container Poly_2_grid_2_poly
 		}
 		unit<uint32> ZoneRingJunction := range(uint32, 0, sum(ZoneRing/nrJunctions))
 		{
-			attribute<ZoneRing> ZoneRing_rel := classify(ID(.0), ZoneRing/ZoneRingJunctionBase);
+			attribute<ZoneRing> ZoneRing_rel := classify(ID(.), ZoneRing/ZoneRingJunctionBase);
 			attribute<uint32> ordinal := ID(.) - ZoneRing_rel;
 			
-			attribute<Junction> JunctionZone_rel := rlookup(xxx, ZoneRing/ordinal );
+			attribute<JunctionZone> JunctionZone_rel := rlookup(ZoneRing_rel->FirstJunctionZone_rel + ordinal, ZoneRing/order );
 			attribute<JFLS2> JFLS2_rel := JunctionZone_rel->outJFLS2;
 			attribute<JunctionLink> strLink:= JunctionZone_rel->outLink;
-			attribute<JunctionLink> endLink:= JunctionZone_rel->in_Link [ JunctionZone_rel->next_rel];
+			attribute<JunctionZone> nextJunctionZone := JunctionZone_rel->next_rel;
+			attribute<JunctionLink> endLink:= nextJunctionZone->in_Link;
+			attribute<bool> IsJFLS := IsDefined(JFLS2_rel);
 			attribute<uint32> nrPoints := MakeDefined(JFLS2_rel->NrSimplifiedPoints, strLink == endLink ? 1 : 2);
 			
 			attribute<uint32> ZoneRingPointBase := cumulate(nrPoints) - nrPoints;
 		}
 		unit<uint32> ZoneRingPoint := range(uint32, 0, sum(ZoneRingJunction/ZoneRingPointBase))
 		{
-			attribute<ZoneRingJunction> ZoneRingJunction_rel := classify(ID(.0), ZoneRingJunction/ZoneRingPointBase);
-			attribute<ZoneRing> ZoneRing_rel := xxx;
+			attribute<ZoneRingJunction> ZoneRingJunction_rel := classify(ID(.), ZoneRingJunction/ZoneRingPointBase);
+			attribute<ZoneRing> ZoneRing_rel := ZoneRingJunction_rel->ZoneRing_rel;
 			attribute<uint32> ordinal := ID(.) - ZoneRingJunction_rel;
-			attribute<Geografie/point_rd> geometry  := xxx;
+			attribute<Geografie/point_rd> geometry  := ZoneRingJunction_rel->IsJFLS 
+				? x
+				: y
+			;
+	//		value(ZoneRingJunction_rel->JFLS2_rel/PointBase + ordinal;
 		}
 		attribute<Geografie/point_rd> ZoneRing_geometry(ZoneRing, poly) := points2sequence(ZoneRingPoint/geomerty, ZoneRingPoint/ZoneRing_rel, ZoneRingPoint/ordinal);
 		
