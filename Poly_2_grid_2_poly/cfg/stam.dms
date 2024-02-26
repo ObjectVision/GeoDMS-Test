@@ -293,7 +293,7 @@ container Poly_2_grid_2_poly
 			attribute<.> per_JunctionZone(JunctionZone) := PartNr;
 			attribute<JunctionZone> index(JunctionZone) :=  index(PartNr);
 			attribute<JunctionZone> order(JunctionZone) := invert(index);
-			attribute<uint32> ordinal(JunctionZone) := order - order[per_JunctionZone->FirstJunctionZone_rel];
+//			attribute<uint32> ordinal(JunctionZone) := order - order[per_JunctionZone->FirstJunctionZone_rel];
 			
 			attribute<Zone> FirstZone_rel := min(JunctionZone/Zone_rel, per_JunctionZone);
 			attribute<JunctionZone> FirstJunctionZone_rel := first(order, per_JunctionZone);
@@ -320,7 +320,7 @@ container Poly_2_grid_2_poly
 			
 			attribute<uint32> nrPoints := 
 				IsJFLS 
-					? JFLS2_rel->NrSimplifiedPoints
+					? sub_or_null(JFLS2_rel->NrSimplifiedPoints, 1)
 					: strLink == endLink 
 						? 1 
 						: 2
@@ -356,6 +356,12 @@ container Poly_2_grid_2_poly
 	}
 	
 	container applications {
+	
+		attribute<uint32> IsNL(Geografie/gridcel_100m/domain) := UInt32(IsDefined(GridData/districts/m100/Districts));
+		unit<uint32> NLZone := district(IsNl);
+		
+		container d100_NL := vectorize(Geografie/gridcel_100m/domain, NLZone, NlZone/Districts, 100.0);
+		
 		container d100 := vectorize(Geografie/gridcel_100m/domain, GridData/districts/m100, GridData/districts/m100/Districts, 100.0);
 		container d50  := vectorize(Geografie/gridcel_25m/domain,  GridData/districts/m25 , GridData/districts/m25/Districts,   50.0);
 		container d10  := vectorize(Geografie/gridcel_10m/domain,  GridData/districts/m10 , GridData/districts/m10/Districts,   10.0);
