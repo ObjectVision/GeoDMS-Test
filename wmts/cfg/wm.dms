@@ -1,0 +1,38 @@
+container CityCo
+{
+	container Units
+	{ 
+		unit<float64> m         := baseunit('meter', float64), cdf = "classifications/m_4K/ClassBreaks";
+		unit<uint32>  nr_inh   := baseunit('inhabitants', uint32), cdf = "classifications/inh_k8/ClassBreaks";
+	}
+	container classifications
+	{
+		unit<uint8> inh_k8: nrofrows = 8
+		{
+			attribute<units/nr_inh> ClassBreaks: DialogType = "Classification",
+				[-1,0,10,30,60,100,150,200];
+			attribute<uint32> BrushColor: DialogType = "BrushColor",
+				[rgb(255,255,255)
+				,rgb(66,117,181),rgb(132,158,189),rgb(198,207,187),rgb(255,255,189),rgb(255,186,132),rgb(239,117,82),rgb(214,44,33)
+				];
+		}
+	}
+	container Geometries
+	{
+		#include <tms_layer_osm_webmercator.dms>
+
+		unit<dpoint> wgs84_base  : SpatialReference = "EPSG:4326";
+		unit<dpoint> WebMercator : SpatialReference = "EPSG:3857",   DialogData = "tms_layer_osm_webmercator";//,DialogData = "tms_layer_osm_webmercator_gisco";
+	}
+
+	container SourceData
+	{
+		unit<ipoint> read : StorageName = "%ProjDir%/data/wm_denhaag.tif"
+		, StorageType     = "gdal.grid"
+		, StorageReadOnly = "True"
+		, DialogData      = "Geometries/WebMercator"
+		{
+			attribute<units/nr_inh> GridData;
+		}
+	}
+}
