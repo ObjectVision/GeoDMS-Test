@@ -152,14 +152,11 @@ container Poly_2_grid_2_poly
 			attribute<Direction>     Dir_rel := Org_dir_rel->Direction/Reverse;
 			
 			attribute<Junction> Junction_rel := Junction/per_node[F2];
-			
 			attribute<Zone> left_Zone_rel := collect_by_cond(ToJunctionLink, BoundarySegment/left_Zone_rel);
 			attribute<Zone> rightZone_rel := collect_by_cond(ToJunctionLink, BoundarySegment/rightZone_rel);
 		}
 		
-		unit<uint32> JunctionDirection := combine_unit(Junction, Direction)
-		{
-		}
+		unit<uint32> JunctionDirection := combine_unit(Junction, Direction);
 		
 		unit<uint32> JunctionLink := union_unit(FromJunctionLink, ToJunctionLink)
 		{
@@ -180,11 +177,8 @@ container Poly_2_grid_2_poly
 			attribute<JunctionLink> n1_JL := rlookup(NextJunctionDirection_rel, JunctionDirection_rel);
 			attribute<JunctionLink> n2_JL := rlookup(NextNextJunctionDirection_rel, JunctionDirection_rel);
 			attribute<JunctionLink> next_JL := MakeDefined(n1_JL, n2_JL);
-//			attribute<JunctionLink> next_JL := invert(prev_JL);
 			
-			
-//			attribute<JFLS2> outJFLS2 := rlookup(next_JL, JFLS2/JL_rel);
-			attribute<JFLS2> outJFLS2 := rlookup(ID(.)  , JFLS2/JL_rel);
+			attribute<JFLS2> outJFLS2 := invert(JFLS2/JL_rel);
 			
 			attribute<.> other_rel_ls := outJFLS2->Other_rel;
 			attribute<.> other_rel_direct := rlookup(combine_data(JunctionDirection, rlookup(F2, Junction/org_rel), Dir_rel->Reverse), JunctionLink/JunctionDirection_rel);
@@ -195,14 +189,22 @@ container Poly_2_grid_2_poly
 			unit<uint32> doubleton_link := select_with_org_rel(has_other_rel_by_2)
 			{
 				attribute<BoundaryPoint> unsorted_F2 := collect_by_cond(., F2);
+				attribute<Geografie/point_rd> unsorted_geometry := unsorted_F2->geometry;
 								
 				attribute<doubleton_link> index := index(unsorted_F2);
 				attribute<BoundaryPoint> sorted_F2 := index->unsorted_F2;
-				attribute<doubleton_link> sorted_other_rel := bitxor(ID(.), 1);
-				attribute<doubleton_link> order := invert(index->sorted_other_rel);
-				attribute<JunctionLink> other_org_rel := order->org_rel;
+				attribute<Geografie/point_rd> sorted_geometry := sorted_F2->geometry;
 				
-				attribute<BoundaryPoint> unsorted_other_F2a := order->unsorted_F2;
+				attribute<doubleton_link> sorted_other_rel := bitxor(ID(.), 1);
+
+				// org_rel[index[order->sorted_other_rel]]
+				attribute<doubleton_link> order := invert(index);
+				attribute<doubleton_link> reindex := index[order->sorted_other_rel];
+				
+				
+				attribute<JunctionLink> other_org_rel := reindex->org_rel;
+				
+				attribute<BoundaryPoint> unsorted_other_F2a := reindex->unsorted_F2;
 				attribute<BoundaryPoint> unsorted_other_F2b := other_org_rel->F2;
 				
 				parameter<bool> Check0   := GeoDmsVersion() >= 14.13;
@@ -213,12 +215,14 @@ container Poly_2_grid_2_poly
 				attribute<bool> Check3b  := unsorted_other_F2b == unsorted_F2; 
 				attribute<bool> Check3c  := other_org_rel != org_rel; 
 				attribute<bool> Check3   := Check3a && Check3b && Check3c; 
-				parameter<bool> CheckAll := and(Check0, Check1, all(Check2), all(Check3));
+//				parameter<bool> CheckAll := and(Check0, Check1, all(Check2), all(Check3));
+				parameter<bool> CheckAll := and(Check0, Check1, all(Check3));
 			}
 			
  			attribute<.> other_rel_with2 := recollect_by_cond(has_other_rel_by_2, doubleton_link/other_org_rel), IntegrityCheck = "doubleton_link/CheckAll";
 			
-			attribute<.> next_rel := MakeDefined(other_rel_ls, other_rel_direct, other_rel_with2);
+			attribute<.> other_rel := MakeDefined(other_rel_ls, other_rel_direct, other_rel_with2);
+			attribute<.> next_rel  := other_rel->next_JL;
 		}
 		
 		
@@ -311,11 +315,13 @@ container Poly_2_grid_2_poly
 		unit<uint32> ZoneRing := connected_parts(ID(JunctionLink), JunctionLink/next_rel)
 		{
 			attribute<.> per_JunctionLink(JunctionLink) := PartNr;
-			attribute<JunctionLink> index(JunctionLink) :=  index(PartNr);
+			attribute<JunctionLink> index(JunctionLink) := index(PartNr);
 			attribute<JunctionLink> order(JunctionLink) := invert(index);
 			
-			attribute<Zone> FirstZone_rel := first(JunctionLink/left_Zone_rel, per_JunctionLink);
-			attribute<JunctionLink> FirstJunctionLink_rel := min(order, per_JunctionLink);
+			attribute<Zone> FirstZone_rel := first(JunctionLink/rightZone_rel, per_JunctionLink);
+			attribute<bool> CheckUniqueZonePerRing(JunctionLink) := JunctionLink/rightZone_rel == per_JunctionLink->FirstZone_rel;
+			
+			attribute<JunctionLink> FirstJunctionLink_rel := min(order, per_JunctionLink), IntegrityCheck = "CheckUniqueZonePerRing";
 			
 			attribute<uint32> nrJunctions := pcount(per_JunctionLink);
 			
@@ -323,7 +329,7 @@ container Poly_2_grid_2_poly
 			
 			attribute<ZoneRingPoint> ZoneRingPointBase := ZoneRingJunctionBase->ZoneRingPointBase;
 			
-			attribute<Geografie/point_rd> geometry(poly) := points2sequence(ZoneRingPoint/geometry, ZoneRingPoint/ZoneRing_rel, ZoneRingPoint/Ring_ordinal);
+			attribute<Geografie/point_rd> geometry(poly) := points2polygon(ClosedZoneRingPoint/geometry, ClosedZoneRingPoint/ZoneRing_rel, ClosedZoneRingPoint/Ring_ordinal);
 			attribute<Float32> area := area(geometry, float32);
 		}
 		unit<uint32> ZoneRingJunction := range(uint32, 0, sum(ZoneRing/nrJunctions)) 
@@ -331,9 +337,17 @@ container Poly_2_grid_2_poly
 			attribute<ZoneRing> ZoneRing_rel := classify(ID(.), ZoneRing/ZoneRingJunctionBase);
 			attribute<uint32> ordinal := ID(.) - ZoneRing_rel->ZoneRingJunctionBase;
 			
-			attribute<JunctionLink> JunctionLink_rel := rlookup(ZoneRing_rel->FirstJunctionLink_rel + ordinal, ZoneRing/order );
-			attribute<JFLS2> JFLS2_rel := JunctionLink_rel->outJFLS2;
+			attribute<JunctionLink> OrderedJunctionLink_rel := rlookup(ZoneRing_rel->FirstJunctionLink_rel + ordinal, ZoneRing/order);
+			attribute<.> NextOrderedZoneRing_rel := invert(OrderedJunctionLink_rel)[OrderedJunctionLink_rel->next_rel];
 
+			attribute<uint32> dist_from_first_JL := impedance_table('directed;startPoint(Node_rel);node:TraceBack'
+					, const(1, ZoneRingJunction), ID(ZoneRingJunction), NextOrderedZoneRing_rel
+					, ZoneRing/ZoneRingJunctionBase);
+					
+					
+			attribute<JunctionLink> JunctionLink_rel := OrderedJunctionLink_rel[invert(ZoneRing_rel->ZoneRingJunctionBase + dist_from_first_JL)];
+			
+			attribute<JFLS2> JFLS2_rel := JunctionLink_rel->outJFLS2;
 			attribute<bool> IsJFLS := IsDefined(JFLS2_rel);
 			
 			attribute<uint32> nrPoints := 
@@ -346,6 +360,7 @@ container Poly_2_grid_2_poly
 			
 			attribute<uint32> ZoneRingPointBase := cumulate(nrPoints) - nrPoints;
 		}
+		// compose a ring from xxx
 		unit<uint32> ZoneRingPoint := range(uint32, 0, sum(ZoneRingJunction/nrPoints))
 		{
 			attribute<ZoneRingJunction> ZoneRingJunction_rel := classify(ID(.), ZoneRingJunction/ZoneRingPointBase);
@@ -361,11 +376,24 @@ container Poly_2_grid_2_poly
 				? JFLS2_Point_rel->geometry
 				: BP_rel->Geometry;
 		}
-		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel != 0) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
+		// add a closing point to each ring equal to the first point of that ring.
+		unit<uint32> ClosedZoneRingPoint := range(uint32, 0, sum(ZoneRingJunction/nrPoints)+#ZoneRing)
+		{
+			 attribute<Geografie/point_rd> geometry     := union_data(., ZoneRingPoint/geometry, ZoneRing/ZoneRingPointBase->geometry);
+			 attribute<ZoneRing> ZoneRing_rel := union_data(., ZoneRingPoint/ZoneRing_rel, id(ZoneRing));
+			 attribute<uint32>   Ring_ordinal := union_data(., ZoneRingPoint/Ring_ordinal, sum(ZoneRingJunction/nrPoints, ZoneRingJunction/ZoneRing_rel));
+		}
+		
+		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel == 1) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
 		{
 			attribute<Geografie/point_rd> geometry(poly) := collect_by_cond(SelectedRing, ZoneRing/geometry);
 		}
-		// TODO: Zoneringen van dezelfde Zone samenvoegen na bepaling outer-ring en weglating van ringen met zero area.
+	
+		// TODO: Losse ringen toevoegen
+		// TODO: weglaten van lege ringen (met zero area)
+		// TODO: bepaing orientation, dwz Outer Ring (area > 0) en inner ring (area < 0);
+		// TODO: Zoneringen van dezelfde Zone samenvoegen van inner ringen met outer ring. na bepaling outer-ring
+		
 		
 	}
 	
