@@ -160,7 +160,16 @@ container Poly_2_grid_2_poly
 		
 		unit<uint32> JunctionLink := union_unit(FromJunctionLink, ToJunctionLink)
 		{
-			attribute<Geografie/point_rd> geometry := Junction_rel->Geometry;
+			attribute<Geografie/point_rd> Junction_geometry := Junction_rel->Geometry;
+			
+			unit<uint32> JL_Point := union_unit(JunctionLink, JunctionLink)
+			{				
+				attribute<Geografie/point_rd> geometry   := union_data(JL_Point, F1->geometry, F2->geometry);
+				attribute<JunctionLink> JunctionLink_rel := union_data(JL_Point, ID(JunctionLink), ID(JunctionLink));
+			}
+			
+			attribute<Geografie/point_rd> geometry(arc) := points2sequence(JL_Point/geometry, JL_Point/JunctionLink_rel);
+			
 			attribute<BoundaryPoint> F1   := union_data(., FromJunctionLink/F1, ToJunctionLink/F2);
 			attribute<BoundaryPoint> F2   := union_data(., FromJunctionLink/F2, ToJunctionLink/F1);
 			attribute<Direction>     Dir_rel := union_data(., FromJunctionLink/Dir_rel, ToJunctionLink/Dir_rel);
@@ -283,7 +292,7 @@ container Poly_2_grid_2_poly
 			}
 			unit<uint32> JFLSPwithConnectors := union_unit(JFLS, JFLSP, JFLS)
 			{
-				attribute<Geografie/point_rd> geometry := union_data(., firstJL_rel->geometry, JFLSP/geometry, last_JL_rel->geometry);
+				attribute<Geografie/point_rd> geometry := union_data(., firstJL_rel->Junction_geometry, JFLSP/geometry, last_JL_rel->Junction_geometry);
 				attribute<JFLS>   sequence_rel := union_data(., id(JFLS), JFLSP/sequence_rel, id(JFLS));
 				attribute<uint32> ordinal      := union_data(., const(0, JFLS), JFLSP/ordinal+1, max(JFLSP/ordinal, JFLSP/sequence_rel)+2);
 			}
