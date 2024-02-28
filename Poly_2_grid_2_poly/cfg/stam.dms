@@ -328,7 +328,8 @@ container Poly_2_grid_2_poly
 			attribute<JunctionLink> order(JunctionLink) := invert(index);
 			
 			attribute<Zone> FirstZone_rel := first(JunctionLink/rightZone_rel, per_JunctionLink);
-			attribute<bool> CheckUniqueZonePerRing(JunctionLink) := JunctionLink/rightZone_rel == per_JunctionLink->FirstZone_rel;
+			attribute<Zone> FirstZone_per_JunctionLink(JunctionLink) := per_JunctionLink->FirstZone_rel;
+			attribute<bool> CheckUniqueZonePerRing(JunctionLink) := or(JunctionLink/rightZone_rel == FirstZone_per_JunctionLink,  not(or(IsDefined(JunctionLink/rightZone_rel), IsDefined(FirstZone_per_JunctionLink))));
 			
 			attribute<JunctionLink> FirstJunctionLink_rel := min(order, per_JunctionLink);
 			
