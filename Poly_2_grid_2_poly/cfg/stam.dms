@@ -17,12 +17,12 @@ container Poly_2_grid_2_poly
 		attribute<SourceData/gemeente> m25  (Geografie/gridcel_25m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_25m/domain);
 		attribute<SourceData/gemeente> m10  (Geografie/gridcel_10m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_10m/domain);
 
-		container districts
-		{
-			unit<uint32> m100 := district(GridData/m100);
-			unit<uint32> m25  := district(GridData/m25);
-			unit<uint32> m10  := district(GridData/m10);
-		}
+	}
+	container districts
+	{
+		unit<uint32> m100 := district(GridData/m100) { attribute<GridData/m100> RegioRel := first(GridData/m100, m100); }
+		unit<uint32> m25  := district(GridData/m25)  { attribute<GridData/m25 > RegioRel := first(GridData/m25 , m25 ); }
+		unit<uint32> m10  := district(GridData/m10)  { attribute<GridData/m10 > RegioRel := first(GridData/m10 , m10 ); }
 	}
 	
 	template grid2poly_T {
@@ -370,7 +370,7 @@ container Poly_2_grid_2_poly
 			
 			attribute<uint32> ZoneRingPointBase := cumulate(nrPoints) - nrPoints;
 		}
-		// compose a ring from xxx
+		// compose a ring from the JunctionLink geometries, either a JFSL2_Point sequence, the BoundaryPoint of F1, or the BoundaryPoint of F2 for doubleton_links
 		unit<uint32> ZoneRingPoint := range(uint32, 0, sum(ZoneRingJunction/nrPoints))
 		{
 			attribute<ZoneRingJunction> ZoneRingJunction_rel := classify(ID(.), ZoneRingJunction/ZoneRingPointBase);
@@ -404,7 +404,7 @@ container Poly_2_grid_2_poly
 //		{
 //			attribute<Geografie/point_rd> geometry(poly) := collect_by_cond(SelectedRing, ZoneRing/geometry);
 //		}
-	
+	    // TODO: ringen met !IsDefined(Zone_rel) niet samenvoegen.
 		// TODO: Losse ringen toevoegen
 		// TODO: weglaten van lege ringen (met zero area)
 		// TODO: bepaing orientation, dwz Outer Ring (area > 0) en inner ring (area < 0);
@@ -412,24 +412,33 @@ container Poly_2_grid_2_poly
 		
 		
 	}
-	
+	template MergePolygons_T {
+		unit<uint32> PolygonDomain;
+		unit<uint32> RegioDomain;
+		attribute<Geografie/point_rd> geometry(PolygonDomain, poly);
+		attribute<RegioDomain> Regio_rel(PolygonDomain);
+
+		// TODO: Polygonen van dezelfde regio samenvoegen tot multi-polygons, in een afzonderlijke template
+		attribute<Geografie/point_rd> result(RegioDomain, poly) := partitioned_union_polygon(geometry, Regio_rel);
+	}
+
 	container applications {
 	
-		attribute<uint32> IsNL(Geografie/gridcel_100m/domain) := UInt32(IsDefined(GridData/districts/m100/Districts));
+		attribute<uint32> IsNL(Geografie/gridcel_100m/domain) := UInt32(IsDefined(districts/m100/Districts));
 		unit<uint32> NLZone := district(IsNl);
 		
 		container d100_NL := grid2poly_T(Geografie/gridcel_100m/domain, NLZone, NlZone/Districts, 100.0);
 		
-		container d100 := grid2poly_T(Geografie/gridcel_100m/domain, GridData/districts/m100, GridData/districts/m100/Districts, 100.0);
-		container d50  := grid2poly_T(Geografie/gridcel_25m/domain,  GridData/districts/m25 , GridData/districts/m25/Districts,   50.0);
-		container d10  := grid2poly_T(Geografie/gridcel_10m/domain,  GridData/districts/m10 , GridData/districts/m10/Districts,   10.0);
+		container d100 := grid2poly_T(Geografie/gridcel_100m/domain, districts/m100, districts/m100/Districts, 100.0);
+		container d50  := grid2poly_T(Geografie/gridcel_25m/domain,  districts/m25 , districts/m25/Districts,   50.0);
+		container d10  := grid2poly_T(Geografie/gridcel_10m/domain,  districts/m10 , districts/m10/Districts,   10.0);
 		
-/*		
-		container m100 := grid2poly_T(Geografie/gridcel_100m/domain, /SourceData/gemeente, GridData/m100, 100.0);
-		container m50  := grid2poly_T(Geografie/gridcel_25m/domain,  /SourceData/gemeente, GridData/m25, 50.0);
-		container m10  := grid2poly_T(Geografie/gridcel_10m/domain,  /SourceData/gemeente, GridData/m10, 10.0s);
-*/		
+
+		container m100 := MergePolygons_T(districts/m100, GridData/m100, d100/results/geometry, districts/m100/Regio_rel);
+		container m50  := MergePolygons_T(districts/m50 , GridData/m50 , d50/results/geometry , districts/m50/Regio_rel);
+		container m10  := MergePolygons_T(districts/m10 , GridData/m10 , d10/results/geometry , districts/m10/Regio_rel);	
 	}
+
 	container ConfigSettings {
 		container Overridable {
 			parameter<string> CbsSourceDatadir := '%SourceDatadir%/CBS';
