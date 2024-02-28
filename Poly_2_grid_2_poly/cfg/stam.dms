@@ -25,7 +25,7 @@ container Poly_2_grid_2_poly
 		}
 	}
 	
-	template vectorize {
+	template grid2poly_T {
 		unit<spoint> domain_grid;
 		unit<uint32> Zone;
 		attribute<Zone> zone_rel(domain_grid);
@@ -321,7 +321,7 @@ container Poly_2_grid_2_poly
 			attribute<Zone> FirstZone_rel := first(JunctionLink/rightZone_rel, per_JunctionLink);
 			attribute<bool> CheckUniqueZonePerRing(JunctionLink) := JunctionLink/rightZone_rel == per_JunctionLink->FirstZone_rel;
 			
-			attribute<JunctionLink> FirstJunctionLink_rel := min(order, per_JunctionLink), IntegrityCheck = "CheckUniqueZonePerRing";
+			attribute<JunctionLink> FirstJunctionLink_rel := min(order, per_JunctionLink);
 			
 			attribute<uint32> nrJunctions := pcount(per_JunctionLink);
 			
@@ -384,10 +384,16 @@ container Poly_2_grid_2_poly
 			 attribute<uint32>   Ring_ordinal := union_data(., ZoneRingPoint/Ring_ordinal, sum(ZoneRingJunction/nrPoints, ZoneRingJunction/ZoneRing_rel));
 		}
 		
-		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel == 1) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
+		container Results
 		{
-			attribute<Geografie/point_rd> geometry(poly) := collect_by_cond(SelectedRing, ZoneRing/geometry);
+			attribute<Zone>               Zone_rel(ZoneRing)      := ZoneRing/FirstZone_rel, IntegrityCheck = "ZoneRing/CheckUniqueZonePerRing";
+			attribute<Geografie/point_rd> geometry(ZoneRing,poly) := ZoneRing/geometry;
 		}
+		
+//		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel == 1) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
+//		{
+//			attribute<Geografie/point_rd> geometry(poly) := collect_by_cond(SelectedRing, ZoneRing/geometry);
+//		}
 	
 		// TODO: Losse ringen toevoegen
 		// TODO: weglaten van lege ringen (met zero area)
@@ -402,15 +408,16 @@ container Poly_2_grid_2_poly
 		attribute<uint32> IsNL(Geografie/gridcel_100m/domain) := UInt32(IsDefined(GridData/districts/m100/Districts));
 		unit<uint32> NLZone := district(IsNl);
 		
-		container d100_NL := vectorize(Geografie/gridcel_100m/domain, NLZone, NlZone/Districts, 100.0);
+		container d100_NL := grid2poly_T(Geografie/gridcel_100m/domain, NLZone, NlZone/Districts, 100.0);
 		
-		container d100 := vectorize(Geografie/gridcel_100m/domain, GridData/districts/m100, GridData/districts/m100/Districts, 100.0);
-		container d50  := vectorize(Geografie/gridcel_25m/domain,  GridData/districts/m25 , GridData/districts/m25/Districts,   50.0);
-		container d10  := vectorize(Geografie/gridcel_10m/domain,  GridData/districts/m10 , GridData/districts/m10/Districts,   10.0);
+		container d100 := grid2poly_T(Geografie/gridcel_100m/domain, GridData/districts/m100, GridData/districts/m100/Districts, 100.0);
+		container d50  := grid2poly_T(Geografie/gridcel_25m/domain,  GridData/districts/m25 , GridData/districts/m25/Districts,   50.0);
+		container d10  := grid2poly_T(Geografie/gridcel_10m/domain,  GridData/districts/m10 , GridData/districts/m10/Districts,   10.0);
+		
 /*		
-		container m100 := vectorize(Geografie/gridcel_100m/domain, /SourceData/gemeente, GridData/m100, 100.0);
-		container m50  := vectorize(Geografie/gridcel_25m/domain,  /SourceData/gemeente, GridData/m25, 50.0);
-		container m10  := vectorize(Geografie/gridcel_10m/domain,  /SourceData/gemeente, GridData/m10, 10.0s);
+		container m100 := grid2poly_T(Geografie/gridcel_100m/domain, /SourceData/gemeente, GridData/m100, 100.0);
+		container m50  := grid2poly_T(Geografie/gridcel_25m/domain,  /SourceData/gemeente, GridData/m25, 50.0);
+		container m10  := grid2poly_T(Geografie/gridcel_10m/domain,  /SourceData/gemeente, GridData/m10, 10.0s);
 */		
 	}
 	container ConfigSettings {
