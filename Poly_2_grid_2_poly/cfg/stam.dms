@@ -206,13 +206,14 @@ container Poly_2_grid_2_poly
 				attribute<BoundaryPoint> unsorted_other_F2b := other_org_rel->F2;
 				
 				parameter<bool> Check0   := GeoDmsVersion() >= 14.13;
-				parameter<bool> Check1   := (nrofrows(.) % 2) == 1;
+				parameter<bool> Check1   := (nrofrows(.) % 2) == 0;
 				
-				parameter<bool> Check2   := all(pcount(unsorted_F2) == 0 || pcount(unsorted_F2) == 2); // time&space complexity: O(BoundaryPoint)
-				parameter<bool> Check3a  := all(unsorted_other_F2a == unsorted_F2); 
-				parameter<bool> Check3b  := all(unsorted_other_F2b == unsorted_F2); 
-				parameter<bool> Check3c  := all(other_org_rel != org_rel); 
-				parameter<bool> CheckAll := and(Check0, Check1, Check2, Check3a, Check3b, Check3c);
+				attribute<bool> Check2(BoundaryPoint) := pcount(unsorted_F2) == 0 || pcount(unsorted_F2) == 2; // time&space complexity: O(BoundaryPoint)
+				attribute<bool> Check3a  := unsorted_other_F2a == unsorted_F2; 
+				attribute<bool> Check3b  := unsorted_other_F2b == unsorted_F2; 
+				attribute<bool> Check3c  := other_org_rel != org_rel; 
+				attribute<bool> Check3   := Check3a && Check3b && Check3c; 
+				parameter<bool> CheckAll := and(Check0, Check1, all(Check2), all(Check3));
 			}
 			
  			attribute<.> other_rel_with2 := recollect_by_cond(has_other_rel_by_2, doubleton_link/other_org_rel), IntegrityCheck = "doubleton_link/CheckAll";
