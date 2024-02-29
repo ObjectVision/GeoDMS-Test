@@ -4,7 +4,7 @@ container Poly_2_grid_2_poly
 	#include <geografie.dms>
 
 	container SourceData{
-		unit<uint32> gemeente : StorageName = "%CbsSourceDatadir%/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
+		unit<uint16> gemeente : StorageName = "%CbsSourceDatadir%/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
 			attribute<geografie/point_rd> geometry (poly);
 			attribute<string> label := GM_NAAM;
@@ -20,18 +20,18 @@ container Poly_2_grid_2_poly
 	}
 	container districts
 	{
-		unit<uint32> m100 := district(GridData/m100) { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m100, Districts); }
-		unit<uint32> m25  := district(GridData/m25)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m25 , Districts); }
-		unit<uint32> m10  := district(GridData/m10)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m10 , Districts); }
+		unit<uint16> m100 := district_uint16(GridData/m100) { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m100, Districts); }
+		unit<uint16> m25  := district_uint16(GridData/m25)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m25 , Districts); }
+		unit<uint16> m10  := district_uint16(GridData/m10)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m10 , Districts); }
 	}
 	
 	template grid2poly_T {
 		unit<spoint> domain_grid;
-		unit<uint32> Zone;
+		unit<uint16> Zone;
 		attribute<Zone> zone_rel(domain_grid);
 		parameter<float64> simplifyFactor;
 		
-		parameter<Zone> NoZone := #Zone+lowerbound(Zone); // outside study area indicator
+		parameter<Zone> NoZone := uint16(#Zone)+lowerbound(Zone); // outside study area indicator
 		
 		// Segments := horizontale raster-randjes met ongelijke boven en onder zones + verticale raster-randjes met ongelijke linker en rechter zones
 		unit<int16> rows := range(uint32, pointrow(lowerbound(domain_grid)), pointrow(upperbound(domain_grid)));
@@ -69,7 +69,7 @@ container Poly_2_grid_2_poly
 		{
 			attribute<domain_grid> West := point_xy(first_rel-1s, second_rel, domain_grid);
 			attribute<domain_grid> East := point_xy(first_rel   , second_rel, domain_grid);
-			attribute<bool> isBoundarySegment := MakeDefined(West->zone_rel, max(zone_rel)+1) != MakeDefined(East->zone_rel, max(zone_rel)+1);
+			attribute<bool> isBoundarySegment := MakeDefined(West->zone_rel, max(zone_rel)+1w) != MakeDefined(East->zone_rel, max(zone_rel)+1w);
 			attribute<Point> F1 := combine_data(Point, first_rel,  second_rel    [HorizontalLine]);
 			attribute<Point> F2 := combine_data(Point, first_rel, (second_rel+1s)[HorizontalLine]);
 		}
@@ -410,7 +410,7 @@ container Poly_2_grid_2_poly
 	}
 	template MergePolygons_T {
 		unit<uint32> PolygonDomain;
-		unit<uint32> RegioDomain;
+		unit<uint16> RegioDomain;
 		attribute<Geografie/point_rd> geometry(PolygonDomain, poly);
 		attribute<RegioDomain> Regio_rel(PolygonDomain);
 
@@ -420,8 +420,8 @@ container Poly_2_grid_2_poly
 
 	container applications {
 	
-		attribute<uint32> IsNL(Geografie/gridcel_100m/domain) := UInt32(IsDefined(districts/m100/Districts));
-		unit<uint32> NLZone := district(IsNl);
+		attribute<bool> IsNL(Geografie/gridcel_100m/domain) := IsDefined(districts/m100/Districts);
+		unit<uint16> NLZone := district_uint16(IsNl);
 		
 		container d100_NL := grid2poly_T(Geografie/gridcel_100m/domain, NLZone, NlZone/Districts, 100.0);
 		
