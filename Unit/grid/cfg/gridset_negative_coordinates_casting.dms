@@ -1,0 +1,38 @@
+container gridset_negative_coordinates_casting
+{
+	unit<float64> m          := baseunit('m', float64);
+	unit<dpoint> WebMercator : SpatialReference = "EPSG:3857";
+
+	unit<ipoint> gridset :=
+		gridset(
+			 WebMercator
+			,point_xy(100[m], -100[m], WebMercator)
+			,point_xy(  0[m],    0[m], WebMercator)
+			,ipoint
+		)
+	, DialogData = "WebMercator";
+
+	 unit<ipoint> griddomain :=
+		range(
+				gridset
+			   ,point_xy(100[m], 300[m], WebMercator)[gridset]
+			   ,point_xy(100[m], 200[m], WebMercator)[gridset] + point_xy(3i, 2i, gridset)
+		  )
+	, DialogData = "WebMercator"
+	{
+		attribute<ipoint> id    := id(.);
+		attribute<uint8>  const := const(1b,.);
+
+		parameter<WebMercator> point    := point_xy(250[m],150[m],WebMercator); 
+		parameter<griddomain>  grid_rel := point[griddomain];
+		parameter<int32>       col      := PointCol(grid_rel);
+		parameter<int32>       row      := PointRow(grid_rel);
+	}
+
+	parameter<bool>   test     := griddomain/col == 2i && griddomain/row == -2i ;
+	parameter<string> test_log := test 
+		? '' 
+		: 'Gridset Negative Coordinates Casting to Gridel Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+	, StorageType = "str"
+	, Storagename = "%localDataDir%/GeoDMSTestResults/unit/grid/gridset_negative_coordinates_casting.txt";
+}

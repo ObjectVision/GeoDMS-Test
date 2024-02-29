@@ -83,6 +83,7 @@ Call full/WriteTimeStamps.bat %results_folder%\t640_2_RSopen_MakeVariantData.txt
 
 Call full/SetStartTime.bat
 
+
 Echo.
 Echo Sectie Run Model:
 Echo.

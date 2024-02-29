@@ -58,18 +58,17 @@ REM Full\NetworkModelEU.bat %Setting1% %Setting2% %Setting3% t410_NetworkModel_E
 
 REM timeout /t 3
 
-Call Full\GUI_tests.bat
-Call Full\Operator_tests.bat
-Call Full\Project_tests.bat
+REM Call Full\GUI_tests.bat
+REM Call Full\Operator_tests.bat
+REM Call Full\Project_tests.bat
 
-REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Hestia
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %HestiaRunPath% t530_hestia2024/result_html t530_hestia2024
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS
+REM Call Full\RsLight_2021_Ontwikkel_3.bat %Setting1% %Setting2% %Setting3% t630_RSLight_2021_ontwikkel_3
+Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
 
-REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\100m_DynaPop
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %DynaPopPath% t810_ValLuisa_Czech_LU_POP/result_html t810_ValLuisa_Czech_LU_POP 
-
-REM Call Full\RSOpenWithFence.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
-REM Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\2UP
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_zonder_calcache t710_2UP_indicator_results_zonder_CalCache
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_met_calcache    t711_2UP_indicator_results_met_CalCache
 
 timeout /t 3
 
