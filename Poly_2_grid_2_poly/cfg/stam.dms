@@ -20,9 +20,9 @@ container Poly_2_grid_2_poly
 	}
 	container districts
 	{
-		unit<uint32> m100 := district(GridData/m100) { attribute<GridData/m100> RegioRel := first(GridData/m100, m100); }
-		unit<uint32> m25  := district(GridData/m25)  { attribute<GridData/m25 > RegioRel := first(GridData/m25 , m25 ); }
-		unit<uint32> m10  := district(GridData/m10)  { attribute<GridData/m10 > RegioRel := first(GridData/m10 , m10 ); }
+		unit<uint32> m100 := district(GridData/m100) { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m100, Districts); }
+		unit<uint32> m25  := district(GridData/m25)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m25 , Districts); }
+		unit<uint32> m10  := district(GridData/m10)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m10 , Districts); }
 	}
 	
 	template grid2poly_T {
@@ -394,10 +394,10 @@ container Poly_2_grid_2_poly
 			 attribute<uint32>   Ring_ordinal := union_data(., ZoneRingPoint/Ring_ordinal, sum(ZoneRingJunction/nrPoints, ZoneRingJunction/ZoneRing_rel));
 		}
 		
-		container Results
+		unit<uint32> Results := ZoneRing
 		{
-			attribute<Zone>               Zone_rel(ZoneRing)      := ZoneRing/FirstZone_rel, IntegrityCheck = "ZoneRing/CheckUniqueZonePerRing";
-			attribute<Geografie/point_rd> geometry(ZoneRing,poly) := ZoneRing/geometry;
+			attribute<Zone>               Zone_rel       := ZoneRing/FirstZone_rel, IntegrityCheck = "ZoneRing/CheckUniqueZonePerRing";
+			attribute<Geografie/point_rd> geometry(poly) := ZoneRing/geometry;
 		}
 		
 //		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel == 1) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
@@ -419,7 +419,7 @@ container Poly_2_grid_2_poly
 		attribute<RegioDomain> Regio_rel(PolygonDomain);
 
 		// TODO: Polygonen van dezelfde regio samenvoegen tot multi-polygons, in een afzonderlijke template
-		attribute<Geografie/point_rd> result(RegioDomain, poly) := partitioned_union_polygon(geometry, Regio_rel);
+		attribute<Geografie/point_rd> result(RegioDomain, poly) := fpolygon(partitioned_union_polygon(ipolygon(geometry), Regio_rel));
 	}
 
 	container applications {
@@ -434,9 +434,9 @@ container Poly_2_grid_2_poly
 		container d10  := grid2poly_T(Geografie/gridcel_10m/domain,  districts/m10 , districts/m10/Districts,   10.0);
 		
 
-		container m100 := MergePolygons_T(districts/m100, GridData/m100, d100/results/geometry, districts/m100/Regio_rel);
-		container m50  := MergePolygons_T(districts/m50 , GridData/m50 , d50/results/geometry , districts/m50/Regio_rel);
-		container m10  := MergePolygons_T(districts/m10 , GridData/m10 , d10/results/geometry , districts/m10/Regio_rel);	
+		container m100 := MergePolygons_T(d100/Results, SourceData/gemeente, d100/results/geometry, d100/results/Zone_rel->Regio_rel);
+		container m50  := MergePolygons_T(d50/Results , SourceData/gemeente, d50/results/geometry , d50/results/Zone_rel->Regio_rel);
+		container m10  := MergePolygons_T(d10/Results , SourceData/gemeente, d10/results/geometry , d10/results/Zone_rel->Regio_rel);
 	}
 
 	container ConfigSettings {
