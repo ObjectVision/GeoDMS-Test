@@ -40,7 +40,7 @@ container Geografie: Using = "Eenheden"
 			parameter<int16> nr_cols:= int16((bbox/right - bbox/left)   / gridsize);
 			parameter<int16> nr_rows:= int16((bbox/top   - bbox/bottom) / gridsize);
 
-			unit<spoint> untiled_domain:=
+			unit<spoint> domain :=
 				range(
 					 gridset(
 						 point_rd
@@ -51,9 +51,7 @@ container Geografie: Using = "Eenheden"
 					,point_xy(int16(0), int16(0))
 					,point_xy(nr_cols,nr_rows)
 				)
-			,	DialogData = "point_rd";
-
-			unit<spoint> domain:= TiledUnit(point_xy(int16(1024),int16(1024), untiled_domain))
+			,	DialogData = "point_rd"
 			{
 				parameter<m>     size := gridsize;
 				attribute<.>     id   := id(.);
