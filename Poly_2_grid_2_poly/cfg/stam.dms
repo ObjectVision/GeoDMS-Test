@@ -52,7 +52,6 @@ container Poly_2_grid_2_poly
 			attribute<geografie/point_rd> geometry := org_rel->geometry;
 			attribute<uint32> NrBoundarySegments := pcount(BoundarySegment/bp_F1) + pcount(BoundarySegment/bp_F2);
 			attribute<bool>   isJunction := NrBoundarySegments != 2; // Junction := raster-hoekpunt waarop meer dan 2 segmenten uit komen (1 kan niet voor komen)
-			attribute<JFS> JFS_rel := JFS/PartNr;
 			
 			attribute<uint32> NrJFL := pcount(JFL/F1) + pcount(JFL/F2);
 		}
@@ -118,9 +117,6 @@ container Poly_2_grid_2_poly
 			attribute<geografie/point_rd> geometry := collect_by_cond(Junction, BoundaryPoint/geometry);
 			attribute<.> per_node(BoundaryPoint) := invert(org_rel);
 		}
-		
-		// JFN (aka Junction Free Nodes) := raster-hoekpunten waarop 2 segments uit komen
-		unit<uint32> JFN := select(not(BoundaryPoint/isJunction));
 		
 		// JFL (aka Junction Free Links) := Segments die 2 JFN verbinden
 		unit<uint32> JFL := select(BoundarySegment/isJFL)
