@@ -97,6 +97,13 @@ container Poly_2_grid_2_poly
 		}
 		unit<uint32> BoundarySegment := union_unit(HorizontalBoundarySegment, VerticalBoundarySegment)
 		{
+			unit<uint32> BS_Point := union_unit(BoundarySegment, BoundarySegment)
+			{				
+				attribute<Geografie/point_rd> geometry   := union_data(BS_Point, F1->geometry, F2->geometry);
+				attribute<BoundarySegment> BoundarySegment_rel := union_data(BS_Point, ID(BoundarySegment), ID(BoundarySegment));
+			}
+			
+			attribute<Geografie/point_rd> geometry(arc) := points2sequence(BS_Point/geometry, BS_Point/BoundarySegment_rel);
 			attribute<domain_grid> left  := union_data(., HorizontalBoundarySegment/North, VerticalBoundarySegment/East);
 			attribute<domain_grid> right := union_data(., HorizontalBoundarySegment/South, VerticalBoundarySegment/West);
 			attribute<Direction> Dir_rel := union_data(., const(Direction/V/East ,HorizontalBoundarySegment), const(Direction/V/South ,VerticalBoundarySegment));
@@ -232,6 +239,7 @@ container Poly_2_grid_2_poly
 		
 		
 		// JFS (aka Junction Free Section) := serie verbonden JFL
+		// TODO: make dual of segment(F1m F2) for JFP: JFP(Link1, Link2) and absorb handling of doubleton_links
 		unit<uint32> JFS := connected_parts(JFL/F1, JFL/F2)
 		{
 			attribute<uint32> nrParts := pcount(PartNr);
