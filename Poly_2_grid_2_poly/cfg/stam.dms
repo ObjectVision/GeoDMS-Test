@@ -53,7 +53,7 @@ container Poly_2_grid_2_poly
 			attribute<uint32> NrBoundarySegments := pcount(BoundarySegment/bp_F1) + pcount(BoundarySegment/bp_F2);
 			attribute<bool>   isJunction := NrBoundarySegments != 2; // Junction := raster-hoekpunt waarop meer dan 2 segmenten uit komen (1 kan niet voor komen)
 			
-			attribute<uint32> NrJFL := pcount(JFL/F1) + pcount(JFL/F2);
+			attribute<uint32> NrJFSegment := pcount(JFSegment/F1) + pcount(JFSegment/F2);
 		}
 		
 		unit<uint32> HorizontalSegment := combine(cols, HorizontalLine)
@@ -113,7 +113,7 @@ container Poly_2_grid_2_poly
 			attribute<BoundaryPoint> bp_F2 := F2->BoundaryPoint_rel; 
 			attribute<bool> f1IsJunction := bp_F1->isJunction;
 			attribute<bool> f2IsJunction := bp_F2->isJunction;
-			attribute<bool> isJFL := not(f1IsJunction) && not(f2IsJunction); // intermediate in linestring
+			attribute<bool> isJFSegment := not(f1IsJunction) && not(f2IsJunction); // intermediate in linestring
 			
 			attribute<Zone> left_Zone_rel := zone_rel[left];
 			attribute<Zone> rightZone_rel := zone_rel[right];
@@ -125,14 +125,14 @@ container Poly_2_grid_2_poly
 			attribute<.> per_node(BoundaryPoint) := invert(org_rel);
 		}
 		
-		// JFL (aka Junction Free Links) := Segments die 2 JFN verbinden
-		unit<uint32> JFL := select(BoundarySegment/isJFL)
+		// JFSegment (aka Junction Free Links) := Segments die 2 JFN verbinden
+		unit<uint32> JFSegment := select(BoundarySegment/isJFSegment)
 		{
-			attribute<BoundaryPoint> F1 := collect_by_cond(JFL, BoundarySegment/bp_F1);
-			attribute<BoundaryPoint> F2 := collect_by_cond(JFL, BoundarySegment/bp_F2);
+			attribute<BoundaryPoint> F1 := collect_by_cond(JFSegment, BoundarySegment/bp_F1);
+			attribute<BoundaryPoint> F2 := collect_by_cond(JFSegment, BoundarySegment/bp_F2);
 			
-			attribute<Zone> left_Zone_rel := collect_by_cond(JFL, BoundarySegment/left_Zone_rel);
-			attribute<Zone> rightZone_rel := collect_by_cond(JFL, BoundarySegment/rightZone_rel);
+			attribute<Zone> left_Zone_rel := collect_by_cond(JFSegment, BoundarySegment/left_Zone_rel);
+			attribute<Zone> rightZone_rel := collect_by_cond(JFSegment, BoundarySegment/rightZone_rel);
 		}
 		
 		// Connector := Segment tussen een Junction en een JFN of een andere Junction
@@ -238,22 +238,23 @@ container Poly_2_grid_2_poly
 		}
 		
 		
-		// JFS (aka Junction Free Section) := serie verbonden JFL
+		// Junction Free Section := clusters van BoundaryPoints, verbonden door JFSegments, of losse BoundaryPoints
 		// TODO: make dual of segment(F1m F2) for JFP: JFP(Link1, Link2) and absorb handling of doubleton_links
-		unit<uint32> JFS := connected_parts(JFL/F1, JFL/F2)
+		unit<uint32> JFSection := connected_parts(JFSegment/F1, JFSegment/F2)
 		{
 			attribute<uint32> nrParts := pcount(PartNr);
 		}
-		unit<uint32> JFSS := select_with_org_rel(JFS/nrParts > 1)
+		
+		unit<uint32> JFPath := select_with_org_rel(JFSection/nrParts > 1)
 		{
-			attribute<JFS> JFS_rel := org_rel;
-			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFS/PartNr];
+			attribute<JFSection> JFSection_rel := org_rel;
+			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFSection/PartNr];
 			
-			unit<uint32> JFLP := union_unit(JFL, JFL) 
+			unit<uint32> JFLP := union_unit(JFSegment, JFSegment) 
 			{ 
-				attribute<BoundaryPoint> BP_rel  := union_data(., JFL/F1, JFL/F2);
-				attribute<JFSS>          JFSS_rel := PartNr[BP_rel];
-				attribute<bool> isEndOfJSF := BP_rel->NrJFL == 1;
+				attribute<BoundaryPoint> BP_rel  := union_data(., JFSegment/F1, JFSegment/F2);
+				attribute<JFPath>          JFSS_rel := PartNr[BP_rel];
+				attribute<bool> isEndOfJSF := BP_rel->NrJFSegment == 1;
 			} 
 			attribute<uint8> NrEnds := sum_uint8(JFLP/isEndOfJSF, JFLP/JFSS_rel);
 			attribute<bool> isLineString := NrEnds == 2b; // it could also be a ring without any Junction
@@ -266,27 +267,22 @@ container Poly_2_grid_2_poly
 			
 				
 		}
-		unit<uint32> JFR  := select_with_org_rel(not(JFSS/isLineString))// JunctionFreeRing
+		unit<uint32> JFRing  := select_with_org_rel(not(JFPath/isLineString))
 		{
-			attribute<JFSS> JFSS_rel := org_rel;
-			attribute<JFS>  JFS_rel  := JFSS_rel->JFS_rel;
+			attribute<JFPath> JFPath_rel := org_rel;
+			attribute<JFSection>  JFSection_rel  := JFPath_rel->JFSection_rel;
 			
-			// use the fact that the first segment of a ring is always West to East and therefore right is inside.
-			attribute<Zone> left_Zone_rel := rlookup(JFS_rel, first(JFL/left_Zone_rel, JFS/PartNr));
-			attribute<Zone> rightZone_rel := rlookup(JFS_rel, first(JFL/rightZone_rel, JFS/PartNr));
-		}
-		
-		unit<uint32> JFLS := select_with_org_rel(JFSS/isLineString) // JunctionFree LineString
-		{
-			attribute<BoundaryPoint> firstBP_rel := collect_by_cond(JFLS, JFSS/firstBP_rel);
-			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLS, JFSS/last_BP_rel);
-			attribute<JunctionLink>  firstJL_rel := rlookup(firstBP_rel, JunctionLink/F2);
-			attribute<JunctionLink>  last_JL_rel := rlookup(last_BP_rel, JunctionLink/F2);
+			attribute<BoundaryPoint> firstBP_rel := min(ID(BoundaryPoint), JFPath_rel->PartNr);
+//			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel); // null
 			
-			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFSS/PartNr];
-			// JFS/Linestring := d.m.v. impedance_single van alle begin JFS naar eind JFS routes t.b.v. points2sequence
+			// abuse the fact that the first segment of a ring is always West to East and therefore right is inside.
+			attribute<Zone> left_Zone_rel := first(BoundarySegment/left_Zone_rel, JFPath_rel->PartNr[BoundarySegment/F1]);
+			attribute<Zone> rightZone_rel := first(BoundarySegment/rightZone_rel, JFPath_rel->PartNr[BoundarySegment/F1]);
+			
+//			attribute<BoundaryPoint> firstBP_rel := min(JFPath/BoundaryPoint_rel, org_rel);
+			
 			attribute<uint32> dist_from_first_BP(BoundaryPoint) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack'
-					, const(1, JFL), JFL/F1, JFL/F2, JFLS/firstBP_rel);
+					, const(1, JFSegment), JFSegment/F1, JFSegment/F2, JFLS/firstBP_rel);
 					
 			unit<uint32> JFLSP := select(IsDefined(dist_from_first_BP))
 			{
@@ -294,11 +290,33 @@ container Poly_2_grid_2_poly
 				attribute<JFLS> sequence_rel := collect_by_cond(JFLSP, PartNr);
 				attribute<uint32> ordinal := collect_by_cond(JFLSP, dist_from_first_BP);
 			}
-			unit<uint32> JFLSPwithConnectors := union_unit(JFLS, JFLSP, JFLS)
+			
+			attribute<uint32> NrSimplifiedPoints := union_data(path, JFLS/NrSimplifiedPoints, JFRing/NrSimplifiedPoints);
+		}
+		
+		unit<uint32> JFLineString := select_with_org_rel(JFPath/isLineString) // JunctionFree LineString
+		{
+			attribute<BoundaryPoint> firstBP_rel := collect_by_cond(JFLineString, JFPath/firstBP_rel);
+			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel);
+			attribute<JunctionLink>  firstJL_rel := rlookup(firstBP_rel, JunctionLink/F2);
+			attribute<JunctionLink>  last_JL_rel := rlookup(last_BP_rel, JunctionLink/F2);
+			
+			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFPath/PartNr];
+			// JFSection/Linestring := d.m.v. impedance_single van alle begin JFSection naar eind JFSection routes t.b.v. points2sequence
+			attribute<uint32> dist_from_first_BP(BoundaryPoint) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack'
+					, const(1, JFSegment), JFSegment/F1, JFSegment/F2, JFLineString/firstBP_rel);
+					
+			unit<uint32> JFLSP := select(IsDefined(dist_from_first_BP))
+			{
+				attribute<Geografie/point_rd> geometry := collect_by_cond(JFLSP, BoundaryPoint/Geometry);
+				attribute<JFLineString> sequence_rel := collect_by_cond(JFLSP, PartNr);
+				attribute<uint32> ordinal := collect_by_cond(JFLSP, dist_from_first_BP);
+			}
+			unit<uint32> JFLSPwithConnectors := union_unit(JFLineString, JFLSP, JFLineString)
 			{
 				attribute<Geografie/point_rd> geometry := union_data(., firstJL_rel->Junction_geometry, JFLSP/geometry, last_JL_rel->Junction_geometry);
-				attribute<JFLS>   sequence_rel := union_data(., id(JFLS), JFLSP/sequence_rel, id(JFLS));
-				attribute<uint32> ordinal      := union_data(., const(0, JFLS), JFLSP/ordinal+1, max(JFLSP/ordinal, JFLSP/sequence_rel)+2);
+				attribute<JFLineString>   sequence_rel := union_data(., id(JFLineString), JFLSP/sequence_rel, id(JFLineString));
+				attribute<uint32> ordinal      := union_data(., const(0, JFLineString), JFLSP/ordinal+1, max(JFLSP/ordinal, JFLSP/sequence_rel)+2);
 			}
 			
 			attribute<Geografie/point_rd> LineString(arc) := points2sequence(JFLSP/geometry, JFLSP/sequence_rel, JFLSP/ordinal);
@@ -309,20 +327,29 @@ container Poly_2_grid_2_poly
 			attribute<uint32> NrSimplifiedPoints := SimplifiedPointOrdinalMax+1;
 			attribute<SimplifiedPoints> SimplifiedPointBase := value(cumulate(NrSimplifiedPoints) - NrSimplifiedPoints, SimplifiedPoints);
 		}
-		unit<uint32>  JFLS2 := union_unit(JFLS, JFLS)
+		unit<uint32> Path := union_unit(JFLineString, JFRing)
 		{
-			attribute<JunctionLink> JL_rel    := union_data(., JFLS/firstJL_rel, JFLS/last_JL_rel);
-			attribute<uint32>       NrSimplifiedPoints := union_data(., JFLS/NrSimplifiedPoints, JFLS/NrSimplifiedPoints);
-			attribute<JunctionLink> Other_rel := union_data(., JFLS/last_JL_rel, JFLS/firstJL_rel);
+			attribute<JunctionLink> firstJL_rel := union_data(Path, JFLineString/firstJL_rel, const(null_u, JFRing));
+			attribute<JunctionLink> last_JL_rel := union_data(Path, JFLineString/last_JL_rel, const(null_u, JFRing));
+			attribute<uint32>       NrSimplifiedPoints := union_data(path, JFLineString/NrSimplifiedPoints, JFRing/NrSimplifiedPoints);
+		}
+		
+		unit<uint32>  pathSrc := path; // JFLineString;
+		
+		unit<uint32>  JFLS2 := union_unit(pathSrc, pathSrc)
+		{
+			attribute<JunctionLink> JL_rel    := union_data(., pathSrc/firstJL_rel, pathSrc/last_JL_rel);
+			attribute<uint32>       NrSimplifiedPoints := union_data(., pathSrc/NrSimplifiedPoints, pathSrc/NrSimplifiedPoints);
+			attribute<JunctionLink> Other_rel := union_data(., pathSrc/last_JL_rel, pathSrc/firstJL_rel);
 			attribute<JFLS2_Point>  JFLS2_Point_Base := cumulate(NrSimplifiedPoints) - NrSimplifiedPoints;
 		}
 		unit<uint32> JFLS2_Point := range(uint32, 0, sum(JFLS2/NrSimplifiedPoints))
 		{
 			attribute<JFLS2> JFLS2_rel := classify(ID(.), JFLS2/JFLS2_Point_Base);
 			attribute<uint32> ordinal := ID(.) - JFLS2_rel;
-			attribute<JFLS/SimplifiedPoints> SimplifiedPoint_rel := union_data(.
-				, JFLS/SimplifiedPointBase[JFLS/SimplifiedPoints/Sequence_rel] + JFLS/SimplifiedPoints/ordinal
-				, (JFLS/SimplifiedPointBase+JFLS/SimplifiedPointOrdinalMax)[JFLS/SimplifiedPoints/Sequence_rel] - JFLS/SimplifiedPoints/ordinal);
+			attribute<JFLineString/SimplifiedPoints> SimplifiedPoint_rel := union_data(.
+				, JFLineString/SimplifiedPointBase[JFLineString/SimplifiedPoints/Sequence_rel] + JFLineString/SimplifiedPoints/ordinal
+				, (JFLineString/SimplifiedPointBase+JFLineString/SimplifiedPointOrdinalMax)[JFLineString/SimplifiedPoints/Sequence_rel] - JFLineString/SimplifiedPoints/ordinal);
 			attribute<Geografie/point_rd> geometry  := SimplifiedPoint_rel->Point;
 		}
 		unit<uint32> ZoneRing := connected_parts(ID(JunctionLink), JunctionLink/next_rel)
