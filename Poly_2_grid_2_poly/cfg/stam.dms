@@ -9,20 +9,10 @@ container Poly_2_grid_2_poly
 			attribute<geografie/point_rd> geometry (poly);
 			attribute<string> label := GM_NAAM;
 		}
-	}
-	
-	container GridData
-	{
-		attribute<SourceData/gemeente> m100 (Geografie/gridcel_100m/domain) := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_100m/domain);
-		attribute<SourceData/gemeente> m25  (Geografie/gridcel_25m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_25m/domain);
-		attribute<SourceData/gemeente> m10  (Geografie/gridcel_10m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_10m/domain);
-
-	}
-	container districts
-	{
-		unit<uint16> m100 := district_uint16(GridData/m100) { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m100, Districts); }
-		unit<uint16> m25  := district_uint16(GridData/m25)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m25 , Districts); }
-		unit<uint16> m10  := district_uint16(GridData/m10)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m10 , Districts); }
+		unit<uint16> nl := range(uint16, 0, 1)
+		{
+			attribute<geografie/point_rd> geometry (poly) := union_data(., fpolygon(union_polygon(ipolygon(gemeentel/geometry))));
+		}
 	}
 	
 	template grid2poly_T {
@@ -249,55 +239,69 @@ container Poly_2_grid_2_poly
 		{
 			attribute<JFSection> JFSection_rel := org_rel;
 			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFSection/PartNr];
+//			attribute<BoundaryPoint> firstBP_rel := min(ID(BoundaryPoint), PartNr);
+//			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel); // null
 			
 			unit<uint32> JFLP := union_unit(JFSegment, JFSegment) 
 			{ 
 				attribute<BoundaryPoint> BP_rel  := union_data(., JFSegment/F1, JFSegment/F2);
-				attribute<JFPath>          JFSS_rel := PartNr[BP_rel];
+				attribute<JFPath>        JFSS_rel := PartNr[BP_rel];
 				attribute<bool> isEndOfJSF := BP_rel->NrJFSegment == 1;
 			} 
 			attribute<uint8> NrEnds := sum_uint8(JFLP/isEndOfJSF, JFLP/JFSS_rel);
-			attribute<bool> isLineString := NrEnds == 2b; // it could also be a ring without any Junction
-			
-			unit<uint32> Connector := select_with_org_rel(JFLP/isEndOfJSF);
-		
-			attribute<uint32> nrParts := pcount(PartNr);
-			attribute<BoundaryPoint> firstBP_rel := first(Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel);
-			attribute<BoundaryPoint> last_BP_rel := last (Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel);
-			
-				
+			attribute<bool> isLineString := NrEnds == 2b; // it could also be a ring without any Junction			
 		}
+		
 		unit<uint32> JFRing  := select_with_org_rel(not(JFPath/isLineString))
 		{
 			attribute<JFPath> JFPath_rel := org_rel;
 			attribute<JFSection>  JFSection_rel  := JFPath_rel->JFSection_rel;
+			attribute<BoundaryPoint> JFPath_firstBP_rel(JFPath) :=  min_index(ID(BoundaryPoint), JFPath/PartNr);
+			attribute<BoundaryPoint> firstBP_rel := lookup(JFPath_rel, JFPath_firstBP_rel);
+//			attribute<BoundaryPoint> firstBP_rel := JFPath_rel->firstBP_rel;
+			attribute<BoundarySegment> outgoingBoundarySegment(BoundaryPoint) := invert(BoundarySegment/bp_F1);
+			attribute<BoundarySegment> firstSegment_rel := outgoingBoundarySegment[firstBP_rel];
 			
-			attribute<BoundaryPoint> firstBP_rel := min(ID(BoundaryPoint), JFPath_rel->PartNr);
-//			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel); // null
+			attribute<bool> BoundarySegment_IsNotFirstRingSegment(BoundarySegment) := !IsDefined(rlookup(ID(BoundarySegment), firstSegment_rel));
+			unit<uint32> ReducedBoundarySegment := subset(BoundarySegment_IsNotFirstRingSegment)
+			{
+				attribute<BoundaryPoint> F1 := collect_by_cond(., BoundarySegment_IsNotFirstRingSegment, BoundarySegment/bp_F1);
+				attribute<BoundaryPoint> F2 := collect_by_cond(., BoundarySegment_IsNotFirstRingSegment, BoundarySegment/bp_F2);
+			}
 			
-			// abuse the fact that the first segment of a ring is always West to East and therefore right is inside.
-			attribute<Zone> left_Zone_rel := first(BoundarySegment/left_Zone_rel, JFPath_rel->PartNr[BoundarySegment/F1]);
-			attribute<Zone> rightZone_rel := first(BoundarySegment/rightZone_rel, JFPath_rel->PartNr[BoundarySegment/F1]);
+			// abuse the fact that the first segment of a ring is always North to South and therefore right is outside en left is inside.
+			attribute<Zone> leftZone_rel := firstSegment_rel->rightZone_rel;
+			attribute<Zone> rightZone_rel := firstSegment_rel->left_Zone_rel;
 			
 //			attribute<BoundaryPoint> firstBP_rel := min(JFPath/BoundaryPoint_rel, org_rel);
 			
+			// as the first segment has been removed, the remaining segments form a clock-wise path from the first BoundaryPoint to the other side of the removed segment
 			attribute<uint32> dist_from_first_BP(BoundaryPoint) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack'
-					, const(1, JFSegment), JFSegment/F1, JFSegment/F2, JFLS/firstBP_rel);
+					, const(1, ReducedBoundarySegment), ReducedBoundarySegment/F1, ReducedBoundarySegment/F2, firstBP_rel);
 					
-			unit<uint32> JFLSP := select(IsDefined(dist_from_first_BP))
+			unit<uint32> Point := select(IsDefined(dist_from_first_BP))
 			{
-				attribute<Geografie/point_rd> geometry := collect_by_cond(JFLSP, BoundaryPoint/Geometry);
-				attribute<JFLS> sequence_rel := collect_by_cond(JFLSP, PartNr);
-				attribute<uint32> ordinal := collect_by_cond(JFLSP, dist_from_first_BP);
+				attribute<Geografie/point_rd> geometry := collect_by_cond(Point, BoundaryPoint/Geometry);
+				attribute<JFRing> sequence_rel := collect_by_cond(Point, invert(JFPath_rel)[JFPath/PartNr]);
+				attribute<uint32> ordinal := collect_by_cond(Point, dist_from_first_BP);
 			}
-			
-			attribute<uint32> NrSimplifiedPoints := union_data(path, JFLS/NrSimplifiedPoints, JFRing/NrSimplifiedPoints);
+			attribute<Geografie/point_rd> geometry(poly) := points2polygon(Point/geometry, Point/sequence_rel, Point/ordinal);
+			attribute<float32> area := area(geometry, float32);
+			attribute<Geografie/point_rd> SimplifiedRing(poly) := bg_simplify_polygon(geometry, simplifyFactor);
+			attribute<float32> simplified_area := area(SimplifiedRing, float32);
 		}
+		unit<uint32> NonEmptyJFRing := select(JFRing/simplified_area > 0f);
 		
 		unit<uint32> JFLineString := select_with_org_rel(JFPath/isLineString) // JunctionFree LineString
 		{
-			attribute<BoundaryPoint> firstBP_rel := collect_by_cond(JFLineString, JFPath/firstBP_rel);
-			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel);
+			unit<uint32> Connector := select_with_org_rel(JFPath/JFLP/isEndOfJSF);
+		
+			attribute<uint32> nrParts := pcount(PartNr);
+			attribute<BoundaryPoint> firstBP_rel := first(Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel)[org_rel];
+			attribute<BoundaryPoint> last_BP_rel := last (Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel)[org_rel];
+			
+//			attribute<BoundaryPoint> firstBP_rel := collect_by_cond(JFLineString, JFPath/firstBP_rel);
+//			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel);
 			attribute<JunctionLink>  firstJL_rel := rlookup(firstBP_rel, JunctionLink/F2);
 			attribute<JunctionLink>  last_JL_rel := rlookup(last_BP_rel, JunctionLink/F2);
 			
@@ -306,32 +310,40 @@ container Poly_2_grid_2_poly
 			attribute<uint32> dist_from_first_BP(BoundaryPoint) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack'
 					, const(1, JFSegment), JFSegment/F1, JFSegment/F2, JFLineString/firstBP_rel);
 					
-			unit<uint32> JFLSP := select(IsDefined(dist_from_first_BP))
+			unit<uint32> Point := select(IsDefined(dist_from_first_BP))
 			{
-				attribute<Geografie/point_rd> geometry := collect_by_cond(JFLSP, BoundaryPoint/Geometry);
-				attribute<JFLineString> sequence_rel := collect_by_cond(JFLSP, PartNr);
-				attribute<uint32> ordinal := collect_by_cond(JFLSP, dist_from_first_BP);
+				attribute<Geografie/point_rd> geometry := collect_by_cond(Point, BoundaryPoint/Geometry);
+				attribute<JFLineString> sequence_rel := collect_by_cond(Point, PartNr);
+				attribute<uint32> ordinal := collect_by_cond(Point, dist_from_first_BP);
 			}
-			unit<uint32> JFLSPwithConnectors := union_unit(JFLineString, JFLSP, JFLineString)
+			unit<uint32> PointwithConnectors := union_unit(JFLineString, Point, JFLineString)
 			{
-				attribute<Geografie/point_rd> geometry := union_data(., firstJL_rel->Junction_geometry, JFLSP/geometry, last_JL_rel->Junction_geometry);
-				attribute<JFLineString>   sequence_rel := union_data(., id(JFLineString), JFLSP/sequence_rel, id(JFLineString));
-				attribute<uint32> ordinal      := union_data(., const(0, JFLineString), JFLSP/ordinal+1, max(JFLSP/ordinal, JFLSP/sequence_rel)+2);
+				attribute<Geografie/point_rd> geometry := union_data(., firstJL_rel->Junction_geometry, Point/geometry, last_JL_rel->Junction_geometry);
+				attribute<JFLineString>   sequence_rel := union_data(., id(JFLineString), Point/sequence_rel, id(JFLineString));
+				attribute<uint32> ordinal      := union_data(., const(0, JFLineString), Point/ordinal+1, max(Point/ordinal, Point/sequence_rel)+2);
 			}
 			
-			attribute<Geografie/point_rd> LineString(arc) := points2sequence(JFLSP/geometry, JFLSP/sequence_rel, JFLSP/ordinal);
-			attribute<Geografie/point_rd> LineStringWithConnectors(arc) := points2sequence(JFLSPwithConnectors/geometry, JFLSPwithConnectors/sequence_rel, JFLSPwithConnectors/ordinal);
-			attribute<Geografie/point_rd> SimplifiedLineStringWithConnectors(arc) := bg_simplify_linestring(LineStringWithConnectors, simplifyFactor);
+			attribute<Geografie/point_rd> LineString(arc) := points2sequence(Point/geometry, Point/sequence_rel, Point/ordinal);
+			attribute<Geografie/point_rd> LineStringWithConnectors(arc) := points2sequence(PointwithConnectors/geometry, PointwithConnectors/sequence_rel, PointwithConnectors/ordinal);
+			attribute<Geografie/point_rd> SimplifiedLineString(arc) := bg_simplify_linestring(LineStringWithConnectors, simplifyFactor);
+/*		
 			unit<uint32> SimplifiedPoints := sequence2points(SimplifiedLineStringWithConnectors);
 			attribute<uint32> SimplifiedPointOrdinalMax := max(SimplifiedPoints/ordinal, SimplifiedPoints/Sequence_rel);
 			attribute<uint32> NrSimplifiedPoints := SimplifiedPointOrdinalMax+1;
 			attribute<SimplifiedPoints> SimplifiedPointBase := value(cumulate(NrSimplifiedPoints) - NrSimplifiedPoints, SimplifiedPoints);
+		*/
 		}
-		unit<uint32> Path := union_unit(JFLineString, JFRing)
+		unit<uint32> Path := union_unit(JFLineString, NonEmptyJFRing)
 		{
-			attribute<JunctionLink> firstJL_rel := union_data(Path, JFLineString/firstJL_rel, const(null_u, JFRing));
-			attribute<JunctionLink> last_JL_rel := union_data(Path, JFLineString/last_JL_rel, const(null_u, JFRing));
-			attribute<uint32>       NrSimplifiedPoints := union_data(path, JFLineString/NrSimplifiedPoints, JFRing/NrSimplifiedPoints);
+			attribute<JunctionLink> firstJL_rel := union_data(Path, JFLineString/firstJL_rel, const(null_u, NonEmptyJFRing));
+			attribute<JunctionLink> last_JL_rel := union_data(Path, JFLineString/last_JL_rel, const(null_u, NonEmptyJFRing));
+			attribute<Geografie/point_rd> SimplifiedPath(arc) := union_data(Path, JFLineString/SimplifiedLineString, collect_by_cond(NonEmptyJFRing, JFRing/SimplifiedRing));
+//			attribute<uint32>       NrSimplifiedPoints := union_data(path, JFLineString/NrSimplifiedPoints, JFRing/NrSimplifiedPoints);
+
+			unit<uint32> SimplifiedPoints := sequence2points(SimplifiedPath);
+			attribute<uint32> SimplifiedPointOrdinalMax := max(SimplifiedPoints/ordinal, SimplifiedPoints/Sequence_rel);
+			attribute<uint32> NrSimplifiedPoints := SimplifiedPointOrdinalMax+1;
+			attribute<SimplifiedPoints> SimplifiedPointBase := value(cumulate(NrSimplifiedPoints) - NrSimplifiedPoints, SimplifiedPoints);
 		}
 		
 		unit<uint32>  pathSrc := path; // JFLineString;
@@ -347,9 +359,9 @@ container Poly_2_grid_2_poly
 		{
 			attribute<JFLS2> JFLS2_rel := classify(ID(.), JFLS2/JFLS2_Point_Base);
 			attribute<uint32> ordinal := ID(.) - JFLS2_rel;
-			attribute<JFLineString/SimplifiedPoints> SimplifiedPoint_rel := union_data(.
-				, JFLineString/SimplifiedPointBase[JFLineString/SimplifiedPoints/Sequence_rel] + JFLineString/SimplifiedPoints/ordinal
-				, (JFLineString/SimplifiedPointBase+JFLineString/SimplifiedPointOrdinalMax)[JFLineString/SimplifiedPoints/Sequence_rel] - JFLineString/SimplifiedPoints/ordinal);
+			attribute<Path/SimplifiedPoints> SimplifiedPoint_rel := union_data(.
+				, Path/SimplifiedPointBase[Path/SimplifiedPoints/Sequence_rel] + Path/SimplifiedPoints/ordinal
+				, (Path/SimplifiedPointBase+Path/SimplifiedPointOrdinalMax)[Path/SimplifiedPoints/Sequence_rel] - Path/SimplifiedPoints/ordinal);
 			attribute<Geografie/point_rd> geometry  := SimplifiedPoint_rel->Point;
 		}
 		unit<uint32> ZoneRing := connected_parts(ID(JunctionLink), JunctionLink/next_rel)
@@ -423,12 +435,24 @@ container Poly_2_grid_2_poly
 			 attribute<Geografie/point_rd> geometry     := union_data(., ZoneRingPoint/geometry, ZoneRing/ZoneRingPointBase->geometry);
 			 attribute<ZoneRing> ZoneRing_rel := union_data(., ZoneRingPoint/ZoneRing_rel, id(ZoneRing));
 			 attribute<uint32>   Ring_ordinal := union_data(., ZoneRingPoint/Ring_ordinal, sum(ZoneRingJunction/nrPoints, ZoneRingJunction/ZoneRing_rel));
+			 attribute<Zone>     Zone_rel     := ZoneRing_rel->FirstZone_rel;
 		}
-		
-		unit<uint32> Results := ZoneRing
+/*		
+		unit<uint32> ClosedZonePoint := range(uint32, 0, #ClosedZoneRingPoint + #ZoneRing - #Zone)
+		{
+			 attribute<Geografie/point_rd> geometry     := union_data(., ClosedZoneRingPoint->geometry, xxx);
+			 attribute<Zone> Zone_rel := union_data(., ClosedZoneRingPoint/Zone_rel, xxx);
+			 attribute<uint32>   Zone_ordinal := union_data(., ClosedZoneRingPoint/Ring_ordinal + ClosedZoneRingPoint/ZoneRing_rel->ClosedZoneRingPointBase, xxx);
+		}
+*/		
+		unit<uint32> RingResults := ZoneRing
 		{
 			attribute<Zone>               Zone_rel       := ZoneRing/FirstZone_rel, IntegrityCheck = "ZoneRing/CheckUniqueZonePerRing";
 			attribute<Geografie/point_rd> geometry(poly) := ZoneRing/geometry;
+		}
+		unit<uint16> Results := Zone
+		{
+			attribute<Geografie/point_rd> geometry(poly) := fpolygon(partitioned_union_polygon(ipolygon(RingResults/geometry), RingResults/Zone_rel));
 		}
 		
 //		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel == 1) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
@@ -437,37 +461,60 @@ container Poly_2_grid_2_poly
 //		}
 	    // TODO: ringen met !IsDefined(Zone_rel) niet samenvoegen.
 		// TODO: Losse ringen toevoegen
-		// TODO: weglaten van lege ringen (met zero area)
 		// TODO: bepaing orientation, dwz Outer Ring (area > 0) en inner ring (area < 0);
 		// TODO: Zoneringen van dezelfde Zone samenvoegen van inner ringen met outer ring. na bepaling outer-ring
+		// TODO: template met shapes en raster die vergrid, zoneert en simplifyt
 		
 		
 	}
-	template MergePolygons_T {
-		unit<uint32> PolygonDomain;
-		unit<uint16> RegioDomain;
-		attribute<Geografie/point_rd> geometry(PolygonDomain, poly);
-		attribute<RegioDomain> Regio_rel(PolygonDomain);
+	container GridData
+	{
+		attribute<SourceData/gemeente> m100 (Geografie/gridcel_100m/domain) := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_100m/domain);
+		attribute<SourceData/gemeente> m25  (Geografie/gridcel_25m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_25m/domain);
+		attribute<SourceData/gemeente> m10  (Geografie/gridcel_10m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_10m/domain);
 
-		// TODO: Polygonen van dezelfde regio samenvoegen tot multi-polygons, in een afzonderlijke template
-		attribute<Geografie/point_rd> result(RegioDomain, poly) := fpolygon(partitioned_union_polygon(ipolygon(geometry), Regio_rel));
+	}
+	container districts
+	{
+		unit<uint16> m100 := district_uint16(GridData/m100) { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m100, Districts); }
+		unit<uint16> m25  := district_uint16(GridData/m25)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m25 , Districts); }
+		unit<uint16> m10  := district_uint16(GridData/m10)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m10 , Districts); }
+	}
+	
+	
+	template SimplifyPolygons_T {
+		unit<uint16> RegionDomain;
+		unit<spoint> RasterDomain;
+		parameter<float64> simplifyFactor;
+		
+		attribute<Geografie/point_rd> Region_geometry(RegionDomain, poly) := RegionDomain/geometry;
+		
+		attribute<RegionDomain> RasterData(RasterDomain) := poly2grid(SourceData/gemeente/geometry, RasterDomain);
+		unit<uint16> DistrictDomain := district_uint16(RasterData) { attribute<RegionDomain> Region_rel := first(RasterData, Districts); }
+		
+		container SimplifiedPolygons := grid2poly_T(RasterDomain, DistrictDomain, DistrictDomain/Districts, simplifyFactor);
+		
+		// Polygonen van dezelfde regio samenvoegen tot multi-polygons, in een afzonderlijke template
+		// TODO: met afzonderlijke punten doen o.b.v. de te checked aanname dat ze niet overlappen.
+		attribute<Geografie/point_rd> result(RegionDomain, poly) := fpolygon(partitioned_union_polygon(ipolygon(SimplifiedPolygons/Results/geometry), DistrictDomain/Region_rel));
+		
+		// check dat result geen overlappende polygonen bevat
+		attribute<ipoint> iresult(RegionDomain, poly) := ipolygon(result);
+		
+		unit<uint32> overlap_check := polygon_connectivity(iresult)
+		{
+			attribute<ipoint> geometry(poly) := iresult[F1] * iresult[F2];
+			attribute<int32> area := area(geometry, int32);
+		}
 	}
 
 	container applications {
 	
-		attribute<bool> IsNL(Geografie/gridcel_100m/domain) := IsDefined(districts/m100/Districts);
-		unit<uint16> NLZone := district_uint16(IsNl);
+		container d100_NL := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_100m/domain, 100.0);
 		
-		container d100_NL := grid2poly_T(Geografie/gridcel_100m/domain, NLZone, NlZone/Districts, 100.0);
-		
-		container d100 := grid2poly_T(Geografie/gridcel_100m/domain, districts/m100, districts/m100/Districts, 100.0);
-		container d50  := grid2poly_T(Geografie/gridcel_25m/domain,  districts/m25 , districts/m25/Districts,   50.0);
-		container d10  := grid2poly_T(Geografie/gridcel_10m/domain,  districts/m10 , districts/m10/Districts,   10.0);
-		
-
-		container m100 := MergePolygons_T(d100/Results, SourceData/gemeente, d100/results/geometry, d100/results/Zone_rel->Regio_rel);
-		container m50  := MergePolygons_T(d50/Results , SourceData/gemeente, d50/results/geometry , d50/results/Zone_rel->Regio_rel);
-		container m10  := MergePolygons_T(d10/Results , SourceData/gemeente, d10/results/geometry , d10/results/Zone_rel->Regio_rel);
+		container d100 := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_100m/domain, 100.0);
+		container d50  := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_50m/domain ,  50.0);
+		container d10  := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_10m/domain ,  10.0);
 	}
 
 	container ConfigSettings {
