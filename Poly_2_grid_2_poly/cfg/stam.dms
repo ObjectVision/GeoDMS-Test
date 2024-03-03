@@ -9,9 +9,9 @@ container Poly_2_grid_2_poly
 			attribute<geografie/point_rd> geometry (poly);
 			attribute<string> label := GM_NAAM;
 		}
-		unit<uint16> nl := range(uint16, 0, 1)
+		unit<uint16> nl := range(uint16, 0w, 1w)
 		{
-			attribute<geografie/point_rd> geometry (poly) := union_data(., fpolygon(union_polygon(ipolygon(gemeentel/geometry))));
+			attribute<geografie/point_rd> geometry (poly) := union_data(., fpolygon(union_polygon(ipolygon(gemeente/geometry))));
 		}
 	}
 	
@@ -489,7 +489,7 @@ container Poly_2_grid_2_poly
 		
 		attribute<Geografie/point_rd> Region_geometry(RegionDomain, poly) := RegionDomain/geometry;
 		
-		attribute<RegionDomain> RasterData(RasterDomain) := poly2grid(SourceData/gemeente/geometry, RasterDomain);
+		attribute<RegionDomain> RasterData(RasterDomain) := poly2grid(Region_geometry, RasterDomain);
 		unit<uint16> DistrictDomain := district_uint16(RasterData) { attribute<RegionDomain> Region_rel := first(RasterData, Districts); }
 		
 		container SimplifiedPolygons := grid2poly_T(RasterDomain, DistrictDomain, DistrictDomain/Districts, simplifyFactor);
@@ -511,6 +511,8 @@ container Poly_2_grid_2_poly
 	container applications {
 	
 		container d100_NL := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_100m/domain, 100.0);
+		container d50_NL  := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_50m/domain,   50.0);
+		container d10_NL  := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_10m/domain,   10.0);
 		
 		container d100 := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_100m/domain, 100.0);
 		container d50  := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_50m/domain ,  50.0);
