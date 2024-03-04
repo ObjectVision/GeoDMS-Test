@@ -4,10 +4,15 @@ container Poly_2_grid_2_poly
 	#include <geografie.dms>
 
 	container SourceData{
-		unit<uint16> gemeente : StorageName = "%CbsSourceDatadir%/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
+		unit<uint16> gemeente_bron : StorageName = "%CbsSourceDatadir%/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
 			attribute<geografie/point_rd> geometry (poly);
 			attribute<string> label := GM_NAAM;
+		}
+		unit<uint16> gemeente := select(IsDefined(gemeente_bron/GM_NAAM))
+		{
+			attribute<geografie/point_rd> geometry (poly) := collect_by_cond(., gemeente_bron/geometry);
+			attribute<string> label := collect_by_cond(., gemeente_bron/label);
 		}
 		unit<uint16> nl := range(uint16, 0w, 1w)
 		{
