@@ -48,7 +48,10 @@ container Poly_2_grid_2_poly
 			attribute<uint32> NrBoundarySegments := pcount(BoundarySegment/bp_F1) + pcount(BoundarySegment/bp_F2);
 			attribute<bool>   isJunction := NrBoundarySegments != 2; // Junction := raster-hoekpunt waarop meer dan 2 segmenten uit komen (1 kan niet voor komen)
 			
-			attribute<uint32> NrJFSegment := pcount(JFSegment/F1) + pcount(JFSegment/F2);
+//			attribute<uint32> NrJFSegment := pcount(JFSegment/F1) + pcount(JFSegment/F2);
+			
+			attribute<BoundarySegment> FirstLink := MakeDefined(first(ID(BoundarySegment), BoundarySegment/bp_F1), first(ID(BoundarySegment), BoundarySegment/bp_F2));
+			attribute<BoundarySegment> Last_Link := MakeDefined(last (ID(BoundarySegment), BoundarySegment/bp_F2), last (ID(BoundarySegment), BoundarySegment/bp_F1));
 		}
 		
 		unit<uint32> HorizontalSegment := combine(cols, HorizontalLine)
@@ -92,11 +95,15 @@ container Poly_2_grid_2_poly
 		}
 		unit<uint32> BoundarySegment := union_unit(HorizontalBoundarySegment, VerticalBoundarySegment)
 		{
+			attribute<Direction> Direction_rel := union_data(., const(Direction/V/South, HorizontalBoundarySegment), const(Direction/V/East, VerticalBoundarySegment));
+			
 			unit<uint32> BS_Point := union_unit(BoundarySegment, BoundarySegment)
 			{				
 				attribute<Geografie/point_rd> geometry   := union_data(BS_Point, F1->geometry, F2->geometry);
 				attribute<BoundarySegment> BoundarySegment_rel := union_data(BS_Point, ID(BoundarySegment), ID(BoundarySegment));
 			}
+			
+			attribute<uint32> NrIntermediatePoints := pcount(IntermediatePoint/Ra) + pcount(IntermediatePoint/Rb);
 			
 			attribute<Geografie/point_rd> geometry(arc) := points2sequence(BS_Point/geometry, BS_Point/BoundarySegment_rel);
 			attribute<domain_grid> left  := union_data(., HorizontalBoundarySegment/North, VerticalBoundarySegment/East);
@@ -108,10 +115,16 @@ container Poly_2_grid_2_poly
 			attribute<BoundaryPoint> bp_F2 := F2->BoundaryPoint_rel; 
 			attribute<bool> f1IsJunction := bp_F1->isJunction;
 			attribute<bool> f2IsJunction := bp_F2->isJunction;
-			attribute<bool> isJFSegment := not(f1IsJunction) && not(f2IsJunction); // intermediate in linestring
+//			attribute<bool> isJFSegment := not(f1IsJunction) && not(f2IsJunction); // intermediate in linestring
 			
 			attribute<Zone> left_Zone_rel := zone_rel[left];
 			attribute<Zone> rightZone_rel := zone_rel[right];
+		}
+		unit<uint32> IntermediatePoint := select_with_org_rel(not(BoundaryPoint/isJunction))
+		{
+			attribute<BoundarySegment> Ra := collect_by_cond(IntermediatePoint, BoundaryPoint/FirstLink);
+			attribute<BoundarySegment> Rb := collect_by_cond(IntermediatePoint, BoundaryPoint/Last_Link);
+			attribute<bool> IsOke := IsDefined(Ra) && IsDefined(Rb) && Ra != Rb;
 		}
 		
 		unit<uint32> Junction := select_with_org_rel(BoundaryPoint/isJunction)
@@ -121,6 +134,7 @@ container Poly_2_grid_2_poly
 		}
 		
 		// JFSegment (aka Junction Free Links) := Segments die 2 JFN verbinden
+/*		
 		unit<uint32> JFSegment := select(BoundarySegment/isJFSegment)
 		{
 			attribute<BoundaryPoint> F1 := collect_by_cond(JFSegment, BoundarySegment/bp_F1);
@@ -129,7 +143,7 @@ container Poly_2_grid_2_poly
 			attribute<Zone> left_Zone_rel := collect_by_cond(JFSegment, BoundarySegment/left_Zone_rel);
 			attribute<Zone> rightZone_rel := collect_by_cond(JFSegment, BoundarySegment/rightZone_rel);
 		}
-		
+*/		
 		// Connector := Segment tussen een Junction en een JFN of een andere Junction
 		unit<uint32> FromJunctionLink := select(BoundarySegment/f1IsJunction)
 		{
@@ -192,40 +206,7 @@ container Poly_2_grid_2_poly
 			attribute<bool> has_other_rel_ls := IsDefined(other_rel_ls);
 			attribute<bool> has_other_rel_direct := IsDefined(other_rel_direct);
 			attribute<bool> has_other_rel_by_2   := not(or(has_other_rel_ls, has_other_rel_direct));
-			
-			unit<uint32> doubleton_link := select_with_org_rel(has_other_rel_by_2)
-			{
-				attribute<BoundaryPoint> unsorted_F2 := collect_by_cond(., F2);
-				attribute<Geografie/point_rd> unsorted_geometry := unsorted_F2->geometry;
-								
-				attribute<doubleton_link> index := index(unsorted_F2);
-				attribute<BoundaryPoint> sorted_F2 := index->unsorted_F2;
-				attribute<Geografie/point_rd> sorted_geometry := sorted_F2->geometry;
-				
-				attribute<doubleton_link> sorted_other_rel := bitxor(ID(.), 1);
 
-				// org_rel[index[order->sorted_other_rel]]
-				attribute<doubleton_link> order := invert(index);
-				attribute<doubleton_link> reindex := index[order->sorted_other_rel];
-				
-				
-				attribute<JunctionLink> other_org_rel := reindex->org_rel;
-				
-				attribute<BoundaryPoint> unsorted_other_F2a := reindex->unsorted_F2;
-				attribute<BoundaryPoint> unsorted_other_F2b := other_org_rel->F2;
-				
-				parameter<bool> Check0   := GeoDmsVersion() >= 14.13;
-				parameter<bool> Check1   := (nrofrows(.) % 2) == 0;
-				
-				attribute<bool> Check2(BoundaryPoint) := pcount(unsorted_F2) == 0 || pcount(unsorted_F2) == 2; // time&space complexity: O(BoundaryPoint)
-				attribute<bool> Check3a  := unsorted_other_F2a == unsorted_F2; 
-				attribute<bool> Check3b  := unsorted_other_F2b == unsorted_F2; 
-				attribute<bool> Check3c  := other_org_rel != org_rel; 
-				attribute<bool> Check3   := Check3a && Check3b && Check3c; 
-//				parameter<bool> CheckAll := and(Check0, Check1, all(Check2), all(Check3));
-				parameter<bool> CheckAll := and(Check0, Check1, all(Check3));
-			}
-			
  			attribute<.> other_rel_with2 := recollect_by_cond(has_other_rel_by_2, doubleton_link/other_org_rel), IntegrityCheck = "doubleton_link/CheckAll";
 			
 			attribute<.> other_rel := MakeDefined(other_rel_ls, other_rel_direct, other_rel_with2);
@@ -233,61 +214,51 @@ container Poly_2_grid_2_poly
 		}
 		
 		
-		// Junction Free Section := clusters van BoundaryPoints, verbonden door JFSegments, of losse BoundaryPoints
-		// TODO: make dual of segment(F1m F2) for JFP: JFP(Link1, Link2) and absorb handling of doubleton_links
-		unit<uint32> JFSection := connected_parts(JFSegment/F1, JFSegment/F2)
+		// Junction Free Section := clusters van BoundarySegments
+		unit<uint32> JFSection := connected_parts(intermediatePoint/Ra, intermediatePoint/Rb)
 		{
 			attribute<uint32> nrParts := pcount(PartNr);
-		}
-		
-		unit<uint32> JFPath := select_with_org_rel(JFSection/nrParts > 1)
-		{
-			attribute<JFSection> JFSection_rel := org_rel;
-			attribute<.> PartNr(BoundaryPoint) := invert(org_rel)[JFSection/PartNr];
-//			attribute<BoundaryPoint> firstBP_rel := min(ID(BoundaryPoint), PartNr);
-//			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel); // null
 			
-			unit<uint32> JFLP := union_unit(JFSegment, JFSegment) 
-			{ 
-				attribute<BoundaryPoint> BP_rel  := union_data(., JFSegment/F1, JFSegment/F2);
-				attribute<JFPath>        JFSS_rel := PartNr[BP_rel];
-				attribute<bool> isEndOfJSF := BP_rel->NrJFSegment == 1;
-			} 
-			attribute<uint8> NrEnds := sum_uint8(JFLP/isEndOfJSF, JFLP/JFSS_rel);
+			attribute<uint8> NrEnds := sum_uint8(BoundarySegment/NrIntermediatePoints == 1, PartNr);
 			attribute<bool> isLineString := NrEnds == 2b; // it could also be a ring without any Junction			
 		}
 		
-		unit<uint32> JFRing  := select_with_org_rel(not(JFPath/isLineString))
+		unit<uint32> JFRing  := select_with_org_rel(not(JFSection/isLineString))
 		{
-			attribute<JFPath> JFPath_rel := org_rel;
-			attribute<JFSection>  JFSection_rel  := JFPath_rel->JFSection_rel;
-			attribute<BoundaryPoint> JFPath_firstBP_rel(JFPath) :=  min_index(ID(BoundaryPoint), JFPath/PartNr);
-			attribute<BoundaryPoint> firstBP_rel := lookup(JFPath_rel, JFPath_firstBP_rel);
-//			attribute<BoundaryPoint> firstBP_rel := JFPath_rel->firstBP_rel;
-			attribute<BoundarySegment> outgoingBoundarySegment(BoundaryPoint) := invert(BoundarySegment/bp_F1);
-			attribute<BoundarySegment> firstSegment_rel := outgoingBoundarySegment[firstBP_rel];
+			attribute<JFSection>  JFSection_rel  := org_rel;
+			attribute<BoundarySegment> JFSection_firstBS_rel(JFSection) :=  min_index(ID(BoundarySegment), JFSection/PartNr);
+			attribute<BoundarySegment> firstBoundarySegment_rel := lookup(JFSection_rel, JFSection_firstBS_rel);
+			attribute<BoundaryPoint>   firstBoundaryPoint_rel   := firstBoundarySegment_rel->bp_F1;
 			
-			attribute<bool> BoundarySegment_IsNotFirstRingSegment(BoundarySegment) := !IsDefined(rlookup(ID(BoundarySegment), firstSegment_rel));
+			attribute<bool> IsOke := firstBoundarySegment_rel->Direction_rel == Direction/V/South; // follows from the order or Points and Segments
+
+			attribute<bool> BoundarySegment_IsNotFirstRingSegment(BoundarySegment) := !IsDefined(invert(firstBoundarySegment_rel));
+//			attribute<bool> BoundaryPoint_IsNotFirstRingPoint(BoundaryPoint) := BoundarySegment_IsNotFirstRingSegment[BoundaryPoint/Ra];
+			
+			// abuse the fact that the first segment of a ring is always North to South and therefore right is outside en left is inside.
+			attribute<Zone> leftZone_rel := firstBoundarySegment_rel->rightZone_rel;
+			attribute<Zone> rightZone_rel := firstBoundarySegment_rel->left_Zone_rel;
+			
 			unit<uint32> ReducedBoundarySegment := subset(BoundarySegment_IsNotFirstRingSegment)
 			{
 				attribute<BoundaryPoint> F1 := collect_by_cond(., BoundarySegment_IsNotFirstRingSegment, BoundarySegment/bp_F1);
 				attribute<BoundaryPoint> F2 := collect_by_cond(., BoundarySegment_IsNotFirstRingSegment, BoundarySegment/bp_F2);
 			}
 			
-			// abuse the fact that the first segment of a ring is always North to South and therefore right is outside en left is inside.
-			attribute<Zone> leftZone_rel := firstSegment_rel->rightZone_rel;
-			attribute<Zone> rightZone_rel := firstSegment_rel->left_Zone_rel;
+			// TODO: only do these things per ring points as there are much less RingPoints than BoundaryPoints
 			
+			attribute<.> per_IntermediatePoint(IntermediatePoint) := invert(JFSection_rel)[MakeDefined(JFSection/PartNr[IntermediatePoint/Ra], JFSection/PartNr[IntermediatePoint/Rb])];
+			attribute<.> per_BoundaryPoint(BoundaryPoint) := lookup(invert(intermediatePoint/org_rel), per_IntermediatePoint); // TODO: recollect_by_cond and remove org_rel
 //			attribute<BoundaryPoint> firstBP_rel := min(JFPath/BoundaryPoint_rel, org_rel);
 			
 			// as the first segment has been removed, the remaining segments form a clock-wise path from the first BoundaryPoint to the other side of the removed segment
 			attribute<uint32> dist_from_first_BP(BoundaryPoint) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack'
-					, const(1, ReducedBoundarySegment), ReducedBoundarySegment/F1, ReducedBoundarySegment/F2, firstBP_rel);
+					, const(1, ReducedBoundarySegment), ReducedBoundarySegment/F1, ReducedBoundarySegment/F2, firstBoundaryPoint_rel);
 					
 			unit<uint32> Point := select(IsDefined(dist_from_first_BP))
 			{
 				attribute<Geografie/point_rd> geometry := collect_by_cond(Point, BoundaryPoint/Geometry);
-				attribute<JFRing> sequence_rel := collect_by_cond(Point, invert(JFPath_rel)[JFPath/PartNr]);
+				attribute<JFRing> sequence_rel := collect_by_cond(Point, per_BoundaryPoint);
 				attribute<uint32> ordinal := collect_by_cond(Point, dist_from_first_BP);
 			}
 			attribute<Geografie/point_rd> geometry(poly) := points2polygon(Point/geometry, Point/sequence_rel, Point/ordinal);
@@ -501,7 +472,10 @@ container Poly_2_grid_2_poly
 		
 		// Polygonen van dezelfde regio samenvoegen tot multi-polygons, in een afzonderlijke template
 		// TODO: met afzonderlijke punten doen o.b.v. de te checked aanname dat ze niet overlappen.
-		attribute<Geografie/point_rd> result(RegionDomain, poly) := fpolygon(partitioned_union_polygon(ipolygon(SimplifiedPolygons/Results/geometry), DistrictDomain/Region_rel));
+		unit<uint32> ZoneRing := SimplifiedPolygons/ZoneRing;
+		attribute<RegionDomain> ZoneRing_RegioDomain_rel(ZoneRing) := lookup(ZoneRing/FirstZone_rel, DistrictDomain/Region_rel);
+		
+		attribute<Geografie/point_rd> result(RegionDomain, poly) := fpolygon(partitioned_union_polygon(ipolygon(SimplifiedPolygons/results/geometry), DistrictDomain/Region_rel));
 		
 		// check dat result geen overlappende polygonen bevat
 		attribute<ipoint> iresult(RegionDomain, poly) := ipolygon(result);
