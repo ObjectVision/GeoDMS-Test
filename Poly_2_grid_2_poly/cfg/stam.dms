@@ -268,13 +268,14 @@ container Poly_2_grid_2_poly
 		}
 		unit<uint32> NonEmptyJFRing := select(JFRing/simplified_area > 0f);
 		
-		unit<uint32> JFLineString := select_with_org_rel(JFPath/isLineString) // JunctionFree LineString
+		unit<uint32> JFLineString := select_with_org_rel(JFSection/isLineString) // JunctionFree LineString
 		{
-			unit<uint32> Connector := select_with_org_rel(JFPath/JFLP/isEndOfJSF);
+//			unit<uint32> Connector := select_with_org_rel(JFSection/JFLP/isEndOfJSF);
 		
-			attribute<uint32> nrParts := pcount(PartNr);
-			attribute<BoundaryPoint> firstBP_rel := first(Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel)[org_rel];
-			attribute<BoundaryPoint> last_BP_rel := last (Connector/org_rel->BP_rel, Connector/org_rel->JFSS_rel)[org_rel];
+			attribute<uint32> nrParts := collect_by_cond(JFLineString, JFSection/nrParts);
+			
+			attribute<BoundaryPoint> firstBP_rel := first(rlookup(Junction/BP_rel, BoundarySegment/F1, JFSection/PartNr);
+			attribute<BoundaryPoint> last_BP_rel := last (Junction/org_rel->BP_rel, Connector/org_rel->JFSS_rel)[org_rel];
 			
 //			attribute<BoundaryPoint> firstBP_rel := collect_by_cond(JFLineString, JFPath/firstBP_rel);
 //			attribute<BoundaryPoint> last_BP_rel := collect_by_cond(JFLineString, JFPath/last_BP_rel);
@@ -443,20 +444,6 @@ container Poly_2_grid_2_poly
 		
 		
 	}
-	container GridData
-	{
-		attribute<SourceData/gemeente> m100 (Geografie/gridcel_100m/domain) := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_100m/domain);
-		attribute<SourceData/gemeente> m25  (Geografie/gridcel_25m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_25m/domain);
-		attribute<SourceData/gemeente> m10  (Geografie/gridcel_10m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_10m/domain);
-
-	}
-	container districts
-	{
-		unit<uint16> m100 := district_uint16(GridData/m100) { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m100, Districts); }
-		unit<uint16> m25  := district_uint16(GridData/m25)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m25 , Districts); }
-		unit<uint16> m10  := district_uint16(GridData/m10)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m10 , Districts); }
-	}
-	
 	
 	template SimplifyPolygons_T {
 		unit<uint16> RegionDomain;
