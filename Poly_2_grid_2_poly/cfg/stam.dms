@@ -488,15 +488,16 @@ container Poly_2_grid_2_poly
 		unit<uint32> ZoneRing := SimplifiedPolygons/ZoneRing;
 		attribute<RegionDomain> ZoneRing_RegioDomain_rel(ZoneRing) := lookup(ZoneRing/FirstZone_rel, DistrictDomain/Region_rel);
 		
-		attribute<Geografie/point_rd> result(RegionDomain, poly) := fpolygon(partitioned_union_polygon(ipolygon(SimplifiedPolygons/results/geometry), DistrictDomain/Region_rel));
+		attribute<ipoint> iresult(RegionDomain, poly) := partitioned_union_polygon(ipolygon(SimplifiedPolygons/results/geometry), DistrictDomain/Region_rel);
 		
 		// check dat result geen overlappende polygonen bevat
-		attribute<ipoint> iresult(RegionDomain, poly) := ipolygon(result);
+		attribute<Geografie/point_rd> result(RegionDomain, poly) := fpolygon(iresult);
 		
 		unit<uint32> overlap_check := polygon_connectivity(iresult)
 		{
-			attribute<ipoint> geometry(poly) := iresult[F1] * iresult[F2];
-			attribute<int32> area := area(geometry, int32);
+			attribute<ipoint> igeometry(poly) := iresult[F1] * iresult[F2];
+			attribute<Geografie/point_rd> geometry(poly) := fpolygon(igeometry);
+			attribute<int32> area := area(igeometry, int32);
 		}
 	}
 
@@ -506,7 +507,7 @@ container Poly_2_grid_2_poly
 		container d50_NL  := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_50m/domain,   50.0);
 		container d10_NL  := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_10m/domain,   10.0);
 		
-		container d100 := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_100m/domain, 100.0);
+		container d100 := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_100m/domain, 0.0);
 		container d50  := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_50m/domain ,  50.0);
 		container d10  := SimplifyPolygons_T(SourceData/gemeente, Geografie/gridcel_10m/domain ,  10.0);
 	}
