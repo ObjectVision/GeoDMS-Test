@@ -3,7 +3,8 @@ container Poly_2_grid_2_poly
 	#include <eenheden.dms>
 	#include <geografie.dms>
 
-	container SourceData{
+	container SourceData
+	{
 		unit<uint16> gemeente_bron : StorageName = "%CbsSourceDatadir%/gemeente.shp", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
 			attribute<geografie/point_rd> geometry (poly);
@@ -47,10 +48,10 @@ container Poly_2_grid_2_poly
 			attribute<geografie/point_rd> geometry := domain_grid_rel[geografie/point_rd];
 			attribute<domain_grid> domain_grid_rel := point_xy(first_rel, second_rel, domain_grid); // the RasterCell NorthEast of this Point
 			attribute<bool> isBoundaryPoint := has_any(BoundarySegment/F1) || has_any(BoundarySegment/F2);
-			attribute<BoundaryPoint> BoundaryPoint_rel := invert(BoundaryPoint/org_rel);
 		}
 		unit<uint32> BoundaryPoint := select_with_org_rel(Point/isBoundaryPoint)
 		{
+			attribute<Point> Point_rel := org_rel;
 			attribute<geografie/point_rd> geometry := org_rel->geometry;
 			attribute<uint32> NrBoundarySegments := pcount(BoundarySegment/bp_F1) + pcount(BoundarySegment/bp_F2);
 			attribute<bool>   isJunction := NrBoundarySegments != 2; // Junction := raster-hoekpunt waarop meer dan 2 segmenten uit komen (1 kan niet voor komen)
@@ -64,8 +65,6 @@ container Poly_2_grid_2_poly
 			attribute<domain_grid> North  := point_xy(first_rel, second_rel-1s, domain_grid);
 			attribute<domain_grid> South  := point_xy(first_rel, second_rel   , domain_grid);
 			attribute<bool> isBoundarySegment := MakeDefined(south->zone_rel, NoZone) != MakeDefined(North->zone_rel, NoZone);
-			attribute<Point> F1 := combine_data(Point,  first_rel    [VerticalLine], second_rel);
-			attribute<Point> F2 := combine_data(Point, (first_rel+1s)[VerticalLine], second_rel);
 		}
 		
 		unit<uint32> VerticalSegment := combine(VerticalLine, rows)
@@ -73,23 +72,29 @@ container Poly_2_grid_2_poly
 			attribute<domain_grid> West := point_xy(first_rel-1s, second_rel, domain_grid);
 			attribute<domain_grid> East := point_xy(first_rel   , second_rel, domain_grid);
 			attribute<bool> isBoundarySegment := MakeDefined(West->zone_rel, max(zone_rel)+1w) != MakeDefined(East->zone_rel, max(zone_rel)+1w);
-			attribute<Point> F1 := combine_data(Point, first_rel,  second_rel    [HorizontalLine]);
-			attribute<Point> F2 := combine_data(Point, first_rel, (second_rel+1s)[HorizontalLine]);
 		}
 		
 		unit<uint32> HorizontalBoundarySegment := select(HorizontalSegment/isBoundarySegment)
 		{
+			attribute<cols>           first_rel  := collect_by_cond(., HorizontalSegment/first_rel);
+			attribute<HorizontalLine> second_rel := collect_by_cond(., HorizontalSegment/second_rel);
+			
 			attribute<domain_grid> North := collect_by_cond(., HorizontalSegment/North);
 			attribute<domain_grid> South := collect_by_cond(., HorizontalSegment/South);
-			attribute<Point>       F1    := collect_by_cond(., HorizontalSegment/F1);
-			attribute<Point>       F2    := collect_by_cond(., HorizontalSegment/F2);
+			
+			attribute<Point> F1 := combine_data(Point,  first_rel    [VerticalLine], second_rel);
+			attribute<Point> F2 := combine_data(Point, (first_rel+1s)[VerticalLine], second_rel);
 		}
 		unit<uint32> VerticalBoundarySegment := select(verticalSegment/isBoundarySegment)
 		{
+			attribute<VerticalLine> first_rel  := collect_by_cond(., VerticalSegment/first_rel);
+			attribute<rows>         second_rel := collect_by_cond(., VerticalSegment/second_rel);
+			
 			attribute<domain_grid> East  := collect_by_cond(., VerticalSegment/East);
 			attribute<domain_grid> West  := collect_by_cond(., VerticalSegment/West);
-			attribute<Point>       F1    := collect_by_cond(., VerticalSegment/F1);
-			attribute<Point>       F2    := collect_by_cond(., VerticalSegment/F2);
+			
+			attribute<Point> F1 := combine_data(Point, first_rel,  second_rel    [HorizontalLine]);
+			attribute<Point> F2 := combine_data(Point, first_rel, (second_rel+1s)[HorizontalLine]);
 		}
 		
 		unit<uint32> BoundarySegment := union_unit(HorizontalBoundarySegment, VerticalBoundarySegment)
@@ -101,17 +106,17 @@ container Poly_2_grid_2_poly
 				attribute<Geografie/point_rd> geometry   := union_data(BS_Point, F1->geometry, F2->geometry);
 				attribute<BoundarySegment> BoundarySegment_rel := union_data(BS_Point, ID(BoundarySegment), ID(BoundarySegment));
 			}
+			attribute<Geografie/point_rd> geometry(arc) := points2sequence(BS_Point/geometry, BS_Point/BoundarySegment_rel);
 			
 			attribute<uint32> NrIntermediatePoints := pcount(IntermediatePoint/Ra) + pcount(IntermediatePoint/Rb);
 			
-			attribute<Geografie/point_rd> geometry(arc) := points2sequence(BS_Point/geometry, BS_Point/BoundarySegment_rel);
 			attribute<domain_grid> left  := union_data(., HorizontalBoundarySegment/North, VerticalBoundarySegment/East);
 			attribute<domain_grid> right := union_data(., HorizontalBoundarySegment/South, VerticalBoundarySegment/West);
 			attribute<Direction> Dir_rel := union_data(., const(Direction/V/East ,HorizontalBoundarySegment), const(Direction/V/South ,VerticalBoundarySegment));
 			attribute<Point> F1 := union_data(., HorizontalBoundarySegment/F1, VerticalBoundarySegment/F1);
 			attribute<Point> F2 := union_data(., HorizontalBoundarySegment/F2, VerticalBoundarySegment/F2);
-			attribute<BoundaryPoint> bp_F1 := F1->BoundaryPoint_rel; 
-			attribute<BoundaryPoint> bp_F2 := F2->BoundaryPoint_rel; 
+			attribute<BoundaryPoint> bp_F1 := rlookup(F1, BoundaryPoint/Point_rel); 
+			attribute<BoundaryPoint> bp_F2 := rlookup(F2, BoundaryPoint/Point_rel);
 			attribute<bool> f1IsJunction := bp_F1->isJunction;
 			attribute<bool> f2IsJunction := bp_F2->isJunction;
 			
@@ -400,7 +405,18 @@ container Poly_2_grid_2_poly
 		
 		unit<uint16> Results := Zone
 		{
-			attribute<Geografie/point_rd> geometry(poly) := fpolygon(partitioned_union_polygon(ipolygon(RingResults/geometry), RingResults/Zone_rel));
+			// Polygonen van dezelfde regio samenvoegen tot multi-polygons, in een afzonderlijke template
+			// TODO: met afzonderlijke punten doen o.b.v. de te checked aanname dat ze niet overlappen.		
+			attribute<ipoint> igeometry(poly) := partitioned_union_polygon(ipolygon(RingResults/geometry), RingResults/Zone_rel);
+			attribute<Geografie/point_rd> geometry(poly) := fpolygon(igeometry);
+			
+			// check dat result geen overlappende polygonen bevat
+			unit<uint32> overlap_check := polygon_connectivity(igeometry)
+			{
+				attribute<ipoint> ioverlap(poly) := igeometry[F1] * igeometry[F2];
+				attribute<Geografie/point_rd> overlap(poly) := fpolygon(ioverlap);
+				attribute<int32> area := area(ioverlap, int32);
+			}
 		}
 		
 //		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel == 1) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
@@ -438,29 +454,11 @@ container Poly_2_grid_2_poly
 		attribute<Geografie/point_rd> Region_geometry(RegionDomain, poly) := RegionDomain/geometry;
 		
 		attribute<RegionDomain> RasterData(RasterDomain) := poly2grid(Region_geometry, RasterDomain);
-		unit<uint16> DistrictDomain := district_uint16(RasterData) { attribute<RegionDomain> Region_rel := first(RasterData, Districts); }
-		
-		container SimplifiedPolygons := grid2poly_T(RasterDomain, DistrictDomain, DistrictDomain/Districts, simplifyFactor);
-		
-		// Polygonen van dezelfde regio samenvoegen tot multi-polygons, in een afzonderlijke template
-		// TODO: met afzonderlijke punten doen o.b.v. de te checked aanname dat ze niet overlappen.
-		unit<uint32> ZoneRing := SimplifiedPolygons/ZoneRing;
-		attribute<RegionDomain> ZoneRing_RegioDomain_rel(ZoneRing) := lookup(ZoneRing/FirstZone_rel, DistrictDomain/Region_rel);
-		
-		attribute<ipoint> iresult(RegionDomain, poly) := partitioned_union_polygon(ipolygon(SimplifiedPolygons/results/geometry), DistrictDomain/Region_rel);
-		
-		// check dat result geen overlappende polygonen bevat
-		attribute<Geografie/point_rd> result(RegionDomain, poly) := fpolygon(iresult);
-		
-		unit<uint32> overlap_check := polygon_connectivity(iresult)
-		{
-			attribute<ipoint> igeometry(poly) := iresult[F1] * iresult[F2];
-			attribute<Geografie/point_rd> geometry(poly) := fpolygon(igeometry);
-			attribute<int32> area := area(igeometry, int32);
-		}
+		container SimplifiedPolygons := grid2poly_T(RasterDomain, RegionDomain, RasterData, simplifyFactor);		
 	}
 
-	container applications {
+	container applications: IntegrityCheck = "GeoDmsVersion() >= 14.1302" 
+	{
 	
 		container d100_NL := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_100m/domain, 100.0);
 		container d50_NL  := SimplifyPolygons_T(SourceData/nl, Geografie/gridcel_50m/domain,   50.0);
