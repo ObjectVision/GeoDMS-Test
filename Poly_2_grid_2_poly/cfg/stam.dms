@@ -419,32 +419,10 @@ container Poly_2_grid_2_poly
 			}
 		}
 		
-//		unit<uint32> SelectedRing := select(ZoneRing/FirstZone_rel == 1) // CUSTOMIZATION POINT: Which zones do we want: geometry van zone 0 negeren.
-//		{
-//			attribute<Geografie/point_rd> geometry(poly) := collect_by_cond(SelectedRing, ZoneRing/geometry);
-//		}
 	    // TODO: ringen met !IsDefined(Zone_rel) niet samenvoegen.
-		// TODO: Losse ringen toevoegen
 		// TODO: bepaing orientation, dwz Outer Ring (area > 0) en inner ring (area < 0);
 		// TODO: Zoneringen van dezelfde Zone samenvoegen van inner ringen met outer ring. na bepaling outer-ring
-		// TODO: template met shapes en raster die vergrid, zoneert en simplifyt
-		
-		
 	}
-	container GridData
-	{
-		attribute<SourceData/gemeente> m100 (Geografie/gridcel_100m/domain) := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_100m/domain);
-		attribute<SourceData/gemeente> m25  (Geografie/gridcel_25m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_25m/domain);
-		attribute<SourceData/gemeente> m10  (Geografie/gridcel_10m/domain)  := poly2grid(SourceData/gemeente/geometry, Geografie/gridcel_10m/domain);
-
-	}
-	container districts
-	{
-		unit<uint16> m100 := district_uint16(GridData/m100) { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m100, Districts); }
-		unit<uint16> m25  := district_uint16(GridData/m25)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m25 , Districts); }
-		unit<uint16> m10  := district_uint16(GridData/m10)  { attribute<SourceData/Gemeente> Regio_rel := first(GridData/m10 , Districts); }
-	}
-	
 	
 	template SimplifyPolygons_T {
 		unit<uint16> RegionDomain;
@@ -453,7 +431,7 @@ container Poly_2_grid_2_poly
 		
 		attribute<Geografie/point_rd> Region_geometry(RegionDomain, poly) := RegionDomain/geometry;
 		
-		attribute<RegionDomain> RasterData(RasterDomain) := poly2grid(Region_geometry, RasterDomain);
+		attribute<RegionDomain> RasterData(RasterDomain) := poly2grid_untiled(Region_geometry, RasterDomain);
 		container SimplifiedPolygons := grid2poly_T(RasterDomain, RegionDomain, RasterData, simplifyFactor);		
 	}
 
