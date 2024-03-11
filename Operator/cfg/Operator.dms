@@ -10386,6 +10386,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<string> u_ := 'ùúûü';
 				parameter<string> Y  := 'Ý';
 				parameter<string> y_ := 'ýÿ';
+				parameter<string> OC := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // Ordinary Characters
 			}
 
 			unit<uint32> Steden_nrd := Steden
@@ -10788,11 +10789,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool> testu_:= from_utf(Source/special_characters/u_) == 'uuuu';
 				parameter<bool> testY := from_utf(Source/special_characters/Y)  == 'Y';
 				parameter<bool> testy_:= from_utf(Source/special_characters/y_) == 'yy';
+				parameter<bool> testOC:= from_utf(Source/special_characters/OC) == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 				
 				parameter<bool> test_param := 
 					   testA  && testa_ && testC  && testc_ && testE  && teste_ && testI 
 					&& testi_ && testN  && testn_ && testO  && testo_ && testU  && testu_
-					&& testY  && testy_;
+					&& testY  && testy_ && testOC;
 			}
 			container AsItemName
 			{
