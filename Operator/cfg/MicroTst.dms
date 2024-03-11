@@ -47,6 +47,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<dpoint> outer_rings(poly) := bg_outer_multi_polygon(geometry);
 		}
 	}
+	container include_multiple_items_test {
+		#include <multiple_items.dms>
+	}
 	container configsettings
 	{
 		container overridable {
@@ -297,8 +300,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	container union
 	{
 		unit<fpoint> rdc_base : DialogData = "ngr_layer";
-		unit<fpoint> rdc      := range(rdc_base, point(0f, -1000000f), point(1000000f, 1000000f));
-		unit<ipoint> rdc_mm         := gridset(rdc, point(0.001, 0.001), point(0.0,0.0), ipoint), IsHidden = "True";
+		unit<fpoint> rdc      := range(rdc_base, point_xy(0f, -1000000f), point_xy(1000000f, 1000000f));
+		unit<ipoint> rdc_mm         := gridset(rdc, point_xy(0.001, 0.001), point_xy(0.0,0.0), ipoint), IsHidden = "True";
 
 		unit<uint32> quadrangle
 		:	StorageName  = "%ProjDir%/data/quadrangle.shp"
@@ -313,6 +316,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		unit<uint32> place: nrofrows = 2
 		{
 			attribute<string> label : ['Amsterdam','Rotterdam'];
+			attribute<rdc > llocationl : [(1000000, 350000), (120000, 400000)];
 		}
 		unit<uint32> time := range(uint32,2012,2014)
 		{
