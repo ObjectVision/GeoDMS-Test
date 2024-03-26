@@ -9967,10 +9967,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float64> gridEmpty (GridDomain): [];
 				attribute<float64> grid      (GridDomain):= = isEmpty ? 'gridEmpty' : 'gridWithValues';
 				
-				attribute<GridDomain> pointset_gridid   (point/UnTiled2UnTiled/source/destination): [{1,1},{1,3},{4,1},{4,4}];
+				//attribute<spoint> pointset_gridid_sp   (point/UnTiled2UnTiled/source/destination) := union_data(point/UnTiled2UnTiled/source/destination, point_yx(1s,1s), point_yx(1s,3s),point_yx(4s,1s),point_yx(4s,4s));
+				attribute<GridDomain> pointset_gridid   (point/UnTiled2UnTiled/source/destination) := union_data(point/UnTiled2UnTiled/source/destination, point_yx(1s,1s, GridDomain), point_yx(1s,3s, GridDomain),point_yx(4s,1s, GridDomain),point_yx(4s,4s, GridDomain));
+				//attribute<GridDomain> pointset_gridid2   (point/UnTiled2UnTiled/source/destination) := pointset_gridid_sp[GridDomain];
+				//attribute<GridDomain> pointset_gridid3   (point/UnTiled2UnTiled/source/destination) := convert(pointset_gridid_sp, GridDomain);
 	
 				attribute<float64>    dist0      (GridDomain) := griddist(const(0.0, GridDomain), pointset_gridid, const(0.0, point/UnTiled2UnTiled/source/destination));
-				attribute<float64>    dist       (GridDomain) := griddist(grid, pointset_gridid, const(0.0, point/UnTiled2UnTiled/source/destination));
+				attribute<float64>    dist       (GridDomain) := griddist        (grid, pointset_gridid, const(0.0, point/UnTiled2UnTiled/source/destination));
+				attribute<float64>    bounded_dist(GridDomain) := griddist_maximp(grid, pointset_gridid, 2.0);
+				attribute<float64>    bounded_dist_with_startdist(GridDomain) := griddist_maximp(grid, pointset_gridid, 2.0, const(0.0, point/UnTiled2UnTiled/source/destination));
 				attribute<bool>       test0      (GridDomain) := dist0 == 0.0 ;
 				attribute<bool>       test       (GridDomain) := float_isNearby(float32(dist), source/distOk, Dif_all_float32) ;
 				parameter<bool>       test_grid               := all(test0 && test); // Referentie DMS 5.81
@@ -11158,6 +11163,16 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				 Region/MetaScriptName
 				,'lookup(' + String(Region/RegionNr) + ', Region/sumNrInhabitants)'
 				,void
+				,uint32
+				,Region/RegionLabel
+				,Region/RegionDescr
+			);
+			
+			container regions2 := for_each_nednvld(
+				 Region/MetaScriptName
+				,'lookup(' + String(Region/RegionNr) + ', Region/sumNrInhabitants)'
+				,Regions
+				,Region/MetaScriptName
 				,uint32
 				,Region/RegionLabel
 				,Region/RegionDescr
