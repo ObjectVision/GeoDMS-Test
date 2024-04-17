@@ -9885,7 +9885,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container district: url  = "http://www.objectvision.nl/geodms/operators-a-functions/grid/district"
 			{
-				unit<uint32>    unit_district     := district(source/src);
+				unit<uint32>    unit_district     := district(source/src), DialogType = "Map", DialogData = "Districts" // use this as BaseGrid to visualize unit_district attributes.
+				{
+					attribute<uint32> freq_count := pcount(Districts); // such as this one
+				}
+				
 				
 				attribute<bool> test (GridDomain) := eq_or_both_null(unit_district/districts, source/districtOk);
 				parameter<bool> test_gridUInt8    := all(test);
