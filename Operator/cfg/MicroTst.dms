@@ -1257,31 +1257,19 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		}
 	}
 
-	unit<spoint> TestGridLarge: expr =
-		"range("
-			"gridset("
-				" TestCoord"
-				",point("
-					" float32(250.0)"
-					",float32(-250.0)"
-					",TestCoord"
-				" )"
-				",point("
-					" float32(340025)"
-					",float32(159900) + float32(250.0) * float32(10000)"
-					",TestCoord"
-				")"
-				", spoint"
-			")"
-			",point("
-				" Int16(0)"
-				",Int16(0)"
-			")"
-			",point("
-				" Int16(10000)"
-				",Int16(10000)"
-			")"
-		")"
+	unit<spoint> TestGridLarge :=
+		range(
+			gridset(
+				 TestCoord
+				,point(250f, -250f, TestCoord)
+				,point(340025f, 159900f + 250f * 1000f
+					,TestCoord
+				)
+				, spoint
+			)
+			,point(Int16(0),Int16(0))
+			,point(Int16(1000),Int16(1000))
+		)
 	{
 		attribute<float32> test:      expr = "float32(pointcol(id(TestGridLarge))) % float32(50) + float32(pointrow(id(TestGridLarge))) % float32(50) - 30f";
 		attribute<float32> potential: expr = "potential(test, Kernel/pot500/AbsWeight)";
