@@ -4747,9 +4747,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container select_unit: url  = "http://www.objectvision.nl/geodms/operators-a-functions/select_unit"
 			{
-				unit<uint32> ZHCities := select_unit(Source/City/RegionCode = 200)
+				unit<uint32> ZHCities := select(Source/City/RegionCode = 200)
 				{
-					attribute<bool> att := const(200, ., uint32) = select_data(., Source/City/RegionCode = 200, Source/City/RegionCode);
+					attribute<bool> att := const(200, ., uint32) = collect_by_cond(., Source/City/RegionCode = 200, Source/City/RegionCode);
 				}
 				parameter<bool> test := all(ZHCities/att);
 			}
