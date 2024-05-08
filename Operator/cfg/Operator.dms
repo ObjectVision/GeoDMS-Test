@@ -8395,6 +8395,31 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
+			
+			container split_multi_linestring
+			{
+				unit<uint32> poly := SDomain 
+				{
+					attribute<dpoint> geometry (poly):= points2Sequence(pointset_poly/point, pointset_poly/sequence, pointset_poly/ordinal)[dpoint];
+				}
+	
+				unit<uint32> pointset_poly : nrofrows   = 5
+				{
+					attribute<float32> row_org : [158100, 0, 158100, 0, 20000];
+					attribute<float32> col_org : [461100, 0, 461100, 0, 461100];
+
+					attribute<float32> row := row_org == 0f ? 0f / 0f : row_org;
+					attribute<float32> col := col_org == 0f ? 0f / 0f : col_org;
+
+					attribute<dpoint> point    := dpoint(point_xy(row, col));
+					attribute<poly>   sequence := const(0[poly],.);
+					attribute<uint32> ordinal  := id(.);
+				}
+
+				unit<uint32> result_domain := split_multi_linestring(poly/geometry);
+				parameter<bool> test_attr   := #result_domain = 3;
+				
+			}
 
 			container results
 			{
@@ -8438,7 +8463,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& bg_buffer_single_polygon/test_attr
 					&& bg_buffer_multi_polygon/test_attr
 					&& bg_outer_single_polygon/test_attr
-					&& bg_outer_multi_polygon/test_attr;
+					&& bg_outer_multi_polygon/test_attr
+					&& split_multi_linestring/test_attr;
 			}
 		}
 	}
