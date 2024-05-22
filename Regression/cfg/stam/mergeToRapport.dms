@@ -49,6 +49,15 @@ container mergeToRapport
 			, 'Multiple Measurements'
 			);
 		attribute<string> FileName               := ver_test_file;
+		
+		attribute<uint32> error_in_syntax     := strcount(contents, 'error');
+		
+		unit<uint32> with_error := select_with_attr_by_org_rel(., error_in_syntax > 0)
+		{
+			attribute<uint32> pos_first_error        := strpos(contents, 'error');
+			attribute<string> start_from_first_error := substr(contents, pos_first_error);
+			
+		}
 	}
 
 	unit<uint32> testfiles := select_with_attr_by_org_rel(test_and_logfiles, test_and_logfiles/is_tst_file)

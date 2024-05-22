@@ -7547,6 +7547,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container partitioned_union_polygon
 			{
 				attribute<ipoint> att(polygon, region) := partitioned_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
+				
 				unit<uint32> pointset := sequence2points(att)
 				{
 					attribute<ipoint> att_ok:
@@ -8394,6 +8395,31 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test_attr   := all(pointset/test);
 			}
+			
+			container split_multi_linestring
+			{
+				unit<uint32> poly := SDomain 
+				{
+					attribute<dpoint> geometry (poly):= points2Sequence(pointset_poly/point, pointset_poly/sequence, pointset_poly/ordinal)[dpoint];
+				}
+	
+				unit<uint32> pointset_poly : nrofrows   = 5
+				{
+					attribute<float32> row_org : [158100, 0, 158100, 0, 20000];
+					attribute<float32> col_org : [461100, 0, 461100, 0, 461100];
+
+					attribute<float32> row := row_org == 0f ? 0f / 0f : row_org;
+					attribute<float32> col := col_org == 0f ? 0f / 0f : col_org;
+
+					attribute<dpoint> point    := dpoint(point_xy(row, col));
+					attribute<poly>   sequence := const(0[poly],.);
+					attribute<uint32> ordinal  := id(.);
+				}
+
+				unit<uint32> result_domain := split_multi_linestring(poly/geometry);
+				parameter<bool> test_attr   := #result_domain = 3;
+				
+			}
 
 			container results
 			{
@@ -8437,7 +8463,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& bg_buffer_single_polygon/test_attr
 					&& bg_buffer_multi_polygon/test_attr
 					&& bg_outer_single_polygon/test_attr
-					&& bg_outer_multi_polygon/test_attr;
+					&& bg_outer_multi_polygon/test_attr
+					&& split_multi_linestring/test_attr;
 			}
 		}
 	}
@@ -12091,6 +12118,40 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<Bool>   test_param := replace ==  quote('NewLabel') + ';' + quote('NewLabel');
 		}
 
+		container entropy
+		{
+			parameter<float64> entropy    := entropy(int16(1));
+			parameter<Bool>    test_param := entropy == 0d;
+
+			unit<uint32> domain : nrofrows = 5
+			{
+				attribute<int16>   att           : [0,1,2,3,4]; 
+				attribute<int16>   att_with_null : [0,1,2,3,null]; 
+
+				parameter<float64> test           := entropy(att);
+				parameter<float64> test_with_null := entropy(att_with_null);
+
+				parameter<bool>    test_attr      := float_isNearby(test, 11.6096405d, Dif_all_float64) && float_isNearby(test_with_null, 8d, Dif_all_float64);
+			}
+		}
+		
+		container average_entropy
+		{
+			parameter<float64> average_entropy    := average_entropy(int16(1));
+			parameter<Bool>    test_param := average_entropy == 0d;
+
+			unit<uint32> domain : nrofrows = 5
+			{
+				attribute<int16>   att           : [0,1,2,3,4]; 
+				attribute<int16>   att_with_null : [0,1,2,3,null]; 
+
+				parameter<float64> test           := average_entropy(att);
+				parameter<float64> test_with_null := average_entropy(att_with_null);
+
+				parameter<bool>    test_attr      := float_isNearby(test, 2.32192809d, Dif_all_float64) && float_isNearby(test_with_null, 2d, Dif_all_float64);
+			}
+		}
+
 		Container TemplateSyntax
 		{
 			Template Org
@@ -12136,6 +12197,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& Regex_search/test_param
 				&& Regex_replace/test_param
 				&& issue_915/test
+				&& entropy/domain/test_attr
+				&& average_entropy/domain/test_attr
 				&& TemplateSyntax/test_param;
 
 		}
