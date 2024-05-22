@@ -39,6 +39,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<uint32> ComplicatedExpr1 := 1 + 2 + 3 + 4 * 5 + 6 * 7 + 8 * 9 + 10 * 11 + 12 *13 + 14 *15 * 16  +  sqr(17 + 18);
 		parameter<float64> ComplicatedExpr :=  exp(3.0 + 5.0 * 7.0) * exp (2.0 + 3.0 * 4.0);
 	}
+	container issue_442_readback : StorageName = "%LocalDataProjDir%/First.mmd", StorageReadOnly = "true";
+	
 	
 	container Cbs
 	{
@@ -1647,7 +1649,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 				parameter<uint32> BrushColor: expr = "rgb(200,0,0)", DialogType = "BrushColor";
 				parameter<uint32> PenColor:   expr = "rgb(100,0,0)", DialogType = "PenColor";
 			}
-			attribute<point_rd> simplified_border(., polygon) := bg_buffer_polygon(border, 10.0, 4b);
+			attribute<point_rd> simplified_border(., polygon) := bg_buffer_multi_polygon(border, 10.0, 4b);
 
 			attribute<string> label
 			:	['gebied1','gebied2','gebied3','gebied4','gebied5','gebied6','gebied7']
