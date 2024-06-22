@@ -52,6 +52,17 @@ rem pause
 Echo Unit Test Results (specific operators, all operators, storage read, other) for: %GeoDmsRunCmdBase% >> %ResultFileName%
 Echo.>> %ResultFileName%
 
+REM SECTION GUI 
+Call Unit\GUIInstance.bat %TstDir%\dmsscript\MapViewClassification.dmsscript %TstDir%\Operator\cfg\MicroTst.dms %ResultDir%\unit\gui\MicroTst_error.txt S1 S2 S3
+
+Call ..\Unit\GUI\bat\DPGeneral_explicit_supplier_error.bat
+Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms test_log %ResultDir%\unit\gui\DPGeneral_ES_error.txt S1 S2 S3
+
+Call ..\Unit\GUI\bat\DPGeneral_missing_file_error.bat
+Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms test_log %ResultDir%\unit\gui\DPGeneral_MF_error.txt S1 S2 S3
+
+Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\background_layer.dms test_log %ResultDir%\unit\GUI\background_layer_error.txt S1 S2 S3
+
 REM SECTION OPERATOR 
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\subitem.dms   test_log %ResultDir%\unit\operator\subitem.txt S1 S2 S3
 Call Unit\Instance.bat %TstDir%\Unit\operator\cfg\connect.dms   test_log %ResultDir%\unit\operator\connect_point_arc.txt S1 S2 S3
@@ -163,17 +174,6 @@ Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms test_log
 
 REM SECTION STATISTICS
 Call Unit\Statistics.bat
-
-REM SECTION GUI 
-Call Unit\GUIInstance.bat %TstDir%\dmsscript\MapViewClassification.dmsscript %TstDir%\Operator\cfg\MicroTst.dms %ResultDir%\unit\gui\MicroTst_error.txt S1 S2 S3
-
-Call ..\Unit\GUI\bat\DPGeneral_explicit_supplier_error.bat
-Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_explicit_supplier_error.dms test_log %ResultDir%\unit\gui\DPGeneral_ES_error.txt S1 S2 S3
-
-Call ..\Unit\GUI\bat\DPGeneral_missing_file_error.bat
-Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\DPGeneral_missing_file_error.dms test_log %ResultDir%\unit\gui\DPGeneral_MF_error.txt S1 S2 S3
-
-Call Unit\Instance.bat %TstDir%\Unit\GUI\cfg\background_layer.dms test_log %ResultDir%\unit\GUI\background_layer_error.txt S1 S2 S3
 
 REM IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsGuiQtPath%" FAILED >> %ResultFileName%
 
