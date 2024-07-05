@@ -207,12 +207,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		 range(
 			gridset(
 				 point_rd
-				,point(float32(-1000.0)  , float32(1000.0) , point_rd )
-				,point(float32(405600), float32(111300), point_rd )
+				,point_yx(float32(-1000.0)  , float32(1000.0) , point_rd )
+				,point_yx(float32(405600), float32(111300), point_rd )
 				,spoint
 			)
-			,point(int16(0), int16(0))
-			,point(int16(5), int16(4))
+			,point_yx(int16(0), int16(0))
+			,point_yx(int16(5), int16(4))
 		);
 
 	unit<UInt32> HTiledDomain := TiledUnit(2[HDomain]);
@@ -452,7 +452,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool>    test_param          := source/ParamA + source/ParamB = 12;
 				attribute<float32> attr       (Domain) := source/A + source/B + float32(source/C);
 				attribute<bool>    test       (Domain) := attr = source/AddABC;
-				attribute<fpoint>  att_point  (Domain) := add(point(source/A,source/B,fpoint), point(source/A,source/B,fpoint));
+				attribute<fpoint>  att_point  (Domain) := add(point_yx(source/A,source/B,fpoint), point_yx(source/A,source/B,fpoint));
 				attribute<bool>    test_point (Domain) := pointRow(att_point) = float32(2) * source/A && pointCol(att_point) = float32(2) * source/B;
 				parameter<bool>    test_attr           := all(test) && all(test_point);
 			}
@@ -3061,7 +3061,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>           isCapital:               [-1,0,0,0,0,0,0];
 				attribute<string>         CityName:                ['Amsterdam','Rotterdam','Utrecht','DenHaag','Eindhoven','Haarlem',null];
 				attribute<Region>         RegionNr:                [0,1,2,1,3,null,3];
-				attribute<grid/units/GridDomain> GridNr := rlookup(point(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
+				attribute<grid/units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
 				// results
 				attribute<uint32>         CumulNrInhabitants:         [550,1075,1375,1875,2075,2250,2250];
 				attribute<uint32>         CumulNrInhabitantsPerRegion:[550,525,300,1025,200,null, 200];
@@ -3169,7 +3169,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>           isCapital:               [];
 				attribute<string>         CityName:                [];
 				attribute<Region>         RegionNr:                [];
-				attribute<grid/units/GridDomain> GridNr := rlookup(point(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
+				attribute<grid/units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
 				// results
 				attribute<uint32>         CumulNrInhabitants:         [];
 				attribute<uint32>         CumulNrInhabitantsPerRegion:[];
@@ -4434,22 +4434,22 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				unit<uint64> u_uint64 : nrofrows = 1;
 				unit<bool>   u_bool;
 				
-				unit<fpoint> rdc_m := range(fpoint, point(300000f,0f), point(625000f,280000f))
+				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point(625000f,280000f))
 				,  label = "rijksdriehoekmeting in meters";
 				
-				unit<spoint> u_spoint := range(gridset(rdc_m,point(     -100f,     100f, rdc_m),point(625000f, 10000f, rdc_m),spoint),point(0s,0s),point(3250s, 2700s))
+				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point(0s,0s),point(3250s, 2700s))
 				{
 					attribute<.> id := id(.);
 				}
-				unit<wpoint> u_wpoint := range(gridset(rdc_m,point(     -100f,     100f, rdc_m),point(625000f, 10000f, rdc_m),wpoint),point(0w,0w),point(3250w, 2700w))
+				unit<wpoint> u_wpoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),wpoint),point(0w,0w),point(3250w, 2700w))
 				{
 					attribute<.> id := id(.);
 				}
-				unit<ipoint> u_ipoint := range(gridset(rdc_m,point(     -100f,     100f, rdc_m),point(625000f, 10000f, rdc_m),ipoint),point(0i,0i),point(3250i, 2700i))
+				unit<ipoint> u_ipoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point(625000f, 10000f, rdc_m),ipoint),point(0i,0i),point(3250i, 2700i))
 				{
 					attribute<.> id := id(.);
 				}
-				unit<upoint> u_upoint := range(gridset(rdc_m,point(     -100f,     100f, rdc_m),point(625000f, 10000f, rdc_m),upoint),point(0u,0u),point(3250u, 2700u))
+				unit<upoint> u_upoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point(625000f, 10000f, rdc_m),upoint),point(0u,0u),point(3250u, 2700u))
 				{
 					attribute<.> id := id(.);
 				}
@@ -6899,6 +6899,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<ipoint> point_plus2 : [{410000,110000},{416000, 110000},{416000, 116000},{410000, 116000},{410000, 110000}];
 				}
 			}
+
 			container bg_simplify
 			{
 				unit<Uint32> pointset_border
@@ -7598,6 +7599,27 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
 				}
 			}
+			container intersect
+			{
+				attribute<ipoint> district_ipoint (polygon, district) := ipolygon(source/district/border_clean);
+				parameter<ipoint> square    (polygon)                 := Sequence/srcDomain/square/boundary_dif[0];
+				attribute<ipoint> intersect (polygon, district)       := bg_intersect(square, district_ipoint);
+				/*,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}*/
+			}
 			container split
 			{
 				attribute<ipoint> district_ipoint (polygon, district) := ipolygon(source/district/border_clean);
@@ -8053,6 +8075,31 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
 			}
+			container bg_difference
+			{
+				parameter<ipoint> att (poly) := bg_difference(source/square/boundary_dif [0], union_polygon/att);
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{400000, 110000},{406000, 110000},{406000, 116000},{400000, 116000},{400000, 110000},{401047, 115164},{401238, 115099},{401462, 115075},
+						{401475, 114991},{401567, 114983},{401545, 114739},{401757, 114803},{401765, 114673},{401790, 114655},{401803, 114574},{401980, 114626},
+						{401988, 114592},{402049, 114612},{402086, 114462},{402197, 114497},{402223, 114390},{402194, 114374},{402317, 114418},{402404, 114445},
+						{402757, 114546},{402870, 114237},{403025, 113810},{403171, 113401},{403298, 113032},{403434, 112809},{403552, 112612},{403544, 112312},
+						{403792, 112379},{403770, 112450},{403939, 112611},{404063, 112893},{404154, 112857},{404256, 112989},{404300, 112976},{404353, 113116},
+						{404576, 113022},{404669, 113068},{404669, 113160},{404776, 113283},{404923, 113297},{404996, 113582},{405183, 113537},{405282, 113561},
+						{405282, 113562},{405353, 113625},{405415, 113601},{405454, 113512},{405495, 113478},{405013, 112720},{404620, 112098},{404631, 112040},
+						{404664, 111986},{404649, 111969},{404555, 111996},{404271, 112054},{404157, 112066},{404010, 112054},{403934, 112040},{403834, 112009},
+						{403701, 111952},{403372, 111821},{402859, 111567},{402382, 111433},{402133, 111453},{401653, 111646},{401477, 111716},{401234, 111711},
+						{401063, 111873},{400943, 112215},{400864, 112187},{400817, 112176},{400893, 112424},{400916, 112666},{400883, 113120},{400886, 113192},
+						{400888, 113291},{400919, 113685},{400926, 113796},{400965, 114314},{400978, 114523},{401047, 115164},{400000, 110000}
+
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+			}
+
 			container multiply
 			{
 				parameter<ipoint> att (poly) := source/square/boundary_mul[0] * union_polygon/att;
@@ -8444,6 +8491,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& deflate/test_attr
 					&& connectivity/polygon_connectvity/test_attr 
 					&& difference/test_param
+					&& bg_difference/test_param
 					&& multiply/test_param
 					&& plus/test_param
 					&& StringToSequence/tests/param_uint64/test
