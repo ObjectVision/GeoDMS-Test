@@ -31,7 +31,7 @@ Call generic\SetRelativePaths.bat
 Set GeoDmsRunCmdBaseLarge="%GeoDmsRunPath%"
 Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
 
-Call Full\DeletePreviousFiles.bat
+REM Call Full\DeletePreviousFiles.bat
 Call Full\EchoFolders.bat
 
 Echo GeoDMS Version information
