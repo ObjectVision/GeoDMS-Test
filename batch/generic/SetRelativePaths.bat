@@ -26,6 +26,7 @@ Set RSLight_2020Path=%prj_snapshotsDir%\RSLight_2020\cfg\Regression_test.dms
 Set HestiaRunPath=%prj_snapshotsDir%\Hestia2024\Runs\HestiaRun.dms
 
 Set TwoUPRunPath=%prj_snapshotsDir%\2UP\cfg\stam.dms
+Set TwoBURPRunPath=%prj_snapshotsDir%\2BURP\cfg\stam.dms
 Set DynaPopPath=%prj_snapshotsDir%\100m_DynaPop\cfg\StatusQuo.dms
 Set RSLight_2021Path=%prj_snapshotsDir%\RSLight2021_ontwikkel_2
 Set RSLight2021_ontwikkel_3Path=%prj_snapshotsDir%\RSLight2021_ontwikkel_3
