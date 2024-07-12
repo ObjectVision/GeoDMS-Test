@@ -29,7 +29,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<ha>     NrHaPerCell_sq   := convert(gridsize^2f, ha);
 	}
 
-	container issue_442 : StorageName = "%LocalDataProjDir%/First.mmd"
+	container issue_130 : StorageName = "%LocalDataProjDir%/First.mmd"
 	{
 		parameter<string> a := =e;
 		parameter<string> e := f+g;
@@ -38,8 +38,14 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<string> g := 'B', IsHidden = "True";
 		parameter<uint32> ComplicatedExpr1 := 1 + 2 + 3 + 4 * 5 + 6 * 7 + 8 * 9 + 10 * 11 + 12 *13 + 14 *15 * 16  +  sqr(17 + 18);
 		parameter<float64> ComplicatedExpr :=  exp(3.0 + 5.0 * 7.0) * exp (2.0 + 3.0 * 4.0);
+		
+		unit<uint32> LargeDomain := range(0, 200000)
+		{
+			attribute<uint64> id_sqr := sqr(uint64(id(.)));
+			attribute<string> id_sqr_str := 'Square of '+string(id(.))+ ' is '+string(id_sqr);
+		}
 	}
-	container issue_442_readback : StorageName = "%LocalDataProjDir%/First.mmd", StorageReadOnly = "true";
+	container issue_130_readback : StorageName = "%LocalDataProjDir%/First.mmd", StorageReadOnly = "true";
 	
 	
 	container Cbs
@@ -1675,7 +1681,6 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<float32> float_hoek := float32(hoek);
 			
 			attribute<bool> is_hoek := hoek > 700i;
-			
 					
 			attribute<float32> SymbolSize:      DialogType = "SymbolSize",
 				expr = "float32(3) * sqrt(float32(hoek))";
