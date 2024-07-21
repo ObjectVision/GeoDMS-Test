@@ -7524,6 +7524,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container union_polygon
 			{
 				parameter<ipoint> att(polygon) := union_polygon(ipolygon(Source/District/border_clean));
+				parameter<ipoint> bp_att(polygon) := bp_union_polygon(ipolygon(Source/District/border_clean));
+				parameter<fpoint> bg_att(polygon) := bg_union_polygon(Source/District/border_clean);
+
 				unit<uint32> pointset := sequence2points(att)
 				{
 					attribute<ipoint> att_ok:
@@ -7542,12 +7545,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					,{401475, 114991},{401462, 115075},{401238, 115099},{401047, 115164}
 					];
 					attribute<bool> test := point == att_ok;
+					attribute<bool> bp_test := union_data(., subitem(sequence2points(bp_att), 'point')) == att_ok;
 				}
-				parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(pointset/test)';
+				parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(pointset/test) && all(pointset/bp_test)';
 			}
 			container partitioned_union_polygon
 			{
 				attribute<ipoint> att(polygon, region) := partitioned_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
+				attribute<ipoint> bp_att(polygon, region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
+				attribute<fpoint> bg_att(polygon, region) := bg_union_polygon(Source/District/border_clean, Source/district/region_rel);
 				
 				unit<uint32> pointset := sequence2points(att)
 				{
@@ -7602,10 +7608,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container split
 			{
-				attribute<ipoint> district_ipoint (polygon, district) := ipolygon(source/district/border_clean);
+//				attribute<ipoint> district_ipoint (polygon, district) := ipolygon(source/district/border_clean);
 				container multipolygon
 				{
 					attribute<ipoint> geometry (Region, polygon) := partitioned_union_polygon(ipolygon(Source/District/border_clean), Source/district/multipolygon_rel);
+					attribute<fpoint> bg_geometry (Region, polygon) := bg_union_polygon(Source/District/border_clean, Source/district/multipolygon_rel);
 					parameter<ipoint> geometry_void (polygon) := geometry[0];
 				}
 				unit<uint32> single_polygons := split_polygon(multipolygon/geometry)
@@ -7614,6 +7621,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 					attribute<bool>   test_attr := nr_OrgEntity == ok;
 					parameter<bool>   test      := = isEmpty ? '#single_polygons == 0' : 'all(test_attr)';
+				}
+				unit<uint32> bg_single_polygons1 := bg_split_polygon(multipolygon/bg_geometry);
+				unit<uint32> bg_single_polygons2 := bg_split_union_polygon(Source/District/border_clean, Source/district/multipolygon_rel)
+				{
+					attribute<uint32> ok: [0,0,0,1,1,2,3];
+
+					attribute<bool>   test_attr := nr_OrgEntity == ok;
+					parameter<bool>   test      := = isEmpty ? '#bg_single_polygons2 == 0' : 'all(test_attr)';
 				}
 			}
 			container inflate
@@ -8561,6 +8576,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& partitioned_union_polygon/test_attr
 					&& overlay_polygon/intersect/test
 					&& split/single_polygons/test
+					&& split/bg_single_polygons2/test
 					&& inflate/test_attr
 					&& deflate/test_attr
 					&& connectivity/polygon_connectvity/test_attr 
