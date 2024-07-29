@@ -1,0 +1,212 @@
+container Redev: isHidden = "True", using = "eenheden"
+{ 
+	unit<uint32> Onveranderd_types : nrofrows = 3
+	{
+		attribute<string> name : ['Woon','NietWoon', 'Mixed'];
+	}
+	
+	unit<uint32> SN_types : nrofrows = 3
+	{
+		attribute<string> name : ['Woon','NietWoon', 'Mixed'];
+	}
+	
+	unit<uint8> processen : nrofrows = 6
+	{
+		attribute<string>   label :   ['urban_densification','urban_transformation','urban_greenfield','non_urban_densification','non_urban_greyfield', 'non_urban_greenfield'], DialogType = "LabelText";
+		attribute<string>   name  := label;
+	}
+	
+	unit<uint8> voorraad_mutatie_type : nrofrows = 7
+	{
+		attribute<string>    label     : ['toevoeging overig', 'nieuwbouw', 'onttrekking overig', 'sloop', 'correctie onttrekking', 'correctie toevoeging', 'geen mutatie'], DialogType = "LabelText";
+		attribute<string>    name      := replace(label, ' ', '_', '-', '_');
+	}
+	
+	unit<uint32> UrbanCores_list : NrOfRows = 64
+	{
+		attribute<string>       code              := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
+		attribute<string>       Region            := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+		attribute<string>       Agglomeration     := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+		attribute<string>       GM_CODE           := 'GM'+code;
+		attribute<uint32>        Region_rel        := rlookup(Region, Region_uq/values);
+		attribute<uint32>        Agglomeration_rel := rlookup(Agglomeration, Agglomeration_uq/values);
+		
+		unit<uint32> Region_uq        := unique(Region);
+		
+		unit<uint32> Agglomeration_uq := unique(Agglomeration)
+		{
+			attribute<string>            name             := replace(values, '/', '_', ' ', '_');
+			attribute<string>            Label            := name, DialogType = "LabelText";
+		}
+		
+		parameter<uint32> nrAttr := 3;
+		unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+		{	
+			attribute<string> Text : 
+			[
+			//	,code  ,region
+				'0327','Randstad','Amersfoort'
+				,'0505','Randstad','Dordrecht'
+				,'0523','Randstad','Dordrecht'
+				,'0610','Randstad','Dordrecht'
+				,'0590','Randstad','Dordrecht'
+				,'0642','Randstad','Dordrecht'
+				,'0397','Randstad','Haarlem'
+				,'0377','Randstad','Haarlem'
+				,'0603','Randstad','Den Haag'
+				,'1916','Randstad','Den Haag'
+				,'0629','Randstad','Den Haag'
+				,'0599','Randstad','Rotterdam'
+				,'0518','Randstad','Den Haag'
+				,'0546','Randstad','Leiden'
+				,'0392','Randstad','Haarlem'
+				,'0363','Randstad','Amsterdam'
+				,'1904','Randstad','Utrecht'
+				,'0307','Randstad','Amersfoort'
+				,'0344','Randstad','Utrecht'
+				,'0479','Randstad','Amsterdam'
+				,'0431','Randstad','Amsterdam'
+				,'0362','Randstad','Amsterdam'
+				,'0384','Randstad','Amsterdam'
+				,'0880','Randstad','Amsterdam'
+				,'0415','Randstad','Amsterdam'
+				,'0353','Randstad','Utrecht'
+				,'0356','Randstad','Utrecht'
+				,'0547','Randstad','Leiden'
+				,'0626','Randstad','Leiden'
+				,'0579','Randstad','Leiden'
+				,'0537','Randstad','Leiden'
+				,'0556','Randstad','Rotterdam'
+				,'0622','Randstad','Rotterdam'
+				,'0606','Randstad','Rotterdam'
+				,'0502','Randstad','Rotterdam'
+				,'0542','Randstad','Rotterdam'
+				,'0489','Randstad','Rotterdam'
+				,'1930','Randstad','Rotterdam'
+				,'1883','South East','Sittard/Geleen'
+				,'0935','South East','Maastricht'
+				,'0917','South East','Heerlen'
+				,'0971','South East','Sittard/Geleen'
+				,'0888','South East','Sittard/Geleen'
+				,'0899','South East','Heerlen'
+				,'0882','South East','Heerlen'
+				,'0928','South East','Heerlen'
+				,'0796','South','Den Bosch'
+				,'0855','South','Tilburg'
+				,'0758','South','Breda'
+				,'0772','South','Eindhoven'
+				,'0785','South','Tilburg'
+				,'0865','South','Den Bosch'
+				,'0848','South','Eindhoven'
+				,'1771','South','Eindhoven'
+				,'0866','South','Eindhoven'
+				,'0861','South','Eindhoven'
+				,'0153','East','Enschede'
+				,'0193','East','Zwolle'
+				,'0200','East','Apeldoorn'
+				,'0202','East','Arnhem'
+				,'0268','East','Nijmegen'
+				,'0277','East','Arnhem'
+				,'0014','North','Groningen'
+				,'0080','North','Leeuwarden'
+			];
+		}
+	}
+	
+	unit<uint8> Redev_Types : nrofrows = 13
+	{
+		attribute<string> name : ['SN_Woon_Woon','SN_NietWoon_Woon','SN_Mixed_Woon'
+									, 'Toevoeging_Woon', 'Onttrekking_Woon'
+									, 'Onveranderd_Woon','Onveranderd_NietWoon','Onveranderd_Mixed'
+									, 'Nieuwbouw_Wonen_OpOnbebouwd', 'Nieuwbouw_Mixed_OpOnbebouwd'
+									, 'Nieuwbouw_Wonen_OpBebouwd', 'Nieuwbouw_Mixed_OpBebouwd'
+									, 'Transformatie_Woon'
+								];
+		attribute<string> Label    := name, DialogType = "LabelText";
+		attribute<bool>   IsRedeveloped := name != 'Onveranderd_Woon' && name != 'Onveranderd_NietWoon' && name != 'Onveranderd_Mixed';
+		attribute<bool>   IsNieuwbouw   := name == 'SN_Woon_Woon' || name == 'SN_NietWoon_Woon' || name == 'SN_Mixed_Woon' || name == 'Nieuwbouw_Wonen_OpOnbebouwd' || name == 'Nieuwbouw_Mixed_OpOnbebouwd' || name == 'Nieuwbouw_Wonen_OpBebouwd' || name == 'Nieuwbouw_Mixed_OpBebouwd';
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> Woon_NietWoon : nrofrows = 2
+	{
+		attribute<string> name : ['Woon','NietWoon'];
+		attribute<string> name_short : ['W','NW'];
+		attribute<string> Label    := name, DialogType = "LabelText";
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> RedevMainTypes : nrofrows = 6
+	{
+		attribute<string> name         :  ['Sloop','Nieuwbouw', 'Toevoeging', 'Onttrekking','Transformatie','Onveranderd'];
+		attribute<string> Label        := name, DialogType = "LabelText";
+		attribute<bool>   IsNegative   : [TRUE, FALSE, FALSE, TRUE, FALSE, FALSE];
+		attribute<bool>   IsPositive   : [FALSE, TRUE, TRUE, FALSE, TRUE, FALSE];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> RedevSub_Types := combine_uint8(Woon_NietWoon, RedevMainTypes)
+	{
+		attribute<string> WoonNietWoon := Woon_NietWoon/name[first_rel];
+		attribute<string> WoonNietWoon_short := Woon_NietWoon/name_short[first_rel];
+		attribute<string> MainTypes    := RedevMainTypes/name[second_rel];
+		attribute<bool>   IsNegative   := MainTypes == 'Onveranderd' ? FALSE : WoonNietWoon == 'NietWoon' && MainTypes == 'Transformatie' ? TRUE : WoonNietWoon == 'NietWoon' ? FALSE : RedevMainTypes/IsNegative[second_rel];
+		attribute<bool>   IsPositive   := MainTypes == 'Onveranderd' ? FALSE : WoonNietWoon == 'NietWoon' ? FALSE : RedevMainTypes/IsPositive[second_rel];
+		attribute<string> Sub_Types    := MainTypes + '_' + WoonNietWoon;
+		attribute<string> Label        := Sub_Types, DialogType = "LabelText";
+		
+		attribute<string> utusf_name   := MainTypes == 'Onveranderd' 
+											? WoonNietWoon_short + '_V_' + MainTypes 
+											: MainTypes == 'Transformatie'  && WoonNietWoon_short == 'W'
+												? 'NWW_Transformatie'
+												: MainTypes == 'Transformatie'  && WoonNietWoon_short == 'NW'
+													? 'WNW_Transformatie'
+													: WoonNietWoon_short + '_' + MainTypes;
+	}
+	unit<uint8> RedevSubMixed_Types : nrofrows = 5
+	{
+		attribute<string> name    : ['Sloop_Mixed','Nieuwbouw_Mixed','Toevoeging_Mixed','Onttrekking_Mixed','Onveranderd_Mixed'];
+		attribute<string> Main    : ['Sloop','Nieuwbouw','Toevoeging','Onttrekking','Onveranderd'];
+		attribute<bool>   IsNegative   : [TRUE, FALSE, FALSE, TRUE, FALSE];
+		attribute<bool>   IsPositive   : [FALSE, TRUE, TRUE, FALSE, FALSE];
+		attribute<string> Label   := name, DialogType = "LabelText";
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	unit<uint8> Redev_Extra : nrofrows = 3
+	{
+		attribute<string> name : ['Gemengd','Dubieus', 'Unclassified'];
+		attribute<string> Label   := name, DialogType = "LabelText";
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> RedevSub_Types_wMixed := union_unit_uint8(RedevSub_Types, RedevSubMixed_Types)
+	{
+		attribute<string> WoonNietWoon := union_data(., RedevSub_Types/WoonNietWoon, const('Mixed', RedevSubMixed_Types));
+		attribute<string> MainTypes    := union_data(., RedevSub_Types/MainTypes, RedevSubMixed_Types/Main);
+		attribute<string> IsNegative   := union_data(., RedevSub_Types/IsNegative, RedevSubMixed_Types/IsNegative);
+		attribute<string> IsPositive   := union_data(., RedevSub_Types/IsPositive, RedevSubMixed_Types/IsPositive);
+		attribute<string> Sub_Types    := MainTypes + '_' + WoonNietWoon;
+		attribute<string> name         := Sub_Types;
+		attribute<string> Label        := name, DialogType = "LabelText";
+	}
+	unit<uint8> RedevSub_Types_wMixed_wExtra := union_unit_uint8(RedevSub_Types_wMixed, Redev_Extra)
+	{
+		attribute<string> name         := union_data(., RedevSub_Types_wMixed/name, Redev_Extra/name);
+		attribute<string> MainTypes    := union_data(., RedevSub_Types_wMixed/MainTypes,  const('Other', Redev_Extra));
+		attribute<string> Label        := name, DialogType = "LabelText";
+	}
+	unit<uint8> RedevSub_Types_wMixed_zOnv := select_with_attr_by_cond(RedevSub_Types_wMixed, RedevSub_Types_wMixed/MainTypes != 'Onveranderd');
+
+	unit<uint8> RedevSub_Types_wMixed_nodata := union_unit_uint8(NoData_uint8, RedevSub_Types_wMixed)
+	{
+		attribute<string>   name         := union_data(., NoData_uint8/name, RedevSub_Types_wMixed/name);
+		attribute<string>   Label        := union_data(., NoData_uint8/Label, RedevSub_Types_wMixed/Label), DialogType = "LabelText";
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+}

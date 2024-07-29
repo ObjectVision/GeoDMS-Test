@@ -1,0 +1,373 @@
+container Polygons
+{
+	container Parameters : using = "eenheden"
+	{
+		parameter<string>  BAG_Selection_Area              := 'AMS'; //'MRA', 'NL', 'AMS', 'Aggl'
+		parameter<int32>   VBO_opp_truncation              := 500i;
+		parameter<int32>   VBO_opp_truncation_lower        := 10i;
+		parameter<int32>   VBO_opp_truncation_defaultvalue := 120i;
+		parameter<m>       supersmall_inflate_m            := 1[m]; //1m
+		parameter<m>       small_inflate_m                 := 5[m]; //5m
+		parameter<m>       big_inflate_m                   := 10[m]; //10m
+		parameter<m>       superbig_inflate_m              := 20[m]; //20m
+		parameter<string>  bouwjaar_truncation_expr        := 'bouwjaar <= 1005s || bouwjaar > @YYYY@[eenheden/jaar] ? (0/0)[int16] : bouwjaar < 1500s ? 1500s : bouwjaar';
+		
+		parameter<string> BRT_file_date  := '20220321';
+		parameter<string> BRK_file_date  := '20231206';
+	}
+	
+	#include <eenheden.dms>
+	#include <typeringen.dms>
+
+	container geometries: using = "eenheden"
+	{
+		unit<fpoint> rdc_base         : SpatialReference = "EPSG:28992", 	DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
+		unit<fpoint> rdc              := range(rdc_base, point_xy(x_min,y_min), point_xy(x_max,y_max));
+		unit<ipoint> rdc_mm           := gridset(rdc, point_xy(0.001,0.001), point_xy(0.0, 0.0), ipoint);
+		unit<ipoint> rdc_cm           := gridset(rdc, point_xy(0.01,0.01), point_xy(0.0, 0.0), ipoint);
+		unit<dpoint> wgs84_base       : SpatialReference = "EPSG:4326";
+		unit<fpoint> LambertEA_base   : SpatialReference = "EPSG:3035", DialogData = "ngr_layer_lea";
+		unit<fpoint> LambertEA        := range(LambertEA_base, point_xy(2500000f, 1300000f), point_xy(4900000f, 4300000f));
+		unit<fpoint> WebMercator_base : SpatialReference = "EPSG:3857";
+		
+		//BOUNDING BOX OF THE NETHERLANDS
+		parameter<m> x_min := 0[m];
+		parameter<m> x_max := 280000[m];
+		parameter<m> y_min := 300000[m];
+		parameter<m> y_max := 625000[m];
+		
+		unit<uint32> BoundingBox_NL : nrofrows = 1
+		{
+			parameter<rdc> top_left     := point_xy(x_min, y_max, rdc); //XY
+			parameter<rdc> top_right    := point_xy(x_max, y_max, rdc);
+			parameter<rdc> bottom_left  := point_xy(x_min, y_min, rdc);
+			parameter<rdc> bottom_right := point_xy(x_max, y_min, rdc);
+			
+			unit<uint32> point_set : nrofrows = 5
+			{
+				attribute<rdc>  point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+				attribute<..>   sequence_rel := const(0, .);
+				attribute<.>    ordinal      := id(.);
+			}
+			
+			attribute<rdc> geometry (poly)      := points2sequence(point_set/point, point_set/sequence_rel, point_set/ordinal);
+			parameter<rdc> geometry_param (poly) := geometry[0[.]];
+		}
+		
+		unit<uint32> selection_polygon : nrofrows = 1
+		{
+			parameter<rdc> top_left     := point_xy(114000[m], 490000[m], rdc); //XY
+			parameter<rdc> top_right    := point_xy(127000[m], 490000[m], rdc);
+			parameter<rdc> bottom_left  := point_xy(114000[m], 480000[m], rdc);
+			parameter<rdc> bottom_right := point_xy(127000[m], 480000[m], rdc);
+			
+			unit<uint32> point_set : nrofrows = 5
+			{
+				attribute<rdc>  point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+				attribute<..>   sequence_rel := const(0, .);
+				attribute<.>    ordinal      := id(.);
+			}
+			
+			attribute<rdc> geometry (poly)      := points2sequence(point_set/point, point_set/sequence_rel, point_set/ordinal);
+		}
+		
+		#include <ngr_layer.dms>
+		
+		container potentialen
+		{
+			unit<uint32> Dist2Range;
+			
+			container pot100m   := potrange_T(10[m] , 100[m]);
+			container pot200m   := potrange_T(100[m], 200[m]);
+			container pot500m   := potrange_T(100[m], 500[m]);
+			container pot600m   := potrange_T(100[m], 600[m]);
+			container pot1000m  := potrange_T(100[m],1000[m]);
+			container pot2000m  := potrange_T(100[m],2000[m]);
+			container pot5000m  := potrange_T(100[m],5000[m]);
+			container pot10000m  := potrange_T(100[m],10000[m]);
+			container pot50000m  := potrange_T(100[m],50000[m]);
+			container pot100000m  := potrange_T(100[m],100000[m]);
+			container pot5000m_25m  := potrange_T(25[m],5000[m]);
+
+			Template potrange_T
+			{
+				parameter<m>       gridgrootte;
+				parameter<m>       afkapstraal;
+				parameter<float32> straal                 := afkapstraal / gridgrootte;
+				unit<spoint>       potRange               := range(spoint, point_xy(-straal[int16], -straal[int16]), point_xy(straal[int16] + 1s, straal[int16] + 1s))
+				{
+					attribute<Dist2Range> distMatr        := dist2(point_xy(0s, 0s, potRange), Dist2Range);
+					attribute<float32> AbsWeight          := distMatr[float32] <= (straal * straal) ? 1f / (distMatr[float32] ^ 2f) : 0f;
+					attribute<float32> AbsWeight_w_center := distMatr[float32] == 0f ? 1f : distMatr[float32] <= (straal * straal) ? 1f / (distMatr[float32] ^ 2f) : 0f;
+					attribute<float32> AbsWeight_wo_center := distMatr[float32] == 0f ? 0f : distMatr[float32] <= (straal * straal) ? 1f / (distMatr[float32] ^ 2f) : 0f;
+					attribute<float32> RelWeightSqrt      := AbsWeight / Sum(AbsWeight);
+					attribute<float32> binair             := distMatr <= 100 ? 1f : 0f;
+					attribute<float32> const              := rev_dist > 0f ? 1f : 0f;
+					attribute<float32> dist               := sqrt(float32(distMatr));
+					attribute<float32> rev_dist           := max_elem(straal - dist, 0f);
+					parameter<float32> rev_dist_max       := max(rev_dist);
+					attribute<float32> rev_dist_scaled    := rev_dist / rev_dist_max;
+				}
+			}
+		}
+		
+		
+		
+		unit<uint32> TileDomain       := NL_grid/perGridsize/size_1000m/points
+		{
+			attribute<rdc>         geometry                 := NL_grid/perGridsize/size_1000m/points/geometry;
+			attribute<rdc>         geometry_poly     (poly) := points2sequence(makepoly/Point, makepoly/SeqNr, makepoly/Ordinal);
+			
+			unit<uint32> makepoly:= union_unit(., ., ., ., .) 
+			{
+				attribute<rdc>                point   := union_data(., 
+															geometry + const(point_xy(-500f,  500f, rdc), .., rdc), 
+															geometry + const(point_xy( 500f,  500f, rdc), .., rdc), 
+															geometry + const(point_xy( 500f, -500f, rdc), .., rdc), 
+															geometry + const(point_xy(-500f, -500f, rdc), .., rdc),
+															geometry + const(point_xy(-500f,  500f, rdc), .., rdc));
+				attribute<..>                 SeqNr   := union_data(., id(..), id(..), id(..), id(..), id(..));
+				attribute<uint32>             Ordinal := id(.) / #..;
+			}
+		}
+			
+		container NL_grid: Using = "eenheden;geometries"
+		{
+			unit<uint32> Gridsizes : nrofrows = 5
+			{
+				attribute<m>      size : [10, 25, 100, 500, 1000];
+				attribute<string> name := 'size_'+string(size)+'m';
+			}
+			
+			unit<spoint> domain       := perGridsize/size_100m/domain;
+			unit<spoint> domain_10m   := perGridsize/size_10m/domain;
+			unit<spoint> domain_25m   := perGridsize/size_25m/domain;
+			unit<spoint> domain_100m  := perGridsize/size_100m/domain;
+			unit<spoint> domain_500m  := perGridsize/size_500m/domain;
+			unit<spoint> domain_1000m := perGridsize/size_1000m/domain;
+		
+			parameter<m> x_min := 0[m];
+			parameter<m> x_max := 280000[m];
+			parameter<m> y_min := 300000[m];
+			parameter<m> y_max := 625000[m];
+			
+			container perGridsize :=
+				for_each_ne(
+					Gridsizes/name
+					, 'Create_GridDomain_T('+string(Gridsizes/size)+'[m])'
+				);
+			
+			Template Create_GridDomain_T
+			{
+				parameter<m> gridsize;
+				
+				parameter<int16> nr_cols := int16((x_max - x_min) / gridsize);
+				parameter<int16> nr_rows := int16((y_max - y_min) / gridsize);
+				
+				unit<spoint> domain :=
+					range(
+						 gridset(
+							 rdc
+							,point_xy(gridsize, -gridsize, rdc)
+							,point_xy(x_min, y_max, rdc)
+							,spoint
+						)
+						,point_xy(0s, 0s)
+						,point_xy(nr_cols, nr_rows)
+					),	DialogData = "rdc"
+				{
+					attribute<.>                    id               := id(.);
+					attribute<rdc>                  point_rd         := id[rdc] + point_xy(0.5f * gridsize, -0.5f * gridsize, rdc);
+					attribute<uint32>               id_nr            := (pointcol(id)[uint32] + 1) + ((pointrow(id)[uint32]) * (x_max[uint32] / gridsize[uint32]));
+					attribute<NL_grid/domain_25m>   grid_25m_rel     := id(.)[NL_grid/domain_25m];
+					attribute<NL_grid/domain_100m>  grid_100m_rel    := id(.)[NL_grid/domain_100m];
+					attribute<NL_grid/domain_500m>  grid_500m_rel    := id(.)[NL_grid/domain_500m];
+				}
+				
+				unit<uint32> points := select_with_org_rel(isDefined(domain/id))
+				{
+					attribute<rdc> 	                geometry  := org_rel -> point_rd;
+					attribute<uint32>               id        := org_rel -> id_nr;
+					
+					attribute<float32>              x         := PointCol(geometry);
+					attribute<float32>              y         := PointRow(geometry);
+					
+					attribute<domain>               NL_grid_domain_rel  := geometry[domain];
+				}
+			}
+		} 
+	}
+	
+	
+	container RegioIndelingen : using = "geometries"
+	{ 
+		container Gebiedsindelingen_2022
+		:	StorageName     = "%Redev_DataDir%/RegioIndelingen/cbsgebiedsindelingen2022.gpkg"
+		, 	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		,	SyncMode        = "alltables"
+		,	DialogData      = "rdc";
+		
+		unit<uint32>  Gemeente := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd 
+		{
+			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/geometry;
+			attribute<string>    statcode        := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statcode;
+			attribute<string>    statnaam        := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statnaam;
+			attribute<string>    GM_NAAM         := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statnaam;
+			attribute<string>    name            := AsItemName(statnaam);
+			
+			unit<uint32> Amsterdam := select_with_org_rel(statcode == 'GM0363')
+			{
+				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
+				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
+				attribute<string>            GM_CODE                           := ../statcode[org_rel];
+				attribute<string>            label                             := ../label[org_rel];
+			}
+		}
+		
+		unit<uint32>  Corop := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd
+		{
+			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/geometry;
+			attribute<string>    statcode        := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/statcode;
+			attribute<string>    statnaam        := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/statnaam;
+			attribute<string>    name            := AsItemName(statnaam);
+		}
+		
+		unit<uint32> Nederland := range(uint32, 0, 1) 
+		{
+			attribute<rdc>               geometry       (poly) := bp_union_polygon(Corop/geometry[rdc_cm], const(0[.],Corop))[rdc];
+			attribute<string>            name                  : [ 'Nederland' ];
+		}
+	}
+
+	#include<VolledigeBAG.dms>
+	#include<brt.dms>
+
+	container Tests : using = "eenheden;typeringen;geometries;VolledigeBAG"
+	{  
+		container Results
+		{
+			container LargeSetWithSmallPolygons := GetResults_T(Tests/LargeSetWithSmallPolygons/domain);
+			container SmallSetWithLargePolygons := GetResults_T(Tests/SmallSetWithLargePolygons/domain);
+			
+			Template GetResults_T
+			{
+				unit<uint32> src;
+				///
+				parameter<string>  bg_inflate_ratio_correctness := string(sum_uint32(src/bg_inflate/bg_inflate_correctness)) + '/' + string(#src);
+				parameter<string>  bg_deflate_ratio_correctness := string(sum_uint32(src/bg_deflate/bg_deflate_correctness)) + '/' + string(#src);
+				
+				parameter<uint32>  bg_polygon_count_islands     := src/bg_polygon/count_islands;
+				parameter<uint32>  bp_polygon_count_islands     := src/bp_polygon/count_islands;
+				parameter<km2>     bg_polygon_area              := sum(src/bg_polygon/area);
+				parameter<km2>     bp_polygon_area              := sum(src/bp_polygon/area);
+				
+				parameter<km2>     bg_union_area                := sum(src/bg_union/area);
+				parameter<km2>     bp_union_area                := sum(src/bp_union/area);
+				
+				parameter<uint32>  bg_split_count_islands       := src/bg_split/count_islands;
+				parameter<uint32>  bp_split_count_islands       := src/bp_split/count_islands;
+				parameter<km2>     bg_split_area                := sum(src/bg_split/area);
+				parameter<km2>     bp_split_area                := sum(src/bp_split/area);
+				
+				parameter<uint32>  bg_split_union_count_islands := src/bg_split_union/count_islands;
+				parameter<uint32>  bp_split_union_count_islands := src/bp_split_union/count_islands;
+				parameter<km2>     bg_split_union_area          := sum(src/bg_split_union/area);
+				parameter<km2>     bp_split_union_area          := sum(src/bp_split_union/area);
+			}
+		}
+
+		container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
+		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
+		
+		Template Tests_T
+		{
+			unit<uint32> src;
+			///
+			unit<uint32> domain  := src
+			{
+				////BOOST GEOMETRY////
+				unit<uint32> bg_overlay  := bg_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor);
+
+				unit<uint32> bg_inflate := .
+				{
+					attribute<rdc>     bg_inflate         (poly) := bg_buffer_multi_polygon(geometry,  parameters/big_inflate_m[float64], 16b);
+					attribute<float32> bg_inflate_increase       := area(bg_inflate, m2) / area(geometry, m2);
+					attribute<bool>    bg_inflate_correctness    := bg_inflate_increase > 1f;
+				}
+				unit<uint32> bg_deflate := .
+				{
+					attribute<rdc>     bg_deflate         (poly) := bg_buffer_multi_polygon(geometry,  -parameters/big_inflate_m[float64], 16b);
+					attribute<float32> bg_deflate_decrease       := area(bg_deflate, m2) / area(geometry, m2);
+					attribute<bool>    bg_deflate_correctness    := bg_deflate_decrease < 1f && bg_deflate_decrease >= 0f;
+				}
+				
+				unit<uint32> bg_polygon := .
+				{
+					attribute<rdc>     bg_polygon         (poly) := bg_polygon(bg_inflate/bg_inflate);
+					attribute<km2>     area                      := area(bg_polygon, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> bg_union := .
+				{
+					parameter<rdc>     bg_union           (poly) := bg_union_polygon(geometry);
+					parameter<km2>     area                      := area(bg_union, km2);
+				}
+				
+				
+				unit<uint32> bg_split := bg_split_polygon(bg_inflate/bg_inflate)
+				{
+					attribute<rdc>     geometry_rd        (poly) := geometry;
+					attribute<km2>     area                      := area(geometry_rd, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				unit<uint32> bg_split_union := bg_split_union_polygon(bg_inflate/bg_inflate)
+				{
+					attribute<rdc>     geometry_rd        (poly) := geometry;
+					attribute<km2>     area                      := area(geometry_rd, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				////BOOST POLYGON////
+				unit<uint32> bp_overlay  := bp_overlay_polygon(geometry[rdc_cm], BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor[rdc_cm])[rdc];
+				
+				unit<uint32> bp_polygon := .
+				{
+					attribute<rdc>     bp_polygon         (poly) := bp_polygon(bg_inflate/bg_inflate[rdc_cm])[rdc];
+					attribute<km2>     area                      := area(bp_polygon, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> bp_union := .
+				{
+					parameter<rdc>     bp_union           (poly) := bp_union_polygon(geometry[rdc_cm])[rdc];
+					parameter<km2>     area                      := area(bp_union, km2);
+				}
+ 
+				unit<uint32> bp_split := bp_split_polygon(bg_inflate/bg_inflate[rdc_cm])
+				{
+					attribute<rdc>     geometry_rd        (poly) := geometry[rdc];
+					attribute<km2>     area                      := area(geometry_rd, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> bp_split_union := bp_split_union_polygon(bg_inflate/bg_inflate[rdc_cm])
+				{
+					attribute<rdc>     geometry_rd        (poly) := geometry[rdc];
+					attribute<km2>     area                      := area(geometry_rd, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+			}
+		}
+	}
+
+	container ConfigSettings
+	{
+		container Overridable
+		{
+			parameter<String> BAG_DataDir        := 'C:/SourceData/BAG';
+			parameter<String> Redev_DataDir      := 'C:/SourceData/RSopen';
+		}
+	}
+}

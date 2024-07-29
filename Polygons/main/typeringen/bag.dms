@@ -1,0 +1,175 @@
+container BAG: using = "eenheden"
+{ 
+	unit<uint8> vbo_gebruiksdoel: nrofrows = 11
+	{
+		attribute<uint8> ID := ID(.);
+		attribute<uint16> functie_code : [1,2,4,8,16,32,64,128,256,512,1024];
+		attribute<string> label:
+		[
+			'bijeenkomstfunctie','celfunctie','gezondheidszorgfunctie','industriefunctie','kantoorfunctie','logiesfunctie'
+			,'onderwijsfunctie','overige gebruiksfunctie','sportfunctie','winkelfunctie','woonfunctie'
+		];
+		attribute<string> name := replace(replace(label,' ','_'), 'functie','');
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		
+		attribute<bool>   IsUtiliteit := label != 'woonfunctie';
+		unit<uint8> Utiliteiten := subset(IsUtiliteit)
+		{
+			attribute<string> label        := ../label[nr_OrgEntity];
+			attribute<string> name         := ../name[nr_OrgEntity];
+			// attribute<uint32> BrushColor   := ../BrushColor[nr_OrgEntity], DialogType = "BrushColor";
+		}
+	}
+	unit<uint8> vbo_gebruiksdoel_ext : nrofrows = 12
+	{
+		attribute<uint8> ID := ID(.);
+		attribute<string> label:
+		[
+			'bijeenkomstfunctie','celfunctie','gezondheidszorgfunctie','industriefunctie','kantoorfunctie','logiesfunctie'
+			,'onderwijsfunctie','overige gebruiksfunctie','sportfunctie','winkelfunctie','woonfunctie','utiliteit combi'
+		];
+		attribute<string> name := replace(replace(label,' ','_'), 'functie','');
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		
+		attribute<bool>   IsUtiliteit := label != 'woonfunctie';
+		attribute<bool>   IsWonen     := label == 'woonfunctie';
+		unit<uint8> Utiliteiten := subset(IsUtiliteit)
+		{
+			attribute<string> label        := ../label[nr_OrgEntity];
+			attribute<string> name         := ../name[nr_OrgEntity];
+			// attribute<uint32> BrushColor   := ../BrushColor[nr_OrgEntity], DialogType = "BrushColor";
+		}
+	}
+	
+	unit<uint8> vbo_gebruiksdoel_english: nrofrows = 12
+	{
+		attribute<uint8> ID := ID(.);
+		attribute<string> label : ['gathering function','prison function','healthcare function','industry function','office function','accommodation function','education function','other uses','sports function' ,'retail function','residential function','utiliteit combi'], DialogType = "LabelText";
+		attribute<string> name_src :
+		[
+			'bijeenkomstfunctie','celfunctie','gezondheidszorgfunctie','industriefunctie','kantoorfunctie','logiesfunctie'
+			,'onderwijsfunctie','overige gebruiksfunctie','sportfunctie','winkelfunctie','woonfunctie'
+		];
+		attribute<string> name := replace(replace(name_src,' ','_'), 'functie','');
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> type_woonpand_src: nrofrows = 6
+	{
+		attribute<string>             label              :  ['geen woonpand','vrijstaand','twee onder 1 kap','hoekwoning','tussenwoning','appartement'], DialogType = "LabelText";
+		attribute<string>             name               := replace(label, ' ', '_');
+		attribute<type_woonpand>      woonpand_rel       :  [0,1,2,3,3,4];
+		attribute<type_woonpand>      WP5_rel            := woonpand_rel;
+		// attribute<type_woonpand_4>    woonpand_4_rel     := rlookup(woonpand_rel, type_woonpand_4/woonpand_rel);
+		// attribute<type_woonpand_3>    woonpand_3_rel     :  [0,1,1,1,1,2];
+		// attribute<string>             woonpand_2_rel_str :  ['','0','0','0','0','1'];
+		// attribute<type_woonpand_2>    woonpand_2_rel     := value(woonpand_2_rel_str, uint8);
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> type_woonpand: nrofrows = 5
+	{
+		attribute<string>            label               :  ['geen woonpand','vrijstaand','twee onder 1 kap','rijtjeswoning','appartement'], DialogType = "LabelText";
+		attribute<string>            name_english        :  ['no_house','detached','semidetached','terraced','apartment'], DialogType = "LabelText";
+		attribute<string>            name                := replace(label, ' ', '_');
+		attribute<uint32>            BrushColor          :  [rgb(255,255,255), rgb(  0,129,  0),rgb(  0,  0,255),rgb(255,220,  0),rgb(255,  0,  0)], DialogType = "BrushColor";
+		attribute<string>            woonpand_2_rel_str  :  ['','0','0','0','1'];
+		attribute<type_woonpand_2>   woonpand_2_rel      := value(woonpand_2_rel_str, type_woonpand_2);
+		attribute<type_woonpand_3>   woonpand_3_rel      : [0, 1, 1, 1, 2];
+		attribute<type_woonpand_4>   woonpand_4_rel      := id(type_woonpand_4)[invert(type_woonpand_4/nr_OrgEntity)];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+
+	unit<uint8> type_woonpand_4 := subset(id(type_woonpand) <> type_woonpand/V/geen_woonpand) 
+	{
+		attribute<type_woonpand>     woonpand_rel        := nr_OrgEntity;
+		attribute<string>            name                := type_woonpand/name[woonpand_rel];
+		attribute<string>            name_english        := type_woonpand/name_english[woonpand_rel];
+		attribute<string>            label               := type_woonpand/label[woonpand_rel], DialogType = "LabelText";
+		attribute<uint32>            BrushColor          := type_woonpand/BrushColor[woonpand_rel];
+		attribute<type_woonpand_2>   WP2_rel             := union_data(., type_woonpand_2/V/eengezins, type_woonpand_2/V/eengezins, type_woonpand_2/V/eengezins, type_woonpand_2/V/meergezins);
+		attribute<bool>              IsDetached          : [true, false, false, false];
+		attribute<bool>              IsSemiDetached      : [false, true, false, false];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> type_woonpand_3: nrofrows = 3
+	{
+		attribute<string>            label               :  ['geen woonpand','eengezins','meergezins'], DialogType = "LabelText";
+		attribute<string>            name                := replace(label, ' ', '_');
+		attribute<type_woonpand_2>   woonpand_2_rel      := invert(type_woonpand_2/woonpand_3_rel);
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> type_woonpand_2 := subset(id(type_woonpand_3) <> type_woonpand_3/V/geen_woonpand) 
+	{
+		attribute<type_woonpand_3>   woonpand_3_rel      := nr_OrgEntity;
+		attribute<string>            name                := type_woonpand_3/name[woonpand_3_rel];
+		attribute<string>            label               := type_woonpand_3/label[woonpand_3_rel], DialogType = "LabelText";
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	
+
+	unit<uint8> pand_status : nrofrows = 10
+	{
+		attribute<string>    label      : ['Bouw gestart','Bouwvergunning verleend','Niet gerealiseerd pand','Pand buiten gebruik','Pand gesloopt','Pand in gebruik','Pand in gebruik (niet ingemeten)','Sloopvergunning verleend','Pand ten onrechte opgevoerd','Verbouwing pand'], DialogType = "LabelText";
+		attribute<string>    name       := replace(label, ' ', '_', '-', '_', '(', '', ')', '');
+		attribute<bool>      IsInPlanvorming : [FALSE,  TRUE,  TRUE,  FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE];
+		attribute<bool>      IsInAanbouw     : [TRUE,   FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE];
+		attribute<bool>      IsInGebruik     : [FALSE,  FALSE, FALSE, FALSE, FALSE, TRUE,  TRUE,  FALSE, FALSE, TRUE];
+		attribute<bool>      IsVoorraad      : [FALSE,  FALSE, FALSE, TRUE,  FALSE, TRUE,  TRUE,  FALSE, FALSE, TRUE];
+		attribute<bool>      IsIngetrokken   : [FALSE,  FALSE, TRUE,  FALSE, TRUE,  FALSE, FALSE, TRUE,  TRUE,  FALSE];
+		attribute<bool>      IsInSloop       : [FALSE,  FALSE, FALSE, TRUE,  TRUE,  FALSE, FALSE, TRUE,  TRUE,  FALSE];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	unit<uint8> vbo_status : nrofrows = 8
+	{
+		attribute<string>    label       : ['Niet gerealiseerd verblijfsobject','Verblijfsobject buiten gebruik','Verblijfsobject gevormd','Verblijfsobject in gebruik','Verblijfsobject in gebruik (niet ingemeten)','Verblijfsobject ingetrokken','Verblijfsobject ten onrechte opgevoerd','Verbouwing verblijfsobject'], DialogType = "LabelText";
+		attribute<string>    label_short : ['niet gerea','buiten gebr','gevormd','in gebr','in gebr (NI)','ingetr','ten onrechte opgev','verbouwing'], DialogType = "LabelText";
+		attribute<string>    name        := replace(label, ' ', '_', '-', '_', '(', '', ')', '');
+		attribute<string>    name_short  := AsItemName(label_short);
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		attribute<bool>      IsInPlanvorming : [TRUE,  FALSE, TRUE,  FALSE, FALSE, FALSE, FALSE, FALSE];
+		attribute<bool>      IsInAanbouw     : [FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE];
+		attribute<bool>      IsInGebruik     : [FALSE, FALSE, FALSE, TRUE,  TRUE,  FALSE, FALSE, TRUE];
+		attribute<bool>      IsVoorraad      : [FALSE, TRUE,  FALSE, TRUE,  TRUE,  FALSE, FALSE, TRUE];
+		attribute<bool>      IsIngetrokken   : [TRUE,  FALSE, FALSE, FALSE, FALSE, TRUE,  TRUE,  FALSE];
+		attribute<bool>      IsInSloop       : [FALSE, TRUE,  FALSE, FALSE, FALSE, TRUE,  TRUE,  FALSE];
+	}
+	
+	unit<uint8> standplaats_status : nrofrows = 2
+	{
+		attribute<string>    label       : ['Plaats aangewezen', 'Plaats ingetrokken'], DialogType = "LabelText";
+	}
+
+	unit<uint8> ligplaats_status : nrofrows = 2
+	{
+		attribute<string>    label       : ['Plaats aangewezen', 'Plaats ingetrokken'], DialogType = "LabelText";
+	}
+	
+	unit<uint8> nummeraanduiding_status : nrofrows = 3
+	{
+		unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
+		{
+			attribute<string> values:
+			[
+				//name'                   , selected
+				 'onbekend'               ,'False'
+				,'naamgeving ingetrokken' ,'False'
+				,'naamgeving uitgegeven'  ,'True'
+			];
+		}
+
+		attribute<string> label    := elements/values[value(id(.) * 2b, elements)];
+		attribute<string> name     := replace(label, ' ', '_', '(','',')','');
+		attribute<bool>   selected := bool(elements/values[value(id(.) * 2b + 1b, elements)]);
+
+		container V := for_each_nedv(lowercase(name), 'value('+string(id(.))+', ..)', void, .);
+	}
+}
