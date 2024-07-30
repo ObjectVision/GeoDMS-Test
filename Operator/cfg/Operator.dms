@@ -7604,6 +7604,38 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool>   test_attr := sorted == testAtt; 
 					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
 				}
+				unit<uint32> bg_intersect := bg_overlay_polygon(building_ipoint, district_ipoint)
+				,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}
+				unit<uint32> cgal_intersect := cgal_overlay_polygon(building_ipoint, district_ipoint)
+				,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}
 			}
 
 			container split
