@@ -13,6 +13,7 @@
 
 container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 {
+	container gui_lander;
 	container results
 	{
 		parameter<bool> tests_all := tests_regression && File/results/tests;
@@ -7636,6 +7637,23 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool>   test_attr := sorted == testAtt; 
 					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
 				}
+				attribute<ipoint> district_ipoint2(poly,district) := bp_polygon(district_ipoint);
+				unit<uint32> cgal_intersect2 := cgal_overlay_polygon(building_ipoint, district_ipoint2)
+				,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}
 			}
 
 			container split
@@ -8189,15 +8207,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container bg_overlay_polygon
 			{
-				unit<uint32> overlay := bg_overlay_polygon(Source/district/border_clean, source/building/boundary)
+				unit<uint32> overlay := bg_overlay_polygon(source/building/boundary, Source/district/border_clean)
 				{
 					attribute<uint32> first_rel_ok:
 					[
-						0,0,0,0,3,3,5,4,5,6
+						1,2,3,5,4,5,5,3,5,4
 					];
 					attribute<uint32> second_rel_ok:
 					[
-						1,2,3,5,4,5,3,5,5,4
+						0,0,0,0,3,3,4,5,5,6
 					];
 					attribute<bool> test := first_rel == first_rel_ok && second_rel == second_rel_ok;
 				}
@@ -8639,8 +8657,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& bg_union/test_param
 					&& bg_xor/test_param
 					&& bg_intersect/test_param
-					//&& bg_overlay_polygon/test_param
-					&& bp_overlay_polygon/test_param;
+					&& bg_overlay_polygon/test_param
+					&& bp_overlay_polygon/test_param
+					&& overlay_polygon/intersect/test
+					&& overlay_polygon/bg_intersect/test
+					&& overlay_polygon/cgal_intersect/test
+					&& overlay_polygon/cgal_intersect2/test
+					;
 			}
 		}
 	}
@@ -12218,6 +12241,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> ADomain := range(uint32, 0, 1000000);
 			attribute<Adomain> attr (Adomain) := rnd_permutation(0, Adomain);  
 			attribute<bool>    test (Adomain) := attr >= 0 && attr <= #Adomain  && Sum_uint64(attr) == Sum_uint64(id(Adomain));
+			attribute<bool>    testvalues (Adomain) := attr >= 0 && attr <= #Adomain;
+			parameter<uint64>  sum1 := Sum_uint64(attr);
+			parameter<uint64>  sum2 := Sum_uint64(id(Adomain));
+			parameter<bool>    testsum        := Sum_uint64(attr) == Sum_uint64(id(Adomain));
 			parameter<bool>    test_attr      := all(test);
 		}
 		container rnd_permutation_empty: url  = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/random-permutation"

@@ -46,7 +46,29 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		}
 	}
 	container issue_130_readback : StorageName = "%LocalDataProjDir%/First.mmd", StorageReadOnly = "true";
+	container sum_uint32_selcount
+	{
 	
+		unit<uint32> M4woningen := range(0, 4)
+		{
+			attribute<bool> selection : [ false, true, false, true ];
+			attribute<bool> isred     : [ false, false, true, true ];
+		}
+		unit<uint32> M30woningen := range(0, 30000000)
+		{
+			attribute<bool> selection := ID(.) >  20000000;
+//			attribute<bool> isred     := ID(.) == 25000000;// || ID(.) == 26000000;
+//			attribute<bool> isred     := (ID(.) % 65536) == 3;
+			attribute<bool> isred     := (ID(.) % 5000000) == 3;
+//			attribute<bool> isred     := ID(.) == 25000000 || ID(.) == 26000000;
+//			attribute<bool> isred     := ID(.) == 20000003;
+			attribute<bool> isred2     := ID(.) == 3 ||  ID(.) == 60000; //|| ID(.) == 10000003 || ID(.) == 15000003 ||  ID(.) ==20000003 || ID(.) == 25000003;
+			attribute<bool> theseame := isred == isred2;
+		}
+		attribute<uint32> selcount04(bool) := sum_uint32(M4woningen/selection, M4woningen/isred);
+		attribute<uint32> selcount30(bool) := sum_uint32(M30woningen/selection, M30woningen/isred);
+		
+	}
 	
 	container Cbs
 	{
@@ -1776,7 +1798,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<uint32> NoData : [0,1,2,3,null,null,null];
 		}
 
-		unit<uint32> pointset: nrofrows = 2
+		unit<uint32> pointset: nrofrows = 2, DialogType = "Map", DialogData = "point"
 		{
 			attribute<point_rd> point:
 			[
@@ -1787,6 +1809,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 				parameter<float32> SymbolSize:  DialogType = "SymbolSize",  expr = "float32(32)";
 				parameter<int16>   SymbolIndex: DialogType = "SymbolIndex", expr = "int16(66)";
 			}
+			attribute<float32> altitude := float32(id(.));
 
 		}
 	}
