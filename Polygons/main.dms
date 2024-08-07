@@ -202,7 +202,7 @@ container Polygons
 	container RegioIndelingen : using = "geometries"
 	{ 
 		container Gebiedsindelingen_2022
-		:	StorageName     = "%Redev_DataDir%/RegioIndelingen/cbsgebiedsindelingen2022.gpkg"
+		:	StorageName     = "%RSo_DataDir%/RegioIndelingen/cbsgebiedsindelingen2022.gpkg"
 		, 	StorageType     = "gdal.vect"
 		,	StorageReadOnly = "True"
 		,	SyncMode        = "alltables"
@@ -216,12 +216,19 @@ container Polygons
 			attribute<string>    GM_NAAM         := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statnaam;
 			attribute<string>    name            := AsItemName(statnaam);
 			
+			attribute<Provincie> prov_rel        := point_in_polygon(centroid_or_mid(geometry), Provincie/geometry);
+			
 			unit<uint32> Amsterdam := select_with_org_rel(statcode == 'GM0363')
 			{
 				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
 				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
 				attribute<string>            GM_CODE                           := ../statcode[org_rel];
-				attribute<string>            label                             := ../label[org_rel];
+			}
+			unit<uint32> Noord_Holland := select_with_org_rel(prov_rel == Provincie/V/Noord_Holland)
+			{
+				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
+				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
+				attribute<string>            GM_CODE                           := ../statcode[org_rel];
 			}
 		}
 		
@@ -231,6 +238,15 @@ container Polygons
 			attribute<string>    statcode        := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/statcode;
 			attribute<string>    statnaam        := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/statnaam;
 			attribute<string>    name            := AsItemName(statnaam);
+		}
+		unit<uint32>  Provincie := Gebiedsindelingen_2022/provincie_gegeneraliseerd
+		{
+			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/provincie_gegeneraliseerd/geometry;
+			attribute<string>    statcode        := Gebiedsindelingen_2022/provincie_gegeneraliseerd/statcode;
+			attribute<string>    statnaam        := Gebiedsindelingen_2022/provincie_gegeneraliseerd/statnaam;
+			attribute<string>    name            := AsItemName(statnaam);
+			
+			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
 		}
 		
 		unit<uint32> Nederland := range(uint32, 0, 1) 
@@ -258,13 +274,18 @@ container Polygons
 				parameter<uint32>  bp_overlay_count_islands     := src/bp_overlay/count_islands;
 				parameter<uint32>  cgal_overlay_count_islands   := src/cgal_overlay/count_islands;
 				parameter<uint32>  geos_overlay_count_islands   := src/geos_overlay/count_islands;
-				parameter<km2>     bg_overlay_area              := sum(src/bg_overlay/area);
-				parameter<km2>     bp_overlay_area              := sum(src/bp_overlay/area);
-				parameter<km2>     cgal_overlay_area            := sum(src/cgal_overlay/area);
-				parameter<km2>     geos_overlay_area            := sum(src/geos_overlay/area);
+				// parameter<km2>     bg_overlay_area              := sum(src/bg_overlay/area);
+				// parameter<km2>     bp_overlay_area              := sum(src/bp_overlay/area);
+				// parameter<km2>     cgal_overlay_area            := sum(src/cgal_overlay/area);
+				// parameter<km2>     geos_overlay_area            := sum(src/geos_overlay/area);
 				
 				parameter<string>  bg_inflate_ratio_correctness := string(sum_uint32(src/bg_inflate/bg_inflate_correctness)) + '/' + string(#src);
 				parameter<string>  bg_deflate_ratio_correctness := string(sum_uint32(src/bg_deflate/bg_deflate_correctness)) + '/' + string(#src);
+				
+				parameter<uint32>  bg_connectivity_count_islands   := max(src/bg_connectivity/connected_parts/PartNr);
+				parameter<uint32>  bp_connectivity_count_islands   := max(src/bp_connectivity/connected_parts/PartNr);
+				parameter<uint32>  cgal_connectivity_count_islands := max(src/cgal_connectivity/connected_parts/PartNr);
+				parameter<uint32>  geos_connectivity_count_islands := max(src/geos_connectivity/connected_parts/PartNr);
 				
 				parameter<uint32>  bg_polygon_count_islands     := src/bg_polygon/count_islands;
 				parameter<uint32>  bp_polygon_count_islands     := src/bp_polygon/count_islands;
@@ -301,7 +322,8 @@ container Polygons
 		}
 
 		container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
-		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
+		// container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
+		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
 		
 		Template Tests_T
 		{
@@ -330,6 +352,11 @@ container Polygons
 					attribute<bool>    bg_deflate_correctness    := bg_deflate_decrease < 1f && bg_deflate_decrease >= 0f;
 				}
 				
+				unit<uint32> bg_connectivity  := bg_polygon_connectivity(bg_inflate/bg_inflate, bg_inflate/bg_inflate)
+				{
+					unit<uint32> connected_parts := connected_parts(first_rel,second_rel);
+				}
+
 				unit<uint32> bg_polygon := .
 				{
 					attribute<rdc>     bg_polygon         (poly) := bg_polygon(bg_inflate/bg_inflate);
@@ -367,6 +394,10 @@ container Polygons
 					attribute<km2>     area                      := area(geometry_rd, km2);
 					parameter<uint32>  count_islands             := #.;
 				}
+				unit<uint32> bp_connectivity  := bp_polygon_connectivity(bg_inflate/bg_inflate[rdc_cm],bg_inflate/bg_inflate[rdc_cm])
+				{
+					unit<uint32> connected_parts := connected_parts(first_rel,second_rel);
+				}
 				
 				unit<uint32> bp_polygon := .
 				{
@@ -400,6 +431,11 @@ container Polygons
 				{
 					attribute<km2>     area                      := area(geometry, km2);
 					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> cgal_connectivity  := cgal_polygon_connectivity(bg_inflate/bg_inflate, bg_inflate/bg_inflate)
+				{
+					unit<uint32> connected_parts := connected_parts(first_rel,second_rel);
 				}
 				
 				unit<uint32> cgal_polygon := .
@@ -437,6 +473,11 @@ container Polygons
 					parameter<uint32>  count_islands             := #.;
 				}
 				
+				unit<uint32> geos_connectivity  := geos_polygon_connectivity(bg_inflate/bg_inflate, bg_inflate/bg_inflate)
+				{
+					unit<uint32> connected_parts := connected_parts(first_rel,second_rel);
+				}
+				
 				unit<uint32> geos_polygon := .
 				{
 					attribute<rdc>     geos_polygon       (poly) := geos_polygon(bg_inflate/bg_inflate);
@@ -472,8 +513,8 @@ container Polygons
 	{
 		container Overridable
 		{
-			parameter<String> BAG_DataDir        := 'C:/SourceData/BAG';
-			parameter<String> Redev_DataDir      := 'C:/SourceData/RSopen';
+			parameter<String> BAG_DataDir        := 'D:/SourceData/BAG';    // OV6=D OV9=C
+			parameter<String> RSo_DataDir        := 'D:/SourceData/RSopen'; // OV6=D OV9=C
 		}
 	}
 }
