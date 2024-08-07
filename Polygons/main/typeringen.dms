@@ -1,0 +1,47 @@
+container typeringen : using = "eenheden"
+{ 
+	#include<bag.dms>
+	#include<bbg.dms>
+	#include<brt.dms>
+	#include<redev.dms>
+	#include<tijd.dms>
+	
+	unit<uint32> Eigendom : nrofrows = 3
+	{
+		attribute<string> label: DialogType = "LabelText",
+			['Koop', 'PartHuur', 'WoonCorp'];
+		attribute<string> name := label;
+		attribute<uint32> BrushColor : [rgb(255,0,0),rgb(0,255,0),rgb(0,0,255)], DialogType = "BrushColor";
+		attribute<uint32> PenColor   : [rgb(112,128,144),rgb(112,128,144),rgb(112,128,144)]      , DialogType = "PenColor";
+		attribute<int16>  PenWidth   : ['1s','1s','1s']                              , DialogType = "PenWidth";
+		
+		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+	}
+	
+	unit<uint32> NoData: NrOfrows = 1
+	{
+		attribute<string> name      : ['NA'];
+		attribute<string> Label     := name, DialogType = "LabelText";
+		attribute<uint32> value     := const(0,.);
+		attribute<string> next_name : ['NA'];
+		attribute<string> prev_name : ['NA'];
+	}
+	unit<uint8> NoData_uint8: NrOfrows = 1
+	{
+		attribute<string> name      : ['NA'];
+		attribute<string> Label     := name, DialogType = "LabelText";
+		attribute<uint32> value     := const(0,.);
+		attribute<string> next_name : ['NA'];
+		attribute<string> prev_name : ['NA'];
+	}
+	
+	unit<uint8> UrbanisationK : nrofrows = 3
+	{
+		attribute<string>    Label        :  ['Urban', 'PeriUrban','Peripheral'], DialogType = "LabelText";
+		// attribute<uint32>    PenColor     := Brushcolor, DialogType = "PenColor";
+		// attribute<uint32>    BrushColor   :  [rgb(200,0,0),rgb(0,200,0), rgb(128,128,128)] , DialogType = "BrushColor";
+		attribute<uint32>    BrushColor   :  [rgb(200,0,0),rgb(0,200,0), rgb(128,128,128)] , DialogType = "BrushColor";
+		
+		container V := for_each_nedv(Label, 'value('+string(id(.))+', ..)', void, .);
+	}
+}

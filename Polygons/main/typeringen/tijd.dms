@@ -1,0 +1,349 @@
+container Tijd: isHidden = "True", using = "eenheden"
+{ 
+	unit<uint32> Kwartalen : nrofrows = 45
+	{
+		attribute<jaar>   year         := (value / 100)[jaar];
+		attribute<uint32> value        :     [201201 ,201204, 201207, 201210
+											, 201301 ,201304, 201307, 201310
+											, 201401, 201404, 201407, 201410
+											, 201501, 201504, 201507, 201510
+											, 201601, 201604, 201607, 201610
+											, 201701, 201704, 201707, 201710
+											, 201801, 201804, 201807, 201810
+											, 201901, 201904, 201907, 201910
+											, 202001, 202004, 202007, 202010
+											, 202101, 202104, 202107, 202110
+											, 202201, 202204, 202207, 202210
+											, 202301];
+		attribute<uint64> value_short  :  [121 ,122, 123, 124
+											, 131 ,132, 133, 134
+											, 141, 142, 143, 144
+											, 151, 152, 153, 154
+											, 161, 162, 163, 164
+											, 171, 172, 173, 174
+											, 181, 182, 183, 184
+											, 191, 192, 193, 194
+											, 201, 202, 203, 204
+											, 211, 212, 213, 214
+											, 221, 222, 223, 224
+											, 231];
+		attribute<uint32> prev_value   := MakeDefined(rjoin(sub_or_null(id(.),1), id(.), value),first(value));
+		attribute<uint32> prev2_value  := MakeDefined(rjoin(sub_or_null(id(.),2), id(.), value),first(value));
+		attribute<uint32> prev3_value  := MakeDefined(rjoin(sub_or_null(id(.),3), id(.), value),first(value));
+		attribute<uint32> prev4_value  := MakeDefined(rjoin(sub_or_null(id(.),4), id(.), value),first(value));
+		attribute<string> name         := 'Y' + string(value);
+		attribute<string> label         := name;
+		attribute<string> prev_name    := 'Y' + string(prev_value);
+		attribute<string> prev2_name    := 'Y' + string(prev2_value);
+		attribute<string> prev3_name    := 'Y' + string(prev3_value);
+		attribute<string> prev4_name    := 'Y' + string(prev4_value);
+		
+		attribute<uint32> next_value       := MakeDefined(rjoin(id(.) + 1, id(.), value),last(value));
+		attribute<uint32> next2_value      := MakeDefined(rjoin(id(.) + 2, id(.), value),last(value));
+		attribute<uint32> next3_value      := MakeDefined(rjoin(id(.) + 3, id(.), value),last(value));
+		attribute<uint32> next4_value      := MakeDefined(rjoin(id(.) + 4, id(.), value),last(value));
+		attribute<string> next_name        := 'Y' + string(next_value);
+		attribute<string> next2_name       := 'Y' + string(next2_value);
+		attribute<string> next3_name       := 'Y' + string(next3_value);
+		attribute<string> next4_name       := 'Y' + string(next4_value);
+		attribute<bool>   IsFirst          := id(.) == first(id(.));
+		attribute<bool>   IsSecond         := id(.) == first(id(.)) + 1;
+		attribute<bool>   IsThird          := id(.) == first(id(.)) + 2;
+		attribute<bool>   IsFourth         := id(.) == first(id(.)) + 3;
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	// unit<uint32> Kwartalen : nrofrows = 4
+	// {
+		// attribute<jaar>   year         := (value / 100)[jaar];
+		// attribute<uint32> value        :     [201801
+											// , 201901
+											// , 202001
+											// , 202101
+											// ];
+		// attribute<uint32> prev_value   := MakeDefined(rjoin(id(.) -1, id(.), value),first(value));
+		// attribute<uint32> prev2_value  := MakeDefined(rjoin(id(.) -2, id(.), value),first(value));
+		// attribute<uint32> prev3_value  := MakeDefined(rjoin(id(.) -3, id(.), value),first(value));
+		// attribute<uint32> prev4_value  := MakeDefined(rjoin(id(.) -4, id(.), value),first(value));
+		// attribute<string> name         := 'Y' + string(value);
+		// attribute<string> label         := name;
+		// attribute<string> prev_name    := 'Y' + string(prev_value);
+		// attribute<string> prev2_name    := 'Y' + string(prev2_value);
+		// attribute<string> prev3_name    := 'Y' + string(prev3_value);
+		// attribute<string> prev4_name    := 'Y' + string(prev4_value);
+		
+		// attribute<uint32> next_value       := MakeDefined(rjoin(id(.) + 1, id(.), value),last(value));
+		// attribute<uint32> next2_value      := MakeDefined(rjoin(id(.) + 2, id(.), value),last(value));
+		// attribute<uint32> next3_value      := MakeDefined(rjoin(id(.) + 3, id(.), value),last(value));
+		// attribute<uint32> next4_value      := MakeDefined(rjoin(id(.) + 4, id(.), value),last(value));
+		// attribute<string> next_name        := 'Y' + string(next_value);
+		// attribute<string> next2_name       := 'Y' + string(next2_value);
+		// attribute<string> next3_name       := 'Y' + string(next3_value);
+		// attribute<string> next4_name       := 'Y' + string(next4_value);
+		// attribute<bool>   IsFirst          := id(.) == first(id(.));
+		// attribute<bool>   IsSecond         := id(.) == first(id(.)) + 1;
+		// attribute<bool>   IsThird          := id(.) == first(id(.)) + 2;
+		// attribute<bool>   IsFourth         := id(.) == first(id(.)) + 3;
+	// }
+	
+
+	unit<uint8> jaren_uint8 := union_unit_uint8(jaren12_23)
+	{
+		attribute<string> name       := union_data(., jaren12_23/name);
+		attribute<int16>  value      := union_data(., jaren12_23/value[int16]);
+		attribute<int16>  prev_value := union_data(., jaren12_23/prev_value[int16]) == 2011s ? 2012s : union_data(., jaren12_23/prev_value[int16]);
+		attribute<string> label      := name , DialogType = "LabelText";
+	}
+
+	unit<uint32> jaren := range(uint32, 2012, 2023)
+	{
+		attribute<int32>  values  := id(.)[int32];
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> jaren96_11 := range(uint32, 1996, 2012)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> jaren00_11 := range(uint32, 2000, 2012)
+	{
+		// attribute<int32>  value;
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> jaren00_12 := range(uint32, 2000, 2013)
+	{
+		// attribute<int32>  value;
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+	}
+	
+	unit<uint32> jaren12_18 := range(uint32, 2012, 2019)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+	}
+	unit<uint32> jaren12_19 := range(uint32, 2012, 2020)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren12_20 := range(uint32, 2012, 2021)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren12_21 := range(uint32, 2012, 2022)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	unit<uint32> jaren12_22 := range(uint32, 2012, 2023)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren12_23 := range(uint32, 2012, 2024)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	unit<uint32> jaren12_24 := range(uint32, 2012, 2025)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	
+	unit<uint32> jaren12_19_nodata := union_unit(NoData, jaren12_19)
+	{
+		attribute<string>   name         := union_data(., NoData/name, jaren12_19/name);
+		attribute<string>   Label        := union_data(., NoData/Label, jaren12_19/Label), DialogType = "LabelText";
+		attribute<uint32>   value        := union_data(., NoData/value, jaren12_19/value);
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren12_20_nodata := union_unit(NoData, jaren12_20)
+	{
+		attribute<string>   name         := union_data(., NoData/name, jaren12_20/name);
+		attribute<string>   Label        := union_data(., NoData/Label, jaren12_20/Label), DialogType = "LabelText";
+		attribute<uint32>   value        := union_data(., NoData/value, jaren12_20/value);
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren12_21_nodata := union_unit(NoData, jaren12_21)
+	{
+		attribute<string>   name         := union_data(., NoData/name, jaren12_21/name);
+		attribute<string>   Label        := union_data(., NoData/Label, jaren12_21/Label), DialogType = "LabelText";
+		attribute<uint32>   value        := union_data(., NoData/value, jaren12_21/value);
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	unit<uint32> jaren13_20 := range(uint32, 2013, 2021)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren00_19 := range(uint32, 2000, 2020)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren00_20 := range(uint32, 2000, 2021)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<bool>   HeeftBAG   := value >= 2012;
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		attribute<string> next_name := 'Y' + string(next_value);
+		attribute<uint32> next_value := id(.) + 1;
+	}
+	
+	unit<uint32> jaren85_22 := range(uint32, 1985, 2023)
+	{
+		attribute<string> label   := name , DialogType = "LabelText";
+		attribute<string> name    := 'Y' + string(id(.));
+		attribute<uint32> value   := id(.);
+		attribute<string> prev_name := 'Y' + string(prev_value);
+		attribute<uint32> prev_value := sub_or_null(id(.),1);
+		
+		unit<uint32> last10years := subset(id(.) >= 2010 && id(.) <= 2019)
+		{
+			attribute<string> label      := ../label[nr_OrgEntity], DialogType = "LabelText";
+			attribute<string> name       := ../name[nr_OrgEntity];
+			attribute<uint32> value      := ../value[nr_OrgEntity];
+			attribute<string> prev_name  := ../prev_name[nr_OrgEntity];
+			attribute<uint32> prev_value := ../prev_value[nr_OrgEntity];
+		}
+	}
+	
+	unit<uint32> Periods_min1 := select_with_attr_by_org_rel(Kwartalen, id(Kwartalen) != Last(id(Kwartalen)))
+	{
+		// attribute<jaar>   year         := Kwartalen/year[nr_OrgEntity];
+		// attribute<uint32> value        := Kwartalen/value[nr_OrgEntity];
+		// attribute<string> name         := Kwartalen/name[nr_OrgEntity];
+		// attribute<string> label        := Kwartalen/name[nr_OrgEntity];
+		// attribute<string> next_name    := Kwartalen/next_name[nr_OrgEntity];
+		// attribute<string> prev_name    := Kwartalen/prev_name[nr_OrgEntity];
+		// attribute<string> prev2_name   := Kwartalen/prev2_name[nr_OrgEntity];
+		// attribute<string> prev3_name   := Kwartalen/prev3_name[nr_OrgEntity];
+		// attribute<string> prev4_name   := Kwartalen/prev4_name[nr_OrgEntity];
+		// attribute<bool>   IsFirst      := Kwartalen/IsFirst[nr_OrgEntity];
+		// attribute<bool>   IsSecond     := Kwartalen/IsSecond[nr_OrgEntity];
+		// attribute<bool>   IsThird      := Kwartalen/IsThird[nr_OrgEntity];
+		// attribute<bool>   IsFourth     := Kwartalen/IsFourth[nr_OrgEntity];
+	}
+	
+	
+	unit<uint32> Periods_nodata := union_unit(NoData, Kwartalen)
+	{
+		attribute<string>   name         := union_data(., NoData/name, Kwartalen/name);
+		attribute<string>   Label        := union_data(., NoData/Label, Kwartalen/Label), DialogType = "LabelText";
+		attribute<uint32>   value        := union_data(., NoData/value, Kwartalen/value);
+		attribute<string>   next_name    := union_data(., NoData/next_name, Kwartalen/next_name);
+		attribute<string>   prev_name    := union_data(., NoData/prev_name, Kwartalen/prev_name);
+		attribute<string>   prev2_name    := union_data(., NoData/prev_name, Kwartalen/prev2_name);
+		attribute<string>   prev3_name    := union_data(., NoData/prev_name, Kwartalen/prev3_name);
+		attribute<string>   prev4_name    := union_data(., NoData/prev_name, Kwartalen/prev4_name);
+		attribute<jaar>   Year          := (value / 100)[jaar];
+		
+		attribute<Kwartalen> kwartaal_rel := rlookup(name, kwartalen/name);
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	// unit<uint32> Periods_min1_nodata := union_unit(NoData, Periods_min1)
+	// {
+		// attribute<string>   name         := union_data(., NoData/name, Periods_min1/name);
+		// attribute<string>   Label        := union_data(., NoData/Label, Periods_min1/Label), DialogType = "LabelText";
+		// attribute<uint32>   value        := union_data(., NoData/value, Periods_min1/value);
+		// attribute<string>   next_name    := union_data(., NoData/next_name, Periods_min1/next_name);
+		// attribute<string>   prev_name    := union_data(., NoData/prev_name, Periods_min1/prev_name);
+		// attribute<string>   prev2_name    := union_data(., NoData/prev_name, Periods_min1/prev2_name);
+		// attribute<string>   prev3_name    := union_data(., NoData/prev_name, Periods_min1/prev3_name);
+		// attribute<string>   prev4_name    := union_data(., NoData/prev_name, Periods_min1/prev4_name);
+		
+		// container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	// }
+}

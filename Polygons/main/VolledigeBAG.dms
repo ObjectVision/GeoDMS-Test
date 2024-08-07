@@ -1,0 +1,487 @@
+container VolledigeBAG : using = "typeringen/BAG;geometries;eenheden"
+{ 
+	unit<uint32>    RegioUnit_NL      := RegioIndelingen/nederland;
+	unit<uint32>    RegioUnit_AMS     := RegioIndelingen/Gemeente/Amsterdam;
+
+
+	parameter<string>  Snapshot_Date_Input := '20240708';
+	parameter<string>  Result_FSS_dir      := '%BAG_DataDir%/VolledigeTabel_' + Snapshot_Date_Input;
+	parameter<int32>   MaxDatum            := 20500101i;
+	
+	unit<uint32>              uq_pand_bag_nr                                 := unique(vbos/vbo/pand_bag_nr); // X
+	attribute<uq_pand_bag_nr> vbo_uq_pand_nr_rel  (vbos/vbo)                 := rlookup(vbos/vbo/pand_bag_nr, uq_pand_bag_nr/values);
+	attribute<uq_pand_bag_nr> pand_uq_pand_nr_rel (panden/pand)              := rlookup(panden/pand/pand_bag_nr, uq_pand_bag_nr/values);
+	
+	//Create new domain with the combination of all existing pand_nrs associated with VBO's and the pand_nrs in the panden domain. 
+	unit<uint32> Historische_Join := join_equal_values(vbo_uq_pand_nr_rel, pand_uq_pand_nr_rel)
+	{
+		attribute<rdc>         geometry                       := vbos/vbo/geometry[first_rel];
+		attribute<rdc>         pand_geometry (poly)           := panden/pand/geometry[second_rel];
+		attribute<uint64>      pand_bag_nr                    := panden/pand/pand_bag_nr[second_rel];
+		attribute<uint64>      vbo_bag_nr                     := vbos/vbo/vbo_bag_nr[first_rel];
+		attribute<int32>       vbo_oppervlakte                := vbos/vbo/oppervlakte[first_rel];
+		attribute<jaar>        pand_bouwjaar                  := panden/pand/bouwjaar_trunc[second_rel];
+		
+		attribute<int32>       pand_begindatum                := panden/pand/begindatum[second_rel];
+		attribute<int32>       pand_einddatum                 := panden/pand/einddatum[second_rel];
+		attribute<int32>       vbo_begindatum                 := vbos/vbo/begindatum[first_rel];
+		attribute<int32>       vbo_einddatum                  := vbos/vbo/einddatum[first_rel];
+		
+		attribute<pand_status> pand_status_rel                := panden/pand/status_rel[second_rel];
+		attribute<vbo_status>  vbo_status_rel                 := vbos/vbo/status_rel[first_rel];
+		attribute<uint16>      vbo_functie_code               := vbos/vbo/functie_code[first_rel];
+		attribute<vbo_gebruiksdoel_ext> gebruiksdoel_rel         := rlookup(impl/gebruiksdoel, vbo_gebruiksdoel_ext/name);
+		
+		attribute<string>      pand_vbo_key                   := string(pand_bag_nr) +'_'+ string(vbo_bag_nr);
+		attribute<string>      pand_vbo_status_key            := string(pand_status_rel) + '_' + string(vbo_status_rel);
+		attribute<string>      pand_vbo_id_status_key         := pand_vbo_key +'_'+ pand_vbo_status_key;
+			
+		attribute<bool>        selectie_1                     := pand_begindatum < vbo_einddatum;
+		attribute<bool>        selectie_2                     := vbo_begindatum < pand_einddatum;
+		attribute<bool>        selectie_3                     := vbo_begindatum != vbo_einddatum && pand_begindatum != pand_einddatum;
+		
+		//This combination results in overlapping begin/einddatum and identical begin/eind datums. We need to omit these. Now we split up the begin-einddatum combination to get distinct periods.
+		unit<uint32> SelectNonOverlappingPeriods      := select_with_org_rel(selectie_1 && selectie_2 && selectie_3)
+		{
+			attribute<rdc>         geometry                       := org_rel -> geometry;
+			attribute<rdc>         pand_geometry (poly)           := org_rel -> pand_geometry;
+			attribute<int32>       pand_begindatum                := org_rel -> pand_begindatum;
+			attribute<int32>       pand_einddatum                 := org_rel -> pand_einddatum;
+			attribute<int32>       vbo_begindatum                 := org_rel -> vbo_begindatum;
+			attribute<int32>       vbo_einddatum                  := org_rel -> vbo_einddatum;
+			attribute<int32>       vbo_oppervlakte                := org_rel -> vbo_oppervlakte;
+			
+			attribute<uint64>      pand_bag_nr                    := org_rel -> pand_bag_nr;
+			attribute<uint64>      vbo_bag_nr                     := org_rel -> vbo_bag_nr;
+			attribute<pand_status> pand_status_rel                := org_rel -> pand_status_rel;
+			attribute<vbo_status>  vbo_status_rel                 := org_rel -> vbo_status_rel;
+			attribute<uint16>      vbo_functie_code               := org_rel -> vbo_functie_code;
+			attribute<vbo_gebruiksdoel_ext> gebruiksdoel_rel      := org_rel -> gebruiksdoel_rel;
+			attribute<int32>       begindatum                     := max_elem(pand_begindatum, vbo_begindatum);
+			attribute<int32>       einddatum                      := min_elem(pand_einddatum, vbo_einddatum);
+			attribute<jaar>        pand_bouwjaar                  := org_rel -> pand_bouwjaar;
+			
+			attribute<string>      pv_key                         := string(pand_bag_nr) +'_'+ string(vbo_bag_nr);
+			attribute<string>      status_key                     := string(pand_status_rel) + '_' + string(vbo_status_rel);
+			
+			attribute<string>      pv_sf_begindatum_key          := pv_key +'_'+ string(begindatum) +'_'+ status_key +'_'+ string(vbo_functie_code);
+			attribute<string>      pv_sf_einddatum_key           := pv_key +'_'+ string(einddatum)  +'_'+ status_key +'_'+ string(vbo_functie_code);
+			attribute<.>           pv_sf_eind_begin_rel          := rlookup(pv_sf_einddatum_key, pv_sf_begindatum_key);
+		}
+		
+		container impl
+		{
+			container gebruiksdoelen :=
+				for_each_nedv(
+					vbo_gebruiksdoel/name
+					, 'bitand(vbo_functie_code,vbo_gebruiksdoel/V/'+vbo_gebruiksdoel/name+'->functie_code) > 0w' 
+					, Historische_Join
+					, bool
+				);
+			
+			container gebruiksdoelen_cbs
+			{
+				attribute<bool>   utiliteit         (...) := ='('+AsList('gebruiksdoelen/'+vbo_gebruiksdoel/Utiliteiten/name, ' || ')+') && !woon';
+				attribute<uint32> Count_Utiliteiten (...) := =AsList('gebruiksdoelen/'+vbo_gebruiksdoel/Utiliteiten/name+'[uint32]', ' + ');
+				
+				attribute<bool>   bijeenkomst       (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/bijeenkomst;
+				attribute<bool>   cel               (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/cel;
+				attribute<bool>   gezondheidszorg   (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/gezondheidszorg;
+				attribute<bool>   industrie         (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/industrie;
+				attribute<bool>   kantoor           (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/kantoor;
+				attribute<bool>   logies            (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/logies;
+				attribute<bool>   onderwijs         (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/onderwijs;
+				attribute<bool>   overige_gebruiks  (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/overige_gebruiks;
+				attribute<bool>   sport             (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/sport;
+				attribute<bool>   winkel            (...) := !woon && Count_Utiliteiten == 1 && gebruiksdoelen/winkel;
+				attribute<bool>   woon              (...) := gebruiksdoelen/woon;
+				attribute<bool>   utiliteit_combi   (...) := !woon && Count_Utiliteiten > 1;
+			}
+			
+			attribute<string> gebruiksdoel (..) := switch(
+													 case(gebruiksdoelen_cbs/woon, 'woon')
+													, case(gebruiksdoelen_cbs/bijeenkomst, 'bijeenkomst')
+													, case(gebruiksdoelen_cbs/cel, 'cel')
+													, case(gebruiksdoelen_cbs/gezondheidszorg, 'gezondheidszorg')
+													, case(gebruiksdoelen_cbs/industrie, 'industrie')
+													, case(gebruiksdoelen_cbs/kantoor, 'kantoor')
+													, case(gebruiksdoelen_cbs/logies, 'logies')
+													, case(gebruiksdoelen_cbs/onderwijs, 'onderwijs')
+													, case(gebruiksdoelen_cbs/overige_gebruiks, 'overige_gebruiks')
+													, case(gebruiksdoelen_cbs/sport, 'sport')
+													, case(gebruiksdoelen_cbs/winkel, 'winkel')
+													, 'utiliteit_combi'
+													);
+		}
+	}
+	
+	container panden
+	{
+		unit<uint32> vbo_domein := vbos/vbo;
+		
+		unit<uint32> import
+		:	StorageName = "= Result_FSS_dir + '/pand.fss'"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_mm>                       geometry_mm (poly);
+			attribute<rdc>                          geometry (poly) := geometry_mm[rdc];
+			attribute<string>                       identificatie;
+			attribute<jaar>                         bouwjaar;
+
+			container meta := meta_src_template(., pand_status);
+		}
+		
+		unit<uint32> src := import
+		{
+			attribute<rdc>                          geometry (poly)              := import/geometry;
+			attribute<uint64>                       pand_bag_nr                  := uint64(identificatie);
+			attribute<typeringen/bag/pand_status>   status_rel                   := import/meta/status_rel;
+			
+			attribute<int32>                        begindatum                   := impl/begindatum0 < 19600101i ? impl/TIJDSTIPREGISTRATIE : impl/begindatum0;
+			attribute<int32>                        einddatum                    := impl/einddatum0 < 19600101i ? impl/EINDREGISTRATIE : impl/einddatum0;
+			attribute<jaar>                         bouwjaar                     := import/bouwjaar;
+			attribute<jaar>                         bouwjaar_trunc               := =replace(parameters/bouwjaar_truncation_expr, '@YYYY@', '2025');
+			
+			unit<uint32> impl := .
+			{
+				attribute<int32>                        TIJDSTIPREGISTRATIE          := int32(replace(substr(import/meta/TIJDSTIPREGISTRATIE,0,10),'-',''));
+				attribute<int32>                        EINDREGISTRATIE              := int32(replace(substr(import/meta/EINDREGISTRATIE,0,10),'-',''));
+				attribute<int32>                        begindatum0                  := import/meta/BEGINDATUM == 0i ? MaxDatum : import/meta/BEGINDATUM;
+				attribute<int32>                        einddatum0                   := import/meta/EINDDATUM == 0i ? MaxDatum : import/meta/EINDDATUM;
+				attribute<rdc>                          NW                           := lower_bound(geometry);
+				attribute<rdc>                          SE                           := upper_bound(geometry);
+				attribute<float32>                      X_ext                        := sub_or_null(PointCol(SE),PointCol(NW));
+				attribute<float32>                      Y_ext                        := sub_or_null(PointRow(SE),PointRow(NW));
+				attribute<RegioUnit_AMS>                AMS_rel                      := point_in_polygon(centroid_or_mid(geometry), RegioUnit_AMS/geometry);
+				attribute<float32>                      lower_x := pointCol(NW);
+				attribute<float32>                      upper_x := pointCol(SE);
+				attribute<float32>                      lower_y := pointRow(NW);
+				attribute<float32>                      upper_y := pointRow(SE);
+				attribute<bool>                         pand_selection_condition     := =Parameters/BAG_Selection_Area == 'AMS'
+																							? 'IsDefined(ams_rel) 
+																								&& X_ext < 1000f && Y_ext < 1000f' //panden met een grotere x/y range dan 1km eruit
+																							: 'X_ext < 1000f && Y_ext < 1000f' //panden met een grotere x/y range dan 1km eruit
+																								'&& lower_x < 300000f && lower_x > 0f'
+																								'&& upper_x < 300000f && upper_x > 0f'
+																								'&& lower_y < 620000f && lower_y > 300000f'
+																								'&& upper_y < 620000f && upper_y > 300000f'; //binnen NL
+			}
+		}  
+		
+		unit<uint32> pand := select_with_attr_by_org_rel(src, src/Impl/pand_selection_condition)
+		{
+			unit<uint32> RecentBouwjaar := select_with_attr_by_org_rel(., bouwjaar_trunc > 1990[jaar]);
+		}
+	}
+	
+	container VBOs
+	{
+		//import the source BAG files
+		unit<uint32> import
+		:	StorageName = "= Result_FSS_dir + '/vbo.fss'"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_mm>                     geometry_mm;
+			attribute<rdc>                        geometry  := geometry_mm[rdc];
+			attribute<string>                     identificatie;
+			attribute<int32>                      oppervlakte;
+			attribute<string>                     nummeraanduiding_id;
+			
+			unit<uint32> gerelateerdPand
+			{
+				attribute<string> identificatie;
+				attribute<string> pand_id;
+			}
+			
+			container gebruiksdoelen :=
+				for_each_ndv(
+					vbo_gebruiksdoel/name
+					, import
+					, bool
+				);
+			
+			container meta := meta_src_template(., vbo_status);
+		}
+		
+		//enrich the source attributes, and prepare selection criteria.
+		unit<uint32> src := import
+		{
+			attribute<rdc>                        geometry                  := import/geometry;
+			attribute<uint64>                     vbo_bag_nr                := uint64(identificatie);
+			attribute<uint64>                     pand_bag_nr               := rjoin(vbo_bag_nr, uint64(import/gerelateerdPand/identificatie), uint64(import/gerelateerdPand/pand_id));
+			attribute<int32>                      oppervlakte               := import/oppervlakte;
+			attribute<vbo_status>                 status_rel                := import/meta/status_rel;
+			// attribute<uint32>                     pand_rel                  := rlookup(pand_bag_nr, pand_domein/pand_bag_nr);
+			attribute<int32>                      begindatum                := import/meta/BEGINDATUM == 0i ? MaxDatum : import/meta/BEGINDATUM;
+			attribute<int32>                      einddatum                 := import/meta/EINDDATUM == 0i ? MaxDatum : import/meta/EINDDATUM;
+			attribute<uint16>                     functie_code              := impl/gebruiksdoelen/functie_code;
+			attribute<uint32>                     pand_count_ZorgFuncties   := impl/pand_count_ZorgFuncties[(impl/uq_pand_rel)];
+			attribute<uint32>                     pand_count_ZorgFuncties_StartBAG   := impl/pand_count_ZorgFuncties_StartBAG[(impl/uq_pand_rel)];
+			attribute<RegioUnit_AMS>              AMS_rel                   := point_in_polygon(geometry, RegioUnit_AMS/geometry);
+			
+			attribute<bool>                       VBO_IsVoorraad            := vbo_status/isVoorraad[status_rel];
+			
+			unit<uint32> impl := .
+			{
+				attribute<bool>                 IsGezondheidsZorg             := gebruiksdoelen/GezondheidsZorg;
+				attribute<bool>                 IsVoorraadStartBAG            := VBO_IsVoorraad && begindatum <= 20111201i;
+				attribute<uint32>               pand_count_ZorgFuncties (uq_pand)       := sum(IsGezondheidsZorg && VBO_IsVoorraad ? 1 : 0, uq_pand_rel);
+				attribute<uint32>               pand_count_ZorgFuncties_StartBAG (uq_pand)       := sum(IsGezondheidsZorg && IsVoorraadStartBAG ? 1 : 0, uq_pand_rel);
+				unit<uint32> uq_pand := unique(pand_bag_nr);
+				attribute<uq_pand>        uq_pand_rel := rlookup(pand_bag_nr, uq_pand/values);
+			
+				container gebruiksdoelen :=
+					for_each_nedv(
+						vbo_gebruiksdoel/name
+						, 'import/gebruiksdoelen/'+vbo_gebruiksdoel/name
+						, src
+						, bool
+					)
+				{
+					attribute<uint16> functie_code (src) := ='add('+AsItemList(vbo_gebruiksdoel/name+'? '+string(vbo_gebruiksdoel/functie_code)+'w : 0w')+')';
+				}
+
+				attribute<float32>    x                         := PointCol(geometry);
+				attribute<float32>    y                         := PointRow(geometry);
+				attribute<bool>     vbo_selection_condition   := =Parameters/BAG_Selection_Area == 'AMS'
+																		? 'IsDefined(src/ams_rel)'
+																		: 'x < 300000f && x > 0f && y < 620000f && y > 300000f'; //binnen NL
+			}
+		}
+
+		// We only select valid records. We omit for example all records that have a geometry outside of the bounding box of Netherlands 
+		unit<uint32> vbo := select_with_attr_by_org_rel(src, src/impl/vbo_selection_condition);
+	}
+	
+	
+	container Standplaatsen
+	{
+		//import the source BAG files
+		unit<uint32> import
+		:	StorageName = "= Result_FSS_dir + '/standplaats.fss'"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_mm>                     geometry_mm (poly);
+			attribute<rdc>                        geometry    (poly) := geometry_mm[rdc];
+			attribute<string>                     identificatie;
+			attribute<string>                     nevenadres;
+			attribute<int32>                      nummeraanduiding_id;
+			
+			container meta := meta_src_template(., standplaats_status);
+		}
+		
+		//enrich the source attributes, and prepare selection criteria.
+		unit<uint32> src := import
+		{
+			attribute<rdc>                        geometry (poly) := import/geometry;
+			attribute<standplaats_status>         status_rel      := import/meta/status_rel;
+			attribute<uint64>                     bag_nr          := uint64(identificatie);
+			attribute<int32>                      begindataum     := meta/begindatum;
+			
+			parameter<int32>  datum_start := 20160101i;
+			parameter<int32>  datum_eind  := 20180101i;
+
+			unit<uint32> SelectieMoment := select_with_org_rel(meta/begindatum >= datum_start && meta/begindatum < datum_eind && impl/selection_condition)
+			{
+				attribute<rdc>                     geometry  (poly)            := src/geometry[org_rel];
+			}
+			
+			container impl
+			: Descr = "tbv identificatie van afwijkende pand geometrieeen. Buiten NL, of zeer groot, of dunne slivers."
+			{
+				attribute<rdc>       NW                         (..) := lower_bound(geometry);
+				attribute<rdc>       SE                         (..) := upper_bound(geometry);
+				attribute<float32>   X_ext                      (..) := sub_or_null(PointCol(SE),PointCol(NW));
+				attribute<float32>   Y_ext                      (..) := sub_or_null(PointRow(SE),PointRow(NW));
+ 
+				attribute<float32>   lower_x                    (..) := pointCol(NW);
+				attribute<float32>   upper_x                    (..) := pointCol(SE);
+				attribute<float32>   lower_y                    (..) := pointRow(NW);
+				attribute<float32>   upper_y                    (..) := pointRow(SE);
+				
+				attribute<bool>      selection_condition        (..) := ='X_ext < 1000f && Y_ext < 1000f' //panden met een grotere x/y range dan 1km eruit
+																						'&& lower_x < 300000f && lower_x > 0f'
+																						'&& upper_x < 300000f && upper_x > 0f'
+																						'&& lower_y < 620000f && lower_y > 300000f'
+																						'&& upper_y < 620000f && upper_y > 300000f'; //binnen NL
+			}
+			
+			
+		}
+		unit<uint32> standplaats := select_with_attr_by_org_rel(src, src/impl/selection_condition);
+	}
+	
+	container Ligplaatsen
+	{
+		//import the source BAG files
+		unit<uint32> import
+		:	StorageName = "= Result_FSS_dir + '/ligplaats.fss'"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_mm>                     geometry_mm (poly);
+			attribute<rdc>                        geometry    (poly) := geometry_mm[rdc];
+			attribute<string>                     identificatie;
+			attribute<string>                     nevenadres;
+			attribute<int32>                      nummeraanduiding_id;
+			
+			container meta := meta_src_template(., ligplaats_status);
+		}
+		
+		//enrich the source attributes, and prepare selection criteria.
+		unit<uint32> src := import
+		{
+			attribute<rdc>                        geometry (poly) := import/geometry;
+			attribute<ligplaats_status>         status_rel      := import/meta/status_rel;
+			attribute<uint64>                     bag_nr          := uint64(identificatie);
+		}
+
+		unit<uint32> ligplaats := select_with_attr_by_org_rel(src, const(TRUE,src));
+	}
+	
+	
+	template meta_src_template // Voor het inlezen van de generieke BAG attributen
+	{
+		// begin case parameters
+		unit<uint32> domain;
+		unit<uint8>  statustype;
+		// end case parameters
+
+		attribute<string>     STATUS                 (domain);
+		attribute<statustype> status_rel             (domain) := rlookup(lowercase(STATUS), lowercase(statustype/label));
+
+		attribute<int32>      BEGINDATUM             (domain);
+		attribute<int32>      EINDDATUM              (domain);
+		attribute<uint32>     VOORKOMENIDENTIFICATIE (domain); //een identificatienummer kan meerdere keren voorkomen. Dit is een volgnummer dat de versie weergeeft.
+
+		attribute<string>     TIJDSTIPREGISTRATIE    (domain);
+		attribute<string>     EINDREGISTRATIE        (domain);
+
+		attribute<int32>      DOCUMENTDATUM          (domain);
+		attribute<string>     DOCUMENTNUMMER         (domain);
+
+		attribute<bool>       IS_GECONSTATEERD       (domain);
+	}
+	
+ 	
+/* 	container Check_BAG_interne_consistentie
+	{
+		unit<uint32>              uq_pand_bag_nr                    := unique(vbos/vbo/pand_bag_nr); // X
+		attribute<uq_pand_bag_nr> vbo_uq_pand_nr_rel  (vbos/vbo)    := rlookup(vbos/vbo/pand_bag_nr, uq_pand_bag_nr/values);
+		attribute<uq_pand_bag_nr> pand_uq_pand_nr_rel (panden/pand) := rlookup(panden/pand/pand_bag_nr, uq_pand_bag_nr/values);
+		
+		//check op database consistentie. Geen overlap in geldigheidsperiodes
+		unit<uint32> join_equal_values_pand_zichzelf := join_equal_values(pand_uq_pand_nr_rel, pand_uq_pand_nr_rel) 
+		{
+			attribute<uint64>      pand_bag_nr_1                    := panden/pand/pand_bag_nr[nr_1_rel];
+			attribute<int32>       pand_begindatum_1                := panden/pand/begindatum[nr_1_rel];
+			attribute<int32>       pand_einddatum_1                 := panden/pand/einddatum[nr_1_rel];
+			
+			attribute<uint64>      pand_bag_nr_2                    := panden/pand/pand_bag_nr[nr_2_rel];
+			attribute<int32>       pand_begindatum_2                := panden/pand/begindatum[nr_2_rel];
+			attribute<int32>       pand_einddatum_2                 := panden/pand/einddatum[nr_2_rel];
+			
+			attribute<bool>        test1                            := pand_begindatum_1 < pand_einddatum_2;
+			attribute<bool>        test2                            := pand_begindatum_2 < pand_einddatum_1;
+			attribute<bool>        test3                            := nr_1_rel != nr_2_rel;
+			attribute<bool>        test1_2_3                        := test1 && test2 && test3; //test faalt als deze true waarden heeft.
+		}
+		
+		unit<uint32>              uq_vbo_bag_nr                    := unique(vbos/vbo/vbo_bag_nr); // X
+		attribute<uq_vbo_bag_nr>  vbo_uq_vbo_nr_rel  (vbos/vbo)    := rlookup(vbos/vbo/vbo_bag_nr, uq_vbo_bag_nr/values);
+		
+		//check op database consistentie. Geen overlap in geldigheidsperiodes
+		unit<uint32> join_equal_values_vbo_zichzelf := join_equal_values(vbo_uq_vbo_nr_rel, vbo_uq_vbo_nr_rel)  
+		{
+			attribute<uint64>      vbo_bag_nr_1                    := vbos/vbo/vbo_bag_nr[nr_1_rel];
+			attribute<int32>       vbo_begindatum_1                := vbos/vbo/begindatum[nr_1_rel];
+			attribute<int32>       vbo_einddatum_1                 := vbos/vbo/einddatum[nr_1_rel];
+			
+			attribute<uint64>      vbo_bag_nr_2                    := vbos/vbo/vbo_bag_nr[nr_2_rel];
+			attribute<int32>       vbo_begindatum_2                := vbos/vbo/begindatum[nr_2_rel];
+			attribute<int32>       vbo_einddatum_2                 := vbos/vbo/einddatum[nr_2_rel];
+			
+			attribute<bool>        test1                            := vbo_begindatum_1 < vbo_einddatum_2;
+			attribute<bool>        test2                            := vbo_begindatum_2 < vbo_einddatum_1;
+			attribute<bool>        test3                            := nr_1_rel != nr_2_rel;
+			attribute<bool>        test1_2_3                        := test1 && test2 && test3;  //test faalt als deze true waarden heeft.
+		}
+		
+		unit<uint32> VBOs_Panden_set := join_equal_values(vbo_uq_pand_nr_rel, pand_uq_pand_nr_rel)
+		{
+			attribute<uint64>      pand_bag_nr                    := panden/pand/pand_bag_nr[nr_2_rel];
+			attribute<uint64>      vbo_bag_nr                     := vbos/vbo/vbo_bag_nr[nr_1_rel];
+			
+			attribute<int32>       pand_begindatum                := panden/pand/begindatum[nr_2_rel];
+			attribute<int32>       pand_einddatum                 := panden/pand/einddatum[nr_2_rel];
+			attribute<int32>       vbo_begindatum                 := vbos/vbo/begindatum[nr_1_rel];
+			attribute<int32>       vbo_einddatum                  := vbos/vbo/einddatum[nr_1_rel];
+			
+			attribute<pand_status> pand_status_rel                := panden/pand/status_rel[nr_2_rel];
+			attribute<vbo_status>  vbo_status_rel                 := vbos/vbo/status_rel[nr_1_rel];
+			
+			attribute<string>      pand_vbo_status_key            := string(pand_status_rel) + '_' + string(vbo_status_rel);
+			
+		}
+		 
+		container VBO_ids_zonder_bestaand_pand_id //BAG ID opbouw = gemeente code + 10 (pand) || 01 (vbo) + 10 cijfers als volgnummer
+		: URL = "https://www.amsterdam.nl/stelselpedia/bag-index/catalogus-bag/unieke-identificatie-van-het-object/"
+		{
+			unit<uint32>           uq_vbo_bag_nr                       := unique(vbos/vbo/vbo_bag_nr)
+			{
+				attribute<bool>    Heeft_Geen_Bestaand_Pand_ID         := !IsDefined(rlookup(values, uq_vbo_bag_nr_metBestaand_pand_id/values));
+				attribute<uint64>  vbo_bag_nr                          := values; 
+				attribute<uint64>  pand_bag_nr                         := rjoin(vbo_bag_nr, vbos/vbo/vbo_bag_nr, vbos/vbo/pand_bag_nr); //range 3100 miljard - 5600100 miljard
+				
+				attribute<vbo_status> vbo_status_rel                  := rjoin(vbo_bag_nr, vbos/vbo/vbo_bag_nr, vbos/vbo/status_rel);
+				
+				unit<uint32> Fouten := select_with_attr_by_cond(., Heeft_Geen_Bestaand_Pand_ID)
+				{
+				
+				}
+			}
+			unit<uint32>           uq_vbo_bag_nr_metBestaand_pand_id   := unique(VBOs_Panden_set/vbo_bag_nr);
+		}
+		
+			
+	}
+ */ 
+ 
+/*  	Template Condense_T
+	{
+		unit<uint32> src;
+		attribute<src> end_to_start_rel (src);
+		attribute<src> start_to_end_rel (src);
+		///
+		
+		//We need to identify records that are part of a chain of mutations. So that we use the service_area()-operator to find the first record of a mutation chain per pv_id. 
+		unit<uint32> SelectOnlyObjectWithChainRel     := select_with_org_rel(IsDefined(end_to_start_rel))
+		{
+			attribute<src>          F1                          := org_rel;
+			attribute<src>          F2                          := end_to_start_rel[org_rel];
+			attribute<.>            TraceBack             (src) := invert(org_rel);
+			attribute<src>          OnlyOrLastInChain_rel (src) := service_area(F1, F2, TraceBack); //fka ServiceArea
+			attribute<bool>         IsOnlyOrLastInChain   (src) := id(src) == OnlyOrLastInChain_rel;
+		}
+		
+		//We only need to keep the record if it is the only one in a chain or if it is the last in a chain. All intermediate records hold no value for us. Additionally we need to update the startdate of the first one of the chain.
+		unit<uint32> SelectChainEndPoints             := select_with_org_rel(SelectOnlyObjectWithChainRel/IsOnlyOrLastInChain)
+		{
+			attribute<rdc>         geometry                       := org_rel -> geometry;
+			attribute<rdc>         pand_geometry (poly)           := org_rel -> pand_geometry;
+			attribute<int32>       begindatum                     := min(src/begindatum, per_src_Tabel);
+			attribute<int32>       einddatum                      := org_rel -> einddatum;
+			attribute<jaar>        pand_bouwjaar                  := org_rel -> pand_bouwjaar;
+			// attribute<WP4>         pand_type                      := org_rel -> pand_type;
+
+			attribute<uint64>      pand_bag_nr                    := org_rel -> pand_bag_nr;
+			attribute<uint64>      vbo_bag_nr                     := org_rel -> vbo_bag_nr;
+			attribute<int32>       vbo_oppervlakte                := org_rel -> vbo_oppervlakte;
+			attribute<pand_status> pand_status_rel                := org_rel -> pand_status_rel;
+			attribute<vbo_status>  vbo_status_rel                 := org_rel -> vbo_status_rel;
+			attribute<vbo_gebruiksdoel_ext> gebruiksdoel_rel      := org_rel -> gebruiksdoel_rel;
+			
+			attribute<.>           per_src_Tabel (src) := invert(org_rel)[SelectOnlyObjectWithChainRel/OnlyOrLastInChain_rel];
+		}
+	}
+ */ 
+ }

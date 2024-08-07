@@ -12,8 +12,8 @@ Echo LocalDataProjDir: %GEODMS_DIRECTORIES_LOCALDATAPROJDIR%
 SET prj=RSopen_RegressieTest
 Echo Removing .dmsdata en .fss files from !LocalDataDirRegression!\%prj%
 
-If exist del !LocalDataDirRegression!\RSopen_RegressieTest\*.fss
-If exist del !LocalDataDirRegression!\RSopen_RegressieTest\*.dmsdata
+REM If exist del !LocalDataDirRegression!\RSopen_RegressieTest\*.fss
+REM If exist del !LocalDataDirRegression!\RSopen_RegressieTest\*.dmsdata
 
 Call full/SetStartTime.bat
 

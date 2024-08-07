@@ -1,0 +1,77 @@
+container BRT : using = "geometries;eenheden;typeringen"
+{ 
+	container Wegdeel
+	:	StorageName     = "='%RSo_DataDir%/Grondgebruik/BRT/'+Parameters/BRT_file_date+'/top10nl_wegdeel.gpkg'"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	, 	DialogData      = "rdc"
+	, 	SyncMode        = "AllTables"
+	, 	Descr           = "Download from PDOK"
+	{
+		unit<uint32> top10nl_wegdeel_vlak
+		{
+			attribute<string>                                    label                := typeringen/BRT/visualisatiecodes/label[visualisatiecode_rel];
+			attribute<typeringen/BRT/visualisatiecodes>          visualisatiecode_rel := rlookup(int32(visualisatiecode), typeringen/BRT/visualisatiecodes/code);
+			attribute<typeringen/BRT/visualisatiecodes/label_uq> label_uq_rel         := rlookup(label, typeringen/BRT/visualisatiecodes/label_uq/values);
+		}
+	}
+	
+	container Terrein
+	:	StorageName     = "='%RSo_DataDir%/Grondgebruik/BRT/'+Parameters/BRT_file_date+'/top10nl_Terrein.gpkg'"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	, 	DialogData      = "rdc"
+	, 	SyncMode        = "AllTables"
+	, 	Descr           = "Download from PDOK"
+	{
+		unit<uint32> top10nl_terrein_vlak
+		{
+			attribute<string>                                    label                := typeringen/BRT/visualisatiecodes/label[visualisatiecode_rel];
+			attribute<typeringen/BRT/visualisatiecodes>          visualisatiecode_rel := rlookup(int32(visualisatiecode), typeringen/BRT/visualisatiecodes/code);
+			attribute<typeringen/BRT/visualisatiecodes/label_uq> label_uq_rel         := rlookup(label, typeringen/BRT/visualisatiecodes/label_uq/values);
+		}
+	}
+	
+	unit<uint32>       Spoor := select_with_org_rel(
+									Terrein/top10nl_terrein_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/spoor_vlak_spoorbaanlichaam
+									|| Terrein/top10nl_terrein_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/spoor_vlak_brug
+								)
+	{
+		attribute<rdc> geometry (poly) := Terrein/top10nl_terrein_vlak/geometry[org_rel];
+	}
+	
+	unit<uint32>       Weg := select_with_org_rel(
+									Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_autosnelweg
+									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_autosnelweg_boven_weg
+									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_hoofdweg
+									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_lokale_weg
+									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_regionale_weg
+									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_straat
+								)
+	{
+		attribute<rdc> geometry (poly) := Wegdeel/top10nl_wegdeel_vlak/geometry[org_rel];
+	}
+	
+	unit<uint32>       WegSpoor := union_unit(Spoor, Weg)
+	{
+		attribute<rdc> geometry (poly) := union_data(.,Spoor/geometry, Weg/geometry);
+	}
+	
+	unit<uint32>       Tiles_x_WegSpoor                            := bg_overlay_polygon(geometries/TileDomain/geometry_poly, WegSpoor/geometry);
+	unit<uint32>       Relevant_Tiles_x_WegSpoor                   := select_with_org_rel(Has_Any(Tiles_x_WegSpoor/first_rel))
+	{
+		attribute<rdc> Tiles            (poly) := geometries/TileDomain/geometry_poly[org_rel];
+		attribute<rdc> TiledWegSpoor    (poly) := bp_union_polygon(Tiles_x_WegSpoor/geometry[rdc_cm],invert(org_rel)[Tiles_x_WegSpoor/first_rel])[rdc];
+		attribute<rdc> TiledNonWegSpoor (poly) := Tiles - TiledWegSpoor;
+	}
+	unit<uint32>       Write_Relevant_Tiles_x_WegSpoor := Relevant_Tiles_x_WegSpoor
+	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor.fss"
+	{
+		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor;
+	}
+	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor
+	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor.fss", StorageReadOnly = "true"
+	{
+		attribute<rdc> TiledNonWegSpoor  (poly);
+	}
+}

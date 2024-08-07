@@ -31,7 +31,7 @@ Call generic\SetRelativePaths.bat
 Set GeoDmsRunCmdBaseLarge="%GeoDmsRunPath%"
 Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
 
-Call Full\DeletePreviousFiles.bat
+REM Call Full\DeletePreviousFiles.bat
 Call Full\EchoFolders.bat
 
 Echo GeoDMS Version information
@@ -53,22 +53,12 @@ CLS
 
 Echo START TESTING
 
-SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\MetworkModelEU
-REM Full\NetworkModelEU.bat %Setting1% %Setting2% %Setting3% t410_NetworkModel_EU_indicator_results_test
-
-REM timeout /t 3
-
-Call Full\GUI_tests.bat
+REM Call Full\GUI_tests.bat
 REM Call Full\Operator_tests.bat
-REM Call Full\Project_tests.bat
+Call Full\Project_tests.bat
 
-REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS
-REM Call Full\RsLight_2021_Ontwikkel_3.bat %Setting1% %Setting2% %Setting3% t630_RSLight_2021_ontwikkel_3
-REM Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t100_network_connect/result_html t100_network_connect
 
-REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\2UP
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_zonder_calcache t710_2UP_indicator_results_zonder_CalCache
-REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_met_calcache    t711_2UP_indicator_results_met_CalCache
 
 timeout /t 3
 
