@@ -254,26 +254,49 @@ container Polygons
 			{
 				unit<uint32> src;
 				///
+				parameter<uint32>  bg_overlay_count_islands     := src/bg_overlay/count_islands;
+				parameter<uint32>  bp_overlay_count_islands     := src/bp_overlay/count_islands;
+				parameter<uint32>  cgal_overlay_count_islands   := src/cgal_overlay/count_islands;
+				parameter<uint32>  geos_overlay_count_islands   := src/geos_overlay/count_islands;
+				parameter<km2>     bg_overlay_area              := sum(src/bg_overlay/area);
+				parameter<km2>     bp_overlay_area              := sum(src/bp_overlay/area);
+				parameter<km2>     cgal_overlay_area            := sum(src/cgal_overlay/area);
+				parameter<km2>     geos_overlay_area            := sum(src/geos_overlay/area);
+				
 				parameter<string>  bg_inflate_ratio_correctness := string(sum_uint32(src/bg_inflate/bg_inflate_correctness)) + '/' + string(#src);
 				parameter<string>  bg_deflate_ratio_correctness := string(sum_uint32(src/bg_deflate/bg_deflate_correctness)) + '/' + string(#src);
 				
 				parameter<uint32>  bg_polygon_count_islands     := src/bg_polygon/count_islands;
 				parameter<uint32>  bp_polygon_count_islands     := src/bp_polygon/count_islands;
+				parameter<uint32>  cgal_polygon_count_islands   := src/cgal_polygon/count_islands;
+				parameter<uint32>  geos_polygon_count_islands   := src/geos_polygon/count_islands;
 				parameter<km2>     bg_polygon_area              := sum(src/bg_polygon/area);
 				parameter<km2>     bp_polygon_area              := sum(src/bp_polygon/area);
+				parameter<km2>     cgal_polygon_area            := sum(src/cgal_polygon/area);
+				parameter<km2>     geos_polygon_area            := sum(src/geos_polygon/area);
 				
 				parameter<km2>     bg_union_area                := sum(src/bg_union/area);
 				parameter<km2>     bp_union_area                := sum(src/bp_union/area);
+				parameter<km2>     cgal_union_area              := sum(src/cgal_union/area);
+				parameter<km2>     geos_union_area              := sum(src/geos_union/area);
 				
 				parameter<uint32>  bg_split_count_islands       := src/bg_split/count_islands;
 				parameter<uint32>  bp_split_count_islands       := src/bp_split/count_islands;
+				parameter<uint32>  cgal_split_count_islands     := src/cgal_split/count_islands;
+				parameter<uint32>  geos_split_count_islands     := src/geos_split/count_islands;
 				parameter<km2>     bg_split_area                := sum(src/bg_split/area);
 				parameter<km2>     bp_split_area                := sum(src/bp_split/area);
+				parameter<km2>     cgal_split_area              := sum(src/cgal_split/area);
+				parameter<km2>     geos_split_area              := sum(src/geos_split/area);
 				
-				parameter<uint32>  bg_split_union_count_islands := src/bg_split_union/count_islands;
-				parameter<uint32>  bp_split_union_count_islands := src/bp_split_union/count_islands;
-				parameter<km2>     bg_split_union_area          := sum(src/bg_split_union/area);
-				parameter<km2>     bp_split_union_area          := sum(src/bp_split_union/area);
+				parameter<uint32>  bg_split_union_count_islands   := src/bg_split_union/count_islands;
+				parameter<uint32>  bp_split_union_count_islands   := src/bp_split_union/count_islands;
+				parameter<uint32>  cgal_split_union_count_islands := src/cgal_split_union/count_islands;
+				parameter<uint32>  geos_split_union_count_islands := src/geos_split_union/count_islands;
+				parameter<km2>     bg_split_union_area            := sum(src/bg_split_union/area);
+				parameter<km2>     bp_split_union_area            := sum(src/bp_split_union/area);
+				parameter<km2>     cgal_split_union_area          := sum(src/cgal_split_union/area);
+				parameter<km2>     geos_split_union_area          := sum(src/geos_split_union/area);
 			}
 		}
 
@@ -287,8 +310,13 @@ container Polygons
 			unit<uint32> domain  := src
 			{
 				////BOOST GEOMETRY////
-				unit<uint32> bg_overlay  := bg_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor);
-
+				unit<uint32> bg_overlay  := bg_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor)
+				{
+					attribute<rdc>     geometry_rd        (poly) := geometry;
+					attribute<km2>     area                      := area(geometry_rd, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
 				unit<uint32> bg_inflate := .
 				{
 					attribute<rdc>     bg_inflate         (poly) := bg_buffer_multi_polygon(geometry,  parameters/big_inflate_m[float64], 16b);
@@ -307,6 +335,9 @@ container Polygons
 					attribute<rdc>     bg_polygon         (poly) := bg_polygon(bg_inflate/bg_inflate);
 					attribute<km2>     area                      := area(bg_polygon, km2);
 					parameter<uint32>  count_islands             := #.;
+					
+					parameter<rdc>     bg_union           (poly) := bg_union_polygon(bg_polygon);
+					parameter<km2>     union_area                := area(bg_union, km2);
 				}
 				
 				unit<uint32> bg_union := .
@@ -315,13 +346,13 @@ container Polygons
 					parameter<km2>     area                      := area(bg_union, km2);
 				}
 				
-				
 				unit<uint32> bg_split := bg_split_polygon(bg_inflate/bg_inflate)
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry;
 					attribute<km2>     area                      := area(geometry_rd, km2);
 					parameter<uint32>  count_islands             := #.;
 				}
+				
 				unit<uint32> bg_split_union := bg_split_union_polygon(bg_inflate/bg_inflate)
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry;
@@ -330,7 +361,12 @@ container Polygons
 				}
 				
 				////BOOST POLYGON////
-				unit<uint32> bp_overlay  := bp_overlay_polygon(geometry[rdc_cm], BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor[rdc_cm])[rdc];
+				unit<uint32> bp_overlay  := bp_overlay_polygon(geometry[rdc_cm], BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor[rdc_cm])
+				{
+					attribute<rdc>     geometry_rd        (poly) := geometry[rdc];
+					attribute<km2>     area                      := area(geometry_rd, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
 				
 				unit<uint32> bp_polygon := .
 				{
@@ -356,6 +392,76 @@ container Polygons
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry[rdc];
 					attribute<km2>     area                      := area(geometry_rd, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				////CGAL////
+				unit<uint32> cgal_overlay  := cgal_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor)
+				{
+					attribute<km2>     area                      := area(geometry, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> cgal_polygon := .
+				{
+					attribute<rdc>     cgal_polygon       (poly) := cgal_polygon(bg_inflate/bg_inflate);
+					attribute<km2>     area                      := area(cgal_polygon, km2);
+					parameter<uint32>  count_islands             := #.;
+					
+					parameter<rdc>     cgal_union         (poly) := cgal_union_polygon(bg_polygon);
+					parameter<km2>     union_area                := area(cgal_union, km2);
+				}
+				
+				unit<uint32> cgal_union := .
+				{
+					parameter<rdc>     cgal_union         (poly) := cgal_union_polygon(geometry);
+					parameter<km2>     area                      := area(cgal_union, km2);
+				}
+				
+				unit<uint32> cgal_split := cgal_split_polygon(bg_inflate/bg_inflate)
+				{
+					attribute<km2>     area                      := area(geometry, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> cgal_split_union := cgal_split_union_polygon(bg_inflate/bg_inflate)
+				{
+					attribute<km2>     area                      := area(geometry, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				////GEOS////
+				unit<uint32> geos_overlay  := geos_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor)
+				{
+					attribute<km2>     area                      := area(geometry, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> geos_polygon := .
+				{
+					attribute<rdc>     geos_polygon       (poly) := geos_polygon(bg_inflate/bg_inflate);
+					attribute<km2>     area                      := area(geos_polygon, km2);
+					parameter<uint32>  count_islands             := #.;
+					
+					parameter<rdc>     geos_union         (poly) := geos_union_polygon(bg_polygon);
+					parameter<km2>     union_area                := area(geos_union, km2);
+				}
+				
+				unit<uint32> geos_union := .
+				{
+					parameter<rdc>     geos_union         (poly) := geos_union_polygon(geometry);
+					parameter<km2>     area                      := area(geos_union, km2);
+				}
+				
+				unit<uint32> geos_split := geos_split_polygon(bg_inflate/bg_inflate)
+				{
+					attribute<km2>     area                      := area(geometry, km2);
+					parameter<uint32>  count_islands             := #.;
+				}
+				
+				unit<uint32> geos_split_union := geos_split_union_polygon(bg_inflate/bg_inflate)
+				{
+					attribute<km2>     area                      := area(geometry, km2);
 					parameter<uint32>  count_islands             := #.;
 				}
 			}
