@@ -4212,6 +4212,18 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				
 				attribute<bool>           selection_condition    := RegionCode = 200;
 			}
+			
+			// unit<uint32> City_subitems := SubItem_PropValues(City,'name'); 
+
+			// container City_ForEachContainer := 
+				// for_each_nedv(
+					// City_subitems/name
+					// , 'City/'+City_subitems/name+'[float32]'
+					// , City
+					// , float32
+				// );
+			
+			
 
 			unit <uint32> Road := RoadDomain
 			{
@@ -4874,10 +4886,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
-				container by_cond    := collect_attr_by_cond(Source/City, selection, Source/City/RegionCode = 200);
+				container by_cond                  := collect_attr_by_cond(Source/City, selection, Source/City/RegionCode = 200);
+				container by_cond_wrong_condition   := collect_attr_by_cond(Source/City, selection, selection/selection_condition);
 
 				unit<uint32> select_subitems := SubItem_PropValues(by_cond,'name'); 
+				unit<uint32> select_subitems_wrongcondition := SubItem_PropValues(by_cond_wrong_condition,'name'); 
 				parameter<bool> test := #select_subitems == 7 && (#selection == 0 ? sum(by_cond/area) == 0f : sum(by_cond/area) == 675f);
+				parameter<bool> test_wrongCondition := #select_subitems_wrongcondition == 7 && (#selection == 0 ? sum(by_cond_wrong_condition/area) == 0f : sum(by_cond_wrong_condition/area) == 675f);
 			}
 			container collect_attr_by_cond_CalcRuleClickingIssue
 			{
@@ -5165,6 +5180,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& collect_by_cond/test
 				&& collect_attr_by_org_rel/test
 				&& collect_attr_by_cond/test
+				&& collect_attr_by_cond/test_wrongCondition
 				&& unique/test 
 				&& union/test_attr 
 				&& union_unit/test 
