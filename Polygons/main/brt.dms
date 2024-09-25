@@ -69,9 +69,13 @@ container BRT : using = "geometries;eenheden;typeringen"
 	{
 		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor;
 	}
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor
+	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src
 	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor.fss", StorageReadOnly = "true"
 	{
 		attribute<rdc> TiledNonWegSpoor  (poly);
 	}
+	
+	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_subset := select_with_attr_by_cond(Read_Relevant_Tiles_x_WegSpoor_src, ID(Read_Relevant_Tiles_x_WegSpoor_src) == 8877);
+	
+	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor := Read_Relevant_Tiles_x_WegSpoor_src;
 }
