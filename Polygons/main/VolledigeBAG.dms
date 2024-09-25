@@ -150,21 +150,21 @@ container VolledigeBAG : using = "typeringen/BAG;geometries;eenheden"
 				attribute<int32>                        einddatum0                   := import/meta/EINDDATUM == 0i ? MaxDatum : import/meta/EINDDATUM;
 				attribute<rdc>                          NW                           := lower_bound(geometry);
 				attribute<rdc>                          SE                           := upper_bound(geometry);
-				attribute<float32>                      X_ext                        := sub_or_null(PointCol(SE),PointCol(NW));
-				attribute<float32>                      Y_ext                        := sub_or_null(PointRow(SE),PointRow(NW));
+				attribute<float64>                      X_ext                        := sub_or_null(PointCol(SE),PointCol(NW));
+				attribute<float64>                      Y_ext                        := sub_or_null(PointRow(SE),PointRow(NW));
 				attribute<RegioUnit_AMS>                AMS_rel                      := point_in_polygon(centroid_or_mid(geometry), RegioUnit_AMS/geometry);
-				attribute<float32>                      lower_x := pointCol(NW);
-				attribute<float32>                      upper_x := pointCol(SE);
-				attribute<float32>                      lower_y := pointRow(NW);
-				attribute<float32>                      upper_y := pointRow(SE);
+				attribute<float64>                      lower_x := pointCol(NW);
+				attribute<float64>                      upper_x := pointCol(SE);
+				attribute<float64>                      lower_y := pointRow(NW);
+				attribute<float64>                      upper_y := pointRow(SE);
 				attribute<bool>                         pand_selection_condition     := =Parameters/BAG_Selection_Area == 'AMS'
 																							? 'IsDefined(ams_rel) 
-																								&& X_ext < 1000f && Y_ext < 1000f' //panden met een grotere x/y range dan 1km eruit
-																							: 'X_ext < 1000f && Y_ext < 1000f' //panden met een grotere x/y range dan 1km eruit
-																								'&& lower_x < 300000f && lower_x > 0f'
-																								'&& upper_x < 300000f && upper_x > 0f'
-																								'&& lower_y < 620000f && lower_y > 300000f'
-																								'&& upper_y < 620000f && upper_y > 300000f'; //binnen NL
+																								&& X_ext < 1000.0 && Y_ext < 1000.0' //panden met een grotere x/y range dan 1km eruit
+																							: 'X_ext < 1000.0 && Y_ext < 1000.0' //panden met een grotere x/y range dan 1km eruit
+																								'&& lower_x < 300000d && lower_x > 0d'
+																								'&& upper_x < 300000d && upper_x > 0d'
+																								'&& lower_y < 620000d && lower_y > 300000d'
+																								'&& upper_y < 620000d && upper_y > 300000d'; //binnen NL
 			}
 		}  
 		

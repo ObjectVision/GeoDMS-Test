@@ -121,11 +121,11 @@ container Polygons
 			unit<uint32> makepoly:= union_unit(., ., ., ., .) 
 			{
 				attribute<rdc>                point   := union_data(., 
-															geometry + const(point_xy(-500f,  500f, rdc), .., rdc), 
-															geometry + const(point_xy( 500f,  500f, rdc), .., rdc), 
-															geometry + const(point_xy( 500f, -500f, rdc), .., rdc), 
-															geometry + const(point_xy(-500f, -500f, rdc), .., rdc),
-															geometry + const(point_xy(-500f,  500f, rdc), .., rdc));
+															geometry + const(point_xy(-500.0,  500.0, rdc), .., rdc), 
+															geometry + const(point_xy( 500.0,  500.0, rdc), .., rdc), 
+															geometry + const(point_xy( 500.0, -500.0, rdc), .., rdc), 
+															geometry + const(point_xy(-500.0, -500.0, rdc), .., rdc),
+															geometry + const(point_xy(-500.0,  500.0, rdc), .., rdc));
 				attribute<..>                 SeqNr   := union_data(., id(..), id(..), id(..), id(..), id(..));
 				attribute<uint32>             Ordinal := id(.) / #..;
 			}
@@ -177,7 +177,7 @@ container Polygons
 					),	DialogData = "rdc"
 				{
 					attribute<.>                    id               := id(.);
-					attribute<rdc>                  point_rd         := id[rdc] + point_xy(0.5f * gridsize, -0.5f * gridsize, rdc);
+					attribute<rdc>                  point_rd         := id[rdc] + point_xy(0.5d * gridsize, -0.5d * gridsize, rdc);
 					attribute<uint32>               id_nr            := (pointcol(id)[uint32] + 1) + ((pointrow(id)[uint32]) * (x_max[uint32] / gridsize[uint32]));
 					attribute<NL_grid/domain_25m>   grid_25m_rel     := id(.)[NL_grid/domain_25m];
 					attribute<NL_grid/domain_100m>  grid_100m_rel    := id(.)[NL_grid/domain_100m];
