@@ -11862,6 +11862,22 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
 			parameter<bool>           test_attr              := all(test);
 		}
+		unit<uint8> p1_claimed_type := select_with_attr_by_cond(source/lu_type, ID(source/lu_type) != 1b);
+		container allocate_discrete_p1 := 
+			discrete_alloc(
+				p1_claimed_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/AtomicRegions,
+				source/claims_min, 
+				source/claims_max, 
+				source/treshold
+			)
+		{
+			attribute<Source/lu_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
 		container allocate_discrete_empty := 
 			discrete_alloc(
 				Esource/lu_type/name, 
