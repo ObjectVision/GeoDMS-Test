@@ -11694,11 +11694,28 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min / nrHaPerCel);
 				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min  / nrHaPerCel);
 			}
+			container aggr_claims_min
+			{
+				parameter<uint32> Living := sum(claims_min/Living);
+				parameter<uint32> Working:= sum(claims_min/Working);
+				parameter<uint32> Nature := sum(claims_min/Nature);
+			}
 			container claims_max
 			{
 				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max  / nrHaPerCel);
 				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max / nrHaPerCel);
 				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max  / nrHaPerCel);
+			}
+			container claims_max2
+			{
+				attribute<uint32> Living (regMaps/p1) := claims_max/Living + claims_max/Living;
+				attribute<uint32> Nature (regMaps/p1) := claims_max/Nature + claims_max/Nature;
+			}
+			container aggr_claims_max
+			{
+				parameter<uint32> Living := sum(claims_max/Living);
+				parameter<uint32> Working:= sum(claims_max/Working);
+				parameter<uint32> Nature := sum(claims_max/Nature);
 			}
 			container regionSets
 			{
@@ -11872,6 +11889,36 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				source/regMaps/p1Map[source/compacted/ADomain/nr_orgEntity], 
 				source/claims_min, 
 				source/claims_max, 
+				source/treshold
+			)
+		{
+			attribute<p1_claimed_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
+		container allocate_discrete_p2 := 
+			discrete_alloc(
+				p1_claimed_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/regMaps/p1,
+				source/regMaps/p1Map[source/compacted/ADomain/nr_orgEntity], 
+				source/claims_min, 
+				source/claims_max2, 
+				source/treshold
+			)
+		{
+			attribute<p1_claimed_type> att      (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
+		container allocate_discrete_aggr := 
+			discrete_alloc(
+				source/lu_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/aggr_claims_min, 
+				source/aggr_claims_max, 
 				source/treshold
 			)
 		{
