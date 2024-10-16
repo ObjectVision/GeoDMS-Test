@@ -7516,6 +7516,22 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
 			}
+			container poly2allgrids
+			{
+				unit<uint32> result := poly2allgrids(Source/District/border, gridcel_1km);
+				unit<uint32> resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), gridcel_1km);
+/*				
+				attribute<District> DistrictGrid (gridcel_1km) := 
+				
+				attribute<District> att_ok       (gridcel_1km):
+				[
+					null,null,null,null,null,6,null,null,6,0,null,null,6,3,4,null,null,1,2,2
+				];
+				attribute<bool> test      (gridcel_1km) :=  eq_or_both_null(DistrictGrid, att_ok);
+
+				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
+					*/
+			}
 
 			container polygon_filtered
 			{
@@ -11881,7 +11897,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		}
 		unit<uint8> p1_claimed_type := select_with_attr_by_cond(source/lu_type, ID(source/lu_type) != 1b);
 		container allocate_discrete_p1 := 
-			discrete_alloc_sp(
+			discrete_alloc(
 				p1_claimed_type/name, 
 				source/Compacted/ADomain, 
 				source/Compacted/SuitabilityMaps, 
@@ -11897,7 +11913,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 //			parameter<bool>           test_attr              := all(test);
 		}
 		container allocate_discrete_p2 := 
-			discrete_alloc_sp(
+			discrete_alloc(
 				p1_claimed_type/name, 
 				source/Compacted/ADomain, 
 				source/Compacted/SuitabilityMaps, 
@@ -11913,7 +11929,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 //			parameter<bool>           test_attr              := all(test);
 		}
 		container allocate_discrete_aggr := 
-			discrete_alloc_np(
+			discrete_alloc(
 				source/lu_type/name, 
 				source/Compacted/ADomain, 
 				source/Compacted/SuitabilityMaps, 
