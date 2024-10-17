@@ -7520,6 +7520,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				unit<uint32> result := poly2allgrids(Source/District/border, gridcel_1km);
 				unit<uint32> resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), gridcel_1km);
+				
+				unit<spoint> smaller_grid_1km := range(gridcel_1km, point_xy(1s, 2s),point_xy(4s, 4s));
+				unit<uint32> smaller_result := poly2allgrids(Source/District/border, smaller_grid_1km);
+				unit<uint32> smaller_resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), smaller_grid_1km);
 /*				
 				attribute<District> DistrictGrid (gridcel_1km) := 
 				
