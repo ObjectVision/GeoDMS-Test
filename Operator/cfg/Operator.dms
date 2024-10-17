@@ -93,6 +93,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Sequence/ETiled/results/tests
 			&& Sequence/ResultUnitTiled/sequence2points/test_attr
 			&& Sequence/ResultUnitTiled/overlay_polygon/test_attr
+			&& Sequence/UnTiled/poly2allgrids/test_all
 			&& Network/UnTiled/results/tests
 			&& Network/Tiled/results/tests
 			&& Network/EunTiled/results/tests
@@ -7519,11 +7520,95 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			container poly2allgrids
 			{
 				unit<uint32> result := poly2allgrids(Source/District/border, gridcel_1km);
+				
+				attribute<int16> result_row_ok (result) :
+				[
+				 2
+				,4
+				,4
+				,4
+				,3
+				,3
+				,1
+				,2
+				,3
+				];
+				attribute<int16> result_col_ok (result) :
+				[
+				 1
+				,1
+				,2
+				,3
+				,1
+				,2
+				,1
+				,0
+				,0
+				];
+				attribute<bool> result_ok (result) := pointRow(result/grid_rel) == result_row_ok && pointCol(result/grid_rel) == result_col_ok;
+
 				unit<uint32> resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), gridcel_1km);
 				
+				attribute<int16> resultvoid_row_ok (resultvoid) :
+				[
+				1,
+				2,
+				2,
+				3,
+				3,
+				3,
+				4,
+				4,
+				4
+				];
+				attribute<int16> resultvoid_col_ok (resultvoid) :
+				[
+				 1
+				,0
+				,1
+				,0
+				,1
+				,2
+				,1
+				,2
+				,3
+				];
+				attribute<bool> resultvoid_ok (resultvoid) := pointRow(resultvoid/grid_rel) == resultvoid_row_ok && pointCol(resultvoid/grid_rel) == resultvoid_col_ok;
+
 				unit<spoint> smaller_grid_1km := range(gridcel_1km, point_xy(1s, 2s),point_xy(4s, 4s));
 				unit<uint32> smaller_result := poly2allgrids(Source/District/border, smaller_grid_1km);
+				attribute<int16> smaller_result_row_ok (smaller_result) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_result_col_ok (smaller_result) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_result_ok (smaller_result) := pointRow(smaller_result/grid_rel) == smaller_result_row_ok && pointCol(smaller_result/grid_rel) == smaller_result_col_ok;
+
 				unit<uint32> smaller_resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), smaller_grid_1km);
+				attribute<int16> smaller_resultvoid_row_ok (smaller_resultvoid) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_resultvoid_col_ok (smaller_resultvoid) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_resultvoid_ok (smaller_resultvoid) := pointRow(smaller_resultvoid/grid_rel) == smaller_resultvoid_row_ok && pointCol(smaller_resultvoid/grid_rel) == smaller_resultvoid_col_ok;
+
+				parameter<bool> test_all := all(result_ok) && all(resultvoid_ok) && all(smaller_result_ok) && all(smaller_resultvoid_ok);
+				
+				
 /*				
 				attribute<District> DistrictGrid (gridcel_1km) := 
 				
@@ -8683,6 +8768,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& overlay_polygon/bg_intersect/test
 					&& overlay_polygon/cgal_intersect/test
 					&& overlay_polygon/cgal_intersect2/test
+					
 					;
 			}
 		}
