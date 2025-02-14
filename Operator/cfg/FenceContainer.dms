@@ -1,11 +1,19 @@
 
 container FC
 {
+	container Task0
+	{
+		unit<uint32> line := range(uint32, 0, 1000000)
+		{
+			attribute<uint64> sqr := sqr(uint64(id(line)));
+		}
+	}
 	container Task1
 	{
 		unit<uint32> line := range(uint32, 0, 20)
 		{
-			attribute<string> txt := 'Task 1.'+string(id(.));
+			attribute<string> txt := 'Task 1.' + string(id(.));
+			parameter<string> summary:= AsItemList(txt), StorageName = "C:/LocalData/FenceContainer/Task1Results.str";
 		}
 	}
 	container Task2
@@ -15,8 +23,12 @@ container FC
 			attribute<string> txt := 'Task 2.'+string(id(.));
 		}
 	}
-	container S1 := FenceContainer(Task1, Task1/line/txt);
+//	container S1 := FenceContainer(Task1, Task1/line/txt);
 	container S2 := FenceContainer(Task1, Task2/line/txt);
+	
+//	container Task0Result := FenceContainer(Task0, "Task 0 completed");
+	parameter<uint64> calcsum := sum(Task0Result/line/sqr);
+	
 	unit<uint32> result := union_unit(S1/line, S2/line)
 	{
 		attribute<string> txt := union_data(., S1/line/txt, S2/line/txt);
