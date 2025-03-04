@@ -21,8 +21,8 @@ container Polygons
 
 	container geometries: using = "eenheden"
 	{
-		unit<fpoint> rdc_base         : SpatialReference = "EPSG:28992", 	DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
-		unit<fpoint> rdc              := range(rdc_base, point_xy(x_min,y_min), point_xy(x_max,y_max));
+		unit<dpoint> rdc_base         : SpatialReference = "EPSG:28992", 	DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
+		unit<dpoint> rdc              := range(rdc_base, point_xy(x_min,y_min), point_xy(x_max,y_max));
 		unit<ipoint> rdc_mm           := gridset(rdc, point_xy(0.001,0.001), point_xy(0.0, 0.0), ipoint);
 		unit<ipoint> rdc_cm           := gridset(rdc, point_xy(0.01,0.01), point_xy(0.0, 0.0), ipoint);
 		unit<dpoint> wgs84_base       : SpatialReference = "EPSG:4326";
@@ -121,11 +121,11 @@ container Polygons
 			unit<uint32> makepoly:= union_unit(., ., ., ., .) 
 			{
 				attribute<rdc>                point   := union_data(., 
-															geometry + const(point_xy(-500f,  500f, rdc), .., rdc), 
-															geometry + const(point_xy( 500f,  500f, rdc), .., rdc), 
-															geometry + const(point_xy( 500f, -500f, rdc), .., rdc), 
-															geometry + const(point_xy(-500f, -500f, rdc), .., rdc),
-															geometry + const(point_xy(-500f,  500f, rdc), .., rdc));
+															geometry + const(point_xy(-500.0,  500.0, rdc), .., rdc), 
+															geometry + const(point_xy( 500.0,  500.0, rdc), .., rdc), 
+															geometry + const(point_xy( 500.0, -500.0, rdc), .., rdc), 
+															geometry + const(point_xy(-500.0, -500.0, rdc), .., rdc),
+															geometry + const(point_xy(-500.0,  500.0, rdc), .., rdc));
 				attribute<..>                 SeqNr   := union_data(., id(..), id(..), id(..), id(..), id(..));
 				attribute<uint32>             Ordinal := id(.) / #..;
 			}
@@ -177,7 +177,7 @@ container Polygons
 					),	DialogData = "rdc"
 				{
 					attribute<.>                    id               := id(.);
-					attribute<rdc>                  point_rd         := id[rdc] + point_xy(0.5f * gridsize, -0.5f * gridsize, rdc);
+					attribute<rdc>                  point_rd         := id[rdc] + point_xy(0.5d * gridsize, -0.5d * gridsize, rdc);
 					attribute<uint32>               id_nr            := (pointcol(id)[uint32] + 1) + ((pointrow(id)[uint32]) * (x_max[uint32] / gridsize[uint32]));
 					attribute<NL_grid/domain_25m>   grid_25m_rel     := id(.)[NL_grid/domain_25m];
 					attribute<NL_grid/domain_100m>  grid_100m_rel    := id(.)[NL_grid/domain_100m];
@@ -211,15 +211,42 @@ container Polygons
 		unit<uint32>  Gemeente := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd 
 		{
 			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/geometry;
+			attribute<float64>     area := area(geometry, float64);
+			attribute<rdc>       SW := lower_bound(geometry);
+			attribute<rdc>       NE := upper_bound(geometry);
 			attribute<string>    statcode        := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statcode;
 			attribute<string>    statnaam        := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statnaam;
 			attribute<string>    GM_NAAM         := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statnaam;
 			attribute<string>    name            := AsItemName(statnaam);
+			attribute<string>    Label := name;
 			
 			attribute<Provincie> prov_rel        := point_in_polygon(centroid_or_mid(geometry), Provincie/geometry);
 			
 			unit<uint32> Amsterdam := select_with_org_rel(statcode == 'GM0363')
 			{
+				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
+				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
+				attribute<string>            GM_CODE                           := ../statcode[org_rel];
+			}
+			unit<uint32> AmsterdamEO := select_with_org_rel(statcode == 'GM0363' || statcode == 'GM0384')
+			{
+				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
+				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
+				attribute<string>            GM_CODE                           := ../statcode[org_rel];
+			}
+			parameter<rdc> MontfoortGeometry(poly) :=  geometry[314];
+			unit<uint32> MontfoortPoints := sequence2points(MontfoortGeometry); // look at 0..3479 and 3479..3487
+			
+			unit<uint32> MontfoortEO := select_with_org_rel(
+//				pointcol(SW) <= pointcol(NE[314]) && pointcol(NE) >= pointcol(SW[314])
+//			&&  pointrow(SW) <= pointrow(NE[314]) && pointrow(NE) >= pointrow(SW[314])
+			ID(.) < 315
+//			(ID(.) >= 65 && ID(.) < 316) || ID(.) == 58 || ID(.) == 59 || ID(.) == 60 || ID(.) == 61 || ID(.) == 62 || ID(.) == 63 || ID(.) == 64
+			)
+//			range(0, 9)
+			{
+//				attribute<Gemeente> org_rel : [314, 111, 230, 120, 137, 149, 90, 106, 58];
+				attribute<string> label := ../label[org_rel];
 				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
 				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
 				attribute<string>            GM_CODE                           := ../statcode[org_rel];
@@ -231,6 +258,8 @@ container Polygons
 				attribute<string>            GM_CODE                           := ../statcode[org_rel];
 			}
 		}
+//		unit<uint32> Gemeente_subset := select_with_attr_by_cond(Gemeente, id(gemeente) < 10);
+//		unit<uint32>  Gemeente := gemeente_src/Noord_Holland;
 		
 		unit<uint32>  Corop := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd
 		{
@@ -260,7 +289,16 @@ container Polygons
 	#include<brt.dms>
 
 	container Tests : using = "eenheden;typeringen;geometries;VolledigeBAG"
-	{  
+	{
+		container Debug
+		{
+			parameter<rdc> Schiermonnikoog(poly) := /RegioIndelingen/Gemeente/geometry[49];
+			unit<uint32> ps := sequence2points(Schiermonnikoog)
+			{
+				attribute<rdc> relocated_point := point - point_xy(210010.0, 610880.0);
+			}
+			
+		}
 		container Results
 		{
 			container LargeSetWithSmallPolygons := GetResults_T(Tests/LargeSetWithSmallPolygons/domain);
@@ -270,60 +308,96 @@ container Polygons
 			{
 				unit<uint32> src;
 				///
+				parameter<string> total := 
+					string(avg_overlay_count_islands)
+					+ bg_inflate_and_deflate_ratio_correctness
+					+ string(avg_connectivity_count_islands)
+					+ string(avg_polygon_count_islands)
+					+ string(avg_polygon_area)
+					+ string(avg_union_area)
+					+ string(avg_split_count_islands)
+					+ string(avg_split_area)
+					+ string(avg_split_union_count_islands)
+					+ string(avg_split_union_area);
+					
+				parameter<uint32> avg_overlay_count_islands := (bg_overlay_count_islands + bp_overlay_count_islands + cgal_overlay_count_islands + geos_overlay_count_islands) / 4;
+				
 				parameter<uint32>  bg_overlay_count_islands     := src/bg_overlay/count_islands;
 				parameter<uint32>  bp_overlay_count_islands     := src/bp_overlay/count_islands;
 				parameter<uint32>  cgal_overlay_count_islands   := src/cgal_overlay/count_islands;
 				parameter<uint32>  geos_overlay_count_islands   := src/geos_overlay/count_islands;
-				// parameter<km2>     bg_overlay_area              := sum(src/bg_overlay/area);
-				// parameter<km2>     bp_overlay_area              := sum(src/bp_overlay/area);
-				// parameter<km2>     cgal_overlay_area            := sum(src/cgal_overlay/area);
-				// parameter<km2>     geos_overlay_area            := sum(src/geos_overlay/area);
 				
-				parameter<string>  bg_inflate_ratio_correctness := string(sum_uint32(src/bg_inflate/bg_inflate_correctness)) + '/' + string(#src);
-				parameter<string>  bg_deflate_ratio_correctness := string(sum_uint32(src/bg_deflate/bg_deflate_correctness)) + '/' + string(#src);
+				// parameter<m2>     bg_overlay_area              := sum(src/bg_overlay/area);
+				// parameter<m2>     bp_overlay_area              := sum(src/bp_overlay/area);
+				// parameter<m2>     cgal_overlay_area            := sum(src/cgal_overlay/area);
+				// parameter<m2>     geos_overlay_area            := sum(src/geos_overlay/area);
 				
+				
+				parameter<string>  bg_inflate_and_deflate_ratio_correctness := string(sum_uint32(src/bg_deflate/bg_deflate_correctness)) + '...'+ string(sum_uint32(src/bg_inflate/bg_inflate_correctness)) + ' of ' + string(#src);
+
+				parameter<uint32> avg_connectivity_count_islands := (bg_connectivity_count_islands + bp_connectivity_count_islands + cgal_connectivity_count_islands + geos_connectivity_count_islands) / 4;
+	
 				parameter<uint32>  bg_connectivity_count_islands   := max(src/bg_connectivity/connected_parts/PartNr);
 				parameter<uint32>  bp_connectivity_count_islands   := max(src/bp_connectivity/connected_parts/PartNr);
 				parameter<uint32>  cgal_connectivity_count_islands := max(src/cgal_connectivity/connected_parts/PartNr);
 				parameter<uint32>  geos_connectivity_count_islands := max(src/geos_connectivity/connected_parts/PartNr);
 				
+				parameter<uint32> avg_polygon_count_islands := (bg_polygon_count_islands + bp_polygon_count_islands + cgal_polygon_count_islands + geos_polygon_count_islands) / 4;
+				
 				parameter<uint32>  bg_polygon_count_islands     := src/bg_polygon/count_islands;
 				parameter<uint32>  bp_polygon_count_islands     := src/bp_polygon/count_islands;
 				parameter<uint32>  cgal_polygon_count_islands   := src/cgal_polygon/count_islands;
 				parameter<uint32>  geos_polygon_count_islands   := src/geos_polygon/count_islands;
-				parameter<km2>     bg_polygon_area              := sum(src/bg_polygon/area);
-				parameter<km2>     bp_polygon_area              := sum(src/bp_polygon/area);
-				parameter<km2>     cgal_polygon_area            := sum(src/cgal_polygon/area);
-				parameter<km2>     geos_polygon_area            := sum(src/geos_polygon/area);
 				
-				parameter<km2>     bg_union_area                := sum(src/bg_union/area);
-				parameter<km2>     bp_union_area                := sum(src/bp_union/area);
-				parameter<km2>     cgal_union_area              := sum(src/cgal_union/area);
-				parameter<km2>     geos_union_area              := sum(src/geos_union/area);
+				parameter<m2> avg_polygon_area := (bg_polygon_area + bp_polygon_area + cgal_polygon_area + geos_polygon_area) / 4.0;
+				
+				parameter<m2>     bg_polygon_area              := sum(src/bg_polygon/area);
+				parameter<m2>     bp_polygon_area              := sum(src/bp_polygon/area);
+				parameter<m2>     cgal_polygon_area            := sum(src/cgal_polygon/area);
+				parameter<m2>     geos_polygon_area            := sum(src/geos_polygon/area);
+				
+				parameter<m2> avg_union_area := (bg_union_area + bp_union_area + cgal_union_area + geos_union_area) / 4.0;
+				
+				parameter<m2>     bg_union_area                := sum(src/bg_union/area);
+				parameter<m2>     bp_union_area                := sum(src/bp_union/area);
+				parameter<m2>     cgal_union_area              := sum(src/cgal_union/area);
+				parameter<m2>     geos_union_area              := sum(src/geos_union/area);
+				
+				parameter<uint32> avg_split_count_islands := (bg_split_count_islands + bp_split_count_islands + cgal_split_count_islands + geos_split_count_islands) / 4;
 				
 				parameter<uint32>  bg_split_count_islands       := src/bg_split/count_islands;
 				parameter<uint32>  bp_split_count_islands       := src/bp_split/count_islands;
 				parameter<uint32>  cgal_split_count_islands     := src/cgal_split/count_islands;
 				parameter<uint32>  geos_split_count_islands     := src/geos_split/count_islands;
-				parameter<km2>     bg_split_area                := sum(src/bg_split/area);
-				parameter<km2>     bp_split_area                := sum(src/bp_split/area);
-				parameter<km2>     cgal_split_area              := sum(src/cgal_split/area);
-				parameter<km2>     geos_split_area              := sum(src/geos_split/area);
+				
+				parameter<m2> avg_split_area := (bg_split_area + bp_split_area + cgal_split_area + geos_split_area) / 4.0;
+				
+				parameter<m2>     bg_split_area                := sum(src/bg_split/area);
+				parameter<m2>     bp_split_area                := sum(src/bp_split/area);
+				parameter<m2>     cgal_split_area              := sum(src/cgal_split/area);
+				parameter<m2>     geos_split_area              := sum(src/geos_split/area);
+				
+				parameter<uint32> avg_split_union_count_islands := (bg_split_union_count_islands + bp_split_union_count_islands + cgal_split_union_count_islands + geos_split_union_count_islands) / 4;
 				
 				parameter<uint32>  bg_split_union_count_islands   := src/bg_split_union/count_islands;
 				parameter<uint32>  bp_split_union_count_islands   := src/bp_split_union/count_islands;
 				parameter<uint32>  cgal_split_union_count_islands := src/cgal_split_union/count_islands;
 				parameter<uint32>  geos_split_union_count_islands := src/geos_split_union/count_islands;
-				parameter<km2>     bg_split_union_area            := sum(src/bg_split_union/area);
-				parameter<km2>     bp_split_union_area            := sum(src/bp_split_union/area);
-				parameter<km2>     cgal_split_union_area          := sum(src/cgal_split_union/area);
-				parameter<km2>     geos_split_union_area          := sum(src/geos_split_union/area);
+				
+				parameter<m2> avg_split_union_area := (bg_split_union_area + bp_split_union_area + cgal_split_union_area + geos_split_union_area) / 4.0;
+				
+				parameter<m2>     bg_split_union_area            := sum(src/bg_split_union/area);
+				parameter<m2>     bp_split_union_area            := sum(src/bp_split_union/area);
+				parameter<m2>     cgal_split_union_area          := sum(src/cgal_split_union/area);
+				parameter<m2>     geos_split_union_area          := sum(src/geos_split_union/area);
 			}
 		}
 
 		container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
-		// container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
-		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
+		//container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/AmsterdamEO);
+		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
+//		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/MontfoortEO);
+		//container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
 		
 		Template Tests_T
 		{
@@ -335,21 +409,21 @@ container Polygons
 				unit<uint32> bg_overlay  := bg_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor)
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry;
-					attribute<km2>     area                      := area(geometry_rd, km2);
+					attribute<m2>     area                      := area(geometry_rd, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				unit<uint32> bg_inflate := .
 				{
 					attribute<rdc>     bg_inflate         (poly) := bg_buffer_multi_polygon(geometry,  parameters/big_inflate_m[float64], 16b);
-					attribute<float32> bg_inflate_increase       := area(bg_inflate, m2) / area(geometry, m2);
-					attribute<bool>    bg_inflate_correctness    := bg_inflate_increase > 1f;
+					attribute<float64> bg_inflate_increase       := area(bg_inflate, m2) / area(geometry, m2);
+					attribute<bool>    bg_inflate_correctness    := bg_inflate_increase > 1.0;
 				}
 				unit<uint32> bg_deflate := .
 				{
 					attribute<rdc>     bg_deflate         (poly) := bg_buffer_multi_polygon(geometry,  -parameters/big_inflate_m[float64], 16b);
-					attribute<float32> bg_deflate_decrease       := area(bg_deflate, m2) / area(geometry, m2);
-					attribute<bool>    bg_deflate_correctness    := bg_deflate_decrease < 1f && bg_deflate_decrease >= 0f;
+					attribute<float64> bg_deflate_decrease       := area(bg_deflate, m2) / area(geometry, m2);
+					attribute<bool>    bg_deflate_correctness    := bg_deflate_decrease < 1.0 && bg_deflate_decrease >= 0.0;
 				}
 				
 				unit<uint32> bg_connectivity  := bg_polygon_connectivity(bg_inflate/bg_inflate, bg_inflate/bg_inflate)
@@ -360,30 +434,30 @@ container Polygons
 				unit<uint32> bg_polygon := .
 				{
 					attribute<rdc>     bg_polygon         (poly) := bg_polygon(bg_inflate/bg_inflate);
-					attribute<km2>     area                      := area(bg_polygon, km2);
+					attribute<m2>     area                      := area(bg_polygon, m2);
 					parameter<uint32>  count_islands             := #.;
 					
 					parameter<rdc>     bg_union           (poly) := bg_union_polygon(bg_polygon);
-					parameter<km2>     union_area                := area(bg_union, km2);
+					parameter<m2>     union_area                := area(bg_union, m2);
 				}
 				
 				unit<uint32> bg_union := .
 				{
 					parameter<rdc>     bg_union           (poly) := bg_union_polygon(geometry);
-					parameter<km2>     area                      := area(bg_union, km2);
+					parameter<m2>     area                      := area(bg_union, m2);
 				}
 				
 				unit<uint32> bg_split := bg_split_polygon(bg_inflate/bg_inflate)
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry;
-					attribute<km2>     area                      := area(geometry_rd, km2);
+					attribute<m2>     area                      := area(geometry_rd, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				unit<uint32> bg_split_union := bg_split_union_polygon(bg_inflate/bg_inflate)
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry;
-					attribute<km2>     area                      := area(geometry_rd, km2);
+					attribute<m2>     area                      := area(geometry_rd, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
@@ -391,7 +465,7 @@ container Polygons
 				unit<uint32> bp_overlay  := bp_overlay_polygon(geometry[rdc_cm], BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor[rdc_cm])
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry[rdc];
-					attribute<km2>     area                      := area(geometry_rd, km2);
+					attribute<m2>     area                      := area(geometry_rd, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				unit<uint32> bp_connectivity  := bp_polygon_connectivity(bg_inflate/bg_inflate[rdc_cm],bg_inflate/bg_inflate[rdc_cm])
@@ -402,34 +476,34 @@ container Polygons
 				unit<uint32> bp_polygon := .
 				{
 					attribute<rdc>     bp_polygon         (poly) := bp_polygon(bg_inflate/bg_inflate[rdc_cm])[rdc];
-					attribute<km2>     area                      := area(bp_polygon, km2);
+					attribute<m2>     area                      := area(bp_polygon, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				unit<uint32> bp_union := .
 				{
 					parameter<rdc>     bp_union           (poly) := bp_union_polygon(geometry[rdc_cm])[rdc];
-					parameter<km2>     area                      := area(bp_union, km2);
+					parameter<m2>     area                      := area(bp_union, m2);
 				}
  
 				unit<uint32> bp_split := bp_split_polygon(bg_inflate/bg_inflate[rdc_cm])
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry[rdc];
-					attribute<km2>     area                      := area(geometry_rd, km2);
+					attribute<m2>     area                      := area(geometry_rd, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				unit<uint32> bp_split_union := bp_split_union_polygon(bg_inflate/bg_inflate[rdc_cm])
 				{
 					attribute<rdc>     geometry_rd        (poly) := geometry[rdc];
-					attribute<km2>     area                      := area(geometry_rd, km2);
+					attribute<m2>     area                      := area(geometry_rd, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				////CGAL////
 				unit<uint32> cgal_overlay  := cgal_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor)
 				{
-					attribute<km2>     area                      := area(geometry, km2);
+					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
@@ -441,35 +515,35 @@ container Polygons
 				unit<uint32> cgal_polygon := .
 				{
 					attribute<rdc>     cgal_polygon       (poly) := cgal_polygon(bg_inflate/bg_inflate);
-					attribute<km2>     area                      := area(cgal_polygon, km2);
+					attribute<m2>     area                      := area(cgal_polygon, m2);
 					parameter<uint32>  count_islands             := #.;
 					
-					parameter<rdc>     cgal_union         (poly) := cgal_union_polygon(bg_polygon);
-					parameter<km2>     union_area                := area(cgal_union, km2);
+					parameter<rdc>     cgal_union         (poly) := cgal_union_polygon(cgal_polygon);
+					parameter<m2>     union_area                := area(cgal_union, m2);
 				}
 				
 				unit<uint32> cgal_union := .
 				{
 					parameter<rdc>     cgal_union         (poly) := cgal_union_polygon(geometry);
-					parameter<km2>     area                      := area(cgal_union, km2);
+					parameter<m2>     area                      := area(cgal_union, m2);
 				}
 				
 				unit<uint32> cgal_split := cgal_split_polygon(bg_inflate/bg_inflate)
 				{
-					attribute<km2>     area                      := area(geometry, km2);
+					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				unit<uint32> cgal_split_union := cgal_split_union_polygon(bg_inflate/bg_inflate)
 				{
-					attribute<km2>     area                      := area(geometry, km2);
+					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				////GEOS////
 				unit<uint32> geos_overlay  := geos_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor)
 				{
-					attribute<km2>     area                      := area(geometry, km2);
+					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
@@ -481,28 +555,28 @@ container Polygons
 				unit<uint32> geos_polygon := .
 				{
 					attribute<rdc>     geos_polygon       (poly) := geos_polygon(bg_inflate/bg_inflate);
-					attribute<km2>     area                      := area(geos_polygon, km2);
+					attribute<m2>     area                      := area(geos_polygon, m2);
 					parameter<uint32>  count_islands             := #.;
 					
-					parameter<rdc>     geos_union         (poly) := geos_union_polygon(bg_polygon);
-					parameter<km2>     union_area                := area(geos_union, km2);
+					parameter<rdc>     geos_union         (poly) := geos_union_polygon(geos_polygon);
+					parameter<m2>     union_area                := area(geos_union, m2);
 				}
 				
 				unit<uint32> geos_union := .
 				{
 					parameter<rdc>     geos_union         (poly) := geos_union_polygon(geometry);
-					parameter<km2>     area                      := area(geos_union, km2);
+					parameter<m2>     area                      := area(geos_union, m2);
 				}
 				
 				unit<uint32> geos_split := geos_split_polygon(bg_inflate/bg_inflate)
 				{
-					attribute<km2>     area                      := area(geometry, km2);
+					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
 				unit<uint32> geos_split_union := geos_split_union_polygon(bg_inflate/bg_inflate)
 				{
-					attribute<km2>     area                      := area(geometry, km2);
+					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 			}

@@ -93,6 +93,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Sequence/ETiled/results/tests
 			&& Sequence/ResultUnitTiled/sequence2points/test_attr
 			&& Sequence/ResultUnitTiled/overlay_polygon/test_attr
+			&& Sequence/UnTiled/poly2allgrids/test_all
+			&& Sequence/UnTiled/poly2allgrids_uint64/test_all
+			
 			&& Network/UnTiled/results/tests
 			&& Network/Tiled/results/tests
 			&& Network/EunTiled/results/tests
@@ -3051,12 +3054,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>         LifeStyleCode:           [2,0,1,0,1,1,null];
 				attribute<uint32>         NrInhabitants:           [550,525,300,500,200,175,null];
 				attribute<bool>           isLarge                  := NrInhabitants >= 200;
-				attribute<uint32>         NrSameValueA:            [3,3,2,2,375,null];
-				attribute<uint32>         NrSameValueB:            [3,2,3,2,375,null];
-				attribute<uint32>         NrSameValueC:            [3,2,2,3,375,null];
-				attribute<uint32>         NrSameValueD:            [2,2,3,3,375,null];
-				attribute<uint32>         NrSameValueE:            [2,3,2,3,375,null];
-				attribute<uint32>         NrSameValueF:            [2,3,3,2,375,null];
+				attribute<uint32>         NrSameValueA:            [3,3,2,2,375,null,null];
+				attribute<uint32>         NrSameValueB:            [3,2,3,2,375,null,null];
+				attribute<uint32>         NrSameValueC:            [3,2,2,3,375,null,null];
+				attribute<uint32>         NrSameValueD:            [2,2,3,3,375,null,null];
+				attribute<uint32>         NrSameValueE:            [2,3,2,3,375,null,null];
+				attribute<uint32>         NrSameValueF:            [2,3,3,2,375,null,null];
 
 				attribute<uint32>         Ranking:                 [1,3,6,9,10,21,50];
 				attribute<bool>           isCapital:               [-1,0,0,0,0,0,0];
@@ -3095,10 +3098,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<uint32> maxIndex           :=  0 / 0;
 				parameter<uint32> firstNrInhabitants :=  0 / 0;
 				parameter<string> firstCityName      :=  string(0 / 0);
-				parameter<bool>   firstisCapital     : [] ;
+				parameter<bool>   firstisCapital     : [false] ;
 				parameter<uint32> lastNrInhabitants  :=  0 / 0;
 				parameter<string> lastCityName       :=  string(0 / 0);
-				parameter<bool>   lastisCapital      : [];
+				parameter<bool>   lastisCapital      : [false];
 				parameter<uint32> meanNrInhabitants  :=  0 / 0;
 				parameter<uint32> sumNrInhabitants   : [ 0 ];
 				parameter<uint32> modusLifeStyleCode :=  0 / 0;
@@ -4197,7 +4200,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<City>           invertRegion:            [1,4,3,7,null];
 				attribute<m>              length:                  [120,1750,500,null,1499];
 				attribute<string>         year:                    ['1995','2005','2015','2025','2035'];
-				attribute<uint32>         uniqueTst:               [100,200,300,400];
+				attribute<uint32>         uniqueTst:               [100,200,300,400, null];
 				attribute<CountryDomain>  CountryDomain_rel:       [0,0,1,1,2];
 			}
 
@@ -7120,16 +7123,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				,	DialogType = "Map"
 				,	DialogData = "point"
 				{
-					attribute<point_rd> point:
-					[
-					]
-					;
-					attribute<building> sequence:
-					[
-					];
-					attribute<uint32> ordinal:
-					[
-					];
+					attribute<point_rd> point   : [ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null ];
+					attribute<building> sequence: [ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null ];
+					attribute<uint32>   ordinal : [ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null ];
 				}
 			}
 			unit<uint32> square: nrofrows = 0
@@ -7533,6 +7529,214 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool> test      (gridcel_1km) :=  eq_or_both_null(DistrictGrid, att_ok);
 
 				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
+			}
+			container poly2allgrids
+			{
+				unit<uint32> result := poly2allgrids(Source/District/border, gridcel_1km);
+				
+				attribute<int16> result_row_ok (result) :
+				[
+				 2
+				,4
+				,4
+				,4
+				,3
+				,3
+				,1
+				,2
+				,3
+				];
+				attribute<int16> result_col_ok (result) :
+				[
+				 1
+				,1
+				,2
+				,3
+				,1
+				,2
+				,1
+				,0
+				,0
+				];
+				attribute<bool> result_ok (result) := pointRow(result/grid_rel) == result_row_ok && pointCol(result/grid_rel) == result_col_ok;
+
+				unit<uint32> resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), gridcel_1km);
+				
+				attribute<int16> resultvoid_row_ok (resultvoid) :
+				[
+				1,
+				2,
+				2,
+				3,
+				3,
+				3,
+				4,
+				4,
+				4
+				];
+				attribute<int16> resultvoid_col_ok (resultvoid) :
+				[
+				 1
+				,0
+				,1
+				,0
+				,1
+				,2
+				,1
+				,2
+				,3
+				];
+				attribute<bool> resultvoid_ok (resultvoid) := pointRow(resultvoid/grid_rel) == resultvoid_row_ok && pointCol(resultvoid/grid_rel) == resultvoid_col_ok;
+
+				unit<spoint> smaller_grid_1km := range(gridcel_1km, point_xy(1s, 2s),point_xy(4s, 4s));
+				unit<uint32> smaller_result := poly2allgrids(Source/District/border, smaller_grid_1km);
+				attribute<int16> smaller_result_row_ok (smaller_result) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_result_col_ok (smaller_result) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_result_ok (smaller_result) := pointRow(smaller_result/grid_rel) == smaller_result_row_ok && pointCol(smaller_result/grid_rel) == smaller_result_col_ok;
+
+				unit<uint32> smaller_resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), smaller_grid_1km);
+				attribute<int16> smaller_resultvoid_row_ok (smaller_resultvoid) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_resultvoid_col_ok (smaller_resultvoid) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_resultvoid_ok (smaller_resultvoid) := pointRow(smaller_resultvoid/grid_rel) == smaller_resultvoid_row_ok && pointCol(smaller_resultvoid/grid_rel) == smaller_resultvoid_col_ok;
+
+				parameter<bool> test_all := all(result_ok) && all(resultvoid_ok) && all(smaller_result_ok) && all(smaller_resultvoid_ok);
+				
+				
+/*				
+				attribute<District> DistrictGrid (gridcel_1km) := 
+				
+				attribute<District> att_ok       (gridcel_1km):
+				[
+					null,null,null,null,null,6,null,null,6,0,null,null,6,3,4,null,null,1,2,2
+				];
+				attribute<bool> test      (gridcel_1km) :=  eq_or_both_null(DistrictGrid, att_ok);
+
+				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
+					*/
+			}
+			container poly2allgrids_uint64
+			{
+				unit<uint64> result := poly2allgrids_uint64(Source/District/border, gridcel_1km);
+				
+				attribute<int16> result_row_ok (result) :
+				[
+				 2
+				,4
+				,4
+				,4
+				,3
+				,3
+				,1
+				,2
+				,3
+				];
+				attribute<int16> result_col_ok (result) :
+				[
+				 1
+				,1
+				,2
+				,3
+				,1
+				,2
+				,1
+				,0
+				,0
+				];
+				attribute<bool> result_ok (result) := pointRow(result/grid_rel) == result_row_ok && pointCol(result/grid_rel) == result_col_ok;
+
+				unit<uint64> resultvoid := poly2allgrids_uint64(bg_union_polygon(Source/District/border), gridcel_1km);
+				
+				attribute<int16> resultvoid_row_ok (resultvoid) :
+				[
+				1,
+				2,
+				2,
+				3,
+				3,
+				3,
+				4,
+				4,
+				4
+				];
+				attribute<int16> resultvoid_col_ok (resultvoid) :
+				[
+				 1
+				,0
+				,1
+				,0
+				,1
+				,2
+				,1
+				,2
+				,3
+				];
+				attribute<bool> resultvoid_ok (resultvoid) := pointRow(resultvoid/grid_rel) == resultvoid_row_ok && pointCol(resultvoid/grid_rel) == resultvoid_col_ok;
+
+				unit<spoint> smaller_grid_1km := range(gridcel_1km, point_xy(1s, 2s),point_xy(4s, 4s));
+				unit<uint64> smaller_result := poly2allgrids_uint64(Source/District/border, smaller_grid_1km);
+				attribute<int16> smaller_result_row_ok (smaller_result) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_result_col_ok (smaller_result) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_result_ok (smaller_result) := pointRow(smaller_result/grid_rel) == smaller_result_row_ok && pointCol(smaller_result/grid_rel) == smaller_result_col_ok;
+
+				unit<uint64> smaller_resultvoid := poly2allgrids_uint64(bg_union_polygon(Source/District/border), smaller_grid_1km);
+				attribute<int16> smaller_resultvoid_row_ok (smaller_resultvoid) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_resultvoid_col_ok (smaller_resultvoid) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_resultvoid_ok (smaller_resultvoid) := pointRow(smaller_resultvoid/grid_rel) == smaller_resultvoid_row_ok && pointCol(smaller_resultvoid/grid_rel) == smaller_resultvoid_col_ok;
+
+				parameter<bool> test_all := all(result_ok) && all(resultvoid_ok) && all(smaller_result_ok) && all(smaller_resultvoid_ok);
+				
+				
+/*				
+				attribute<District> DistrictGrid (gridcel_1km) := 
+				
+				attribute<District> att_ok       (gridcel_1km):
+				[
+					null,null,null,null,null,6,null,null,6,0,null,null,6,3,4,null,null,1,2,2
+				];
+				attribute<bool> test      (gridcel_1km) :=  eq_or_both_null(DistrictGrid, att_ok);
+
+				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
+					*/
 			}
 
 			container polygon_filtered
@@ -8681,6 +8885,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& overlay_polygon/bg_intersect/test
 					&& overlay_polygon/cgal_intersect/test
 					&& overlay_polygon/cgal_intersect2/test
+					
 					;
 			}
 		}
@@ -11712,11 +11917,28 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min / nrHaPerCel);
 				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min  / nrHaPerCel);
 			}
+			container aggr_claims_min
+			{
+				parameter<uint32> Living := sum(claims_min/Living);
+				parameter<uint32> Working:= sum(claims_min/Working);
+				parameter<uint32> Nature := sum(claims_min/Nature);
+			}
 			container claims_max
 			{
 				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max  / nrHaPerCel);
 				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max / nrHaPerCel);
 				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max  / nrHaPerCel);
+			}
+			container claims_max2
+			{
+				attribute<uint32> Living (regMaps/p1) := claims_max/Living + claims_max/Living;
+				attribute<uint32> Nature (regMaps/p1) := claims_max/Nature + claims_max/Nature;
+			}
+			container aggr_claims_max
+			{
+				parameter<uint32> Living := sum(claims_max/Living);
+				parameter<uint32> Working:= sum(claims_max/Working);
+				parameter<uint32> Nature := sum(claims_max/Nature);
 			}
 			container regionSets
 			{
@@ -11879,6 +12101,53 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			attribute<Source/lu_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
 			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
 			parameter<bool>           test_attr              := all(test);
+		}
+		unit<uint8> p1_claimed_type := select_with_attr_by_cond(source/lu_type, ID(source/lu_type) != 1b);
+		container allocate_discrete_p1 := 
+			discrete_alloc(
+				p1_claimed_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/regMaps/p1,
+				source/regMaps/p1Map[source/compacted/ADomain/nr_orgEntity], 
+				source/claims_min, 
+				source/claims_max, 
+				source/treshold
+			)
+		{
+			attribute<p1_claimed_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
+		container allocate_discrete_p2 := 
+			discrete_alloc(
+				p1_claimed_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/regMaps/p1,
+				source/regMaps/p1Map[source/compacted/ADomain/nr_orgEntity], 
+				source/claims_min, 
+				source/claims_max2, 
+				source/treshold
+			)
+		{
+			attribute<p1_claimed_type> att      (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
+		container allocate_discrete_aggr := 
+			discrete_alloc(
+				source/lu_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/aggr_claims_min, 
+				source/aggr_claims_max, 
+				source/treshold
+			)
+		{
+			attribute<Source/lu_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
 		}
 		container allocate_discrete_empty := 
 			discrete_alloc(
