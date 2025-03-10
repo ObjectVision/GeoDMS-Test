@@ -208,6 +208,29 @@ container Polygons
 		,	SyncMode        = "alltables"
 		,	DialogData      = "rdc";
 		
+		unit<uint32>  Buurt := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd
+		{
+			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/geometry;
+			attribute<string>    statcode        := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/statcode;
+			attribute<string>    statnaam        := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/statnaam;
+			attribute<string>    GM_NAAM         := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/statnaam;
+			attribute<string>    name            := AsItemName(statnaam);
+			
+			// attribute<Provincie> prov_rel        := point_in_polygon(centroid_or_mid(geometry), Provincie/geometry);
+			
+			// unit<uint32> Amsterdam := select_with_org_rel(statcode == 'GM0363')
+			// {
+				// attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
+				// attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
+				// attribute<string>            GM_CODE                           := ../statcode[org_rel];
+			// }
+			// unit<uint32> Noord_Holland := select_with_org_rel(prov_rel == Provincie/V/Noord_Holland)
+			// {
+				// attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
+				// attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
+				// attribute<string>            GM_CODE                           := ../statcode[org_rel];
+			// }
+		}
 		unit<uint32>  Gemeente := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd 
 		{
 			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/geometry;
@@ -321,9 +344,10 @@ container Polygons
 			}
 		}
 
-		container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
+		// container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
 		// container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
-		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
+		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Buurt);
+		// container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
 		
 		Template Tests_T
 		{
@@ -514,7 +538,8 @@ container Polygons
 		container Overridable
 		{
 			parameter<String> BAG_DataDir        := 'D:/SourceData/BAG';    // OV6=D OV9=C
-			parameter<String> RSo_DataDir        := 'D:/SourceData/RSopen'; // OV6=D OV9=C
+			// parameter<String> RSo_DataDir        := 'D:/SourceData/RSopen'; // OV6=D OV9=C
+			parameter<String> RSo_DataDir        := 'E:/SourceData/RSopen'; // OV6=D OV9=C
 		}
 	}
 }
