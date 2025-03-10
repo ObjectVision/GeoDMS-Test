@@ -201,20 +201,60 @@ container Polygons
 	
 	container RegioIndelingen : using = "geometries"
 	{ 
-		container Gebiedsindelingen_2022
-		:	StorageName     = "%RSo_DataDir%/RegioIndelingen/cbsgebiedsindelingen2022.gpkg"
-		, 	StorageType     = "gdal.vect"
-		,	StorageReadOnly = "True"
-		,	SyncMode        = "alltables"
-		,	DialogData      = "rdc";
+		parameter<string> jaar := '2024';
 		
-		unit<uint32>  Buurt := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd
+		// unit<uint32> buurt_shp := Buurt
+		// ,	StorageName     = "='%ProjDir%/Polygons/Data/cbs_buurten_'+jaar+'.shp'"
+		// , 	StorageType     = "gdalwrite.vect"
+		// {
+			// attribute<rdc>       geometry (poly) := buurt/geometry;
+			// attribute<string>    BU_NAAM         := buurt/statnaam;
+		// }
+		// unit<uint32> gemeente_shp := Gemeente
+		// ,	StorageName     = "='%ProjDir%/Polygons/Data/cbs_gemeenten_'+jaar+'.shp'"
+		// , 	StorageType     = "gdalwrite.vect"
+		// {
+			// attribute<rdc>       geometry (poly) := Gemeente/geometry;
+			// attribute<string>    GM_NAAM         := Gemeente/statnaam;
+		// }
+		
+		unit<uint32> Buurt 
+		:	StorageName     = "='%ProjDir%/Polygons/Data/cbs_buurten_'+jaar+'.shp'"
+		, 	StorageType     = "gdal.vect"
+		,	SyncMode        = "alltables"
+		,	DialogData      = "rdc"
 		{
-			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/geometry;
-			attribute<string>    statcode        := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/statcode;
-			attribute<string>    statnaam        := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/statnaam;
-			attribute<string>    GM_NAAM         := Gebiedsindelingen_2022/buurt_niet_gegeneraliseerd/statnaam;
-			attribute<string>    name            := AsItemName(statnaam);
+			// attribute<rdc>       geometry (poly) ;
+			// attribute<string>    BU_NAAM        ;
+		}
+		unit<uint32> Gemeente
+		:	StorageName     = "='%ProjDir%/Polygons/Data/cbs_gemeenten_'+jaar+'.shp'"
+		, 	StorageType     = "gdal.vect"
+		,	SyncMode        = "alltables"
+		,	DialogData      = "rdc"
+		{
+			// attribute<rdc>       geometry (poly) := Gemeente/geometry;
+			// attribute<string>    GM_NAAM         := Gemeente/statnaam;
+		}
+		
+		// container Gebiedsindelingen
+		// :	StorageName     = "='%ProjDir%/Polygons/Data/cbsgebiedsindelingen'+jaar+'.gpkg'"
+		// , 	StorageType     = "gdal.vect"
+		// ,	StorageReadOnly = "True"
+		// ,	SyncMode        = "alltables"
+		// ,	DialogData      = "rdc";
+		
+		// unit<uint32>  Buurt := Gebiedsindelingen/buurt_niet_gegeneraliseerd
+		// {
+			// attribute<string>    BU_NAAM         := statnaam;
+			// attribute<string>    name            := AsItemName(BU_NAAM);
+		// }
+		
+		
+		// unit<uint32>  Gemeente := Gebiedsindelingen/Gemeente_niet_gegeneraliseerd
+		// {
+			// attribute<string>    GM_NAAM         := statnaam;
+			// attribute<string>    name            := AsItemName(GM_NAAM);
 			
 			// attribute<Provincie> prov_rel        := point_in_polygon(centroid_or_mid(geometry), Provincie/geometry);
 			
@@ -230,53 +270,26 @@ container Polygons
 				// attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
 				// attribute<string>            GM_CODE                           := ../statcode[org_rel];
 			// }
-		}
-		unit<uint32>  Gemeente := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd 
-		{
-			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/geometry;
-			attribute<string>    statcode        := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statcode;
-			attribute<string>    statnaam        := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statnaam;
-			attribute<string>    GM_NAAM         := Gebiedsindelingen_2022/gemeente_niet_gegeneraliseerd/statnaam;
-			attribute<string>    name            := AsItemName(statnaam);
-			
-			attribute<Provincie> prov_rel        := point_in_polygon(centroid_or_mid(geometry), Provincie/geometry);
-			
-			unit<uint32> Amsterdam := select_with_org_rel(statcode == 'GM0363')
-			{
-				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
-				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
-				attribute<string>            GM_CODE                           := ../statcode[org_rel];
-			}
-			unit<uint32> Noord_Holland := select_with_org_rel(prov_rel == Provincie/V/Noord_Holland)
-			{
-				attribute<geometries/rdc>    geometry (poly)                   := ../geometry[org_rel];
-				attribute<geometries/rdc_mm> geometry_mm (poly)                := geometry[geometries/rdc_mm];
-				attribute<string>            GM_CODE                           := ../statcode[org_rel];
-			}
-		}
+		// }
 		
-		unit<uint32>  Corop := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd
-		{
-			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/geometry;
-			attribute<string>    statcode        := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/statcode;
-			attribute<string>    statnaam        := Gebiedsindelingen_2022/coropgebied_gegeneraliseerd/statnaam;
-			attribute<string>    name            := AsItemName(statnaam);
-		}
-		unit<uint32>  Provincie := Gebiedsindelingen_2022/provincie_gegeneraliseerd
-		{
-			attribute<rdc>       geometry (poly) := Gebiedsindelingen_2022/provincie_gegeneraliseerd/geometry;
-			attribute<string>    statcode        := Gebiedsindelingen_2022/provincie_gegeneraliseerd/statcode;
-			attribute<string>    statnaam        := Gebiedsindelingen_2022/provincie_gegeneraliseerd/statnaam;
-			attribute<string>    name            := AsItemName(statnaam);
+		// unit<uint32>  Corop := Gebiedsindelingen/coropgebied_gegeneraliseerd
+		// {
+			// attribute<rdc>       geometry (poly) := Gebiedsindelingen_2024/coropgebied_gegeneraliseerd/geometry;
+			// attribute<string>    name            := AsItemName(statnaam);
+		// }
+		// unit<uint32>  Provincie := Gebiedsindelingen/provincie_gegeneraliseerd
+		// {
+			// attribute<rdc>       geometry (poly) := Gebiedsindelingen_2024/provincie_gegeneraliseerd/geometry;
+			// attribute<string>    name            := AsItemName(statnaam);
 			
-			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
-		}
+			// container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		// }
 		
-		unit<uint32> Nederland := range(uint32, 0, 1) 
-		{
-			attribute<rdc>               geometry       (poly) := bp_union_polygon(Corop/geometry[rdc_cm], const(0[.],Corop))[rdc];
-			attribute<string>            name                  : [ 'Nederland' ];
-		}
+		// unit<uint32> Nederland := range(uint32, 0, 1) 
+		// {
+			// attribute<rdc>               geometry       (poly) := bp_union_polygon(Corop/geometry[rdc_cm], const(0[.],Corop))[rdc];
+			// attribute<string>            name                  : [ 'Nederland' ];
+		// }
 	}
 
 	#include<VolledigeBAG.dms>
@@ -345,8 +358,9 @@ container Polygons
 		}
 
 		// container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
+		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
+		container LargeSetWithSmallPolygons := Tests_T(RegioIndelingen/Buurt);
 		// container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
-		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Buurt);
 		// container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
 		
 		Template Tests_T
