@@ -3009,6 +3009,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<float32> sdNrInhabitants   : [155.46] ;
 				parameter<float32> corrNrInhabitants : [-0.89948];
 				parameter<float32> covNrInhabitants  : [-156.25];
+				parameter<string>  frequency_table_inhabitants:  ['175: 1; 200: 1; 300: 1; 500: 1; 525: 1; 550: 1'];
+
 			}
 
 			unit<uint32> Region := RegionDomain
@@ -3046,6 +3048,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>           condC:                   [ 0, 0, 0, 0, 0];
 				attribute<bool>           allInh:                  [ false, false, true, false, true ];
 				attribute<bool>           anyInh:                  [ true, true, false, false, false ];
+				attribute<string>         frequency_table_inhabitants          : ['550: 1','500: 1; 525: 1','300: 1','200: 1',''];
+				attribute<string>         frequency_table_inhabitants_with_null: ['550: 1','500: 1; 525: 1','300: 1','200: 1; <null>: 1',''];
+
 			}
 
 			unit<uint32> City := CityDomain
@@ -3053,6 +3058,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<DegreesCelsius> AvgDailyTemperature:     [12,11,null,11,14,null,14];
 				attribute<uint32>         LifeStyleCode:           [2,0,1,0,1,1,null];
 				attribute<uint32>         NrInhabitants:           [550,525,300,500,200,175,null];
+				
 				attribute<bool>           isLarge                  := NrInhabitants >= 200;
 				attribute<uint32>         NrSameValueA:            [3,3,2,2,375,null,null];
 				attribute<uint32>         NrSameValueB:            [3,2,3,2,375,null,null];
@@ -3117,6 +3123,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<float32> sdNrInhabitants   : [ 0.0 ] ;
 				parameter<float32> corrNrInhabitants : [ 0.0 ];
 				parameter<float32> covNrInhabitants  : [ 0.0 ];
+				parameter<string>  frequency_table_inhabitants:  [''];
+
 			}
 
 			unit<uint32> Region := RegionDomain
@@ -3154,6 +3162,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>           condC:                   [];
 				attribute<bool>           allInh:                  [];
 				attribute<bool>           anyInh:                  [];
+				attribute<string>         frequency_table_inhabitants:[];
+				attribute<string>         frequency_table_inhabitants_with_null:[];
+
 			}
 
 			unit<uint32> City := CityDomain
@@ -3712,6 +3723,24 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter<bool> test_attr := #reg_count_subitems = 0;
 			}
+			container frequency_table
+			{
+				parameter<string>  param               := frequency_table(City/NrInhabitants);
+				parameter<bool>    test_param          := eq_or_both_null(param, params/frequency_table_inhabitants) ;
+				
+				attribute<string>  att        (Region) := frequency_table(City/NrInhabitants, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/frequency_table_inhabitants);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container frequency_table_with_null
+			{
+				parameter<string>  param               := frequency_table_with_null(City/NrInhabitants);
+				parameter<bool>    test_param          := eq_or_both_null(param, params/frequency_table_inhabitants) ;
+				
+				attribute<string>  att        (Region) := frequency_table_with_null(City/NrInhabitants, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/frequency_table_inhabitants_with_null);
+				parameter<bool>    test_attr           := all(test);
+			}
 			container results
 			{
 				parameter<bool> test_params := 
@@ -3736,7 +3765,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& corr/test_param
 					&& cov/test_param
 					&& all/test_param
-					&& any/test_param;
+					&& any/test_param
+					&& frequency_table/test_param
+					&& frequency_table_with_null/test_param;
+
 				parameter<bool> test_attr := 
 					   count/test_attr
 					&& pcount/test_attr
@@ -3775,7 +3807,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& reg_count/test_attr
 					&& reg_count_uint16/test_attr
 					&& reg_count_uint8/test_attr
-					&& reg_count_empty/test_attr;
+					&& reg_count_empty/test_attr
+					&& frequency_table/test_attr;
+
 				parameter<bool> tests := test_params && test_attr;
 			}
 		}
@@ -4201,6 +4235,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>              length:                  [120,1750,500,null,1499];
 				attribute<string>         year:                    ['1995','2005','2015','2025','2035'];
 				attribute<uint32>         uniqueTst:               [100,200,300,400, null];
+				attribute<uint32>         unique_with_null_tst:    [null, 100,200,300,400];
+				
 				attribute<CountryDomain>  CountryDomain_rel:       [0,0,1,1,2];
 			}
 
@@ -4259,6 +4295,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>              length:                  [];
 				attribute<string>         year:                    [];
 				attribute<uint32>         uniqueTst:               [];
+				attribute<uint32>         unique_with_null_tst:    [];
 				attribute<CountryDomain>  CountryDomain_rel:       [];
 			}
 
@@ -4897,6 +4934,30 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool>   test          := all(Regions/Values == Regions/att);
 			}
+			container unique_uint16
+			{
+				unit<uint16>      Regions       := unique_uint16(Source/City/RegionCode)
+				{
+					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+				}
+				parameter<bool>   test          := all(Regions/Values == Regions/att);
+			}
+			container unique_uint8
+			{
+				unit<uint8>      Regions       := unique_uint8(Source/City/RegionCode)
+				{
+					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+				}
+				parameter<bool>   test          := all(Regions/Values == Regions/att);
+			}
+			container unique_with_null
+			{
+				unit<uint32>      Regions       := unique_with_null(Source/City/RegionCode)
+				{
+					attribute<uint32> att := Source/Region/unique_with_null_tst[id(Regions)[Source/Region]];
+				}
+				parameter<bool>   test          := all(eq_or_both_null(Regions/Values, Regions/att));
+			}
 			container union: url  = "http://www.objectvision.nl/geodms/operators-a-functions/union"
 			{
 				unit<uint32>    unit_ProvCity   := union(Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames)
@@ -5150,6 +5211,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& collect_attr_by_org_rel/test
 				&& collect_attr_by_cond/test
 				&& unique/test 
+				&& unique_with_null/test
 				&& union/test_attr 
 				&& union_unit/test 
 				&& union_data/test_attr 
@@ -11176,6 +11238,18 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>   test           (Prov) := att_asexprList = source/Prov_nrd/src_asexprList;
 				parameter<bool>   test_attr  := param_att = param_exp && all(test);
 			}
+			container asExprList_with_null
+			{
+				parameter<bool>   test_param := asExprList_with_null(source/teststring) = quote(source/teststring) && asExprList(source/ValueToString) = String(source/ValueToString);
+				parameter<string> param_att  := asExprList_with_null(source/A);
+				parameter<string> param_exp_with_values    := quote('Test') +';' + quote ('88hallo99') + ';' + quote('+)') +';'+ quote('twee woorden') +';'+quote(' test met spatie');
+				parameter<string> param_exp_without_values := '';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+
+				attribute<string> att_asexprList (Prov) := asExprList_with_null(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
+				attribute<bool>   test           (Prov) := att_asexprList = source/Prov_nrd/src_asexprList;
+				parameter<bool>   test_attr  := param_att = param_exp && all(test);
+			}
 			container asItemList: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/asitemlist"
 			{
 				parameter<bool>   test_param := asItemList(source/teststring) = source/teststring;
@@ -11184,6 +11258,17 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<string> param_exp_without_values := '';
 				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
 				attribute<string> att_asItemList (Prov) := asItemList(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
+				attribute<bool>   test           (Prov) := att_asItemList = source/Prov_nrd/src_asItemList;
+				parameter<bool>   test_attr  := param_att = param_exp && all(test);
+			}
+			container asItemList_with_null
+			{
+				parameter<bool>   test_param := asItemList_with_null(source/teststring) = source/teststring;
+				parameter<string> param_att  := asItemList_with_null(source/A);
+				parameter<string> param_exp_with_values    := 'Test' +',' + '88hallo99' + ',' + '+)' +','+ 'twee woorden'+','+' test met spatie';
+				parameter<string> param_exp_without_values := '';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+				attribute<string> att_asItemList (Prov) := asItemList_with_null(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
 				attribute<bool>   test           (Prov) := att_asItemList = source/Prov_nrd/src_asItemList;
 				parameter<bool>   test_attr  := param_att = param_exp && all(test);
 			}
@@ -11275,7 +11360,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& repeat/test_param 
 					&& trim/test_param
 					&& asExprList/test_param 
+					&& asExprList_with_null/test_param 
 					&& asItemList/test_param 
+					&& asItemList_with_null/test_param 
 					&& asDatastring/test_param 
 					&& expand/test_param 
 					&& from_utf/test_param
@@ -11307,7 +11394,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& add/test_attr 
 					&& asList/test_attr
 					&& asExprList/test_attr 
+					&& asExprList_with_null/test_attr 
 					&& asItemList/test_attr 
+					&& asItemList_with_null/test_attr 
 					&& asDatastring/test_attr ;
 				parameter<bool> tests := test_params && test_attrs;
 			}
