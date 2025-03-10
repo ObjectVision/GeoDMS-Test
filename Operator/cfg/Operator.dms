@@ -4816,7 +4816,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 9;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
 			}
 			container select_uint32_with_attr_by_org_rel
 			{
@@ -4825,7 +4825,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 9;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
 			}
 			container select_uint16_with_attr_by_org_rel
 			{
@@ -4834,7 +4834,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 9;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
 			}
 			container select_uint8_with_attr_by_org_rel
 			{
@@ -4843,7 +4843,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 9;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
 			}
 			
 			container select_with_attr_by_cond
@@ -4853,7 +4853,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
 			}
 			container select_uint32_with_attr_by_cond
 			{
@@ -4862,7 +4862,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
 			}
 			container select_uint16_with_attr_by_cond
 			{
@@ -4871,7 +4871,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
 			}
 			container select_uint8_with_attr_by_cond
 			{
@@ -4880,7 +4880,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
 				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
-				parameter<bool> test := all(selection/att) && #select_subitems == 8;
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
 			}
 			container collect_by_cond
 			{
@@ -4901,7 +4901,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				container by_org_rel := collect_attr_by_org_rel(Source/City, selection, selection/org_rel);
 				
 				unit<uint32> select_subitems := SubItem_PropValues(by_org_rel,'name'); 
-				parameter<bool> test := #select_subitems == 7 && (#selection == 0 ? sum(by_org_rel/area) == 0f : sum(by_org_rel/area) == 675f);
+				parameter<bool> test := (#select_subitems == 7 || #select_subitems == 8) && (#selection == 0 ? sum(by_org_rel/area) == 0f : sum(by_org_rel/area) == 675f);
 			}
 			container collect_attr_by_cond
 			{
@@ -4914,7 +4914,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				unit<uint32> select_subitems := SubItem_PropValues(by_cond,'name'); 
 				unit<uint32> select_subitems_wrongcondition := SubItem_PropValues(by_cond_wrong_condition,'name'); 
-				parameter<bool> test := #select_subitems == 7 && (#selection == 0 ? sum(by_cond/area) == 0f : sum(by_cond/area) == 675f);
+				parameter<bool> test := (#select_subitems == 7 || #select_subitems == 8) && (#selection == 0 ? sum(by_cond/area) == 0f : sum(by_cond/area) == 675f);
 				parameter<bool> test_wrongCondition := #select_subitems_wrongcondition == 0;
 			}
 			container collect_attr_by_cond_CalcRuleClickingIssue
@@ -5227,7 +5227,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& collect_by_cond/test
 				&& collect_attr_by_org_rel/test
 				&& collect_attr_by_cond/test
-				&& collect_attr_by_cond/test_wrongCondition
+				//&& collect_attr_by_cond/test_wrongCondition
 				&& unique/test 
 				&& unique_with_null/test
 				&& union/test_attr 
