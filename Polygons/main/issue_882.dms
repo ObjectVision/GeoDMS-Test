@@ -2,11 +2,15 @@
 
 container issue_882
 {
+	#include <../ngr_layer.dms>
+	
+	unit<dpoint> rdc_base         : SpatialReference = "EPSG:28992", 	DialogData = "ngr_layer"; // wms achtergrondlaag voor kaarten met rd coordinaten
+	unit<dpoint> rdc              := range(rdc_base, point_xy(10000d,325000d), point_xy(270000d,650000d));
 	container m1 {
 		container p1 {
 			unit<uint32> outer := range(0, 85) {
 
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 						point_xy(174132.82812500000, 603982.87500000000),
 						point_xy(174135.46875000000, 603982.31250000000),
 						point_xy(174138.90625000000, 603982.87500000000),
@@ -92,14 +96,14 @@ container issue_882
 						point_xy(174129.39062500000, 603985.81250000000),
 						point_xy(174130.96875000000, 603984.18750000000),
 						point_xy(174132.82812500000, 603982.87500000000)
-						);
+						)[rdc];
 			}
-			parameter<dpoint> geo0(poly) := points2sequence(outer/xy);
+			parameter<rdc> geo0(poly) := points2sequence(outer/xy);
 			parameter<float64> a0 := area(geo0, Float64);
 		}
 		container p2 {
 			unit<uint32> outer := range(0, 931) {
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 point_xy(177838.85937500000, 608355.62500000000),
 point_xy(177869.84375000000, 608355.31250000000),
 point_xy(178251.51562500000, 608345.62500000000),
@@ -1031,10 +1035,10 @@ point_xy(177120.32812500000, 608366.37500000000),
 point_xy(177315.31250000000, 608363.62500000000),
 point_xy(177584.96875000000, 608358.06250000000),
 point_xy(177838.85937500000, 608355.62500000000)				
-						);
+						)[rdc];
 				}
 			unit<uint32> inner1 := range(0, 35) {
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 point_xy(174563.04687500000, 606682.12500000000),
 point_xy(174503.57812500000, 606679.50000000000),
 point_xy(174461.59375000000, 606681.25000000000),
@@ -1070,10 +1074,10 @@ point_xy(174839.43750000000, 606760.87500000000),
 point_xy(174767.71875000000, 606744.25000000000),
 point_xy(174640.89062500000, 606701.37500000000),
 point_xy(174563.04687500000, 606682.12500000000)
-				);
+				)[rdc];
 			}
 			unit<uint32> inner2 := range(0, 70) {
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 point_xy(180362.90625000000, 607115.87500000000),
 point_xy(180292.70312500000, 607078.31250000000),
 point_xy(180206.40625000000, 607015.62500000000),
@@ -1144,21 +1148,21 @@ point_xy(180740.50000000000, 607090.31250000000),
 point_xy(180600.90625000000, 607114.12500000000),
 point_xy(180440.50000000000, 607121.31250000000),
 point_xy(180362.90625000000, 607115.87500000000)
-				);
+				)[rdc];
 			}
-			parameter<dpoint> geo0(poly) := points2sequence(outer/xy);
-			parameter<dpoint> geo1(poly) := points2sequence(inner1/xy);
-			parameter<dpoint> geo2(poly) := points2sequence(inner2/xy);
+			parameter<rdc> geo0(poly) := points2sequence(outer/xy);
+			parameter<rdc> geo1(poly) := points2sequence(inner1/xy);
+			parameter<rdc> geo2(poly) := points2sequence(inner2/xy);
 			parameter<float64> a0 := area(geo0, Float64);
 			parameter<float64> a1 := area(geo1, Float64);
 			parameter<float64> a2 := area(geo2, Float64);
 		}
-		parameter<dpoint> geo(poly) := p1/geo0 + p2/geo0 - p2/geo1 - p2/geo2;
+		parameter<rdc> geo(poly) := p1/geo0 + p2/geo0 - p2/geo1 - p2/geo2;
 	}
 	container m2 {
 		container p1 {
 			unit<uint32> outer := range(0, 119) {
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 point_xy(171158.21875000000, 605046.25000000000),
 point_xy(171168.14062500000, 605013.75000000000),
 point_xy(171184.81250000000, 604983.56250000000),
@@ -1278,14 +1282,14 @@ point_xy(171179.64062500000, 604975.25000000000),
 point_xy(171162.57812500000, 605009.75000000000),
 point_xy(171150.67187500000, 605045.87500000000),
 point_xy(171158.21875000000, 605046.25000000000)
-				);
+				)[rdc];
 			}
-			parameter<dpoint> geo0(poly) := points2sequence(outer/xy);
+			parameter<rdc> geo0(poly) := points2sequence(outer/xy);
 			parameter<float64> a0 := area(geo0, Float64);
 		}
 		container p2 {
 			unit<uint32> outer := range(0, 602) {
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 point_xy(171158.21875000000, 605046.25000000000),
 point_xy(171143.32812500000, 605055.06250000000),
 point_xy(171123.10937500000, 605066.93750000000),
@@ -1888,10 +1892,10 @@ point_xy(171311.25000000000, 604941.56250000000),
 point_xy(171217.96875000000, 605006.62500000000),
 point_xy(171184.23437500000, 605024.06250000000),
 point_xy(171158.21875000000, 605046.25000000000)
-				);
+				)[rdc];
 			}
 			unit<uint32> inner1 := range(0, 42) {
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 point_xy(171960.09375000000, 606705.31250000000),
 point_xy(171887.59375000000, 606710.31250000000),
 point_xy(171753.20312500000, 606661.37500000000),
@@ -1934,16 +1938,16 @@ point_xy(172190.00000000000, 606536.31250000000),
 point_xy(172133.00000000000, 606628.00000000000),
 point_xy(172061.00000000000, 606677.37500000000),
 point_xy(171960.09375000000, 606705.31250000000)
-				);
+				)[rdc];
 			}
-			parameter<dpoint> geo0(poly) := points2sequence(outer/xy);
-			parameter<dpoint> geo1(poly) := points2sequence(inner1/xy);
+			parameter<rdc> geo0(poly) := points2sequence(outer/xy);
+			parameter<rdc> geo1(poly) := points2sequence(inner1/xy);
 			parameter<float64> a0 := area(geo0, Float64);
 			parameter<float64> a1 := area(geo1, Float64);
 		}
 		container p3 {
 			unit<uint32> outer := range(0, 25) {
-				attribute<dpoint> xy := union_data(., 
+				attribute<rdc> xy := union_data(., 
 point_xy(158296.00000000000, 577129.00000000000),
 point_xy(158410.20312500000, 577051.62500000000),
 point_xy(158576.59375000000, 576924.18750000000),
@@ -1969,12 +1973,12 @@ point_xy(157358.09375000000, 577042.31250000000),
 point_xy(157795.59375000000, 577156.31250000000),
 point_xy(158158.70312500000, 577177.37500000000),
 point_xy(158296.00000000000, 577129.00000000000)
-				);
+				)[rdc];
 			}
-			parameter<dpoint> geo0(poly) := points2sequence(outer/xy);
+			parameter<rdc> geo0(poly) := points2sequence(outer/xy);
 			parameter<float64> a0 := area(geo0, Float64);
 		}
-		parameter<dpoint> geo(poly) := p1/geo0 + p2/geo0 - p2/geo1 + p3/geo0;
+		parameter<rdc> geo(poly) := p1/geo0 + p2/geo0 - p2/geo1;// + p3/geo0;
 	}
-	parameter<dpoint> union(poly) := m1/geo + m2/geo;
+	parameter<rdc> union(poly) := m1/geo + m2/geo;
 }
