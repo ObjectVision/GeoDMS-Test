@@ -29,10 +29,15 @@ container FC
 	container S2 := FenceContainer(Task1, Task2/line/txt);
 	
 	container Task0Result := FenceContainer(Task0, "Task 0 completed");
-	parameter<uint64> calcsum := sum(Task0Result/line/sqr);
+	container SumContainer {
+		parameter<uint64> calcsum := sum(Task0Result/line/sqr);
+	}
+	container FencedSumContainer := FenceContainer(SumContainer, "calcsum");
 	
 	unit<uint32> result := union_unit(S1/line, S2/line)
 	{
 		attribute<string> txt := union_data(., S1/line/txt, S2/line/txt);
+		parameter<uint64> fcs := FencedSumContainer/calcsum;
+		parameter<string> hallo := =(fcs > uint64(1) ? Quote('ja') : Quote('nee'));
 	}
 }
