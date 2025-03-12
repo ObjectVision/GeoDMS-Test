@@ -1555,5 +1555,26 @@ container issue_882
 		parameter<rdc> geo0(poly) := points2sequence(outer/xy);
 		parameter<float64> a0 := area(geo0, Float64);
 	}
+	container r0 {
+		unit<uint32> outer := range(0, 5)
+		{
+			attribute<rdc> xy := union_data(., 
+				point_xy(172000.0, 605000.0, rdc),
+				point_xy(174000.0, 605000.0, rdc),
+				point_xy(174000.0, 600000.0, rdc),
+				point_xy(172000.0, 600000.0, rdc),
+				point_xy(172000.0, 605000.0, rdc)
+			);
+		}
+		parameter<rdc> geo0(poly) := points2sequence(outer/xy);
+		parameter<float64> a0 := area(geo0, Float64);
+	}
 	parameter<rdc> union_gone(poly) := p1/geo0 + p2/geo0;
+	parameter<rdc> s1(poly) := p1/geo0 * r0/geo0;
+	parameter<rdc> s2(poly) := p2/geo0 * r0/geo0;
+	unit<uint32> split_s2 := bg_split_polygon(s2);
+	
+	parameter<rdc> s2_main(poly) := split_s2/geometry[0];
+	
+	parameter<rdc> section_gone(poly) := s1+ s2_main;
 }
