@@ -324,12 +324,24 @@ container BAG_MakeSnapshot
 				:	StorageName     = "= FSSDir + '/adres.fss'"
 				,	StorageReadOnly = "True"
 				{
-					attribute<geometries/rdc_meter> geometry;
+					attribute<fpoint> geometry;
+					attribute<geometries/rdc_meter> geometry_rd := geometry[geometries/rdc_meter];
+					
 					attribute<string>         postcode;
 					attribute<string>         huisnummer;
 				}
 				
-				unit<uint32> nearby_m50 := join_near_values(src/geometry, src/geometry, 50.0);
+				unit<uint32> nearby_m50 := join_near_values(src/geometry_rd, src/geometry_rd, 50.0)
+				{
+					attribute<string> postcode_org    := src/postcode[first_rel];
+					attribute<string> huisnummer_org  := src/huisnummer[first_rel];
+
+					attribute<string> postcode_dest   := src/postcode[second_rel];
+					attribute<string> huisnummer_dest := src/huisnummer[second_rel];
+
+					attribute<string> label           := postcode_org + '_' + huisnummer_org + '_' + postcode_dest + '_' + huisnummer_dest;
+					
+				}
 			}
 
 		container results {
