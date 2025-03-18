@@ -318,11 +318,25 @@ container BAG_MakeSnapshot
 				}
 			}
 		}
+		container adres
+		{
+			unit<uint32> src
+			:	StorageName     = "= FSSDir + '/adres.fss'"
+			,	StorageReadOnly = "True"
+			{
+				attribute<geometries/rdc_meter> geometry;
+				attribute<string>         postcode;
+				attribute<string>         huisnummer;
+			}
+			
+			unit<uint32> nearby_m50 := join_near_values(src/geometry, src/geometry, 50.0);
+		}
 		container results {
 			unit<uint32> pand := ../pand/results/unique;
 			unit<uint32> vbo  := ../vbo/results/unique;
 		}
 	}
+
 	template meta_src_template // Voor het inlezen van de generieke BAG attributen
 	{
 		// begin case parameters
