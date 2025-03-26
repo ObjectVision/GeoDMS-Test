@@ -395,8 +395,8 @@ def RunExperiments(experiments, sampling_rate=1.0):
             log_fn = exp.flags
             if os.path.exists(log_fn): # always start with empty log
                 os.remove(log_fn)
-
-            exp.result["log"],start_time = getPerformanceBatch(exp.exe_fldr, sampling_rate)
+            exp.result["log"],start_time = getPerformanceBatch(f"{exp.exe_fldr} {exp.flags}", sampling_rate)
+            
         else: # RUN
             log_fn = f"{exp.storage_fldr}log{i}.txt"
             stat_fn = f"{exp.storage_fldr}stat{i}.txt"
