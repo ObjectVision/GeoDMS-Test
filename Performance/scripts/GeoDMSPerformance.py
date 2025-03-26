@@ -70,7 +70,8 @@ def readLogAllocator(log_fn, start_time):
         # 2023-11-21 14:10:50[1]Reserved in Blocks 63532[MB]; allocated: 0[MB]; freed: 62532[MB]; uncommitted: 999[MB]; PageFileUsage: 62767[MB]
         integers_in_entry = re.findall(r"\d+", alloc_log["text"][ind])[1:]
         print(integers_in_entry)
-        assert(len(integers_in_entry)==5)
+        if len(integers_in_entry) < 5:
+            continue
         
         log_alloc["time"].append(alloc_log["time"][ind])
         log_alloc["dtime"].append((alloc_log["time"][ind]-start_time).total_seconds())
