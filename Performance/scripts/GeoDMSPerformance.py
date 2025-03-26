@@ -212,63 +212,67 @@ def getPerformanceGui(exp, log_fn, sampling_rate=1.0):
         log, start_time, cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time, delta_start_time)
     return log, start_time
 
-def getClosestLog(t, log, param):
+def getClosestLog(dms_log_t, profile_log, param):
     smallest_dt = 99999999999.0 # absurdly large
-    ind = 0
-    ind_chosen = -1
-    for ts in log["time"]:
-        dt = abs((t-ts).total_seconds())
+    ind_chosen = None
+    for ind, profile_log_t in enumerate(profile_log["time"]):
+        dt = abs((dms_log_t-profile_log_t).total_seconds())
         if dt < smallest_dt:
             smallest_dt = dt
             ind_chosen = ind
-        ind+=1
-    return (ind_chosen, log[param][ind_chosen])
+    assert(ind_chosen, "dms_log datetime falls within profile log datetime range, hence index should be between 0 and the end of the profile log")
+    return (ind_chosen, profile_log[param][ind_chosen])
 
-def getClosestLogForRLog(log, rlog, param):
-    xy = {"ind":[], "x":[], "y":[]}
-    for i,t in enumerate(rlog["time"]):
+def getClosestProfilelogForGeodmslog(profile_log, geodms_log, param):
+    xy = {"ind":[], "x":[], "y":[], "dms_log_ind":[]}
+    for i, dms_log_t in enumerate(geodms_log["time"]):
+        profile_log_first_datetime = profile_log['time'][0]
+        profile_log_last_datetime = profile_log['time'][-1]
+        dmslogt_seconds_after_profile_start = (dms_log_t - profile_log_first_datetime).total_seconds() # positive when dms_log_t is after start of profile
+        dmslogt_seconds_before_profile_end = (profile_log_last_datetime - dms_log_t).total_seconds() # positive when dms_log_t is before end of profile
 
-        time_diff_start_t = (t-log['time'][0]).total_seconds()
-        time_diff_t_end   = (log['time'][-1]-t).total_seconds()
-
-        if time_diff_start_t < -1.0 or time_diff_t_end < -1.0: # log entry time is outside experiment time
-            print(f"No match for line {rlog['text'][i]} {time_diff_start_t} {time_diff_t_end}")
+        if dmslogt_seconds_after_profile_start < -1.0 or dmslogt_seconds_before_profile_end < -1.0:
+            print(f"Geodms log entry is outside experiment timeline: {geodms_log['text'][i]} {dmslogt_seconds_after_profile_start} {dmslogt_seconds_before_profile_end}")
             continue
-        #print(f"No match for line {rlog['text'][i]}")
-        (ind, y) = getClosestLog(t, log, param)
+
+        (ind, y) = getClosestLog(dms_log_t, profile_log, param)
         xy["ind"].append(ind)
-        xy["x"].append(log["dtime"][ind])
+        xy["x"].append(profile_log["dtime"][ind])
         xy["y"].append(y)
+        xy["dms_log_ind"].append(i)
     return xy
 
-def getCompactClosestLogForRLog(log, rlog, param, max_lines=30):
+def getCompactClosestLogForRLog(profile_log, geodms_log, param, max_lines=50):
     rlog_compact = {"inds":{}, "x":[], "y":[], "text":[], "num_text_lines":[], "IsEnded":{}}
-    xy = getClosestLogForRLog(log, rlog, param)
+    xy = getClosestProfilelogForGeodmslog(profile_log, geodms_log, param)
     
     ind_cur = 0
-    for ind in range(len(xy["x"])):
-        ind_log = xy["ind"][ind]
-        dtime = xy["x"][ind]
-        val   = xy["y"][ind]
+    for i in range(len(xy["x"])):
+        ind_log = xy["ind"][i]
+        dtime = xy["x"][i]
+        val   = xy["y"][i]
+        ind_geodms_log = xy["dms_log_ind"][i]
 
         if ind_log not in rlog_compact["inds"]:
             rlog_compact["inds"][ind_log] = ind_cur
             rlog_compact["x"].append(dtime)
             rlog_compact["y"].append(val)
-            rlog_compact["text"].append(rlog["text"][ind])
+            rlog_compact["text"].append(geodms_log["text"][ind_geodms_log])
             rlog_compact["num_text_lines"].append(1)
             ind_cur += 1
         else:
             rlog_compact["num_text_lines"][rlog_compact["inds"][ind_log]] += 1
             if (rlog_compact["num_text_lines"][rlog_compact["inds"][ind_log]] > max_lines):
                 continue
-            rlog_compact["text"][rlog_compact["inds"][ind_log]] += rlog["text"][ind]
+            rlog_compact["text"][rlog_compact["inds"][ind_log]] += geodms_log["text"][ind_geodms_log]
+            if (rlog_compact["num_text_lines"][rlog_compact["inds"][ind_log]] == max_lines):
+                rlog_compact["text"][rlog_compact["inds"][ind_log]] += "...<br>"
 
     return rlog_compact
     
 def getLogInfoForPlotting(log, log_fn, param):
-    rlog = readLog(log_fn)
-    rlog_compact = getCompactClosestLogForRLog(log, rlog, param)
+    geodms_log = readLog(log_fn)
+    rlog_compact = getCompactClosestLogForRLog(log, geodms_log, param)
     return rlog_compact
 
 def getCPU_ID():
@@ -387,8 +391,6 @@ def RunExperiments(experiments, sampling_rate=1.0):
             continue
 
         # Sample performance
-        
-            
         if (not exp.cfg and not exp.item): # BATCH
             log_fn = exp.flags
             if os.path.exists(log_fn): # always start with empty log
