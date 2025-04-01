@@ -6137,6 +6137,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<PandDomain> second_rel_OK : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19,15,20];
 				attribute<float32>    rank          := abs(1f / area(geometry, float32));
 			}
+			unit<spoint> Grid := /grid/units/GridDomain
+			{
+				attribute<float64> X: [-100,4900,9900,14900,19900,-100,4900,9900,14900,19900,-100,4900,9900,14900,19900,-100,4900,9900,14900,19900,-100,4900,9900,14900,19900];
+				attribute<float64> Y: [24900,24900,24900,24900,24900,19900,19900,19900,19900,19900,14900,14900,14900,14900,14900,9900,9900,9900,9900,9900,4900,4900,4900,4900,4900];
+			}
 		}
 		template ESource
 		{
@@ -6224,6 +6229,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<EDomain>  first_rel_OK:    [];
 				attribute<EDomain>  second_rel_OK: [];
 			}
+			unit<spoint> Grid := /grid/units/EGridDomain
+			{
+				attribute<float64> X: [];
+				attribute<float64> Y: [];
+			}
+
 
 		}
 		container UnTiled2Untiled := Template(ADomain,      HDomain,      DistrictPointsDomain,      RDomain       ,HDomain ,PandDomain      , srcUnTiled2Untiled, False);
@@ -6314,22 +6325,43 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<bool>    test (origin) := att = source/origin/x;
 				parameter<bool>    test_attr     := all(test);
 			}
-			container Get_X
+			container get_X
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
 			{
-				attribute<float32> att  (origin) := Get_X(point/att);
-				attribute<bool>    test (origin) := att = origin/x;
+				attribute<float64> att  (origin) := Get_X(point/att);
+				attribute<bool>    test (origin) := att = float64(origin/x);
 				parameter<bool>    test_attr     := all(test);
 			}
+			container get_X_griddomain
+			:	Using = "source"
+			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
+			{
+				attribute<float64> att  (Source/Grid) := Get_X(id(Source/Grid));
+				
+				attribute<bool>    test (Source/Grid) := att = grid/x;
+				parameter<bool>    test_attr     := all(test);
+			}
+
 			container Get_Y
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointcol"
 			{
-				attribute<float32> att  (origin) := Get_Y(point/att);
-				attribute<bool>    test (origin) := att = source/origin/y;
+				attribute<float64> att  (origin) := Get_Y(point/att);
+				attribute<bool>    test (origin) := att = float64(source/origin/y);
 				parameter<bool>    test_attr     := all(test);
 			}
+			
+			container get_Y_griddomain
+			:	Using = "source"
+			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
+			{
+				attribute<float64> att  (Source/Grid) := Get_Y(id(Source/Grid));
+				
+				attribute<bool>    test (Source/Grid) := att = grid/y;
+				parameter<bool>    test_attr     := all(test);
+			}
+
 			container dist
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/dist"
@@ -6726,8 +6758,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& point_yx/test_attr
 					&& PointRow/test_attr 
 					&& PointCol/test_attr 
-					//&& get_x/test_attr 
-					//&& get_y/test_attr 
+					&& get_x/test_attr 
+					&& get_y/test_attr 
+					&& get_x_griddomain/test_attr 
+					&& get_y_griddomain/test_attr 
 					&& dist/test_attr 
 					&& sqrdist/test_attr 
 					&& point_in_polygon/test_attr 
@@ -10097,6 +10131,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
 				attribute<GridDomain3000>          GridDomain3000nr         := rlookup(GridDomain3000PointSetnr, GridDomain3000/PointSetNr);
+				
+				attribute<int16>    col := PointCol (id(.));
+				attribute<float64> x := Get_x (id(.));
+
 			}
 
 			unit<spoint> GridTiledDomain := TiledUnit(Point(Int16(2), Int16(2), GridDomain));
