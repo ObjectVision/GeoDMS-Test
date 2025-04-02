@@ -176,8 +176,7 @@ def getPerformanceBatch(batch_cmd, sampling_rate=1.0):
     log = None
     start_time = None
     cpu_curr_time = None
-    batchfldr_name = os.path.dirname(batch_cmd)
-    p = subprocess.Popen(batch_cmd, cwd=batchfldr_name, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    p = subprocess.Popen(batch_cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
     while p.poll() is None:
         if not start_time:
@@ -220,7 +219,7 @@ def getClosestLog(dms_log_t, profile_log, param):
         if dt < smallest_dt:
             smallest_dt = dt
             ind_chosen = ind
-    assert(ind_chosen, "dms_log datetime falls within profile log datetime range, hence index should be between 0 and the end of the profile log")
+    assert ind_chosen, "dms_log datetime falls within profile log datetime range, hence index should be between 0 and the end of the profile log"
     return (ind_chosen, profile_log[param][ind_chosen])
 
 def getClosestProfilelogForGeodmslog(profile_log, geodms_log, param):
@@ -275,27 +274,6 @@ def getLogInfoForPlotting(log, log_fn, param):
     rlog_compact = getCompactClosestLogForRLog(log, geodms_log, param)
     return rlog_compact
 
-def getCPU_ID():
-    cpu_id = subprocess.run("wmic cpu get ProcessorId", capture_output=True).stdout.decode("utf-8").split("\n")[1]
-    cpu_id = cpu_id.replace(" ", "")
-    cpu_id = cpu_id.replace("\n", "")
-    cpu_id = cpu_id.replace("\t", "")
-    cpu_id = cpu_id.replace("\r", "")
-    #subprocess.Popen("wmic cpu get ProcessorId", stdout=subprocess.PIPE ).communicate()[0]
-
-    #cpu_id = cpu_id.split(b"\n")[1]
-    return cpu_id
-    
-def getUUID():
-    uuid = subprocess.run("wmic csproduct get \"UUID\"", capture_output=True).stdout.decode("utf-8")
-    uuid = uuid.replace("-", "")
-    uuid = uuid.replace(" ", "")
-    uuid = uuid.replace("\n", "")
-    uuid = uuid.replace("\t", "")
-    uuid = uuid.replace("\r", "")
-    uuid = uuid.replace("UUID", "")
-    return uuid
-    
 def getSvnVersion(exp):
     if exp.svn[0]:
         svn_id = subprocess.run("svn info --show-item last-changed-revision", cwd=exp.svn[0], capture_output=True).stdout.decode("utf-8")
@@ -307,7 +285,6 @@ def getSvnVersion(exp):
 
 def getExperimentFileName(experiment):
     cfg_item_hash = int(hashlib.sha256((experiment.cfg + experiment.item).encode('utf-8')).hexdigest(), 16) % 10**15
-    uuid = getUUID() # make experiment machine specific
     if experiment.svn[1]:
         svn_revision_entry = f"_{experiment.svn[1]}_"
     else:
@@ -323,7 +300,7 @@ def getExperimentFileName(experiment):
     fldrname = f"{experiment.storage_fldr}experiment_data\\"
     if not os.path.exists(fldrname):
         os.makedirs(fldrname)
-    filename  = f"{experiment.name}{svn_revision_entry}{flags}_{uuid}_{cfg_item_hash}.bin"
+    filename  = f"{experiment.name}{svn_revision_entry}{flags}_{cfg_item_hash}.bin"
     return (fldrname, filename)
 
 def storeExperimentToPickleFile(experiment):
