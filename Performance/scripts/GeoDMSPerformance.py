@@ -128,7 +128,7 @@ def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_c
     p = psutil.Process(pid)
 
     if not start_time:
-        start_time = datetime.fromtimestamp(p.create_time()) #datetime.now()
+        start_time = datetime.fromtimestamp(p.create_time())
     prev_io_counters = p.io_counters()
     prev_time = start_time
     if not cpu_curr_time:
@@ -190,7 +190,7 @@ def createGeoDMSCallerBatchFile(exp, log_fn, delta_start_time=0):
     gui_caller_cmd_fn = f"{exp.storage_fldr}/tmp_dms_caller_file.bat"
     exe_fldr = os.path.dirname(exp.exe_fldr)
     with open(gui_caller_cmd_fn, "w") as f:
-        f.write(f"start \"GeoDmsGui\" /MAX {exe_fldr}\GeoDmsGui.exe {exp.flags} {exp.cfg}\n")
+        f.write(f"start \"GeoDmsGui\" /MAX {exe_fldr}/GeoDmsGui.exe {exp.flags} {exp.cfg}\n")
         #f.write(f"\"{exp.exe_fldr}\" WAIT 10\n")
         f.write(f"timeout {int(delta_start_time)}\n")
         f.write(f"{exp.exe_fldr} GOTO \"{exp.item}\"\n")
@@ -770,6 +770,6 @@ def main():
     
 if __name__=="__main__":
     main()
-    #RunTestConfig("C:\\prj\\tst\\Performance\\scripts\\experiments_Fast_test_batch.txt")
+    #RunTestConfig("C:/Users/Cicada/prj/GeoDMS-Test/Performance/scripts/profiler_rework.txt")
     #testReadLog()
     #testReadAllocatorInfoLog()
