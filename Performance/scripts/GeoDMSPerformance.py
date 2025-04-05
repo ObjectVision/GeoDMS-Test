@@ -9,6 +9,7 @@ import hashlib
 import difflib
 import subprocess
 import argparse
+import csv
 
 from bokeh import plotting
 from bokeh.models import HoverTool, PanTool, ResetTool, WheelZoomTool, CheckboxGroup, CheckboxButtonGroup, CustomJS, Legend, LegendItem
@@ -16,18 +17,17 @@ from bokeh.layouts import row, column
 from bokeh.palettes import Category10, Category20, Category20b, Category20c
 
 class Experiment:
-    def __init__(self, name, svn, exe_fldr, ld_fldr, storage_fldr, cfg, item, flags, color=None):
-        self.name         = name
-        self.svn          = svn
-        self.exe_fldr     = exe_fldr
-        self.ld_fldr      = ld_fldr
-        self.storage_fldr = storage_fldr
-        self.cfg          = cfg
-        self.item         = item
-        self.flags        = flags
-        self.color        = color
-       
+    def __init__(self, name, command, experiment_folder, environment_variables, cwd, geodms_logfile, binary_experiment_file):
+        self.name                   = name
+        self.command                = command
+        self.experiment_folder      = experiment_folder
+        self.environment_variables  = environment_variables
+        self.cwd                    = cwd
+        self.geodms_logfile         = geodms_logfile
+        self.binary_experiment_file = binary_experiment_file
         self.result = {}
+        def __str__(self):
+            return f"Experiment: name:{name} command:{command}"
 
 def readLog(log_filename, filter=None):
     ret = {"time":[], "text":[]}
@@ -110,106 +110,93 @@ def getProcessIdIfActive(names, parent_pid=None):
         time.sleep(0.5)
     return pid
 
-def getPerformance(exe_name, sampling_rate=1.0, log=None, start_time=None, cpu_curr_time=None, delta_start_time=0.0, parent_pid=None):
-    print(f"PARENT PID {parent_pid}")
+def getProcessCurrentStatistics(process:psutil.Process, experiment_start_time, cpu_curr_time=None):
+    t=None
+    dt=None
+    cpu_p=0
+    cpu_ct=cpu_curr_time
+    mem_p=0
+    rss=0
+    vms=0
+    num_threads=0
+    rb=0
+    wb=0
+    net_c=0
 
-    if not log:
-        log = {"time":[], "dtime":[], "cpu_percent":[], "cpu_curr_time":[], "memory_percent":[], "rss":[], "vms":[], "num_threads":[], "read_bytes":[], "write_bytes":[], "total_read_bytes":[], "total_write_bytes":[]} # rss=resident set size (aka physical non swapped memory in use by process), vms virtual memory size
-    pid = getProcessIdIfActive(exe_name, parent_pid)
+    try:
+        with process.oneshot():
+            cur_time = datetime.now()
+            t = cur_time
+            dt = (cur_time-experiment_start_time).total_seconds()
+            cpu_p_raw = process.cpu_percent()
+            num_cpus = psutil.cpu_count()
+            cpu_p = cpu_p_raw / num_cpus
+            print(f"{num_cpus} {cpu_p_raw} {cpu_p}")
+            if cpu_curr_time:
+                cpu_ct += cpu_p / 100.0
+            mem_p = process.memory_percent()
+            memory_info = process.memory_info()
+            rss = memory_info.rss * 10.0**-9.0 # GB
+            vms = memory_info.vms * 10.0**-9.0 # GB
+            num_threads = process.num_threads()
+            io_counters = process.io_counters()
+            rb = io_counters.read_bytes/10.0**9 # GB
+            wb = io_counters.write_bytes/10.0**9 # GB
+            net_c = len(process.net_connections())
+    except:
+        return [t, dt, cpu_p, cpu_ct, mem_p, rss, vms, num_threads, rb, wb, net_c]
+    return [t, dt, cpu_p, cpu_ct, mem_p, rss, vms, num_threads, rb, wb, net_c]
+
+def getPerformance(exp:Experiment, sampling_rate=1.0):
+    profile_log = {"time":[], "dtime":[], "cpu_percent":[], "cpu_curr_time":[], "memory_percent":[], "rss":[], "vms":[], "num_threads":[], "total_read_bytes":[], "total_write_bytes":[], "net_connections":[], "processes":[]} # rss=resident set size (aka physical non swapped memory in use by process), vms virtual memory ize
+    command = exp.command
+    env = exp.environment_variables
+    cwd = exp.cwd
     
-    if pid == -1:
-        print("Cannot find process id")
-        return log, start_time, cpu_curr_time
+    parent_process_open_handle = subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)    
+    parent_process = psutil.Process(parent_process_open_handle.pid)
+    experiment_start_time = datetime.fromtimestamp(parent_process.create_time())
+    cpu_ct = 0
+    while (psutil.pid_exists(parent_process.pid)):
+        print("BEGIN\n")
+        time_measurement_start = datetime.now()
+        t, dt, cpu_p, cpu_ct, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(parent_process, experiment_start_time, cpu_ct)
+        profile_log["time"].append(t)
+        profile_log["dtime"].append(dt)
+        profile_log["cpu_percent"].append(cpu_p)
+        profile_log["cpu_curr_time"].append(cpu_ct)
+        profile_log["memory_percent"].append(mem_p)
+        profile_log["rss"].append(rss)
+        profile_log["vms"].append(vms)
+        profile_log["num_threads"].append(num_threads)
+        profile_log["total_read_bytes"].append(rb)
+        profile_log["total_write_bytes"].append(wb)
+        profile_log["net_connections"].append(net_c)
+        child_processes = parent_process.children(recursive=True) 
+        profile_log["processes"].append(len(child_processes)+1)
 
-    if not psutil.pid_exists(pid):
-        print(f"Process id {pid} does not exist.")
-        return log, start_time, cpu_curr_time
-    
-    p = psutil.Process(pid)
-
-    if not start_time:
-        start_time = datetime.fromtimestamp(p.create_time())
-    prev_io_counters = p.io_counters()
-    prev_time = start_time
-    if not cpu_curr_time:
-        cpu_curr_time = 0.0
-    while (psutil.pid_exists(pid)):
-        timestamp_start = datetime.now()
-
-        try:
-            with p.oneshot():
-                cur_time = datetime.now()
-                log["time"].append(cur_time)
-                log["dtime"].append((cur_time-start_time).total_seconds()-delta_start_time)
-                cpu_percent = p.cpu_percent() / psutil.cpu_count()
-                cpu_curr_time += cpu_percent / 100.0
-                log["cpu_percent"].append(cpu_percent)
-                log["cpu_curr_time"].append(cpu_curr_time)
-                log["memory_percent"].append(p.memory_percent())
-                memory_info = p.memory_info()
-                log["rss"].append(memory_info.rss * 10.0**-9.0) # GB
-                log["vms"].append(memory_info.vms * 10.0**-9.0) # GB
-                log["num_threads"].append(p.num_threads())
-                io_counters = p.io_counters()
-                log["read_bytes"].append((io_counters.read_bytes-prev_io_counters.read_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
-                log["write_bytes"].append((io_counters.write_bytes-prev_io_counters.write_bytes)/(cur_time-prev_time).total_seconds()/10.0**9) # mb/second
-                log["total_read_bytes"].append(io_counters.read_bytes/10.0**9) # mb
-                log["total_write_bytes"].append(io_counters.write_bytes/10.0**9) # mb
-        except:
-            break
-
-        prev_io_counters = io_counters
-        
-        timestamp_end = datetime.now()
-        dtimestamp = (timestamp_end-timestamp_start).total_seconds()
-        sleep_time = sampling_rate-dtimestamp
-        #print(sleep_time, dtimestamp)
-        prev_time = cur_time
-        
+        for child_process in child_processes:
+            t, _, cpu_p, _, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(child_process, experiment_start_time)
+            if not t:
+                continue
+            profile_log["cpu_percent"][-1]       += cpu_p
+            profile_log["memory_percent"][-1]    += mem_p
+            profile_log["rss"][-1]               += rss
+            profile_log["vms"][-1]               += vms
+            profile_log["num_threads"][-1]       += num_threads
+            profile_log["total_read_bytes"][-1]  += rb
+            profile_log["total_write_bytes"][-1] += wb
+            profile_log["net_connections"][-1]   += net_c
+        print("END\n")
+        time_measurement_end = datetime.now()
+        dtimestamp = (time_measurement_end-time_measurement_start).total_seconds()
+        sleep_time = sampling_rate-dtimestamp        
         if sleep_time > 0.0:
             time.sleep(sleep_time)
-            
-    return log, start_time, cpu_curr_time
-
-def getPerformanceBatch(batch_cmd, sampling_rate=1.0):
-    exe_name = ["GeoDmsRun.exe", "Python.exe"]
-    log = None
-    start_time = None
-    cpu_curr_time = None
-    p = subprocess.Popen(batch_cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
-
-    while p.poll() is None:
-        if not start_time:
-            log, start_time, cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time, parent_pid=p.pid)
         else:
-            log,_,cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time, parent_pid=p.pid)
-    print(f"Finished profiling batchfile {batch_cmd}")
-    return log, start_time
+            print(f"Warning: measurements of calculation process took {dtimestamp} seconds, and is longer than sampling rate: {sampling_rate}")
 
-def createGeoDMSCallerBatchFile(exp, log_fn, delta_start_time=0):
-    gui_caller_cmd_fn = f"{exp.storage_fldr}/tmp_dms_caller_file.bat"
-    exe_fldr = os.path.dirname(exp.exe_fldr)
-    with open(gui_caller_cmd_fn, "w") as f:
-        f.write(f"start \"GeoDmsGui\" /MAX {exe_fldr}/GeoDmsGui.exe {exp.flags} {exp.cfg}\n")
-        #f.write(f"\"{exp.exe_fldr}\" WAIT 10\n")
-        f.write(f"timeout {int(delta_start_time)}\n")
-        f.write(f"{exp.exe_fldr} GOTO \"{exp.item}\"\n")
-        f.write(f"{exp.exe_fldr} SEND 5 0 >> {log_fn}\n")
-        #f.write(f"{exp.exe_fldr} SEND 1 3 16 0 0 \n")
-    return gui_caller_cmd_fn
-
-def getPerformanceGui(exp, log_fn, sampling_rate=1.0):
-    delta_start_time = 10.0
-    gui_caller_cmd = createGeoDMSCallerBatchFile(exp, log_fn, delta_start_time)
-    exe_name = "GeoDmsGui.exe"
-    log = None
-    start_time = None
-    cpu_curr_time = None
-    batchfldr_name = os.path.dirname(gui_caller_cmd)
-    p = subprocess.Popen(gui_caller_cmd, cwd=batchfldr_name)
-    while p.poll() is None:
-        log, start_time, cpu_curr_time = getPerformance(exe_name, sampling_rate, log, start_time, cpu_curr_time, delta_start_time)
-    return log, start_time
+    return profile_log, experiment_start_time
 
 def getClosestLog(dms_log_t, profile_log, param):
     smallest_dt = 99999999999.0 # absurdly large
@@ -283,24 +270,13 @@ def getSvnVersion(exp):
         svn_id = "<non versioned>"
     return svn_id
 
-def getExperimentFileName(experiment):
-    cfg_item_hash = int(hashlib.sha256((experiment.cfg + experiment.item).encode('utf-8')).hexdigest(), 16) % 10**15
-    if experiment.svn[1]:
-        svn_revision_entry = f"_{experiment.svn[1]}_"
-    else:
-        svn_revision_entry = "_"
-
-    flags = experiment.flags.replace(" ", "") # remove spaces
-    flags = flags.replace("/", "") # remove forward slashes
+def getExperimentFileName(experiment:Experiment):
+    experiment_hash = int(hashlib.sha256((experiment.name + experiment.command).encode('utf-8')).hexdigest(), 16) % 10**15
     
-    
-    if not experiment.cfg and not experiment.item: # batch file, flags param used for hardcoded log filename
-        flags = ""
-    
-    fldrname = f"{experiment.storage_fldr}experiment_data\\"
+    fldrname = f"{experiment.experiment_folder}/experiment_data/"
     if not os.path.exists(fldrname):
         os.makedirs(fldrname)
-    filename  = f"{experiment.name}{svn_revision_entry}{flags}_{cfg_item_hash}.bin"
+    filename  = f"{experiment.name}{experiment_hash}.bin"
     return (fldrname, filename)
 
 def storeExperimentToPickleFile(experiment):
@@ -319,95 +295,49 @@ def loadExperimentFromPickleFile(experiment, exp_fn=None):
         experiment = pickle.load(f)
     return experiment
 
-def RunExperiments(experiments, sampling_rate=1.0):
-    exe_name = "GeoDmsRun.exe"
-    for i, exp in enumerate(experiments):
-        
-        if type(exp) is str: # Read experiment from stored file
-            exp_fn = exp
-            if not os.path.exists(exp_fn): # check if experiment exists
-                print(f"Experiment file: {exp_fn} does not exist, skipping experiment.")
-                experiments[i] = None
+def RunExperiments(experiments:list[Experiment], sampling_rate=1.0):
+    for exp_index, exp in enumerate(experiments):
+        bin_exp_fn = exp.binary_experiment_file
+        if bin_exp_fn:
+            if not os.path.exists(bin_exp_fn): # check if experiment exists
+                print(f"Experiment file: {bin_exp_fn} does not exist, skipping experiment.")
+                experiments[exp_index] = None
                 continue
-            experiments[i] = loadExperimentFromPickleFile(None, exp_fn=exp_fn)
-            fn_no_ext = exp[:-4].split('\\')
-            print(f"Experiment: {fn_no_ext[-1]}, rev: {getSvnVersion(experiments[i])}, flags: {experiments[i].flags}, cfg: {experiments[i].cfg}, item: {experiments[i].item}")
-            continue
-            
-        if type(exp) is tuple:
-            exp_fn = exp[0]
-            if not os.path.exists(exp_fn): # check if experiment exists
-                print(f"Experiment file: {exp_fn} does not exist, skipping experiment.")
-                experiments[i] = None
-                continue
-            experiments[i] = loadExperimentFromPickleFile(None, exp_fn=exp_fn)
-            experiments[i].storage_fldr = exp[1]
-            
-            fn_no_ext = exp[0][:-4].split('\\')
-            print(f"Experiment: {fn_no_ext[-1]}, rev: {getSvnVersion(experiments[i])}, flags: {experiments[i].flags}, cfg: {experiments[i].cfg}, item: {experiments[i].item}")
+            experiments[exp_index] = loadExperimentFromPickleFile(None, exp_fn=bin_exp_fn)
+            print(experiments[exp_index])
             continue
         
         fldrname, filename = getExperimentFileName(exp)
-        print(f"Experiment: {filename[:-4]}, rev: {getSvnVersion(experiments[i])}, flags: {experiments[i].flags}, cfg: {experiments[i].cfg}, item: {experiments[i].item}")
         exp_fn = fldrname + filename
-
         
-        if os.path.exists(exp_fn): # Experiment is calculated before, do not recalculate
-            experiments[i] = loadExperimentFromPickleFile(exp)
-            continue
-        
-        if exp.ld_fldr and os.path.exists(exp.ld_fldr): # for a fair comparison remove LocalData
-            try:
-                shutil.rmtree(exp.ld_fldr)
-            except OSError as e:
-                print("Error: %s - %s." % (e.filename, e.strerror))       
-
-                
-        if exp.svn[0] and getSvnVersion(exp) != exp.svn[1]: # svn revision should match
-            print(f"Warning: cannot compute experiment {filename}, local svn copy revision: {getSvnVersion(exp)} does not match experiments revision: {exp.svn[1]}")
-            continue
+        #if os.path.exists(exp_fn): # Experiment is calculated before, do not recalculate
+        #    experiments[exp_index] = loadExperimentFromPickleFile(None, exp_fn)
+        #    continue
 
         # Sample performance
-        if (not exp.cfg and not exp.item): # BATCH
-            log_fn = exp.flags
-            if os.path.exists(log_fn): # always start with empty log
-                os.remove(log_fn)
-            exp.result["log"],start_time = getPerformanceBatch(f"{exp.exe_fldr} {exp.flags}", sampling_rate)
-            
-        else: # RUN
-            log_fn = f"{exp.storage_fldr}log{i}.txt"
-            stat_fn = f"{exp.storage_fldr}stat{i}.txt"
-            if os.path.exists(log_fn): # remove log
-                os.remove(log_fn)
-            if "GeoDmsCaller.exe" in exp.exe_fldr: # GUI
-                exp.result["log"],start_time = getPerformanceGui(exp, log_fn, sampling_rate=1.0)
-            else:
-                cmd = f"start \"GeoDmsRun\" {exp.exe_fldr}{exe_name} /L{log_fn} {exp.flags} {exp.cfg} @file {stat_fn} @statistics {exp.item}"
-                print(cmd)
-                os.system(cmd)
-                exp.result["log"],start_time,_ = getPerformance(exe_name, sampling_rate)
+        geodms_logfile = exp.geodms_logfile
+        if os.path.exists(geodms_logfile): # always start with empty log
+            os.remove(geodms_logfile)
+        exp.result["log"], start_time = getPerformance(exp)
 
-        # LOG
-        if os.path.exists(log_fn):
-            exp.result["cpu_percent"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_percent")
-            exp.result["cpu_curr_time"]  = getLogInfoForPlotting(exp.result["log"], log_fn, "cpu_curr_time")
-            exp.result["memory_percent"] = getLogInfoForPlotting(exp.result["log"], log_fn, "memory_percent")
-            exp.result["num_threads"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "num_threads")
-            exp.result["rss"]            = getLogInfoForPlotting(exp.result["log"], log_fn, "rss")
-            exp.result["vms"]            = getLogInfoForPlotting(exp.result["log"], log_fn, "vms")
-            exp.result["read_bytes"]     = getLogInfoForPlotting(exp.result["log"], log_fn, "read_bytes")
-            exp.result["write_bytes"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "write_bytes")
-            exp.result["total_read_bytes"]     = getLogInfoForPlotting(exp.result["log"], log_fn, "total_read_bytes")
-            exp.result["total_write_bytes"]    = getLogInfoForPlotting(exp.result["log"], log_fn, "total_write_bytes")
+        if os.path.exists(geodms_logfile):
+            exp.result["cpu_percent"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "cpu_percent")
+            exp.result["cpu_curr_time"]     = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "cpu_curr_time")
+            exp.result["memory_percent"]    = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "memory_percent")
+            exp.result["num_threads"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "num_threads")
+            exp.result["rss"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "rss")
+            exp.result["vms"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "vms")
+            exp.result["read_bytes"]        = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "read_bytes")
+            exp.result["write_bytes"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "write_bytes")
+            exp.result["total_read_bytes"]  = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_read_bytes")
+            exp.result["total_write_bytes"] = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_write_bytes")
 
         # Get allocator state from log
-        log_alloc = readLogAllocator(log_fn, start_time) # temporarily disable allocator logging
+        log_alloc = readLogAllocator(geodms_logfile, start_time) # temporarily disable allocator logging
+        exp.result["log_alloc"] = None
         if log_alloc:
             exp.result["log_alloc"] = log_alloc
-        else: 
-            exp.result["log_alloc"] = None
-        
-        # store experiment    
+
         storeExperimentToPickleFile(exp)
 
     return experiments
@@ -495,10 +425,7 @@ def VisualizeExperiments(experiments, vgroups):
         exps_ds.append([exp_ds_graphs, exp_ds_logs, exp_ds_alloc])
         
     for ii, vgroup in enumerate(vgroups):
-        if ii == 0:
-            title = f"{experiments[0].cfg} {experiments[0].item}"
-        else:
-            title = ""
+        title = ""
         
         if not vgroup[1]: # no y_range
             p = plotting.figure(width=2000, height=500, tooltips=tool_tips, tools="pan,wheel_zoom,box_zoom,reset,save,hover", title=title)
@@ -557,8 +484,8 @@ def VisualizeExperiments(experiments, vgroups):
     dum_fig.x_range.start = 1000
     # add the legend
     dum_fig.add_layout( Legend(click_policy='hide',location='top_left',border_line_alpha=0,items=legend_items) )
-    
-    output_fn = f"{experiments[0].storage_fldr}compare.html"
+
+    output_fn = f"{experiments[0].experiment_folder}compare.html"
     print(f"Storing experiments interactive figure in {output_fn}")
     
     grid_structure = []
@@ -574,54 +501,20 @@ def VisualizeExperiments(experiments, vgroups):
 
 def InitExperimentsFromCsvFile(fn):
     if not os.path.exists(fn):
-        return None
-    cfg = None
-    item = None
-    storage_fldr = None
+        raise Exception(f"Experiment file does not exist: {fn}")
     
-    experiments = []
-    with open(fn, "r") as f:
-        while (True):
-            line = f.readline()
-            if not line:
-                break
-            
-            if "name;svn;exe_fldr;ld_fldr;flags;fullname" in line:
-                continue
-                
-            if line[0] == "#": # comment
-                continue
-                
-            if len(line) == 1: # empty line
-                continue
-            
-            line_split   = line.split(";")
-            
-            if len(line_split) == 2: # general params
-                if line_split[0] == "cfg":
-                    cfg = line_split[1].replace("\n", "")
-                elif line_split[0] == "item":
-                    item = line_split[1].replace("\n", "")
-                elif line_split[0] == "storage_fldr":
-                    storage_fldr = line_split[1].replace("\n", "")
-            else:
-                name         = line_split[0]
-                svn_split    = line_split[1].split(",")
-                if len(svn_split) == 1:
-                    svn = (None, None)
-                else:
-                    svn = (svn_split[0], svn_split[1])
-                exe_fldr     = line_split[2]
-                ld_fldr      = line_split[3]
-                flags        = line_split[4]
-                fullname     = line_split[5].replace("\n", "").replace("\t","").replace(" ","")
-                
-                if fullname and storage_fldr:
-                    experiments.append((fullname,storage_fldr))
-                elif fullname:
-                    experiments.append(fullname)
-                else:
-                    experiments.append(Experiment(name=name, svn=svn, exe_fldr=exe_fldr, ld_fldr=ld_fldr, storage_fldr=storage_fldr, cfg=cfg, item=item, flags=flags))
+    with open(fn) as experiment_csv_file:
+        csv_reader = csv.reader(experiment_csv_file, delimiter=";")
+
+        print("Skipping first line in experiment file, assuming it has a header")
+        next(csv_reader)
+
+        experiments = []
+        for row_index, csv_row in enumerate(csv_reader):
+            assert len(csv_row)==7, f"Unexpected number of csv fields ({len(csv_row)}) in experiment file row {row_index}, should be semicolonseparated with fields: name;command;experiment_folder;environment_variables(optional);cwd(optional);geodms_logfile(optional);binary_experiment_file(optional), skipping"
+            # experiment fields
+            name,command,experiment_folder,environment_variables,cwd,geodms_logfile,binary_experiment_file = csv_row 
+            experiments.append(Experiment(name=name, command=command, experiment_folder=experiment_folder, environment_variables=environment_variables,cwd=cwd,geodms_logfile=geodms_logfile,binary_experiment_file=binary_experiment_file))
 
     return experiments
     
@@ -638,7 +531,6 @@ def pause():
     return False
     
 def compareStatFiles(name1, statfn_1, name2, statfn_2):
-    
     files_are_different = False
     with open(statfn_1) as f, open(statfn_2) as g:
         flines = f.readlines()
@@ -722,16 +614,11 @@ def Run(config_fn, sampling_rate=1.0):
     experiments = InitExperimentsFromCsvFile(config_fn)
 
     if not experiments:
-        print(f"Unable to initialize experiments from csv file: {config_fn}")
+        print(f"No valid experiments found in experiment file: {config_fn}")
         return
         
     # run 
     experiments = RunExperiments(experiments, sampling_rate)
-
-    # check
-    #if compareExperimentStatisticsFiles(experiments):
-    #    print("Aborting..")
-    #    return
     
     # visualize    
     vgroups = [("cpu_percent", (0,100)), ("cpu_curr_time", False), ("vms", False), ("num_threads", False), ("total_read_bytes", False), ("total_write_bytes", False)]
@@ -769,7 +656,7 @@ def main():
     return
     
 if __name__=="__main__":
-    main()
-    #RunTestConfig("C:/Users/Cicada/prj/GeoDMS-Test/Performance/scripts/profiler_rework.txt")
+    #main()
+    RunTestConfig("C:/Users/Cicada/prj/GeoDMS-Test/Performance/scripts/profiler_rework.txt")
     #testReadLog()
     #testReadAllocatorInfoLog()
