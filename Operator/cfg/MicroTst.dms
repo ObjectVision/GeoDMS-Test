@@ -316,7 +316,14 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		attribute<rdc_1000m> rdc_1000m_rel (centroids) := centroids/centroid[rdc_1000m];
 		attribute<float32> f1_noname       (centroids) := rdc_1000m/f1[rdc_1000m_rel];
 	}
-
+	container AsString
+	{
+		parameter<float64> sumAllNaturals := -1.0 / 12.0;
+		parameter<string>  sumAllNaturals_str := String(sumAllNaturals);
+		parameter<float64> round_trip := float64(sumAllNaturals_str);
+		parameter<bool> test := sumAllNaturals == round_trip;
+		
+	}
 	container EmptyDijkstra
 	{
 		unit<uint32> linkset : nrofrows = 0
