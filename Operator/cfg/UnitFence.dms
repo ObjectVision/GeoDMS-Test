@@ -1,8 +1,14 @@
 container UnitFenceTest
 {
-	unit<uint32> r := range(0, 10) {
-		attribute<uint32> sqr := id(r)*id(r);
+	unit<uint32> r := range(0, 1000000000) {
+		attribute<uint32> sqr := sort(id(r)*id(r));
+		attribute<uint32> sqr3 := sort(sqr+3);
 	}
 	unit<uint32> f := FenceContainer(r, 'rrrr');
-	unit<uint32> g := FenceContainer(f, 'ffff');
+	container ff {
+		attribute<uint32> sqr2(r) := sort(f/sqr + 2);
+		attribute<uint32> sqr32(r) := sort(f/sqr3 + 2);
+	}
+	container g := FenceContainer(ff, 'ffff');
+	attribute<uint32> gg(r) := sort(g/sqr2 + 3);
 }
