@@ -1,6 +1,7 @@
 REM paden die worden afgeleid
 
 Set prj_snapshotsDir=C:\ProjDir_Jip\prj_snapshots
+Set prj_snapshotsDir=%RegressionTestsSourceDataDir%\prj_snapshots
 
 Rem projecten die uit het GeoDMS tst project
 
