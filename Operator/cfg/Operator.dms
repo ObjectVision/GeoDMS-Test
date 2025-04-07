@@ -2531,9 +2531,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container string: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/string"
 			{
+				parameter<string> floatAsString := string(source/FloatParam);
 				parameter<bool> test_param := 
 					   string(source/IntegerParam) = '7'
-					&& string(source/FloatParam)   = '-999.99';
+					&& float64(floatAsString)= -999.99;
 				attribute<string> att_int  (Domain) := string(source/IntegerAtt);
 				attribute<bool>   test_int (Domain) := att_int = source/StringInteger;
 				parameter<bool>   test_attr := all(test_int);
