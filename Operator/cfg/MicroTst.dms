@@ -28,7 +28,22 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<ha>     NrHaPerCell_mul  := convert(gridsize * gridsize, ha);
 		parameter<ha>     NrHaPerCell_sq   := convert(gridsize^2f, ha);
 	}
+	container issue_783 {
+		unit<uint32> Sequence_later := range(0, 2)
+		{
+			attribute<. > id := id(.);
+			attribute<string> name := 'sl'+string(id);
+		}
 
+		container Sequence_later_container := for_each_nedv(Sequence_later/name, 'string('+string(ID(Sequence_later))+')', void, string) ;
+
+		container x :=  1+2;
+		
+		container LastSequence := ='last(Sequence_later/Name)'
+		{
+			container StateNaAllocatie := =last(Sequence_later/name)+'/StateNaAllocatie'; 
+		}
+	}
 	container issue_130 : StorageName = "%LocalDataProjDir%/First.mmd"
 	{
 		parameter<string> a := =e;
@@ -301,7 +316,14 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		attribute<rdc_1000m> rdc_1000m_rel (centroids) := centroids/centroid[rdc_1000m];
 		attribute<float32> f1_noname       (centroids) := rdc_1000m/f1[rdc_1000m_rel];
 	}
-
+	container AsString
+	{
+		parameter<float64> sumAllNaturals := -1.0 / 12.0;
+		parameter<string>  sumAllNaturals_str := String(sumAllNaturals);
+		parameter<float64> round_trip := float64(sumAllNaturals_str);
+		parameter<bool> test := sumAllNaturals == round_trip;
+		
+	}
 	container EmptyDijkstra
 	{
 		unit<uint32> linkset : nrofrows = 0
@@ -924,7 +946,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 
 			attribute<point_rd> endpoint:   expr = "startpoint + point(deltaY,deltaX,point_rd)";
 
-			attribute<point_rd> startpoint: [{432327,78929},{432107,78969},{432227,78949},{432300,78900},{432327,78959}];
+			attribute<point_rd> startpoint := union_data(., point_yx(432327f,78929f),point_yx(432107f,78969f),point_yx(432227f,78949f),point_yx(432300f,78900f),point_yx(432327f,78959f));
 //			attribute<point_rd> endpoint:   [{432827,79400},{432827,79400},{432827,79400},{432600,78800},{433327,79000}];
 			attribute<float32>  deltaX:       [500,500,-500,-500,250];
 			attribute<float32>  deltaY:       [500,-500,-500,500,-500];
@@ -1215,11 +1237,11 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		range(
 			gridset(
 				 TestCoord
-				,point(250f, -250f, TestCoord)
-				,point(340025f, 159900f + 250f * 2025f, TestCoord)
+				,point_yx(250f, -250f, TestCoord)
+				,point_yx(340025f, 159900f + 250f * 2025f, TestCoord)
 				, spoint
 			)
-			, point(0s, 0s), point(1990s, 2025s)
+			, point_yx(0s, 0s), point_yx(1990s, 2025s)
 		)
 	{
 		parameter<fpoint>  ProjFactor: expr = "fpoint(GetProjectionFactor(.))";
@@ -1237,8 +1259,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		range(
 			gridset(
 				 TestCoord
-				,point(-250f, 250f, TestCoord)
-				,point(4112000f, -5264000f, TestCoord)
+				,point_yx(-250f, 250f, TestCoord)
+				,point_yx(4112000f, -5264000f, TestCoord)
 				, ipoint
 			)
 			, point(0i, 0i), point(80000i, 100000i)
@@ -1279,11 +1301,11 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		unit<spoint> pot500: expr = 
 			"range("
 				" spoint"
-				",point(-int16(500),-int16(500)),point(int16(510),int16(510))"
+				",point_yx(-int16(500),-int16(500)),point_yx(int16(510),int16(510))"
 			")"
 		{
-			attribute<Dist2Range> distMatr:  expr =  "dist2(point(int16(0), int16(0), .), Dist2Range)";
-			attribute<float32>    AbsWeight: expr = "MakeDefined(distMatr <= uint32(250000) ? float32(10000) / float32(distMatr) : float32(0), float32(0))";
+			attribute<Dist2Range> distMatr := dist2(point_xy(int16(0), int16(0), .), Dist2Range);
+			attribute<float32>    AbsWeight:= MakeDefined(distMatr <= uint32(250000) ? float32(10000) / float32(distMatr) : float32(0), float32(0));
 		}
 	}
 
@@ -1291,14 +1313,14 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		range(
 			gridset(
 				 TestCoord
-				,point(250f, -250f, TestCoord)
-				,point(340025f, 159900f + 250f * 1000f
+				,point_yx(250f, -250f, TestCoord)
+				,point_yx(340025f, 159900f + 250f * 1000f
 					,TestCoord
 				)
 				, spoint
 			)
-			,point(Int16(0),Int16(0))
-			,point(Int16(1000),Int16(1000))
+			,point_yx(Int16(0),Int16(0))
+			,point_yx(Int16(1000),Int16(1000))
 		)
 	{
 		attribute<float32> test:      expr = "float32(pointcol(id(TestGridLarge))) % float32(50) + float32(pointrow(id(TestGridLarge))) % float32(50) - 30f";
@@ -1322,9 +1344,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		}
 
 
-		parameter<dpoint> a := point(1.3, 1.4);
-		parameter<dpoint> b := point(3.4,5.6) * a;
-		parameter<dpoint> c := a * 5.6;
+		parameter<dpoint> a := point_yx(1.3, 1.4);
+		parameter<dpoint> b := point_yx(3.4,5.6) * a;
+		parameter<dpoint> c := 5.6 * a;
 		parameter<dpoint> d := 3.4 / a;
 		parameter<dpoint> e := a / 5.6;
 		parameter<dpoint> f := e*e;
@@ -1332,7 +1354,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<string> gdalData: Expr = "Expand(., '%env:GDAL_DATA%')";
 		unit<int16> pointset: nrofrows = 100
 		{
-			attribute<TestGrid> gridnr: expr = "point(id(.),id(.),TestGrid)";
+			attribute<TestGrid> gridnr := point_yx(id(.),id(.),TestGrid);
 		}
 	}
 	attribute<float32> DistTo (TestGrid): expr =
@@ -1363,7 +1385,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	
 	container AsciiGridOsStructuredException
 	{
-		unit<fpoint> rdc: Range = "[{300000, 0}, {625000, 280000})";
+		unit<fpoint> rdc := range(point_yx(300000f, 0f),point_yx(625000f, 280000f));
 
 		unit<spoint> rdc_100m_monolith
 		:	Descr = "rdCoords/100m van NW naar SE (3250 rows, 2700 cols)"
@@ -1371,12 +1393,12 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 				"range("
 					"gridset("
 						" rdc"
-						",point(Float32( - 100), Float32(  100), rdc)"
-						",point(Float32(625000), Float32(10000), rdc)"
+						",point_yx(Float32( - 100), Float32(  100), rdc)"
+						",point_yx(Float32(625000), Float32(10000), rdc)"
 						",spoint"
 					")"
-					",point(Int16(0)   , Int16(0))"
-					",point(Int16(3250), Int16(2700))"
+					",point_yx(Int16(0)   , Int16(0))"
+					",point_yx(Int16(3250), Int16(2700))"
 				")";
 		unit<spoint> rdc_100m_tiled
 		:	Descr = "rdCoords/100m van NW naar SE (3250 rows x 2700 cols in 5x5 tiles of 650 rows x 540 cols each)"
@@ -1603,16 +1625,15 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			unit<uint32> pointset: nrofrows = 177
 			{
-				attribute<point_rd> point:
-				[
-					 {403025,113810},{402552,113711},{402558,113646},{402428,113636},{402448,113472},{402480,113244},{402503,113057},{402570,112883},{402576,112884},{402578,112876},{402647,112740},{402697,112555},{402698,112554},{402973,112471},{402977,112473},{403544,112312},{403552,112612},{403434,112809},{403298,113032},{403171,113401},{403025,113810}
-					,{400990,113269},{400888,113291},{400886,113192},{400883,113120},{400916,112666},{400893,112424},{400817,112176},{400864,112187},{401157,112293},{401322,112404},{401494,112519},{401597,112589},{401558,112840},{401553,112888},{401288,112945},{401065,113187},{400990,113269}
-					,{401238,115099},{401047,115164},{400978,114523},{400965,114314},{400926,113796},{400919,113685},{400888,113291},{400990,113269},{401065,113187},{401288,112945},{401553,112888},{401510,113137},{401550,113377},{401602,113684},{401642,113915},{401567,114437},{401475,114991},{401462,115075},{401238,115099}
-					,{402174,113703},{402076,113691},{402076,113690},{401742,113655},{401723,113659},{401602,113684},{401510,113137},{401553,112888},{402697,112555},{402647,112740},{402578,112876},{402577,112876},{402576,112884},{402570,112883},{402503,113057},{402480,113244},{402448,113472},{402446,113472},{402428,113636},{402426,113634},{402414,113716},{402281,113770},{402174,113703}
-					,{401531,114646},{401567,114437},{401642,113915},{401602,113684},{401723,113659},{401742,113655},{402077,113690},{402076,113691},{402076,113690},{402077,113690},{402174,113703},{402281,113770},{402272,113831},{402263,113896},{402199,114330},{402194,114374},{402223,114390},{402197,114497},{402086,114462},{402049,114612},{401988,114592},{401980,114626},{401803,114574},{401790,114655},{401765,114673},{401757,114803},{401545,114739},{401567,114983},{401475,114991},{401531,114646}
-					,{402757,114546},{402404,114445},{402317,114418},{402192,114373},{402263,113896},{402281,113770},{402414,113716},{402428,113636},{402558,113646},{402552,113711},{403025,113810},{402870,114237},{402757,114546}
-					,{405282,113562},{405282,113561},{405183,113537},{404996,113582},{404923,113297},{404776,113283},{404669,113160},{404669,113068},{404576,113022},{404353,113116},{404300,112976},{404256,112989},{404154,112857},{404063,112893},{403939,112611},{403770,112450},{403792,112379},{403544,112312},{402977,112473},{402973,112471},{402698,112554},{402697,112555},{401553,112888},{401558,112840},{401597,112589},{401494,112519},{401322,112404},{401157,112293},{400943,112215},{401063,111873},{401234,111711},{401477,111716},{401653,111646},{402133,111453},{402382,111433},{402859,111567},{403372,111821},{403701,111952},{403834,112009},{403934,112040},{404010,112054},{404157,112066},{404271,112054},{404555,111996},{404649,111969},{404664,111986},{404631,112040},{404620,112098},{405013,112720},{405495,113478},{405454,113512},{405415,113601},{405353,113625},{405282,113562}
-				];
+				attribute<point_rd> point := union_data(., 
+					 point_yx(403025f,113810f), point_yx(402552f,113711f), point_yx(402558f,113646f), point_yx(402428f,113636f), point_yx(402448f,113472f), point_yx(402480f,113244f), point_yx(402503f,113057f), point_yx(402570f,112883f), point_yx(402576f,112884f), point_yx(402578f,112876f), point_yx(402647f,112740f), point_yx(402697f,112555f), point_yx(402698f,112554f), point_yx(402973f,112471f), point_yx(402977f,112473f), point_yx(403544f,112312f), point_yx(403552f,112612f), point_yx(403434f,112809f), point_yx(403298f,113032f), point_yx(403171f,113401f), point_yx(403025f,113810f)
+					,point_yx(400990f,113269f), point_yx(400888f,113291f), point_yx(400886f,113192f), point_yx(400883f,113120f), point_yx(400916f,112666f), point_yx(400893f,112424f), point_yx(400817f,112176f), point_yx(400864f,112187f), point_yx(401157f,112293f), point_yx(401322f,112404f), point_yx(401494f,112519f), point_yx(401597f,112589f), point_yx(401558f,112840f), point_yx(401553f,112888f), point_yx(401288f,112945f), point_yx(401065f,113187f), point_yx(400990f,113269f)
+					,point_yx(401238f,115099f), point_yx(401047f,115164f), point_yx(400978f,114523f), point_yx(400965f,114314f), point_yx(400926f,113796f), point_yx(400919f,113685f), point_yx(400888f,113291f), point_yx(400990f,113269f), point_yx(401065f,113187f), point_yx(401288f,112945f), point_yx(401553f,112888f), point_yx(401510f,113137f), point_yx(401550f,113377f), point_yx(401602f,113684f), point_yx(401642f,113915f), point_yx(401567f,114437f), point_yx(401475f,114991f), point_yx(401462f,115075f), point_yx(401238f,115099f)
+					,point_yx(402174f,113703f), point_yx(402076f,113691f), point_yx(402076f,113690f), point_yx(401742f,113655f), point_yx(401723f,113659f), point_yx(401602f,113684f), point_yx(401510f,113137f), point_yx(401553f,112888f), point_yx(402697f,112555f), point_yx(402647f,112740f), point_yx(402578f,112876f), point_yx(402577f,112876f), point_yx(402576f,112884f), point_yx(402570f,112883f), point_yx(402503f,113057f), point_yx(402480f,113244f), point_yx(402448f,113472f), point_yx(402446f,113472f), point_yx(402428f,113636f), point_yx(402426f,113634f), point_yx(402414f,113716f), point_yx(402281f,113770f), point_yx(402174f,113703f)
+					,point_yx(401531f,114646f), point_yx(401567f,114437f), point_yx(401642f,113915f), point_yx(401602f,113684f), point_yx(401723f,113659f), point_yx(401742f,113655f), point_yx(402077f,113690f), point_yx(402076f,113691f), point_yx(402076f,113690f), point_yx(402077f,113690f), point_yx(402174f,113703f), point_yx(402281f,113770f), point_yx(402272f,113831f), point_yx(402263f,113896f), point_yx(402199f,114330f), point_yx(402194f,114374f), point_yx(402223f,114390f), point_yx(402197f,114497f), point_yx(402086f,114462f), point_yx(402049f,114612f), point_yx(401988f,114592f), point_yx(401980f,114626f), point_yx(401803f,114574f), point_yx(401790f,114655f), point_yx(401765f,114673f), point_yx(401757f,114803f), point_yx(401545f,114739f), point_yx(401567f,114983f), point_yx(401475f,114991f), point_yx(401531f,114646f)
+					,point_yx(402757f,114546f), point_yx(402404f,114445f), point_yx(402317f,114418f), point_yx(402192f,114373f), point_yx(402263f,113896f), point_yx(402281f,113770f), point_yx(402414f,113716f), point_yx(402428f,113636f), point_yx(402558f,113646f), point_yx(402552f,113711f), point_yx(403025f,113810f), point_yx(402870f,114237f), point_yx(402757f,114546f)
+					,point_yx(405282f,113562f), point_yx(405282f,113561f), point_yx(405183f,113537f), point_yx(404996f,113582f), point_yx(404923f,113297f), point_yx(404776f,113283f), point_yx(404669f,113160f), point_yx(404669f,113068f), point_yx(404576f,113022f), point_yx(404353f,113116f), point_yx(404300f,112976f), point_yx(404256f,112989f), point_yx(404154f,112857f), point_yx(404063f,112893f), point_yx(403939f,112611f), point_yx(403770f,112450f), point_yx(403792f,112379f), point_yx(403544f,112312f), point_yx(402977f,112473f), point_yx(402973f,112471f), point_yx(402698f,112554f), point_yx(402697f,112555f), point_yx(401553f,112888f), point_yx(401558f,112840f), point_yx(401597f,112589f), point_yx(401494f,112519f), point_yx(401322f,112404f), point_yx(401157f,112293f), point_yx(400943f,112215f), point_yx(401063f,111873f), point_yx(401234f,111711f), point_yx(401477f,111716f), point_yx(401653f,111646f), point_yx(402133f,111453f), point_yx(402382f,111433f), point_yx(402859f,111567f), point_yx(403372f,111821f), point_yx(403701f,111952f), point_yx(403834f,112009f), point_yx(403934f,112040f), point_yx(404010f,112054f), point_yx(404157f,112066f), point_yx(404271f,112054f), point_yx(404555f,111996f), point_yx(404649f,111969f), point_yx(404664f,111986f), point_yx(404631f,112040f), point_yx(404620f,112098f), point_yx(405013f,112720f), point_yx(405495f,113478f), point_yx(405454f,113512f), point_yx(405415f,113601f), point_yx(405353f,113625f), point_yx(405282f,113562f)
+				);
 				attribute<district> districtnr:
 				[
 					0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1636,10 +1657,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			}
 			unit<uint32> pointsetBB: nrofrows = 5, DialogType = "Map", DialogData = "point"
 			{
-				attribute<point_rd> point:
-				[
-					 {405550,111100},{405550,115500},{401000,115500},{401000,111100},{405550,111100}
-				];
+				attribute<point_rd> point:=union_data(., point_yx(405550f,111100f),point_yx(405550f,115500f),point_yx(401000f,115500f),point_yx(401000f,111100f),point_yx(405550f,111100f));
 				attribute<string> label := id(.) == 4 ? string(1) : string(id(.) + 1), DialogType = "LabelText";
 				attribute<point_rd> point_revers:= reverse(point);
 			}
@@ -1700,7 +1718,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<int32> hoek:          [-100,-300,5, 700,900,1200,1500];
 			unit<uint16> unique_hoek := unique_uint16(hoek);
 			attribute<unique_hoek> unique_hoek_rel := rlookup(hoek, unique_hoek/values);
-			attribute<float32> float_hoek := float32(hoek);
+			attribute<float32> float_hoek := float32(hoek)+4;
 			
 			attribute<bool> is_hoek := hoek > 700i;
 					
@@ -1800,11 +1818,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 
 		unit<uint32> pointset: nrofrows = 2, DialogType = "Map", DialogData = "point"
 		{
-			attribute<point_rd> point:
-			[
-				 {402000,113000},
-				 {402084, 113193}
-			]
+			attribute<point_rd> point := union_data(., point_yx(402000f,113000f),point_yx(402084f, 113193f))
 			{
 				parameter<float32> SymbolSize:  DialogType = "SymbolSize",  expr = "float32(32)";
 				parameter<int16>   SymbolIndex: DialogType = "SymbolIndex", expr = "int16(66)";
@@ -2645,23 +2659,23 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	
 	container table_crash_irregular_tiling
 	{
-		unit<dpoint> AfricanACEA: Format = "EPSG:9001"; // TODO: Check the EPSG number; (only) required for reprojection operations.
+		unit<dpoint> AfricanACEA: SpatialReference = "EPSG:9001"; // TODO: Check the EPSG number; (only) required for reprojection operations.
 		unit<dpoint> BaseProjection := AfricanACEA;
 
 		// first, let's define an arbitrary regular tiling
-		unit<dpoint> proto_base_grid_1k  := gridset(BaseProjection, GetProjectionFactor(Base_grid_100m) * point(10d, 10d, BaseProjection), GetProjectionOffSet(Base_grid_100m), BaseProjection);
+		unit<dpoint> proto_base_grid_1k  := gridset(BaseProjection, GetProjectionFactor(Base_grid_100m) * point_yx(10d, 10d, BaseProjection), GetProjectionOffSet(Base_grid_100m), BaseProjection);
 		unit<ipoint> Base_grid_100m      := BaseData/Landuse, DialogData = "BaseProjection"; // this domain has cardinality 82178 x 89023 = 7.315.732.094 = 6.8 GB.
 
 		container BaseData
 		{
 			unit<ipoint> Landuse: StorageName = "%SourceDataDir%/Africa/landuse/LU.tif", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "geometries/BaseProjection";
 		}
-		unit<ipoint> Base_grid_1km  := range(proto_base_grid_1k, point(0i,0i,ipoint), upperbound(Base_grid_100m) / point(10i,10i,ipoint) ), DialogData = "BaseProjection";
+		unit<ipoint> Base_grid_1km  := range(proto_base_grid_1k, point_yx(0i,0i,ipoint), upperbound(Base_grid_100m) / point_yx(10i,10i,ipoint) ), DialogData = "BaseProjection";
 
 		unit<uint32> StudyAreaTile: nrofrows = 6
 		{
-			attribute<Base_grid_1km>   LB1k  :[{2833, 2352},{2811, 2457},{2867, 2352},{2867, 2457},{3276, 2325},{3276, 2457}];
-			attribute<Base_grid_1km>   UB1k  :[{2867, 2457},{2867, 2662},{3276, 2457},{3276, 2738},{3566, 2457},{3564, 2788}];
+			attribute<Base_grid_1km> LB1k := union_data(., point_yx(2833i, 2352i),point_yx(2811i, 2457i),point_yx(2867i, 2352i),point_yx(2867i, 2457i),point_yx(3276i, 2325i),point_yx(3276i, 2457i));
+			attribute<Base_grid_1km> UB1k := union_data(., point_yx(2867i, 2457i),point_yx(2867i, 2662i),point_yx(3276i, 2457i),point_yx(3276i, 2738i),point_yx(3566i, 2457i),point_yx(3564i, 2788i));
 		}
 		
 		unit<ipoint> IrregularTiledUnit  := TiledUnit(StudyAreaTile/LB1k, StudyAreaTile/UB1k), DialogData = "BaseProjection" 
