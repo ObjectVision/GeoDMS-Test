@@ -5195,6 +5195,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
 
+
+
 				parameter<bool> attr_test := Region_City/attr_test && Region_City_uint8/attr_test && Region_City_uint16/attr_test && Region_City_uint32/attr_test && Region_City_uint64/attr_test;
 			}
 
@@ -6591,9 +6593,6 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool>    test         := test_point && test_nextpoint; // && SequenceNr = seq && Ordinal = ord;
 					parameter<bool>    test_attr    := all(test);
 				}
-				
-
-
 			}
 			container RD2LatLongWgs84: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/rd2latlongwgs84"
 			{
@@ -6749,6 +6748,28 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> test  := = IsEmpty? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
 				}
 				parameter<bool> test_attr   := all(pointset/test);
+			}
+			container join_near_points
+			:	Using = "source"
+			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/dist"
+			{
+				unit<uint32> nearby_points_km1  := join_near_values(destination/location, origin/location, 1000d)
+				{
+					attribute<point_rd> location_org  := origin/location[second_rel];
+					attribute<point_rd> location_dest := destination/location[first_rel];
+				}
+				unit<uint32> nearby_points_km3 := join_near_values(destination/location, origin/location, 3000d)
+				{
+					attribute<point_rd> location_org  := origin/location[second_rel];
+					attribute<point_rd> location_dest := destination/location[first_rel];
+				}
+
+				unit<uint32> nearby_points_km10 := join_near_values(destination/location, origin/location, 100000d)
+				{
+					attribute<point_rd> location_org  := origin/location[second_rel];
+					attribute<point_rd> location_dest := destination/location[first_rel];
+				}
+
 			}
 
 			container results
