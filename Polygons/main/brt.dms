@@ -98,13 +98,14 @@ container BRT : using = "geometries;eenheden;typeringen"
 	}
 	
 //	unit<uint32> TilesSub := select_with_org_rel(id(TileDomain) == 35956 || id(TileDomain) == 35957) //35956+35957 plesmanlaan
-	unit<uint32> TilesSub := select_with_org_rel(id(TileDomain) == 35957) //35956+35957 plesmanlaan
+	unit<uint32> TilesSub := TileDomain //select_with_org_rel(id(TileDomain) == 35957) //35956+35957 plesmanlaan
 	{
-		attribute<rdc> geometry (poly) := org_rel -> TileDomain/geometry_poly;
+//		attribute<rdc> geometry (poly) := org_rel -> TileDomain/geometry_poly;
+		attribute<rdc> geometry (poly) := geometry_poly;
 	}
 	
 	// unit<uint32>       Write_Tiles_x_WegSpoor     := bg_overlay_polygon(TileDomain/geometry_poly, WegSpoor/geometry), StorageName = "%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss"
-	unit<uint32>       Write_Tiles_x_WegSpoor     := bg_overlay_polygon(TilesSub/geometry, WegSpoor/geometry), StorageName = "='%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss'"
+	unit<uint32>       Write_Tiles_x_WegSpoor     := geos_overlay_polygon(TilesSub/geometry, WegSpoor/geometry), StorageName = "='%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss'"
 	{
 		attribute<rdc>        geometry (poly);
 		// attribute<TileDomain> first_rel;
@@ -132,57 +133,23 @@ container BRT : using = "geometries;eenheden;typeringen"
 		attribute<rdc> TiledNonWegSpoor_geos(poly) := geos_difference(Tiles, TiledWegSpoor_bp);
 		attribute<rdc> TiledNonWegSpoor_cgal(poly) := cgal_difference(Tiles, TiledWegSpoor_bp);
 	}
-	unit<uint32>       Write_Relevant_Tiles_x_WegSpoor_bp := Relevant_Tiles_x_WegSpoor
+	unit<uint32>       Write_Relevant_Tiles_x_WegSpoor_geos := Relevant_Tiles_x_WegSpoor
 	// , StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp.fss"
-	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp_1725.fss"
+	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_geos_1730.fss"
 	{
-		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor_bp;
-	}
-	unit<uint32>       Write_Relevant_Tiles_x_WegSpoor_bg := Relevant_Tiles_x_WegSpoor
-	// , StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bg.fss"
-	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bg_1725.fss"
-	{
-		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor_bg;
+		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor_geos;
 	}
 	
 	
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src_bp
-	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp.fss", StorageReadOnly = "true"
+	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src_geos
+	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_geos_1730.fss", StorageReadOnly = "true"
 	{
 		attribute<rdc> TiledNonWegSpoor  (poly);
 		attribute<km2> area := area(TiledNonWegSpoor, m2)[km2];
 	}
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src_bp_1725
-	// : StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp.fss", StorageReadOnly = "true"
-	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp_1725.fss", StorageReadOnly = "true"
-	{
-		attribute<rdc> TiledNonWegSpoor  (poly);
-		attribute<km2> area := area(TiledNonWegSpoor, m2)[km2];
-	}
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src_bg
-	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bg.fss", StorageReadOnly = "true"
-	{
-		attribute<rdc> TiledNonWegSpoor  (poly);
-		attribute<km2> area := area(TiledNonWegSpoor, m2)[km2];
-	}
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src_bg_1725
-	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bg_1725.fss", StorageReadOnly = "true"
-	{
-		attribute<rdc> TiledNonWegSpoor  (poly);
-		attribute<km2> area := area(TiledNonWegSpoor, m2)[km2];
-	}
+		
 	
-	
-	container Tests_bgbp
-	{
-		attribute<rdc> bp_1725  (poly, Read_Relevant_Tiles_x_WegSpoor_src_bp_1725) := Read_Relevant_Tiles_x_WegSpoor_src_bp_1725/TiledNonWegSpoor;
-		attribute<rdc> bp_1730  (poly, Read_Relevant_Tiles_x_WegSpoor_src_bp) := Read_Relevant_Tiles_x_WegSpoor_src_bp/TiledNonWegSpoor;
-		attribute<rdc> bg_1725  (poly, Read_Relevant_Tiles_x_WegSpoor_src_bg_1725) := Read_Relevant_Tiles_x_WegSpoor_src_bg_1725/TiledNonWegSpoor;
-		attribute<rdc> bg_1730  (poly, Read_Relevant_Tiles_x_WegSpoor_src_bg) := Read_Relevant_Tiles_x_WegSpoor_src_bg/TiledNonWegSpoor;
-	}
-	
-	// unit<uint32>       Read_Relevant_Tiles_x_WegSpoor := Read_Relevant_Tiles_x_WegSpoor_src_bp;
-	// unit<uint32>       Read_Relevant_Tiles_x_WegSpoor := Read_Relevant_Tiles_x_WegSpoor_src_bg;
+	unit<uint32> Read_Relevant_Tiles_x_WegSpoor := Read_Relevant_Tiles_x_WegSpoor_src_geos;
 	
 	
 	
