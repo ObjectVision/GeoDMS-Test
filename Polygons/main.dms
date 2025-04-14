@@ -12,7 +12,7 @@ container Polygons
 		parameter<m>       superbig_inflate_m              := 20[m]; //20m
 		parameter<string>  bouwjaar_truncation_expr        := 'bouwjaar <= 1005s || bouwjaar > @YYYY@[eenheden/jaar] ? (0/0)[int16] : bouwjaar < 1500s ? 1500s : bouwjaar';
 		
-		parameter<string> BRT_file_date  := '20220321';
+		parameter<string> BRT_file_date  := '20250318';
 		parameter<string> BRK_file_date  := '20231206';
 	}
 	
@@ -290,6 +290,13 @@ container Polygons
 
 	container Tests : using = "eenheden;typeringen;geometries;VolledigeBAG"
 	{
+		container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
+		//container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/AmsterdamEO);
+		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
+//		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/MontfoortEO);
+		//container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
+	
+	
 		container Debug
 		{
 			parameter<rdc> Schiermonnikoog(poly) := /RegioIndelingen/Gemeente/geometry[49];
@@ -393,11 +400,6 @@ container Polygons
 			}
 		}
 
-		container LargeSetWithSmallPolygons := Tests_T(VolledigeBAG/panden/pand/RecentBouwjaar);
-		//container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/AmsterdamEO);
-		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente);
-//		container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/MontfoortEO);
-		//container SmallSetWithLargePolygons := Tests_T(RegioIndelingen/Gemeente/Noord_Holland);
 		
 		Template Tests_T
 		{
@@ -588,7 +590,7 @@ container Polygons
 		container Overridable
 		{
 			parameter<String> BAG_DataDir        := 'D:/SourceData/BAG';    // OV6=D OV9=C
-			parameter<String> RSo_DataDir        := 'D:/SourceData/RSopen'; // OV6=D OV9=C
+			parameter<String> RSo_DataDir        := 'E:/SourceData/RSopen'; // OV6=D OV9=C
 		}
 	}
 }
