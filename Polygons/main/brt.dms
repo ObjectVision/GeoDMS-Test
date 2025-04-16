@@ -1,5 +1,52 @@
 container BRT : using = "geometries;eenheden;typeringen"
 { 
+	unit<uint32> crossingringpoints := range(0,38)
+	{
+		attribute<rdc> geometry : [
+			(117339.65193990925, 484509.82113926241),
+			(117339.70499999799, 484509.82000000001),
+			(117341.90599999900, 484509.77200000000),
+			(117344.02299999799, 484488.60499999998),
+			(117344.09400000100, 484487.28599999798),
+			(117344.33900000200, 484482.74500000098),
+			(117344.73200000099, 484475.48200000101),
+			(117345.29699999800, 484465.02899999899),
+			(117345.71599999801, 484457.27899999899),
+			(117342.90900000199, 484457.38300000102),
+			(117339.68299999800, 484457.50199999998),
+			(117338.75099999800, 484475.38799999998),
+			(117338.48299999900, 484482.69799999899),
+			(117338.42300000000, 484487.06899999798),
+			(117337.19000000111, 484509.87400000001),
+			(117337.19000000111, 484509.87400000001),
+			(117337.19000000000, 484509.87400000001),
+			(117332.90800000000, 484509.96600000001),
+			(117330.41000000000, 484510.02000000002),
+			(117332.90800000000, 484509.96599999798),
+			(117333.12200000101, 484486.86400000000),
+			(117333.16099999800, 484482.66699999903),
+			(117333.22899999800, 484475.29800000001),
+			(117333.39400000100, 484457.52499999898),
+			(117326.88899999901, 484457.52499999898),
+			(117320.55200000100, 484457.52000000002),
+			(117314.45400000000, 484457.50099999801),
+			(117314.10399999800, 484475.00900000002),
+			(117313.95300000200, 484482.53300000000),
+			(117313.88500000200, 484485.92700000101),
+			(117313.40199999900, 484510.07099999901),
+			(117319.18200000000, 484510.08900000202),
+			(117326.19999999899, 484510.11100000102),
+			(117330.41000000000, 484510.02000000002),
+			(117329.99900000000, 484543.58600000001),
+			(117331.63300000000, 484572.69099999999),
+			(117336.92400000000, 484543.71899999998),
+			(117339.70500000000, 484509.82000000001),
+			(117339.65193990925, 484509.82113926241)
+		];
+	}
+	parameter<rdc> ring1(poly) := points2sequence(crossingringpoints/geometry);
+	parameter<rdc> ring2(arc ) := points2sequence(crossingringpoints/geometry);
+	
 	parameter<string> filedate := Parameters/BRT_file_date;
 	unit<uint32> BRT_Classifications := typeringen/BRT/visualisatiecodes;
 	
@@ -104,12 +151,11 @@ container BRT : using = "geometries;eenheden;typeringen"
 		attribute<rdc> geometry (poly) := geometry_poly;
 	}
 	
-	// unit<uint32>       Write_Tiles_x_WegSpoor     := bg_overlay_polygon(TileDomain/geometry_poly, WegSpoor/geometry), StorageName = "%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss"
+	// unit<uint32>       Write_Tiles_x_WegSpoor     := bg_overlay_polygon(TileDomain/geometry_poly, WegSpoor/geometry), StorageName = "%LocalDataProjDir%/Temp/Tiles_x_WegSpoor_sub.fss"
 	unit<uint32>       Write_Tiles_x_WegSpoor     := geos_overlay_polygon(TilesSub/geometry, WegSpoor/geometry), StorageName = "='%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss'"
 	{
 		attribute<rdc>        geometry (poly);
-		// attribute<TileDomain> first_rel;
-		attribute<TilesSub> first_rel;
+		attribute<TilesSub>   first_rel;
 		attribute<WegSpoor>   second_rel;
 	}
 	unit<uint32>       Tiles_x_WegSpoor           : StorageName = "='%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss'", StorageReadOnly = "true"
@@ -134,7 +180,7 @@ container BRT : using = "geometries;eenheden;typeringen"
 		attribute<rdc> TiledNonWegSpoor_cgal(poly) := cgal_difference(Tiles, TiledWegSpoor_bp);
 	}
 	unit<uint32>       Write_Relevant_Tiles_x_WegSpoor_geos := Relevant_Tiles_x_WegSpoor
-	// , StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp.fss"
+//	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp.fss"
 	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_geos_1730.fss"
 	{
 		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor_geos;
