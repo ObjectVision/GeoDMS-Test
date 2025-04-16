@@ -427,6 +427,12 @@ container Polygons
 					attribute<float64> bg_deflate_decrease       := area(bg_deflate, m2) / area(geometry, m2);
 					attribute<bool>    bg_deflate_correctness    := bg_deflate_decrease < 1.0 && bg_deflate_decrease >= 0.0;
 				}
+				unit<uint32> geos_inflate := .
+				{
+					attribute<rdc>     geos_inflate         (poly) := geos_buffer_multi_polygon(geometry,  parameters/big_inflate_m[float64], 16b);
+					attribute<float64> geos_inflate_increase       := area(geos_inflate, m2) / area(geometry, m2);
+					attribute<bool>    geos_inflate_correctness    := geos_inflate_increase > 1.0;
+				}
 				
 				unit<uint32> bg_connectivity  := bg_polygon_connectivity(bg_inflate/bg_inflate, bg_inflate/bg_inflate)
 				{
@@ -549,14 +555,14 @@ container Polygons
 					parameter<uint32>  count_islands             := #.;
 				}
 				
-				unit<uint32> geos_connectivity  := geos_polygon_connectivity(bg_inflate/bg_inflate, bg_inflate/bg_inflate)
+				unit<uint32> geos_connectivity  := geos_polygon_connectivity(geos_inflate/geos_inflate, geos_inflate/geos_inflate)
 				{
 					unit<uint32> connected_parts := connected_parts(first_rel,second_rel);
 				}
 				
 				unit<uint32> geos_polygon := .
 				{
-					attribute<rdc>     geos_polygon       (poly) := geos_polygon(bg_inflate/bg_inflate);
+					attribute<rdc>     geos_polygon       (poly) := geos_polygon(geos_inflate/geos_inflate);
 					attribute<m2>     area                      := area(geos_polygon, m2);
 					parameter<uint32>  count_islands             := #.;
 					
@@ -570,13 +576,13 @@ container Polygons
 					parameter<m2>     area                      := area(geos_union, m2);
 				}
 				
-				unit<uint32> geos_split := geos_split_polygon(bg_inflate/bg_inflate)
+				unit<uint32> geos_split := geos_split_polygon(geos_inflate/geos_inflate)
 				{
 					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
 				}
 				
-				unit<uint32> geos_split_union := geos_split_union_polygon(bg_inflate/bg_inflate)
+				unit<uint32> geos_split_union := geos_split_union_polygon(geos_inflate/geos_inflate)
 				{
 					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;
