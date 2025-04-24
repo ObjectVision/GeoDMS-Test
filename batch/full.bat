@@ -31,7 +31,7 @@ Call generic\SetRelativePaths.bat
 Set GeoDmsRunCmdBaseLarge="%GeoDmsRunPath%"
 Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
 
-REM Call Full\DeletePreviousFiles.bat
+Call Full\DeletePreviousFiles.bat
 Call Full\EchoFolders.bat
 
 Echo GeoDMS Version information
@@ -53,8 +53,8 @@ CLS
 
 Echo START TESTING
 
-REM Call Full\GUI_tests.bat
-REM Call Full\Operator_tests.bat
+Call Full\GUI_tests.bat
+Call Full\Operator_tests.bat
 Call Full\Project_tests.bat
 
 REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t100_network_connect/result_html t100_network_connect
