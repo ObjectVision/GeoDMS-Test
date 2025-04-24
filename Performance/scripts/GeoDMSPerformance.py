@@ -110,11 +110,10 @@ def getProcessIdIfActive(names, parent_pid=None):
         time.sleep(0.5)
     return pid
 
-def getProcessCurrentStatistics(process:psutil.Process, experiment_start_time, cpu_curr_time=None):
+def getProcessCurrentStatistics(process:psutil.Process, experiment_start_time):
     t=None
     dt=None
     cpu_p=0
-    cpu_ct=cpu_curr_time
     mem_p=0
     rss=0
     vms=0
@@ -131,9 +130,7 @@ def getProcessCurrentStatistics(process:psutil.Process, experiment_start_time, c
             cpu_p_raw = process.cpu_percent()
             num_cpus = psutil.cpu_count()
             cpu_p = cpu_p_raw / num_cpus
-            print(f"{num_cpus} {cpu_p_raw} {cpu_p}")
-            if cpu_curr_time:
-                cpu_ct += cpu_p / 100.0
+            print(f"{process.name()} {num_cpus} {cpu_p_raw} {cpu_p}")
             mem_p = process.memory_percent()
             memory_info = process.memory_info()
             rss = memory_info.rss * 10.0**-9.0 # GB
@@ -144,8 +141,8 @@ def getProcessCurrentStatistics(process:psutil.Process, experiment_start_time, c
             wb = io_counters.write_bytes/10.0**9 # GB
             net_c = len(process.net_connections())
     except:
-        return [t, dt, cpu_p, cpu_ct, mem_p, rss, vms, num_threads, rb, wb, net_c]
-    return [t, dt, cpu_p, cpu_ct, mem_p, rss, vms, num_threads, rb, wb, net_c]
+        return [t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c]
+    return [t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c]
 
 def getPerformance(exp:Experiment, sampling_rate=1.0):
     profile_log = {"time":[], "dtime":[], "cpu_percent":[], "cpu_curr_time":[], "memory_percent":[], "rss":[], "vms":[], "num_threads":[], "total_read_bytes":[], "total_write_bytes":[], "net_connections":[], "processes":[]} # rss=resident set size (aka physical non swapped memory in use by process), vms virtual memory ize
@@ -153,18 +150,32 @@ def getPerformance(exp:Experiment, sampling_rate=1.0):
     env = exp.environment_variables
     cwd = exp.cwd
     
-    parent_process_open_handle = subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_CONSOLE)    
+    absolute_command = os.path.abspath(command)
+    parent_process_open_handle = subprocess.Popen(absolute_command, cwd=cwd, creationflags=subprocess.CREATE_NEW_CONSOLE) # shell=True 
     parent_process = psutil.Process(parent_process_open_handle.pid)
     experiment_start_time = datetime.fromtimestamp(parent_process.create_time())
     cpu_ct = 0
     while (psutil.pid_exists(parent_process.pid)):
         print("BEGIN\n")
         time_measurement_start = datetime.now()
-        t, dt, cpu_p, cpu_ct, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(parent_process, experiment_start_time, cpu_ct)
+        
+        try: # dry run cpu_p for every child, first time cpu_percent() always returns 0.0, see
+            
+            child_processes = parent_process.children(recursive=True)
+            dummy_parent_cpu_p = parent_process.cpu_percent()
+            for child_process in child_processes:
+                dummy_child_cpu_p = child_process.cpu_percent()
+        except:
+            pass
+        time.sleep(0.1)
+
+        t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(parent_process, experiment_start_time)
+        if not t:
+            continue
+
         profile_log["time"].append(t)
         profile_log["dtime"].append(dt)
         profile_log["cpu_percent"].append(cpu_p)
-        profile_log["cpu_curr_time"].append(cpu_ct)
         profile_log["memory_percent"].append(mem_p)
         profile_log["rss"].append(rss)
         profile_log["vms"].append(vms)
@@ -172,11 +183,11 @@ def getPerformance(exp:Experiment, sampling_rate=1.0):
         profile_log["total_read_bytes"].append(rb)
         profile_log["total_write_bytes"].append(wb)
         profile_log["net_connections"].append(net_c)
-        child_processes = parent_process.children(recursive=True) 
+        
         profile_log["processes"].append(len(child_processes)+1)
 
         for child_process in child_processes:
-            t, _, cpu_p, _, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(child_process, experiment_start_time)
+            t, _, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(child_process, experiment_start_time)
             if not t:
                 continue
             profile_log["cpu_percent"][-1]       += cpu_p
@@ -187,6 +198,9 @@ def getPerformance(exp:Experiment, sampling_rate=1.0):
             profile_log["total_read_bytes"][-1]  += rb
             profile_log["total_write_bytes"][-1] += wb
             profile_log["net_connections"][-1]   += net_c
+        cpu_ct += profile_log["cpu_percent"][-1] / 100.0
+        profile_log["cpu_curr_time"].append(cpu_ct)
+
         print("END\n")
         time_measurement_end = datetime.now()
         dtimestamp = (time_measurement_end-time_measurement_start).total_seconds()
@@ -206,7 +220,7 @@ def getClosestLog(dms_log_t, profile_log, param):
         if dt < smallest_dt:
             smallest_dt = dt
             ind_chosen = ind
-    assert ind_chosen, "dms_log datetime falls within profile log datetime range, hence index should be between 0 and the end of the profile log"
+    assert ind_chosen is not None, "dms_log datetime falls within profile log datetime range, hence index should be between 0 and the end of the profile log"
     return (ind_chosen, profile_log[param][ind_chosen])
 
 def getClosestProfilelogForGeodmslog(profile_log, geodms_log, param):
@@ -327,8 +341,8 @@ def RunExperiments(experiments:list[Experiment], sampling_rate=1.0):
             exp.result["num_threads"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "num_threads")
             exp.result["rss"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "rss")
             exp.result["vms"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "vms")
-            exp.result["read_bytes"]        = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "read_bytes")
-            exp.result["write_bytes"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "write_bytes")
+            #exp.result["read_bytes"]        = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "read_bytes")
+            #exp.result["write_bytes"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "write_bytes")
             exp.result["total_read_bytes"]  = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_read_bytes")
             exp.result["total_write_bytes"] = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_write_bytes")
 
@@ -656,7 +670,9 @@ def main():
     return
     
 if __name__=="__main__":
-    #main()
-    RunTestConfig("C:/Users/Cicada/prj/GeoDMS-Test/Performance/scripts/profiler_rework.txt")
+    main()
+    #RunTestConfig("./profile_setups_profile_rework.txt")
+    #RunTestConfig("C:/Users/Cicada/prj/GeoDMS-Test/Performance/scripts/profiler_rework.txt")
+    #RunTestConfig("./profile_setups_profile_rework.txt")
     #testReadLog()
     #testReadAllocatorInfoLog()
