@@ -305,11 +305,10 @@ container BRT
 		attribute<uint32> b_pen      := uint32(elem/values[value(id * nrAttr + 8, elem)]);
 		attribute<int16>  penWidth   :=  int16(elem/values[value(id * nrAttr + 9, elem)]), DialogType = "PenWidth";
 		attribute<int32>  wegvlak_groep := int32(elem/values[value(id * nrAttr + 10, elem)]);
-		attribute<uint8>  bbg_code   := uint8(elem/values[value(id * nrAttr + 11, elem)]);
 		
-		attribute<uint8>  bbg_code_ek:= rjoin(bbg_code, id(typeringen/bbg), typeringen/bbg/bbg_ek);
-		attribute<string> bbg_name   := rjoin(bbg_code, id(typeringen/bbg), typeringen/bbg/name);
-		
+		// attribute<uint8>  bbg_code   := uint8(elem/values[value(id * nrAttr + 11, elem)]);
+		// attribute<uint8>  bbg_code_ek:= rjoin(bbg_code, id(typeringen/bbg), typeringen/bbg/bbg_ek);
+		// attribute<string> bbg_name   := rjoin(bbg_code, id(typeringen/bbg), typeringen/bbg/name);
 
 		attribute<uint32> BrushColor := rgb(r_brush, g_brush, b_brush), DialogType = "BrushColor";
 		// attribute<uint32> PenColor   := rgb(r_pen  , g_pen  , b_pen)  , DialogType = "PenColor";
@@ -317,7 +316,7 @@ container BRT
 		
 		attribute<string> name := replace(label, ' - ', '_', ' ', '', '-', '', ':', '', ',', '');
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		// container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
 		
 		unit<uint32> label_uq   := unique(label)
 		{

@@ -1,55 +1,142 @@
 container BRT : using = "geometries;eenheden;typeringen"
 { 
-	container Wegdeel
-	:	StorageName     = "='%RSo_DataDir%/Grondgebruik/BRT/'+Parameters/BRT_file_date+'/top10nl_wegdeel.gpkg'"
-	,	StorageType     = "gdal.vect"
-	,	StorageReadOnly = "True"
-	, 	DialogData      = "rdc"
-	, 	SyncMode        = "AllTables"
-	, 	Descr           = "Download from PDOK"
+	unit<uint32> crossingringpoints := range(0,38)
 	{
-		unit<uint32> top10nl_wegdeel_vlak
-		{
-			attribute<string>                                    label                := typeringen/BRT/visualisatiecodes/label[visualisatiecode_rel];
-			attribute<typeringen/BRT/visualisatiecodes>          visualisatiecode_rel := rlookup(int32(visualisatiecode), typeringen/BRT/visualisatiecodes/code);
-			attribute<typeringen/BRT/visualisatiecodes/label_uq> label_uq_rel         := rlookup(label, typeringen/BRT/visualisatiecodes/label_uq/values);
-		}
+		attribute<rdc> geometry : [
+			(117339.65193990925, 484509.82113926241),
+			(117339.70499999799, 484509.82000000001),
+			(117341.90599999900, 484509.77200000000),
+			(117344.02299999799, 484488.60499999998),
+			(117344.09400000100, 484487.28599999798),
+			(117344.33900000200, 484482.74500000098),
+			(117344.73200000099, 484475.48200000101),
+			(117345.29699999800, 484465.02899999899),
+			(117345.71599999801, 484457.27899999899),
+			(117342.90900000199, 484457.38300000102),
+			(117339.68299999800, 484457.50199999998),
+			(117338.75099999800, 484475.38799999998),
+			(117338.48299999900, 484482.69799999899),
+			(117338.42300000000, 484487.06899999798),
+			(117337.19000000111, 484509.87400000001),
+			(117337.19000000111, 484509.87400000001),
+			(117337.19000000000, 484509.87400000001),
+			(117332.90800000000, 484509.96600000001),
+			(117330.41000000000, 484510.02000000002),
+			(117332.90800000000, 484509.96599999798),
+			(117333.12200000101, 484486.86400000000),
+			(117333.16099999800, 484482.66699999903),
+			(117333.22899999800, 484475.29800000001),
+			(117333.39400000100, 484457.52499999898),
+			(117326.88899999901, 484457.52499999898),
+			(117320.55200000100, 484457.52000000002),
+			(117314.45400000000, 484457.50099999801),
+			(117314.10399999800, 484475.00900000002),
+			(117313.95300000200, 484482.53300000000),
+			(117313.88500000200, 484485.92700000101),
+			(117313.40199999900, 484510.07099999901),
+			(117319.18200000000, 484510.08900000202),
+			(117326.19999999899, 484510.11100000102),
+			(117330.41000000000, 484510.02000000002),
+			(117329.99900000000, 484543.58600000001),
+			(117331.63300000000, 484572.69099999999),
+			(117336.92400000000, 484543.71899999998),
+			(117339.70500000000, 484509.82000000001),
+			(117339.65193990925, 484509.82113926241)
+		];
 	}
+	parameter<rdc> ring1(poly) := points2sequence(crossingringpoints/geometry);
+	parameter<rdc> ring2(arc ) := points2sequence(crossingringpoints/geometry);
 	
-	container Terrein
-	:	StorageName     = "='%RSo_DataDir%/Grondgebruik/BRT/'+Parameters/BRT_file_date+'/top10nl_Terrein.gpkg'"
+	parameter<string> filedate := Parameters/BRT_file_date;
+	unit<uint32> BRT_Classifications := typeringen/BRT/visualisatiecodes;
+	
+	container Compleet
+	:	StorageName     = "='%RSo_DataDir%/Grondgebruik/BRT/top10nl_Compleet-'+filedate+'.gpkg'"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
 	, 	DialogData      = "rdc"
 	, 	SyncMode        = "AllTables"
 	, 	Descr           = "Download from PDOK"
 	{
+		unit<uint32> top10nl_Wegdeel_vlak
+		{
+			attribute<string>                       label                := BRT_Classifications/label[visualisatiecode_rel];
+			attribute<BRT_Classifications>          visualisatiecode_rel := rlookup(int32(visualisatiecode), BRT_Classifications/code);
+			attribute<BRT_Classifications/label_uq> label_uq_rel         := rlookup(label, BRT_Classifications/label_uq/values);
+		}
+		
+		unit<uint32> top10nl_Waterdeel_vlak
+		{
+			attribute<string>                       label                := BRT_Classifications/label[visualisatiecode_rel];
+			attribute<BRT_Classifications>          visualisatiecode_rel := rlookup(int32(visualisatiecode), BRT_Classifications/code);
+			attribute<BRT_Classifications/label_uq> label_uq_rel         := rlookup(label, BRT_Classifications/label_uq/values);
+		}
+		
 		unit<uint32> top10nl_terrein_vlak
 		{
-			attribute<string>                                    label                := typeringen/BRT/visualisatiecodes/label[visualisatiecode_rel];
-			attribute<typeringen/BRT/visualisatiecodes>          visualisatiecode_rel := rlookup(int32(visualisatiecode), typeringen/BRT/visualisatiecodes/code);
-			attribute<typeringen/BRT/visualisatiecodes/label_uq> label_uq_rel         := rlookup(label, typeringen/BRT/visualisatiecodes/label_uq/values);
+			attribute<string>                       label                 := BRT_Classifications/label[visualisatiecode_rel];
+			attribute<BRT_Classifications>          visualisatiecode_rel  := rlookup(int32(visualisatiecode), BRT_Classifications/code);
+			attribute<BRT_Classifications/label_uq> label_uq_rel          := rlookup(label, BRT_Classifications/label_uq/values);
+			attribute<rdc>                    geometry_simpl (poly) := bg_simplify_multi_polygon(Geometry, 1d);
 		}
+		// container MaakLosseCat :=
+			// for_each_ne(
+				// BRT_Classifications/label_uq/name
+				// , 'BRT_groepen_T(' +string(id(BRT_Classifications/label_uq))+ ',''plaats'')'
+			// );
 	}
+
+
+	// container Wegdeel
+	// :	StorageName     = "='%RSo_DataDir%/Grondgebruik/BRT/'+Parameters/BRT_file_date+'/top10nl_wegdeel.gpkg'"
+	// ,	StorageType     = "gdal.vect"
+	// ,	StorageReadOnly = "True"
+	// , 	DialogData      = "rdc"
+	// , 	SyncMode        = "AllTables"
+	// , 	Descr           = "Download from PDOK"
+	// {
+		// unit<uint32> top10nl_wegdeel_vlak
+		// {
+			// attribute<string>                                    label                := BRT_Classifications/label[visualisatiecode_rel];
+			// attribute<BRT_Classifications>          visualisatiecode_rel := rlookup(int32(visualisatiecode), BRT_Classifications/code);
+			// attribute<BRT_Classifications/label_uq> label_uq_rel         := rlookup(label, BRT_Classifications/label_uq/values);
+		// }
+	// }
+	
+	// container Terrein
+	// :	StorageName     = "='%RSo_DataDir%/Grondgebruik/BRT/'+Parameters/BRT_file_date+'/top10nl_Terrein.gpkg'"
+	// ,	StorageType     = "gdal.vect"
+	// ,	StorageReadOnly = "True"
+	// , 	DialogData      = "rdc"
+	// , 	SyncMode        = "AllTables"
+	// , 	Descr           = "Download from PDOK"
+	// {
+		// unit<uint32> top10nl_terrein_vlak
+		// {
+			// attribute<string>                                    label                := BRT_Classifications/label[visualisatiecode_rel];
+			// attribute<BRT_Classifications>          visualisatiecode_rel := rlookup(int32(visualisatiecode), BRT_Classifications/code);
+			// attribute<BRT_Classifications/label_uq> label_uq_rel         := rlookup(label, BRT_Classifications/label_uq/values);
+		// }
+	// }
 	
 	unit<uint32>       Spoor := select_with_org_rel(
-									Terrein/top10nl_terrein_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/spoor_vlak_spoorbaanlichaam
-									|| Terrein/top10nl_terrein_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/spoor_vlak_brug
+									Compleet/top10nl_terrein_vlak/label_uq_rel == BRT_Classifications/label_uq/V/spoor_vlak_spoorbaanlichaam
+									|| Compleet/top10nl_terrein_vlak/label_uq_rel == BRT_Classifications/label_uq/V/spoor_vlak_brug
 								)
 	{
-		attribute<rdc> geometry (poly) := Terrein/top10nl_terrein_vlak/geometry[org_rel];
+		attribute<rdc> geometry (poly) := Compleet/top10nl_terrein_vlak/geometry[org_rel];
 	}
 	
 	unit<uint32>       Weg := select_with_org_rel(
-									Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_autosnelweg
-									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_autosnelweg_boven_weg
-									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_hoofdweg
-									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_lokale_weg
-									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_regionale_weg
-									|| Wegdeel/top10nl_wegdeel_vlak/label_uq_rel == typeringen/BRT/visualisatiecodes/label_uq/V/weg_vlak_straat
+									Compleet/top10nl_wegdeel_vlak/label_uq_rel == BRT_Classifications/label_uq/V/weg_vlak_autosnelweg
+									|| Compleet/top10nl_wegdeel_vlak/label_uq_rel == BRT_Classifications/label_uq/V/weg_vlak_autosnelweg_boven_weg
+									|| Compleet/top10nl_wegdeel_vlak/label_uq_rel == BRT_Classifications/label_uq/V/weg_vlak_hoofdweg
+									|| Compleet/top10nl_wegdeel_vlak/label_uq_rel == BRT_Classifications/label_uq/V/weg_vlak_lokale_weg
+									|| Compleet/top10nl_wegdeel_vlak/label_uq_rel == BRT_Classifications/label_uq/V/weg_vlak_regionale_weg
+									|| Compleet/top10nl_wegdeel_vlak/label_uq_rel == BRT_Classifications/label_uq/V/weg_vlak_straat
 								)
 	{
-		attribute<rdc> geometry (poly) := Wegdeel/top10nl_wegdeel_vlak/geometry[org_rel];
+		attribute<rdc> geometry (poly) := Compleet/top10nl_wegdeel_vlak/geometry[org_rel];
 	}
 	
 	unit<uint32>       WegSpoor := union_unit(Spoor, Weg)
@@ -57,25 +144,87 @@ container BRT : using = "geometries;eenheden;typeringen"
 		attribute<rdc> geometry (poly) := union_data(.,Spoor/geometry, Weg/geometry);
 	}
 	
-	unit<uint32>       Tiles_x_WegSpoor                            := bg_overlay_polygon(geometries/TileDomain/geometry_poly, WegSpoor/geometry);
+//	unit<uint32> TilesSub := select_with_org_rel(id(TileDomain) == 35956 || id(TileDomain) == 35957) //35956+35957 plesmanlaan
+	unit<uint32> TilesSub := TileDomain //select_with_org_rel(id(TileDomain) == 35957) //35956+35957 plesmanlaan
+	{
+//		attribute<rdc> geometry (poly) := org_rel -> TileDomain/geometry_poly;
+		attribute<rdc> geometry (poly) := geometry_poly;
+	}
+	
+	// unit<uint32>       Write_Tiles_x_WegSpoor     := bg_overlay_polygon(TileDomain/geometry_poly, WegSpoor/geometry), StorageName = "%LocalDataProjDir%/Temp/Tiles_x_WegSpoor_sub.fss"
+	unit<uint32>       Write_Tiles_x_WegSpoor     := geos_overlay_polygon(TilesSub/geometry, WegSpoor/geometry), StorageName = "='%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss'"
+	{
+		attribute<rdc>        geometry (poly);
+		attribute<TilesSub>   first_rel;
+		attribute<WegSpoor>   second_rel;
+	}
+	unit<uint32>       Tiles_x_WegSpoor           : StorageName = "='%LocalDataProjDir%/Temp/Tiles_x_WegSpoor.fss'", StorageReadOnly = "true"
+	{
+		attribute<rdc>        geometry (poly);
+		// attribute<TileDomain> first_rel;
+		attribute<TilesSub> first_rel;
+		attribute<WegSpoor>   second_rel;
+	}
+	
 	unit<uint32>       Relevant_Tiles_x_WegSpoor                   := select_with_org_rel(Has_Any(Tiles_x_WegSpoor/first_rel))
 	{
-		attribute<rdc> Tiles            (poly) := geometries/TileDomain/geometry_poly[org_rel];
-		attribute<rdc> TiledWegSpoor    (poly) := bp_union_polygon(Tiles_x_WegSpoor/geometry[rdc_cm],invert(org_rel)[Tiles_x_WegSpoor/first_rel])[rdc];
-		attribute<rdc> TiledNonWegSpoor (poly) := Tiles - TiledWegSpoor;
+		// attribute<rdc> Tiles            (poly) := geometries/TileDomain/geometry_poly[org_rel];
+		attribute<rdc> Tiles                (poly) := TilesSub/geometry[org_rel];
+		attribute<rdc> TiledWegSpoor_bp     (poly) := bp_union_polygon  (Tiles_x_WegSpoor/geometry[rdc_cm],invert(org_rel)[Tiles_x_WegSpoor/first_rel])[rdc];
+		attribute<rdc> TiledWegSpoor_bg     (poly) := bg_union_polygon  (Tiles_x_WegSpoor/geometry,invert(org_rel)[Tiles_x_WegSpoor/first_rel]);
+		attribute<rdc> TiledWegSpoor_geos   (poly) := geos_union_polygon(Tiles_x_WegSpoor/geometry,invert(org_rel)[Tiles_x_WegSpoor/first_rel]);
+		attribute<rdc> TiledWegSpoor_cgal   (poly) := cgal_union_polygon(Tiles_x_WegSpoor/geometry,invert(org_rel)[Tiles_x_WegSpoor/first_rel]);
+		attribute<rdc> TiledNonWegSpoor_bp  (poly) := bp_difference(Tiles[rdc_cm], TiledWegSpoor_bp[rdc_cm])[rdc];
+		attribute<rdc> TiledNonWegSpoor_bg  (poly) := Tiles - TiledWegSpoor_bg;
+		attribute<rdc> TiledNonWegSpoor_geos(poly) := geos_difference(Tiles, TiledWegSpoor_bp);
+		attribute<rdc> TiledNonWegSpoor_cgal(poly) := cgal_difference(Tiles, TiledWegSpoor_bp);
 	}
-	unit<uint32>       Write_Relevant_Tiles_x_WegSpoor := Relevant_Tiles_x_WegSpoor
-	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor.fss"
+	unit<uint32>       Write_Relevant_Tiles_x_WegSpoor_geos := Relevant_Tiles_x_WegSpoor
+//	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_bp.fss"
+	, StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_geos_1730.fss"
 	{
-		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor;
+		attribute<rdc> TiledNonWegSpoor (poly) := Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor_geos;
 	}
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src
-	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor.fss", StorageReadOnly = "true"
+	
+	
+	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_src_geos
+	: StorageName = "%LocalDataProjDir%/Temp/TiledNonWegSpoor_geos_1730.fss", StorageReadOnly = "true"
 	{
 		attribute<rdc> TiledNonWegSpoor  (poly);
+		attribute<km2> area := area(TiledNonWegSpoor, m2)[km2];
 	}
+		
 	
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor_subset := select_with_attr_by_cond(Read_Relevant_Tiles_x_WegSpoor_src, ID(Read_Relevant_Tiles_x_WegSpoor_src) == 8877);
+	unit<uint32> Read_Relevant_Tiles_x_WegSpoor := Read_Relevant_Tiles_x_WegSpoor_src_geos;
 	
-	unit<uint32>       Read_Relevant_Tiles_x_WegSpoor := Read_Relevant_Tiles_x_WegSpoor_src;
+	
+	
+/* 	Template BRT_groepen_T
+	{
+		parameter<BRT_Classifications/label_uq> label_rel;
+		parameter<string> Type;
+		//
+		
+	
+		unit<uint32> vlak := ='select_with_org_rel(rlookup(BRT_Classifications/label[rlookup(int32(top10nl_'+Type+'_vlak/visualisatiecode), BRT_Classifications/code)], BRT_Classifications/label_uq/values) == label_rel)'
+		{
+			attribute<rdc_meter> geometry (poly) := ='top10nl_'+Type+'_vlak/geometry[org_rel]';
+			attribute<uint32>    aantal_inwoners := ='top10nl_'+Type+'_vlak/aantalinwoners[uint32][org_rel]';
+			attribute<string>    plaatsnaam      := ='top10nl_'+Type+'_vlak/naamnl[org_rel]';
+		} 
+		unit<uint32> multi_vlak := ='select_with_org_rel(rlookup(BRT_Classifications/label[rlookup(int32(top10nl_'+Type+'_multivlak/visualisatiecode), BRT_Classifications/code)], BRT_Classifications/label_uq/values) == label_rel)'
+		{
+			attribute<rdc_meter> geometry (poly) := ='top10nl_'+Type+'_multivlak/geometry[org_rel]';
+			attribute<uint32>    aantal_inwoners := ='top10nl_'+Type+'_multivlak/aantalinwoners[uint32][org_rel]';
+			attribute<string>    plaatsnaam      := ='top10nl_'+Type+'_multivlak/naamnl[org_rel]';
+		} 
+		
+		unit<uint32> combined_vlak := union_unit(vlak, multi_vlak)
+		{
+			attribute<rdc_meter> geometry (poly) := union_data(., vlak/geometry, multi_vlak/geometry);
+			attribute<uint32>    aantal_inwoners := union_data(., vlak/aantal_inwoners, multi_vlak/aantal_inwoners);
+			attribute<string>    plaatsnaam      := union_data(., vlak/plaatsnaam, multi_vlak/plaatsnaam);
+		} 
+	}
+ */
 }
