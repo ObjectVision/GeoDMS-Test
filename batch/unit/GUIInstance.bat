@@ -1,7 +1,7 @@
 Rem voer 1 instantie van de operator test uit
 Set RegrResult=OK
 
-Set command=%GeoDmsQtCmdBase% /T%1 /%4 /%5 /%6  "%2"
+Set command=%GeoDmsQtCmdBase% "/T%1" /%4 /%5 /%6 "%2"
 Echo ****************
 Echo.
 Echo Test: GeoDMS Command: %command%

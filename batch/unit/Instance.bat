@@ -12,14 +12,14 @@ rem pause
 
 IF %ERRORLEVEL% EQU 0 (
 	Echo read contents from file: %3
-	Echo resultfilename: %ResultFileName%
-	FOR /F "tokens=* delims=" %%x in (%3) DO Echo %%x
+	Echo resultfilename: "%ResultFileName%"
+	FOR /F "tokens=* delims=" %%x in (%~3) DO Echo %%x
 
-	FOR /F "tokens=* delims=" %%x in (%3) DO Echo %%x >> %ResultFileName%
+	FOR /F "tokens=* delims=" %%x in (%~3) DO Echo %%x >> "%ResultFileName%"
 	) Else (
 	Echo TEST FAILED
 	Echo ERRORLEVEL: %ERRORLEVEL%
-	Echo %GeoDmsRunCmdBase% /%4 /%5 %1 %2 FAILED >> %ResultFileName%
+	Echo %command% FAILED >> "%ResultFileName%"
 )
 
 Echo.
