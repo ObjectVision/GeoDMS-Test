@@ -7,6 +7,8 @@ if "%ProgramFiles(x86)%"=="" (
 	Set GeoDmsPlatform=Win32
 )
 
+if ("%geodms_rootdir%") EQU ("") Set geodms_rootdir=C:\dev\GeoDMS
+
 Rem Verwerk de meegegeven parameter die bepaalt welke exe getest moet worden
 Set GeoDmsPath=%ProgramFiles%\ObjectVision\GeoDms%1%
 IF %1 == D32 Set GeoDmsPath=%geodms_rootdir%\bin\Debug\Win32
