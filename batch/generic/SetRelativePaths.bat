@@ -39,6 +39,8 @@ Set RslDataDir=%RegressionTestsSourceDataDir%\RSL
 Set HestiaDataDir=%RegressionTestsSourceDataDir%\Hestia
 Set CusaRunPath=%prj_snapshotsDir%\geodms_africa_cusa2\cfg\africa.dms
 Set RSopen_RegressieTestPath=%prj_snapshotsDir%\RsOpen_regressietest\cfg
+Set RSopen_RegressieTestPath_v2025=%prj_snapshotsDir%\RSopen_RegressieTest_v2025\cfg
 Set Networkmodel_pbl_regressietest=%prj_snapshotsDir%\NetworkModel_PBL_RegressieTest\cfg
 Set Networkmodel_eu_regressietest=%prj_snapshotsDir%\networkmodel_eu_regressieTest\cfg
-
+Set RSo_DataDir=E:\SourceData\RSOpen
+Set PrivDataDir=E:\SourceData\RSOpen_Priv

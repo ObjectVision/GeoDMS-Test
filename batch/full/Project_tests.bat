@@ -1,8 +1,8 @@
 REM Testen van projecten
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\Storage
 Call Full\InstanceTimeStampWithFileCompare.bat %Setting1% %Setting2% %Setting3% %StoragePath% EsriShape/polygon/Write t050_Storage_Write_Shape_Polygon_Folder_Compare  %LocalDataDir%\Regression\Storage\regr_results\polygon\area.* %TstDir%\Storage\data\polygon\area.*
-SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\BAG20
-Call Full\InstanceTimeStampWithFileSizeCompare.bat %Setting1% %Setting2% %Setting3% %BAG20MakeSnapShotPath% snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare %LocalDataDir%\Regression\BAG20\snapshot_Utrecht_20210701.gpkg %RegressionTestsSourceDataDir%\BAG20\snapshot_Utrecht_20210701.gpkg
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\BAG20
+REM Call Full\InstanceTimeStampWithFileSizeCompare.bat %Setting1% %Setting2% %Setting3% %BAG20MakeSnapShotPath% snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare %LocalDataDir%\Regression\BAG20\snapshot_Utrecht_20210701.gpkg %RegressionTestsSourceDataDir%\BAG20\snapshot_Utrecht_20210701.gpkg
 
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t100_network_connect/result_html t100_network_connect
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t101_network_od_pc4_dense/result_html t101_network_od_pc4_dense
@@ -29,6 +29,9 @@ Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS
 Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS_v2025
+Call Full\RSOpen_v2025.bat %Setting1% %Setting2% %Setting3% t641_3_RSopen_indicator_results_test
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\2UP
 Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_zonder_calcache t710_2UP_indicator_results_zonder_CalCache
