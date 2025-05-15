@@ -43,7 +43,7 @@ Echo resultaat folder : %results_folder%
 Echo resultaat log folder : %results_log_folder%
 Echo.
 
-pause
+if "%SilentMode%" neq "QUIET" pause
 
 CLS
 
