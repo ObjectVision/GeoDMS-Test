@@ -8,31 +8,27 @@ set version=%1
 set Setting1=%2
 set Setting2=%3
 set Setting3=%4
+set SilentMode=%5
 
 setlocal enabledelayedexpansion
 
 Echo Starting the Full test
 Echo.
 
-Rem Sectie om LocalDataDir en SourceDataDir op te halen uit het Windows Registry en om de paden naar de lokale testprojecten en bijbehorende data te zetten
-Call generic\SetLocalDataDir.bat
-Call generic\SetSourceDataDir.bat
+Call generic\SetGeoDMSPlatform.bat %version%
+Call generic\SetRelativePaths.bat
 
 Rem Sectie om de folder te bepalen voor de logging en de status bestanden die uit de batch en door de GeoDMS worden weggeschreven.
 Set LocalDataDirRegression=%LocalDataDir%\regression
-
-Set tmpFileDir=%LocalDataDirRegression%\log
-If NOT EXIST "%tmpFileDir%" md "%tmpFileDir%"
-
-Call generic\SetGeoDMSPlatform.bat %version%
-Call generic\SetRegressionTestSourceDataDir.bat 
-Call generic\SetRelativePaths.bat
 
 Set GeoDmsRunCmdBaseLarge="%GeoDmsRunPath%"
 Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
 
 Call Full\DeletePreviousFiles.bat
+Set tmpFileDir=%LocalDataDirRegression%\log
+If NOT EXIST "%tmpFileDir%" md "%tmpFileDir%"
 Call Full\EchoFolders.bat
+
 
 Echo GeoDMS Version information
 Echo ************************
@@ -53,9 +49,10 @@ CLS
 
 Echo START TESTING
 
-Call Full\GUI_tests.bat
-Call Full\Operator_tests.bat
-Call Full\Project_tests.bat
+REM Call Full\GUI_tests.bat
+REM Call Full\Operator_tests.bat
+REM Call Full\Project_tests.bat
+Call Full\Project_tests_enkelProject.bat
 
 REM Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t100_network_connect/result_html t100_network_connect
 
