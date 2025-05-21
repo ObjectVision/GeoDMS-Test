@@ -20,7 +20,6 @@ IF %ERRORLEVEL% EQU 0 (
 	Echo TEST FAILED
 	Echo ERRORLEVEL: %ERRORLEVEL%
 	Echo %command% FAILED >> "%ResultFileName%"
-	pause
 )
 
 Echo.
