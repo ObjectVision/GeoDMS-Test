@@ -30,7 +30,7 @@ Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS
 Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
 
-SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS_v2025
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\%projdir%
 Call Full\RSOpen_v2025.bat %Setting1% %Setting2% %Setting3% t641_3_RSopen_indicator_results_test
 
 SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\2UP
