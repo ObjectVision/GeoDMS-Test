@@ -5,15 +5,18 @@ import platform
 import importlib
 import sys
 from packaging.version import Version
-import re
 import glob
 
 def get_local_machine_parameters() -> dict:
     local_machine_parameters = {}
     # user adaptable
     local_machine_parameters["RegressionTestsSourceDataDir"] = "C:/SourceData/RegressionTests"
-    local_machine_parameters["RegressionTestsAltSourceDataDir"] = "E:/SourceData"
+    local_machine_parameters["RegressionTestsAltSourceDataDir"] = "C:/SourceData"
     local_machine_parameters["LocalDataDir"] = "C:/LocalData"
+
+    # derived
+    local_machine_parameters["LocalDataDirRegression"] = f"{local_machine_parameters["LocalDataDir"]}/regression"
+    local_machine_parameters["tmpFileDir"] = f"{local_machine_parameters["LocalDataDirRegression"]}/log"
     return local_machine_parameters
 
 def get_regression_test_paths(local_machine_parameters:dict) -> dict:
@@ -56,7 +59,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
     geodms_paths["GeoDmsPath"] = f"C:/PROGRA~1/ObjectVision/GeoDms{version}"
-    geodms_paths["GeoDmsProfilerPath"] = "C:/Users/Cicada/dev/geodms/branches/geodms_v17_profilerpy/profiler/Profiler.py"  #f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
+    geodms_paths["GeoDmsProfilerPath"] = "C:/dev/geodms/geodms_v17/profiler/Profiler.py"  #f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
     import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
 
     geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
@@ -128,9 +131,12 @@ def get_operator_test_experiments(local_machine_parameters:dict, geodms_paths:di
     return operator_test_experiments
 
 def folder_is_results_folder(result_folder_name:str) -> bool:
-    pattern = r'^\d+_\d+_\d+_(?:[A-Za-z0-9]+_)*[A-Za-z0-9]+$'
-    match = re.match(pattern, result_folder_name)
-    return match
+    # valid: 17_4_5_x64_SF_C1C2C3_OVSRV07
+    split_result_folder_name = result_folder_name.split("_")
+    if len(split_result_folder_name)!=7:
+        return False
+    major, minor, patch, architecture,_,statusflags,machine_name = split_result_folder_name
+    return major.isdigit() and minor.isdigit() and patch.isdigit()
 
 def parse_folder_name(result_folder_name:str) -> list:
     major, minor, patch, architecture, sf, multithreading, local_machine_name = result_folder_name.split("_")
@@ -192,28 +198,90 @@ def collect_experiment_filenames_per_experiment(regression_tests:list, result_pa
     regression_tests_experiment_filenames = {}
     for regression_test in regression_tests:
         regression_tests_experiment_filenames[regression_test] = []
-        for experiment_folder in sorted_valid_result_folders:
+        for experiment_folder, _ in sorted_valid_result_folders:
             experiment_folder_path = f"{result_paths["results_base_folder"]}/{experiment_folder}"
             experiment_filenames = get_all_experiments_from_experiment_folder(experiment_folder_path)
             for experiment_filename in experiment_filenames:
                 experiment_name = get_experiment_name_from_experiment_filename(experiment_filename)
                 if not experiment_name == regression_test:
                     continue
-                regression_tests_experiment_filenames.append(f"{experiment_folder_path}/{experiment_filename}")
-    return
+                regression_tests_experiment_filenames[regression_test].append(f"{experiment_folder_path}/{experiment_filename}")
+    return regression_tests_experiment_filenames
 
-def collect_experiment_summaries(regression_test_files:dict) -> list[list]:
-    
-    pass
+def get_result_row(regression_test:str, regression_test_names:list):
+    row = 1
+    for testname in regression_test_names:
+        if testname == regression_test:
+            return row
+        row+=1
+    return row
+
+def get_result_col(experiment_file:str, sorted_valid_result_folders:list):
+    col = 1
+    foldername_from_experiment_file = experiment_file.split("__")[0]
+    for foldername, _ in sorted_valid_result_folders:
+        if foldername == foldername_from_experiment_file:
+            return col
+        col+=1
+
+    return col
+
+def collect_experiment_summaries(sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
+    # initialize table
+    rows = len(regression_test_names)+1
+    cols = len(sorted_valid_result_folders)+1
+    summaries = [[None for _ in range(cols)] for _ in range(rows)]
+
+    # fill table with summaries
+    for regression_test in regression_test_files.keys():
+        row = get_result_row(regression_test, regression_test_names)
+        summaries[row][0] = regression_test.replace("_", " ")
+        binary_experiment_result_files = regression_test_files[regression_test]
+        for experiment_file in binary_experiment_result_files:
+            col = get_result_col(experiment_file, sorted_valid_result_folders)
+            experiment = Profiler.loadExperimentFromPickleFile(None, experiment_file)
+            pass
+    experiments = []
+    #Profiler.Experiment
+
+    # figure
+
+    return [[]]
 
 def collect_and_generate_test_results(version:str, result_paths:dict):
-    valid_result_folders = get_valid_result_folders(result_paths)
+    valid_result_folders = get_valid_result_folders(version, result_paths)
     version_range = get_version_range(valid_result_folders)
     sorted_valid_result_folders = sort_valid_result_folders_new_to_old(valid_result_folders)
-    regression_test_names = get_all_regression_tests_by_name(valid_result_folders)
+    regression_test_names = get_all_regression_tests_by_name(result_paths, valid_result_folders)
     regression_test_files = collect_experiment_filenames_per_experiment(regression_test_names, result_paths, sorted_valid_result_folders)
-    regression_test_summaries = collect_experiment_summaries(regression_test_files)
+    regression_test_summaries = collect_experiment_summaries(sorted_valid_result_folders, regression_test_names, regression_test_files)
 
+    return
+
+def header_stuff_to_be_removed_in_future(local_machine_parameters:dict, result_paths:dict, MT1:str, MT2:str, MT3:str):
+    """
+    needer for:
+    regression/cfg/stam.dms /results/VersionInfo/results_folder results/VersionInfo/all /results/VersionInfo/ComputerName /results/VersionInfo/RegionalSettings
+    operator/cfg/operator.dms /results/Regression/results_folder /results/Regression/t010_operator_test
+    """
+    local_machine_name = get_local_machine_name()
+    date_format = "YYYYMMDD"
+    status_flags = f"{MT1}{MT2}{MT3}"
+
+    if not os.path.exists(local_machine_parameters["tmpFileDir"]):
+        os.makedirs(local_machine_parameters["tmpFileDir"])
+
+    with open(f"{local_machine_parameters["tmpFileDir"]}/computername.txt", "w") as f:
+        f.write(local_machine_name)
+
+    with open(f"{local_machine_parameters["tmpFileDir"]}/date_format.txt", "w") as f:
+        f.write(date_format)
+
+    with open(f"{local_machine_parameters["tmpFileDir"]}/statusflags.txt", "w") as f:
+        f.write(status_flags)
+
+    with open(f"{local_machine_parameters["tmpFileDir"]}/results_folder.txt", "w") as f:
+        f.write(result_paths["results_folder"])
     return
 
 def run_full_regression_test(version:str="17.4.6"):
@@ -251,6 +319,8 @@ def run_full_regression_test(version:str="17.4.6"):
     regression_test_paths = get_regression_test_paths(local_machine_parameters)
     result_paths = get_result_paths(geodms_paths, regression_test_paths, version, MT1, MT2, MT3)
     
+    header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
+
     operator_experiments = get_operator_test_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, version, MT1, MT2, MT3)
     experiments = Profiler.RunExperiments(operator_experiments)
 
