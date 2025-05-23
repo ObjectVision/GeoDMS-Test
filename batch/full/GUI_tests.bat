@@ -28,5 +28,6 @@ echo %GeoDmsRunCmdBaseLarge% %RegressionPath% /results/t1642_value_info_group_by
 Call full/SetEndTime.bat
 Call full/WriteTimeStamps.bat %results_folder%\t1642_value_info_group_by.txt
 
+REM t1742_command_statistics [compare file updated 2025-05-21]
 Call Full\InstanceTimeStampStatistics.bat %Setting1% %Setting2% %Setting3% %OperatorPath% /Arithmetics/UnTiled/add/attr t1742_command_statistics "%TstDir%\norm\Statistics_AUAA.html"
 

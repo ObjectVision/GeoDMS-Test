@@ -26,21 +26,21 @@ Echo.
 FOR %%A IN (%7) DO (
 	SET CFileSize=%%~zA
 )
-ECHO FileSize %7 : %CFileSize%
+ECHO FileSize %7 : !CFileSize!
 
 FOR %%B IN (%8) DO (
 	SET RFileSize=%%~zB
 )
-ECHO FileSize %8 : %RFileSize%
+ECHO FileSize %8 : !RFileSize!
 
 Echo.
 
-if %CFileSize% EQU %RFileSize% (
+if !CFileSize! EQU !RFileSize! (
     echo OK, file size equals
-    echo OK, file size equals >> %resultfile%
+    echo OK, file size equals >> !resultfile!
 ) else (
     echo False, file size differs
-    echo False, file size differs >> %resultfile%
+    echo False, file size differs >> !resultfile!
 )
 
 Echo ^<^/result^>^ >> %resultfile%

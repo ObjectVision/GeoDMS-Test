@@ -482,10 +482,12 @@ container StorageManagerTest
 			{
 				parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
 			}
-			container Write: StorageName = "%localDataProjDir%/regr_results/Polygon/area.dbf"
+			unit<uint32> Write := PolygonSet
+			, StorageName = "%localDataProjDir%/regr_results/Polygon/area.shp"
+			, StorageType = "gdalwrite.vect"
 			{
-				attribute<units/point_rd> Polygon (PolygonSet, polygon) := PolygonSet/poly, StorageName= "%localDataProjDir%/regr_results/Polygon/area.shp";
-				attribute<string>         label   (PolygonSet)          := PolygonSet/label;
+				attribute<units/point_rd> Polygon (polygon) := PolygonSet/poly;
+				attribute<string>         label             := PolygonSet/label;
 			}
 		}
 	}
