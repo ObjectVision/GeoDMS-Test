@@ -5,23 +5,6 @@ import sys
 from packaging.version import Version
 import glob
 
-def get_operator_test_experiments(local_machine_parameters:dict, geodms_paths:dict, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str) -> list:
-    operator_test_experiments = []
-    env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    result_folder_name = get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)
-    # "C:\Program Files\ObjectVision\GeoDms17.4.6\GeoDmsRun.exe" /L"C:\Users\Cicada\prj\GeoDMS-Test\Regression\GeoDMSTestResults\17_4_6_x64_SF_S1S2S3_OVSRV07\log\t010_operator_test_C1C2C3.txt"  /C1 /C2 /C3 C:\Users\Cicada\prj\GeoDMS-Test\Operator\cfg\Operator.dms results/regression/t010_operator_test/C1C2C3
-    #'C:/PROGRA~1/ObjectVision/GeoDms17.4.6/GeoDmsRun.exe /L C:\\Users\\Cicada\\prj\\GeoDMS-Test\\batch/Regression/GeoDMSTestResults/17.4.6_x64_SF_C1C2C3_OVSRV07/log/t010_operator_test_C1C2C3.txt /C1 /C2 /C3 C:\\Users\\Cicada\\prj\\GeoDMS-Test\\batch/Operator/cfg/Operator.dms results/regression/t010_operator_test/stored_result'
-    
-    operator_test_experiments.append(Profiler.Experiment(name=f"{result_folder_name}__t010_operator_test", \
-                                                         command=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test_{MT1}{MT2}{MT3}.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", \
-                                                         experiment_folder=f"{result_paths["results_folder"]}", \
-                                                         environment_variables=env_vars,\
-                                                         cwd=None,\
-                                                         geodms_logfile=f"{result_paths["results_log_folder"]}/t010_operator_test_{MT1}{MT2}{MT3}.txt",\
-                                                         binary_experiment_file=""))
-    
-    return operator_test_experiments
-
 def get_table_regression_test_row(summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", summary_row[0])
@@ -360,3 +343,7 @@ def collect_and_generate_test_results(version:str, result_paths:dict):
 
 def run_experiments(experiments):
     experiments = Profiler.RunExperiments(experiments)
+
+def append_experiment(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, bin_fn=None) -> list:
+    exps.append(Profiler.Experiment(name=name, command=cmd, experiment_folder=exp_fldr, environment_variables=env, cwd=cwd, geodms_logfile=log_fn, binary_experiment_file=bin_fn))
+    return exps

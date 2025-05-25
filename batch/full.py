@@ -50,7 +50,14 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
 
     return regression_test_paths
 
+def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str) -> list:
+    exps = []
+    env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    result_folder_name = get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)
 
+    # add experiments
+    append_experiment(exps, name=f"{result_folder_name}__t010_operator_test", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test_{MT1}{MT2}{MT3}.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test_{MT1}{MT2}{MT3}.txt")
+    return exps
 
 def run_full_regression_test(version:str="17.4.6"):
     # arguments
@@ -90,7 +97,7 @@ def run_full_regression_test(version:str="17.4.6"):
 
     header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
 
-    operator_experiments = get_operator_test_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, version, MT1, MT2, MT3)
+    operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, version, MT1, MT2, MT3)
     #experiments = Profiler.RunExperiments(operator_experiments)
     run_experiments(operator_experiments)
 
