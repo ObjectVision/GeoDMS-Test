@@ -28,11 +28,12 @@ def get_table_regression_test_row(summary_row:list) -> str:
         minutes = time // 60
         time %= 60
         seconds = time
-
-        table_col_header = table_col_header.replace("@@@DAYS@@@", str(day))
-        table_col_header = table_col_header.replace("@@@HOURS@@@", str(hour))
-        table_col_header = table_col_header.replace("@@@MINS@@@", str(minutes))
-        table_col_header = table_col_header.replace("@@@SECONDS@@@", str(seconds))
+        #2025 05 21 : 12.24.32
+        table_col_header = table_col_header.replace("@@@STARTTIME@@@", str(summary_col_row["start_time"].strftime("%Y %m %d %H:%M:%S")))
+        table_col_header = table_col_header.replace("@@@DAYS@@@", str(int(day)))
+        table_col_header = table_col_header.replace("@@@HOURS@@@", str(int(hour)))
+        table_col_header = table_col_header.replace("@@@MINS@@@", str(int(minutes)))
+        table_col_header = table_col_header.replace("@@@SECONDS@@@", str(int(seconds)))
         table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", str(summary_col_row["highest_commit"]))
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
         table_col_header = table_col_header.replace("@@@TOTALREAD@@@", str(summary_col_row["total_read"]))
