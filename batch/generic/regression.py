@@ -5,12 +5,20 @@ import sys
 from packaging.version import Version
 import glob
 
+def get_empty_table_row_col_html() -> str:
+    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"></td>\n'
+
 def get_table_regression_test_row(summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", summary_row[0])
     for summary_col_row in summary_row[1:]:
         table_col_header = get_table_row_col_html_template()
-        
+        if not summary_col_row:
+            regression_test_row += get_empty_table_row_col_html()
+            continue
+
+        if summary_col_row["status"]:
+            table_col_header = table_col_header.replace("@@@STATUS@@@", summary_col_row["status"])
         # split duration [s] into components
         time = summary_col_row['duration']
         day = time // (24 * 3600)
@@ -20,7 +28,7 @@ def get_table_regression_test_row(summary_row:list) -> str:
         minutes = time // 60
         time %= 60
         seconds = time
-        table_col_header = table_col_header.replace("@@@STATUS@@@", summary_col_row["status"])
+
         table_col_header = table_col_header.replace("@@@DAYS@@@", str(day))
         table_col_header = table_col_header.replace("@@@HOURS@@@", str(hour))
         table_col_header = table_col_header.replace("@@@MINS@@@", str(minutes))
