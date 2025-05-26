@@ -79,7 +79,8 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             summaries[row][col] = experiment.summary()
             regression_test_experiments.append(experiment)
             summaries[row][col]["profile_figure_filename"] = f"../{get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)}"
-            summaries[row][col]["status"] = get_regression_test_result(regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}")
+            status_code = experiment.result["status_code"] if "status_code" in experiment.result else 0
+            summaries[row][col]["status"] = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}")
         
         visualized_experiments_filename = Profiler.VisualizeExperiments(regression_test_experiments, show_figure=False)
         target_visualized_experiments_filename = get_profile_figure_filename(result_paths["results_folder"], regression_test)
@@ -89,10 +90,10 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
 
     return summaries
 
-def get_regression_test_result(regression_test:str, regression_test_folder:str) -> str:
+def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str) -> str:
     regression_test_status_filename = f"{regression_test_folder}/{regression_test}.txt"
     if not os.path.isfile(regression_test_status_filename):
-        return None
+        return str(status_code)
     with open(regression_test_status_filename, "r") as f:
         return f.read()
 
