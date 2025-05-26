@@ -34,10 +34,10 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@HOURS@@@", str(int(hour)))
         table_col_header = table_col_header.replace("@@@MINS@@@", str(int(minutes)))
         table_col_header = table_col_header.replace("@@@SECONDS@@@", str(int(seconds)))
-        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", str(summary_col_row["highest_commit"]))
+        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f"{summary_col_row["highest_commit"]:.3f}")
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
-        table_col_header = table_col_header.replace("@@@TOTALREAD@@@", str(summary_col_row["total_read"]))
-        table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", str(summary_col_row["total_write"]))
+        table_col_header = table_col_header.replace("@@@TOTALREAD@@@", f"{summary_col_row["total_read"]:.5f}")
+        table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", f"{summary_col_row["total_write"]:.5f}")
         table_col_header = table_col_header.replace("@@@LOG@@@", summary_col_row["log_filename"])
         table_col_header = table_col_header.replace("@@@PROFILE_FIGURE@@@", summary_col_row["profile_figure_filename"])
 
@@ -55,7 +55,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@"><span class="material-symbols-outlined">article</span></a>'
     profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@"><span class="material-symbols-outlined">timeline</span></a>'
     return f'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">@@@STATUS@@@<BR>\
-    <I>start at</I>: @@@STARTTIME@@@<BR>\
+    <I>start</I>: @@@STARTTIME@@@<BR>\
     <I>duration</I>: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
     <I>highest Commit: </I><B>@@@HIGHESTCOMMIT@@@[GB]</B><BR>\
     <I>max threads: </I><B>@@@MAXTHREADS@@@</B><BR>\
@@ -303,10 +303,11 @@ def get_table_title_html_template() -> str:
 
 def get_table_col_header_html_template() -> str:
     #<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><I>version</I>: <B>17.4.6</B><BR><I>build</I>: <B>Release</B><BR><I>platform</I>: <B>x64</B><BR><I>multi tasking</I>: <B>S1S2S3</B><BR> 			<I>operating system</I>: <B>Windows 10</B><BR> 			<I>computername</I>: <B>OVSRV07</B><BR> </td>
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><I>version</I>: <B>@@@VERSION@@@</B><BR>\
-    <I>build</I>: <B>Release</B><BR><I>platform</I>: <B>@@@PLATFORM@@@</B><BR>\
-    <I>multi tasking</I>: <B>@@@MULTITASKING@@@</B><BR>\
-    <I>computername</I>: <B>@@@COMPUTER_NAME@@@</B><BR> </td>\n'
+    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><B>@@@VERSION@@@</B><BR>\
+    <B>Release</B><BR>\
+    <B>@@@PLATFORM@@@</B><BR>\
+    <B>@@@MULTITASKING@@@</B><BR>\
+    <B>@@@COMPUTER_NAME@@@</B><BR> </td>\n'
 
 def get_table_header_row(summary_row:list) -> str:
     table_header_row = get_table_title_html_template()
