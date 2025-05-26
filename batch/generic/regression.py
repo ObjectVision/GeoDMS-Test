@@ -5,6 +5,7 @@ import sys
 from packaging.version import Version
 import glob
 from bs4 import BeautifulSoup
+import filecmp
 
 def get_empty_table_row_col_html() -> str:
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"></td>\n'
@@ -92,7 +93,7 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             summaries[row][col]["profile_figure_filename"] = f"../{profile_fig_filename}"
             summaries[row][col]["log_filename"] = f"../{log_filename}"
             status_code = experiment.result["status_code"] if "status_code" in experiment.result else 0
-            results = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}")
+            results = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}", experiment.file_comparison)
             summaries[row][col]["status"] = results[0]
             summaries[row][col]["results"] = results
         
@@ -115,8 +116,36 @@ def parse_regression_test_status_file(status_filename:str) -> dict:
         result_dict[child.name] = child.text
     return result_dict
 
-def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str) -> tuple:
+def get_filepairs(benchmark_files:list, generated_files:list) -> list:
+    file_pairs = []
+    for benchmark_file in benchmark_files:
+        benchmark_filename = os.path.basename(benchmark_file)
+        for index, generated_file in enumerate(generated_files):
+            generated_filename = os.path.basename(generated_file)
+            if benchmark_filename ==  generated_filename:
+                file_pairs.append((benchmark_file, generated_file))
+            if index == len(generated_files)-1:
+                file_pairs.append((benchmark_file, None))
+    return file_pairs
+
+def compare_files(file_comparison:tuple):
+    benchmark_files = glob.glob(file_comparison[0])
+    generated_files = glob.glob(file_comparison[1])
+    filepairs = get_filepairs(benchmark_files, generated_files)
+
+    for benchmark_file, generated_file in filepairs:
+        if not generated_file:
+            return False
+        files_are_similar = filecmp.cmp(benchmark_file, generated_file)
+        if not files_are_similar:
+            return False        
+    return True
+
+def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple) -> tuple:
     regression_test_status_filename = f"{regression_test_folder}/{regression_test}.txt"
+    if file_comparison:
+        files_are_comparable = compare_files(file_comparison)
+        return ("OK", {}) if files_are_comparable else ("Failed", {})
     if not os.path.isfile(regression_test_status_filename):
         if status_code == 15:
             return ("TIMEOUT", {})
@@ -388,6 +417,6 @@ def collect_and_generate_test_results(version:str, result_paths:dict):
 def run_experiments(experiments):
     experiments = Profiler.RunExperiments(experiments)
 
-def append_experiment(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, bin_fn=None) -> list:
-    exps.append(Profiler.Experiment(name=name, command=cmd, experiment_folder=exp_fldr, environment_variables=env, cwd=cwd, geodms_logfile=log_fn, binary_experiment_file=bin_fn))
+def append_experiment(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, bin_fn=None, file_comparison:tuple=None) -> list:
+    exps.append(Profiler.Experiment(name=name, command=cmd, experiment_folder=exp_fldr, environment_variables=env, cwd=cwd, geodms_logfile=log_fn, binary_experiment_file=bin_fn, file_comparison=file_comparison))
     return exps
