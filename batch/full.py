@@ -6,7 +6,7 @@ from generic.regression import *
 def get_local_machine_parameters() -> dict:
     local_machine_parameters = {}
     # user adaptable
-    local_machine_parameters["RegressionTestsSourceDataDir"] = "C:/SourceData/RegressionTests"
+    local_machine_parameters["RegressionTestsSourceDataDir"] = "E:/SourceData/RegressionTests"
     local_machine_parameters["RegressionTestsAltSourceDataDir"] = "C:/SourceData"
     local_machine_parameters["LocalDataDir"] = "C:/LocalData"
 
@@ -27,7 +27,7 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["RegressionPath"] = f"{regression_test_paths["TstDir"]}/Regression/cfg/stam.dms"
     regression_test_paths["BLRDConversiePath"] = f"{regression_test_paths["prj_snapshotsDir"]}/bl_rd_conversie/cfg/root.dms"
 
-    regression_test_paths["LusDemoRunPath2023"] = f"{regression_test_paths["prj_snapshotsDir"]}/lus_demo_2023/cfg/demo.dns"
+    regression_test_paths["LusDemoRunPath2023"] = f"{regression_test_paths["prj_snapshotsDir"]}/lus_demo_2023/cfg/demo.dms"
     regression_test_paths["RSLRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSL_2020/cfg/regression_test.dms"
     regression_test_paths["RSLight_2020Path"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSLight_2020/cfg/Regression_test.dms"
     regression_test_paths["HestiaRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/Hestia2024/Runs/HestiaRun.dms"
@@ -47,6 +47,7 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["HestiaDataDir"] = f"{local_machine_parameters["RegressionTestsSourceDataDir"]}/Hestia"
     regression_test_paths["RSo_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen"
     regression_test_paths["RSo_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv"
+    regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = local_machine_parameters["LocalDataDirRegression"]
 
     return regression_test_paths
 
@@ -56,8 +57,22 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     result_folder_name = get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)
 
     # add experiments
-    append_experiment(exps, name=f"{result_folder_name}__t010_operator_test", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test_{MT1}{MT2}{MT3}.txt")
-    append_experiment(exps, name=f"{result_folder_name}__t010_operator_test_t2", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test_t2.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test_{MT1}{MT2}{MT3}.txt")
+    add_experiment(exps, 
+                   name=f"{result_folder_name}__t010_operator_test", 
+                   cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", 
+                   exp_fldr=f"{result_paths["results_folder"]}", 
+                   env=env_vars, 
+                   log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test.txt")
+    
+    #Call Full\InstanceTimeStampWithFileCompare.bat %Setting1% %Setting2% %Setting3% %StoragePath% EsriShape/polygon/Write t050_Storage_Write_Shape_Polygon_Folder_Compare  %LocalDataDir%\Regression\Storage\regr_results\polygon\area.* %TstDir%\Storage\data\polygon\area.*
+    add_experiment(exps, 
+                   name=f"{result_folder_name}__t050_Storage_Write_Shape_Polygon_Folder_Compare", 
+                   cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["StoragePath"]} EsriShape/polygon/Write",
+                   exp_fldr=f"{result_paths["results_folder"]}", 
+                   env=env_vars,
+                   log_fn=f"{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt",
+                   file_comparison=(f"{regression_test_paths["TstDir"]}/Storage/data/polygon/area.*", f"{local_machine_parameters["LocalDataDir"]}/Regression/Storage/regr_results/polygon/area.*"))
+
     return exps
 
 def run_full_regression_test(version:str="17.4.6"):
@@ -108,3 +123,7 @@ def run_full_regression_test(version:str="17.4.6"):
 
 if __name__=="__main__":
     run_full_regression_test()
+
+#TODO: clear localdatadir
+#TODO: color based on status
+#TODO: set #tests_succeeded/#tests for col header
