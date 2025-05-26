@@ -8,11 +8,11 @@ import glob
 def get_empty_table_row_col_html() -> str:
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"></td>\n'
 
-def get_table_regression_test_row(summary_row:list) -> str:
+def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", summary_row[0])
     for summary_col_row in summary_row[1:]:
-        table_col_header = get_table_row_col_html_template()
+        table_col_header = get_table_row_col_html_template(result_paths, summary_col_row["log_filename"], summary_col_row["profile_figure_filename"])
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
             continue
@@ -38,7 +38,8 @@ def get_table_regression_test_row(summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
         table_col_header = table_col_header.replace("@@@TOTALREAD@@@", str(summary_col_row["total_read"]))
         table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", str(summary_col_row["total_write"]))
-        table_col_header = table_col_header.replace("@@@LINK@@@", summary_col_row["profile_figure_filename"])
+        table_col_header = table_col_header.replace("@@@LOG@@@", summary_col_row["log_filename"])
+        table_col_header = table_col_header.replace("@@@PROFILE_FIGURE@@@", summary_col_row["profile_figure_filename"])
 
         regression_test_row += table_col_header
 
@@ -47,15 +48,21 @@ def get_table_regression_test_row(summary_row:list) -> str:
 def get_table_row_title_html_template() -> str:
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><H3>@@@TESTNAME@@@</H3></TD>\n'
 
-def get_table_row_col_html_template() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">@@@STATUS@@@<BR>\
-    <I>test started at</I>: @@@STARTTIME@@@<BR>\
+def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_fig_fn:str=None) -> str:
+    absolute_log_fn = f"{result_paths["results_base_folder"]}/{log_fn[3:]}"
+    absolute_profile_fn = f"{result_paths["results_base_folder"]}/{profile_fig_fn[3:]}"
+    
+    log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@"><span class="material-symbols-outlined">article</span></a>'
+    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@"><span class="material-symbols-outlined">timeline</span></a>'
+    return f'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">@@@STATUS@@@<BR>\
+    <I>start at</I>: @@@STARTTIME@@@<BR>\
     <I>duration</I>: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
-    <I>Highest CommitCharge [GB]: </I><B>@@@HIGHESTCOMMIT@@@</B><BR>\
-    <I>Max threads: </I><B>@@@MAXTHREADS@@@</B><BR>\
-    <I>Total read [GB]: </I><B>@@@TOTALREAD@@@</B><BR>\
-    <I>Total write [GB]: </I><B>@@@TOTALWRITE@@@</B><BR>\
-    <I>Profile figure: </I><a href="@@@LINK@@@">@@@LINK@@@</a></td>\n'
+    <I>highest Commit: </I><B>@@@HIGHESTCOMMIT@@@[GB]</B><BR>\
+    <I>max threads: </I><B>@@@MAXTHREADS@@@</B><BR>\
+    <I>Total read: </I><B>@@@TOTALREAD@@@[GB]</B><BR>\
+    <I>Total write: </I><B>@@@TOTALWRITE@@@[GB]</B><BR>\
+    {log_part} {profile_part}\
+    </td>\n'
 
 def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
     # initialize table
@@ -78,7 +85,10 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             experiment = Profiler.loadExperimentFromPickleFile(None, experiment_file)
             summaries[row][col] = experiment.summary()
             regression_test_experiments.append(experiment)
-            summaries[row][col]["profile_figure_filename"] = f"../{get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)}"
+            log_filename = get_log_filename(sorted_valid_result_folders[col-1][0], regression_test)
+            profile_fig_filename = get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)
+            summaries[row][col]["profile_figure_filename"] = f"../{profile_fig_filename}"
+            summaries[row][col]["log_filename"] = f"../{log_filename}"
             status_code = experiment.result["status_code"] if "status_code" in experiment.result else 0
             summaries[row][col]["status"] = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}")
         
@@ -97,7 +107,10 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     with open(regression_test_status_filename, "r") as f:
         return f.read()
 
-def get_profile_figure_filename(result_folder:str, regression_test:str) -> str:
+def get_log_filename(result_folder:str, regression_test:str):
+    return f"{result_folder}/log/{regression_test}.txt"
+
+def get_profile_figure_filename(result_folder:str, regression_test:str):
     return f"{result_folder}/{regression_test}.html"
 
 def get_col_header(col:int, sorted_valid_result_folders:list) -> dict:
@@ -308,18 +321,19 @@ def get_table_header_row(summary_row:list) -> str:
         
     return f'<tr style="background-color: #fff497">{table_header_row}</tr>'
 
-def get_table_rows(regression_test_summaries:list[list]) -> str:
+def get_table_rows(result_paths:dict, regression_test_summaries:list[list]) -> str:
     rows = ""    
     for index, summary_row in enumerate(regression_test_summaries):
         if index == 0:
             rows += get_table_header_row(summary_row)
             continue
-        rows += get_table_regression_test_row(summary_row)
+        rows += get_table_regression_test_row(result_paths, summary_row)
     return rows
 
-def render_regression_test_result_html(result_folder:str, version_range:tuple, result_paths:dict, regression_test_summaries:dict):
+def render_regression_test_result_html(version_range:tuple, result_paths:dict, regression_test_summaries:dict):
     result_html = '<!DOCTYPE html>\
     <html>\
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />\
         <head>\
             <meta charset="UTF-8">\
         </head>\
@@ -330,7 +344,7 @@ def render_regression_test_result_html(result_folder:str, version_range:tuple, r
         </body>\
     </html>'
 
-    table_content = get_table_rows(regression_test_summaries)
+    table_content = get_table_rows(result_paths, regression_test_summaries)
     result_html = result_html.replace("@@@TABLE_CONTENT@@@", table_content)
 
     final_html_filename = f"{result_paths['results_base_folder']}/reports/{version_range[0].replace(".","_")}___{version_range[1].replace(".","_")}.html"
@@ -348,7 +362,7 @@ def collect_and_generate_test_results(version:str, result_paths:dict):
     regression_test_names       = get_all_regression_tests_by_name(result_paths, valid_result_folders)
     regression_test_files       = collect_experiment_filenames_per_experiment(regression_test_names, result_paths, sorted_valid_result_folders)
     regression_test_summaries   = collect_experiment_summaries(version_range, result_paths, sorted_valid_result_folders, regression_test_names, regression_test_files)
-    render_regression_test_result_html(sorted_valid_result_folders[0][0], version_range, result_paths, regression_test_summaries)
+    render_regression_test_result_html(version_range, result_paths, regression_test_summaries)
     return
 
 def run_experiments(experiments):
