@@ -4,21 +4,20 @@ import importlib
 import sys
 from packaging.version import Version
 import glob
+from bs4 import BeautifulSoup
 
 def get_empty_table_row_col_html() -> str:
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"></td>\n'
 
-def get_table_regression_test_row(summary_row:list) -> str:
+def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", summary_row[0])
     for summary_col_row in summary_row[1:]:
-        table_col_header = get_table_row_col_html_template()
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
             continue
-
-        if summary_col_row["status"]:
-            table_col_header = table_col_header.replace("@@@STATUS@@@", summary_col_row["status"])
+        table_col_header = get_table_row_col_html_template(result_paths, summary_col_row["log_filename"], summary_col_row["profile_figure_filename"])
+        table_col_header = table_col_header.replace("@@@STATUS@@@", summary_col_row["status"])
         # split duration [s] into components
         time = summary_col_row['duration']
         day = time // (24 * 3600)
@@ -34,11 +33,12 @@ def get_table_regression_test_row(summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@HOURS@@@", str(int(hour)))
         table_col_header = table_col_header.replace("@@@MINS@@@", str(int(minutes)))
         table_col_header = table_col_header.replace("@@@SECONDS@@@", str(int(seconds)))
-        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", str(summary_col_row["highest_commit"]))
+        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f"{summary_col_row["highest_commit"]:.3f}")
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
-        table_col_header = table_col_header.replace("@@@TOTALREAD@@@", str(summary_col_row["total_read"]))
-        table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", str(summary_col_row["total_write"]))
-        table_col_header = table_col_header.replace("@@@LINK@@@", summary_col_row["profile_figure_filename"])
+        table_col_header = table_col_header.replace("@@@TOTALREAD@@@", f"{summary_col_row["total_read"]:.5f}")
+        table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", f"{summary_col_row["total_write"]:.5f}")
+        table_col_header = table_col_header.replace("@@@LOG@@@", summary_col_row["log_filename"])
+        table_col_header = table_col_header.replace("@@@PROFILE_FIGURE@@@", summary_col_row["profile_figure_filename"])
 
         regression_test_row += table_col_header
 
@@ -47,15 +47,24 @@ def get_table_regression_test_row(summary_row:list) -> str:
 def get_table_row_title_html_template() -> str:
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><H3>@@@TESTNAME@@@</H3></TD>\n'
 
-def get_table_row_col_html_template() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">@@@STATUS@@@<BR>\
-    <I>test started at</I>: @@@STARTTIME@@@<BR>\
-    <I>duration</I>: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
-    <I>Highest CommitCharge [GB]: </I><B>@@@HIGHESTCOMMIT@@@</B><BR>\
-    <I>Max threads: </I><B>@@@MAXTHREADS@@@</B><BR>\
-    <I>Total read [GB]: </I><B>@@@TOTALREAD@@@</B><BR>\
-    <I>Total write [GB]: </I><B>@@@TOTALWRITE@@@</B><BR>\
-    <I>Profile figure: </I><a href="@@@LINK@@@">@@@LINK@@@</a></td>\n'
+def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_fig_fn:str=None) -> str:
+    absolute_log_fn = f"{result_paths["results_base_folder"]}/{log_fn[3:]}"
+    absolute_profile_fn = f"{result_paths["results_base_folder"]}/{profile_fig_fn[3:]}"
+    
+    log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@"><span class="material-symbols-outlined">article</span></a>'
+    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@"><span class="material-symbols-outlined">timeline</span></a>'
+    return f'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">\
+    <details>\
+    <summary>@@@STATUS@@@</summary>\
+    start: @@@STARTTIME@@@<BR>\
+    duration: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
+    highest Commit: <B>@@@HIGHESTCOMMIT@@@[GB]</B><BR>\
+    max threads: <B>@@@MAXTHREADS@@@</B><BR>\
+    total read: <B>@@@TOTALREAD@@@[GB]</B><BR>\
+    total write: <B>@@@TOTALWRITE@@@[GB]</B><BR>\
+    </details>\
+    {log_part} {profile_part}\
+    </td>\n'
 
 def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
     # initialize table
@@ -78,9 +87,14 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             experiment = Profiler.loadExperimentFromPickleFile(None, experiment_file)
             summaries[row][col] = experiment.summary()
             regression_test_experiments.append(experiment)
-            summaries[row][col]["profile_figure_filename"] = f"../{get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)}"
+            log_filename = get_log_filename(sorted_valid_result_folders[col-1][0], regression_test)
+            profile_fig_filename = get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)
+            summaries[row][col]["profile_figure_filename"] = f"../{profile_fig_filename}"
+            summaries[row][col]["log_filename"] = f"../{log_filename}"
             status_code = experiment.result["status_code"] if "status_code" in experiment.result else 0
-            summaries[row][col]["status"] = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}")
+            results = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}")
+            summaries[row][col]["status"] = results[0]
+            summaries[row][col]["results"] = results
         
         visualized_experiments_filename = Profiler.VisualizeExperiments(regression_test_experiments, show_figure=False)
         target_visualized_experiments_filename = get_profile_figure_filename(result_paths["results_folder"], regression_test)
@@ -90,14 +104,32 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
 
     return summaries
 
-def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str) -> str:
+def parse_regression_test_status_file(status_filename:str) -> dict:
+    # <description>operator test</description><size>number unique tests: 1356</size><result>OK</result>
+    raw_html = ""
+    result_dict = {}
+    with open(status_filename, "r") as f:
+        raw_html = f.read()
+    soup = BeautifulSoup(raw_html)
+    for child in soup.children:
+        result_dict[child.name] = child.text
+    return result_dict
+
+def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str) -> tuple:
     regression_test_status_filename = f"{regression_test_folder}/{regression_test}.txt"
     if not os.path.isfile(regression_test_status_filename):
-        return str(status_code)
-    with open(regression_test_status_filename, "r") as f:
-        return f.read()
+        if status_code == 15:
+            return ("TIMEOUT", {})
+        elif status_code == 0:
+            return ("OK", {})
+        return (str(status_code), {})
+    parsed_status_file = parse_regression_test_status_file(regression_test_status_filename)
+    return (parsed_status_file["result"], parsed_status_file)
 
-def get_profile_figure_filename(result_folder:str, regression_test:str) -> str:
+def get_log_filename(result_folder:str, regression_test:str):
+    return f"{result_folder}/log/{regression_test}.txt"
+
+def get_profile_figure_filename(result_folder:str, regression_test:str):
     return f"{result_folder}/{regression_test}.html"
 
 def get_col_header(col:int, sorted_valid_result_folders:list) -> dict:
@@ -290,10 +322,11 @@ def get_table_title_html_template() -> str:
 
 def get_table_col_header_html_template() -> str:
     #<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><I>version</I>: <B>17.4.6</B><BR><I>build</I>: <B>Release</B><BR><I>platform</I>: <B>x64</B><BR><I>multi tasking</I>: <B>S1S2S3</B><BR> 			<I>operating system</I>: <B>Windows 10</B><BR> 			<I>computername</I>: <B>OVSRV07</B><BR> </td>
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><I>version</I>: <B>@@@VERSION@@@</B><BR>\
-    <I>build</I>: <B>Release</B><BR><I>platform</I>: <B>@@@PLATFORM@@@</B><BR>\
-    <I>multi tasking</I>: <B>@@@MULTITASKING@@@</B><BR>\
-    <I>computername</I>: <B>@@@COMPUTER_NAME@@@</B><BR> </td>\n'
+    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><B>@@@VERSION@@@</B><BR>\
+    <B>Release</B><BR>\
+    <B>@@@PLATFORM@@@</B><BR>\
+    <B>@@@MULTITASKING@@@</B><BR>\
+    <B>@@@COMPUTER_NAME@@@</B><BR> </td>\n'
 
 def get_table_header_row(summary_row:list) -> str:
     table_header_row = get_table_title_html_template()
@@ -308,18 +341,19 @@ def get_table_header_row(summary_row:list) -> str:
         
     return f'<tr style="background-color: #fff497">{table_header_row}</tr>'
 
-def get_table_rows(regression_test_summaries:list[list]) -> str:
+def get_table_rows(result_paths:dict, regression_test_summaries:list[list]) -> str:
     rows = ""    
     for index, summary_row in enumerate(regression_test_summaries):
         if index == 0:
             rows += get_table_header_row(summary_row)
             continue
-        rows += get_table_regression_test_row(summary_row)
+        rows += get_table_regression_test_row(result_paths, summary_row)
     return rows
 
-def render_regression_test_result_html(result_folder:str, version_range:tuple, result_paths:dict, regression_test_summaries:dict):
+def render_regression_test_result_html(version_range:tuple, result_paths:dict, regression_test_summaries:dict):
     result_html = '<!DOCTYPE html>\
     <html>\
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />\
         <head>\
             <meta charset="UTF-8">\
         </head>\
@@ -330,7 +364,7 @@ def render_regression_test_result_html(result_folder:str, version_range:tuple, r
         </body>\
     </html>'
 
-    table_content = get_table_rows(regression_test_summaries)
+    table_content = get_table_rows(result_paths, regression_test_summaries)
     result_html = result_html.replace("@@@TABLE_CONTENT@@@", table_content)
 
     final_html_filename = f"{result_paths['results_base_folder']}/reports/{version_range[0].replace(".","_")}___{version_range[1].replace(".","_")}.html"
@@ -348,7 +382,7 @@ def collect_and_generate_test_results(version:str, result_paths:dict):
     regression_test_names       = get_all_regression_tests_by_name(result_paths, valid_result_folders)
     regression_test_files       = collect_experiment_filenames_per_experiment(regression_test_names, result_paths, sorted_valid_result_folders)
     regression_test_summaries   = collect_experiment_summaries(version_range, result_paths, sorted_valid_result_folders, regression_test_names, regression_test_files)
-    render_regression_test_result_html(sorted_valid_result_folders[0][0], version_range, result_paths, regression_test_summaries)
+    render_regression_test_result_html(version_range, result_paths, regression_test_summaries)
     return
 
 def run_experiments(experiments):
