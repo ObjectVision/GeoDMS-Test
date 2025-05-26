@@ -17,7 +17,7 @@ def get_local_machine_parameters() -> dict:
 
 def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths = {}
-    regression_test_paths["prj_snapshotsDir"] = f"{local_machine_parameters["RegressionTestsSourceDataDir"]}/prj_shapshots"
+    regression_test_paths["prj_snapshotsDir"] = f"{local_machine_parameters["RegressionTestsSourceDataDir"]}/prj_snapshots"
     regression_test_paths["BatchDir"] = str(os.getcwd()).replace("\\", "/")
     regression_test_paths["TstDir"] = str(Path(regression_test_paths["BatchDir"]).parent.absolute()).replace("\\", "/")
 
@@ -64,7 +64,6 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
                    env=env_vars, 
                    log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test.txt")
     
-    #Call Full\InstanceTimeStampWithFileCompare.bat %Setting1% %Setting2% %Setting3% %StoragePath% EsriShape/polygon/Write t050_Storage_Write_Shape_Polygon_Folder_Compare  %LocalDataDir%\Regression\Storage\regr_results\polygon\area.* %TstDir%\Storage\data\polygon\area.*
     add_experiment(exps, 
                    name=f"{result_folder_name}__t050_Storage_Write_Shape_Polygon_Folder_Compare", 
                    cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["StoragePath"]} EsriShape/polygon/Write",
@@ -72,6 +71,132 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
                    env=env_vars,
                    log_fn=f"{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt",
                    file_comparison=(f"{regression_test_paths["TstDir"]}/Storage/data/polygon/area.*", f"{local_machine_parameters["LocalDataDir"]}/Regression/Storage/regr_results/polygon/area.*"))
+
+    add_experiment(exps, 
+                   name=f"{result_folder_name}__t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare", 
+                   cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["BAG20MakeSnapShotPath"]} snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage",
+                   exp_fldr=f"{result_paths["results_folder"]}", 
+                   env=env_vars,
+                   log_fn=f"{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt",
+                   file_comparison=(f"{local_machine_parameters["RegressionTestsSourceDataDir"]}/BAG20/snapshot_Utrecht_20210701.gpkg", f"{local_machine_parameters["LocalDataDir"]}/Regression/BAG20/snapshot_Utrecht_20210701.gpkg"))
+
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t100_network_connect/result_html t100_network_connect
+    add_experiment(exps, 
+                name=f"{result_folder_name}__t100_network_connect", 
+                cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t100_network_connect.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t100_network_connect/result_html",
+                exp_fldr=f"{result_paths["results_folder"]}", 
+                env=env_vars,
+                log_fn=f"{result_paths["results_log_folder"]}/t100_network_connect.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t101_network_od_pc4_dense/result_html t101_network_od_pc4_dense
+    add_experiment(exps, 
+            name=f"{result_folder_name}__t101_network_od_pc4_dense", 
+            cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t101_network_od_pc4_dense.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t101_network_od_pc4_dense/result_html t101_network_od_pc4_dense",
+            exp_fldr=f"{result_paths["results_folder"]}", 
+            env=env_vars,
+            log_fn=f"{result_paths["results_log_folder"]}/t101_network_od_pc4_dense.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t102_network_od_pc6_sparse/result_html t102_network_od_pc6_sparse
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t102_network_od_pc6_sparse", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t102_network_od_pc6_sparse.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t102_network_od_pc6_sparse/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t102_network_od_pc6_sparse.txt")
+
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %BLRDConversiePath% t151_conversie_bl_rd_test/result_html t151_conversie_bl_rd_test
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t151_conversie_bl_rd_test", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t151_conversie_bl_rd_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["BLRDConversiePath"]} t151_conversie_bl_rd_test/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t151_conversie_bl_rd_test.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t200_grid_Poly2Grid/result_html t200_grid_Poly2Grid
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t200_grid_Poly2Grid", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t200_grid_Poly2Grid.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t200_grid_Poly2Grid/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t200_grid_Poly2Grid.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t300_xml_ReadParse/result_html t300_xml_ReadParse
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t300_xml_ReadParse", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t300_xml_ReadParse.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t300_xml_ReadParse/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t300_xml_ReadParse.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %RegressionPath% results/t301_BAG_ResidentialType/result_html t301_BAG_ResidentialType
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t301_BAG_ResidentialType", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t301_BAG_ResidentialType/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt")
+    
+    #Call Full\NetworkModel.bat %Setting1% %Setting2% %Setting3% t405_2_NetworkModel_PBL_indicator_results_test
+    #Call Full\NetworkModelEU.bat %Setting1% %Setting2% %Setting3% t410_NetworkModel_EU_indicator_results_test
+
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %HestiaRunPath% t530_hestia2024/result_html t530_hestia2024
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t530_hestia2024", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t530_hestia2024.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaRunPath"]} t530_hestia2024/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t530_hestia2024.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %LusDemoRunPath2023% t611_lus_demo_2023_results_test/result_html t611_lus_demo_2023_results_test
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t611_lus_demo_2023_results_test", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t611_lus_demo_2023_results_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["LusDemoRunPath2023"]} t611_lus_demo_2023_results_test/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t611_lus_demo_2023_results_test.txt")
+    
+    #Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
+    #Call Full\RSOpen_v2025.bat %Setting1% %Setting2% %Setting3% t641_3_RSopen_indicator_results_test
+
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_zonder_calcache t710_2UP_indicator_results_zonder_CalCache
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t710_2UP_indicator_results_zonder_CalCache", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t710_2UP_indicator_results_zonder_CalCache.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["TwoUPRunPath"]} test_2UP_indicator_results/result_html_zonder_calcache",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t710_2UP_indicator_results_zonder_CalCache.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoUPRunPath% test_2UP_indicator_results/result_html_met_calcache    t711_2UP_indicator_results_met_CalCache
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t711_2UP_indicator_results_met_CalCache", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t711_2UP_indicator_results_met_CalCache.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["TwoUPRunPath"]} test_2UP_indicator_results/result_html_met_calcache",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t711_2UP_indicator_results_met_CalCache.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %TwoBURPRunPath% t720_2BURP_indicator_results/result t720_2BURP_indicator_results
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t720_2BURP_indicator_results", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t720_2BURP_indicator_results.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["TwoBURPRunPath"]} t720_2BURP_indicator_results/result",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t720_2BURP_indicator_results.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %DynaPopPath% t810_ValLuisa_Czech_LU_POP/result_html t810_ValLuisa_Czech_LU_POP 
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t810_ValLuisa_Czech_LU_POP", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t810_ValLuisa_Czech_LU_POP.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["DynaPopPath"]} t810_ValLuisa_Czech_LU_POP/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t810_ValLuisa_Czech_LU_POP.txt")
+    
+    #Call Full\InstanceTimeStamp.bat %Setting1% %Setting2% %Setting3% %CusaRunPath% t910_cusa2_Africa_test/result_html t910_cusa2_Africa_test
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t910_cusa2_Africa_test", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t910_cusa2_Africa_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["CusaRunPath"]} t910_cusa2_Africa_test/result_html",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t910_cusa2_Africa_test.txt")
 
     return exps
 
