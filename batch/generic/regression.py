@@ -51,10 +51,10 @@ def get_table_row_col_html_template() -> str:
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">@@@STATUS@@@<BR>\
     <I>test started at</I>: @@@STARTTIME@@@<BR>\
     <I>duration</I>: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
-    <I>Highest CommitCharge: </I><B>@@@HIGHESTCOMMIT@@@</B><BR>\
+    <I>Highest CommitCharge [GB]: </I><B>@@@HIGHESTCOMMIT@@@</B><BR>\
     <I>Max threads: </I><B>@@@MAXTHREADS@@@</B><BR>\
-    <I>Total read: </I><B>@@@TOTALREAD@@@</B><BR>\
-    <I>Total write: </I><B>@@@TOTALWRITE@@@</B><BR>\
+    <I>Total read [GB]: </I><B>@@@TOTALREAD@@@</B><BR>\
+    <I>Total write [GB]: </I><B>@@@TOTALWRITE@@@</B><BR>\
     <I>Profile figure: </I><a href="@@@LINK@@@">@@@LINK@@@</a></td>\n'
 
 def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
@@ -240,7 +240,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
     geodms_paths["GeoDmsPath"] = f"C:/PROGRA~1/ObjectVision/GeoDms{version}"
-    geodms_paths["GeoDmsProfilerPath"] = "C:/dev/geodms/geodms_v17/profiler/Profiler.py"  #f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
+    geodms_paths["GeoDmsProfilerPath"] = "C:/Users/Cicada/dev/geodms/branches/geodms_v17/profiler/Profiler.py"  #f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
     geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
