@@ -189,4 +189,4 @@ Set Sequence=%date:/=-%_%time::=-%
 SET ResultFileFinalName=v%1_%Sequence%.txt
 RENAME "%ResultFileName%" "%ResultFileFinalName%"
 
-CALL "%ProgramFiles%\Notepad++\Notepad++.exe"  "%ResultDir%\unit\%ResultFileFinalName%"
+START "" "%ProgramFiles%\Notepad++\Notepad++.exe"  "%ResultDir%\unit\%ResultFileFinalName%"
