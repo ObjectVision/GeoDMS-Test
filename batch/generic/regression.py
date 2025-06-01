@@ -410,14 +410,14 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
         <body>\
             <script>\
                 function copy_href(event, element) {\
-                event.preventDefault();\
-                const href = element.href;\
-                navigator.clipboard.writeText(href)\
+                event.preventDefault(); \
+                const rawPath = element.getAttribute("href");\
+                navigator.clipboard.writeText(rawPath)\
                     .then(() => {\
-                    alert(href);\
+                    alert("Copied the path: " + rawPath);\
                     })\
                     .catch(err => {\
-                    console.error("Failed to copy link: ", err);\
+                    console.error("Failed to copy path: ", err);\
                     });\
                 }\
             </script>\
