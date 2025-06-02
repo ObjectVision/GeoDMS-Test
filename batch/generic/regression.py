@@ -18,6 +18,18 @@ def get_table_row_col_color(status:str) -> str:
         return "#ccddee"
     return "#ff6f6f"
 
+def get_days_hours_minutes_seconds_from_duration(duration:int):
+    # split duration [s] into components
+    time = duration
+    day = time // (24 * 3600)
+    time = time % (24 * 3600)
+    hour = time // 3600
+    time %= 3600
+    minutes = time // 60
+    time %= 60
+    seconds = time
+    return day, hour, minutes, seconds
+
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", summary_row[0])
@@ -30,17 +42,10 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         color = get_table_row_col_color(status)
         table_col_header = table_col_header.replace("@@@STATUS@@@", status)
         table_col_header = table_col_header.replace("@@@COLOR@@@", color)
-        # split duration [s] into components
-        time = summary_col_row['duration']
-        day = time // (24 * 3600)
-        time = time % (24 * 3600)
-        hour = time // 3600
-        time %= 3600
-        minutes = time // 60
-        time %= 60
-        seconds = time
+        day, hour, minutes, seconds = get_days_hours_minutes_seconds_from_duration(summary_col_row["duration"])
+
         #2025 05 21 : 12.24.32
-        command = summary_col_row["command"].replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
+        command = summary_col_row["command"]#.replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", str(summary_col_row["start_time"].strftime("%Y %m %d %H:%M:%S")))
         table_col_header = table_col_header.replace("@@@DAYS@@@", str(int(day)))
@@ -117,6 +122,20 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             #os.remove(target_visualized_experiments_filename)
             os.rename(visualized_experiments_filename, target_visualized_experiments_filename)
 
+        # get column total duration and success ratio
+        for col in cols:
+            total_tests = rows
+            total_duration = 0
+            succeeded = 0
+            for row in rows:
+                if not summaries[row][col]:
+                    total_tests -= 1
+                    continue
+                total_duration += summaries[row][col]["duration"]
+                if summaries[row][col]["status"] == "OK":
+                    succeeded += 1
+            summaries[0][col]["total_duration"] = total_duration
+            summaries[0][col]["success_ratio"] = (succeeded, total_tests)
     return summaries
 
 def parse_regression_test_status_file(status_filename:str) -> dict:
@@ -168,9 +187,9 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
         return (str(status_code), {})
     parsed_status_file = parse_regression_test_status_file(regression_test_status_filename)
     result_text = parsed_status_file["result"]
-    if len(result_text)>15:
-        print(f"Compressing geodms result_text from '{result_text}' to 'OK'")
-        result_text = "OK"
+    #if len(result_text)>15:
+    #    print(f"Compressing geodms result_text from '{result_text}' to 'OK'")
+    #    result_text = "OK"
     return (result_text, parsed_status_file)
 
 def get_log_filename(result_folder:str, regression_test:str):
@@ -370,7 +389,9 @@ def get_table_title_html_template() -> str:
 def get_table_col_header_html_template() -> str:
     #<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><I>version</I>: <B>17.4.6</B><BR><I>build</I>: <B>Release</B><BR><I>platform</I>: <B>x64</B><BR><I>multi tasking</I>: <B>S1S2S3</B><BR> 			<I>operating system</I>: <B>Windows 10</B><BR> 			<I>computername</I>: <B>OVSRV07</B><BR> </td>
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><B>@@@VERSION@@@</B><BR>\
-    <B>@@@MULTITASKING@@@</B></td>\n'
+    <B>@@@MULTITASKING@@@</B><BR>\
+    <B>@@@TOTALTIME@@@</B><BR>\
+    <B>@@@SUCCESSRATIO@@@</B></td>\n'
 
     #'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><B>@@@VERSION@@@</B><BR>\
     #<B>Release</B><BR>\
@@ -386,6 +407,9 @@ def get_table_header_row(summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@VERSION@@@", summary_col_header["version"])
         table_col_header = table_col_header.replace("@@@PLATFORM@@@", summary_col_header["platform"])
         table_col_header = table_col_header.replace("@@@MULTITASKING@@@", summary_col_header["multi_tasking"])
+        days, hours, minutes, seconds = get_days_hours_minutes_seconds_from_duration(summary_col_header["total_duration"])
+        table_col_header = table_col_header.replace("@@@TOTALTIME@@@", f"{days} {hours}:{minutes}:{seconds}")
+        table_col_header = table_col_header.replace("@@@SUCCESSRATIO@@@", f"{summary_col_header["success_ratio"][0]}/{summary_col_header["success_ratio"][1]}")
         table_col_header = table_col_header.replace("@@@COMPUTER_NAME@@@", summary_col_header["computer_name"])
         table_header_row += table_col_header
         
