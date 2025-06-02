@@ -122,20 +122,21 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             #os.remove(target_visualized_experiments_filename)
             os.rename(visualized_experiments_filename, target_visualized_experiments_filename)
 
-        # get column total duration and success ratio
-        for col in cols:
-            total_tests = rows
-            total_duration = 0
-            succeeded = 0
-            for row in rows:
-                if not summaries[row][col]:
-                    total_tests -= 1
-                    continue
-                total_duration += summaries[row][col]["duration"]
-                if summaries[row][col]["status"] == "OK":
-                    succeeded += 1
-            summaries[0][col]["total_duration"] = total_duration
-            summaries[0][col]["success_ratio"] = (succeeded, total_tests)
+    # get column total duration and success ratio
+    for col in range(1, cols):
+        total_tests = rows - 1
+        total_duration = 0
+        succeeded = 0
+        for row in range(1, rows):
+            if not summaries[row][col]:
+                total_tests -= 1
+                continue
+            summary_row_col = summaries[row][col]
+            total_duration += summary_row_col["duration"]
+            if summaries[row][col]["status"] == "OK":
+                succeeded += 1
+        summaries[0][col]["total_duration"] = total_duration
+        summaries[0][col]["success_ratio"] = (succeeded, total_tests)
     return summaries
 
 def parse_regression_test_status_file(status_filename:str) -> dict:
@@ -408,7 +409,7 @@ def get_table_header_row(summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@PLATFORM@@@", summary_col_header["platform"])
         table_col_header = table_col_header.replace("@@@MULTITASKING@@@", summary_col_header["multi_tasking"])
         days, hours, minutes, seconds = get_days_hours_minutes_seconds_from_duration(summary_col_header["total_duration"])
-        table_col_header = table_col_header.replace("@@@TOTALTIME@@@", f"{days} {hours}:{minutes}:{seconds}")
+        table_col_header = table_col_header.replace("@@@TOTALTIME@@@", f"{int(days)} {int(hours)}:{int(minutes)}:{int(seconds)}")
         table_col_header = table_col_header.replace("@@@SUCCESSRATIO@@@", f"{summary_col_header["success_ratio"][0]}/{summary_col_header["success_ratio"][1]}")
         table_col_header = table_col_header.replace("@@@COMPUTER_NAME@@@", summary_col_header["computer_name"])
         table_header_row += table_col_header
