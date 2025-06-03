@@ -516,7 +516,7 @@ def remove_local_data_dir_regression(local_data_regression_folder:str):
             shutil.rmtree(f)
     return
 
-def run_full_regression_test(version:str="17.4.6"):
+def run_full_regression_test(version:str="17.5.5"): #"17.4.6"):
     # arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")

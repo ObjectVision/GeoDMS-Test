@@ -188,9 +188,11 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
         return (str(status_code), {})
     parsed_status_file = parse_regression_test_status_file(regression_test_status_filename)
     result_text = parsed_status_file["result"]
-    #if len(result_text)>15:
-    #    print(f"Compressing geodms result_text from '{result_text}' to 'OK'")
-    #    result_text = "OK"
+    if len(result_text)>15:
+        
+        #if "OK" in result_text:
+        print(f"Compressing geodms result_text from '{result_text}' to 'OK'")
+        result_text = "OK"
     return (result_text, parsed_status_file)
 
 def get_log_filename(result_folder:str, regression_test:str):
