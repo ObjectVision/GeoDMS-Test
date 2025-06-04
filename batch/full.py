@@ -163,15 +163,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
         exp_fldr=f"{result_paths["results_folder"]}", 
         env=env_vars,
         log_fn=f"{result_paths["results_log_folder"]}/t405_1_NetworkModel_PBL_prepare_data.txt")
-    
-    #Call full/EchoAndExecuteWithoutLogFile.bat %1 %2 %3 %Networkmodel_pbl_regressietest%\main.dms RegressieTest/t405_1_NetworkModel_PBL_prepare_data/result_html
-    # add_experiment(exps, 
-    #     name=f"{result_folder_name}__t405_1_NetworkModel_PBL_prepare_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t405_1_NetworkModel_PBL_prepare_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_pbl_regressietest"]}/main.dms RegressieTest/t405_1_NetworkModel_PBL_prepare_data/result_html",
-    #     exp_fldr=f"{result_paths["results_folder"]}", 
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t405_1_NetworkModel_PBL_prepare_data.txt")
-    
+
     #Set UseFence=FALSE
     regression_test_paths["UseFence"] = "FALSE"
     env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
@@ -247,130 +239,6 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/RSopen_RegressieTest"
     regression_test_paths["AlleenEindjaar"] = "TRUE"
     env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run1    
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run1_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run1_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run1",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run1_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run2
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run2_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run2_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run2",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run2_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run3
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run3_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run3_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run3",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run3_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run4
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run4_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run4_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run4",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run4_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run5
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run5_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run5_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run5",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run5_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run6
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run6_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run6_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run6",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run6_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run7
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run7_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run7_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run7",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run7_RSopen_prepare_base_data.txt")
-
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run8
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run8_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run8_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run8",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run8_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms WriteBasedata/Generate_Run9
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_Run9_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_Run9_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteBasedata/Generate_Run9",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_Run9_RSopen_prepare_base_data.txt")
-    
-    # #Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms /t640_1_RSopen_prepare_base_data/result_html
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_1_RSopen_prepare_base_data", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_1_RSopen_prepare_base_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms t640_1_RSopen_prepare_base_data/result_html",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_1_RSopen_prepare_base_data.txt")
-    
-    # regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
-    # regression_test_paths["IsProductieRun"] = "FALSE"
-    # regression_test_paths["RSL_VARIANT_NAME"] = "BAU"
-    # env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    # # Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms /WriteVariantData/Zeef_AdminDomain_All
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_2_RSopen_MakeVariantData_Zeef_AdminDomain_All", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Zeef_AdminDomain_All.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteVariantData/Zeef_AdminDomain_All",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Zeef_AdminDomain_All.txt")
-    
-    # # Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms /WriteVariantData/Opbrengsten_perOP
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_2_RSopen_MakeVariantData_Opbrengsten_perOP", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Opbrengsten_perOP.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteVariantData/Opbrengsten_perOP",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Opbrengsten_perOP.txt")
-    
-    # # Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms /WriteVariantData/Zeef_Domain_All
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_2_RSopen_MakeVariantData_Zeef_Domain_All", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Zeef_Domain_All.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteVariantData/Zeef_Domain_All",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Zeef_Domain_All.txt")
-    
-    # # Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms /WriteVariantData/Verblijfsrecreatie
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_2_RSopen_MakeVariantData_Verblijfsrecreatie", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Verblijfsrecreatie.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms WriteVariantData/Verblijfsrecreatie",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData_Verblijfsrecreatie.txt")
-    
-    # # Call full/EchoAndExecute.bat %1 %2 %3 %RSopen_RegressieTestPath%\Regression_test.dms /t640_2_RSopen_MakeVariantData/result_html
-    # add_experiment(exps,
-    #     name=f"{result_folder_name}__t640_2_RSopen_MakeVariantData", 
-    #     cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms t640_2_RSopen_MakeVariantData/result_html",
-    #     exp_fldr=f"{result_paths["results_folder"]}",
-    #     env=env_vars,
-    #     log_fn=f"{result_paths["results_log_folder"]}/t640_2_RSopen_MakeVariantData.txt")
 
     regression_test_paths["VariantDataOntkoppeld"] = "TRUE"
     env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
