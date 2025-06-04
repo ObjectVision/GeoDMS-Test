@@ -32,7 +32,10 @@ def get_days_hours_minutes_seconds_from_duration(duration:int):
 
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
-    regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", summary_row[0])
+    testname = summary_row[0]
+    testclass = testname.replace(" ", "_")
+    regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", testname)
+    regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
     for summary_col_row in summary_row[1:]:
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
@@ -40,6 +43,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = get_table_row_col_html_template(result_paths, summary_col_row["log_filename"], summary_col_row["profile_figure_filename"])
         status = summary_col_row["status"]
         color = get_table_row_col_color(status)
+        table_col_header = table_col_header.replace("@@@TESTCLASS@@@", testclass)
         table_col_header = table_col_header.replace("@@@STATUS@@@", status)
         table_col_header = table_col_header.replace("@@@COLOR@@@", color)
         day, hour, minutes, seconds = get_days_hours_minutes_seconds_from_duration(summary_col_row["duration"])
@@ -64,7 +68,10 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     return f'<tr style="background-color: #EEEEFF">{regression_test_row}</tr>\n'
 
 def get_table_row_title_html_template() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;white-space:nowrap"><H4>@@@TESTNAME@@@</H4></TD>\n'
+    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;white-space:nowrap">\
+                <H4>@@@TESTNAME@@@ <sub>\
+                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" style="border:0px transparent; background-color: transparent;" class="material-symbols-outlined">add_circle</button></sub></H4>\
+            </td>\n'
 
 def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_fig_fn:str=None) -> str:
     absolute_log_fn = f"{result_paths["results_base_folder"]}/{log_fn[3:]}"
@@ -74,7 +81,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@"><span class="material-symbols-outlined">timeline</span></a>'
     geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)"><span class="material-symbols-outlined">globe</span></a>'
     return f'<td style="border-right: 0px; border-bottom: 1px solid @@@COLOR@@@; background-color:@@@COLOR@@@; box-shadow: 0 1px 0 #FFFFFF; padding: 0px; white-space: nowrap">\
-    <details>\
+    <details class=@@@TESTCLASS@@@>\
     <summary>@@@STATUS@@@</summary>\
     start: @@@STARTTIME@@@<BR>\
     duration: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
@@ -447,6 +454,27 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                     console.error("Failed to copy path: ", err);\
                     });\
                 }\
+                function expand_test_row(element_class_name) {\
+                    console.log("TEST");\
+                    var elements = document.getElementsByClassName(element_class_name);\
+                    const attribute_name = "open";\
+                    console.log(elements);\
+                    for (const sum_det_element of elements)\
+                    {\
+                        if (sum_det_element==null) {\
+                            continue; \
+                        }\
+                        const attribute = sum_det_element.getAttribute(attribute_name);\
+                        if (attribute == null) {\
+                            sum_det_element.setAttribute(attribute_name, "");\
+                            console.log("open");\
+                        }\
+                        else {\
+                            sum_det_element.removeAttribute(attribute_name);\
+                            console.log("close");\
+                        }\
+                    }\
+                }\
             </script>\
             <table style="border: 0; background-color: #ddd;">\
                 @@@TABLE_CONTENT@@@\
@@ -454,6 +482,8 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
         </body>\
     </html>'
 
+    #//sum_det_element.setAttribute(attribute_name, "");\
+    #//sum_det_element.removeAttribute(attribute_name);\
     table_content = get_table_rows(result_paths, regression_test_summaries)
     result_html = result_html.replace("@@@TABLE_CONTENT@@@", table_content)
 
