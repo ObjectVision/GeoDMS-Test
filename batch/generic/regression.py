@@ -69,8 +69,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
 
 def get_table_row_title_html_template() -> str:
     return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;white-space:nowrap">\
-                <H4>@@@TESTNAME@@@ <sub>\
-                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" style="border:0px transparent; background-color: transparent;" class="material-symbols-outlined">add_circle</button></sub></H4>\
+                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" style="border:0px transparent; background-color: transparent;">@@@TESTNAME@@@</button>\
             </td>\n'
 
 def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_fig_fn:str=None) -> str:
