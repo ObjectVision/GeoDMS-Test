@@ -58,7 +58,6 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["GEODMS_Overridable_MondiaalDataDir"] = f"{local_machine_parameters["RegressionTestsSourceDataDir"]}/2UP"
     regression_test_paths["GEODMS_Overridable_NetworkModel_Dir"] = f"E:/SourceData/RegressionTests/NetworkModel_regressietest"
     regression_test_paths["GEODMS_Overridable_NetworkModelDataDir"] = f"E:/SourceData/RegressionTests/NetworkModel_EU_regressiontest"
-                           
     return regression_test_paths
 
 def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str) -> list:
@@ -373,6 +372,45 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
         env=env_vars,
         log_fn=f"{result_paths["results_log_folder"]}/t910_cusa2_Africa_test.txt")
 
+    # GUI tests
+    regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/gui"
+    #Call Full\GUIInstance.bat %TstDir%\dmsscript\RSLight_2020_expand_S1S2.dmsscript %RSLight_2020Path% %Setting1% %Setting2% %Setting3% t1630_expandtest_S1S2
+    #Set command=%GeoDmsQtCmdBase% /L%GeoDmsLogFilePath% /T%1 %2 /%3 /%4 /%5  
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t1630_expandtest", 
+        cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1630_expandtest.txt /T{regression_test_paths["TstDir"]}/dmsscript/RSLight_2020_expand_S1S2.dmsscript /{MT1} /{MT2} /{MT3} {regression_test_paths["RSLight_2020Path"]} t1630_expandtest_S1S2",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t1630_expandtest.txt")
+    
+    # Call Full\GUIInstance.bat %TstDir%\dmsscript\value_info.dmsscript %OperatorPath% %Setting1% %Setting2% %Setting3% t1640_value_info
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t1640_value_info", 
+        cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1640_value_info.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info.dmsscript /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} t1640_value_info",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t1640_value_info.txt")
+    
+    # Call Full\GUIInstance.bat %TstDir%\dmsscript\value_info_group_by.dmsscript %TstDir%\operator\cfg\MicroTst.dms %Setting1% %Setting2% %Setting3% t1642_value_info_group_by
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t1642_value_info_group_by", 
+        cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {regression_test_paths["TstDir"]}/operator/cfg/MicroTst.dms t1642_value_info_group_by",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt")
+
+    # Call Full\InstanceTimeStampStatistics.bat %Setting1% %Setting2% %Setting3% %OperatorPath% /Arithmetics/UnTiled/add/attr t1742_command_statistics "%TstDir%\norm\Statistics_AUAA.html"
+    # command=%GeoDmsRunCmdBaseLarge% /L"%GeoDmsLogFilePath%" /%1 /%2 /%3 %4 @statistics %5 @file %statfile%
+    generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t1742_command_statistics_stat.html"
+    reference_statfile = f"{regression_test_paths["TstDir"]}/norm/Statistics_AUAA.html"
+    add_experiment(exps, 
+        name=f"{result_folder_name}__t1742_command_statistics", 
+        cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t1742_command_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} @statistics /Arithmetics/UnTiled/add/attr @file {generated_statfile}",
+        exp_fldr=f"{result_paths["results_folder"]}", 
+        env=env_vars,
+        log_fn=f"{result_paths["results_log_folder"]}/t1742_command_statistics.txt",
+        file_comparison=(reference_statfile, generated_statfile))
+    
     return exps
 
 def remove_local_data_dir_regression(local_data_regression_folder:str):
