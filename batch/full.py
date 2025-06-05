@@ -422,35 +422,26 @@ def remove_local_data_dir_regression(local_data_regression_folder:str):
             shutil.rmtree(f)
     return
 
-def run_full_regression_test(version:str="17.5.5"): #"17.4.6"):
+def run_full_regression_test(version:str="17.5.5", MT1="S1", MT2="S2", MT3="S3"): #"17.4.6"):
     # arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
     parser.add_argument("-MT1", help="Multithreading 1: S1 or C1")
     parser.add_argument("-MT2", help="Multithreading 2: S2 or C2")
     parser.add_argument("-MT3", help="Multithreading 3: S3 or C3")
-    parser.add_argument("-pause_when_done", help="Pauses when done with all regression tests")
     args = parser.parse_args()
     
     if args.version:
         version = args.version
 
-    MT1 = args.MT1
-    MT2 = args.MT2
-    MT3 = args.MT3
-    pause_when_done = args.pause_when_done
+    if args.MT1:
+        MT1 = args.MT1
+    if args.MT2:
+        MT2 = args.MT2
+    if args.MT3:
+        MT3 = args.MT3
 
-    # default params
-    if not MT1:
-        MT1="S1"
-    if not MT2:
-        MT2="S2"
-    if not MT3:
-        MT3="S3"
-    if not pause_when_done:
-        pause_when_done = False
-
-    print(version, MT1, MT2, MT3, pause_when_done)
+    print(version, MT1, MT2, MT3)
 
     local_machine_parameters = get_local_machine_parameters()
     geodms_paths = get_geodms_paths(version)
