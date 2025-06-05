@@ -176,7 +176,6 @@ def remove_local_data_dir_regression(local_data_regression_folder:str):
     return
 
 def run_full_regression_test(version:str="17.5.5", MT1="S1", MT2="S2", MT3="S3"): #"17.4.6"):
-    # arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
     parser.add_argument("-MT1", help="Multithreading 1: S1 or C1")
