@@ -1,34 +1,56 @@
 import os
 import platform
-import importlib
+import importlib.util
 import sys
 from packaging.version import Version
 import glob
 from bs4 import BeautifulSoup
 import filecmp
+import webbrowser
 
 def get_empty_table_row_col_html() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"></td>\n'
+    return '<td style="border-right: 0px; border-bottom: 1px solid @@@COLOR@@@; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"></td>\n'
+
+def get_table_row_col_color(status:str) -> str:
+    if status == "OK":
+        return "#90ee90"
+    if status == "TIMEOUT":
+        return "#ccddee"
+    return "#ff6f6f"
+
+def get_days_hours_minutes_seconds_from_duration(duration:int):
+    # split duration [s] into components
+    time = duration
+    day = time // (24 * 3600)
+    time = time % (24 * 3600)
+    hour = time // 3600
+    time %= 3600
+    minutes = time // 60
+    time %= 60
+    seconds = time
+    return day, hour, minutes, seconds
 
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
-    regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", summary_row[0])
+    testname = summary_row[0]
+    testclass = testname.replace(" ", "_")
+    regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", testname)
+    regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
     for summary_col_row in summary_row[1:]:
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
             continue
         table_col_header = get_table_row_col_html_template(result_paths, summary_col_row["log_filename"], summary_col_row["profile_figure_filename"])
-        table_col_header = table_col_header.replace("@@@STATUS@@@", summary_col_row["status"])
-        # split duration [s] into components
-        time = summary_col_row['duration']
-        day = time // (24 * 3600)
-        time = time % (24 * 3600)
-        hour = time // 3600
-        time %= 3600
-        minutes = time // 60
-        time %= 60
-        seconds = time
+        status = summary_col_row["status"]
+        color = get_table_row_col_color(status)
+        table_col_header = table_col_header.replace("@@@TESTCLASS@@@", testclass)
+        table_col_header = table_col_header.replace("@@@STATUS@@@", status)
+        table_col_header = table_col_header.replace("@@@COLOR@@@", color)
+        day, hour, minutes, seconds = get_days_hours_minutes_seconds_from_duration(summary_col_row["duration"])
+
         #2025 05 21 : 12.24.32
+        command = summary_col_row["command"]#.replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
+        table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", str(summary_col_row["start_time"].strftime("%Y %m %d %H:%M:%S")))
         table_col_header = table_col_header.replace("@@@DAYS@@@", str(int(day)))
         table_col_header = table_col_header.replace("@@@HOURS@@@", str(int(hour)))
@@ -46,7 +68,9 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     return f'<tr style="background-color: #EEEEFF">{regression_test_row}</tr>\n'
 
 def get_table_row_title_html_template() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><H3>@@@TESTNAME@@@</H3></TD>\n'
+    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;white-space:nowrap">\
+                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" style="border:0px transparent; background-color: transparent;">@@@TESTNAME@@@</button>\
+            </td>\n'
 
 def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_fig_fn:str=None) -> str:
     absolute_log_fn = f"{result_paths["results_base_folder"]}/{log_fn[3:]}"
@@ -54,8 +78,9 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     
     log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@"><span class="material-symbols-outlined">article</span></a>'
     profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@"><span class="material-symbols-outlined">timeline</span></a>'
-    return f'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;">\
-    <details>\
+    geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)"><span class="material-symbols-outlined">globe</span></a>'
+    return f'<td style="border-right: 0px; border-bottom: 1px solid @@@COLOR@@@; background-color:@@@COLOR@@@; box-shadow: 0 1px 0 #FFFFFF; padding: 0px; white-space: nowrap">\
+    <details class=@@@TESTCLASS@@@>\
     <summary>@@@STATUS@@@</summary>\
     start: @@@STARTTIME@@@<BR>\
     duration: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
@@ -64,7 +89,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     total read: <B>@@@TOTALREAD@@@[GB]</B><BR>\
     total write: <B>@@@TOTALWRITE@@@[GB]</B><BR>\
     </details>\
-    {log_part} {profile_part}\
+    {log_part} {geodms_part} {profile_part}\
     </td>\n'
 
 def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
@@ -97,12 +122,27 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             summaries[row][col]["status"] = results[0]
             summaries[row][col]["results"] = results
         
-        visualized_experiments_filename = Profiler.VisualizeExperiments(regression_test_experiments, show_figure=False)
         target_visualized_experiments_filename = get_profile_figure_filename(result_paths["results_folder"], regression_test)
-        if os.path.exists(target_visualized_experiments_filename):
-            os.remove(target_visualized_experiments_filename)
-        os.rename(visualized_experiments_filename, target_visualized_experiments_filename)
+        if not os.path.exists(target_visualized_experiments_filename):
+            visualized_experiments_filename = Profiler.VisualizeExperiments(regression_test_experiments, show_figure=False)
+            #os.remove(target_visualized_experiments_filename)
+            os.rename(visualized_experiments_filename, target_visualized_experiments_filename)
 
+    # get column total duration and success ratio
+    for col in range(1, cols):
+        total_tests = rows - 1
+        total_duration = 0
+        succeeded = 0
+        for row in range(1, rows):
+            if not summaries[row][col]:
+                total_tests -= 1
+                continue
+            summary_row_col = summaries[row][col]
+            total_duration += summary_row_col["duration"]
+            if summaries[row][col]["status"] == "OK":
+                succeeded += 1
+        summaries[0][col]["total_duration"] = total_duration
+        summaries[0][col]["success_ratio"] = (succeeded, total_tests)
     return summaries
 
 def parse_regression_test_status_file(status_filename:str) -> dict:
@@ -153,7 +193,13 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
             return ("OK", {})
         return (str(status_code), {})
     parsed_status_file = parse_regression_test_status_file(regression_test_status_filename)
-    return (parsed_status_file["result"], parsed_status_file)
+    result_text = parsed_status_file["result"]
+    if len(result_text)>15:
+        
+        #if "OK" in result_text:
+        print(f"Compressing geodms result_text from '{result_text}' to 'OK'")
+        result_text = "OK"
+    return (result_text, parsed_status_file)
 
 def get_log_filename(result_folder:str, regression_test:str):
     return f"{result_folder}/log/{regression_test}.txt"
@@ -322,7 +368,7 @@ def get_local_machine_name() -> str:
 
 def header_stuff_to_be_removed_in_future(local_machine_parameters:dict, result_paths:dict, MT1:str, MT2:str, MT3:str):
     """
-    needer for:
+    needed for:
     regression/cfg/stam.dms /results/VersionInfo/results_folder results/VersionInfo/all /results/VersionInfo/ComputerName /results/VersionInfo/RegionalSettings
     operator/cfg/operator.dms /results/Regression/results_folder /results/Regression/t010_operator_test
     """
@@ -347,15 +393,20 @@ def header_stuff_to_be_removed_in_future(local_machine_parameters:dict, result_p
     return
 
 def get_table_title_html_template() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><H3>@@@TITLE@@@</H3></td>\n'
+    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><H4>@@@TITLE@@@</H4></td>\n'
 
 def get_table_col_header_html_template() -> str:
     #<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><I>version</I>: <B>17.4.6</B><BR><I>build</I>: <B>Release</B><BR><I>platform</I>: <B>x64</B><BR><I>multi tasking</I>: <B>S1S2S3</B><BR> 			<I>operating system</I>: <B>Windows 10</B><BR> 			<I>computername</I>: <B>OVSRV07</B><BR> </td>
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><B>@@@VERSION@@@</B><BR>\
-    <B>Release</B><BR>\
-    <B>@@@PLATFORM@@@</B><BR>\
+    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><B>@@@VERSION@@@</B><BR>\
     <B>@@@MULTITASKING@@@</B><BR>\
-    <B>@@@COMPUTER_NAME@@@</B><BR> </td>\n'
+    <B>@@@TOTALTIME@@@</B><BR>\
+    <B>@@@SUCCESSRATIO@@@</B></td>\n'
+
+    #'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><B>@@@VERSION@@@</B><BR>\
+    #<B>Release</B><BR>\
+    #<B>@@@PLATFORM@@@</B><BR>\
+    #<B>@@@MULTITASKING@@@</B><BR>\
+    #<B>@@@COMPUTER_NAME@@@</B><BR> </td>\n'
 
 def get_table_header_row(summary_row:list) -> str:
     table_header_row = get_table_title_html_template()
@@ -365,6 +416,9 @@ def get_table_header_row(summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@VERSION@@@", summary_col_header["version"])
         table_col_header = table_col_header.replace("@@@PLATFORM@@@", summary_col_header["platform"])
         table_col_header = table_col_header.replace("@@@MULTITASKING@@@", summary_col_header["multi_tasking"])
+        days, hours, minutes, seconds = get_days_hours_minutes_seconds_from_duration(summary_col_header["total_duration"])
+        table_col_header = table_col_header.replace("@@@TOTALTIME@@@", f"{int(days)} {int(hours)}:{int(minutes)}:{int(seconds)}")
+        table_col_header = table_col_header.replace("@@@SUCCESSRATIO@@@", f"{summary_col_header["success_ratio"][0]}/{summary_col_header["success_ratio"][1]}")
         table_col_header = table_col_header.replace("@@@COMPUTER_NAME@@@", summary_col_header["computer_name"])
         table_header_row += table_col_header
         
@@ -379,7 +433,7 @@ def get_table_rows(result_paths:dict, regression_test_summaries:list[list]) -> s
         rows += get_table_regression_test_row(result_paths, summary_row)
     return rows
 
-def render_regression_test_result_html(version_range:tuple, result_paths:dict, regression_test_summaries:dict):
+def render_regression_test_result_html(version_range:tuple, result_paths:dict, regression_test_summaries:dict) -> str:
     result_html = '<!DOCTYPE html>\
     <html>\
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />\
@@ -387,12 +441,48 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
             <meta charset="UTF-8">\
         </head>\
         <body>\
+            <script>\
+                function copy_href(event, element) {\
+                event.preventDefault(); \
+                const rawPath = element.getAttribute("href");\
+                navigator.clipboard.writeText(rawPath)\
+                    .then(() => {\
+                    alert("Copied the path: " + rawPath);\
+                    })\
+                    .catch(err => {\
+                    console.error("Failed to copy path: ", err);\
+                    });\
+                }\
+                function expand_test_row(element_class_name) {\
+                    console.log("TEST");\
+                    var elements = document.getElementsByClassName(element_class_name);\
+                    const attribute_name = "open";\
+                    console.log(elements);\
+                    for (const sum_det_element of elements)\
+                    {\
+                        if (sum_det_element==null) {\
+                            continue; \
+                        }\
+                        const attribute = sum_det_element.getAttribute(attribute_name);\
+                        if (attribute == null) {\
+                            sum_det_element.setAttribute(attribute_name, "");\
+                            console.log("open");\
+                        }\
+                        else {\
+                            sum_det_element.removeAttribute(attribute_name);\
+                            console.log("close");\
+                        }\
+                    }\
+                }\
+            </script>\
             <table style="border: 0; background-color: #ddd;">\
                 @@@TABLE_CONTENT@@@\
             </Table>\
         </body>\
     </html>'
 
+    #//sum_det_element.setAttribute(attribute_name, "");\
+    #//sum_det_element.removeAttribute(attribute_name);\
     table_content = get_table_rows(result_paths, regression_test_summaries)
     result_html = result_html.replace("@@@TABLE_CONTENT@@@", table_content)
 
@@ -402,7 +492,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
         os.makedirs(report_dir)
     with open(final_html_filename, "w") as f:
         f.write(result_html)
-    return
+    return final_html_filename
 
 def collect_and_generate_test_results(version:str, result_paths:dict):
     valid_result_folders        = get_valid_result_folders(version, result_paths)
@@ -411,12 +501,17 @@ def collect_and_generate_test_results(version:str, result_paths:dict):
     regression_test_names       = get_all_regression_tests_by_name(result_paths, valid_result_folders)
     regression_test_files       = collect_experiment_filenames_per_experiment(regression_test_names, result_paths, sorted_valid_result_folders)
     regression_test_summaries   = collect_experiment_summaries(version_range, result_paths, sorted_valid_result_folders, regression_test_names, regression_test_files)
-    render_regression_test_result_html(version_range, result_paths, regression_test_summaries)
+    final_html_file = render_regression_test_result_html(version_range, result_paths, regression_test_summaries)
+    webbrowser.open(final_html_file)
     return
 
 def run_experiments(experiments):
     experiments = Profiler.RunExperiments(experiments)
 
-def add_experiment(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, bin_fn=None, file_comparison:tuple=None) -> list:
+def add_exp(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, bin_fn=None, file_comparison:tuple=None) -> list:
+    exps.append(Profiler.Experiment(name=name, command=cmd, experiment_folder=exp_fldr, environment_variables=env, cwd=cwd, geodms_logfile=log_fn, binary_experiment_file=bin_fn, file_comparison=file_comparison))
+    return exps
+
+def add_cexp(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, bin_fn=None, file_comparison:tuple=None) -> list:
     exps.append(Profiler.Experiment(name=name, command=cmd, experiment_folder=exp_fldr, environment_variables=env, cwd=cwd, geodms_logfile=log_fn, binary_experiment_file=bin_fn, file_comparison=file_comparison))
     return exps
