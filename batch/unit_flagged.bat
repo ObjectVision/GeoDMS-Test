@@ -56,7 +56,7 @@ del "%ResultFileName%" 2>nul
 
 rem pause
 
-Echo Unit Test Results (specific operators, all operators, storage read, other) for: %GeoDmsRunCmdBase% >> %ResultFileName%
+Echo Unit Test Results (specific operators, all operators, storage read, other) for: %GeoDmsRunCmdBase% >> "%ResultFileName%"
 Echo.>> "%ResultFileName%"
 
 REM SECTION GUI 

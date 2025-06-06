@@ -16,7 +16,7 @@ Call full/EchoAndExecute.bat %1 %2 %3 %4 %5
 
 Call full/SetEndTime.bat
 
-Call full/WriteTimeStamps.bat %results_folder%\%6.txt
+Call full/WriteTimeStamps.bat "%results_folder%\%6.txt"
 
 
 
