@@ -17,10 +17,9 @@ Call full/EchoAndExecute.bat %1 %2 %3 %4 %5
 Call full/SetEndTime.bat
 
 Set resultfile=%results_folder%\%6.txt
-Echo %resultfile%
 
-Echo write to %resultfile%
-Echo ^<description^>%6%:^<^/description^>^<result^> > %resultfile%
+Echo write to "!resultfile!"
+Echo ^<description^>%6%:^<^/description^>^<result^> > "!resultfile!"
 Echo.
 
 FOR %%A IN (%7) DO (
@@ -37,12 +36,12 @@ Echo.
 
 if !CFileSize! EQU !RFileSize! (
     echo OK, file size equals
-    echo OK, file size equals >> !resultfile!
+    echo OK, file size equals >> "!resultfile!"
 ) else (
     echo False, file size differs
-    echo False, file size differs >> !resultfile!
+    echo False, file size differs >> "!resultfile!"
 )
 
-Echo ^<^/result^>^ >> %resultfile%
+Echo ^<^/result^>^ >> "!resultfile!"
 
-Call full/WriteTimeStamps.bat %resultfile%
+Call full/WriteTimeStamps.bat "!resultfile!"

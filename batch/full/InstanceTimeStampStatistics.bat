@@ -17,18 +17,18 @@ Echo Execute: %command%
 %command%
 
 Set resultfile=%results_folder%\%6.txt
-echo del %resultfile%
-del %resultfile%
+echo del "%resultfile%"
+del "%resultfile%"
 rem pause
-Echo ^<description^>%5^</description^> > %resultfile%
+Echo ^<description^>%5^</description^> > "%resultfile%"
 Echo.
 
 Echo FileCompare Execute: FC %statfile% %7
-FC %statfile% %7 > NUL && Echo ^<I^>result:^</I^> ^<B^>OK^</B^> >> %resultfile% || Echo ^<I^>result:^</I^> ^<B^>False^</B^> , difference(s) occur, errorcode: %errorlevel%  >> %resultfile%
+FC %statfile% %7 > NUL && Echo ^<I^>result:^</I^> ^<B^>OK^</B^> >> "%resultfile%" || Echo ^<I^>result:^</I^> ^<B^>False^</B^> , difference(s) occur, errorcode: %errorlevel%  >> "%resultfile%"
 
-Echo ^<^/result^>^ >> %resultfile%
+Echo ^<^/result^>^ >> "%resultfile%"
 
 Call full/SetEndTime.bat
 
-Call full/WriteTimeStamps.bat %results_folder%\%6.txt
+Call full/WriteTimeStamps.bat "%results_folder%\%6.txt"
 
