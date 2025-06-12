@@ -47,4 +47,9 @@ In full.py:
 - "GEODMS_Overridable_NetworkModel_Dir"
 - "GEODMS_Overridable_NetworkModelDataDir"
 
+in generic/regression.py in function get_geodms_paths:
+- "GeoDmsPath"
+- "GeoDmsProfilerPath"
+
+
     
