@@ -30,6 +30,16 @@ def get_days_hours_minutes_seconds_from_duration(duration:int):
     seconds = time
     return day, hour, minutes, seconds
 
+def get_indicator_part_from_parsed_results(parsed_results:dict)->str:
+    indicator_part = ""
+    for indicator in parsed_results:
+        if indicator == "result":
+            continue
+        value = parsed_results[indicator]
+        #nr_inhabitants: <B>1337</B><BR>
+        indicator_part += f"{indicator}: <B>{value}</B><BR>"
+    return indicator_part
+
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     testname = summary_row[0]
@@ -63,6 +73,10 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@LOG@@@", summary_col_row["log_filename"])
         table_col_header = table_col_header.replace("@@@PROFILE_FIGURE@@@", summary_col_row["profile_figure_filename"])
 
+        # indicators        
+        indicator_part = get_indicator_part_from_parsed_results(summary_col_row["results"][1])
+        table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
+
         regression_test_row += table_col_header
 
     return f'<tr style="background-color: #EEEEFF">{regression_test_row}</tr>\n'
@@ -88,6 +102,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     max threads: <B>@@@MAXTHREADS@@@</B><BR>\
     total read: <B>@@@TOTALREAD@@@[GB]</B><BR>\
     total write: <B>@@@TOTALWRITE@@@[GB]</B><BR>\
+    @@@INDICATORS@@@\
     </details>\
     {log_part} {geodms_part} {profile_part}\
     </td>\n'
