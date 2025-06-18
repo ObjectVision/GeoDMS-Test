@@ -76,8 +76,8 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     absolute_log_fn = f"{result_paths["results_base_folder"]}/{log_fn[3:]}"
     absolute_profile_fn = f"{result_paths["results_base_folder"]}/{profile_fig_fn[3:]}"
     
-    log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@"><span class="material-symbols-outlined">article</span></a>'
-    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@"><span class="material-symbols-outlined">timeline</span></a>'
+    log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@" target="_blank"><span class="material-symbols-outlined">article</span></a>'
+    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@" target="_blank"><span class="material-symbols-outlined">timeline</span></a>'
     geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)"><span class="material-symbols-outlined">globe</span></a>'
     return f'<td style="border-right: 0px; border-bottom: 1px solid @@@COLOR@@@; background-color:@@@COLOR@@@; box-shadow: 0 1px 0 #FFFFFF; padding: 0px; white-space: nowrap">\
     <details class=@@@TESTCLASS@@@>\
