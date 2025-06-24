@@ -369,10 +369,12 @@ def import_module_from_path(path):
 
 def get_geodms_paths(version:str) -> dict:
     assert(version)
+    geodms_profiler_env_key = f"%GeodmsProfiler%"
+    geodms_profiler = os.path.expandvars(f"%GeodmsProfiler%")
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
-    geodms_paths["GeoDmsPath"] = f"C:/PROGRA~1/ObjectVision/GeoDms{version}"
-    geodms_paths["GeoDmsProfilerPath"] = "C:/Users/Cicada/dev/geodms/branches/geodms_v17/profiler/Profiler.py"  #f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
+    geodms_paths["GeoDmsPath"] = os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")
+    geodms_paths["GeoDmsProfilerPath"] = geodms_profiler if geodms_profiler_env_key!=geodms_profiler else f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
     geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
