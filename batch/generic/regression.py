@@ -370,7 +370,7 @@ def import_module_from_path(path):
 def get_geodms_paths(version:str) -> dict:
     assert(version)
     geodms_profiler_env_key = f"%GeodmsProfiler%"
-    geodms_profiler = os.path.expandvars(f"%GeodmsProfiler%")
+    geodms_profiler = os.path.expandvars(geodms_profiler_env_key)
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
     geodms_paths["GeoDmsPath"] = os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")
