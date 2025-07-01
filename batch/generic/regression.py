@@ -197,16 +197,25 @@ def compare_files(file_comparison:tuple):
     return True
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple) -> tuple:
-    regression_test_status_filename = f"{regression_test_folder}/{regression_test}.txt"
+    regression_test_status_filename_txt = f"{regression_test_folder}/{regression_test}.txt"
+    regression_test_status_filename_xml = f"{regression_test_folder}/{regression_test}.xml"
+    regression_test_status_filename = regression_test_status_filename_txt
+    if not os.path.isfile(regression_test_status_filename):
+        regression_test_status_filename = regression_test_status_filename_xml
+        
+    if status_code == 15:
+        return ("TIMEOUT", {})
+
+    if status_code != 0:
+        return (str(status_code), {})
+
     if file_comparison:
         files_are_comparable = compare_files(file_comparison)
-        return ("OK", {}) if files_are_comparable else ("Failed", {})
+        return ("OK", {}) if files_are_comparable else ("FCFAIL", {})
+
     if not os.path.isfile(regression_test_status_filename):
-        if status_code == 15:
-            return ("TIMEOUT", {})
-        elif status_code == 0:
-            return ("OK", {})
-        return (str(status_code), {})
+        return ("OK", {})
+    
     parsed_status_file = parse_regression_test_status_file(regression_test_status_filename)
     result_text = parsed_status_file["result"]
     if len(result_text)>15:
@@ -360,10 +369,12 @@ def import_module_from_path(path):
 
 def get_geodms_paths(version:str) -> dict:
     assert(version)
+    geodms_profiler_env_key = f"%GeodmsProfiler%"
+    geodms_profiler = os.path.expandvars(geodms_profiler_env_key)
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
-    geodms_paths["GeoDmsPath"] = f"C:/PROGRA~1/ObjectVision/GeoDms{version}"
-    geodms_paths["GeoDmsProfilerPath"] = "C:/Users/Cicada/dev/geodms/branches/geodms_v17/profiler/Profiler.py"  #f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
+    geodms_paths["GeoDmsPath"] = os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")
+    geodms_paths["GeoDmsProfilerPath"] = geodms_profiler if geodms_profiler_env_key!=geodms_profiler else f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
     geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
