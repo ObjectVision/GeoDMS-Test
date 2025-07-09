@@ -1,0 +1,137 @@
+container CaseSensitiveTest 
+{
+	unit<fpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "ngr_layer";
+	unit<fpoint> rdc      := range(rdc_base, point_xy(0f, 300000f), point_xy(280000f, 625000f)) //heel NL
+	{
+		parameter<float32> PenWorldWidth := 1f, DialogData = "PenWorldWidth";
+	}
+	
+	container Read_Gebiedsindelingen_gpkg
+	:	StorageName     = "='%SourceDataDir%/RSopen/RegioIndelingen/cbsgebiedsindelingen2023.gpkg'"
+	, 	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	,	SyncMode        = "alltables"
+	,	DialogData      = "rdc"
+	,	URL             = "https://www.cbs.nl/nl-nl/dossier/nederland-regionaal/geografische-data/cbs-gebiedsindelingen";
+
+	unit<uint32>  Corop := Read_Gebiedsindelingen_gpkg/coropgebied_gegeneraliseerd
+	{
+		attribute<rdc>       geometry (poly)         := Read_Gebiedsindelingen_gpkg/coropgebied_gegeneraliseerd/geometry;
+		attribute<string>    statcode                := Read_Gebiedsindelingen_gpkg/coropgebied_gegeneraliseerd/statcode;
+		attribute<string>    statnaam                := Read_Gebiedsindelingen_gpkg/coropgebied_gegeneraliseerd/statnaam;
+		attribute<string>    name                    := AsItemName(statnaam);
+		attribute<string>    label                   := statnaam;
+		container V := for_each_nedv(AsItemName(statnaam), 'value('+string(id(.))+', ..)', void, .);
+	}
+
+	unit<uint32> Concessiegebied_Geom := Read_Gebiedsindelingen_gpkg/gemeente_niet_gegeneraliseerd
+	{
+		attribute<Corop>              corop_rel              := point_in_polygon(centroid_or_mid(geometry), Corop/geometry);
+		attribute<Concessiegebied>  Concessiegebied_rel  :=
+			switch(
+				case(corop_rel == corop/v/oost_zuid_holland, Concessiegebied/v/zuid_holland_noord) //17
+				, null_b
+			);
+			
+		attribute<Concessiegebied>  Concessiegebied_rel_CaseSensitve  :=
+			switch(
+				case(corop_rel == corop/v/Oost_Zuid_Holland, Concessiegebied/v/zuid_holland_noord) //17
+				, null_b
+			);
+			
+		// attribute<Concessiegebied>  Concessiegebied_rel2 :=
+		// switch(
+			 // case(prov_rel == Provincie/V/Groningen || prov_rel == Provincie/V/Drenthe, Concessiegebied/v/GD_Concessie) //1
+			// ,case(prov_rel == Provincie/V/Fryslân, Concessiegebied/v/Openbaar_busvervoer_Fryslân) //2
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/Flevoland || Zorgkantoorregio_rel == Zorgkantoorregio/V/Zwolle || corop_rel == Corop/V/Zuidwest_Overijssel || id(.) == v/nijkerk || id(.) == v/Brummen 
+					// || (corop_rel == Corop/V/Veluwe && NOT(id(.) == v/Ede || id(.) == v/Barneveld || id(.) == v/Wageningen || id(.) == v/Scherpenzeel)) , Concessiegebied/v/IJssel_Vecht) //3
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/Twente, Concessiegebied/v/Twente) //4
+			// ,case(corop_rel == Corop/V/Achterhoek || corop_rel == Corop/V/zuidwest_gelderland || id(.) == v/Druten && NOT(id(.) == v/Brummen || id(.) == v/Montferland), Concessiegebied/v/Achterhoek_Rivierenland) //5
+			// ,case((corop_rel == Corop/V/Arnhem_Nijmegen || id(.) == v/Montferland || id(.) == v/Mook_en_Middelaar) && NOT(id(.) == v/Druten), Concessiegebied/v/Concessie_Arnhem_Nijmegen) //6
+			// ,case(id(.) == v/Barneveld || id(.) == v/Ede || id(.) == v/Wageningen || id(.) == v/Scherpenzeel, Concessiegebied/v/Noodconcessie_Veluwe_Zuid) //7
+			// ,case(id(.) == v/Almere, Concessiegebied/v/Busvervoer_Almere) //8
+			// ,case(id(.) == v/Eemnes || id(.) == v/Bunschoten || id(.) == v/Amersfoort || id(.) == v/Leusden || id(.) == v/Woudenberg || id(.) == v/Renswoude || id(.) == v/Veenendaal
+				 // || id(.) == v/Rhenen || id(.) == v/Utrechtse_Heuvelrug || id(.) == v/Wijk_bij_Duurstede || id(.) == v/Soest || id(.) == v/Baarn 
+				 // || id(.) == v/De_Ronde_Venen || id(.) == v/Stichtse_Vecht || id(.) == v/Woerden || id(.) == v/Montfoort || id(.) == v/Oudewater || id(.) == v/Lopik , Concessiegebied/v/Provincie_Utrecht) //9
+			// ,case(id(.) == v/De_Bilt || id(.) == v/Zeist || id(.) == v/Bunnik || id(.) == v/Houten || id(.) == v/Utrecht || id(.) == v/Zeist || id(.) == v/Vijfheerenlanden || id(.) == v/IJsselstein || id(.) == v/Nieuwegein 
+				// , Concessiegebied/v/Tram_en_Bus_Regio_Utrecht) //10
+			// ,case((Zorgkantoorregio_rel == Zorgkantoorregio/V/_t_gooi || id(.) == v/Weesp) && id(.) != v/Almere && id(.) != v/Eemnes, Concessiegebied/v/Gooi_en_Vechtstreek) //11
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/Noord_Holland_Noord || id(.) == v/Castricum, Concessiegebied/v/Noord_Holland_Noord) //12
+			// ,case(id(.) == v/Bloemendaal || id(.) == v/zandvoort || id(.) == v/Haarlem || id(.) == v/Heemstede || id(.) == v/Velsen || id(.) == v/Heemskerk || id(.) == v/Uitgeest || id(.) == v/Beverwijk, Concessiegebied/v/Haarlem_IJmond) //13
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/Zaanstreek_Waterland, Concessiegebied/v/Zaanstreek_Waterland) //14
+			// ,case(id(.) == v/Amsterdam || id(.) == v/Diemen, Concessiegebied/v/Concessie_Amsterdam) //15
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/Amstelland_en_de_Meerlanden, Concessiegebied/v/Amstelland_Meerlanden) //16
+			// ,case(corop_rel == corop/v/oost_zuid_holland || corop_rel == corop/v/Agglomeratie_Leiden_en_Bollenstreek || id(.) == v/Zuidplas , Concessiegebied/v/Zuid_Holland_Noord) //17
+			// ,case(id(.) == v/Leidschendam_Voorburg || id(.) == v/_s_Gravenhage || id(.) == v/Rijswijk, Concessiegebied/v/Bus_Haaglanden_stad) //18
+			// ,case(id(.) == v/Leidschendam_Voorburg || id(.) == v/_s_Gravenhage || id(.) == v/Rijswijk, Concessiegebied/v/Concessie_rail_Haaglanden) //19
+			// ,case(id(.) == v/Wassenaar || id(.) == v/Westland || id(.) == v/Maassluis || id(.) == v/Midden_Delfland || id(.) == v/Delft || id(.) == v/Pijnacker_Nootdorp || id(.) == v/Zoetermeer, Concessiegebied/v/Haaglanden_streek) //20
+			// ,case(id(.) == v/Rotterdam || id(.) == v/Vlaardingen || id(.) == v/Schiedam || id(.) == v/Ridderkerk || id(.) == v/Lansingerland 
+				// || id(.) == v/Hendrik_Ido_Ambacht || id(.) == v/Albrandswaard || id(.) == v/Barendrecht || id(.) == v/Capelle_aan_den_IJssel || id(.) == v/Krimpen_aan_den_Ijssel, Concessiegebied/v/Concessie_rail_Rotterdam) //21
+			// ,case(id(.) == v/Rotterdam || id(.) == v/Vlaardingen || id(.) == v/Schiedam || id(.) == v/Ridderkerk || id(.) == v/Lansingerland 
+				// || id(.) == v/Hendrik_Ido_Ambacht || id(.) == v/Albrandswaard || id(.) == v/Barendrecht || id(.) == v/Capelle_aan_den_IJssel || id(.) == v/Krimpen_aan_den_Ijssel, Concessiegebied/v/Bus_Rotterdam_eo) //22
+			// ,case(id(.) == v/Westvoorne || id(.) == v/Hellevoetsluis || id(.) == v/Brielle || id(.) == v/Nissewaard, Concessiegebied/v/Voorne_Putten_en_Rozenburg) //23
+			// ,case(id(.) == v/Hoeksche_waard || id(.) == v/Goeree_Overflakkee, Concessiegebied/v/Hoeksche_waard_GoereeOverflakkee) //24
+			// ,case(id(.) == v/Molenlanden || id(.) == v/Gorinchem || id(.) == v/Dordrecht || id(.) == v/Alblasserdam 
+					// || id(.) == v/Zwijndrecht || id(.) == v/Papendrecht || id(.) == v/Sliedrecht || id(.) == v/Hardinxveld_Giessendam, Concessiegebied/v/Drechtsteden_MolenlandenGorinchem) //25
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/zeeland, Concessiegebied/v/zeeland) //26
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/west_brabant, Concessiegebied/v/west_brabant) //27
+			// ,case(corop_rel == Corop/V/noordoost_noord_brabant || Zorgkantoorregio_rel == Zorgkantoorregio/V/midden_Brabant, Concessiegebied/v/oost_brabant) //28
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/Zuidoost_brabant, Concessiegebied/v/Zuidoost_Brabant) //29
+			// ,case(Zorgkantoorregio_rel == Zorgkantoorregio/V/noord_en_midden_limburg || Zorgkantoorregio_rel == Zorgkantoorregio/V/zuid_limburg || id(.) == v/Gennep, Concessiegebied/v/Limburg) // 30
+			// , null_b
+		// );
+			
+			
+			
+	}
+	
+	unit<uint8> Concessiegebied : NrOfRows = 30
+	, URL = "https://www.crow.nl/downloads/pdf/collectief-vervoer/concessieposter-2024.aspx?ext=.pdf"
+	{
+		unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+		{
+			attribute<String> Text: //data 1 januari 2024
+			[
+				//Label                            , Vervoersbedrijf
+				'GD-concessie'                     , 'Qbuzz',
+				'Openbaar busvervoer Fryslân'      , 'Arriva',
+				'IJssel-Vecht'                     , 'EBS',
+				'Twente'                           , 'Arriva',
+				'Achterhoek Rivierenland'          , 'Arriva',
+				'Concessie Arnhem Nijmegen'        , 'Hermes',
+				'Noodconcessie Veluwe-Zuid'        , 'Hermes',
+				'Busvervoer Almere'                , 'Keolis Nederland',
+				'Provincie Utrecht'                , 'Keolis Nederland',
+				'Tram en Bus Regio Utrecht'        , 'Qbuzz',
+				'Gooi en Vechtstreek'              , 'Connexxion/Transdev',
+				'Noord-Holland Noord'              , 'Connexxion/Transdev',
+				'Haarlem/IJmond'                   , 'Connexxion/Transdev',
+				'Zaanstreek-Waterland'             , 'EBS',
+				'Concessie Amsterdam'              , 'GVB',
+				'Amstelland-Meerlanden'            , 'Connexxion/Transdev',
+				'Zuid-Holland Noord'               , 'Arriva',
+				'Bus Haaglanden Stad'              , 'HTM',
+				'Concessie Rail Haaglanden'        , 'HTM',
+				'Haaglanden Streek'                , 'EBS',
+				'Concessie Rail Rotterdam'         , 'RET',
+				'Bus Rotterdam eo'                 , 'RET',
+				'Voorne-Putten en Rozenburg'       , 'EBS',
+				'Hoeksche Waard/GoereeOverflakkee' , 'Connexxion/Transdev',
+				'Drechtsteden-MolenlandenGorinchem', 'Qbuzz',
+				'Zeeland'                          , 'Connexxion/Transdev',
+				'West-Brabant'                     , 'Arriva',
+				'Oost-Brabant'                     , 'Arriva',
+				'Zuidoost-Brabant'                 , 'Hermes',
+				'Limburg'                          , 'Arriva'
+			];
+		}
+		
+		// attribute<rdc>          geometry (poly) := bp_union_polygon(Concessiegebied_Geom/geometry[rdc_cm], Concessiegebied_Geom/Concessiegebied_rel)[rdc];
+		attribute<string>       Label           := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
+		attribute<string>       Vervoerder      := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+		attribute<string>       name            := AsItemName(label);
+		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		parameter<uint32> nrAttr := 2;
+	}
+		
+}
