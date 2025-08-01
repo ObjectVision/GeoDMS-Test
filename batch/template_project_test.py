@@ -124,7 +124,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
 
-def run_full_regression_test(git_repo:str="latest", version:str="17.9.6", MT1="S1", MT2="S2", MT3="S3"):
+def run_project_test(git_repo:str="latest", version:str="17.9.6", MT1="S1", MT2="S2", MT3="S3"):
     parser = argparse.ArgumentParser()
     parser.add_argument("-git_repo", help="Path to local git repo")
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
@@ -166,4 +166,4 @@ def run_full_regression_test(git_repo:str="latest", version:str="17.9.6", MT1="S
     return
 
 if __name__=="__main__":
-    run_full_regression_test()
+    run_project_test()
