@@ -15,5 +15,5 @@ Call %7 %1 %2 %3 %4 %5 %6
 
 Call Full/SetEndTime.bat
 
-Call Full/WriteTimeStamps.bat %results_folder%\%6.txt
+Call Full/WriteTimeStamps.bat "%results_folder%\%6.txt"
 

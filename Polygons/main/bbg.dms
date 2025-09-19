@@ -1,0 +1,58 @@
+container BBG : using = "geometries;eenheden;regioindelingen"
+{
+	unit<uint32> BBG_Reeks_1996_2017
+	:	StorageName     = "='%RSo_DataDir%/Grondgebruik/BBG/CBS_MutatiebestandBBG1996_2017_v1.gpkg'"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	,	Source          = "https://geodata.cbs.nl/files/Bodemgebruik/BBG2017/CBS_MutatiebestandBBG1996_2017_v1_GPKG.zip"
+	// , 	DialogData      = "rdc"
+	{
+		attribute<rdc>     Geometry (poly);
+		attribute<rdc_f32> Geometry_f32 (poly);
+		attribute<typeringen/BBG/gg_src> CBSKlasse_rel_1996 := typeringen/BBG/bbg_EK/CBSKlasseNr[value(BG96, typeringen/BBG/bbg_EK)]; //alle jaren tbv Verblijfsrec claims door trendanlayse
+		// attribute<rdc>                   centroid := centroid(geometry);
+		// attribute<provincie>             prov_rel := point_in_polygon(centroid(geometry), provincie/geometry);
+	}
+	
+	// unit<uint32> IsVerblijfsRecreatieSub1996 := select_with_org_rel(BBG_Reeks_1996_2017/CBSKlasse_rel_1996 == typeringen/BBG/gg_src/V/verblijfsrecreatie && BBG_Reeks_1996_2017/prov_rel == Provincie/V/Noord_Holland)
+	unit<uint32> IsVerblijfsRecreatieSub1996 := select_with_org_rel(BBG_Reeks_1996_2017/CBSKlasse_rel_1996 == typeringen/BBG/gg_src/V/verblijfsrecreatie)
+	{
+		attribute<geometries/rdc>           geometry           (poly) := BBG_Reeks_1996_2017/geometry[org_rel];
+		attribute<geometries/rdc_f32>       geometry_f32       (poly) := BBG_Reeks_1996_2017/Geometry_f32[org_rel];
+		parameter<geometries/rdc>           union              (poly) := geos_union_polygon(geometry);
+		parameter<geometries/rdc_f32>       union_f32          (poly) := geos_union_polygon(geometry_f32);
+		
+		unit<uint32> unioned_unit_1 : nrofrows = 1
+		{
+			attribute<geometries/rdc> geometry (poly) := union_data(., ../union);
+		}
+		
+		unit<uint32> single2multi_1 := geos_split_polygon(unioned_unit_1/geometry)
+		{
+			attribute<geometries/rdc> inflate (poly) := geos_buffer_multi_polygon(geometry, 100d, 16b), DisableStorage = "true";
+			parameter<geometries/rdc> union   (poly) := geos_union_polygon(inflate);
+		}
+		
+		unit<uint32> unioned_unit_2 : nrofrows = 1
+		{
+			attribute<geometries/rdc> geometry (poly) := union_data(., single2multi_1/union);
+		}
+		
+		unit<uint32> single2multi_2 := geos_split_polygon(unioned_unit_2/geometry)
+		, StorageName = "%LocalDataProjDir%/VerblijfsrecreatieBuffer_1996.fss"
+		{
+			attribute<geometries/rdc>    geometry_rd (poly) := geometry;
+		}
+		unit<uint32> Read_single2multi_2
+		: StorageName = "%LocalDataProjDir%/VerblijfsrecreatieBuffer_1996.fss"
+		, StorageReadOnly = "true"
+		{
+			attribute<geometries/rdc>    geometry_rd (poly);
+			attribute<.>                 per_grid       (rdc_100m)     := poly2grid(geometry_rd, rdc_100m);
+			attribute<bool>              bool           (rdc_100m)     := IsDefined(per_grid);
+		}
+	}
+
+
+
+}

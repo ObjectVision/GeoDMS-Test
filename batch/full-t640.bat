@@ -1,7 +1,7 @@
 Rem Full test is de full test die een aantal GUI tests doet, operatoren op kleine en grote datasets test en die een aantal projecten test.
 Rem version C1 C2 : PP1 && PP2 disabled, version S1 C2 : PP1 enabled && PP2 disabled, version S1 S2 : PP1 enabled && PP2 enabled
 
-Echo off
+Echo on
 CLS
 
 set version=%1
@@ -24,9 +24,10 @@ Set LocalDataDirRegression=%LocalDataDir%\regression
 Set GeoDmsRunCmdBaseLarge="%GeoDmsRunPath%"
 Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
 
-Call Full\DeletePreviousFiles.bat
+REM Call Full\DeletePreviousFiles.bat
 Set tmpFileDir=%LocalDataDirRegression%\log
 If NOT EXIST "%tmpFileDir%" md "%tmpFileDir%"
+echo off
 Call Full\EchoFolders.bat
 
 
@@ -49,12 +50,13 @@ CLS
 
 Echo START TESTING
 
-Call Full\GUI_tests.bat
-Call Full\Operator_tests.bat
-Call Full\Project_tests.bat
+REM Testen van projecten
 
-REM Call Full\Project_tests_enkelProject.bat
+REM SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS
+REM Call Full\RSOpen.bat %Setting1% %Setting2% %Setting3% t640_3_RSopen_indicator_results_test
 
+SET GEODMS_DIRECTORIES_LOCALDATAPROJDIR=!LocalDataDirRegression!\RS_v2025
+Call Full\RSOpen_v2025.bat %Setting1% %Setting2% %Setting3% t641_3_RSopen_indicator_results_test
 
 timeout /t 3
 

@@ -164,15 +164,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					'<size>number unique tests: ' + string(Subitems/nrTests) + '</size>' + 
 					'<result>' + (tests_regression ? 'OK' : 'False') + '</result>';
 
-				parameter<string> C1C2C3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_C1C2C3.txt'";
-				parameter<string> S1C2C3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_S1C2C3.txt'";
-				parameter<string> S1S2C3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_S1S2C3.txt'";
-				parameter<string> C1S2C3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_C1S2C3.txt'";
-				
-				parameter<string> C1C2S3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_C1C2S3.txt'";
-				parameter<string> S1C2S3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_S1C2S3.txt'";
-				parameter<string> S1S2S3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_S1S2S3.txt'";
-				parameter<string> C1S2S3 := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test_C1S2S3.txt'";
+				parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test.txt'";
 			}
 		}
 	}
@@ -5014,9 +5006,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<string> CityNamesSrc               (union_unit/unit_ProvCity) := = isEmpty ? 'CityNamesSrcWithoutEntries' : 'CityNamesSrcWithEntries';
 
 				attribute<string> CityNames                  (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames);
+				attribute<string> CityNames_shouldbeerror    (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/NoordHollandBigCities/CityNames);
 				attribute<bool>   test                       (union_unit/unit_ProvCity) := CityNames == CityNamesSrc;
 				parameter<bool>   test_attr                                             := all(test);
 				attribute<string> GhosttownNames             (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity); // should emit diagnostic, see https://github.com/ObjectVision/GeoDMS/issues/534
+				
+				
+				
 			}
 			container union_data_single
 			{

@@ -1,14 +1,27 @@
-container UnitFenceTest
+container UnitFenceTest  
 {
-	unit<uint32> r := range(0, 1000000000) {
-		attribute<uint32> sqr := sort(id(r)*id(r));
+	// #1
+	unit<uint32> r := range(0, 1000000) {
+		attribute<uint32> sqr := sort(id(r)+id(r));
 		attribute<uint32> sqr3 := sort(sqr+3);
 	}
-	unit<uint32> f := FenceContainer(r, 'rrrr');
+
+	// #2
+	unit<uint32> f := FenceContainer(r, 'rrrr'); 
 	container ff {
 		attribute<uint32> sqr2(r) := sort(f/sqr + 2);
 		attribute<uint32> sqr32(r) := sort(f/sqr3 + 2);
 	}
+
+	// #3
 	container g := FenceContainer(ff, 'ffff');
 	attribute<uint32> gg(r) := sort(g/sqr2 + 3);
+
+
+	unit<uint32> hek := range(0, 80)
+	{
+		attribute<string> name := 'hekje' + string(id(.));
+		attribute<string> prevname := MakeDefined(name[sub_or_null(id(.), 1)], 'g');
+	}
+	container hekjes := for_each_ne(hek/name, 'FenceContainer('+hek/prevname+', '+Quote(hek/name)+')');
 }
