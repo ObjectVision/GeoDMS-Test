@@ -4469,11 +4469,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				//attribute<bool>   test      (Region) := eq_or_both_null(att, Region/invertRegion);
 				//parameter<bool>   test_attr           := all(test);
 			}*/
-			container subset
+			container select_with_org_rel
 			{
-				unit<uint32> s_uint32 := subset(Source/City/RegionCode = 200)
+				unit<uint32> s_uint32 := select_with_org_rel(Source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[nr_OrgEntity];
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -4502,48 +4502,48 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<.> id := id(.);
 				}
 
-				unit<uint8> s_uint8 := subset(id(u_uint8) == 0[u_uint8])
+				unit<uint8> s_uint8 := select_with_org_rel(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
+					attribute<bool> att  := org_rel == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint16> s_uint16 := subset(id(u_uint16) == 0[u_uint16])
+				unit<uint16> s_uint16 := select_with_org_rel(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
+					attribute<bool> att  := org_rel == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint64> s_uint64 := subset(id(u_uint64) == 0[u_uint64])
+				unit<uint64> s_uint64 := select_with_org_rel(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
+					attribute<bool> att  := org_rel == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
-				unit<uint32> s_bool := subset(id(u_bool) == True)
+				unit<uint32> s_bool := select_with_org_rel(id(u_bool) == True)
 				{
-					attribute<bool> att  := nr_OrgEntity == True;
+					attribute<bool> att  := org_rel == True;
 					parameter<bool> test := all(att);
 				}
 				
-				unit<uint32> s_spoint := subset(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
+				unit<uint32> s_spoint := select_with_org_rel(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0s && pointrow(nr_OrgEntity) == 0s;
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
 					parameter<bool> test := all(att);
 				}
-				unit<uint32> s_wpoint := subset(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
+				unit<uint32> s_wpoint := select_with_org_rel(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0w && pointrow(nr_OrgEntity) == 0w;
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
 					parameter<bool> test := all(att);
 				}
-				unit<uint64> s_ipoint := subset(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
+				unit<uint64> s_ipoint := select_with_org_rel(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0i && pointrow(nr_OrgEntity) == 0i;
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
 					parameter<bool> test := all(att);
 				}
-				unit<uint64> s_upoint := subset(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
+				unit<uint64> s_upoint := select_with_org_rel(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0u && pointrow(nr_OrgEntity) == 0u;
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
 					parameter<bool> test := all(att);
 				}
 				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
@@ -4552,7 +4552,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				unit<uint32> s_uint32 := subset_uint32(Source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[nr_OrgEntity];
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -4583,46 +4583,46 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				unit<uint32> s_uint8 := subset_uint32(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
+					attribute<bool> att  := org_rel == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint32> s_uint16 := subset_uint32(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
+					attribute<bool> att  := org_rel == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint32> s_uint64 := subset_uint32(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
+					attribute<bool> att  := org_rel == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint32> s_bool := subset_uint32(id(u_bool) == True)
 				{
-					attribute<bool> att  := nr_OrgEntity == True;
+					attribute<bool> att  := org_rel == True;
 					parameter<bool> test := all(att);
 				}
 				
 				unit<uint32> s_spoint := subset_uint32(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0s && pointrow(nr_OrgEntity) == 0s;
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
 					parameter<bool> test := all(att);
 				}
 				unit<uint32> s_wpoint := subset_uint32(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0w && pointrow(nr_OrgEntity) == 0w;
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
 					parameter<bool> test := all(att);
 				}
 				unit<uint32> s_ipoint := subset_uint32(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0i && pointrow(nr_OrgEntity) == 0i;
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
 					parameter<bool> test := all(att);
 				}
 				unit<uint32> s_upoint := subset_uint32(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0u && pointrow(nr_OrgEntity) == 0u;
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
 					parameter<bool> test := all(att);
 				}
 				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
@@ -4631,7 +4631,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				unit<uint16> s_uint32 := subset_uint16(Source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[nr_OrgEntity];
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -4662,46 +4662,46 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				unit<uint16> s_uint8 := subset_uint16(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
+					attribute<bool> att  := org_rel == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint16> s_uint16 := subset_uint16(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
+					attribute<bool> att  := org_rel == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint16> s_uint64 := subset_uint16(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
+					attribute<bool> att  := org_rel == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint16> s_bool := subset_uint16(id(u_bool) == True)
 				{
-					attribute<bool> att  := nr_OrgEntity == True;
+					attribute<bool> att  := org_rel == True;
 					parameter<bool> test := all(att);
 				}
 				
 				unit<uint16> s_spoint := subset_uint16(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0s && pointrow(nr_OrgEntity) == 0s;
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
 					parameter<bool> test := all(att);
 				}
 				unit<uint16> s_wpoint := subset_uint16(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0w && pointrow(nr_OrgEntity) == 0w;
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
 					parameter<bool> test := all(att);
 				}
 				unit<uint16> s_ipoint := subset_uint16(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0i && pointrow(nr_OrgEntity) == 0i;
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
 					parameter<bool> test := all(att);
 				}
 				unit<uint16> s_upoint := subset_uint16(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0u && pointrow(nr_OrgEntity) == 0u;
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
 					parameter<bool> test := all(att);
 				}
 				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
@@ -4710,7 +4710,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				unit<uint8> s_uint32 := subset_uint8(Source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[nr_OrgEntity];
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -4741,46 +4741,46 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				unit<uint8> s_uint8 := subset_uint8(id(u_uint8) == 0[u_uint8])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint8];
+					attribute<bool> att  := org_rel == 0[u_uint8];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint8> s_uint16 := subset_uint8(id(u_uint16) == 0[u_uint16])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint16];
+					attribute<bool> att  := org_rel == 0[u_uint16];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint8> s_uint64 := subset_uint8(id(u_uint64) == 0[u_uint64])
 				{
-					attribute<bool> att  := nr_OrgEntity == 0[u_uint64];
+					attribute<bool> att  := org_rel == 0[u_uint64];
 					parameter<bool> test := all(att);
 				}
 
 				unit<uint8> s_bool := subset_uint8(id(u_bool) == True)
 				{
-					attribute<bool> att  := nr_OrgEntity == True;
+					attribute<bool> att  := org_rel == True;
 					parameter<bool> test := all(att);
 				}
 				
 				unit<uint8> s_spoint := subset_uint8(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0s && pointrow(nr_OrgEntity) == 0s;
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
 					parameter<bool> test := all(att);
 				}
 				unit<uint8> s_wpoint := subset_uint8(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0w && pointrow(nr_OrgEntity) == 0w;
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
 					parameter<bool> test := all(att);
 				}
 				unit<uint8> s_ipoint := subset_uint8(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0i && pointrow(nr_OrgEntity) == 0i;
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
 					parameter<bool> test := all(att);
 				}
 				unit<uint8> s_upoint := subset_uint8(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
 				{
-					attribute<bool> att  := pointcol(nr_OrgEntity) == 0u && pointrow(nr_OrgEntity) == 0u;
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
 					parameter<bool> test := all(att);
 				}
 				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
@@ -5209,7 +5209,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& index/test_attr 
 				&& direct_index/test_attr 
 				&& invert/test_attr 
-				&& subset/test 
+				&& select_with_org_rel/test 
 				&& subset_uint32/test 
 				&& subset_uint16/test 
 				&& subset_uint8/test 
@@ -7465,12 +7465,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				
 				attribute<float32> area (orgdomain) := area(set, float32);
 				
-				unit<uint32> subset := subset(id(orgdomain) <  75000orgdomain)
+				unit<uint32> select_with_org_rel := select_with_org_rel(id(orgdomain) <  75000orgdomain)
 				{
-					attribute<ipoint>  set  (polygon) := ipolygon(make_large_polygonset/set[nr_OrgEntity]);
+					attribute<ipoint>  set  (polygon) := ipolygon(make_large_polygonset/set[org_rel]);
 				}
 			}
-			unit<uint32>  overlay_polygon := overlay_polygon(make_large_polygonset/subset/set, make_large_polygonset/subset/set[0])
+			unit<uint32>  overlay_polygon := overlay_polygon(make_large_polygonset/select_with_org_rel/set, make_large_polygonset/select_with_org_rel/set[0])
 			{
 				parameter<bool>    test_attr  := #. == 75000 && max(first_rel) == 74999;
 			}
@@ -8793,9 +8793,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container bg_buffer_multi_point: Using = "source"
 			{
-				unit<uint32> road_sel := Subset(id(RoadDomain) < 1RoadDomain )
+				unit<uint32> road_sel := select_with_org_rel(id(RoadDomain) < 1RoadDomain )
 				{
-					attribute<point_rd> geometry (arc) := road/line[nr_OrgEntity];
+					attribute<point_rd> geometry (arc) := road/line[org_rel];
 					unit<uint32> pointset := Sequence2points(geometry);
 				}
 				attribute<point_rd>    att  (poly, road_sel) := bg_buffer_multi_point(road_sel/Geometry, 100d, 16b);
@@ -9272,7 +9272,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		{
 			unit<uint32> connect := connect(Network/srcDomain/Road/line , point/ResultUnitTiled/dyna_point_tiled/CalcPoint/point)
 			{
-				parameter<bool> test_attr := sum(MakeDefined(nr_orgEntity, 0)) == 3 && #. == 476870 && nr_orgEntity[2] == 2;
+				parameter<bool> test_attr := sum(MakeDefined(org_rel, 0)) == 3 && #. == 476870 && org_rel[2] == 2;
 			}
 			container connect_info := connect_info(Network/srcDomain/Road/line , point/ResultUnitTiled/dyna_point_tiled/CalcPoint/point)
 			{
@@ -9321,7 +9321,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				
 				attribute<bool>     test      := float_isNearby(length, att_ok, Dif_all_float32);
 				parameter<bool>     test_attr := all(test);
-				attribute<uint32>   test2 := nr_OrgEntity;
+				attribute<uint32>   test2 := org_rel;
 			}
 			unit<uint32> connect_null_values := connect(source/road/line, source/location/location_with_undefined_values)
 			,	url  = "http://www.objectvision.nl/dms/Operator/connect.htm"
@@ -9468,12 +9468,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<point_rd> nextpoint;
 				}
 				unit <uint32> LinkSet_extra // bedoeld om de verbindingen die door de connect zijn gemaakt naar de locations dubbel op te nemen voor de dijkstra_directed
-				:= subset(LinkSet_org/isConnectionToLocation)
+				:= select_with_org_rel(LinkSet_org/isConnectionToLocation)
 				,	DialogData = "segments"
 				,	DialogType = "Map"
 				{
-					attribute<point_rd> point     := LinkSet_org/nextpoint[nr_OrgEntity];
-					attribute<point_rd> nextpoint := LinkSet_org/point[nr_OrgEntity];
+					attribute<point_rd> point     := LinkSet_org/nextpoint[org_rel];
+					attribute<point_rd> nextpoint := LinkSet_org/point[org_rel];
 				}
 				
 				unit <uint32> LinkSet := Union_Unit(LinkSet_org,LinkSet_extra)
@@ -10140,11 +10140,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords>   P          := value((fpoint(id(.)) + point_yx(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords>                  P                := GridDomain/P[nr_OrgEntity];
+					attribute<Coords>                  P                := GridDomain/P[org_rel];
 					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
 				}
 				attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
@@ -10173,11 +10173,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords>   P          := value((fpoint(id(.)) + point_yx(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords>                  P                := GridDomain/P[nr_OrgEntity];
+					attribute<Coords>                  P                := GridDomain/P[org_rel];
 					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
 				}
 				//attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
@@ -10206,11 +10206,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<SPoint> P5 := spoint(P3);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain3000/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords> P := GridDomain3000/P[nr_OrgEntity];
+					attribute<Coords> P := GridDomain3000/P[org_rel];
 				}
 				attribute<bool> T1 := P0 == P2;
 				attribute<bool> T4 := P0 == P4;
@@ -12108,23 +12108,23 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container Compacted
 			{
-				unit <uint32>      ADomain := Subset(FreeLand = True),
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
 					label = "allocation domain";
-				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/nr_OrgEntity);
+				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
 				
 				container SuitabilityMaps
 				{
-					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/nr_orgEntity]  * int32(1000);
-					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/nr_orgEntity] * int32(1000);
-					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/nr_orgEntity]  * int32(1000);
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/org_rel]  * int32(1000);
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/org_rel] * int32(1000);
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/org_rel]  * int32(1000);
 				}
 				container SuitabilityMapsDiv
 				{
-					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
-					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
-					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
 				}
-				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/nr_orgEntity];
+				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/org_rel];
 			}
 			parameter<int32> treshold := int32(0);
 			container FeasibleSolution;
@@ -12209,23 +12209,23 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container Compacted
 			{
-				unit <uint32>      ADomain := Subset(FreeLand = True),
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
 					label = "allocation domain";
-				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/nr_OrgEntity);
+				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
 				
 				container SuitabilityMaps
 				{
-					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/nr_orgEntity]  * int32(1000);
-					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/nr_orgEntity] * int32(1000);
-					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/nr_orgEntity]  * int32(1000);
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/org_rel]  * int32(1000);
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/org_rel] * int32(1000);
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/org_rel]  * int32(1000);
 				}
 				container SuitabilityMapsDiv
 				{
-					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
-					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
-					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
 				}
-				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/nr_orgEntity];
+				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/org_rel];
 			}
 			parameter<int32> treshold := int32(0);
 			container FeasibleSolution;
@@ -12256,7 +12256,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				source/Compacted/ADomain, 
 				source/Compacted/SuitabilityMaps, 
 				source/regMaps/p1,
-				source/regMaps/p1Map[source/compacted/ADomain/nr_orgEntity], 
+				source/regMaps/p1Map[source/compacted/ADomain/org_rel], 
 				source/claims_min, 
 				source/claims_max, 
 				source/treshold
@@ -12272,7 +12272,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				source/Compacted/ADomain, 
 				source/Compacted/SuitabilityMaps, 
 				source/regMaps/p1,
-				source/regMaps/p1Map[source/compacted/ADomain/nr_orgEntity], 
+				source/regMaps/p1Map[source/compacted/ADomain/org_rel], 
 				source/claims_min, 
 				source/claims_max2, 
 				source/treshold
