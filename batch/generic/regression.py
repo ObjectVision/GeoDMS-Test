@@ -355,7 +355,7 @@ def get_full_regression_test_environment_string(local_machine_parameters:dict, g
 
 def import_module_from_path(path):
     module_name = os.path.splitext(os.path.basename(path))[0]  # Extract "module" from "module.py"
-
+    path = path.replace("\"", "")
     spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None:
         raise ImportError(f"Can't find spec for {module_name} at {path}")
@@ -373,7 +373,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_profiler = os.path.expandvars(geodms_profiler_env_key)
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
-    geodms_paths["GeoDmsPath"] = os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")
+    geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
     geodms_paths["GeoDmsProfilerPath"] = geodms_profiler if geodms_profiler_env_key!=geodms_profiler else f"{geodms_paths["GeoDmsPath"]}/Profiler.py"
     geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
