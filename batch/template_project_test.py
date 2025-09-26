@@ -55,7 +55,7 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["RSLight2021_ontwikkel_3Path"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSLight2021_ontwikkel_3"
     regression_test_paths["BAG20MakeSnapShotPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/BAG20/cfg/BAG20_MakeSnaphot.dms"
     regression_test_paths["RSopen_RegressieTestPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/RsOpen_regressietest/cfg"
-    regression_test_paths["RSopen_RegressieTestPath_v2025"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSopen_RegressieTest_v2025/cfg"
+    regression_test_paths["RSopen_RegressieTestPath_v2025"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSopen_RegressieTest_v2025H2_wLB/cfg"
     regression_test_paths["CusaRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/geodms_africa_cusa2/cfg/africa.dms"
     regression_test_paths["Networkmodel_pbl_regressietest"] = f"{regression_test_paths["prj_snapshotsDir"]}/NetworkModel_PBL_RegressieTest/cfg"
     regression_test_paths["Networkmodel_eu_regressietest"] = f"{regression_test_paths["prj_snapshotsDir"]}/networkmodel_eu_regressieTest/cfg"
@@ -124,7 +124,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
 
-def run_project_test(git_repo:str="latest", version:str="17.9.6", MT1="S1", MT2="S2", MT3="S3"):
+def run_project_test(git_repo:str="latest", version:str="18.0.1", MT1="S1", MT2="S2", MT3="S3"):
     parser = argparse.ArgumentParser()
     parser.add_argument("-git_repo", help="Path to local git repo")
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
