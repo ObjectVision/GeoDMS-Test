@@ -26,6 +26,11 @@ container StorageManagerTest
 		parameter<String> OdbcTxtDriver   := (GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'; 
 	}
 	
+	container Parameters
+	{
+		parameter<string> StorageBasePath := "%LocalDataDir%/Regression/";
+	}
+	
 	container units
 	{
 		unit<uint32>  color;
@@ -483,10 +488,11 @@ container StorageManagerTest
 				parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
 			}
 			unit<uint32> Write := PolygonSet
-			, StorageName = "%localDataProjDir%/regr_results/Polygon/area.shp"
+			, StorageName = "= Parameters/StorageBasePath + 'Polygon/area.shp'"
 			, StorageType = "gdalwrite.vect"
 			{
-				attribute<units/point_rd> Polygon (polygon) := PolygonSet/poly;
+				//attribute<units/point_rd> Polygon (polygon) := PolygonSet/poly;
+				attribute<units/point_rd> geometry (poly) := PolygonSet/poly;
 				attribute<string>         label             := PolygonSet/label;
 			}
 		}
