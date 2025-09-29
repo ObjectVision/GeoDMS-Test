@@ -156,6 +156,8 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             total_duration += summary_row_col["duration"]
             if summaries[row][col]["status"] == "OK":
                 succeeded += 1
+        if summaries[0][col] is None:
+            summaries[0][col] = {}
         summaries[0][col]["total_duration"] = total_duration
         summaries[0][col]["success_ratio"] = (succeeded, total_tests)
     return summaries
