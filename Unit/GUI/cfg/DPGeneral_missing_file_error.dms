@@ -1,19 +1,19 @@
-container subitem
+container SubItem
 {
 	container DPGeneral_missing_file_error
 	{
-		parameter<string> test   : StorageName = "%projdir%/missing/ThisFileDoesNotExists.txt", StorageType = "str";
+		parameter<String> test   : StorageName = "%projdir%/missing/ThisFileDoesNotExists.txt", StorageType = "str";
 	}
 
-	parameter<string> result : StorageName = "%localDataDir%/GeoDMSTestResults/Unit/GUI/DPGeneral_missing_file_error.tmp", StorageType = "str";
+	parameter<String> result : StorageName = "%localDataDir%/GeoDMSTestResults/Unit/GUI/DPGeneral_missing_file_error.tmp", StorageType = "str";
 
-	parameter<string> norm_with_replace_characters : StorageName = "%projdir%/Norm/DPGeneral_missing_file_error.txt", StorageType = "str";
-	parameter<string> ProjDir_local_path           := expand(.,'%projdir%');
-	parameter<string> norm                         := replace(norm_with_replace_characters,'@projdir@',ProjDir_local_path);
+	parameter<String> norm_with_replace_characters : StorageName = "%projdir%/Norm/DPGeneral_missing_file_error.txt", StorageType = "str";
+	parameter<String> ProjDir_local_path           := expand(.,'%projdir%');
+	parameter<String> norm                         := replace(norm_with_replace_characters,'@projdir@',ProjDir_local_path);
 
-	parameter<string> linebreak:= '\n';
-	parameter<bool>   test     := trim(result) == trim(norm);
-	parameter<string> test_log := test 
+	parameter<String> linebreak:= '\n';
+	parameter<Bool>   test     := trim(result) == trim(norm);
+	parameter<String> test_log := test 
 		? '' 
 		: replace('Detail Page General Missing file Error test: ' 
 		  + expand(., '%configDir%') + '.dms, item: ', '/', '\\') 
@@ -24,5 +24,5 @@ container subitem
 		  + expand(., '%projdir%')
 		  + '/norm/DPGeneral_missing_file_error.txt', '/', '\\')
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/gui/DPGeneral_MF_error.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/gui/DPGeneral_MF_error.txt";
 }
