@@ -3,17 +3,17 @@ container Write_NL_tiff_gdal_grid
 	unit<fpoint>  rdc_base  
 	:	DialogData = "wmts_layer" 
 	,	Format     = "EPSG:28992";
-	unit<fpoint> rdc_m := range(rdc_base, point(300000f,0f), point(625000f,280000f));
+	unit<fpoint> rdc_m := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
 
 	 unit<spoint> rdc_100 := range(
 		  gridset(
 			  rdc_m
-			 ,point(  -100f,   100f, rdc_m)
-			 ,point(625000f, 10000f, rdc_m)
+			 ,point_yx(  -100f,   100f, rdc_m)
+			 ,point_yx(625000f, 10000f, rdc_m)
 			 ,spoint
 		  )
-		  ,point(   0s,    0s)
-		  ,point(3250s, 2700s)
+		  ,point_yx(   0s,    0s)
+		  ,point_yx(3250s, 2700s)
 	   ), DialogData = "rdc_m"
 		{
 			attribute<int16> PointRow := PointRow(id(.));

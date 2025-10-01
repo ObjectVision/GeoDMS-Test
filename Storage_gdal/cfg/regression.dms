@@ -326,12 +326,12 @@ container regression
 					,	StorageType     = "gdal.vect"
 					,	StorageReadOnly = "True";
 
-					unit<uint32> ignoreheader := Subset(id(ignoreheader_org) > 0[ignoreheader_org])
+					unit<uint32> ignoreheader := select_with_org_rel(id(ignoreheader_org) > 0[ignoreheader_org])
 					{
-						attribute<string> IntegerAtt := ignoreheader_org/field_2[nr_OrgEntity];
-						attribute<string> FloatAtt   := ignoreheader_org/field_3[nr_OrgEntity];
-						attribute<string> BoolAtt    := ignoreheader_org/field_4[nr_OrgEntity];
-						attribute<string> StringAtt  := ignoreheader_org/field_5[nr_OrgEntity];
+						attribute<string> IntegerAtt := ignoreheader_org/field_2[org_rel];
+						attribute<string> FloatAtt   := ignoreheader_org/field_3[org_rel];
+						attribute<string> BoolAtt    := ignoreheader_org/field_4[org_rel];
+						attribute<string> StringAtt  := ignoreheader_org/field_5[org_rel];
 					}
 				}
 
@@ -1139,7 +1139,7 @@ container regression
 	
 					attribute<fpoint> point_ref  (PointSet) := union_data(Pointset, reference/arc/pointset/geometry);
 					attribute<bool>   test_point (PointSet) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet) := pointset/sequenceNr ==  union_data(Pointset, reference/arc/pointset/seq_nr);
+					attribute<bool>   test_seq   (PointSet) := pointset/sequence_rel ==  union_data(Pointset, reference/arc/pointset/seq_nr);
 					attribute<bool>   test_ord   (PointSet) := pointset/ordinal ==  union_data(Pointset, reference/arc/pointset/ordinal);
 
 					attribute<bool>   test_label (ArcSet)   := ArcSet/label == union_data(ArcSet, reference/arc/label);
@@ -1174,7 +1174,7 @@ container regression
 	
 					attribute<fpoint> point_ref  (PointSet) := union_data(Pointset, reference/arc/pointset/geometry);
 					attribute<bool>   test_point (PointSet) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet) := pointset/sequenceNr ==  union_data(Pointset, reference/arc/pointset/seq_nr)[EsriShape/arc/Write/reread/export];
+					attribute<bool>   test_seq   (PointSet) := pointset/sequence_rel ==  union_data(Pointset, reference/arc/pointset/seq_nr)[EsriShape/arc/Write/reread/export];
 					attribute<bool>   test_ord   (PointSet) := pointset/ordinal    ==  union_data(Pointset, reference/arc/pointset/ordinal);
 
 					attribute<bool>   test_label (ReRead/Export)   := ReRead/Export/name == union_data(ReRead/Export, reference/arc/label);
@@ -1206,9 +1206,9 @@ container regression
 					attribute<string> name_ref   (PolygonSet) := union_data(PolygonSet, reference/polygon/label);
 	
 					attribute<bool>   test_point (PointSet)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet)   := pointset/sequenceNr == union_data(Pointset, reference/polygon/pointset/seq_nr);
-					attribute<bool>   test_ord   (PointSet)   := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
-					attribute<bool>   test_label (PolygonSet) := PolygonSet/label    == name_ref;
+					attribute<bool>   test_seq   (PointSet)   := pointset/sequence_rel == union_data(Pointset, reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   (PointSet)   := pointset/ordinal      == union_data(Pointset, reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (PolygonSet) := PolygonSet/label      == name_ref;
 				}
 				container results
 				{
@@ -1242,7 +1242,7 @@ container regression
 					attribute<string> name_ref   (ReRead/export) := union_data(ReRead/export, reference/polygon/label);
 	
 					attribute<bool>   test_point (PointSet)      := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet)      := pointset/sequenceNr == union_data(Pointset, reference/polygon/pointset/seq_nr)[reread/export];
+					attribute<bool>   test_seq   (PointSet)      := pointset/sequence_rel == union_data(Pointset, reference/polygon/pointset/seq_nr)[reread/export];
 					attribute<bool>   test_ord   (PointSet)      := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
 					attribute<bool>   test_label (ReRead/export) := ReRead/export/name  == name_ref;
 				}
@@ -1280,7 +1280,7 @@ container regression
 				attribute<string>         name_ref   (PolygonSet) := union_data(PolygonSet, reference/point/name);
 
 				attribute<bool>           test_point (PointSet)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-				attribute<bool>           test_seq   (PointSet)   := pointset/sequenceNr ==  union_data(Pointset, /EsriShape/polygon/reference/sequence);
+				attribute<bool>           test_seq   (PointSet)   := pointset/sequence_rel ==  union_data(Pointset, /EsriShape/polygon/reference/sequence);
 				attribute<bool>           test_ord   (PointSet)   := pointset/ordinal ==  union_data(Pointset, /EsriShape/polygon/reference/ordinal);
 				attribute<bool>           test_label (PolygonSet) := PolygonSet/label == name_ref;
 			}
@@ -1322,7 +1322,7 @@ container regression
 				attribute<string> name_ref   (ReRead/export) := union_data(ReRead/export, reference/polygon/label);
 
 				attribute<bool>   test_point (PointSet)      := point_isNearby(fpoint(pointset/point), point_ref, Dif_all_float32);
-				attribute<bool>   test_seq   (PointSet)      := pointset/sequenceNr == union_data(Pointset, reference/polygon/pointset/seq_nr)[reread/export];
+				attribute<bool>   test_seq   (PointSet)      := pointset/sequence_rel == union_data(Pointset, reference/polygon/pointset/seq_nr)[reread/export];
 				attribute<bool>   test_ord   (PointSet)      := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
 				attribute<bool>   test_label (ReRead/export) := ReRead/export/name   == name_ref;
 				attribute<bool>   area       (ReRead/export) := float32(ReRead/export/area)   == area(fpolygon(ReRead/export/geometry), float32);
@@ -1503,11 +1503,11 @@ container regression
 				}
 				unit<uint32> PointSet_shp     := Sequence2Points(src_shp/mask_ettenleur/Geometry)
 				{
-					attribute<PointSet_geojson> sequenceNr_PointSet_geojson := sequenceNr[PointSet_geojson];
+					attribute<PointSet_geojson> sequenceNr_PointSet_geojson := sequence_rel[PointSet_geojson];
 				}
 
 				attribute<bool> test_point (PointSet_geojson)   := point_isNearby(union_data(PointSet_geojson, fpoint(PointSet_shp/point)), fPoint(PointSet_geojson/point), Dif_all_float32);
-				attribute<bool> test_seq   (PointSet_geojson)   := PointSet_geojson/sequenceNr_from_shp == PointSet_geojson/sequenceNr;
+				attribute<bool> test_seq   (PointSet_geojson)   := PointSet_geojson/sequenceNr_from_shp == PointSet_geojson/sequence_rel;
 				attribute<bool> test_ord   (PointSet_geojson)   := union_data(PointSet_geojson, PointSet_shp/ordinal)        == PointSet_geojson/ordinal;
 				attribute<bool> test_id    (src/mask_ettenleur) := union_data(src/mask_ettenleur, int32(src_shp/mask_ettenleur/id)) == int32(src/mask_ettenleur/id);
 				
@@ -1532,7 +1532,7 @@ container regression
 				unit<uint32> PointSet_geojson := Sequence2Points(reread/mask_ettenleur/Geometry);
 
 				attribute<bool> test_point (PointSet_geojson)      := point_isNearby(union_data(PointSet_geojson, fpoint(read/tests/PointSet_shp/point)), fPoint(PointSet_geojson/point), Dif_all_float32);
-				attribute<bool> test_seq   (PointSet_geojson)      := union_data(PointSet_geojson, read/tests/PointSet_shp/sequenceNr)[reread/mask_ettenleur] == PointSet_geojson/sequenceNr[reread/mask_ettenleur];
+				attribute<bool> test_seq   (PointSet_geojson)      := union_data(PointSet_geojson, read/tests/PointSet_shp/sequence_rel)[reread/mask_ettenleur] == PointSet_geojson/sequence_rel[reread/mask_ettenleur];
 				attribute<bool> test_ord   (PointSet_geojson)      := union_data(PointSet_geojson, read/tests/PointSet_shp/ordinal)         == PointSet_geojson/ordinal;
 				attribute<bool> test_id    (reread/mask_ettenleur) := union_data(reread/mask_ettenleur, int32(read/src_shp/mask_ettenleur/id)) == int32(reread/mask_ettenleur/id);
 				
@@ -1561,7 +1561,7 @@ container regression
 
 					attribute<geopackage/read/single_polygon_layer> seq_ok : [0,0,0,0,2,2,2,2];
 
-					attribute<bool>   test_seq   := sequenceNr == seq_ok;
+					attribute<bool>   test_seq   := sequence_rel == seq_ok;
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
 					attribute<bool>   test_label (single_polygon_layer) := single_polygon_layer/label == name_ref;
 				}
@@ -1581,7 +1581,7 @@ container regression
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 					
 					attribute<geopackage/read/multi_layer/arc> seq_ok : [0,0,0,1,1,2,2,2];
-					attribute<bool>   test_seq   := sequenceNr == seq_ok;
+					attribute<bool>   test_seq   := sequence_rel == seq_ok;
 					
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/arc/pointset/ordinal);
 					attribute<bool>   test_label (multi_layer/arc) := multi_layer/arc/name == name_ref;
@@ -1594,7 +1594,7 @@ container regression
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 					
 					attribute<geopackage/read/multi_layer/polygon> seq_ok : [0,0,0,0,2,2,2,2];
-					attribute<bool>   test_seq   := sequenceNr == seq_ok;
+					attribute<bool>   test_seq   := sequence_rel == seq_ok;
 
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
 					attribute<bool>   test_label (multi_layer/polygon) := multi_layer/polygon/name == name_ref;
@@ -1685,7 +1685,7 @@ container regression
 					attribute<string> name_ref (reread/single_polygon_layer) := union_data(reread/single_polygon_layer, reference/polygon/label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
-					attribute<bool>   test_seq   := sequenceNr[EsriShape/polygon/read/PolygonSet] == union_data(., reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_seq   := sequence_rel[EsriShape/polygon/read/PolygonSet] == union_data(., reference/polygon/pointset/seq_nr);
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
 					attribute<bool>   test_label (reread/single_polygon_layer) := reread/single_polygon_layer/label == name_ref;
 				}
@@ -1703,7 +1703,7 @@ container regression
 					attribute<string> name_ref (reread/multi_layer/arc) := union_data(reread/multi_layer/arc, reference/arc/label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
-					attribute<bool>   test_seq   := sequenceNr[EsriShape/arc/read/ArcSet] == union_data(., reference/arc/pointset/seq_nr);
+					attribute<bool>   test_seq   := sequence_rel[EsriShape/arc/read/ArcSet] == union_data(., reference/arc/pointset/seq_nr);
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/arc/pointset/ordinal);
 					attribute<bool>   test_label (reread/multi_layer/arc) := reread/multi_layer/arc/name == name_ref;
 				}
@@ -1713,7 +1713,7 @@ container regression
 					attribute<string> name_ref (reread/multi_layer/polygon) := union_data(reread/multi_layer/polygon, reference/polygon/label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
-					attribute<bool>   test_seq   := sequenceNr[EsriShape/polygon/read/PolygonSet] == union_data(., reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_seq   := sequence_rel[EsriShape/polygon/read/PolygonSet] == union_data(., reference/polygon/pointset/seq_nr);
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
 					attribute<bool>   test_label (reread/multi_layer/polygon) := reread/multi_layer/polygon/name == name_ref;
 				}

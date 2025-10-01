@@ -6,7 +6,7 @@ container connect
 		{
 			attribute<float32> X: [122102,121488,120752,119639,120705,120566,121299,123046,124399,123001];
 			attribute<float32> Y: [487125,487405,488981,489387,487952,487118,486233,486726,487412,488631];
-			attribute<fpoint> geometry := point(Y, X, fpoint);
+			attribute<fpoint> geometry := point_yx(Y, X, fpoint);
 			
 			attribute<arc>     arc_rel: [1487,3444,546,3534,2463,1703,1075,1395,1513,3408];
 			attribute<uint32>  key    := id(.) + 3902;
@@ -18,12 +18,12 @@ container connect
 
 	unit<uint32> connect_point_arc := connect( fpolygon(SourceData/arc/geometry) , SourceData/point/geometry)
 	{
-		attribute<SourceData/arc> arc_rel  := rjoin(id(.), SourceData/point/key, SourceData/point/arc_rel);
+		attribute<SourceData/arc> src_arc_rel  := rjoin(id(.), SourceData/point/key[connect_point_arc], SourceData/point/arc_rel);
 
 		attribute<bool> isOK  := switch(
-			  case(id(.)[SourceData/arc] < 3892[.]                , nr_OrgEntity == id(.)[SourceData/arc])
-			, case(id(.)[SourceData/arc] > 3891[.] && id(.) < 3902[.], isNull(nr_OrgEntity))
-			, nr_OrgEntity == arc_rel
+			  case(id(.)[SourceData/arc] < 3892[.]                , arc_rel == id(.)[SourceData/arc])
+			, case(id(.)[SourceData/arc] > 3891[.] && id(.) < 3902[.], isNull(arc_rel))
+			, arc_rel == src_arc_rel
 			);
 	}
 
