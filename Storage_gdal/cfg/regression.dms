@@ -77,7 +77,7 @@ container regression
 		unit<fpoint>  point_rd_base : 
 			DialogData = "wmts_layer" 
 		,	Format     = "EPSG:28992";
-		unit<fpoint> point_rd      := range(point_rd_base, point(300000[m],0[m]), point(625000[m],280000[m]));
+		unit<fpoint> point_rd      := range(point_rd_base, point_yx(300000[m],0[m]), point_yx(625000[m],280000[m]));
 	}
 
 	unit<uint32> reference: nrofrows = 5
@@ -94,7 +94,7 @@ container regression
 		attribute<float32> FloatAtt             : [0,1,9999999,-2.5,99.9];
 		attribute<float32> FloatAttNull         : [null,1,9999999,-2.5,99.9];
 		attribute<float64> Float64Att           := Float64(FloatAtt);
-		attribute<fpoint>  FPointAtt            := point(FloatAtt, FloatAtt, fpoint);
+		attribute<fpoint>  FPointAtt            := point_yx(FloatAtt, FloatAtt, fpoint);
 
 		attribute<bool>    BoolAtt              : [False, True, True, False, True];
 		attribute<string>  StringAtt            : ['Hello','Test',null,'Two words','88a'];
@@ -1008,12 +1008,12 @@ container regression
 				 range(
 					gridset(
 						 point_rd
-						,point(float32(-1000.0)  , float32(1000.0) , point_rd )
-						,point(float32(405600), float32(111300), point_rd )
+						,point_yx(float32(-1000.0)  , float32(1000.0) , point_rd )
+						,point_yx(float32(405600), float32(111300), point_rd )
 						,spoint
 					)
-					,point(int16(0), int16(0))
-					,point(int16(5), int16(4))
+					,point_yx(int16(0), int16(0))
+					,point_yx(int16(5), int16(4))
 				), StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_spoint.csv"
 				 , StorageType = "gdalwrite.vect"
 				 , StorageReadOnly = "false"
@@ -1751,12 +1751,12 @@ container regression
 			range(
 				gridset(
 					 units/point_rd
-					,point(-40f, 40f, units/point_rd)
-					,point(383960,216040)
+					,point_yx(-40f, 40f, units/point_rd)
+					,point_yx(383960,216040)
 					,spoint
 				)
-				,point(0s, 0s)
-				,point(2s, 2s)
+				,point_yx(0s, 0s)
+				,point_yx(2s, 2s)
 			)
 		{
 			attribute<.> id := id(.);
@@ -1885,17 +1885,17 @@ container regression
 
 				container nl_lu_2020
 				{
-					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point(0s,0s,nl_lu_2010)];     //7
-					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point(275s,223s,nl_lu_2010)]; //0
-					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point(378s,342s,nl_lu_2010)]; //6
+					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point_yx(0s,0s,nl_lu_2010)];     //7
+					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point_yx(275s,223s,nl_lu_2010)]; //0
+					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point_yx(378s,342s,nl_lu_2010)]; //6
 
 					parameter<uint32> nr_cells_water           := sum(nl_lu_2010/GridData == 7b ? 1 :0);
 					parameter<uint32> nr_cells_residential     := sum(nl_lu_2010/GridData == 0b ? 1 :0);
 					parameter<uint32> nr_cells_infrastructure  := sum(nl_lu_2010/GridData == 6b ? 1 :0);
 
-					parameter<units/point_rd> rd_coord_0_0     := point(0s,0s,nl_lu_2010)[units/point_rd];
-					parameter<units/point_rd> rd_coord_274_233 := point(275s,223s,nl_lu_2010)[units/point_rd];
-					parameter<units/point_rd> rd_coord_378_342 := point(378s,342s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_0_0     := point_yx(0s,0s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_274_233 := point_yx(275s,223s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_378_342 := point_yx(378s,342s,nl_lu_2010)[units/point_rd];
 
 					parameter<bool> all := 
 						GridData_0_0 == 7[cl_lu] && GridData_274_233 == 0[cl_lu] && GridData_378_342 == 6[cl_lu]
@@ -2037,17 +2037,17 @@ container regression
 
 				container nl_lu_2020
 				{
-					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point(0s,0s,nl_lu_2010)];     //7
-					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point(275s,223s,nl_lu_2010)]; //0
-					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point(378s,342s,nl_lu_2010)]; //6
+					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point_yx(0s,0s,nl_lu_2010)];     //7
+					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point_yx(275s,223s,nl_lu_2010)]; //0
+					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point_yx(378s,342s,nl_lu_2010)]; //6
 
 					parameter<uint32> nr_cells_water           := sum(nl_lu_2010/GridData == 7b ? 1 :0);
 					parameter<uint32> nr_cells_residential     := sum(nl_lu_2010/GridData == 0b ? 1 :0);
 					parameter<uint32> nr_cells_infrastructure  := sum(nl_lu_2010/GridData == 6b ? 1 :0);
 
-					parameter<units/point_rd> rd_coord_0_0     := point(0s,0s,nl_lu_2010)[units/point_rd];
-					parameter<units/point_rd> rd_coord_274_233 := point(275s,223s,nl_lu_2010)[units/point_rd];
-					parameter<units/point_rd> rd_coord_378_342 := point(378s,342s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_0_0     := point_yx(0s,0s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_274_233 := point_yx(275s,223s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_378_342 := point_yx(378s,342s,nl_lu_2010)[units/point_rd];
 
 					parameter<bool> all := 
 						GridData_0_0 == 7[cl_lu] && GridData_274_233 == 0[cl_lu] && GridData_378_342 == 6[cl_lu]
@@ -2123,17 +2123,17 @@ container regression
 			{
 				container nl_lu_2020
 				{
-					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point(0s,0s,nl_lu_2010)];     //7
-					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point(275s,223s,nl_lu_2010)]; //0
-					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point(378s,342s,nl_lu_2010)]; //6
+					parameter<cl_lu> GridData_0_0              := nl_lu_2010/GridData[point_yx(0s,0s,nl_lu_2010)];     //7
+					parameter<cl_lu> GridData_274_233          := nl_lu_2010/GridData[point_yx(275s,223s,nl_lu_2010)]; //0
+					parameter<cl_lu> GridData_378_342          := nl_lu_2010/GridData[point_yx(378s,342s,nl_lu_2010)]; //6
 
 					parameter<uint32> nr_cells_water           := sum(nl_lu_2010/GridData == 7b ? 1 :0);
 					parameter<uint32> nr_cells_residential     := sum(nl_lu_2010/GridData == 0b ? 1 :0);
 					parameter<uint32> nr_cells_infrastructure  := sum(nl_lu_2010/GridData == 6b ? 1 :0);
 
-					parameter<units/point_rd> rd_coord_0_0     := point(0s,0s,nl_lu_2010)[units/point_rd];
-					parameter<units/point_rd> rd_coord_274_233 := point(275s,223s,nl_lu_2010)[units/point_rd];
-					parameter<units/point_rd> rd_coord_378_342 := point(378s,342s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_0_0     := point_yx(0s,0s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_274_233 := point_yx(275s,223s,nl_lu_2010)[units/point_rd];
+					parameter<units/point_rd> rd_coord_378_342 := point_yx(378s,342s,nl_lu_2010)[units/point_rd];
 
 					parameter<bool> all := 
 						GridData_0_0 == 7[cl_lu] && GridData_274_233 == 0[cl_lu] && GridData_378_342 == 6[cl_lu]

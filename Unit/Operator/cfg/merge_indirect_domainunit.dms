@@ -9,7 +9,7 @@ container merge_indirect_domainunit
 	parameter<Meter> y_max := 625000[Meter];
 
 	unit<fpoint> rdc_meter_base :Format = "EPSG:28992";
-	unit<fpoint> rdc_meter      := range(rdc_meter_base, point(y_min, x_min), point(y_max, x_max));
+	unit<fpoint> rdc_meter      := range(rdc_meter_base, point_yx(y_min, x_min), point_yx(y_max, x_max));
 
 	parameter<string> SrcDomain_grid_ref       := 'rdc_25m';
 	unit<spoint> SrcDomain_grid := = 'Geography/'+SrcDomain_grid_ref;
@@ -19,16 +19,16 @@ container merge_indirect_domainunit
 
 	container Geography
 	{
-		unit<spoint> rdc_25m := TiledUnit(Point(1024s, 1280s, rdc_25m_org)); 
+		unit<spoint> rdc_25m := TiledUnit(Point_yx(1024s, 1280s, rdc_25m_org)); 
 		unit<spoint> rdc_25m_org := range(
 						gridset(
 							 rdc_meter
-							,point(-25[Meter], 25[Meter], rdc_meter)
-							,point(y_max, x_min, rdc_meter)
+							,point_yx(-25[Meter], 25[Meter], rdc_meter)
+							,point_yx(y_max, x_min, rdc_meter)
 							,spoint
 						)
-						,point(    0s,     0s)
-						,point(13000s, 11200s)
+						,point_yx(    0s,     0s)
+						,point_yx(13000s, 11200s)
 		);
 	}
 

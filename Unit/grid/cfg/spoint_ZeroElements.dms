@@ -2,7 +2,7 @@ container spoint_ZeroElements
 {
 	unit<float32> m             := baseunit('m', float32);
 	unit<fpoint>  point_rd_base : Format = "EPSG:28992";
-	unit<fpoint>  point_rd      := range(point_rd_base, point(300000[m], 0[m]), point(625000[m], 280000[m]));
+	unit<fpoint>  point_rd      := range(point_rd_base, point_yx(300000[m], 0[m]), point_yx(625000[m], 280000[m]));
 
 	parameter<int16> nr_cols := int16(632);
 	parameter<int16> nr_rows := int16(778);
@@ -12,12 +12,12 @@ container spoint_ZeroElements
 		range(
 			 gridset(
 				 point_rd
-				,point(float32(gridsize), float32(-gridsize), point_rd)
-				,point(89849.8[m], 466895[m], point_rd)
+				,point_yx(float32(gridsize), float32(-gridsize), point_rd)
+				,point_yx(89849.8[m], 466895[m], point_rd)
 				,spoint
 			)
-			,point(int16(0), int16(0))
-			,point(nr_cols,nr_rows)
+			,point_yx(int16(0), int16(0))
+			,point_yx(nr_cols,nr_rows)
 		)
 	,	DialogData = "point_rd"
 	{				
@@ -26,7 +26,7 @@ container spoint_ZeroElements
 		attribute<int16> row_def := MakeDefined(row, int16(0));
 	}
 
-	unit<spoint> tiled_domain:= TiledUnit(point(int16(1024),int16(1024), untiled_domain))
+	unit<spoint> tiled_domain:= TiledUnit(point_yx(int16(1024),int16(1024), untiled_domain))
 	{
 		attribute<.>     id  := id(.);
 		attribute<int16> row := PointRow(id);

@@ -273,12 +273,12 @@ container StorageManagerTest
 				range(
 					gridset(
 						 units/point_rd
-						,point(-40f, 40f, units/point_rd)
-						,point(383960,216040)
+						,point_yx(-40f, 40f, units/point_rd)
+						,point_yx(383960,216040)
 						,spoint
 					)
-					,point(int16(0), int16(0))
-					,point(int16(2), int16(2))
+					,point_yx(int16(0), int16(0))
+					,point_yx(int16(2), int16(2))
 				)
 		{
 			attribute<.> id := id(.);
@@ -403,7 +403,7 @@ container StorageManagerTest
 			{
 				attribute<float32>        x        (PointSet) : [115135,111803,114903,111353,111741];
 				attribute<float32>        y        (PointSet) : [401331,399476,399289,401729,398696];
-				attribute<units/point_rd> location (PointSet) := point(y, x, units/point_rd);
+				attribute<units/point_rd> location (PointSet) := point_yx(y, x, units/point_rd);
 				attribute<string>         name     (PointSet) := 'point_' + String(id(PointSet));
 				attribute<bool>           test     (PointSet) := PointSet/location == location && PointSet/name == reference/name;
 			}
@@ -437,7 +437,7 @@ container StorageManagerTest
 				attribute<ArcSet>         sequence   (PointSet): [0,0,0,1,1,2,2,2];
 				attribute<uint32>         ordinal    (PointSet): [0,1,2,0,1,0,1,2];
 
-				attribute<units/point_rd> point      (PointSet) := Point(y, x, units/point_rd);
+				attribute<units/point_rd> point      (PointSet) := Point_yx(y, x, units/point_rd);
 				attribute<string>         name       (ArcSet): ['A27;E311','A59','A27;E311'];
 
 				attribute<bool>           test_point (PointSet) := point_isNearby(pointset/point, point, Dif_all_float32);
@@ -475,7 +475,7 @@ container StorageManagerTest
 				attribute<PolygonSet>     sequence   (PointSet)   : [0,0,0,0,2,2,2,2];
 				attribute<uint32>         ordinal    (PointSet)   : [0,1,2,3,0,1,2,3];
 
-				attribute<units/point_rd> point      (PointSet)   := Point(y, x, units/point_rd);
+				attribute<units/point_rd> point      (PointSet)   := Point_yx(y, x, units/point_rd);
 				attribute<string>         name       (PolygonSet) : ['A27;E311','A59','A27;E311'];
 
 				attribute<bool>           test_point (PointSet)   := point_isNearby(pointset/point, point, Dif_all_float32);

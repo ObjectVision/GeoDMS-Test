@@ -3,7 +3,7 @@ container GridFromTemplate
 	unit<float32> m             := baseunit('m', float32);
 	unit<float32> coord_rd      := m;
 	unit<fpoint>  point_rd_base : Format = "EPSG:28992";
-	unit<fpoint>  point_rd      := range(point_rd_base, point(300000[m],0[m]), point(625000[m],280000[m]));
+	unit<fpoint>  point_rd      := range(point_rd_base, point_yx(300000[m],0[m]), point_yx(625000[m],280000[m]));
 
 	container Studiegebied
 	{
@@ -31,12 +31,12 @@ container GridFromTemplate
 				range(
 					 gridset(
 						 point_rd
-						,point(float32(gridsize), float32(-gridsize), point_rd)
-						,point(bbox/left,bbox/top,point_rd)
+						,point_yx(float32(gridsize), float32(-gridsize), point_rd)
+						,point_yx(bbox/left,bbox/top,point_rd)
 						,spoint
 					)
-					,point(int16(0), int16(0))
-					,point(nr_cols,nr_rows)
+					,point_yx(int16(0), int16(0))
+					,point_yx(nr_cols,nr_rows)
 				)
 			,	DialogData = "point_rd"
 			{				
@@ -46,7 +46,7 @@ container GridFromTemplate
 
 			}
 
-			unit<spoint> domain := TiledUnit(point(int16(1024),int16(1024), untiled_domain))
+			unit<spoint> domain := TiledUnit(point_yx(int16(1024),int16(1024), untiled_domain))
 			{
 				parameter<m>     size := gridsize;
 				attribute<.>     id   := id(.);

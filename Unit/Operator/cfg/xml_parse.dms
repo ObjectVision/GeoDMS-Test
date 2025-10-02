@@ -1,8 +1,8 @@
 container xml_parse
 {
 	unit<dpoint> rdc_base;
-	unit<dpoint> rdc_meter := range(rdc_base, point(300000d,0d), point(625000d,280000d));
-	unit<ipoint> rdc_mm    := gridset(rdc_meter, point(0.001, 0.001), point(0.0,0.0), ipoint);
+	unit<dpoint> rdc_meter := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
+	unit<ipoint> rdc_mm    := gridset(rdc_meter, point_yx(0.001, 0.001), point_yx(0.0,0.0), ipoint);
 
 	parameter<string> XmlData 
 	: StorageType = "str"
@@ -188,7 +188,7 @@ container xml_parse
 				{
 					attribute<float64>     x    := coordinates/point[org_rel  ];
 					attribute<float64>     y    := coordinates/point[org_rel+1];
-					attribute<rdc_mm>      p_mm := point(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
+					attribute<rdc_mm>      p_mm := point_yx(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
 					attribute<posListUnit> s    := coordinates/sequence_rel[org_rel];
 					attribute<uint32>      fo   := coordinates/ordinal[org_rel] / posListUnit/nrCoordPerPoint[s]; // forward winding
 					attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding
