@@ -15,11 +15,11 @@ container subset
 {
 	unit<uint32> RegionEK;
 	unit <uint32> City : NrOfRows = 7 {
-		attribute<RegionEK> RegionCode: [100,200,300,200,400,null,400];
+		attribute<RegionEK> RegionCode: [1000,2000,3000,2000,4000,null,4000];
 		attribute<string>   Label := string(RegionCode);
 	}
 	
-	unit<uint32> s_uint32 := subset(City/RegionCode == 200)
+	unit<uint32> s_uint32 := subset(City/RegionCode >  2000)
 	{
 		attribute<uint32> RC  := City/RegionCode[nr_OrgEntity];
 		attribute<bool> att  := City/RegionCode[nr_OrgEntity] == const(200, ., RegionEK);
@@ -28,9 +28,12 @@ container subset
 		
 		attribute<City> nr_OrgEntity;
 	}
+	
+	unit<uint32> select := select_with_org_rel(City/RegionCode >  2000);
+	unit<uint32> select_att := select_with_attr_by_org_rel(City/RegionCode >  2000);
 
-	unit<uint32> select_afew := select_afew(City, City/RegionCode==100);
-	unit<uint32> select_many := select_many(City, City/RegionCode < 400);
-	unit<uint8>  select_afew8 := select_afew_uint8(City, City/RegionCode==100);
-	unit<uint8>  select_many8 := select_many_uint8(City, City/RegionCode < 400);
+//	unit<uint32> select_afew := select_afew(City, City/RegionCode==100);
+//	unit<uint32> select_many := select_many(City, City/RegionCode < 400);
+//	unit<uint8>  select_afew8 := select_afew_uint8(City, City/RegionCode==100);
+//	unit<uint8>  select_many8 := select_many_uint8(City, City/RegionCode < 400);
 }
