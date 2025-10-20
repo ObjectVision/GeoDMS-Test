@@ -196,7 +196,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
 
-def run_full_regression_test(version:str="17.9.6", MT1="S1", MT2="S2", MT3="S3"):
+def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3"):
     parser = argparse.ArgumentParser()
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
     parser.add_argument("-MT1", help="Multithreading 1: S1 or C1")
@@ -227,7 +227,7 @@ def run_full_regression_test(version:str="17.9.6", MT1="S1", MT2="S2", MT3="S3")
     regression_test_paths = get_regression_test_paths(local_machine_parameters)
     result_paths = regression.get_result_paths(geodms_paths, regression_test_paths, version, MT1, MT2, MT3)
     #remove_local_data_dir_regression(local_machine_parameters["LocalDataDirRegression"])
-    import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
+    #import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
 
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, version, MT1, MT2, MT3)
