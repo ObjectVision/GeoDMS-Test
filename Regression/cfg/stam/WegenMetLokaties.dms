@@ -62,10 +62,10 @@ container WegenMetLokaties
 		}
 		
 		unit<uint32> WegenMetVerbondenLocaties := union_unit(WegenVerbonden/resultaat/snelwegen,SubWegenMetVerbondenLocaties) // hiermee verbinden we de herkomst en bestemmingslocaties aan het wegenNetwerk
-		,	DialogData = "UnionData"
+		//,	DialogData = "UnionData"
 		,	DialogType = "Map"
 		{
-			attribute<point_rd>           geometry(arc) := union_data(.,WegenVerbonden/resultaat/snelwegen/geometry     , SubWegenMetVerbondenLocaties/UnionData);
+			attribute<point_rd>           geometry(arc) := union_data(.,WegenVerbonden/resultaat/snelwegen/geometry     , SubWegenMetVerbondenLocaties/geometry);
 			attribute<eenheden/km_hr> KMH           := union_data(.,WegenVerbonden/resultaat/snelwegen/KMH          , SubWegenMetVerbondenLocaties/KMH);
 			attribute<s>                  traveltime_s  := union_data(.,WegenVerbonden/resultaat/snelwegen/traveltime_s , SubWegenMetVerbondenLocaties/traveltime_s);
 		}
