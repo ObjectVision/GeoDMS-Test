@@ -32,27 +32,27 @@ container WegenMetLokaties
 				
 				attribute<bool> inSelectie := X >= brondata/PC4_centroid/x_min && X <= brondata/PC4_centroid/x_max && Y >= brondata/PC4_centroid/y_min && Y <= brondata/PC4_centroid/y_max;
 			}
-			unit<uint32> pointset_selected := Subset(pointset/inSelectie)
+			unit<uint32> pointset_selected := select_with_org_rel(pointset/inSelectie)
 			{
-				attribute<point_rd> point := pointset/point[nr_OrgEntity];
-				attribute<WegenVerbonden/resultaat/geen_snelwegen> SequenceNr := pointset/SequenceNr[nr_OrgEntity];
+				attribute<point_rd> point := pointset/point[org_rel];
+				attribute<WegenVerbonden/resultaat/geen_snelwegen> SequenceNr := pointset/SequenceNr[org_rel];
 			}
-			unit<uint32> result := Subset(isDefined(rlookup(id(WegenVerbonden/resultaat/geen_snelwegen), pointset_selected/SequenceNr)))
+			unit<uint32> result := select_with_org_rel(isDefined(rlookup(id(WegenVerbonden/resultaat/geen_snelwegen), pointset_selected/SequenceNr)))
 			{
-				attribute<point_rd>       geometry (arc) := WegenVerbonden/resultaat/geen_snelwegen/geometry[nr_OrgEntity];
-				attribute<eenheden/km_hr> KMH            := WegenVerbonden/resultaat/geen_snelwegen/KMH[nr_OrgEntity];
-				attribute<s>              traveltime_s   := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[nr_OrgEntity];
+				attribute<point_rd>       geometry (arc) := WegenVerbonden/resultaat/geen_snelwegen/geometry[org_rel];
+				attribute<eenheden/km_hr> KMH            := WegenVerbonden/resultaat/geen_snelwegen/KMH[org_rel];
+				attribute<s>              traveltime_s   := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[org_rel];
 
 			}
 		}*/
 		unit<uint32> SubWegenMetVerbondenLocaties := connect(WegenVerbonden/resultaat/geen_snelwegen/geometry, locaties/geometry) // hiermee verbinden we de herkomst en bestemmingslocaties aan het wegenNetwerk
-		,	DialogData = "UnionData"
+		//,	DialogData = "UnionData"
 		,	DialogType = "Map"
 //		,	StorageName = "%SourceDataDir%/OperatorLarge/PC6_connect.fss"
 		{
-			attribute<point_rd>       UnionData(arc);
-			attribute<eenheden/km_hr> KMH           := WegenVerbonden/resultaat/geen_snelwegen/KMH[nr_OrgEntity];
-			attribute<s>              traveltime_s  := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[nr_OrgEntity];
+			attribute<point_rd>       geometry(arc);
+			attribute<eenheden/km_hr> KMH           := WegenVerbonden/resultaat/geen_snelwegen/KMH[arc_rel];
+			attribute<s>              traveltime_s  := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[arc_rel];
 		}
 		
 		container SubWegenMetVerbondenLocatiesInfo := connect_info(WegenVerbonden/resultaat/geen_snelwegen/geometry, locaties/geometry), DialogType = "Map", DialogData = "CutPoint"
@@ -76,8 +76,8 @@ container WegenMetLokaties
 		,	FreeData   = "False"
 		{
 			attribute<point_rd>                  geometry(arc)      := WegenMetVerbondenLocaties/geometry;
-			attribute<point_rd>                  point              := first_node(geometry);
-			attribute<point_rd>                  nextpoint          := last_node(geometry);
+			attribute<point_rd>                  point              := first_point(geometry);
+			attribute<point_rd>                  nextpoint          := last_point(geometry);
 
 			attribute<m>                         length_m           := (arc_length(geometry, float32)[m]);
 			attribute<km>                        length_km          := length_m / value(1000, m / km);

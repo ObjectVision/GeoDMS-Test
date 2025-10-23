@@ -72,13 +72,13 @@ container Regression:	FreeData = "True"
 	{
 		unit<uint32> PC4_centroid: StorageName = "%RegressionDataDir%/pc4_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
-			attribute<eenheden/point_rd> geometry := point(float32(X), float32(Y), eenheden/point_rd);
+			attribute<eenheden/point_rd> geometry := point_xy(float32(X), float32(Y), eenheden/point_rd);
 		}
 		/*
-		unit<uint32> PC4_centroid_sel:= Subset(id(PC4_centroid_org) < 10)
+		unit<uint32> PC4_centroid_sel:= select_with_org_rel(id(PC4_centroid_org) < 10)
 		{
-			attribute<eenheden/point_rd> geometry := PC4_centroid_org/geometry[nr_OrgEntity];
-			attribute<string> PC                  := PC4_centroid_org/PC[nr_OrgEntity];
+			attribute<eenheden/point_rd> geometry := PC4_centroid_org/geometry[org_rel];
+			attribute<string> PC                  := PC4_centroid_org/PC[org_rel];
 			
 			attribute<float32> X := PointCol(geometry)[float32];
 			attribute<float32> Y := PointRow(geometry)[float32];
@@ -90,7 +90,7 @@ container Regression:	FreeData = "True"
 		}*/
 		unit<uint32> PC6_centroid: StorageName = "%RegressionDataDir%/pc6_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
-			attribute<eenheden/point_rd> geometry := point(float32(X), float32(Y), eenheden/point_rd);
+			attribute<eenheden/point_rd> geometry := point_xy(float32(X), float32(Y), eenheden/point_rd);
 		}
 		unit<uint32> weg: StorageName = "%RegressionDataDir%/roads_nl_be_du.fss", StorageReadOnly = "True"
 		{
@@ -337,12 +337,12 @@ container Regression:	FreeData = "True"
 			range(
 				 gridset(
 					 eenheden/point_rd
-					,point(gridsize_10m, -gridsize_10m, eenheden/point_rd)
-					,point(x_min, y_max, eenheden/point_rd)
+					,point_xy(gridsize_10m, -gridsize_10m, eenheden/point_rd)
+					,point_xy(x_min, y_max, eenheden/point_rd)
 					,spoint
 				)
-				,point(0s, 0s)
-				,point(nr_cols, nr_rows)
+				,point_xy(0s, 0s)
+				,point_xy(nr_cols, nr_rows)
 			)
 		,	DialogData = "eenheden/point_rd"
 		{
@@ -350,7 +350,7 @@ container Regression:	FreeData = "True"
 			attribute<brondata/bodemgebruik> bodemgebruik_rel := poly2grid(brondata/bodemgebruik/geometry_rd, .);
 		}
 
-		unit<spoint> domain_10m := TiledUnit(Point(1000s, 1200s, domain_10m_untiled))
+		unit<spoint> domain_10m := TiledUnit(Point_xy(1000s, 1200s, domain_10m_untiled))
 		{
 			attribute<brondata/bodemgebruik/groep> groep_rel := brondata/bodemgebruik/groep_rel[poly2grid(brondata/bodemgebruik/geometry_rd, .)];
 		}
@@ -363,8 +363,8 @@ container Regression:	FreeData = "True"
 	{
 		unit<uint32> PointSet: nrofrows = 75000
 		{
-			attribute<point_rd> geometry     := point(id(.)[m],id(.)[m],point_rd);
-			attribute<point_rd> geometry_arc := point(const(max(id(.)),.)[m],id(.)[m],point_rd);
+			attribute<point_rd> geometry     := point_xy(id(.)[m],id(.)[m],point_rd);
+			attribute<point_rd> geometry_arc := point_xy(const(max(id(.)),.)[m],id(.)[m],point_rd);
 			
 			attribute<arcset>   sequence := value(id(.) / 2, arcset);
 			attribute<uint32>   ordinal  := id(.) % 2;
@@ -454,7 +454,7 @@ container Regression:	FreeData = "True"
 		
 		container t100_network_connect
 		{
-			unit<uint32> uniondata_pointset := sequence2points(netwerk/WegenMetLokaties/pc6/SubWegenMetVerbondenLocaties/UnionData)
+			unit<uint32> uniondata_pointset := sequence2points(netwerk/WegenMetLokaties/pc6/SubWegenMetVerbondenLocaties/geometry)
 			{
 				attribute<eenheden/point_rd> point;
 			}
@@ -565,18 +565,18 @@ container Regression:	FreeData = "True"
 
 			container error_analysis
 			{
-				unit<uint32> testresult_false:= subset(!t102_network_od_pc6_sparse/alt_imp || !t102_network_od_pc6_sparse/DstZone_rel || !t102_network_od_pc6_sparse/OrgZone_rel)
+				unit<uint32> testresult_false:= select_with_org_rel(!t102_network_od_pc6_sparse/alt_imp || !t102_network_od_pc6_sparse/DstZone_rel || !t102_network_od_pc6_sparse/OrgZone_rel)
 				{
-					attribute<uint32>  OrgZone_rel := OD/PC6_sparse/OrgZone_rel[Nr_OrgEntity];
-					attribute<uint32>  DstZone_rel := OD/PC6_sparse/DstZone_rel[Nr_OrgEntity];
-					attribute<float32> imp         := OD/PC6_sparse/impedance[Nr_OrgEntity];
-					attribute<float32> alt_imp     := OD/PC6_sparse/alt_imp[Nr_OrgEntity];
+					attribute<uint32>  OrgZone_rel := OD/PC6_sparse/OrgZone_rel[org_rel];
+					attribute<uint32>  DstZone_rel := OD/PC6_sparse/DstZone_rel[org_rel];
+					attribute<float32> imp         := OD/PC6_sparse/impedance[org_rel];
+					attribute<float32> alt_imp     := OD/PC6_sparse/alt_imp[org_rel];
 	//				attribute<string>  key         := string(DstZone_rel) + '_' + string(OrgZone_rel);
 	//				attribute<string>  bron_key(brondata/PC6_impedance_ok) := string(brondata/PC6_impedance_ok/DstZone_rel) + '_' + string(brondata/PC6_impedance_ok/OrgZone_rel);
-					attribute<uint32>  OrgZone_ok  := pc6_recorded/OrgZone_rel[value(Nr_OrgEntity, bron)];
-					attribute<uint32>  DstZone_ok  := pc6_recorded/DstZone_rel[value(Nr_OrgEntity, bron)];
-					attribute<float32> imp_ok      := pc6_recorded/impedance  [value(Nr_OrgEntity, bron)];
-					attribute<float32> alt_imp_ok  := pc6_recorded/alt_imp    [value(Nr_OrgEntity, bron)];
+					attribute<uint32>  OrgZone_ok  := pc6_recorded/OrgZone_rel[value(org_rel, bron)];
+					attribute<uint32>  DstZone_ok  := pc6_recorded/DstZone_rel[value(org_rel, bron)];
+					attribute<float32> imp_ok      := pc6_recorded/impedance  [value(org_rel, bron)];
+					attribute<float32> alt_imp_ok  := pc6_recorded/alt_imp    [value(org_rel, bron)];
 				}
 			}
 		}
@@ -664,12 +664,12 @@ container Regression:	FreeData = "True"
 
 			container error_analysis
 			{
-				unit<uint32> errors:= Subset(!test)
+				unit<uint32> errors:= select_with_org_rel(!test)
 				{
-					attribute<uint8>  type_woonpand_rel := BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/type_woonpand_rel[nr_OrgEntity];
-					attribute<string> identificatie     := pand_id[nr_OrgEntity];
+					attribute<uint8>  type_woonpand_rel := BAG_MakeSnapshot/snapshot_20170701/pand/results/unique/type_woonpand_rel[org_rel];
+					attribute<string> identificatie     := pand_id[org_rel];
 					
-					attribute<uint8>  test_ok           := union_data(BAG_MakeSnapshot/snapshot_20170701/pand/results/unique, brondata/BAG_type_woonpand_rel/type_woonpand_rel)[nr_OrgEntity];
+					attribute<uint8>  test_ok           := union_data(BAG_MakeSnapshot/snapshot_20170701/pand/results/unique, brondata/BAG_type_woonpand_rel/type_woonpand_rel)[org_rel];
 				}
 	
 				unit<uint32> vreemde_pand_id : nrofrows = 19, DialogType = "Map", DialogData = "geometry_mm"

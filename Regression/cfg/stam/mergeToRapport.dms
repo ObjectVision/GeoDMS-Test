@@ -217,22 +217,22 @@ container mergeToRapport
 		attribute<string> regel:= firstcolum + html/total + '</TR>';
 	}
 
-	unit<uint32> test_public:= Subset(test_all/isPublic) // Not all tests in public version
+	unit<uint32> test_public:= select_with_org_rel(test_all/isPublic) // Not all tests in public version
 	{
-		attribute<string> name:= test_all/name[nr_OrgEntity];
+		attribute<string> name:= test_all/name[org_rel];
 		
 		container html:= for_each_nedv(
 			ver/name,
-			'test_all/html/' + ver/name + '[nr_OrgEntity]'
+			'test_all/html/' + ver/name + '[org_rel]'
 			,.
 			,string
 		)
 		{
-			attribute<string> total (test_public):= test_all/html/total[nr_OrgEntity];
+			attribute<string> total (test_public):= test_all/html/total[org_rel];
 		}
-		attribute<string> bgcolor    := test_all/bgcolor[nr_OrgEntity];
-		attribute<string> firstcolum := test_all/firstcolum[nr_OrgEntity];
-		attribute<string> regel      := test_all/regel[nr_OrgEntity];
+		attribute<string> bgcolor    := test_all/bgcolor[org_rel];
+		attribute<string> firstcolum := test_all/firstcolum[org_rel];
+		attribute<string> regel      := test_all/regel[org_rel];
 	}
 
 	container report_all     := make_report(test_all,   '');

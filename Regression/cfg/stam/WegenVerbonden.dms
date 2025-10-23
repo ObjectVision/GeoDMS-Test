@@ -28,8 +28,8 @@ container WegenVerbonden
 	{
 		attribute<point_rd>       geometry (arc) := wegen/geometry;
 		
-		attribute<point_rd>       point          := first_node(geometry);
-		attribute<point_rd>       nextpoint      := last_node(geometry);
+		attribute<point_rd>       point          := first_point(geometry);
+		attribute<point_rd>       nextpoint      := last_point(geometry);
 		attribute<eenheden/km_hr> KMH            := wegen/KMH;
 
 		attribute<m>              length_m       := (arc_length(geometry, float32)[m]);
@@ -97,46 +97,46 @@ container WegenVerbonden
 		parameter<networks> main       : = rlookup(MaxNrNodes, nr_nodes); // uitgangspunt: het netwerk met de meeste nodes is het relevante netwerk
 	}
 
-	unit<uint32> NodesNotConnected := Subset(networks/partnr <> networks/main)
+	unit<uint32> NodesNotConnected := select_with_org_rel(networks/partnr <> networks/main)
 	{
-		attribute<point_rd> point := NodeSet/Values[Nr_OrgEntity];
+		attribute<point_rd> point := NodeSet/Values[org_rel];
 	}
 
 	container resultaat
 	{
-		unit<uint32> alle := Subset(Linkset/isVerbonden) // het resulterende verbonden wegennetwerk
+		unit<uint32> alle := select_with_org_rel(Linkset/isVerbonden) // het resulterende verbonden wegennetwerk
 		,	DialogType = "Map"
 		,	DialogData = "geometry"
 		{
-			attribute<point_rd>           geometry (arc):= Linkset/geometry[nr_OrgEntity];
-			attribute<eenheden/km_hr> KMH           := Linkset/KMH[nr_OrgEntity];
-			attribute<s>                  traveltime_s  := traveltime_all_s[nr_OrgEntity];
-			attribute<bool>               IsSnelweg     := wegen/IsSnelweg[nr_OrgEntity];
+			attribute<point_rd>           geometry (arc):= Linkset/geometry[org_rel];
+			attribute<eenheden/km_hr> KMH           := Linkset/KMH[org_rel];
+			attribute<s>                  traveltime_s  := traveltime_all_s[org_rel];
+			attribute<bool>               IsSnelweg     := wegen/IsSnelweg[org_rel];
 		}
 	
-		unit<uint32> geen_snelwegen := Subset(!alle/IsSnelweg) // het resulterende verbonden wegennetwerk zonder snelwegen, gebruikt voor het connecten.
+		unit<uint32> geen_snelwegen := select_with_org_rel(!alle/IsSnelweg) // het resulterende verbonden wegennetwerk zonder snelwegen, gebruikt voor het connecten.
 		,	DialogType = "Map"
 		,	DialogData = "geometry"
 		{
-			attribute<point_rd>           geometry (arc):= alle/geometry[nr_OrgEntity];
-			attribute<eenheden/km_hr> KMH           := alle/KMH[nr_OrgEntity];
-			attribute<s>                  traveltime_s  := alle/traveltime_s[nr_OrgEntity];
+			attribute<point_rd>           geometry (arc):= alle/geometry[org_rel];
+			attribute<eenheden/km_hr> KMH           := alle/KMH[org_rel];
+			attribute<s>                  traveltime_s  := alle/traveltime_s[org_rel];
 		}
 	
-		unit<uint32> snelwegen := Subset(alle/IsSnelweg) // het resulterende verbonden wegennetwerk alleen de snelwegen
+		unit<uint32> snelwegen := select_with_org_rel(alle/IsSnelweg) // het resulterende verbonden wegennetwerk alleen de snelwegen
 		,	DialogType = "Map"
 		,	DialogData = "geometry"
 		{
-			attribute<point_rd>           geometry (arc):= alle/geometry[nr_OrgEntity]
+			attribute<point_rd>           geometry (arc):= alle/geometry[org_rel]
 			{
 				parameter<int16>  PenWidth:= int16(3)    , DialogType = "PenWidth";
 				parameter<uint32> PenColor:= rgb(200,0,0), DialogType = "PenColor";
 			}
-			attribute<eenheden/km_hr> KMH           := alle/KMH[nr_OrgEntity];
-			attribute<s>                  traveltime_s  := alle/traveltime_s[nr_OrgEntity];
+			attribute<eenheden/km_hr> KMH           := alle/KMH[org_rel];
+			attribute<s>                  traveltime_s  := alle/traveltime_s[org_rel];
 		}
 		
-		container subset
+		container select_with_org_rel
 		{
 // 			unit<uint32> pointset_geen_snelwegen := sequence2points(resultaat/geen_snelwegen/geometry)
 // 			{
@@ -145,14 +145,14 @@ container WegenVerbonden
 // 				attribute<uint32> ordinal;
 // 			}
 			
-			unit<uint32> arcset := Subset(id(resultaat/geen_snelwegen) == 579922 || id(resultaat/geen_snelwegen) == 13220)
+			unit<uint32> arcset := select_with_org_rel(id(resultaat/geen_snelwegen) == 579922 || id(resultaat/geen_snelwegen) == 13220)
 			{
-				attribute<point_rd> geometry (arc):= resultaat/geen_snelwegen/geometry[nr_OrgEntity];
+				attribute<point_rd> geometry (arc):= resultaat/geen_snelwegen/geometry[org_rel];
 			}
 
-			unit<uint32> pointset := Subset(id(Brondata/PC6_centroid) == 167067)
+			unit<uint32> pointset := select_with_org_rel(id(Brondata/PC6_centroid) == 167067)
 			{
-				attribute<point_rd> geometry   := Brondata/PC6_centroid/geometry[nr_OrgEntity];
+				attribute<point_rd> geometry   := Brondata/PC6_centroid/geometry[org_rel];
 
 				unit<uint32> connect := connect(arcset/geometry, geometry), DisableStorage = "True"
 				{
