@@ -12047,22 +12047,22 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				container p1
 				{
-					attribute<Ha> Nature_min (regMaps/p1): [12];
-					attribute<Ha> Nature_max (regMaps/p1): [20];
-					attribute<Ha> Living_min (regMaps/p1): [5];
-					attribute<Ha> Living_max (regMaps/p1): [9];
+					attribute<uint32> Nature_min (regMaps/p1) := const(12, regMaps/p1);
+					attribute<uint32> Nature_max (regMaps/p1) := const(20, regMaps/p1);
+					attribute<uint32> Living_min (regMaps/p1) := const(5, regMaps/p1);
+					attribute<uint32> Living_max (regMaps/p1) := const(9, regMaps/p1);
 				}
 				container p2
 				{
-					attribute<Ha> Working_min (regMaps/p2): [6,2];
-					attribute<Ha> Working_max (regMaps/p2): [10,4];
+					attribute<uint32> Working_min (regMaps/p2) : [6, 2];
+					attribute<uint32> Working_max (regMaps/p2) : [10, 4];
 				}
 			}
 			container claims_min
 			{
-				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_min  / DomainGrid/NrHaPerCell);
-				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min / DomainGrid/NrHaPerCell);
-				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min  / DomainGrid/NrHaPerCell);
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_min);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min);
 			}
 			container aggr_claims_min
 			{
@@ -12072,9 +12072,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container claims_max
 			{
-				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max  / DomainGrid/NrHaPerCell);
-				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max / DomainGrid/NrHaPerCell);
-				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max  / DomainGrid/NrHaPerCell);
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max);
 			}
 			container claims_max2
 			{
