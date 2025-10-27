@@ -11945,32 +11945,45 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Allocation: url = "http://www.objectvision.nl/geodms/operators-a-functions/allocation"
 	{
-		unit<fpoint> TestCoords: Range = "[{100, 0}, {600, 600})";
+		unit<fpoint>  TestCoords : Range = "[{100, 0}, {600, 600})";
+		unit<float32> Meter      := BaseUnit('m', float32);
+		unit<float32> Meter2     := Meter * Meter;
+		unit<float32> Ha         := 10000.0 * Meter2;
+		parameter<Float32> gridsize := 500f;
+		
 		unit<spoint> DomainGrid :=
 				range(
 				  gridset(
 					fpoint, 
-					point_yx(float32(  -500.0), float32(  500.0), TestCoords), 
-					point_yx(float32(625000.0), float32(10000.0), TestCoords), 
+					point_yx(-gridsize, gridsize, TestCoords), 
+					point_yx(625000f, 10000f, TestCoords), 
 					SPoint
 				  ),
 				  point_yx(int16(0), int16(0))
 				, point_yx(int16(6), int16(6))
 				),
-			DialogType = "Map";
+			DialogType = "Map" 
+		{
+			parameter<meter2> NrMeter2PerCell := gridsize[meter] * gridsize[meter];
+			parameter<ha>     NrHaPerCell     := convert(NrMeter2PerCell, ha);
+		}
 
 		unit<spoint> EDomainGrid :=
 				range(
 				  gridset(
 					fpoint, 
-					point_yx(float32(  -500.0), float32(  500.0), TestCoords), 
+					point_yx(-gridsize, gridsize, TestCoords), 
 					point_yx(float32(625000.0), float32(10000.0), TestCoords), 
 					SPoint
 				  ),
 				  point_yx(int16(0), int16(0))
 				, point_yx(int16(0), int16(0))
 				),
-			DialogType = "Map";
+			DialogType = "Map"
+		{
+			parameter<meter2> NrMeter2PerCell := gridsize[meter] * gridsize[meter];
+			parameter<ha>     NrHaPerCell     := convert(NrMeter2PerCell, ha);
+		}
 
 		container source
 		{
@@ -12032,9 +12045,6 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container claim_sources
 			{
-				unit<float32> Meter := BaseUnit('m', float32);
-				unit<float32> Ha :=10000.0 * Meter * Meter;
-
 				container p1
 				{
 					attribute<Ha> Nature_min (regMaps/p1): [12];
@@ -12048,12 +12058,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<Ha> Working_max (regMaps/p2): [10,4];
 				}
 			}
-			parameter <float32> nrHaPerCel := value(1, claim_sources/Ha);
 			container claims_min
 			{
-				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_min  / nrHaPerCel);
-				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min / nrHaPerCel);
-				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min  / nrHaPerCel);
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_min  / DomainGrid/NrHaPerCell);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min / DomainGrid/NrHaPerCell);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min  / DomainGrid/NrHaPerCell);
 			}
 			container aggr_claims_min
 			{
@@ -12063,9 +12072,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container claims_max
 			{
-				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max  / nrHaPerCel);
-				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max / nrHaPerCel);
-				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max  / nrHaPerCel);
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max  / DomainGrid/NrHaPerCell);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max / DomainGrid/NrHaPerCell);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max  / DomainGrid/NrHaPerCell);
 			}
 			container claims_max2
 			{
