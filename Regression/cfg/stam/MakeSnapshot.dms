@@ -21,8 +21,8 @@ container BAG_MakeSnapshot
 	container geometries
 	{
 		unit<dpoint> rdc_base;
-		unit<dpoint> rdc_meter := range(rdc_base, point(300000d,0d), point(625000d,280000d)), IsHidden = "True";
-		unit<ipoint> rdc_mm    := gridset(rdc_meter, point(0.001, 0.001), point(0.0,0.0), ipoint), IsHidden = "True";
+		unit<dpoint> rdc_meter := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d)), IsHidden = "True";
+		unit<ipoint> rdc_mm    := gridset(rdc_meter, point_yx(0.001, 0.001), point_yx(0.0,0.0), ipoint), IsHidden = "True";
 	}
 
 	container typeringen
@@ -57,17 +57,17 @@ container BAG_MakeSnapshot
 					attribute<bool>   is_inactief (src);
 				}
 			}
-			unit<uint32> result:= Subset(left(src/identificatie,4) == '1987')
+			unit<uint32> result:= select_with_org_rel(left(src/identificatie,4) == '1987')
 			,	StorageName     = "= FSSDir + '/zuidbroek/pand.fss'"
 			{
-				attribute<geometries/rdc_mm> geometry_mm (polygon) := src/geometry_mm[nr_OrgEntity];
-				attribute<string>            identificatie         := src/identificatie[nr_OrgEntity];
+				attribute<geometries/rdc_mm> geometry_mm (polygon) := src/geometry_mm[org_rel];
+				attribute<string>            identificatie         := src/identificatie[org_rel];
 				container meta
 				{
-					attribute<string> status      (src):= src/meta/status[nr_OrgEntity];
-					attribute<int32>  begindatum  (src):= src/meta/begindatum[nr_OrgEntity];
-					attribute<int32>  einddatum   (src):= src/meta/einddatum[nr_OrgEntity];
-					attribute<bool>   is_inactief (src):= src/meta/is_inactief[nr_OrgEntity];
+					attribute<string> status      (src):= src/meta/status[org_rel];
+					attribute<int32>  begindatum  (src):= src/meta/begindatum[org_rel];
+					attribute<int32>  einddatum   (src):= src/meta/einddatum[org_rel];
+					attribute<bool>   is_inactief (src):= src/meta/is_inactief[org_rel];
 				}
 			}
 		}
@@ -107,29 +107,29 @@ container BAG_MakeSnapshot
 					attribute<bool>  is_inactief (src);
 				}
 			}
-			unit<uint32> result := Subset(left(src/identificatie,4) == '1987')
+			unit<uint32> result := select_with_org_rel(left(src/identificatie,4) == '1987')
 			,	StorageName     = "= FSSDir + '/zuidbroek/vbo.fss'"
 			{
-				attribute<geometries/rdc_mm> geometry_mm   := src/geometry_mm[nr_OrgEntity];
-				attribute<string>            identificatie := src/identificatie[nr_OrgEntity];
+				attribute<geometries/rdc_mm> geometry_mm   := src/geometry_mm[org_rel];
+				attribute<string>            identificatie := src/identificatie[org_rel];
 
-				attribute<int32>             oppervlakte   := src/oppervlakte[nr_OrgEntity];
+				attribute<int32>             oppervlakte   := src/oppervlakte[org_rel];
 
 				container gebruiksdoelen :=
 					for_each_nedv(
 						typeringen/gebruiksdoel_vbo/Label_ti
-						, 'src/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/Label_ti + '[nr_OrgEntity]'
+						, 'src/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/Label_ti + '[org_rel]'
 						, src
 						, bool
 					);
 
-				attribute<geometries/rdc_mm> centroid_mm := src/centroid_mm[nr_OrgEntity];
+				attribute<geometries/rdc_mm> centroid_mm := src/centroid_mm[org_rel];
 				container meta
 				{
-					attribute<string> status      (src) := src/meta/status[nr_OrgEntity];
-					attribute<int32>  begindatum  (src) := src/meta/begindatum[nr_OrgEntity];
-					attribute<int32>  einddatum   (src) := src/meta/einddatum[nr_OrgEntity];
-					attribute<bool>   is_inactief (src) := src/meta/is_inactief[nr_OrgEntity];
+					attribute<string> status      (src) := src/meta/status[org_rel];
+					attribute<int32>  begindatum  (src) := src/meta/begindatum[org_rel];
+					attribute<int32>  einddatum   (src) := src/meta/einddatum[org_rel];
+					attribute<bool>   is_inactief (src) := src/meta/is_inactief[org_rel];
 				}
 			}
 		}
@@ -167,9 +167,9 @@ container BAG_MakeSnapshot
 			{
 				unit<uint32> selectie
 				{
-					attribute<geometries/rdc_mm> geometry_mm (polygon) := domain/geometry_mm[selectie/nr_OrgEntity];
-					attribute<string>            identificatie         := domain/identificatie[selectie/nr_OrgEntity];
-					attribute<eenheden/jaar>     bouwjaar              := domain/bouwjaar[selectie/nr_OrgEntity];
+					attribute<geometries/rdc_mm> geometry_mm (polygon) := domain/geometry_mm[selectie/org_rel];
+					attribute<string>            identificatie         := domain/identificatie[selectie/org_rel];
+					attribute<eenheden/jaar>     bouwjaar              := domain/bouwjaar[selectie/org_rel];
 					attribute<unique>            unique_rel            := rlookup(identificatie,unique/identificatie);
 				}
 
@@ -224,7 +224,7 @@ container BAG_MakeSnapshot
 
 				attribute<geometries/rdc_mm> centroid_mm := = hasVboPolygon 
 					? 'polygon/centroid_mm[invert(polygon/parent_rel)]' 
-					: 'point(const(0i / 0i,src), const(0i / 0i,src),geometries/rdc_mm)';
+					: 'point_yx(const(0i / 0i,src), const(0i / 0i,src),geometries/rdc_mm)';
 
 				unit<uint32> gerelateerdPand // is een 1->0..n relatie
 				{
@@ -245,25 +245,25 @@ container BAG_MakeSnapshot
 			{
 				unit<uint32> selectie
 				{
-					attribute<geometries/rdc_mm> geometry_mm_raw_or_centroid := MakeDefined(domain/geometry_mm, domain/centroid_mm)[selectie/nr_OrgEntity]; // Op snapshot moment willen we alleen punt geometrien hebben voor vbo's
+					attribute<geometries/rdc_mm> geometry_mm_raw_or_centroid := MakeDefined(domain/geometry_mm, domain/centroid_mm)[selectie/org_rel]; // Op snapshot moment willen we alleen punt geometrien hebben voor vbo's
 					attribute<int32> X:= PointCol(geometry_mm_raw_or_centroid);
 					attribute<int32> Y:= PointRow(geometry_mm_raw_or_centroid);
 					attribute<geometries/rdc_mm> geometry_mm:= 
 						   X >=  -8000000i &&  X <= 300000000i
 						&& Y >= 289000000i &&  Y <= 629000000i
 						?	geometry_mm_raw_or_centroid
-						:	point(0i/0i, 0i/0i, geometries/rdc_mm);
+						:	point_yx(0i/0i, 0i/0i, geometries/rdc_mm);
 					// Op snapshot moment willen we alleen geometrien in NL (https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten), dit ten behoeve van gemiddelde bepalingen (denk aan coordinaten voor geocode)
 
-					attribute<string> identificatie       := domain/identificatie[selectie/nr_OrgEntity];
-					attribute<int32>  oppervlakte         := domain/oppervlakte[selectie/nr_OrgEntity];
-					attribute<string> nummeraanduiding_id := domain/nummeraanduiding_id[selectie/nr_OrgEntity];
+					attribute<string> identificatie       := domain/identificatie[selectie/org_rel];
+					attribute<int32>  oppervlakte         := domain/oppervlakte[selectie/org_rel];
+					attribute<string> nummeraanduiding_id := domain/nummeraanduiding_id[selectie/org_rel];
 					attribute<unique> unique_rel          := rlookup(identificatie,unique/identificatie);
 
 				container gebruiksdoelen :=
 					for_each_nedv(
 						typeringen/gebruiksdoel_vbo/Label_ti
-						, 'domain/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/Label_ti + '[selectie/nr_OrgEntity]'
+						, 'domain/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/Label_ti + '[selectie/org_rel]'
 						, selectie
 						, bool
 					);
@@ -296,24 +296,24 @@ container BAG_MakeSnapshot
 
 					container meta := meta_template(selectie, unique);
 
-					unit<uint32> gerelateerdPand := Subset(isDefined(rlookup(src/gerelateerdPand/parent_rel,selectie/nr_OrgEntity))) // is een 1->0..n relatie
+					unit<uint32> gerelateerdPand := select_with_org_rel(isDefined(rlookup(src/gerelateerdPand/parent_rel,selectie/org_rel))) // is een 1->0..n relatie
 					{
-						attribute<string> pand_id      := src/gerelateerdPand/pand_id[nr_OrgEntity];
-						attribute<string> vbo_id       := src/gerelateerdPand/vbo_id[nr_OrgEntity];
-						attribute<uint32> nr_OrgEntity : DisableStorage = "True";
+						attribute<string> pand_id      := src/gerelateerdPand/pand_id[org_rel];
+						attribute<string> vbo_id       := src/gerelateerdPand/vbo_id[org_rel];
+						attribute<uint32> org_rel : DisableStorage = "True";
 					}
 
-					unit<uint32> nevenadres:= Subset(isDefined(rlookup(src/nevenadres/parent_rel,selectie/nr_OrgEntity))) // is een 1->0..n relatie
+					unit<uint32> nevenadres:= select_with_org_rel(isDefined(rlookup(src/nevenadres/parent_rel,selectie/org_rel))) // is een 1->0..n relatie
 					{
-						attribute<string> nummeraanduiding_id := src/nevenadres/nummeraanduiding_id[nr_OrgEntity];
-						attribute<string> vbo_id              := src/nevenadres/vbo_id[nr_OrgEntity];
-						attribute<uint32> nr_OrgEntity        : DisableStorage = "True";
+						attribute<string> nummeraanduiding_id := src/nevenadres/nummeraanduiding_id[org_rel];
+						attribute<string> vbo_id              := src/nevenadres/vbo_id[org_rel];
+						attribute<uint32> org_rel        : DisableStorage = "True";
 					}
 					
-					unit<uint32> debug := Subset(pand_rel == 10523864)
+					unit<uint32> debug := select_with_org_rel(pand_rel == 10523864)
 					{
-						attribute<geometries/rdc_mm>   geometry_mm         := unique/geometry_mm[nr_OrgEntity];
-						attribute<string>              identificatie       := unique/identificatie[nr_OrgEntity];
+						attribute<geometries/rdc_mm>   geometry_mm         := unique/geometry_mm[org_rel];
+						attribute<string>              identificatie       := unique/identificatie[org_rel];
 					}
 				}
 			}
@@ -386,26 +386,26 @@ container BAG_MakeSnapshot
 		attribute<bool> WasGestart   (domain):= domain/meta/BEGINDATUM <= prik_datum;
 		attribute<bool> WasBeeindigd (domain):= domain/meta/EINDDATUM  <= prik_datum && domain/meta/EINDDATUM > 0i;
 
-// 		unit<uint32> selectie:= = 'Subset(WasGestart && not(WasBeeindigd) && Not(domain/Meta/IS_INACTIEF) && left(src/identificatie, 4) == ''0358'')'
+// 		unit<uint32> selectie:= = 'select_with_org_rel(WasGestart && not(WasBeeindigd) && Not(domain/Meta/IS_INACTIEF) && left(src/identificatie, 4) == ''0358'')'
 // 		,	DialogType = "Map"
 // 		,	DialogData = "geometry_mm"
 
-		unit<uint32> selectie:= = 'Subset(WasGestart && not(WasBeeindigd) && Not(domain/Meta/IS_INACTIEF))'
+		unit<uint32> selectie:= = 'select_with_org_rel(WasGestart && not(WasBeeindigd) && Not(domain/Meta/IS_INACTIEF))'
 		,	DialogType = "Map"
 		,	DialogData = "geometry_mm"
 		{
 			container meta
 			{
-				attribute<string>         STATUS         (selectie):= domain/meta/STATUS[nr_OrgEntity];
-				attribute<eenheden/datum> BEGINDATUM     (selectie):= domain/meta/BEGINDATUM[nr_OrgEntity];
-				attribute<eenheden/datum> EINDDATUM      (selectie):= domain/meta/EINDDATUM[nr_OrgEntity];
-				attribute<eenheden/datum> DOCUMENTDATUM  (selectie):= domain/meta/DOCUMENTDATUM[nr_OrgEntity];
-				attribute<string>         DOCUMENTNUMMER (selectie):= domain/meta/DOCUMENTNUMMER[nr_OrgEntity];
+				attribute<string>         STATUS         (selectie):= domain/meta/STATUS[org_rel];
+				attribute<eenheden/datum> BEGINDATUM     (selectie):= domain/meta/BEGINDATUM[org_rel];
+				attribute<eenheden/datum> EINDDATUM      (selectie):= domain/meta/EINDDATUM[org_rel];
+				attribute<eenheden/datum> DOCUMENTDATUM  (selectie):= domain/meta/DOCUMENTDATUM[org_rel];
+				attribute<string>         DOCUMENTNUMMER (selectie):= domain/meta/DOCUMENTNUMMER[org_rel];
 
-				attribute<bool>           IS_ONDERZOEK   (selectie):= domain/meta/IS_ONDERZOEK[nr_OrgEntity];
-				attribute<bool>           IS_CORRECTIE   (selectie):= domain/meta/IS_CORRECTIE[nr_OrgEntity];
-				attribute<bool>           IS_INACTIEF    (selectie):= domain/meta/IS_INACTIEF[nr_OrgEntity];
-				attribute<bool>           IS_OFFICIEEL   (selectie):= domain/meta/IS_OFFICIEEL[nr_OrgEntity];
+				attribute<bool>           IS_ONDERZOEK   (selectie):= domain/meta/IS_ONDERZOEK[org_rel];
+				attribute<bool>           IS_CORRECTIE   (selectie):= domain/meta/IS_CORRECTIE[org_rel];
+				attribute<bool>           IS_INACTIEF    (selectie):= domain/meta/IS_INACTIEF[org_rel];
+				attribute<bool>           IS_OFFICIEEL   (selectie):= domain/meta/IS_OFFICIEEL[org_rel];
 			}
 		}
 	}
