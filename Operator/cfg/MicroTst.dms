@@ -27,6 +27,13 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		
 		parameter<ha>     NrHaPerCell_mul  := convert(gridsize * gridsize, ha);
 		parameter<ha>     NrHaPerCell_sq   := convert(gridsize^2f, ha);
+		container issue954 {
+			unit<float32> Euro      := baseunit('euro', float32);
+			unit<uint16>  Ct        := uint16(0.01f * euro);
+
+			parameter<euro> euros   := 2.60[euro];
+			parameter<Ct>   centen  := rounded_convert(euros, Ct);
+		}
 	}
 	container issue_783 {
 		unit<uint32> Sequence_later := range(0, 2)
