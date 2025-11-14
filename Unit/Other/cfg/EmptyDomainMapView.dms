@@ -5,13 +5,13 @@ container EmptyDomainMapView: Descr = "Check that Copy of BaseLine -> Toekomst d
 	   : DialogData = "wmts_layer" 
 	   , Format     = "EPSG:28992";
 	
-	unit<fpoint> point_rd := range(point_rd_base, point(300000[m],0[m]), point(625000[m],280000[m]));
+	unit<fpoint> point_rd := range(point_rd_base, point_yx(300000[m],0[m]), point_yx(625000[m],280000[m]));
 
 	unit<uint32> src: nrofrows = 1
 	{
 		attribute<m> X: [121000];
 		attribute<m> y: [487000];
-		attribute<point_rd> geometry := point(Y, X, point_rd);
+		attribute<point_rd> geometry := point_yx(Y, X, point_rd);
 	}
 	unit<uint32> sel := select_with_attr_by_org_rel(src, src/X < 0f);
 

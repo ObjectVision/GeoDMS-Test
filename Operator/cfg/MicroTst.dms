@@ -76,7 +76,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<bool> selection : [ false, true, false, true ];
 			attribute<bool> isred     : [ false, false, true, true ];
 		}
-		unit<uint32> M30woningen := range(0, 30000000)
+		unit<uint32> M30woningen := range(0, 30000)
 		{
 			attribute<bool> selection := ID(.) >  20000000;
 //			attribute<bool> isred     := ID(.) == 25000000;// || ID(.) == 26000000;
@@ -376,7 +376,6 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		unit<uint32> place: nrofrows = 2
 		{
 			attribute<string> label : ['Amsterdam','Rotterdam'];
-			attribute<rdc > llocationl : [yx(1000000, 350000), yx(120000, 400000)];
 		}
 		unit<uint32> time := range(uint32,2012,2014)
 		{
@@ -1270,7 +1269,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 				,point_yx(4112000f, -5264000f, TestCoord)
 				, ipoint
 			)
-			, point(0i, 0i), point(80000i, 100000i)
+			, point_yx(0i, 0i), point_yx(80000i, 100000i)
 		)
 	{
 		attribute<bool>    test:= const(True, .);
@@ -2149,21 +2148,26 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	}
 	container ExportSettings
 	{
-		parameter<float64> width:  [25.52];
-		parameter<float64> height: [19.14];
+		unit<float64> meter := baseunit('m', float64);
+		unit<float64> cm := 0.01 * meter;
+		unit<float64> mm := 0.001 * meter;
+		unit<uint64>  inch := 0.0254 * meter;
+		
+		parameter<cm> width:  [19.14];
+		parameter<cm> height: [25.52];
 
-		parameter<DPoint>  PaperSize: expr = "Point(width / 100.0 , height / 100.0)", url ="about:papersize is <B>defined</B> as height * width";
+		parameter<DPoint>  PaperSize := Point_yx(height[m] , width[m]), url ="about:papersize is <B>defined</B> as height * width, both in meters";
 
 		parameter<Float64> ScaleDenom: [30000];
-		parameter<Float64> Scale:      expr = "1.0 / ScaleDenom";
+		parameter<Float64> Scale := 1.0 / ScaleDenom;
 		
 		parameter<float64> dwsc:        [null];
-		parameter<DPoint>  DotWorldSize: expr = "Point(dwsc,dwsc)";
+		parameter<DPoint>  DotWorldSize := Point_yx(dwsc,dwsc);
 
 		parameter<UInt32 > NrSubDotsPerDot: [1];                               // alternative spec for nrSubDotsPerDot, default = 2
 
 		parameter<Float64> dpi:        [400.0];                                // alternative spec for dotSize in dots per inch (default: 600 pdi)
-		parameter<DPoint>  DotSize:    expr = " Point(0.0254/dpi,0.0254/dpi)"; // size of dot on paper in m (default 600 dpi)
+		parameter<DPoint>  DotSize:    expr = " Point_yx(0.0254/dpi,0.0254/dpi)"; // size of dot on paper in meters (default 600 dpi)
 		parameter<Float64> ViewFactor: [1.0];                                  // paper view distance relative to screen view distance
 
 		parameter<IPoint>  MaxNrSubDotsPerTile: [yx(4096, 4096)];
