@@ -10225,7 +10225,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			unit<uint32>  Dist2Range;
 			unit<float32> Potentiaal;
-			unit<spoint>  pot3Range: Range = "[{-1, -1}, {2, 2}) "
+			unit<spoint>  pot3Range := Range(point_xy(-1s, -1s), point_xy(2s, 2s))
 			{
 				attribute<Dist2Range> distMatr3 (pot3Range) := dist2(point_yx(int16(0), int16(0), pot3Range), Dist2Range);
 				attribute<Potentiaal> AbsWeight (pot3Range) := float32(1.0) / float32(distMatr3 + 2);
@@ -11945,7 +11945,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Allocation: url = "http://www.objectvision.nl/geodms/operators-a-functions/allocation"
 	{
-		unit<fpoint>  TestCoords : Range = "[{100, 0}, {600, 600})";
+		unit<fpoint>  TestCoords := Range(point_yx(100f, 0f), point_yx(600f, 600f));
 		unit<float32> Meter      := BaseUnit('m', float32);
 		unit<float32> Meter2     := Meter * Meter;
 		unit<float32> Ha         := 10000.0 * Meter2;
@@ -12439,9 +12439,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container gridset: Descr ="to make a projection", url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/gridset"
 			{
-				unit<fpoint> rdc_meter:
-					DialogData = "Geografie/top100/grid/Nl/achtergrond;Geografie/RegioIndelingen/Provincie/Shapes/Polygons",
-					Range      = "[{300000, 0}, {625000, 280000})";
+				unit<fpoint> rdc_meter := Range(point_yx(300000f, 0f), point_yx(625000f, 280000f))
+				,	DialogData = "Geografie/top100/grid/Nl/achtergrond;Geografie/RegioIndelingen/Provincie/Shapes/Polygons";
+					
 				unit<spoint> rdc_100 := 
 					gridset(
 						rdc_meter, 
@@ -12493,17 +12493,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				container Source
 				{
-					unit<fpoint> rdc_meter: Range = "[{300000, 0}, {625000, 280000})";
+					unit<fpoint> rdc_meter:= Range(point_yx(300000f, 0f), point_yx(625000f, 280000f));
 					unit<spoint> rdc_100 := range(
-						gridset(
-							 rdc_meter
-							,point_yx(float32( - 100.0), float32(  100.0), rdc_meter)
-							,point_yx(float32(625000.0), float32(10000.0), rdc_meter)
-							,spoint)
-						,
-							 point_yx(int16(0)   , int16(0))
-							,point_yx(int16(3250), int16(2700)
-						)
+						gridset(rdc_meter
+						,	point_yx(float32( - 100.0), float32(  100.0), rdc_meter)
+						,	point_yx(float32(625000.0), float32(10000.0), rdc_meter)
+						,	spoint)
+					,	point_yx(int16(0)   , int16(0))
+					,	point_yx(int16(3250), int16(2700))
 					);
 				}
 				container GetProjectionBase: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionbase"
@@ -12640,7 +12637,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<bool>   test_name := (name) = 'A';
 			
 				parameter<string> valuesunit     := LowerCase(PropValue(A, 'ValuesUnit'));
-				parameter<bool>   test_valueunit := valuesunit = 'meter';
+				parameter<bool>   test_valueunit := valuesunit = '../meter';
 	
 				parameter<string> expr      := LowerCase(PropValue(A, 'expr'));
 				parameter<bool>   test_expr := expr == 'value(arithmetics/untiled/source/b, meter) + value(arithmetics/untiled/source/c, meter)';
@@ -12714,7 +12711,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		container diagram_mandelbrot
 		{
 			unit<uint32>        CountSet := range(uint32, uint32(0), uint32(300));
-			unit<spoint>        grid100: Range = "[{-1000, -1000}, {1001, 1001})" ;
+			unit<spoint>        grid100 := Range(point_xy(-1000s, -1000s), point_xy(1001s, 1001s));
 			attribute<CountSet> x1 (grid100) := Mandelbrot(grid100, CountSet, point_yx(0.0, 0.0), point_yx(0.002, 0.002));
 		}
 		Container GeoDMSVersion: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/geodmsversion"
