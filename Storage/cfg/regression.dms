@@ -35,9 +35,9 @@ container StorageManagerTest
 	{
 		unit<uint32>  color;
 		unit<float32> m         := baseunit('m', float32);
-		unit<fpoint>  point_rd  := baseunit('m', fpoint), Format = "EPSG:28992";
+		unit<fpoint>  point_rd  := baseunit('m', fpoint), SpatialReference = "EPSG:28992";
 		unit<dpoint>  dpoint_rd := baseunit('m', dpoint);
-		unit<fpoint>  LatLong : Format = "EPSG:4326";
+		unit<fpoint>  LatLong : SpatialReference = "EPSG:4326";
 
 //		#include<wmts_layer.dms>
 	}
@@ -491,8 +491,8 @@ container StorageManagerTest
 			, StorageName = "= Parameters/StorageBasePath + 'Polygon/area.shp'"
 			, StorageType = "gdalwrite.vect"
 			{
-				//attribute<units/point_rd> Polygon (polygon) := PolygonSet/poly;
-				attribute<units/point_rd> geometry (poly) := PolygonSet/poly;
+				attribute<units/point_rd> Polygon (polygon) := PolygonSet/poly;
+				///attribute<units/point_rd> geometry (poly) := PolygonSet/poly;
 				attribute<string>         label             := PolygonSet/label;
 			}
 		}

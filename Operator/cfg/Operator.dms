@@ -2778,8 +2778,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container convert: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/convert"
 			{
-				unit<fpoint> LambertEA: Format = "EPSG:3035";
-				unit<fpoint> rdc: Format = "EPSG:28992";
+				unit<fpoint> LambertEA: SpatialReference = "EPSG:3035";
+				unit<fpoint> rdc: SpatialReference = "EPSG:28992";
 				
 				unit<uint32> pointset: nrofrows = 4
 				{
@@ -7851,7 +7851,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container union_polygon
 			{
-				parameter<ipoint> att(polygon) := union_polygon(ipolygon(Source/District/border_clean));
+				parameter<ipoint> att(polygon) := bp_union_polygon(ipolygon(Source/District/border_clean));
 				parameter<ipoint> bp_att  (polygon) := bp_union_polygon(ipolygon(Source/District/border_clean));
 				parameter<fpoint> bg_att  (polygon) := bg_union_polygon(Source/District/border_clean);
 				parameter<fpoint> cgal_att(polygon) := cgal_union_polygon(Source/District/border_clean);
@@ -7881,7 +7881,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container partitioned_union_polygon
 			{
-				attribute<ipoint> att(polygon, region) := partitioned_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
+				attribute<ipoint> att(polygon, region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
 				attribute<ipoint> bp_att(polygon, region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
 				attribute<fpoint> bg_att(polygon, region) := bg_union_polygon(Source/District/border_clean, Source/district/region_rel);
 				
@@ -7990,11 +7990,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 //				attribute<ipoint> district_ipoint (polygon, district) := ipolygon(source/district/border_clean);
 				container multipolygon
 				{
-					attribute<ipoint> geometry (Region, polygon) := partitioned_union_polygon(ipolygon(Source/District/border_clean), Source/district/multipolygon_rel);
+					attribute<ipoint> geometry (Region, polygon) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/multipolygon_rel);
 					attribute<fpoint> bg_geometry (Region, polygon) := bg_union_polygon(Source/District/border_clean, Source/district/multipolygon_rel);
 					parameter<ipoint> geometry_void (polygon) := geometry[0];
 				}
-				unit<uint32> single_polygons := split_polygon(multipolygon/geometry)
+				unit<uint32> single_polygons := bp_split_polygon(multipolygon/geometry)
 				{
 					attribute<uint32> ok: [0,0,0,1,1,2,3];
 
@@ -8017,53 +8017,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_inflated_100     (polygon, building) := polygon_inflated(building_ipoint, float64(100))
+				attribute<ipoint> building_inflated_100     (polygon, building) := bp_polygon_inflated(building_ipoint, float64(100))
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_inflated_i_4D100  (polygon, building) := polygon_inflated_i4D(building_ipoint, float64(75), float64(25))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-
-				attribute<ipoint> building_inflated_i_8D100  (polygon, building) := polygon_inflated_i8D(building_ipoint, float64(75), float64(25))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-				attribute<ipoint> building_inflated_i_16D100 (polygon, building) := polygon_inflated_i16D(building_ipoint, float64(75), float64(25))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-
-				attribute<ipoint> building_polygon_i4D75  (polygon, building) :=  polygon_i4D(building_ipoint, float64(75))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-				attribute<ipoint> building_polygon_i8D75  (polygon, building) :=  polygon_i8D(building_ipoint, float64(75))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-				attribute<ipoint> building_polygon_i16D75  (polygon, building) :=  polygon_i16D(building_ipoint, float64(75))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-				attribute<ipoint> building_polygon_i4HV75  (polygon, building) :=  polygon_i4HV(building_ipoint, float64(75))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-
-				parameter<bool> test_attr := 
-					    pointset/test_attr       && pointset_i_4D100/test_attr && pointset_i_8D100/test_attr && pointset_i_16D100/test_attr
-					&&  pointset_i4D75/test_attr && pointset_i8D75/test_attr   && pointset_i16D75/test_attr  && pointset_i4HV75/test_attr
-				;
+				parameter<bool> test_attr := pointset/test_attr;
 
 				unit<uint32> pointset := sequence2points(building_inflated_100)
 				{
@@ -8083,154 +8042,6 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<bool> test      := point == att_ok;
 					parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(test)';
 				}
-				unit<uint32> pointset_i_4D100 := sequence2points(building_inflated_i_4D100)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403382, 113680),yx(403325, 113680),yx(403182, 113674),yx(403157, 113649),yx(403141, 113633),yx(403116, 113608),yx(403116, 113551),yx(403141, 113322),
-						yx(403166, 113297),yx(403182, 113281),yx(403207, 113256),yx(403362, 113169),yx(403419, 113169),yx(403444, 113194),yx(403460, 113210),yx(403485, 113235),
-						yx(403485, 113292),yx(403448, 113614),yx(403423, 113639),yx(403407, 113655),yx(403382, 113680),yx(403007, 113337),yx(402950, 113337),yx(402850, 113337),
-						yx(402793, 113337),yx(402768, 113312),yx(402752, 113296),yx(402727, 113271),yx(402727, 113214),yx(402747, 112887),yx(402772, 112862),yx(402788, 112846),
-						yx(402813, 112821),yx(402870, 112821),yx(403014, 112854),yx(403039, 112879),yx(403055, 112895),yx(403080, 112920),yx(403080, 112977),yx(403073, 113271),
-						yx(403048, 113296),yx(403032, 113312),yx(403007, 113337),yx(403261, 113143),yx(403204, 113143),yx(403179, 113118),yx(403163, 113102),yx(403138, 113077),
-						yx(403131, 112934),yx(403131, 112877),yx(403156, 112852),yx(403172, 112836),yx(403197, 112811),yx(403431, 112794),yx(403488, 112794),yx(403513, 112819),
-						yx(403529, 112835),yx(403554, 112860),yx(403581, 113003),yx(403581, 113060),yx(403556, 113085),yx(403540, 113101),yx(403515, 113126),yx(403261, 113143),
-						yx(403163, 113956),yx(403106, 113956),yx(403105, 113955),yx(402973, 113953),yx(402916, 113953),yx(402891, 113928),yx(402875, 113912),yx(402850, 113887),
-						yx(402850, 113830),yx(402864, 113667),yx(402889, 113642),yx(402905, 113626),yx(402930, 113601),yx(402987, 113601),yx(403180, 113632),yx(403205, 113657),
-						yx(403221, 113673),yx(403246, 113698),yx(403246, 113755),yx(403229, 113890),yx(403204, 113915),yx(403188, 113931),yx(403163, 113956),yx(402220, 112861),
-						yx(402163, 112861),yx(402138, 112836),yx(402122, 112820),yx(402097, 112795),yx(402097, 112738),yx(402097, 112609),yx(402097, 112552),yx(402122, 112527),
-						yx(402138, 112511),yx(402163, 112486),yx(402220, 112486),yx(402390, 112506),yx(402415, 112531),yx(402431, 112547),yx(402456, 112572),yx(402500, 112735),
-						yx(402500, 112792),yx(402475, 112817),yx(402459, 112833),yx(402434, 112858),yx(402377, 112858),yx(402221, 112859),yx(402220, 112860),yx(402220, 112861),
-						yx(402505, 113977),yx(402448, 113977),yx(402184, 113950),yx(402159, 113925),yx(402143, 113909),yx(402118, 113884),yx(402118, 113827),yx(402135, 113521),
-						yx(402160, 113496),yx(402176, 113480),yx(402201, 113455),yx(402258, 113455),yx(402536, 113472),yx(402561, 113497),yx(402577, 113513),yx(402602, 113538),
-						yx(402602, 113595),yx(402571, 113911),yx(402546, 113936),yx(402530, 113952),yx(402505, 113977)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_i_4D100 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_i_8D100 := sequence2points(building_inflated_i_8D100)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403382, 113680),yx(403325, 113680),yx(403182, 113674),yx(403165, 113666),yx(403124, 113625),yx(403116, 113608),yx(403116, 113551),yx(403141, 113322),
-						yx(403149, 113305),yx(403190, 113264),yx(403345, 113177),yx(403362, 113169),yx(403419, 113169),yx(403436, 113177),yx(403477, 113218),yx(403485, 113235),
-						yx(403485, 113292),yx(403448, 113614),yx(403440, 113631),yx(403399, 113672),yx(403382, 113680),yx(403007, 113337),yx(402950, 113337),yx(402850, 113337),
-						yx(402793, 113337),yx(402776, 113329),yx(402735, 113288),yx(402727, 113271),yx(402727, 113214),yx(402747, 112887),yx(402755, 112870),yx(402796, 112829),
-						yx(402813, 112821),yx(402870, 112821),yx(403014, 112854),yx(403031, 112862),yx(403072, 112903),yx(403080, 112920),yx(403080, 112977),yx(403073, 113271),
-						yx(403065, 113288),yx(403024, 113329),yx(403007, 113337),yx(403261, 113143),yx(403204, 113143),yx(403187, 113135),yx(403146, 113094),yx(403138, 113077),
-						yx(403131, 112934),yx(403131, 112877),yx(403139, 112860),yx(403180, 112819),yx(403197, 112811),yx(403431, 112794),yx(403488, 112794),yx(403505, 112802),
-						yx(403546, 112843),yx(403554, 112860),yx(403581, 113003),yx(403581, 113060),yx(403573, 113077),yx(403532, 113118),yx(403515, 113126),yx(403261, 113143),
-						yx(403163, 113956),yx(403106, 113956),yx(403105, 113955),yx(403103, 113954),yx(402973, 113953),yx(402916, 113953),yx(402899, 113945),yx(402858, 113904),
-						yx(402850, 113887),yx(402850, 113830),yx(402864, 113667),yx(402872, 113650),yx(402913, 113609),yx(402930, 113601),yx(402987, 113601),yx(403180, 113632),
-						yx(403197, 113640),yx(403238, 113681),yx(403246, 113698),yx(403246, 113755),yx(403229, 113890),yx(403221, 113907),yx(403180, 113948),yx(403163, 113956),
-						yx(402220, 112861),yx(402163, 112861),yx(402146, 112853),yx(402105, 112812),yx(402097, 112795),yx(402097, 112738),yx(402097, 112609),yx(402097, 112552),
-						yx(402105, 112535),yx(402146, 112494),yx(402163, 112486),yx(402220, 112486),yx(402390, 112506),yx(402407, 112514),yx(402448, 112555),yx(402456, 112572),
-						yx(402500, 112735),yx(402500, 112792),yx(402492, 112809),yx(402451, 112850),yx(402434, 112858),yx(402377, 112858),yx(402222, 112859),yx(402220, 112860),
-						yx(402220, 112861),yx(402505, 113977),yx(402448, 113977),yx(402184, 113950),yx(402167, 113942),yx(402126, 113901),yx(402118, 113884),yx(402118, 113827),
-						yx(402135, 113521),yx(402143, 113504),yx(402184, 113463),yx(402201, 113455),yx(402258, 113455),yx(402536, 113472),yx(402553, 113480),yx(402594, 113521),
-						yx(402602, 113538),yx(402602, 113595),yx(402571, 113911),yx(402563, 113928),yx(402522, 113969),yx(402505, 113977)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_i_8D100 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_i_16D100 := sequence2points(building_inflated_i_16D100)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403382, 113680),yx(403325, 113680),yx(403182, 113674),yx(403173, 113672),yx(403165, 113666),yx(403124, 113625),yx(403118, 113617),yx(403116, 113608),
-						yx(403116, 113551),yx(403141, 113322),yx(403143, 113313),yx(403149, 113305),yx(403190, 113264),yx(403194, 113261),yx(403198, 113258),yx(403353, 113171),
-						yx(403362, 113169),yx(403419, 113169),yx(403428, 113171),yx(403436, 113177),yx(403477, 113218),yx(403483, 113226),yx(403485, 113235),yx(403485, 113292),
-						yx(403483, 113301),yx(403448, 113614),yx(403446, 113623),yx(403440, 113631),yx(403399, 113672),yx(403397, 113672),yx(403391, 113678),yx(403382, 113680),
-						yx(403007, 113337),yx(402950, 113337),yx(402850, 113337),yx(402793, 113337),yx(402784, 113335),yx(402776, 113329),yx(402735, 113288),yx(402729, 113280),
-						yx(402727, 113271),yx(402727, 113214),yx(402747, 112887),yx(402749, 112878),yx(402755, 112870),yx(402796, 112829),yx(402804, 112823),yx(402813, 112821),
-						yx(402870, 112821),yx(402879, 112823),yx(403014, 112854),yx(403023, 112856),yx(403031, 112862),yx(403072, 112903),yx(403078, 112911),yx(403080, 112920),
-						yx(403080, 112977),yx(403073, 113271),yx(403071, 113280),yx(403065, 113288),yx(403024, 113329),yx(403022, 113329),yx(403016, 113335),yx(403007, 113337),
-						yx(403261, 113143),yx(403204, 113143),yx(403195, 113141),yx(403187, 113135),yx(403146, 113094),yx(403140, 113086),yx(403138, 113077),yx(403131, 112934),
-						yx(403131, 112877),yx(403133, 112868),yx(403139, 112860),yx(403180, 112819),yx(403188, 112813),yx(403197, 112811),yx(403431, 112794),yx(403488, 112794),
-						yx(403497, 112796),yx(403505, 112802),yx(403546, 112843),yx(403552, 112851),yx(403553, 112859),yx(403554, 112860),yx(403579, 112994),yx(403581, 113003),
-						yx(403581, 113060),yx(403579, 113069),yx(403573, 113075),yx(403573, 113077),yx(403532, 113118),yx(403524, 113124),yx(403515, 113126),yx(403261, 113143),
-						yx(403163, 113956),yx(403106, 113956),yx(403105, 113955),yx(403101, 113954),yx(403100, 113954),yx(403097, 113954),yx(402973, 113953),yx(402916, 113953),
-						yx(402907, 113951),yx(402899, 113945),yx(402858, 113904),yx(402852, 113896),yx(402850, 113887),yx(402850, 113830),yx(402864, 113667),yx(402866, 113658),
-						yx(402872, 113650),yx(402913, 113609),yx(402921, 113603),yx(402930, 113601),yx(402987, 113601),yx(403180, 113632),yx(403189, 113634),yx(403197, 113640),
-						yx(403238, 113681),yx(403244, 113689),yx(403246, 113698),yx(403246, 113755),yx(403244, 113764),yx(403229, 113890),yx(403228, 113890),yx(403227, 113899),
-						yx(403221, 113907),yx(403180, 113948),yx(403178, 113948),yx(403172, 113954),yx(403163, 113956),yx(402220, 112861),yx(402163, 112861),yx(402154, 112859),
-						yx(402146, 112853),yx(402105, 112812),yx(402099, 112804),yx(402097, 112795),yx(402097, 112738),yx(402097, 112609),yx(402097, 112552),yx(402099, 112543),
-						yx(402105, 112535),yx(402146, 112494),yx(402154, 112488),yx(402163, 112486),yx(402220, 112486),yx(402390, 112506),yx(402399, 112508),yx(402407, 112514),
-						yx(402448, 112555),yx(402454, 112563),yx(402456, 112572),yx(402497, 112725),yx(402498, 112726),yx(402498, 112727),yx(402500, 112735),yx(402500, 112792),
-						yx(402498, 112801),yx(402492, 112807),yx(402492, 112809),yx(402451, 112850),yx(402449, 112850),yx(402443, 112856),yx(402434, 112858),yx(402377, 112858),
-						yx(402229, 112859),yx(402224, 112859),yx(402220, 112860),yx(402220, 112861),yx(402505, 113977),yx(402448, 113977),yx(402184, 113950),yx(402175, 113948),
-						yx(402167, 113942),yx(402126, 113901),yx(402120, 113893),yx(402118, 113884),yx(402118, 113827),yx(402135, 113521),yx(402137, 113512),yx(402143, 113504),
-						yx(402184, 113463),yx(402192, 113457),yx(402201, 113455),yx(402258, 113455),yx(402536, 113472),yx(402545, 113474),yx(402553, 113480),yx(402594, 113521),
-						yx(402600, 113529),yx(402602, 113538),yx(402602, 113595),yx(402571, 113911),yx(402569, 113920),yx(402563, 113928),yx(402522, 113969),yx(402520, 113969),
-						yx(402514, 113975),yx(402505, 113977)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_i_16D100 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_i4D75 := sequence2points(building_polygon_i4D75)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403354, 113661),yx(403211, 113655),yx(403136, 113580),yx(403161, 113351),yx(403236, 113276),yx(403391, 113189),yx(403466, 113264),yx(403429, 113586),yx(403354, 113661),yx(402979, 113318),
-						yx(402822, 113318),yx(402747, 113243),yx(402767, 112916),yx(402842, 112841),yx(402986, 112874),yx(403061, 112949),yx(403054, 113243),yx(402979, 113318),yx(403233, 113124),yx(403158, 113049),
-						yx(403151, 112906),yx(403226, 112831),yx(403460, 112814),yx(403535, 112889),yx(403562, 113032),yx(403487, 113107),yx(403233, 113124),yx(403135, 113937),yx(402945, 113934),yx(402870, 113859),
-						yx(402884, 113696),yx(402959, 113621),yx(403152, 113652),yx(403227, 113727),yx(403210, 113862),yx(403135, 113937),yx(402192, 112842),yx(402117, 112767),yx(402117, 112581),yx(402192, 112506),
-						yx(402362, 112526),yx(402437, 112601),yx(402481, 112764),yx(402406, 112839),yx(402192, 112842),yx(402477, 113958),yx(402213, 113931),yx(402138, 113856),yx(402155, 113550),yx(402230, 113475),
-						yx(402508, 113492),yx(402583, 113567),yx(402552, 113883),yx(402477, 113958)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_i4D75 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_i8D75 := sequence2points(building_polygon_i8D75)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403354, 113661),yx(403211, 113655),yx(403158, 113633),yx(403136, 113580),yx(403161, 113351),yx(403183, 113298),yx(403338, 113211),yx(403391, 113189),yx(403444, 113211),yx(403466, 113264),
-						yx(403429, 113586),yx(403407, 113639),yx(403354, 113661),yx(402979, 113318),yx(402822, 113318),yx(402769, 113296),yx(402747, 113243),yx(402767, 112916),yx(402789, 112863),yx(402842, 112841),
-						yx(402986, 112874),yx(403039, 112896),yx(403061, 112949),yx(403054, 113243),yx(403032, 113296),yx(402979, 113318),yx(403233, 113124),yx(403180, 113102),yx(403158, 113049),yx(403151, 112906),
-						yx(403173, 112853),yx(403226, 112831),yx(403460, 112814),yx(403513, 112836),yx(403535, 112889),yx(403562, 113032),yx(403540, 113085),yx(403487, 113107),yx(403233, 113124),yx(403135, 113937),
-						yx(402945, 113934),yx(402892, 113912),yx(402870, 113859),yx(402884, 113696),yx(402906, 113643),yx(402959, 113621),yx(403152, 113652),yx(403205, 113674),yx(403227, 113727),yx(403210, 113862),
-						yx(403188, 113915),yx(403135, 113937),yx(402192, 112842),yx(402139, 112820),yx(402117, 112767),yx(402117, 112581),yx(402139, 112528),yx(402192, 112506),yx(402362, 112526),yx(402415, 112548),
-						yx(402437, 112601),yx(402481, 112764),yx(402459, 112817),yx(402406, 112839),yx(402192, 112842),yx(402477, 113958),yx(402213, 113931),yx(402160, 113909),yx(402138, 113856),yx(402155, 113550),
-						yx(402177, 113497),yx(402230, 113475),yx(402508, 113492),yx(402561, 113514),yx(402583, 113567),yx(402552, 113883),yx(402530, 113936),yx(402477, 113958)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_i8D75 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_i16D75 := sequence2points(building_polygon_i16D75)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403354, 113661),yx(403211, 113655),yx(403183, 113649),yx(403158, 113633),yx(403142, 113608),yx(403136, 113580),yx(403161, 113351),yx(403167, 113323),yx(403183, 113298),yx(403208, 113282),yx(403363, 113195),
-						yx(403391, 113189),yx(403419, 113195),yx(403444, 113211),yx(403460, 113236),yx(403466, 113264),yx(403429, 113586),yx(403423, 113614),yx(403407, 113639),yx(403382, 113655),yx(403354, 113661),yx(402979, 113318),
-						yx(402822, 113318),yx(402794, 113312),yx(402769, 113296),yx(402753, 113271),yx(402747, 113243),yx(402767, 112916),yx(402773, 112888),yx(402789, 112863),yx(402814, 112847),yx(402842, 112841),yx(402870, 112847),
-						yx(402871, 112847),yx(403014, 112880),yx(403039, 112896),yx(403055, 112921),yx(403061, 112949),yx(403054, 113243),yx(403048, 113271),yx(403032, 113296),yx(403007, 113312),yx(402979, 113318),yx(403233, 113124),
-						yx(403205, 113118),yx(403180, 113102),yx(403164, 113077),yx(403158, 113049),yx(403151, 112906),yx(403157, 112878),yx(403173, 112853),yx(403198, 112837),yx(403226, 112831),yx(403460, 112814),yx(403488, 112820),
-						yx(403513, 112836),yx(403529, 112861),yx(403535, 112889),yx(403556, 113004),yx(403562, 113032),yx(403556, 113060),yx(403540, 113085),yx(403515, 113101),yx(403487, 113107),yx(403233, 113124),yx(403135, 113937),
-						yx(402945, 113934),yx(402917, 113928),yx(402892, 113912),yx(402876, 113887),yx(402870, 113859),yx(402884, 113696),yx(402890, 113668),yx(402906, 113643),yx(402931, 113627),yx(402959, 113621),yx(403152, 113652),
-						yx(403180, 113658),yx(403205, 113674),yx(403221, 113699),yx(403227, 113727),yx(403210, 113862),yx(403204, 113890),yx(403188, 113915),yx(403163, 113931),yx(403135, 113937),yx(402192, 112842),yx(402164, 112836),
-						yx(402139, 112820),yx(402123, 112795),yx(402117, 112767),yx(402117, 112581),yx(402123, 112553),yx(402139, 112528),yx(402164, 112512),yx(402192, 112506),yx(402362, 112526),yx(402390, 112532),yx(402415, 112548),
-						yx(402431, 112573),yx(402475, 112736),yx(402481, 112764),yx(402475, 112792),yx(402459, 112817),yx(402434, 112833),yx(402406, 112839),yx(402192, 112842),yx(402477, 113958),yx(402213, 113931),yx(402185, 113925),
-						yx(402160, 113909),yx(402144, 113884),yx(402138, 113856),yx(402155, 113550),yx(402161, 113522),yx(402177, 113497),yx(402202, 113481),yx(402230, 113475),yx(402508, 113492),yx(402536, 113498),yx(402561, 113514),
-						yx(402577, 113539),yx(402583, 113567),yx(402552, 113883),yx(402546, 113911),yx(402530, 113936),yx(402505, 113952),yx(402477, 113958)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_i16D75 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_i4HV75 := sequence2points(building_polygon_i4HV75)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403429, 113661),yx(403279, 113661),yx(403136, 113655),yx(403136, 113505),yx(403161, 113276),yx(403316, 113189),yx(403466, 113189),yx(403466, 113339),yx(403429, 113661),yx(403054, 113318),yx(402904, 113318),
-						yx(402897, 113318),yx(402747, 113318),yx(402747, 113168),yx(402767, 112841),yx(402917, 112841),yx(403061, 112874),yx(403061, 113024),yx(403054, 113318),yx(403308, 113124),yx(403158, 113124),yx(403151, 112981),
-						yx(403151, 112831),yx(403385, 112814),yx(403535, 112814),yx(403562, 112957),yx(403562, 113107),yx(403308, 113124),yx(403210, 113937),yx(403060, 113937),yx(402870, 113934),yx(402870, 113784),yx(402884, 113621),
-						yx(403034, 113621),yx(403227, 113652),yx(403227, 113802),yx(403210, 113937),yx(402267, 112842),yx(402117, 112842),yx(402117, 112692),yx(402117, 112656),yx(402117, 112506),yx(402267, 112506),yx(402437, 112526),
-						yx(402481, 112689),yx(402481, 112839),yx(402267, 112842),yx(402552, 113958),yx(402402, 113958),yx(402138, 113931),yx(402138, 113781),yx(402155, 113475),yx(402305, 113475),yx(402583, 113492),yx(402583, 113642),
-						yx(402552, 113958)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_i4HV75 == 0' : 'all(test)';
-				}
 			}
 			container deflate
 			{
@@ -8239,50 +8050,35 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_deflated_50     (polygon, building) := polygon_deflated(building_ipoint, float64(50))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-				attribute<ipoint> building_deflated_d_4D50  (polygon, building) := polygon_deflated_i4D(building_ipoint, float64(35), float64(15))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-				attribute<ipoint> building_deflated_d_8D50  (polygon, building) := polygon_deflated_i8D(building_ipoint, float64(35), float64(15))
-				{
-					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
-					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
-				}
-				attribute<ipoint> building_deflated_d_16D50 (polygon, building) := polygon_deflated_i16D(building_ipoint, float64(35), float64(15))
+				attribute<ipoint> building_deflated_50     (polygon, building) := bp_polygon_deflated(building_ipoint, float64(50))
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
 
-				attribute<ipoint> building_polygon_d4D75  (polygon, building) :=  polygon_d4D(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d4D75  (polygon, building) :=  bp_polygon_d4D(building_ipoint, float64(75))
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_polygon_d8D75  (polygon, building) :=  polygon_d8D(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d8D75  (polygon, building) :=  bp_polygon_d8D(building_ipoint, float64(75))
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_polygon_d16D75  (polygon, building) :=  polygon_d16D(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d16D75  (polygon, building) :=  bp_polygon_d16D(building_ipoint, float64(75))
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_polygon_d4HV75  (polygon, building) :=  polygon_d4HV(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d4HV75  (polygon, building) := bp_polygon_d4HV(building_ipoint, float64(75))
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
 
 				parameter<bool> test_attr := 
-					   pointset/test_attr       && pointset_d_4D50/test_attr && pointset_d_8D50/test_attr && pointset_d_16D50/test_attr
+					   pointset/test_attr 
 					&& pointset_d4D75/test_attr && pointset_d8D75/test_attr  && pointset_d16D75/test_attr && pointset_d4HV75/test_attr;
 
 				unit<uint32> pointset := sequence2points(building_deflated_50)
@@ -8296,64 +8092,6 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					];
 					attribute<bool> test      := point == att_ok;
 					parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_d_4D50 := sequence2points(building_deflated_d_4D50)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403323, 113566),yx(403247, 113563),yx(403232, 113548),yx(403252, 113372),yx(403267, 113357),yx(403349, 113311),yx(403364, 113326),yx(403338, 113551),
-						yx(403323, 113566),yx(402946, 113225),yx(402856, 113225),yx(402841, 113210),yx(402857, 112958),yx(402872, 112943),yx(402952, 112961),yx(402967, 112976),
-						yx(402961, 113210),yx(402946, 113225),yx(403263, 113027),yx(403248, 113012),yx(403245, 112936),yx(403260, 112921),yx(403431, 112909),yx(403446, 112924),
-						yx(403460, 113000),yx(403445, 113015),yx(403263, 113027),yx(403104, 113843),yx(402980, 113841),yx(402965, 113826),yx(402973, 113735),yx(402988, 113720),
-						yx(403113, 113740),yx(403128, 113755),yx(403119, 113828),yx(403104, 113843),yx(402224, 112748),yx(402209, 112733),yx(402209, 112618),yx(402224, 112603),
-						yx(402333, 112616),yx(402348, 112631),yx(402375, 112731),yx(402360, 112746),yx(402224, 112748),yx(402446, 113860),yx(402247, 113840),yx(402232, 113825),
-						yx(402245, 113584),yx(402260, 113569),yx(402470, 113582),yx(402485, 113597),yx(402461, 113845),yx(402446, 113860)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_d_4D50 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_d_8D50 := sequence2points(building_deflated_d_8D50)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403323, 113566),yx(403247, 113563),yx(403237, 113558),yx(403232, 113548),yx(403252, 113372),yx(403257, 113362),yx(403338, 113316),yx(403339, 113316),
-						yx(403349, 113311),yx(403359, 113316),yx(403364, 113326),yx(403338, 113551),yx(403333, 113561),yx(403323, 113566),yx(402946, 113225),yx(402856, 113225),
-						yx(402846, 113220),yx(402841, 113210),yx(402857, 112958),yx(402862, 112948),yx(402872, 112943),yx(402952, 112961),yx(402962, 112966),yx(402967, 112976),
-						yx(402961, 113210),yx(402956, 113220),yx(402946, 113225),yx(403263, 113027),yx(403253, 113022),yx(403248, 113012),yx(403245, 112936),yx(403250, 112926),
-						yx(403260, 112921),yx(403431, 112909),yx(403441, 112914),yx(403446, 112924),yx(403460, 113000),yx(403455, 113010),yx(403445, 113015),yx(403263, 113027),
-						yx(403104, 113843),yx(402980, 113841),yx(402970, 113836),yx(402965, 113826),yx(402973, 113735),yx(402978, 113725),yx(402988, 113720),yx(403113, 113740),
-						yx(403123, 113745),yx(403128, 113755),yx(403119, 113828),yx(403114, 113838),yx(403104, 113843),yx(402224, 112748),yx(402214, 112743),yx(402209, 112733),
-						yx(402209, 112618),yx(402214, 112608),yx(402224, 112603),yx(402333, 112616),yx(402343, 112621),yx(402348, 112631),yx(402375, 112731),yx(402370, 112741),
-						yx(402360, 112746),yx(402224, 112748),yx(402446, 113860),yx(402247, 113840),yx(402237, 113835),yx(402232, 113825),yx(402245, 113584),yx(402250, 113574),
-						yx(402260, 113569),yx(402470, 113582),yx(402480, 113587),yx(402485, 113597),yx(402461, 113845),yx(402456, 113855),yx(402446, 113860)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_d_8D50 == 0' : 'all(test)';
-				}
-				unit<uint32> pointset_d_16D50 := sequence2points(building_deflated_d_16D50)
-				{
-					attribute<ipoint> att_ok:
-					[
-						yx(403323, 113566),yx(403247, 113563),yx(403242, 113561),yx(403237, 113558),yx(403234, 113553),yx(403232, 113548),yx(403252, 113372),yx(403254, 113367),
-						yx(403257, 113362),yx(403261, 113359),yx(403262, 113359),yx(403263, 113358),yx(403338, 113316),yx(403343, 113313),yx(403344, 113313),yx(403349, 113311),
-						yx(403354, 113313),yx(403359, 113316),yx(403362, 113321),yx(403364, 113326),yx(403338, 113551),yx(403336, 113556),yx(403333, 113561),yx(403328, 113564),
-						yx(403323, 113566),yx(402946, 113225),yx(402856, 113225),yx(402851, 113223),yx(402846, 113220),yx(402843, 113215),yx(402841, 113210),yx(402857, 112958),
-						yx(402859, 112953),yx(402862, 112948),yx(402867, 112945),yx(402872, 112943),yx(402952, 112961),yx(402957, 112963),yx(402962, 112966),yx(402965, 112971),
-						yx(402967, 112976),yx(402961, 113210),yx(402959, 113215),yx(402956, 113220),yx(402951, 113223),yx(402946, 113225),yx(403263, 113027),yx(403258, 113025),
-						yx(403253, 113022),yx(403250, 113017),yx(403248, 113012),yx(403245, 112936),yx(403247, 112931),yx(403250, 112926),yx(403255, 112923),yx(403260, 112921),
-						yx(403431, 112909),yx(403436, 112911),yx(403441, 112914),yx(403444, 112919),yx(403446, 112924),yx(403460, 113000),yx(403458, 113005),yx(403455, 113010),
-						yx(403450, 113013),yx(403445, 113015),yx(403263, 113027),yx(403104, 113843),yx(402980, 113841),yx(402975, 113839),yx(402970, 113836),yx(402967, 113831),
-						yx(402965, 113826),yx(402973, 113735),yx(402975, 113730),yx(402978, 113725),yx(402983, 113722),yx(402988, 113720),yx(403113, 113740),yx(403118, 113742),
-						yx(403123, 113745),yx(403126, 113750),yx(403128, 113755),yx(403119, 113828),yx(403117, 113833),yx(403114, 113838),yx(403109, 113841),yx(403104, 113843),
-						yx(402224, 112748),yx(402219, 112746),yx(402214, 112743),yx(402211, 112738),yx(402209, 112733),yx(402209, 112618),yx(402211, 112613),yx(402214, 112608),
-						yx(402219, 112605),yx(402224, 112603),yx(402333, 112616),yx(402338, 112618),yx(402343, 112621),yx(402346, 112626),yx(402347, 112630),yx(402348, 112631),
-						yx(402373, 112726),yx(402375, 112731),yx(402373, 112736),yx(402370, 112741),yx(402365, 112744),yx(402360, 112746),yx(402224, 112748),yx(402446, 113860),
-						yx(402247, 113840),yx(402242, 113838),yx(402237, 113835),yx(402234, 113830),yx(402232, 113825),yx(402245, 113584),yx(402247, 113579),yx(402250, 113574),
-						yx(402255, 113571),yx(402260, 113569),yx(402470, 113582),yx(402475, 113584),yx(402480, 113587),yx(402483, 113592),yx(402485, 113597),yx(402461, 113845),
-						yx(402459, 113850),yx(402456, 113855),yx(402451, 113858),yx(402446, 113860)
-					];
-					attribute<bool> test      := point == att_ok;
-					parameter<bool> test_attr := = isEmpty ? '#pointset_d_16D50 == 0' : 'all(test)';
 				}
 				unit<uint32> pointset_d4D75 := sequence2points(building_polygon_d4D75)
 				{
@@ -9504,7 +9242,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<uint32> par_without_values (nodeset) : [];
 					attribute<uint32> par                (nodeset) := = isEmpty ? 'par_without_values' : 'par_with_values';
 					
-					attribute<bool>   test(nodeset) := Partnr = par;
+					attribute<bool>   test(nodeset) := Part_rel = par;
 					parameter<bool>   test_attr     := all(test);
 				}
 				unit<uint32> strongly_connected_components := strongly_connected_components(F1, F2);
@@ -10641,7 +10379,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<float32> m;
 			unit<float32> coord_rd := m;
 			unit<fpoint>  point_rd_wms:
-				Format     = "EPSG:28992";
+				SpatialReference     = "EPSG:28992";
 			unit<fpoint>  point_rd    := range(point_rd_wms, point_yx(0f,250000f), point_yx(350000f,650000f)); 
 		
 			parameter<m> gridsize := 5[m];

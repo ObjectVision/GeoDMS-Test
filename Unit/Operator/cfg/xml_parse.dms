@@ -228,7 +228,7 @@ container xml_parse
 				unit<uint32> nonTrivialChild := select_with_org_rel((count != 1)[union_data(childCopy, parent_rel)])
 				{
 					attribute<child> child_rel := value(org_rel, child);
-					attribute<rdc_mm> union(poly,parent) := partitioned_union_polygon(geometry[child_rel], parent_rel[child_rel]);
+					attribute<rdc_mm> union(poly,parent) := bp_union_polygon(geometry[child_rel], parent_rel[child_rel]);
 				}
 			}
 			attribute<rdc_mm> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
