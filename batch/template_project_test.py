@@ -81,15 +81,10 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
 
-    # add experiments
-    regression.add_exp(exps, name=f"{result_folder_name}__git_repo_test1", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_folder}/{result_folder_name}/log/t010_operator_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/t010_operator_test.txt", indicator_results_file=f"{result_paths["results_folder"]}/t010_operator_test.txt")
-    regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Storage"
-    env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    regression.add_exp(exps, name=f"{result_folder_name}__git_repo_test2", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_folder}/{result_folder_name}/log/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["StoragePath"]} EsriShape/polygon/Write", exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt", file_comparison=(f"{regression_test_paths["TstDir"]}/Storage/data/polygon/area.*", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/Storage/regr_results/polygon/area.*"))
+    # add LUS demo to experiments
+    # indicator_results_file
+    regression.add_exp(exps, name=f"{result_folder_name}__LUS_git_test1", cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/LUS_git_test1.txt /{MT1} /{MT2} /{MT3} {regression_test_paths['OperatorPath']} @statistics Final_Results/A1_GE_Discr", exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/t010_operator_test.txt")
 
-    #regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/BAG20"
-    #env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    #regression.add_exp(exps, name=f"{result_folder_name}__git_repo_test3", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_folder}/{result_folder_name}/log/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["BAG20MakeSnapShotPath"]} snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage", exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt", file_comparison=(f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/BAG20/snapshot_Utrecht_20210701.gpkg", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/BAG20/snapshot_Utrecht_20210701.gpkg"))
 
     return exps
 
@@ -118,13 +113,13 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
     geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
-    geodms_paths["GeoDmsProfilerPath"] = "C:/Users/Cicada/dev/geodms/branches/geodms_v17/profiler/profiler.py" #geodms_profiler if geodms_profiler_env_key!=geodms_profiler else f"{geodms_paths["GeoDmsPath"]}/profiler.py"
-    geodms_paths["GeoDmsRegressionPath"] = "C:/Users/Cicada/dev/geodms/branches/geodms_v17/profiler/regression.py" #"C:/Users/Cicada/dev/geodms/branches/geodms_v17_profilerpy/profiler/regression.py" #f"{geodms_paths["GeoDmsPath"]}/regression.py"
+    geodms_paths["GeoDmsProfilerPath"] = geodms_profiler if geodms_profiler_env_key!=geodms_profiler else f"{geodms_paths["GeoDmsPath"]}/profiler.py" # "C:/Users/Cicada/dev/geodms/branches/geodms_v17/profiler/profiler.py"
+    geodms_paths["GeoDmsRegressionPath"] = f"{geodms_paths["GeoDmsPath"]}/regression.py" #"C:/Users/Cicada/dev/geodms/branches/geodms_v17/profiler/regression.py" 
     geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
 
-def run_project_test(git_repo:str="latest", version:str="18.0.1", MT1="S1", MT2="S2", MT3="S3"):
+def run_project_test(git_repo:str="latest", version:str="19.1.0", MT1="S1", MT2="S2", MT3="S3"):
     parser = argparse.ArgumentParser()
     parser.add_argument("-git_repo", help="Path to local git repo")
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
