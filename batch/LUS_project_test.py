@@ -6,6 +6,19 @@ import glob
 import shutil
 import importlib
 
+## input klant
+
+# geodms versie
+# sha-1 code
+# branch (afleiden?)
+# 
+# projdir lcoatie
+# local dir
+# sorucedata dir
+
+### EIND USER PARAMETERS
+
+
 def import_module_from_path(path):
     module_name = os.path.splitext(os.path.basename(path))[0]  # Extract "module" from "module.py"
     spec = importlib.util.spec_from_file_location(module_name, path)
@@ -36,20 +49,17 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["prj_snapshotsDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/prj_snapshots"
     regression_test_paths["BatchDir"] = str(os.getcwd()).replace("\\", "/")
     regression_test_paths["TstDir"] = str(Path(regression_test_paths["BatchDir"]).parent.absolute()).replace("\\", "/")
-    regression_test_paths["LUSDemo"] = f"C:/Users/Cicada/prj/LandUseModelling/lus_demo/cfg/demo.dms"
+    regression_test_paths["LUSDemo"] = f"C:/projdir/_archief/LandUseModelling/lus_demo/cfg/demo.dms"
     return regression_test_paths
 
 def update_result_folder_paths_with_git_repo() -> dict:
     return
 
-def add_experiment(exps:list, exp_name:str, local_machine_parameters:dict, geodms_paths:dict, env_vars, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str, local_git_repo:str=None) -> list:
+def add_experiment(exps:list, exp_name:str, geodms_cmd:str, result_folder:str, result_folder_name:str, local_machine_parameters:dict, geodms_paths:dict, env_vars, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str, local_git_repo:str=None) -> list:
     # override results_folder with added local_git_repo location if applicable
-    result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3, local_git_repo)
-    result_paths['results_folder'] = f"{result_paths["results_base_folder"]}/{result_folder_name}"
-    result_paths['results_log_folder'] = f"{result_paths["results_base_folder"]}/{result_folder_name}/log"
-    result_folder = result_paths["results_base_folder"]
 
-    regression.add_exp(exps, name=f"{result_folder_name}__{exp_name}", cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/{exp_name}.txt /{MT1} /{MT2} /{MT3} {regression_test_paths['LUSDemo']} @statistics Final_Results/A1_GE_Discr", exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/{exp_name}.txt")
+
+    regression.add_exp(exps, name=f"{result_folder_name}__{exp_name}", cmd=geodms_cmd, exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/{exp_name}.txt")
     exps 
 
 def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str, local_git_repo:str=None) -> list:
@@ -59,7 +69,26 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
 
     # add LUS demo to experiments
-    add_experiment(exps=exps, exp_name="A1_GE_Discr", local_machine_parameters=local_machine_parameters, geodms_paths=geodms_paths, env_vars=env_vars, regression_test_paths=regression_test_paths, result_paths=result_paths, version=version, MT1=MT1, MT2=MT2, MT3=MT3, local_git_repo="C:/Users/Cicada/prj/LandUseModelling")
+    local_git_repo="C:/projdir/_archief/LandUseModelling"
+    result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3, local_git_repo)
+    result_paths['results_folder'] = f"{result_paths["results_base_folder"]}/{result_folder_name}"
+    result_paths['results_log_folder'] = f"{result_paths["results_base_folder"]}/{result_folder_name}/log"
+    result_folder = result_paths["results_base_folder"]
+    exp_name="A1_GE_Discr"
+    add_experiment(exps=exps, \
+                   exp_name=exp_name,
+                   geodms_cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/{exp_name}.txt /{MT1} /{MT2} /{MT3} {regression_test_paths['LUSDemo']} @statistics Final_Results/A1_GE_Discr",
+                   result_folder=result_folder,
+                   result_folder_name=result_folder_name,
+                   local_machine_parameters=local_machine_parameters,
+                   geodms_paths=geodms_paths, 
+                   env_vars=env_vars, 
+                   regression_test_paths=regression_test_paths, 
+                   result_paths=result_paths, 
+                   version=version, 
+                   MT1=MT1, MT2=MT2, MT3=MT3, 
+                   local_git_repo=local_git_repo)
+    
     #regression.add_exp(exps, name=f"{result_folder_name}__A1_GE_Discr", cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/A1_GE_Discr.txt /{MT1} /{MT2} /{MT3} {regression_test_paths['LUSDemo']} @statistics Final_Results/A1_GE_Discr", exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/A1_GE_Discr.txt")
 
     return exps
