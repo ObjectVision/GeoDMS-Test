@@ -18,7 +18,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	{
 		parameter<bool> tests_all := tests_regression && File/results/tests;
 
-		parameter<bool> tests_regression:= 
+		parameter<bool> tests_regression:= tests_r1 && tests_r2 && tests_r3 && tests_r4 && tests_r5 && tests_r6;
+		
+		parameter<bool> tests_r1:= 
 			   Arithmetics/UnTiled/results/tests
 			&& Arithmetics/EunTiled/results/tests
 			&& Arithmetics/Tiled/results/tests
@@ -43,8 +45,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Aggregations/EUnTiled2Untiled/results/tests
 			&& Aggregations/EUnTiled2Untiled/reg_count/test_attr
 			&& Aggregations/ETiled2Untiled/results/tests
-			&& Aggregations/EUnTiled2Tiled/results/tests
-			&& Predicates/UnTiled/results/tests
+			&& Aggregations/EUnTiled2Tiled/results/tests;
+			
+		parameter<bool> tests_r2:= 
+			   Predicates/UnTiled/results/tests
 			&& Predicates/Tiled/results/tests
 			&& Predicates/EUnTiled/results/tests
 			&& Predicates/Etiled/results/tests
@@ -60,8 +64,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Relational/ETiled/results/tests
 			&& Relational/ResultUnitTiled/unique/test_attr
 			&& Relational/ResultUnitTiled/combine/test_attr
-			&& Relational/ResultUnitTiled/join_equal_values/test_attr
-			&& Classify/UnTiled2UnTiled/results/tests
+			&& Relational/ResultUnitTiled/join_equal_values/test_attr;
+			
+		parameter<bool> tests_r3:= 
+			   Classify/UnTiled2UnTiled/results/tests
 			&& Classify/Tiled2UnTiled/results/tests
 			&& Classify/EunTiled/results/tests
 			&& Rescale/UnTiled2UnTiled/results/tests
@@ -84,8 +90,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Point/EUnTiled2Tiled/results/tests
 			&& Point/ETiled2UnTiled/results/tests
 			&& Point/ETiled2Tiled/results/tests
-			&& Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/test_attr
-			&& Sequence/UnTiled/canyon/test_attr
+			&& Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/test_attr;
+			
+		parameter<bool> tests_r4:= 
+			   Sequence/UnTiled/canyon/test_attr
 			&& Sequence/UnTiled/canyon_empty/test_attr
 			&& Sequence/UnTiled/results/tests
 			&& Sequence/Tiled/results/tests
@@ -96,7 +104,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Sequence/UnTiled/poly2allgrids/test_all
 			&& Sequence/UnTiled/poly2allgrids_uint64/test_all
 			
-			&& Network/UnTiled/results/tests
+			;
+		parameter<bool> tests_r5:= 
+			   Network/UnTiled/results/tests
 			&& Network/Tiled/results/tests
 			&& Network/EunTiled/results/tests
 			&& Network/ETiled/results/tests
@@ -112,8 +122,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Matrix/UnTiled/results/tests
 			&& Matrix/Tiled/results/tests
 			&& Matrix/ETiled/results/tests
-			&& Matrix/EunTiled/results/tests
-			&& String/UnTiled/results/tests
+			&& Matrix/EunTiled/results/tests;
+			
+		parameter<bool> tests_r6:= 
+			   String/UnTiled/results/tests
 			&& String/Tiled/results/tests
 			&& String/EUnTiled/results/tests
 			&& String/ETiled/results/tests
