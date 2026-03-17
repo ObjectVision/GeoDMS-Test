@@ -5,6 +5,8 @@ from pathlib import Path
 import glob
 import shutil
 import importlib
+import subprocess
+from urllib.parse import urlparse
 
 ## input klant
 
@@ -18,6 +20,13 @@ import importlib
 
 ### EIND USER PARAMETERS
 
+def define_userinput():
+    geodms_versie = "19.1.0"
+    git_repository_url = "git@github.com:ObjectVision/LandUseModelling.git"
+    sha_1 = "d064312" # https://github.com/ObjectVision/LandUseModelling/commits/main/
+    projdir = "C:/Users/Cicada/prj/tmp" 
+    localdatadir = "C:/LocalData/"
+    return (geodms_versie, git_repository_url, sha_1, projdir, localdatadir)
 
 def import_module_from_path(path):
     module_name = os.path.splitext(os.path.basename(path))[0]  # Extract "module" from "module.py"
@@ -69,7 +78,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
 
     # add LUS demo to experiments
-    local_git_repo="C:/projdir/_archief/LandUseModelling"
+    #local_git_repo="C:/projdir/_archief/LandUseModelling"
     result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3, local_git_repo)
     result_paths['results_folder'] = f"{result_paths["results_base_folder"]}/{result_folder_name}"
     result_paths['results_log_folder'] = f"{result_paths["results_base_folder"]}/{result_folder_name}/log"
@@ -77,7 +86,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     exp_name="A1_GE_Discr"
     add_experiment(exps=exps, \
                    exp_name=exp_name,
-                   geodms_cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/{exp_name}.txt /{MT1} /{MT2} /{MT3} {regression_test_paths['LUSDemo']} @statistics Final_Results/A1_GE_Discr",
+                   geodms_cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/{exp_name}.txt /{MT1} /{MT2} /{MT3} {local_git_repo}/lus_demo/cfg/demo.dms @statistics Final_Results/A1_GE_Discr",
                    result_folder=result_folder,
                    result_folder_name=result_folder_name,
                    local_machine_parameters=local_machine_parameters,
@@ -164,5 +173,79 @@ def run_project_test(git_repo:str="latest", version:str="19.1.0", MT1="S1", MT2=
 
     return
 
+def clone_gitrepo_sha1(git_repository_url: str, sha_1: str, projdir: str):
+    if not git_repository_url or not git_repository_url.strip():
+        raise ValueError("git_repository_url must be a non-empty string")
+    if not sha_1 or not sha_1.strip():
+        raise ValueError("sha_1 must be a non-empty string")
+    if not projdir or not projdir.strip():
+        raise ValueError("projdir must be a non-empty string")
+
+    git_repository_url = git_repository_url.strip()
+    sha_1 = sha_1.strip()
+
+    # Create projdir recursively if needed.
+    parent_dir = Path(projdir).expanduser().resolve()
+    parent_dir.mkdir(parents=True, exist_ok=True)
+
+    # Derive repository name from URL.
+    # Works for e.g.
+    # - https://github.com/user/repo.git
+    # - https://github.com/user/repo
+    # - git@github.com:user/repo.git
+    repo_part = git_repository_url.rstrip("/")
+
+    if repo_part.endswith(".git"):
+        repo_part = repo_part[:-4]
+
+    if "://" in repo_part:
+        parsed = urlparse(repo_part)
+        git_repository_name = Path(parsed.path).name
+    else:
+        # Handle SCP-like SSH syntax: git@host:user/repo
+        git_repository_name = Path(repo_part.split(":")[-1]).name
+
+    if not git_repository_name:
+        raise ValueError(
+            f"Could not determine repository name from URL: {git_repository_url}"
+        )
+
+    clone_dir = parent_dir / f"{git_repository_name}_{sha_1}"
+
+    if not clone_dir.exists():
+        def run_git(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
+            try:
+                return subprocess.run(
+                    ["git", *args],
+                    cwd=str(cwd) if cwd else None,
+                    check=True,
+                    text=True,
+                    capture_output=True,
+                )
+            except subprocess.CalledProcessError as e:
+                stderr = e.stderr.strip() if e.stderr else ""
+                stdout = e.stdout.strip() if e.stdout else ""
+                msg = f"Git command failed: git {' '.join(args)}"
+                if stderr:
+                    msg += f"\nstderr: {stderr}"
+                if stdout:
+                    msg += f"\nstdout: {stdout}"
+                raise RuntimeError(msg) from e
+            except FileNotFoundError as e:
+                raise RuntimeError("git executable not found in PATH") from e
+
+        # Clone first, then check out the requested commit.
+        # This reliably supports short SHAs as long as the commit is reachable after clone.
+        run_git("clone", git_repository_url, str(clone_dir))
+        run_git("checkout", sha_1, cwd=clone_dir)
+
+    return str(clone_dir).replace("\\", "/")
+
+def run_project_test_from_user_input():
+    geodms_versie, git_repository_url, sha_1, projdir, localdatadir = define_userinput()
+    git_repo = clone_gitrepo_sha1(git_repository_url, sha_1, projdir)
+    run_project_test(git_repo=git_repo, version=geodms_versie)
+
 if __name__=="__main__":
-    run_project_test()
+    #run_project_test()
+    run_project_test_from_user_input()
