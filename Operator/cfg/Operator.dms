@@ -11258,9 +11258,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<string> NewLine         : [ '\n' ];
 
 				parameter<string> ComSpec         := Expand(., '%env:ComSpec%');
-				parameter<string> FileNameDirInfo := '%LocalDataDir%/Operator/dirinfo.str';
+				parameter<string> FileNameDirInfo:= '%LocalDataDir%/Operator/dirinfo.str';
+				parameter<string> QuotedFileNameDirInfo := DQuote(FileNameDirInfo);
 
-				parameter<string> DirCmdOrg       := Expand(., 'dir %projDir%/data/*.shp > ' + FileNameDirInfo);
+				parameter<string> DirCmdOrg       := Expand(., 'dir %projDir%/data/*.shp > ' + QuotedFileNameDirInfo);
 				parameter<string> DirCmd          := Replace(DirCmdOrg, Slash, BackSlash) + ' /B /S /A-D';
 			}
 
