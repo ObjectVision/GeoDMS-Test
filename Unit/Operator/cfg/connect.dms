@@ -20,14 +20,17 @@ container connect
 	{
 		attribute<SourceData/arc> src_arc_rel  := rjoin(id(.), SourceData/point/key[connect_point_arc], SourceData/point/arc_rel);
 
-		attribute<bool> isOK  := switch(
+		attribute<bool> isOK  :=
+		switch(
 			  case(id(.)[SourceData/arc] < 3892[.]                , arc_rel == id(.)[SourceData/arc])
 			, case(id(.)[SourceData/arc] > 3891[.] && id(.) < 3902[.], isNull(arc_rel))
-			, arc_rel == src_arc_rel
+			, true
 			);
+			
+		parameter<bool> count_isOK  := sum_uint32(IsDefined(src_arc_rel)) == 10;
 	}
 
-	parameter<bool>   test     := all(connect_point_arc/isOK);
+	parameter<bool>   test     := all(connect_point_arc/isOK) && connect_point_arc/count_isOK;
 	parameter<string> test_log := test 
 		? '' 
 		: 'Connect point to arc Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
