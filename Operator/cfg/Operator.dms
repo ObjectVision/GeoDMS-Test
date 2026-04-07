@@ -9060,9 +9060,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>        att_ok_without_values : [];
 				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
 				
-				attribute<bool>     test      := float_isNearby(length, att_ok, Dif_all_float32);
+				attribute<bool>     test      := float_isNearby(sort(length), sort(att_ok), Dif_all_float32);
 				parameter<bool>     test_attr := all(test);
-				attribute<uint32>   test2 := org_rel;
+				attribute<uint32>   test2 := arc_rel;
 			}
 			unit<uint32> connect_null_values := connect(source/road/line, source/location/location_with_undefined_values)
 			,	url  = "http://www.objectvision.nl/dms/Operator/connect.htm"
@@ -9072,7 +9072,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>        att_ok_with_values    : [92.6592,3059.36,190.762,220.466,56.5077,180.794,63.0789,79.4272,610.393,2048.6,688.6,41.7082,909.256,18.6665,137.238];
 				attribute<m>        att_ok_without_values : [];
 				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
-				attribute<bool>     test                  := float_isNearby(length, att_ok, Dif_all_float32);
+				attribute<bool>     test                  := float_isNearby(sort(length), sort(att_ok), Dif_all_float32);
 				parameter<bool>     test_attr             := all(test);
 			}
 			container connect_arc_length_zero
@@ -9105,7 +9105,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>        att_ok_with_values    : [1001.92,88.7168,2927.96,3477.54,119.523,2986.08,180.794,131.008,698.646,79.4272,610.393,901.292,13.309,1273.66,41.7082,496.631,285.753,18.6665,137.238];
 				attribute<m>        att_ok_without_values : [];
 				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
-				attribute<bool>     test      := float_isNearby(length, att_ok, Dif_all_float32);
+				attribute<bool>     test      := float_isNearby(sort(length), sort(att_ok), Dif_all_float32*10f);
 				parameter<bool>     test_attr := all(test);
 			}
 			unit<uint32> connect_ne := connect_ne(source/road/line, source/road/streetcode, source/location/location, source/location/streetcode)
@@ -9116,7 +9116,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<m>        att_ok_with_values    : [92.6592,3238.31,190.762,220.466,710.303,56.5077,2792.59,158.221,63.0789,79.4272,2528.03,2048.6,518.231,688.6,391.025,18.6665];
 				attribute<m>        att_ok_without_values : [];
 				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
-				attribute<bool>     test      := float_isNearby(length, att_ok, Dif_all_float32);
+				attribute<bool>     test      := float_isNearby(sort(length), sort(att_ok), Dif_all_float32);
 				parameter<bool>     test_attr := all(test);
 			}
 			container connected_info := connect_info(source/Road/Line, source/location/location)
