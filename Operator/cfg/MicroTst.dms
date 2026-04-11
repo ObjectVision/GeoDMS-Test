@@ -13,6 +13,22 @@
 
 container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97", 
 {
+	container check
+	{
+		container x { parameter<uint32> i := 1; }
+		container y { parameter<uint32> i := 2; }
+		
+		container StateNaAllocatie0 := ='x', IntegrityCheck = "true"
+																			, Descr = "Check op genoeg iteraties. Is het stop criterium wel bereikt? 
+																						Oftewel, is er in de laatste iter niks meer gealloceerd, en de claim wel gehaald, of geen geschikte locaties meer over?" //TO DO: nu staat dit feitelijk uitgeschakeld doordat het op statisch staat.
+		{
+			parameter<uint32> TotalI := i;
+		}
+		
+//		container StateNaAllocatie_P := PhaseContainer(StateNaAllocatie0, 'Finished '+Sector_name+' in '+AllocRegio_name+' with total overlow of: '+string(StateNaAllocatie0/TotalOverFlow));
+//		container StateNaAllocatie   := =ModelParameters/UsePhaseContainer ? 'StateNaAllocatie_P' : 'StateNaAllocatie0';
+		container StateNaAllocatie   := ='StateNaAllocatie0';
+	}
 	container MetriekConversie
 	{
 		unit<Float32>     Meter            := BaseUnit('m', float32);
@@ -47,6 +63,10 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		}
 
 		container Sequence_later_container := for_each_nedv(Sequence_later/name, 'string('+string(ID(Sequence_later))+')', void, string) ;
+		
+		unit<uint32> issue_317_unit:= range(0, 3);
+
+		container issue_317 := for_each_nedv(Sequence_later/name, 'string('+string(ID(issue_317_unit))+')', void, string) ;
 
 		container x :=  1+2;
 		
@@ -71,6 +91,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<string> id_sqr_str := 'Square of '+string(id(.))+ ' is '+string(id_sqr);
 		}
 	}
+	parameter<uint32> negTest: [ -3 ];
 	container issue_130_readback : StorageName = "%LocalDataProjDir%/First.mmd", StorageReadOnly = "true";
 	container sum_uint32_selcount
 	{
@@ -308,6 +329,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<float32> attDNum := float32(attD);
 		}
 		unit<uint32> TestIssue583 :=  select_with_attr_by_cond(src, uint64(src/attANum) == 3100000117486u64);
+		attribute<float32> test_issue203(src) := MakeDefined(src/attANum, TestIssue583/attANum);
 	}
 	parameter<string> abc := 'a' + 'b' + 'c';
 	container GridCoordinatesOutOfRange
@@ -806,6 +828,10 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	
 	container DivByZero
 	{
+		unit<uint32> pand2: nrofrows = 1, IntegrityCheck = "True"
+		{
+			attribute<string> identificatie   : ['2'];
+		}
 		unit<uint32> pand: nrofrows = 1, IntegrityCheck = "False"
 //		,	StorageName = "='%LocalDataProjDir%/bladen/'+ AHNSet +'/pand/' + bladname + '.fss'"
 		{
@@ -926,6 +952,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	{
 		parameter<Float64> x: expr = "value('33.9', Float64)";
 	}
+	container issue_1075 := BackGroundLayer/district/hoek/xxxxx/yyyyy + 3;
+	container issue_1075b := BackGroundLayer/district/hoek/xxxxx/yyyyy;
+	
 	container UndefTest {
 		parameter<Float32> Undef: Expr = "Float32( 0 / 0 )";
 		parameter<Float32> t1: expr = "min_elem(Undef, Float32(3))"; // 3
@@ -1726,6 +1755,9 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			}
 //			attribute<uint32> hoek:          [100,300,500,700,900,1200,1500], DialogType = "LabelAngle", cdf = "hoek_classes/classBreaks";
 			attribute<int32> hoek:          [-100,-300,5, 700,900,1200,1500];
+			attribute<uint32> hoek2:          [0,1,0, 1,2,3,4];
+			unit<uint8> hoekwaarden := range(0b, 6b);
+			attribute<hoekwaarden> hoek_uint8 := uint8(hoek2);
 			unit<uint16> unique_hoek := unique_uint16(hoek);
 			attribute<unique_hoek> unique_hoek_rel := rlookup(hoek, unique_hoek/values);
 //			attribute<float32> float_hoek := float32(hoek)+4;
