@@ -4,15 +4,7 @@ ActivateItem "/BackGroundLayer/district/hoek"
 DefaultView
 WAIT 1000
 
-WAIT 3000 // let classBreaks compute, WMS tiles download, and MapControl::UpdateView populate LayerControl
-
-// Copy MapView viewport to clipboard/file while MapView is still the active DataView
-// WM_COMMAND (273) with wParam=18 triggers TB_Copy (Copy Viewport Contents to Clipboard)
-SEND 3 2 273 18
-WAIT 500
-// Copy LayerControl to clipboard/file (TB_CopyLC = 19)
-SEND 3 2 273 19
-WAIT 500
+WAIT 100 // let MapControl::UpdateView go first in order to populate the layer control
 
 // Send cmd 4 (WM_COPYDATA->MdiChild) => ActiveDataView.ActiveControl.PopupMenu."Edit Palette"
 // code 1 (activates popup menu on active control) and menu item list {12}: Edit Palette
@@ -52,5 +44,10 @@ SEND 4 2 1 7
 WAIT 1000
 
 WAIT 5000
+
+// Copy MapView viewport contents to clipboard (TB_Copy = 18)
+SEND 3 2 273 18
+WAIT 3000
+
 // Send cmd 1 (WM->Main) 16 represents WM_CLOSE.
 SEND 1 3 16 0 0
