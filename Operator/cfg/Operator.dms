@@ -150,12 +150,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		,	storagename = "%localDataProjDir%/regr_results/operator.txt";
 
 
-		parameter<string> unit_test_log := tests_regression 
-			? '' 
+		parameter<string> unit_test_log := tests_regression
+			? ''
 			: 'Operator Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(tests_regression, 'fullname') + ' result: not OK'
 		,	StorageType = "str"
 		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/operator.txt";
-
 
 		container Regression
 		{
@@ -3025,7 +3024,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<uint32>         countNrInhabitants:      [1,2,1,1,0];
 				attribute<uint32>         pcountRegionNr:          [1,2,1,2,0];
 				attribute<uint32>         minNrInhabitants:        [550,500,300,200,4294967294]; // MAX_VALUE(UInt32) decremented by 1 in GeoDMS 6.061 to be consistent with http://wiki.objectvision.nl/index.php/Value_Types
-				attribute<string>         minCityName:             ['Amsterdam','DenHaag','Utrecht','Eindhoven','ÿÿÿÿ'];
+				attribute<string>         minCityName:             ['Amsterdam','DenHaag','Utrecht','Eindhoven','\xFF\xFF\xFF\xFF'];
 				attribute<uint32>         minIndex:                [1, 4, 3, 5, null];
 				attribute<uint32>         maxNrInhabitants:        [550,525,300,200,0];
 				attribute<uint32>         maxIndex:                [1, 2, 3, 5, null];
@@ -3102,7 +3101,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				parameter<uint32> count              : [ 0 ]; // without the 0, count is initialized as null since GeoDms 8.xxx
 				parameter<uint32> minNrInhabitants   : [4294967294]; // MAX_VALUE(UInt32) decremented by 1 in GeoDMS 6.061 to be consistent with http://wiki.objectvision.nl/index.php/Value_Types
-				parameter<string> minCityName        : ['ÿÿÿÿ'];
+				parameter<string> minCityName        : ['\xFF\xFF\xFF\xFF'];
 				parameter<uint32> minIndex           := 0 / 0;
 				parameter<uint32> maxNrInhabitants   : [0]; // without the 0, count is initialized as null since GeoDms 8.xxx
 				parameter<string> maxCityName        : ['']; // without the '', count is initialized as null since GeoDms 8.xxx
