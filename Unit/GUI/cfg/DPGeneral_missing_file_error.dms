@@ -11,8 +11,11 @@ container SubItem
 	parameter<String> ProjDir_local_path           := expand(.,'%projdir%');
 	parameter<String> norm                         := replace(norm_with_replace_characters,'@projdir@',ProjDir_local_path);
 
+	parameter<String> UserName          := expand(., '%UserName%');
+	parameter<String> result_normalized := replace(replace(result, ProjDir_local_path, '@projdir@'), UserName, '@USERNAME@');
+
 	parameter<String> linebreak:= '\n';
-	parameter<Bool>   test     := trim(result) == trim(norm);
+	parameter<Bool>   test     := trim(result_normalized) == trim(norm_with_replace_characters);
 	parameter<String> test_log := test 
 		? '' 
 		: replace('Detail Page General Missing file Error test: ' 
