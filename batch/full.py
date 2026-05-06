@@ -1,8 +1,10 @@
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
 import importlib
+import importlib.util
 #from generic.regression import *
 import glob
 import shutil
@@ -18,17 +20,48 @@ def import_module_from_path(path):
     globals()[module_name] = module  # Inject into global namespace
     spec.loader.exec_module(module)
 
+# Machine-specific paths live in batch/local_settings.json (gitignored).
+# A template is committed as batch/local_settings.json.template — copy it
+# to local_settings.json once per working copy and adjust drive letters /
+# user names. Each key may also be overridden via an environment variable
+# of the same name (env wins over file wins over built-in default).
+_BUILT_IN_DEFAULTS = {
+    "RegressionTestsSourceDataDir": "C:/SourceData/RegressionTests",
+    "RegressionTestsAltSourceDataDir": "D:/SourceData",
+    "LocalDataDir": "C:/LocalData",
+    "ProfilerDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
+    "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
+}
+
+def _load_local_settings() -> dict:
+    """Resolve machine-specific paths from local_settings.json + env vars + defaults."""
+    settings = dict(_BUILT_IN_DEFAULTS)
+    settings_path = Path(__file__).resolve().parent / "local_settings.json"
+    if settings_path.exists():
+        with open(settings_path, "r", encoding="utf-8") as f:
+            file_settings = json.load(f)
+        for k in _BUILT_IN_DEFAULTS:
+            if k in file_settings:
+                settings[k] = file_settings[k]
+    for k in _BUILT_IN_DEFAULTS:
+        env_value = os.environ.get(k)
+        if env_value:
+            settings[k] = env_value
+    return settings
+
 def get_local_machine_parameters() -> dict:
+    s = _load_local_settings()
     local_machine_parameters = {}
-    # user adaptable
-    #local_machine_parameters["SourceDataDir"] = "E:/SourceData"
-    local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"] = "C:/SourceData/RegressionTests"
-    local_machine_parameters["RegressionTestsAltSourceDataDir"] = "D:/SourceData"
-    local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"] = "C:/LocalData"
+    local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"] = s["RegressionTestsSourceDataDir"]
+    local_machine_parameters["RegressionTestsAltSourceDataDir"] = s["RegressionTestsAltSourceDataDir"]
+    local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"] = s["LocalDataDir"]
 
     # derived
     local_machine_parameters["LocalDataDirRegression"] = f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/regression"
     local_machine_parameters["tmpFileDir"] = f"{local_machine_parameters["LocalDataDirRegression"]}/log"
+    # Pass through additional roots used by get_geodms_paths.
+    local_machine_parameters["ProfilerDir"] = s["ProfilerDir"]
+    local_machine_parameters["LocalBuildDir"] = s["LocalBuildDir"]
     return local_machine_parameters
 
 def get_regression_test_paths(local_machine_parameters:dict) -> dict:
@@ -187,11 +220,19 @@ def remove_local_data_dir_regression(local_data_regression_folder:str):
 
 def get_geodms_paths(version:str) -> dict:
     assert(version)
+    s = _load_local_settings()
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
-    geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
-    geodms_paths["GeoDmsProfilerPath"] = f'C:/Users/Cicada/dev/geodms/branches/geodms_v18/profiler/profiler.py'
-    geodms_paths["GeoDmsRegressionPath"] = f'C:/Users/Cicada/dev/geodms/branches/geodms_v18/profiler/regression.py'
+    # version="local" resolves to the just-built CMake Release tree under
+    # LocalBuildDir, so the regression suite can run against the working copy
+    # without first installing an NSIS package. Any other value resolves to
+    # an installed GeoDms{version} under %ProgramFiles%/ObjectVision/.
+    if version == "local":
+        geodms_paths["GeoDmsPath"] = f"\"{s["LocalBuildDir"]}\""
+    else:
+        geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
+    geodms_paths["GeoDmsProfilerPath"] = f"{s["ProfilerDir"]}/profiler.py"
+    geodms_paths["GeoDmsRegressionPath"] = f"{s["ProfilerDir"]}/regression.py"
     geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
     return geodms_paths
