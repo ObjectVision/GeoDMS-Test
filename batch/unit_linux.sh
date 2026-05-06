@@ -52,6 +52,7 @@ mkdir -p "$RESULT_DIR/unit/Template"
 source "$BATCH_DIR/unit/instance.sh"
 source "$BATCH_DIR/unit/instance_error_is_ok.sh"
 source "$BATCH_DIR/unit/statistics.sh"
+source "$BATCH_DIR/unit/gui_instance.sh"
 
 # ---------------------------------------------------------------------------
 # Clean old results
@@ -82,25 +83,52 @@ echo "Unit Test Results for: $GEODMS_RUN_PATH" > "$RESULT_FILENAME"
 echo "" >> "$RESULT_FILENAME"
 
 # ---------------------------------------------------------------------------
-# GUI tests — skip if no display is available
+# GUI tests — same set as Windows unit_flagged.bat (MapViewClassification,
+# DPGeneral GUI parts that write the .tmp baselines, then GeoDmsRun parts that
+# verify them). Skip if no display is available.
 # ---------------------------------------------------------------------------
 if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
     export GEODMS_DIRECTORIES_LOCALDATAPROJDIR="$LOCAL_DATA_DIR_REGRESSION/gui"
-    # DPGeneral tests require .tmp baselines written by a prior GUI run; skip if absent.
-    if [[ -f "$RESULT_DIR/Unit/GUI/DPGeneral_explicit_supplier_error.tmp" ]]; then
+
+    GUI_RESULT_DIR="$RESULT_DIR/Unit/GUI"
+    mkdir -p "$GUI_RESULT_DIR"
+
+    # MapViewClassification: opens DefaultView on a polygon layer, copies viewport,
+    # exercises Edit Palette / Classify dialogs (Win32 SEND opcodes — most are
+    # no-ops on Linux until the SEND code 4 path is implemented).
+    gui_instance "$TST_DIR/dmsscript/MapViewClassification.dmsscript" \
+                 "$TST_DIR/Operator/cfg/MicroTst.dms" \
+                 "$RESULT_DIR/unit/gui/MicroTst_error.txt" \
+                 $flag1 $flag2 $flag3
+
+    # DPGeneral_explicit_supplier_error: GUI part writes .tmp, Run part verifies.
+    rm -f "$GUI_RESULT_DIR/DPGeneral_explicit_supplier_error.tmp"
+    gui_instance "$TST_DIR/dmsscript/DPGeneral_explicit_supplier_error.dmsscript" \
+                 "$TST_DIR/Unit/GUI/cfg/DPGeneral_explicit_supplier_error.dms" \
+                 "" \
+                 $flag1 $flag2 $flag3
+    if [[ -f "$GUI_RESULT_DIR/DPGeneral_explicit_supplier_error.tmp" ]]; then
         geodms_instance "$TST_DIR/Unit/GUI/cfg/DPGeneral_explicit_supplier_error.dms" test_log \
             "$RESULT_DIR/unit/gui/DPGeneral_ES_error.txt" $flag1 $flag2 $flag3
     else
-        echo "NOTE: DPGeneral_explicit_supplier_error.tmp missing — skipping (run GUI first)"
-        echo "NOTE: DPGeneral_explicit_supplier_error skipped (no GUI baseline .tmp)" >> "$RESULT_FILENAME"
+        echo "NOTE: DPGeneral_explicit_supplier_error.tmp missing after GUI run — skipping verify"
+        echo "NOTE: DPGeneral_explicit_supplier_error verify skipped (no .tmp produced)" >> "$RESULT_FILENAME"
     fi
-    if [[ -f "$RESULT_DIR/Unit/GUI/DPGeneral_missing_file_error.tmp" ]]; then
+
+    # DPGeneral_missing_file_error: same pattern.
+    rm -f "$GUI_RESULT_DIR/DPGeneral_missing_file_error.tmp"
+    gui_instance "$TST_DIR/dmsscript/DPGeneral_missing_file_error.dmsscript" \
+                 "$TST_DIR/Unit/GUI/cfg/DPGeneral_missing_file_error.dms" \
+                 "" \
+                 $flag1 $flag2 $flag3
+    if [[ -f "$GUI_RESULT_DIR/DPGeneral_missing_file_error.tmp" ]]; then
         geodms_instance "$TST_DIR/Unit/GUI/cfg/DPGeneral_missing_file_error.dms" test_log \
             "$RESULT_DIR/unit/gui/DPGeneral_MF_error.txt" $flag1 $flag2 $flag3
     else
-        echo "NOTE: DPGeneral_missing_file_error.tmp missing — skipping (run GUI first)"
-        echo "NOTE: DPGeneral_missing_file_error skipped (no GUI baseline .tmp)" >> "$RESULT_FILENAME"
+        echo "NOTE: DPGeneral_missing_file_error.tmp missing after GUI run — skipping verify"
+        echo "NOTE: DPGeneral_missing_file_error verify skipped (no .tmp produced)" >> "$RESULT_FILENAME"
     fi
+
     geodms_instance "$TST_DIR/Unit/GUI/cfg/background_layer.dms" test_log \
         "$RESULT_DIR/unit/gui/background_layer_error.txt" $flag1 $flag2 $flag3
 else
