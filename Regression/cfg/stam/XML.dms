@@ -71,9 +71,10 @@ container XML
 				parameter<bool> strcount_0       := sum(strcount(all/pand_id,'0')) == 38691899;
 
 				parameter<float64> dif := 0.99d;
-				parameter<bool> area_id_0        := float_isNearby(all/area[0]      , -312.912538,  dif);
-				parameter<bool> area_id_500000   := float_isNearby(all/area[500000] ,  -32.681908,  dif);
-				parameter<bool> area_id_1000000  := float_isNearby(all/area[1000000],  -57.6939875, dif);
+				parameter<bool> area_id_0        := float_isNearby(all/area[0]      , 312.912538,  dif);
+				parameter<bool> area_id_500000   := float_isNearby(all/area[500000] ,  32.681908,  dif);
+				parameter<bool> area_id_1000000  := float_isNearby(all/area[1000000],  57.6939875, dif);
+				parameter<float64> mean_intermediate := mean(all/area);
 				parameter<bool> meanarea         := float_isNearby(mean(all/area)   , -253.061977,  dif);
 
 				parameter<bool> result           := pand_id_0 && pand_id_500000 && pand_id_1000000 && strcount_0 && area_id_0 && area_id_500000 && area_id_1000000 && meanarea;
@@ -210,12 +211,12 @@ container XML
 				}
 				unit<uint32> coordinates := sequence2points(union_data(posListUnit, f64_sequence));
 	
-				unit<uint32> p := select_with_org_rel(coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/SequenceNr] == 0)
+				unit<uint32> p := select_with_org_rel(coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/sequence_rel] == 0)
 				{
 					attribute<float64>     x    := coordinates/point[org_rel  ];
 					attribute<float64>     y    := coordinates/point[org_rel+1];
 					attribute<rdc_mm>      p_mm := point_yx(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
-					attribute<posListUnit> s    := coordinates/SequenceNr[org_rel];
+					attribute<posListUnit> s    := coordinates/sequence_rel[org_rel];
 					attribute<uint32>      fo   := coordinates/ordinal[org_rel] / posListUnit/nrCoordPerPoint[s]; // forward winding
 					attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding
 				}

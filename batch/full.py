@@ -140,6 +140,7 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["RSLRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSL_2020/cfg/regression_test.dms"
     regression_test_paths["RSLight_2020Path"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSLight_2020/cfg/Regression_test.dms"
     regression_test_paths["HestiaRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/Hestia2024/Runs/HestiaRun.dms"
+    regression_test_paths["HestiaDevelopment"] = f"{regression_test_paths["prj_snapshotsDir"]}/model-hestia-development.main_18_0_4/Runs/HestiaRun.dms"
 
     regression_test_paths["TwoUPRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/2UP/cfg/stam.dms"
     regression_test_paths["TwoBURPRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/2BURP/cfg/main.dms"
@@ -267,6 +268,12 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t1742_command_statistics_stat.html"
     reference_statfile = f"{regression_test_paths["TstDir"]}/norm/Statistics_AUAA.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t1742_command_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t1742_command_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} @statistics /Arithmetics/UnTiled/add/attr @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1742_command_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
+    
+    # hestia development
+    # /Jaarreeksen/hWP_asl
+    generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t2000_hestia_hWP_asl_statistics.html"
+    reference_statfile = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/HESTIA_dev/t2000_hestia_hWP_asl_statistics.html"
+    regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} @statistics /Jaarreeksen/hWP_asl @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     return exps
 
 def remove_local_data_dir_regression(local_data_regression_folder:str):
@@ -329,7 +336,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt{exe}"
     return geodms_paths
 
-def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3"):
+def run_full_regression_test(version:str="19.3.0", MT1="S1", MT2="S2", MT3="S3"):
     parser = argparse.ArgumentParser()
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
     parser.add_argument("-MT1", help="Multithreading 1: S1 or C1")
