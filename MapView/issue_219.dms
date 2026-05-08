@@ -14,10 +14,10 @@ container issue_xxx
 	{
 		attribute<int16> col := PointCol(id(.));
 	}
-	unit<uint32> selection := Subset(mod(rdc_1000_domain/col, 10s) == 0s), DialogType = "Map", DialogData = "basegrid"
+	unit<uint32> selection := select_with_org_rel(mod(rdc_1000_domain/col, 10s) == 0s), DialogType = "Map", DialogData = "basegrid"
 	{
-		attribute<selection> basegrid (rdc_1000_domain):= invert(nr_OrgEntity);
-		attribute<rdc_meter> geometry := nr_OrgEntity[rdc_meter]
+		attribute<selection> basegrid (rdc_1000_domain):= invert(org_rel);
+		attribute<rdc_meter> geometry := org_rel[rdc_meter]
 		{
 			parameter<float32> SymbolSize       := 32f            ,  DialogType = "SymbolSize";
 		}

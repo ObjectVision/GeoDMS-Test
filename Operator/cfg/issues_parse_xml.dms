@@ -39,9 +39,9 @@ container issuea_parse_xml
 			}
 			container xml_bestanden
 			{
-				unit<uint32> woonplaats := Subset(alle_regels/isxmlfile && strcount(alle_regels/inhoud,'WPL')> 0 && strcount(alle_regels/inhoud,'GEM-WPL-RELATIE') == 0)
+				unit<uint32> woonplaats := select_with_org_rel(alle_regels/isxmlfile && strcount(alle_regels/inhoud,'WPL')> 0 && strcount(alle_regels/inhoud,'GEM-WPL-RELATIE') == 0)
 				{
-					attribute<string> naam := alle_regels/inhoud[nr_OrgEntity];
+					attribute<string> naam := alle_regels/inhoud[org_rel];
 				}
 			}
 		}

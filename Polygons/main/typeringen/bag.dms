@@ -13,11 +13,11 @@ container BAG: using = "eenheden"
 		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
 		
 		attribute<bool>   IsUtiliteit := label != 'woonfunctie';
-		unit<uint8> Utiliteiten := subset(IsUtiliteit)
+		unit<uint8> Utiliteiten := select_with_org_rel(IsUtiliteit)
 		{
-			attribute<string> label        := ../label[nr_OrgEntity];
-			attribute<string> name         := ../name[nr_OrgEntity];
-			// attribute<uint32> BrushColor   := ../BrushColor[nr_OrgEntity], DialogType = "BrushColor";
+			attribute<string> label        := ../label[org_rel];
+			attribute<string> name         := ../name[org_rel];
+			// attribute<uint32> BrushColor   := ../BrushColor[org_rel], DialogType = "BrushColor";
 		}
 	}
 	unit<uint8> vbo_gebruiksdoel_ext : nrofrows = 12
@@ -33,11 +33,11 @@ container BAG: using = "eenheden"
 		
 		attribute<bool>   IsUtiliteit := label != 'woonfunctie';
 		attribute<bool>   IsWonen     := label == 'woonfunctie';
-		unit<uint8> Utiliteiten := subset(IsUtiliteit)
+		unit<uint8> Utiliteiten := select_with_org_rel(IsUtiliteit)
 		{
-			attribute<string> label        := ../label[nr_OrgEntity];
-			attribute<string> name         := ../name[nr_OrgEntity];
-			// attribute<uint32> BrushColor   := ../BrushColor[nr_OrgEntity], DialogType = "BrushColor";
+			attribute<string> label        := ../label[org_rel];
+			attribute<string> name         := ../name[org_rel];
+			// attribute<uint32> BrushColor   := ../BrushColor[org_rel], DialogType = "BrushColor";
 		}
 	}
 	
@@ -77,14 +77,14 @@ container BAG: using = "eenheden"
 		attribute<string>            woonpand_2_rel_str  :  ['','0','0','0','1'];
 		attribute<type_woonpand_2>   woonpand_2_rel      := value(woonpand_2_rel_str, type_woonpand_2);
 		attribute<type_woonpand_3>   woonpand_3_rel      : [0, 1, 1, 1, 2];
-		attribute<type_woonpand_4>   woonpand_4_rel      := id(type_woonpand_4)[invert(type_woonpand_4/nr_OrgEntity)];
+		attribute<type_woonpand_4>   woonpand_4_rel      := id(type_woonpand_4)[invert(type_woonpand_4/org_rel)];
 		
 		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
 	}
 
-	unit<uint8> type_woonpand_4 := subset(id(type_woonpand) <> type_woonpand/V/geen_woonpand) 
+	unit<uint8> type_woonpand_4 := select_with_org_rel(id(type_woonpand) <> type_woonpand/V/geen_woonpand) 
 	{
-		attribute<type_woonpand>     woonpand_rel        := nr_OrgEntity;
+		attribute<type_woonpand>     woonpand_rel        := org_rel;
 		attribute<string>            name                := type_woonpand/name[woonpand_rel];
 		attribute<string>            name_english        := type_woonpand/name_english[woonpand_rel];
 		attribute<string>            label               := type_woonpand/label[woonpand_rel], DialogType = "LabelText";
@@ -105,9 +105,9 @@ container BAG: using = "eenheden"
 		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
 	}
 	
-	unit<uint8> type_woonpand_2 := subset(id(type_woonpand_3) <> type_woonpand_3/V/geen_woonpand) 
+	unit<uint8> type_woonpand_2 := select_with_org_rel(id(type_woonpand_3) <> type_woonpand_3/V/geen_woonpand) 
 	{
-		attribute<type_woonpand_3>   woonpand_3_rel      := nr_OrgEntity;
+		attribute<type_woonpand_3>   woonpand_3_rel      := org_rel;
 		attribute<string>            name                := type_woonpand_3/name[woonpand_3_rel];
 		attribute<string>            label               := type_woonpand_3/label[woonpand_3_rel], DialogType = "LabelText";
 		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);

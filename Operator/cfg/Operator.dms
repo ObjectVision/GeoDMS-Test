@@ -2871,7 +2871,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			/*
 			container UrlEncode
 			{
-				parameter<string> param         := UrlEncode('<>&abcdef ©');
+				parameter<string> param         := UrlEncode('<>&abcdef ï¿½');
 				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
 				attribute<string> att  (Domain) := UrlEncode(Source/HTMLEncodeDecode);
 				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
@@ -2880,7 +2880,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			
 			container HTMLEncode
 			{
-				parameter<string> param         := HtmlEncode('<>&abcdef ©');
+				parameter<string> param         := HtmlEncode('<>&abcdef ï¿½');
 				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
 				attribute<string> att  (Domain) := HTMLEncode(Source/HTMLEncodeDecode);
 				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
@@ -7890,7 +7890,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 				parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(pointset/test) && all(pointset/bp_test)';
 			}
-			container partitioned_union_polygon
+			container bp_union_polygon
 			{
 				attribute<ipoint> att(polygon, region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
 				attribute<ipoint> bp_att(polygon, region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
@@ -8701,7 +8701,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& centroid_or_mid_complex/test_attr
 					&& poly2grid/test_attr
 					&& union_polygon/test_attr
-					&& partitioned_union_polygon/test_attr
+					&& bp_union_polygon/test_attr
 					&& overlay_polygon/intersect/test
 					&& split/single_polygons/test
 					&& split/bg_single_polygons2/test
@@ -9263,7 +9263,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	Using = "connected"
 			{
 //				attribute<m> distance_nodeset (NodeSet) := dijkstra(LinkSet/dist, F1, F2, nr_DestinationNode)"
-				attribute<m> distance_nodeset (NodeSet) := dijkstra_s('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, F1, F2, nr_DestinationNode)
+				attribute<m> distance_nodeset (NodeSet) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, F1, F2, nr_DestinationNode)
 				{
 					attribute<LinkSet> TraceBack (NodeSet);
 				}
@@ -9296,7 +9296,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	Using = "connected"
 			{
 //				attribute<m> distance_nodeset_directed (NodeSet) := dijkstra_directed(LinkSet/dist, F1, F2, nr_DestinationNode)"
-				attribute<m> distance_nodeset_directed (NodeSet) := dijkstra_s('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
+				attribute<m> distance_nodeset_directed (NodeSet) := impedance_table('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
 				{
 					attribute<LinkSet> TraceBack (NodeSet);
 				}
@@ -9329,7 +9329,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	Using = "connected"
 			{
 //				attribute<m> distance_nodeset (NodeSet) :=  dijkstra_maxdist(LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
-				attribute<m> distance_nodeset (NodeSet) :=  dijkstra_s('bidirectional;startPoint(Node_rel);cut(OrgZone_max_imp);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
+				attribute<m> distance_nodeset (NodeSet) :=  impedance_table('bidirectional;startPoint(Node_rel);cut(OrgZone_max_imp);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
 				{
 					attribute<LinkSet> TraceBack (NodeSet);
 				}
@@ -9357,7 +9357,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter <bool> test_attr := all(test);
 			}
-			unit<uint32> dijkstra_alt_impedance := dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+			unit<uint32> dijkstra_alt_impedance := impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 					, connected/LinkSet/dist
 					, connected/F1
 					, connected/F2
@@ -9367,7 +9367,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			);
 
 			unit<uint64> dijkstra_interaction := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;startPoint(Node_rel);endPoint(Node_rel);'
 					'cut(OrgZone_max_imp);'
 					'interaction(v_i,w_j,dist_decay):D_i,M_ix,C_j,M_xj,Link_flow;'
@@ -9408,7 +9408,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<float32> demand_alpha := 1.0f;
 			parameter<float32> min_imp      := 0.0f;
 			unit<uint64> dijkstra_all_interaction := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'interaction(OrgZone_min,v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;'
 					'od:impedance,OrgZone_rel,DstZone_rel,LinkSet',
@@ -9423,21 +9423,21 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 
 			unit<uint64> dijkstra_all_route_count := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
 					connected/LinkSet/dist, connected/F1, connected/F2,
 					1.0f, 1.0f, 0.0f, 1.0f
 				);
 			unit<uint64> dijkstra_all_length := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;od:impedance',
 					connected/LinkSet/dist, connected/F1, connected/F2,
 					1.0f, 1.0f, -1.0f, 1.0f
 				);
 			unit<uint64> dijkstra_all_link_count:= 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'alternative(link_imp):alt_imp;'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;od:impedance',
@@ -9460,7 +9460,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 
 			unit<uint64> dijkstra_cut_route_count := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'cut(OrgZone_max_imp);'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
@@ -9469,7 +9469,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					1.0f, 1.0f, 0.0f, 1.0f
 				);
 			unit<uint64> dijkstra_cut_length := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'cut(OrgZone_max_imp);'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
@@ -9478,7 +9478,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					1.0f, 1.0f, -1.0f, 1.0f
 				);
 			unit<uint64> dijkstra_cut_link_count:= 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'cut(OrgZone_max_imp);'
 					'alternative(link_imp):alt_imp;'
@@ -9504,7 +9504,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			unit<uint32> dijkstra_OD :=
 			// 	dijkstra_od(
-				dijkstra_m('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+				impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
 					connected/LinkSet/dist,       connected/F1                   , connected/F2,
 					connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 					connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
@@ -9553,7 +9553,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
 				//	dijkstra_od_directed(
-					dijkstra_m('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
 						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
 						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
@@ -9600,7 +9600,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
 //					dijkstra_OD_maxdist(
-					dijkstra_m('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+					impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
 						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
 						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
@@ -9661,7 +9661,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
 //					dijkstra_OD_maxdist_directed(
-					dijkstra_m('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
 						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
 						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
@@ -9717,7 +9717,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 
 			unit<uint32> dijkstra_OD_maxtime_alt_imp :=
-				dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 					, connected/LinkSet/dist * 1[s / m]
 					, connected/F1
 					, connected/F2
@@ -12477,7 +12477,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		Container GeoDmsPlatform: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/GeoDmsPlatform"
 		{
 			parameter<string> BuildConfig := GeoDmsPlatform();
-			parameter<bool>   test        := BuildConfig == 'Win32' || BuildConfig == 'x64';
+			parameter<bool>   test        := BuildConfig == 'Win32' || BuildConfig == 'x64'
+			                              || BuildConfig == 'x64-windows' || BuildConfig == 'x86-windows'
+			                              || BuildConfig == 'x64-linux'   || BuildConfig == 'x64-osx';
 		}
 		Container Regex_match
 		{

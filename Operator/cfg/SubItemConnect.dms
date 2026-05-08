@@ -489,12 +489,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				}
 /* REMOVE				
 				unit <uint32> LinkSet_extra // bedoeld om de verbindingen die door de connect zijn gemaakt naar de locations dubbel op te nemen voor de dijkstra_directed
-				:= subset(LinkSet_org/isConnectionToLocation)
+				:= select_with_org_rel(LinkSet_org/isConnectionToLocation)
 				,	DialogData = "segments"
 				,	DialogType = "Map"
 				{
-					attribute<point_rd> point     := LinkSet_org/nextpoint[nr_OrgEntity];
-					attribute<point_rd> nextpoint := LinkSet_org/point[nr_OrgEntity];
+					attribute<point_rd> point     := LinkSet_org/nextpoint[org_rel];
+					attribute<point_rd> nextpoint := LinkSet_org/point[org_rel];
 				}
 				
 				unit <uint32> LinkSet := Union_Unit(LinkSet_org,LinkSet_extra)
@@ -581,11 +581,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords>   P          := value((fpoint(id(.)) + point(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords>                  P                := GridDomain/P[nr_OrgEntity];
+					attribute<Coords>                  P                := GridDomain/P[org_rel];
 					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
 				}
 				attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
@@ -610,11 +610,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords>   P          := value((fpoint(id(.)) + point(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords>                  P                := GridDomain/P[nr_OrgEntity];
+					attribute<Coords>                  P                := GridDomain/P[org_rel];
 					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
 				}
 				//attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
@@ -643,11 +643,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<SPoint> P5 := spoint(P3);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain3000/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords> P := GridDomain3000/P[nr_OrgEntity];
+					attribute<Coords> P := GridDomain3000/P[org_rel];
 				}
 				attribute<bool> T1 := P0 == P2;
 				attribute<bool> T4 := P0 == P4;

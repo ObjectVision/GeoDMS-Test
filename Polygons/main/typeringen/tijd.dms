@@ -289,31 +289,31 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<string> prev_name := 'Y' + string(prev_value);
 		attribute<uint32> prev_value := sub_or_null(id(.),1);
 		
-		unit<uint32> last10years := subset(id(.) >= 2010 && id(.) <= 2019)
+		unit<uint32> last10years := select_with_org_rel(id(.) >= 2010 && id(.) <= 2019)
 		{
-			attribute<string> label      := ../label[nr_OrgEntity], DialogType = "LabelText";
-			attribute<string> name       := ../name[nr_OrgEntity];
-			attribute<uint32> value      := ../value[nr_OrgEntity];
-			attribute<string> prev_name  := ../prev_name[nr_OrgEntity];
-			attribute<uint32> prev_value := ../prev_value[nr_OrgEntity];
+			attribute<string> label      := ../label[org_rel], DialogType = "LabelText";
+			attribute<string> name       := ../name[org_rel];
+			attribute<uint32> value      := ../value[org_rel];
+			attribute<string> prev_name  := ../prev_name[org_rel];
+			attribute<uint32> prev_value := ../prev_value[org_rel];
 		}
 	}
 	
 	unit<uint32> Periods_min1 := select_with_attr_by_org_rel(Kwartalen, id(Kwartalen) != Last(id(Kwartalen)))
 	{
-		// attribute<jaar>   year         := Kwartalen/year[nr_OrgEntity];
-		// attribute<uint32> value        := Kwartalen/value[nr_OrgEntity];
-		// attribute<string> name         := Kwartalen/name[nr_OrgEntity];
-		// attribute<string> label        := Kwartalen/name[nr_OrgEntity];
-		// attribute<string> next_name    := Kwartalen/next_name[nr_OrgEntity];
-		// attribute<string> prev_name    := Kwartalen/prev_name[nr_OrgEntity];
-		// attribute<string> prev2_name   := Kwartalen/prev2_name[nr_OrgEntity];
-		// attribute<string> prev3_name   := Kwartalen/prev3_name[nr_OrgEntity];
-		// attribute<string> prev4_name   := Kwartalen/prev4_name[nr_OrgEntity];
-		// attribute<bool>   IsFirst      := Kwartalen/IsFirst[nr_OrgEntity];
-		// attribute<bool>   IsSecond     := Kwartalen/IsSecond[nr_OrgEntity];
-		// attribute<bool>   IsThird      := Kwartalen/IsThird[nr_OrgEntity];
-		// attribute<bool>   IsFourth     := Kwartalen/IsFourth[nr_OrgEntity];
+		// attribute<jaar>   year         := Kwartalen/year[org_rel];
+		// attribute<uint32> value        := Kwartalen/value[org_rel];
+		// attribute<string> name         := Kwartalen/name[org_rel];
+		// attribute<string> label        := Kwartalen/name[org_rel];
+		// attribute<string> next_name    := Kwartalen/next_name[org_rel];
+		// attribute<string> prev_name    := Kwartalen/prev_name[org_rel];
+		// attribute<string> prev2_name   := Kwartalen/prev2_name[org_rel];
+		// attribute<string> prev3_name   := Kwartalen/prev3_name[org_rel];
+		// attribute<string> prev4_name   := Kwartalen/prev4_name[org_rel];
+		// attribute<bool>   IsFirst      := Kwartalen/IsFirst[org_rel];
+		// attribute<bool>   IsSecond     := Kwartalen/IsSecond[org_rel];
+		// attribute<bool>   IsThird      := Kwartalen/IsThird[org_rel];
+		// attribute<bool>   IsFourth     := Kwartalen/IsFourth[org_rel];
 	}
 	
 	

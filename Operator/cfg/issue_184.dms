@@ -2,7 +2,7 @@ container issue_184
 {
 	unit<dpoint> LatLong :=  range(LatLong_Base, point(-90.0,-180.0), point(90.0, 180.0));
 
-	unit<dpoint> LatLong_Base: DialogData = "TopoCountry/Geometry", Format = "EPSG:4326"
+	unit<dpoint> LatLong_Base: DialogData = "TopoCountry/Geometry", SpatialReference = "EPSG:4326"
 	{
 		parameter<float32> ViewPortMinSize := 100f / 3600f;
 		parameter<float32> PenWorldWidth := 10f / 3600f, DialogType = "PenWorldWidth";
@@ -20,8 +20,8 @@ container issue_184
 		attribute<uint32>           one         := const(1u,.);
 		attribute<LatLong>          Geometry(polygon);
 		attribute<LatLong_mdegrees> Geometry_mdegrees(polygon) := Geometry[LatLong_mdegrees];
-		attribute<LatLong_mdegrees> Geometry_mdegrees_clean1(polygon) := partitioned_union_polygon(SG_mg/Geometry, SG_mg/nr_OrgEntity);
-		attribute<LatLong_mdegrees> Geometry_mdegrees_clean2(polygon) := partitioned_union_polygon(Geometry_mdegrees, ID(.));
+		attribute<LatLong_mdegrees> Geometry_mdegrees_clean1(polygon) := bp_union_polygon(SG_mg/Geometry, SG_mg/org_rel);
+		attribute<LatLong_mdegrees> Geometry_mdegrees_clean2(polygon) := bp_union_polygon(Geometry_mdegrees, ID(.));
 	}
 //	unit<uint32> SG_deg := split_polygon(Benelux/Geometry);
 	unit<uint32> SG_mg  := split_polygon(Benelux/Geometry_mdegrees)

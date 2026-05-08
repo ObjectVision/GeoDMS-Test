@@ -279,9 +279,9 @@ container Mini// : IntegrityCheck = "GeoDmsVersion() >= 5.89"
 			attribute<uint32>  A : [1,2,3,4,5];
 			attribute<uint32>  C : [1,1,1,1,1];
 		}
-		unit<uint32> domainB: Expr = "Subset(domainA/A > 2)"
+		unit<uint32> domainB: Expr = "select_with_org_rel(domainA/A > 2)"
 		{
-			attribute<uint32>  B : expr = "domainA/A[nr_OrgEntity]";
+			attribute<uint32>  B : expr = "domainA/A[org_rel]";
 		}
 	}
 	container Table
@@ -298,10 +298,10 @@ container Mini// : IntegrityCheck = "GeoDmsVersion() >= 5.89"
 			attribute<uint32>  A : [1,2,3,4,5];
 			attribute<string>  C : ['text',' ','abc','t t','text'];
 		}
-		unit<uint32> EmptyDomainWithAttributes: expr = "Subset(DomainWithAttributes/A > 5)"
+		unit<uint32> EmptyDomainWithAttributes: expr = "select_with_org_rel(DomainWithAttributes/A > 5)"
 		{
-			attribute<uint32>  A : expr = "DomainWithAttributes/A[nr_OrgEntity]";
-			attribute<uint32>  C : expr = "DomainWithAttributes/C[nr_OrgEntity]";
+			attribute<uint32>  A : expr = "DomainWithAttributes/A[org_rel]";
+			attribute<uint32>  C : expr = "DomainWithAttributes/C[org_rel]";
 		}
 	}
 	container Classifications

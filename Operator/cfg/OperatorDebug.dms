@@ -124,9 +124,9 @@ DEBUG*/
 					attribute<string> name:= = 'union_data(.,' + AsItemList('test_items_subitems/' + test_item/name + '/name/name') + ')';
 				}
 
-				unit<uint32> test := Subset(test_items_subitem/name == 'test_attr' || test_items_subitem/name == 'test_param')
+				unit<uint32> test := select_with_org_rel(test_items_subitem/name == 'test_attr' || test_items_subitem/name == 'test_param')
 				{
-					attribute<string> name:=  test_items_subitem/name[nr_OrgEntity];
+					attribute<string> name:=  test_items_subitem/name[org_rel];
 				}
 			}
 		
@@ -1726,7 +1726,7 @@ DEBUG*/
 			/*
 			container UrlEncode
 			{
-				parameter<string> param         := UrlEncode('<>&abcdef ©');
+				parameter<string> param         := UrlEncode('<>&abcdef ï¿½');
 				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
 				attribute<string> att  (Domain) := UrlEncode(Source/HTMLEncodeDecode);
 				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
@@ -1735,7 +1735,7 @@ DEBUG*/
 			
 			container HTMLEncode
 			{
-				parameter<string> param         := HtmlEncode('<>&abcdef ©');
+				parameter<string> param         := HtmlEncode('<>&abcdef ï¿½');
 				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
 				attribute<string> att  (Domain) := HTMLEncode(Source/HTMLEncodeDecode);
 				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
@@ -1840,7 +1840,7 @@ DEBUG*/
 				attribute<uint32>         countNrInhabitants:      [1,2,1,1,0];
 				attribute<uint32>         pcountRegionNr:          [1,2,1,2,0];
 				attribute<uint32>         minNrInhabitants:        [550,500,300,200,4294967294]; // MAX_VALUE(UInt32) decremented by 1 in GeoDMS 6.061 to be consistent with http://wiki.objectvision.nl/index.php/Value_Types
-				attribute<string>         minCityName:             ['Amsterdam','DenHaag','Utrecht','Eindhoven','ÿÿÿÿ'];
+				attribute<string>         minCityName:             ['Amsterdam','DenHaag','Utrecht','Eindhoven','ï¿½ï¿½ï¿½ï¿½'];
 				attribute<uint32>         minIndex:                [1, 4, 3, 5, null];
 				attribute<uint32>         maxNrInhabitants:        [550,525,300,200,0];
 				attribute<uint32>         maxIndex:                [1, 2, 3, 5, null];
@@ -2668,10 +2668,10 @@ DEBUG*/
 				//attribute<bool>   test      (Region) := eq_or_both_null(att, Region/invertRegion);
 				//parameter<bool>   test_attr           := all(test);
 			}*/
-			container subset: url  = "http://www.objectvision.nl/geodms/operators-a-functions/subset"
+			container select_with_org_rel: url  = "http://www.objectvision.nl/geodms/operators-a-functions/select_with_org_rel"
 			{
-				unit<uint32>    ZHCities       := subset(City/RegionCode = 200);
-				attribute<bool> att (ZHCities) := const(200, ZHCities, uint32) = lookup(ZHCities/nr_OrgEntity, uint32(City/RegionCode));
+				unit<uint32>    ZHCities       := select_with_org_rel(City/RegionCode = 200);
+				attribute<bool> att (ZHCities) := const(200, ZHCities, uint32) = lookup(ZHCities/org_rel, uint32(City/RegionCode));
 				parameter<bool> test           := all(att) && nrofrows(ZHCities) = 2;
 			}
 			container unique: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unique"
@@ -2772,7 +2772,7 @@ DEBUG*/
 				&& index/test_attr 
 				&& direct_index/test_attr 
 				&& invert/test_attr 
-				&& subset/test 
+				&& select_with_org_rel/test 
 				&& unique/test 
 				&& union/test_attr 
 				&& union_unit/test 
@@ -3946,9 +3946,9 @@ DEBUG*/
 				}
 				parameter<bool> test_attr := all(pointset/test);
 			}
-			container partitioned_union_polygon
+			container bp_union_polygon
 			{
-				attribute<ipoint> att(polygon, Source/region) := partitioned_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
+				attribute<ipoint> att(polygon, Source/region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
 				unit<uint32> pointset := sequence2points(att)
 				{
 					attribute<ipoint> att_ok:
@@ -4004,13 +4004,13 @@ DEBUG*/
 				attribute<ipoint> district_ipoint (polygon, source/district) := ipolygon(source/district/border_clean);
 				container multipolygon
 				{
-					attribute<ipoint> geometry (Source/multipolygon, polygon) := partitioned_union_polygon(ipolygon(Source/District/border_clean), Source/district/multipolygon_rel);
+					attribute<ipoint> geometry (Source/multipolygon, polygon) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/multipolygon_rel);
 					parameter<ipoint> geometry_void (polygon) := geometry[0];
 				}
 				unit<uint32> single_polygons := split_polygon(multipolygon/geometry)
 {					attribute<uint32> ok: [0,0,0,1,1,2,3];
 
-					attribute<bool>   test_attr := nr_OrgEntity == ok;
+					attribute<bool>   test_attr := org_rel == ok;
 					parameter<bool>   test      := all(test_attr);
 				}
 			}
@@ -4058,7 +4058,7 @@ DEBUG*/
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_polygon_i4HV75  (polygon, source/building) :=  polygon_i4HV(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_i4HV75  (polygon, source/building) :=  geos_buffer_multi_polygon(building_ipoint, float64(75), 16b)
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
@@ -4611,7 +4611,7 @@ DEBUG*/
 					&& centroid_or_mid_complex/test_attr
 					&& poly2grid/test_attr
 					&& union_polygon/test_attr
-					&& partitioned_union_polygon/test_attr
+					&& bp_union_polygon/test_attr
 					&& overlay_polygon/intersect/test
 					&& split/single_polygons/test
 					&& inflate/test_attr
@@ -4919,12 +4919,12 @@ DEBUG*/
 					attribute<point_rd> nextpoint;
 				}
 				unit <uint32> LinkSet_extra // bedoeld om de verbindingen die door de connect zijn gemaakt naar de locations dubbel op te nemen voor de dijkstra_directed
-				:= subset(LinkSet_org/isConnectionToLocation)
+				:= select_with_org_rel(LinkSet_org/isConnectionToLocation)
 				,	DialogData = "segments"
 				,	DialogType = "Map"
 				{
-					attribute<point_rd> point     := LinkSet_org/nextpoint[nr_OrgEntity];
-					attribute<point_rd> nextpoint := LinkSet_org/point[nr_OrgEntity];
+					attribute<point_rd> point     := LinkSet_org/nextpoint[org_rel];
+					attribute<point_rd> nextpoint := LinkSet_org/point[org_rel];
 				}
 				
 				unit <uint32> LinkSet := Union_Unit(LinkSet_org,LinkSet_extra)
@@ -4970,7 +4970,7 @@ DEBUG*/
 			,	Using = "connected"
 			{
 //				attribute<m> distance_nodeset (NodeSet) := dijkstra(LinkSet/dist, F1, F2, nr_DestinationNode)"
-				attribute<m> distance_nodeset (NodeSet) := dijkstra_s('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, F1, F2, nr_DestinationNode)
+				attribute<m> distance_nodeset (NodeSet) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, F1, F2, nr_DestinationNode)
 				{
 					attribute<LinkSet> TraceBack (NodeSet);
 				}
@@ -4985,7 +4985,7 @@ DEBUG*/
 			,	Using = "connected"
 			{
 //				attribute<m> distance_nodeset_directed (NodeSet) := dijkstra_directed(LinkSet/dist, F1, F2, nr_DestinationNode)"
-				attribute<m> distance_nodeset_directed (NodeSet) := dijkstra_s('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
+				attribute<m> distance_nodeset_directed (NodeSet) := impedance_table('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
 				{
 					attribute<LinkSet> TraceBack (NodeSet);
 				}
@@ -5000,7 +5000,7 @@ DEBUG*/
 			,	Using = "connected"
 			{
 //				attribute<m> distance_nodeset (NodeSet) :=  dijkstra_maxdist(LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
-				attribute<m> distance_nodeset (NodeSet) :=  dijkstra_s('bidirectional;startPoint(Node_rel);cut(OrgZone_max_imp);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
+				attribute<m> distance_nodeset (NodeSet) :=  impedance_table('bidirectional;startPoint(Node_rel);cut(OrgZone_max_imp);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
 				{
 					attribute<LinkSet> TraceBack (NodeSet);
 				}
@@ -5011,7 +5011,7 @@ DEBUG*/
 				parameter <bool> test_attr := all(test);
 			}
 
-			unit<uint32> dijkstra_alt_impedance := dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+			unit<uint32> dijkstra_alt_impedance := impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 					, connected/LinkSet/dist
 					, connected/F1
 					, connected/F2
@@ -5022,7 +5022,7 @@ DEBUG*/
 
 
 			unit<uint64> dijkstra_interaction := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;startPoint(Node_rel);endPoint(Node_rel);'
 					'cut(OrgZone_max_imp);'
 					'interaction(v_i,w_j,dist_decay):D_i,M_ix,C_j,M_xj,Link_flow;'
@@ -5045,7 +5045,7 @@ DEBUG*/
 			parameter<float32> demand_alpha := 1.0f;
 			parameter<float32> min_imp      := 0.0f;
 			unit<uint64> dijkstra_all_interaction := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'interaction(OrgZone_min,v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;'
 					'od:impedance,OrgZone_rel,DstZone_rel,LinkSet',
@@ -5060,21 +5060,21 @@ DEBUG*/
 				
 			}
 			unit<uint64> dijkstra_all_route_count := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
 					connected/LinkSet/dist, connected/F1, connected/F2,
 					1.0f, 1.0f, 0.0f, 1.0f
 				);
 			unit<uint64> dijkstra_all_length := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;od:impedance',
 					connected/LinkSet/dist, connected/F1, connected/F2,
 					1.0f, 1.0f, -1.0f, 1.0f
 				);
 			unit<uint64> dijkstra_all_link_count:= 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'alternative(link_imp):alt_imp;'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;od:impedance',
@@ -5097,7 +5097,7 @@ DEBUG*/
 			}
 
 			unit<uint64> dijkstra_cut_route_count := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'cut(OrgZone_max_imp);'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
@@ -5106,7 +5106,7 @@ DEBUG*/
 					1.0f, 1.0f, 0.0f, 1.0f
 				);
 			unit<uint64> dijkstra_cut_length := 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'cut(OrgZone_max_imp);'
 					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
@@ -5115,7 +5115,7 @@ DEBUG*/
 					1.0f, 1.0f, -1.0f, 1.0f
 				);
 			unit<uint64> dijkstra_cut_link_count:= 
-				dijkstra_m64(
+				impedance_matrix_od64(
 					'bidirectional;'
 					'cut(OrgZone_max_imp);'
 					'alternative(link_imp):alt_imp;'
@@ -5141,7 +5141,7 @@ DEBUG*/
 			
 			unit<uint32> dijkstra_OD :=
 			// 	dijkstra_od(
-				dijkstra_m('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+				impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
 					connected/LinkSet/dist,       connected/F1                   , connected/F2,
 					connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 					connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
@@ -5163,7 +5163,7 @@ DEBUG*/
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
 				//	dijkstra_od_directed(
-					dijkstra_m('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
 						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
 						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
@@ -5182,7 +5182,7 @@ DEBUG*/
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
 //					dijkstra_OD_maxdist(
-					dijkstra_m('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+					impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
 						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
 						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
@@ -5203,7 +5203,7 @@ DEBUG*/
 			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
 			,=
 //					dijkstra_OD_maxdist_directed(
-					dijkstra_m('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
 						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
 						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
 						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
@@ -5222,7 +5222,7 @@ DEBUG*/
 			}
 
 			unit<uint32> dijkstra_OD_maxtime_alt_imp :=
-				dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 					, connected/LinkSet/dist * 1[s / m]
 					, connected/F1
 					, connected/F2
@@ -5338,11 +5338,11 @@ DEBUG*/
 				attribute<Coords>   P          := value((fpoint(id(.)) + point(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords>                  P                := GridDomain/P[nr_OrgEntity];
+					attribute<Coords>                  P                := GridDomain/P[org_rel];
 					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
 				}
 				attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
@@ -5372,11 +5372,11 @@ DEBUG*/
 				attribute<SPoint> P5 := spoint(P3);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := Subset(isDefined(GridDomain3000/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords> P := GridDomain3000/P[nr_OrgEntity];
+					attribute<Coords> P := GridDomain3000/P[org_rel];
 				}
 				attribute<bool> T1 := P0 == P2;
 				attribute<bool> T4 := P0 == P4;
@@ -6746,23 +6746,23 @@ DEBUG*/
 
 			container Compacted
 			{
-				unit <uint32>      ADomain := Subset(FreeLand = True),
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
 					label = "allocation domain";
-				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/nr_OrgEntity);
+				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
 				
 				container SuitabilityMaps
 				{
-					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/nr_orgEntity]  * int32(1000);
-					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/nr_orgEntity] * int32(1000);
-					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/nr_orgEntity]  * int32(1000);
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/org_rel]  * int32(1000);
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/org_rel] * int32(1000);
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/org_rel]  * int32(1000);
 				}
 				container SuitabilityMapsDiv
 				{
-					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
-					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
-					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/nr_orgEntity];
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
 				}
-				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/nr_orgEntity];
+				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/org_rel];
 			}
 			parameter<int32> treshold := int32(0);
 			container FeasibleSolution;

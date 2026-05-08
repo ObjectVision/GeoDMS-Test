@@ -31,6 +31,7 @@ _BUILT_IN_DEFAULTS = {
     "LocalDataDir": "C:/LocalData",
     "ProfilerDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
     "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
+    "LocalBuilds": {},
 }
 
 def _load_local_settings() -> dict:
@@ -44,10 +45,69 @@ def _load_local_settings() -> dict:
             if k in file_settings:
                 settings[k] = file_settings[k]
     for k in _BUILT_IN_DEFAULTS:
+        if k == "LocalBuilds":
+            continue  # dict-valued, not env-overridable
         env_value = os.environ.get(k)
         if env_value:
             settings[k] = env_value
     return settings
+
+def _read_local_geodms_version(repo_root:Path) -> str:
+    """Parse rtc/dll/src/RtcGeneratedVersion.h to get '<MAJOR>.<MINOR>.<PATCH>'."""
+    header = repo_root / "rtc" / "dll" / "src" / "RtcGeneratedVersion.h"
+    major = minor = patch = "0"
+    if header.exists():
+        with open(header, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#define DMS_VERSION_MAJOR"):
+                    major = line.split()[-1]
+                elif line.startswith("#define DMS_VERSION_MINOR"):
+                    minor = line.split()[-1]
+                elif line.startswith("#define DMS_VERSION_PATCH"):
+                    patch = line.split()[-1]
+    return f"{major}.{minor}.{patch}"
+
+def _resolve_local_build(version:str, settings:dict):
+    """Map -version local[-flavor] to a build descriptor.
+    Returns None if `version` is not a local pseudo-version.
+    Returned dict: {BinDir, Suffix, RunPrefix, ExeSuffix, Flavor}.
+    """
+    if version == "local":
+        flavor = "cmake-release"
+    elif version.startswith("local-"):
+        flavor = version[len("local-"):]
+    else:
+        return None
+
+    repo_root = Path(settings["ProfilerDir"]).parent.as_posix()
+    win_repo_tail = repo_root[2:] if len(repo_root) > 2 and repo_root[1] == ":" else repo_root
+    built_in = {
+        "cmake-release":   {"BinDir": f"{repo_root}/build/windows-x64-release/bin", "Suffix": "c"},
+        "cmake-debug":     {"BinDir": f"{repo_root}/build/windows-x64-debug/bin",   "Suffix": "c"},
+        "msbuild-release": {"BinDir": f"{repo_root}/bin/Release/x64",               "Suffix": "m"},
+        "msbuild-debug":   {"BinDir": f"{repo_root}/bin/Debug/x64",                 "Suffix": "m"},
+        "linux-release":   {"BinDir": f"/mnt/c{win_repo_tail}/build/linux-x64-release/bin",
+                            "Suffix": "l", "RunPrefix": "wsl --", "ExeSuffix": ""},
+        "linux-debug":     {"BinDir": f"/mnt/c{win_repo_tail}/build/linux-x64-debug/bin",
+                            "Suffix": "l", "RunPrefix": "wsl --", "ExeSuffix": ""},
+    }
+
+    spec = dict(built_in.get(flavor, {}))
+    file_builds = settings.get("LocalBuilds") or {}
+    spec.update(file_builds.get(flavor, {}))
+
+    if not spec.get("BinDir") and flavor == "cmake-release" and settings.get("LocalBuildDir"):
+        spec["BinDir"] = settings["LocalBuildDir"]
+
+    if not spec.get("BinDir"):
+        raise ValueError(f"No BinDir configured for local build flavor '{flavor}'. Add LocalBuilds.{flavor}.BinDir to local_settings.json.")
+
+    spec.setdefault("Suffix", "")
+    spec.setdefault("RunPrefix", "")
+    spec.setdefault("ExeSuffix", ".exe")
+    spec["Flavor"] = flavor
+    return spec
 
 def get_local_machine_parameters() -> dict:
     s = _load_local_settings()
@@ -92,17 +152,17 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["CusaRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/geodms_africa_cusa2/cfg/africa.dms"
     regression_test_paths["Networkmodel_pbl_regressietest"] = f"{regression_test_paths["prj_snapshotsDir"]}/NetworkModel_PBL_RegressieTest/cfg"
     regression_test_paths["Networkmodel_eu_regressietest"] = f"{regression_test_paths["prj_snapshotsDir"]}/networkmodel_eu_regressieTest/cfg"
-    regression_test_paths["GEODMS_Overridable_RslDataDir"] = "F:/SourceData/RSL" #f"{local_machine_parameters["RegressionTestsSourceDataDir"]}/RSL"
-    regression_test_paths["GEODMS_Overridable_HestiaDataDir"] = "E:/SourceData/SD51/" #f"{local_machine_parameters["RegressionTestsSourceDataDir"]}/compact_data/Hestia"
-    regression_test_paths["GEODMS_Overridable_RSo_DataDir"] = "F:/SourceData/RSopen" #"E:/SourceData/RSOpen"
-    regression_test_paths["GEODMS_Overridable_RVF_DataDir"] = "C:/Users/Cicada/OneDrive - Objectvision/Object Vision - SourceData/RS_Friesland" #"C:/Users/Cicada/SourceData/Objectvision/Object Vision - RS_Friesland" #"F:/SourceData/RS_Friesland"
-    regression_test_paths["GEODMS_Overridable_RSo_PrivDataDir"] = "F:/SourceData/RSOpen_Priv" # "E:/SourceData/RSOpen_Priv"
-    regression_test_paths["GEODMS_Overridable_PrivDataDir"] = "F:/SourceData/RSOpen_Priv"
-    regression_test_paths["GEODMS_Overridable_ToBURPDataDir"] = "E:/SourceData/2BURP"
+    #regression_test_paths["GEODMS_Overridable_RslDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSL"
+    regression_test_paths["GEODMS_Overridable_HestiaDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/SD51"
+    regression_test_paths["GEODMS_Overridable_RSo_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen" 
+    regression_test_paths["GEODMS_Overridable_RVF_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RS_Landbouw" 
+    regression_test_paths["GEODMS_Overridable_RSo_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv" 
+    #regression_test_paths["GEODMS_Overridable_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv" 
+    regression_test_paths["GEODMS_Overridable_ToBURPDataDir"]         = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/2BURP"
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = local_machine_parameters["LocalDataDirRegression"]
     regression_test_paths["GEODMS_Overridable_MondiaalDataDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/2UP"
-    regression_test_paths["GEODMS_Overridable_NetworkModel_Dir"] = f"C:/SourceData/RegressionTests/NetworkModel_regressietest" #E:/SourceData/RegressionTests/NetworkModel_regressietest"
-    regression_test_paths["GEODMS_Overridable_NetworkModelDataDir"] = f"C:/SourceData/RegressionTests/NetworkModel_EU_RegressionTest" #f"E:/SourceData/RegressionTests/NetworkModel_EU_regressiontest"
+    regression_test_paths["GEODMS_Overridable_NetworkModel_Dir"]      = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_regressietest"
+    regression_test_paths["GEODMS_Overridable_NetworkModelDataDir"]   = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_EU_RegressionTest"
     return regression_test_paths
 
 def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str) -> list:
@@ -218,23 +278,55 @@ def remove_local_data_dir_regression(local_data_regression_folder:str):
             shutil.rmtree(f)
     return
 
+# Workaround for https://github.com/ObjectVision/GeoDMS/issues/1101 — the
+# 20.0.0 GeoDMS binary cannot overwrite existing .dmsdata files whose names
+# contain non-ASCII characters (e.g. `_β`). Wipe the known-affected .fss
+# folders before each run so each test starts with fresh-create semantics.
+_ISSUE_1101_AFFECTED_FSS = [
+    "RSopen_RegressieTest_v2025/BaseData/Vastgoed/Verblijfsrecreatie/Provincie/Betas_Objecten_Nederland.fss",
+]
+
+def workaround_issue_1101(local_data_dir_regression:str):
+    for rel in _ISSUE_1101_AFFECTED_FSS:
+        path = f"{local_data_dir_regression}/{rel}"
+        if not os.path.isdir(path):
+            continue
+        for f in glob.glob(f"{path}/*"):
+            try:
+                os.remove(f) if os.path.isfile(f) else shutil.rmtree(f)
+            except OSError as e:
+                print(f"[1101 workaround] could not remove {f}: {e}")
+        print(f"[1101 workaround] cleaned: {path}")
+    return
+
 def get_geodms_paths(version:str) -> dict:
     assert(version)
     s = _load_local_settings()
     geodms_paths = {}
     geodms_paths["GeoDmsPlatform"] = "x64"
-    # version="local" resolves to the just-built CMake Release tree under
-    # LocalBuildDir, so the regression suite can run against the working copy
-    # without first installing an NSIS package. Any other value resolves to
-    # an installed GeoDms{version} under %ProgramFiles%/ObjectVision/.
-    if version == "local":
-        geodms_paths["GeoDmsPath"] = f"\"{s["LocalBuildDir"]}\""
+    # version="local" / "local-<flavor>" resolves to a working-copy build via
+    # LocalBuilds (see _resolve_local_build). Any other value resolves to an
+    # installed GeoDms{version} under %ProgramFiles%/ObjectVision/.
+    local_spec = _resolve_local_build(version, s)
+    if local_spec is not None:
+        geodms_paths["GeoDmsPath"] = f"\"{local_spec["BinDir"]}\""
+        numeric_version = _read_local_geodms_version(Path(s["ProfilerDir"]).parent)
+        suffix = local_spec["Suffix"]
+        geodms_paths["GeoDmsDisplayVersion"] = f"{numeric_version}.{suffix}" if suffix else numeric_version
+        geodms_paths["GeoDmsRunPrefix"] = local_spec["RunPrefix"]
+        geodms_paths["GeoDmsExeSuffix"] = local_spec["ExeSuffix"]
+        geodms_paths["GeoDmsLocalFlavor"] = local_spec["Flavor"]
     else:
         geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
+        geodms_paths["GeoDmsDisplayVersion"] = version
+        geodms_paths["GeoDmsRunPrefix"] = ""
+        geodms_paths["GeoDmsExeSuffix"] = ".exe"
+        geodms_paths["GeoDmsLocalFlavor"] = ""
     geodms_paths["GeoDmsProfilerPath"] = f"{s["ProfilerDir"]}/profiler.py"
     geodms_paths["GeoDmsRegressionPath"] = f"{s["ProfilerDir"]}/regression.py"
-    geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun.exe"
-    geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt.exe"
+    exe = geodms_paths["GeoDmsExeSuffix"]
+    geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun{exe}"
+    geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt{exe}"
     return geodms_paths
 
 def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3"):
@@ -265,15 +357,17 @@ def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3")
     geodms_paths["GeoDmsProfilerPath"] = f'C:/Users/Cicada/dev/geodms/branches/geodms_v18/profiler/profiler.py'
     geodms_paths["GeoDmsProfilerPath"] = f'C:/Users/Cicada/dev/geodms/branches/geodms_v18/profiler/profiler.py'
 
+    display_version = geodms_paths["GeoDmsDisplayVersion"]
     regression_test_paths = get_regression_test_paths(local_machine_parameters)
-    result_paths = regression.get_result_paths(geodms_paths, regression_test_paths, version, MT1, MT2, MT3)
+    result_paths = regression.get_result_paths(geodms_paths, regression_test_paths, display_version, MT1, MT2, MT3)
     #remove_local_data_dir_regression(local_machine_parameters["LocalDataDirRegression"])
     #import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
 
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
-    operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, version, MT1, MT2, MT3)
+    workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
+    operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3)
     regression.run_experiments(operator_experiments)
-    regression.collect_and_generate_test_results(version, result_paths)
+    regression.collect_and_generate_test_results(display_version, result_paths)
 
     return
 

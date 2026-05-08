@@ -172,7 +172,7 @@ container Regression:	FreeData = "True"
 	{
 		container netwerk_PC4:= netwerk/WegenMetLokaties/PC4;
 		unit<uint32> PC4_dense :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 				, netwerk_PC4/LinkSet/traveltime_s
 				, netwerk_PC4/F1
 				, netwerk_PC4/F2
@@ -184,7 +184,7 @@ container Regression:	FreeData = "True"
 		
 		container netwerk_PC6:= netwerk/WegenMetLokaties/PC6;
 		unit<uint32> PC6_sparse_count :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones,D_i,M_ix,SumImp'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones,D_i,M_ix,SumImp'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -196,7 +196,7 @@ container Regression:	FreeData = "True"
 			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
 		}
 		unit<uint32> PC6_sparse_count2 :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -206,7 +206,7 @@ container Regression:	FreeData = "True"
 			);
 			
 		unit<uint32> PC6_sparse_avg_imp_a1 :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -219,7 +219,7 @@ container Regression:	FreeData = "True"
 			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
 		}
 		unit<uint32> PC6_sparse_avg_imp_ad :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(dist_decay):NrDstZones,D_i,M_ix,SumImp'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(dist_decay):NrDstZones,D_i,M_ix,SumImp'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -232,7 +232,7 @@ container Regression:	FreeData = "True"
 			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
 		}
 		unit<uint32> PC6_sparse_avg_imp_ad_nodecay :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones,D_i,M_ix,SumImp'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction:NrDstZones,D_i,M_ix,SumImp'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -244,7 +244,7 @@ container Regression:	FreeData = "True"
 			attribute<eenheden/s> avg_imp(netwerk_PC6/locaties) := OrgZone_SumImp / M_ix;
 		}
 		unit<uint32> PC6_sparse_altcount :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -259,7 +259,7 @@ container Regression:	FreeData = "True"
 		}
 		
 		unit<uint32> PC6_sparse_link_attrcount :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_attr):link_attr;interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp,SumLinkAttr'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_attr):link_attr;interaction(v_i,w_j,dist_decay,OrgZone_alpha):NrDstZones,D_i,M_ix,SumImp,SumLinkAttr'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -275,7 +275,7 @@ container Regression:	FreeData = "True"
 		}
 		
 		unit<uint32> PC6_sparse :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2
@@ -303,7 +303,7 @@ container Regression:	FreeData = "True"
 		//check that /OD/PC6_sparse/avg_altimp == /OD/PC6_sparse_count/avg_linkattr
 
 		unit<uint32> PC6_sparse_precounted :=
-			dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od(precalculateted_NrDstZones):impedance,OrgZone_rel,DstZone_rel'
+			impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od(precalculateted_NrDstZones):impedance,OrgZone_rel,DstZone_rel'
 				, netwerk_PC6/LinkSet/traveltime_s
 				, netwerk_PC6/F1
 				, netwerk_PC6/F2

@@ -31,10 +31,10 @@ container OperatorTest
 	container vrz_schema: isTemplate = "True"
 	{
 		attribute<bool> vrz_sel (vrz_all); 
-		unit<uint32>    selectie: expr = "Subset(vrz_sel)"
+		unit<uint32>    selectie: expr = "select_with_org_rel(vrz_sel)"
 		{
-			attribute<string> naam :   expr = "lookup(selectie/nr_OrgEntity, vrz_all/naam)";
-			attribute<spoint> locatie: expr = "lookup(selectie/nr_OrgEntity, vrz_all/locatie)"
+			attribute<string> naam :   expr = "lookup(selectie/org_rel, vrz_all/naam)";
+			attribute<spoint> locatie: expr = "lookup(selectie/org_rel, vrz_all/locatie)"
 			{
 				parameter<uint32> SymbolColor: expr = "rgb(255,0,0)";
 			}

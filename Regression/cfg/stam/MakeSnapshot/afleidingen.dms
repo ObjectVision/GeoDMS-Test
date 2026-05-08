@@ -93,7 +93,7 @@ container afleidingen
 				// end case parameters
 			
 				unit<uint32> domain := 
-					select_with_attr_(
+					select_with_attr_by_cond(
 						uint32(PointCol(functioneel_pand/NW)) <= rectangle/max_x[rectangle_sel]
 					&&	uint32(PointRow(functioneel_pand/NW)) <= rectangle/max_y[rectangle_sel]
 					&&	uint32(PointCol(functioneel_pand/SE)) >= rectangle/min_x[rectangle_sel]
@@ -104,7 +104,7 @@ container afleidingen
 					attribute<geometries/rdc_mm> geometry_mm(poly) := functioneel_pand/geometry_mm[org_rel];
 				}
 //				attribute<geometries/rdc_mm> grens_mm(domain, polygon) := domain/geometry[geometries/rdc_mm];
-				attribute<geometries/rdc_mm> i4HV_mm (domain, polygon) := polygon_I4HV (domain/geometry_mm, inflate_size);
+				attribute<geometries/rdc_mm> i4HV_mm (domain, polygon) := geos_buffer_multi_polygon(domain/geometry_mm, inflate_size, 16b);
 
 				unit<uint32> neighbours:= polygon_connectivity(i4HV_mm)
 				{

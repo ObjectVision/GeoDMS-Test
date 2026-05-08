@@ -13,10 +13,10 @@ container test
 		attribute<.>            per_CompactedAllocDomain (CompactedAllocDomain) := select_data(CompactedAllocDomain, AllocDomain/IsCompactedDomain, per_AllocDomain);
 		attribute<impl/Nl_src>  NL_src_rel                           := const(1[impl/Nl_src], .);
 		
-		unit<uint32> Sub := subset(id(Provincie) > 0[Provincie])
+		unit<uint32> Sub := select_with_org_rel(id(Provincie) > 0[Provincie])
 		{
-			attribute<rdc_meter> Geometry (poly) := ../Geometry[Nr_OrgEntity];
-			attribute<string> name := ../name[Nr_OrgEntity];
+			attribute<rdc_meter> Geometry (poly) := ../Geometry[org_rel];
+			attribute<string> name := ../name[org_rel];
 			
 			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
 		}

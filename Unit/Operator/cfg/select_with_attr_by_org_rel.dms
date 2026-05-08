@@ -39,7 +39,7 @@ container select_with_attr_by_org_rel
 		}
 	}
 
-	unit<uint32> split := split_union_polygon(src/Square/geometry)
+	unit<uint32> split := bp_split_polygon(src/Square/geometry)
 	{
 		attribute<Geography/rdc_mm> deflate_100m (poly) := bg_buffer_multi_polygon(geometry, -100d, 16b);
 		attribute<units/ha>         area                := area(deflate_100m[Geography/rdc], units/m2) / 10000 [units/m2 / units/ha];

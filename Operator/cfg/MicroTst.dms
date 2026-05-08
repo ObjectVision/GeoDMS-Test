@@ -369,7 +369,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			
 		}
 		unit<uint32> e_dijkstra :=
-			dijkstra_m(
+			impedance_matrix(
 				'directed;startPoint(Node_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel'
 				,const(1.0f, linkset)
 				,linkset/f1
@@ -497,13 +497,13 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			parameter<int32> TresHold  := 30000i;
 			parameter<bool>  selGebied := True;
 	
-			unit<uint32> gem_sel: = = selGebied ? 'Subset(src/GM_code ==  GM_code) ' : 'Subset(src/OPP_TOT < ' + string(TresHold) + 'i)'
+			unit<uint32> gem_sel: = = selGebied ? 'select_with_org_rel(src/GM_code ==  GM_code) ' : 'select_with_org_rel(src/OPP_TOT < ' + string(TresHold) + 'i)'
 			{
-				attribute<string> label := src/label[nr_OrgEntity];
+				attribute<string> label := src/label[org_rel];
 			}
 			container inst := for_each_ne(
 				att/name
-				,'selectie(' + quote(att/name) + ', gem_sel, float32(src/' + att/name + '[ gem_sel/nr_OrgEntity]))'
+				,'selectie(' + quote(att/name) + ', gem_sel, float32(src/' + att/name + '[ gem_sel/org_rel]))'
 			);
 		}
 		template selectie
@@ -733,9 +733,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			}
 			
 		}
-		unit<uint32> testdomain_null:= Subset(id(testdomain1) > 1)
+		unit<uint32> testdomain_null:= select_with_org_rel(id(testdomain1) > 1)
 		{
-			attribute<geometries/rdc_mm> geometry_mm := testdomain1/geometry_mm[nr_OrgEntity];
+			attribute<geometries/rdc_mm> geometry_mm := testdomain1/geometry_mm[org_rel];
 		}
 	}
 	container Poly2grid
@@ -816,8 +816,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		attribute<string> is_c_or_m := ((centroid == centroid_or_mid) ? 'CENTR' : '     ')+'-'+((mid == centroid_or_mid) ? 'MID' : '   ');
 		
 	}
-	unit<uint32> stranger_centroids := subset(id(centroids)==17[centroids]) {
-		attribute<fpoint> geometry(poly)  := centroids/geometry[nr_OrgEntity];
+	unit<uint32> stranger_centroids := select_with_org_rel(id(centroids)==17[centroids]) {
+		attribute<fpoint> geometry(poly)  := centroids/geometry[org_rel];
 		
 		attribute<fpoint> centroid        := centroid(geometry);
 		attribute<fpoint> mid             := mid(geometry);
@@ -841,9 +841,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 
 			attribute<uint32> nr_vlakken      := sum(pand_vlak/nr_vlakken, pand_vlak/pand_rel);
 		}
-		unit<uint32> pand_points  := Subset(isDefined(pand/hoogte))
+		unit<uint32> pand_points  := select_with_org_rel(isDefined(pand/hoogte))
 		{
-			attribute<string> pand_key := string(id(pand)[nr_OrgEntity]);
+			attribute<string> pand_key := string(id(pand)[org_rel]);
 			attribute<pand> pand_rel := rlookup(pand_key, string(id(pand)));
 			attribute<uint32> vlak_id  := const(0,.);
 			attribute<string> pand_vlak_key := string(pand_rel) + '_' + string(vlak_id);
@@ -923,15 +923,15 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 				// end case parameters
 				parameter<string> thema_name:= csv/src/themas/name[thema_rel];
 
-				unit<uint32> src := Subset(uint32(csv/src/themas_rel) == thema_rel)
+				unit<uint32> src := select_with_org_rel(uint32(csv/src/themas_rel) == thema_rel)
 				{
-					//attribute<string>            Projectnr         := csv/src/Projectnr[nr_OrgEntity];
-					//attribute<string>            Projectnaam       := csv/src/Projectnaam[nr_OrgEntity];
-					//attribute<string>            NaamOpdrachtgever := csv/src/NaamOpdrachtgever[nr_OrgEntity];
-					attribute<string>            Plaats            := csv/src/Plaats[nr_OrgEntity];
-					//attribute<string>            Projectleider     := csv/src/Projectleider[nr_OrgEntity];
-					//attribute<string>            Thema             := csv/src/Thema[nr_OrgEntity];
-					//attribute<string>            pdf               := csv/src/url[nr_OrgEntity]+ '.pdf' +'$' + Projectnaam;
+					//attribute<string>            Projectnr         := csv/src/Projectnr[org_rel];
+					//attribute<string>            Projectnaam       := csv/src/Projectnaam[org_rel];
+					//attribute<string>            NaamOpdrachtgever := csv/src/NaamOpdrachtgever[org_rel];
+					attribute<string>            Plaats            := csv/src/Plaats[org_rel];
+					//attribute<string>            Projectleider     := csv/src/Projectleider[org_rel];
+					//attribute<string>            Thema             := csv/src/Thema[org_rel];
+					//attribute<string>            pdf               := csv/src/url[org_rel]+ '.pdf' +'$' + Projectnaam;
 				}
 			}
 		}
@@ -1460,9 +1460,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	{
 		attribute<UInt32> Sqr: Expr = "ID(.)*ID(.)";
 	}
-	unit<UInt32> SubSet: Expr = "SubSet(ID(TestSet) > 5)"
+	unit<UInt32> select_with_org_rel: Expr = "select_with_org_rel(ID(TestSet) > 5)"
 	{
-		attribute<UInt32> Sqr: Expr = "TestSet/Sqr[nr_OrgEntity]";
+		attribute<UInt32> Sqr: Expr = "TestSet/Sqr[org_rel]";
 	}
 	// Deze test laat zien hoe je templates kan instantieren met variabele domeinen (variabel in de zin van verschillende value types)
 	// Dit moet eigenlijk als bug gezien worden
@@ -1658,7 +1658,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<uint32> SymbolColor: DialogType = "SymbolColor", expr = "BrushColor";
 			attribute<int16>  PenWidth: DialogType = "PenWidth", expr = "const(1,.,int16)";
 			
-			unit<uint8> selectie:= Subset(classBreaks > 100);
+			unit<uint8> selectie:= select_with_org_rel(classBreaks > 100);
 		}
 		container source
 		{
@@ -2047,10 +2047,10 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<string> key : expr = "'I' + string(id(.))";
 			attribute<string> key2: expr = "'II' + string(id(RelativePaths/fileset/pand))";
 			container later {
-			unit<uint32> pand_sel: expr = "Subset(id(RelativePaths/fileset/pand) <= 3)"
+			unit<uint32> pand_sel: expr = "select_with_org_rel(id(RelativePaths/fileset/pand) <= 3)"
 			{
-				attribute<string> key:  expr = "pand/key[nr_OrgEntity]";
-				attribute<string> key2: expr = "pand/key2[nr_OrgEntity]";
+				attribute<string> key:  expr = "pand/key[org_rel]";
+				attribute<string> key2: expr = "pand/key2[org_rel]";
 			}
 			}
 			
@@ -2269,9 +2269,9 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			attribute<uint32> inw  : [200,500];
 
-			unit<uint32> selectie := subset(buurt/inw > 300)
+			unit<uint32> selectie := select_with_org_rel(buurt/inw > 300)
 			{
-				attribute<uint32> inw  := buurt/inw[nr_OrgEntity];
+				attribute<uint32> inw  := buurt/inw[org_rel];
 			}
 		}
 		container Cases
@@ -2394,9 +2394,9 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<float32>  area      := area(intersect[point_rd], float32);
 		}
 
-		unit<uint32> met_overlap_vector := Subset(overlap_vector/area > 0f)
+		unit<uint32> met_overlap_vector := select_with_org_rel(overlap_vector/area > 0f)
 		{
-			attribute<point_rd> geometry (poly) := value(overlap_vector/intersect[nr_OrgEntity], point_rd);
+			attribute<point_rd> geometry (poly) := value(overlap_vector/intersect[org_rel], point_rd);
 		}
 
 		container Grid
@@ -2449,13 +2449,13 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<buurt>   reverse_buurt_rel (grid/Domain) := reverse/buurt_rel[reverse_rel];
 			attribute<bool>    hasOverlap        (grid/Domain) := buurt_rel <> reverse_buurt_rel;
 	
-			unit<uint32> overlap := Subset(hasOverlap)
+			unit<uint32> overlap := select_with_org_rel(hasOverlap)
 			{
-				attribute<buurt>  dom_rel := buurt_rel[nr_OrgEntity];
+				attribute<buurt>  dom_rel := buurt_rel[org_rel];
 				attribute<string> BU_code := buurt/BU_code[dom_rel];
 				attribute<string> BU_naam := buurt/BU_naam[dom_rel];
 	
-				attribute<buurt>  rev_rel := reverse_buurt_rel[nr_OrgEntity];
+				attribute<buurt>  rev_rel := reverse_buurt_rel[org_rel];
 				attribute<string> BU_code_overlap := buurt/BU_code[rev_rel];
 				attribute<string> BU_naam_overlap := buurt/BU_naam[rev_rel];
 				
@@ -2496,9 +2496,9 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 				
 			container BU16580300_BU16580308
 			{
-				unit<uint32> overlappende_intermediates:= Subset(isDefined(rlookup(pointset_per_buurt/BU16580308/Point, pointset_per_buurt/BU16580300/Point)))
+				unit<uint32> overlappende_intermediates:= select_with_org_rel(isDefined(rlookup(pointset_per_buurt/BU16580308/Point, pointset_per_buurt/BU16580300/Point)))
 				{
-					attribute<point_rd> geometry  := pointset_per_buurt/BU16580308/Point[nr_OrgEntity];
+					attribute<point_rd> geometry  := pointset_per_buurt/BU16580308/Point[org_rel];
 				}
 			}
 		}
@@ -2525,13 +2525,13 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		}
 
 		unit<uint32> adres := 
-		  Subset(isDefined(adres_nl/geometry) && strlen(trim(adres_nl/postcode))==6)
+		  select_with_org_rel(isDefined(adres_nl/geometry) && strlen(trim(adres_nl/postcode))==6)
 		,	DialogData      = "geometry"
 		,	DialogType      = "Map"
 		{
-			attribute<point_rd> geometry            := adres_nl/geometry[nr_OrgEntity];
-			attribute<string>   nummeraanduiding_id := adres_nl/nummeraanduiding_id[nr_OrgEntity];
-			attribute<string>   postcode            := adres_nl/postcode[nr_OrgEntity];
+			attribute<point_rd> geometry            := adres_nl/geometry[org_rel];
+			attribute<string>   nummeraanduiding_id := adres_nl/nummeraanduiding_id[org_rel];
+			attribute<string>   postcode            := adres_nl/postcode[org_rel];
 			attribute<float32>  X_rd                := PointCol(geometry);
 			attribute<float32>  Y_rd                := PointRow(geometry);
 			attribute<pc6>      pc6_rel             := rlookup(postcode, pc6/values);

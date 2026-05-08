@@ -152,12 +152,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<point_rd> nextpoint;
 				}
 				unit <uint32> LinkSet_extra // bedoeld om de verbindingen die door de connect zijn gemaakt naar de locations dubbel op te nemen voor de dijkstra_directed
-				:= subset(LinkSet_org/isConnectionToLocation)
+				:= select_with_org_rel(LinkSet_org/isConnectionToLocation)
 				,	DialogData = "segments"
 				,	DialogType = "Map"
 				{
-					attribute<point_rd> point     := LinkSet_org/nextpoint[nr_OrgEntity];
-					attribute<point_rd> nextpoint := LinkSet_org/point[nr_OrgEntity];
+					attribute<point_rd> point     := LinkSet_org/nextpoint[org_rel];
+					attribute<point_rd> nextpoint := LinkSet_org/point[org_rel];
 				}
 				
 				unit <uint32> LinkSet := Union_Unit(LinkSet_org,LinkSet_extra)
@@ -190,7 +190,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<NodeSet> nr_DestinationNode (source/destination) := rlookup(source/destination/location, NodeSet/Values);
 			}
 			unit<uint32> dijkstra_OD_maxtime_alt_imp :=
-				dijkstra_m('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
 					, connected/LinkSet/dist * 1[s / m]
 					, connected/F1
 					, connected/F2

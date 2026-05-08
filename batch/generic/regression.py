@@ -2,7 +2,16 @@ import os
 import platform
 import importlib.util
 import sys
-from packaging.version import Version
+from packaging.version import Version, InvalidVersion
+
+def _try_parse_version(s:str):
+    """Return packaging.Version(s), or None if s is not a semantic version
+    (e.g. the "local" pseudo-version). None means "newer than anything"
+    in the comparisons below."""
+    try:
+        return Version(s)
+    except InvalidVersion:
+        return None
 import glob
 from bs4 import BeautifulSoup
 import filecmp
@@ -298,12 +307,17 @@ def get_experiment_name_from_experiment_filename(experiment_filename:str) -> str
 
 def get_valid_result_folders(version:str, result_paths:dict) -> list:
     valid_result_folders = []
+    if not os.path.isdir(result_paths["results_base_folder"]):
+        return valid_result_folders
+    target = _try_parse_version(version)
     result_folder_candidates = os.listdir(result_paths["results_base_folder"])
     for candidate in result_folder_candidates:
         if not folder_is_results_folder(candidate):
             continue
         major, minor, patch, architecture, sf, multithreading, local_machine_name = parse_folder_name(candidate)
-        if Version(f"{major}.{minor}.{patch}") <= Version(version):
+        # Non-semver `version` (e.g. "local") is treated as newer than any
+        # historical numeric version, so all candidates are valid for compare.
+        if target is None or Version(f"{major}.{minor}.{patch}") <= target:
             valid_result_folders.append(candidate)
 
     return valid_result_folders
@@ -325,6 +339,8 @@ def get_semantic_version_from_folder_name(result_folder_name:str):
     return f"{major}.{minor}.{patch}"
 
 def get_version_range(valid_result_folders:list) -> tuple:
+    if not valid_result_folders:
+        return (None, None)
     newest_tested_geodms_version = get_semantic_version_from_folder_name(valid_result_folders[0])
     oldest_tested_geodms_version = newest_tested_geodms_version
     for result_folder_name in valid_result_folders:
