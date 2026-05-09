@@ -350,6 +350,15 @@ def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3")
     parser.add_argument("-MT1", help="Multithreading 1: S1 or C1")
     parser.add_argument("-MT2", help="Multithreading 2: S2 or C2")
     parser.add_argument("-MT3", help="Multithreading 3: S3 or C3")
+    parser.add_argument(
+        "-tests",
+        help=(
+            "Comma-separated test-name substrings to run. Substring is matched "
+            "against the full experiment name. Examples: '-tests t060' runs only "
+            "the t060_ test; '-tests t060,t301' runs both; '-tests t06' runs all "
+            "t06* (t060, t061, ...). Omit to run the full suite."
+        ),
+    )
     args = parser.parse_args()
     
     if args.version:
@@ -381,6 +390,35 @@ def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3")
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3)
+
+    # Optional test-name filter for fast iteration. The HTML report still
+    # picks up cached results for the unselected tests, so consistency with
+    # a full prior run is preserved — only the listed tests are re-executed.
+    # We also wipe the matching .bin caches so the runner actually re-runs
+    # the targeted tests (otherwise it skips them with "results are reused").
+    if args.tests:
+        filters = [t.strip() for t in args.tests.split(",") if t.strip()]
+        filtered = [exp for exp in operator_experiments
+                    if any(f in exp.name for f in filters)]
+        if not filtered:
+            print(f"-tests filter {filters} matched 0 experiments out of "
+                  f"{len(operator_experiments)}; available names:", file=sys.stderr)
+            for exp in operator_experiments:
+                print(f"  {exp.name}", file=sys.stderr)
+            sys.exit(2)
+        print(f"-tests filter {filters} -> running {len(filtered)} of "
+              f"{len(operator_experiments)} experiments:")
+        wiped = 0
+        for exp in filtered:
+            print(f"  {exp.name}")
+            cache = f"{result_paths['results_folder']}/{exp.name}.bin"
+            if os.path.exists(cache):
+                os.remove(cache)
+                wiped += 1
+        if wiped:
+            print(f"-tests: wiped {wiped} cached .bin file(s) to force re-run")
+        operator_experiments = filtered
+
     regression.run_experiments(operator_experiments)
     regression.collect_and_generate_test_results(display_version, result_paths)
 
