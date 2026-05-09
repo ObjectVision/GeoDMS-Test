@@ -316,6 +316,16 @@ def get_geodms_paths(version:str) -> dict:
         geodms_paths["GeoDmsRunPrefix"] = local_spec["RunPrefix"]
         geodms_paths["GeoDmsExeSuffix"] = local_spec["ExeSuffix"]
         geodms_paths["GeoDmsLocalFlavor"] = local_spec["Flavor"]
+    elif version.endswith("l"):
+        # Linux flavor installed via .deb (CreateLinuxSetup.sh) at
+        # /opt/ObjectVision/GeoDms<version>. Invoked via `wsl --` so the
+        # rest of the test command (paths, env vars, args) is forwarded
+        # into the WSL distro.
+        geodms_paths["GeoDmsPath"] = f"/opt/ObjectVision/GeoDms{version}"
+        geodms_paths["GeoDmsDisplayVersion"] = version
+        geodms_paths["GeoDmsRunPrefix"] = "wsl --"
+        geodms_paths["GeoDmsExeSuffix"] = ""
+        geodms_paths["GeoDmsLocalFlavor"] = "linux-release"
     else:
         geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
         geodms_paths["GeoDmsDisplayVersion"] = version
@@ -325,8 +335,13 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths["GeoDmsProfilerPath"] = f"{s["ProfilerDir"]}/profiler.py"
     geodms_paths["GeoDmsRegressionPath"] = f"{s["ProfilerDir"]}/regression.py"
     exe = geodms_paths["GeoDmsExeSuffix"]
-    geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun{exe}"
-    geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt{exe}"
+    # If a RunPrefix is set (e.g. "wsl --" for linux-release flavors), prepend
+    # it so any consumer that just builds f"{GeoDmsRunPath} <args>" actually
+    # invokes the binary through WSL rather than as a direct Windows process.
+    prefix = geodms_paths["GeoDmsRunPrefix"]
+    prefix_str = f"{prefix} " if prefix else ""
+    geodms_paths["GeoDmsRunPath"] = f"{prefix_str}{geodms_paths["GeoDmsPath"]}/GeoDmsRun{exe}"
+    geodms_paths["GeoDmsGuiQtPath"] = f"{prefix_str}{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt{exe}"
     return geodms_paths
 
 def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3"):
