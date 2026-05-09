@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 import importlib
@@ -299,6 +300,26 @@ def workaround_issue_1101(local_data_dir_regression:str):
         print(f"[1101 workaround] cleaned: {path}")
     return
 
+_FLAVOR_RE = re.compile(r'^(\d+(?:\.\d+)+)([a-z])$')
+
+def _display_version_with_flavor_dot(version:str) -> str:
+    """Make sure the display-version inserts a dot before any one-letter
+    flavor suffix (m / c / l / …) so the folder name later splits cleanly
+    on `_` into [major, minor, patch, flavor, arch, …].
+
+    `20.0.0c` -> `20.0.0.c`     # split-on-`_` gives [20, 0, 0, c, …]
+    `20.0.0`  -> `20.0.0`       # no flavor letter, unchanged
+    `local`   -> `local`        # not numeric, unchanged
+
+    Without this, `20.0.0c` produces folder `20_0_0c_x64_…` which
+    `parse_folder_name` reads as patch=`0c`, no flavor, breaking the
+    report's column lookup for that run.
+    """
+    m = _FLAVOR_RE.match(version)
+    if m:
+        return f"{m.group(1)}.{m.group(2)}"
+    return version
+
 def get_geodms_paths(version:str) -> dict:
     assert(version)
     s = _load_local_settings()
@@ -322,13 +343,13 @@ def get_geodms_paths(version:str) -> dict:
         # rest of the test command (paths, env vars, args) is forwarded
         # into the WSL distro.
         geodms_paths["GeoDmsPath"] = f"/opt/ObjectVision/GeoDms{version}"
-        geodms_paths["GeoDmsDisplayVersion"] = version
+        geodms_paths["GeoDmsDisplayVersion"] = _display_version_with_flavor_dot(version)
         geodms_paths["GeoDmsRunPrefix"] = "wsl --"
         geodms_paths["GeoDmsExeSuffix"] = ""
         geodms_paths["GeoDmsLocalFlavor"] = "linux-release"
     else:
         geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
-        geodms_paths["GeoDmsDisplayVersion"] = version
+        geodms_paths["GeoDmsDisplayVersion"] = _display_version_with_flavor_dot(version)
         geodms_paths["GeoDmsRunPrefix"] = ""
         geodms_paths["GeoDmsExeSuffix"] = ".exe"
         geodms_paths["GeoDmsLocalFlavor"] = ""
