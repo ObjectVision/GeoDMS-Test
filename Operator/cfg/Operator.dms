@@ -12477,9 +12477,16 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		Container GeoDmsPlatform: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/GeoDmsPlatform"
 		{
 			parameter<string> BuildConfig := GeoDmsPlatform();
+			// BuildConfig is now <arch>-<os>-<toolset>, e.g. "x64-windows-cmake",
+			// "x64-windows-msbuild", "x64-linux-cmake" (see rtc/dll/src/gen/General.cpp).
+			// The plain "x64-windows" / "x64-linux" / "x64-osx" forms are kept for
+			// older builds that pre-date the toolset suffix.
 			parameter<bool>   test        := BuildConfig == 'Win32' || BuildConfig == 'x64'
 			                              || BuildConfig == 'x64-windows' || BuildConfig == 'x86-windows'
-			                              || BuildConfig == 'x64-linux'   || BuildConfig == 'x64-osx';
+			                              || BuildConfig == 'x64-linux'   || BuildConfig == 'x64-osx'
+			                              || BuildConfig == 'x64-windows-cmake'   || BuildConfig == 'x64-windows-msbuild'
+			                              || BuildConfig == 'x86-windows-cmake'   || BuildConfig == 'x86-windows-msbuild'
+			                              || BuildConfig == 'x64-linux-cmake'     || BuildConfig == 'x64-osx-cmake';
 		}
 		Container Regex_match
 		{
