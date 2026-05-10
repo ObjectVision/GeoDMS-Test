@@ -16,9 +16,12 @@ gui_instance() {
         return
     fi
 
+    # /SM enables RSF_DebugMode so DetailPage captures include ProgressState +
+    # CalcExpr/CheckedKeyExpr rows (Windows tests rely on the dev's persisted
+    # registry setting; on Linux there's no persistence so we set it here).
     echo "****************"
-    echo "Test: $GEODMS_GUI_QT_PATH /T$dmsscript /$f1 /$f2 /$f3 $dms_file"
-    "$GEODMS_GUI_QT_PATH" "/T$dmsscript" "/$f1" "/$f2" "/$f3" "$dms_file"
+    echo "Test: $GEODMS_GUI_QT_PATH /T$dmsscript /$f1 /$f2 /$f3 /SM $dms_file"
+    "$GEODMS_GUI_QT_PATH" "/T$dmsscript" "/$f1" "/$f2" "/$f3" "/SM" "$dms_file"
     local rc=$?
     echo ""
 
