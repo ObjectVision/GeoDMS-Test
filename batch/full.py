@@ -337,22 +337,30 @@ def get_geodms_paths(version:str) -> dict:
         geodms_paths["GeoDmsRunPrefix"] = local_spec["RunPrefix"]
         geodms_paths["GeoDmsExeSuffix"] = local_spec["ExeSuffix"]
         geodms_paths["GeoDmsLocalFlavor"] = local_spec["Flavor"]
-    elif version.endswith("l"):
-        # Linux flavor installed via .deb (CreateLinuxSetup.sh) at
-        # /opt/ObjectVision/GeoDms<version>. Invoked via `wsl --` so the
-        # rest of the test command (paths, env vars, args) is forwarded
-        # into the WSL distro.
-        geodms_paths["GeoDmsPath"] = f"/opt/ObjectVision/GeoDms{version}"
-        geodms_paths["GeoDmsDisplayVersion"] = _display_version_with_flavor_dot(version)
-        geodms_paths["GeoDmsRunPrefix"] = "wsl --"
-        geodms_paths["GeoDmsExeSuffix"] = ""
-        geodms_paths["GeoDmsLocalFlavor"] = "linux-release"
     else:
-        geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
-        geodms_paths["GeoDmsDisplayVersion"] = _display_version_with_flavor_dot(version)
-        geodms_paths["GeoDmsRunPrefix"] = ""
-        geodms_paths["GeoDmsExeSuffix"] = ".exe"
-        geodms_paths["GeoDmsLocalFlavor"] = ""
+        # Canonicalise the user-supplied version to the dotted form the
+        # rest of the pipeline expects (folder name parser splits on `_`
+        # into [major, minor, patch, flavor, arch, …], install dirs are
+        # named GeoDms<ver>.<flavor>, etc.). Accepts either form on the
+        # CLI: `-version 20.0.0.l` (canonical) or `-version 20.0.0l`
+        # (compact, kept as a courtesy).
+        canonical = _display_version_with_flavor_dot(version)
+        if canonical.endswith(".l"):
+            # Linux flavor installed via .deb (nsi/CreateLinuxSetup.sh) at
+            # /opt/ObjectVision/GeoDms<canonical>. Invoked via `wsl --` so
+            # the rest of the test command (paths, env vars, args) is
+            # forwarded into the WSL distro.
+            geodms_paths["GeoDmsPath"] = f"/opt/ObjectVision/GeoDms{canonical}"
+            geodms_paths["GeoDmsDisplayVersion"] = canonical
+            geodms_paths["GeoDmsRunPrefix"] = "wsl --"
+            geodms_paths["GeoDmsExeSuffix"] = ""
+            geodms_paths["GeoDmsLocalFlavor"] = "linux-release"
+        else:
+            geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{canonical}")}\""
+            geodms_paths["GeoDmsDisplayVersion"] = canonical
+            geodms_paths["GeoDmsRunPrefix"] = ""
+            geodms_paths["GeoDmsExeSuffix"] = ".exe"
+            geodms_paths["GeoDmsLocalFlavor"] = ""
     geodms_paths["GeoDmsProfilerPath"] = f"{s["ProfilerDir"]}/profiler.py"
     geodms_paths["GeoDmsRegressionPath"] = f"{s["ProfilerDir"]}/regression.py"
     exe = geodms_paths["GeoDmsExeSuffix"]
