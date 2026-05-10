@@ -302,6 +302,32 @@ def workaround_issue_1101(local_data_dir_regression:str):
 
 _FLAVOR_RE = re.compile(r'^(\d+(?:\.\d+)+)([a-z])$')
 
+# Windows absolute paths anywhere in a string. The "preceded by" alternation
+# avoids URL false positives (`https://` — where `s` is part of a multi-letter
+# scheme name) while still matching switch-attached paths (`/LC:/foo` — where
+# `C` is preceded by `/L`, i.e. a slash + a single switch-letter). Drive
+# letters used in actual cmds are always exactly one letter.
+_WIN_PATH_RE = re.compile(r"(^|[\s;=\"']|/[A-Za-z])([A-Za-z]):[/\\]([^\s;\"']*)")
+
+def to_wsl_path(s:str) -> str:
+    """Translate every Windows absolute path in `s` to its WSL `/mnt/<letter>/…`
+    equivalent. Non-path tokens, env-var names, switches like `/S1`, and the
+    `wsl --` prefix all pass through unchanged.
+
+    Examples:
+        "C:/dev/tst"                          -> "/mnt/c/dev/tst"
+        "F:\\\\SourceData\\\\BAG20"           -> "/mnt/f/SourceData/BAG20"
+        "wsl -- /opt/.../GeoDmsRun /LC:/log.txt /S1 C:/cfg/x.dms target"
+            -> "wsl -- /opt/.../GeoDmsRun /L/mnt/c/log.txt /S1 /mnt/c/cfg/x.dms target"
+        "https://example.com/page"            -> unchanged (URL scheme not a drive)
+    """
+    def repl(m):
+        prefix = m.group(1) or ''
+        letter = m.group(2).lower()
+        rest = m.group(3).replace(chr(92), '/')
+        return f"{prefix}/mnt/{letter}/{rest}"
+    return _WIN_PATH_RE.sub(repl, s)
+
 def _display_version_with_flavor_dot(version:str) -> str:
     """Make sure the display-version inserts a dot before any one-letter
     flavor suffix (m / c / l / …) so the folder name later splits cleanly
@@ -419,6 +445,24 @@ def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3")
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3)
+
+    # Linux-flavor path translation. The whole command line + every env var
+    # value contains Windows-style paths (C:/…, F:/…); the WSL-side binary
+    # needs them in /mnt/<letter>/… form. Translate both, and prepend a
+    # `WSLENV=…` entry so wsl.exe forwards the (now POSIX-shaped) values
+    # to the Linux distro. Without this every linux-flavor test fails
+    # at the first I/O on the cfg path or log path.
+    if geodms_paths.get("GeoDmsLocalFlavor") == "linux-release":
+        for exp in operator_experiments:
+            exp.command = to_wsl_path(exp.command)
+            if exp.environment_variables:
+                ev = to_wsl_path(exp.environment_variables)
+                # Build WSLENV listing every variable name so wsl.exe propagates
+                # them (without /p — we've already translated paths ourselves).
+                names = [pair.split('=', 1)[0].strip()
+                         for pair in ev.split(';') if '=' in pair]
+                ev = ev + ';WSLENV=' + ':'.join(names)
+                exp.environment_variables = ev
 
     # Optional test-name filter for fast iteration. The HTML report still
     # picks up cached results for the unselected tests, so consistency with
