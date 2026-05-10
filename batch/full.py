@@ -29,6 +29,7 @@ def import_module_from_path(path):
 _BUILT_IN_DEFAULTS = {
     "RegressionTestsSourceDataDir": "C:/SourceData/RegressionTests",
     "RegressionTestsAltSourceDataDir": "D:/SourceData",
+    "SourceDataDir": "",  # if blank, derived from RegressionTestsSourceDataDir
     "LocalDataDir": "C:/LocalData",
     "ProfilerDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
     "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
@@ -116,6 +117,18 @@ def get_local_machine_parameters() -> dict:
     local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"] = s["RegressionTestsSourceDataDir"]
     local_machine_parameters["RegressionTestsAltSourceDataDir"] = s["RegressionTestsAltSourceDataDir"]
     local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"] = s["LocalDataDir"]
+
+    # SourceDataDir mirrors the value the Windows registry holds (set via
+    # GUI Options). On Linux there is no registry, so we forward it via the
+    # GEODMS_directories_SourceDataDir env var. Falls back to stripping the
+    # trailing /RegressionTests off RegressionTestsSourceDataDir, which is
+    # how the cfg-side fallback (`%sourcedataDir%\RegressionTests`) reverses
+    # the relation.
+    src = s.get("SourceDataDir") or ""
+    if not src:
+        rts = s["RegressionTestsSourceDataDir"].rstrip("/")
+        src = rts[:-len("/RegressionTests")] if rts.lower().endswith("/regressiontests") else rts
+    local_machine_parameters["GEODMS_directories_SourceDataDir"] = src
 
     # derived
     local_machine_parameters["LocalDataDirRegression"] = f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/regression"
@@ -463,6 +476,14 @@ def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3")
                          for pair in ev.split(';') if '=' in pair]
                 ev = ev + ';WSLENV=' + ':'.join(names)
                 exp.environment_variables = ev
+
+        # Override results_folder.txt with the WSL-translated path so the
+        # cfg-side `results_folder` parameter (read via %LocalDataDir%/.../
+        # results_folder.txt) hands the Linux binary a /mnt/c/… path instead
+        # of a C:/… path that maps to nowhere on Linux.
+        rf_path = f"{local_machine_parameters['tmpFileDir']}/results_folder.txt"
+        with open(rf_path, "w") as f:
+            f.write(to_wsl_path(result_paths["results_folder"]))
 
     # Optional test-name filter for fast iteration. The HTML report still
     # picks up cached results for the unselected tests, so consistency with
