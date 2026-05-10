@@ -10,9 +10,10 @@ geodms_instance_error_is_ok() {
     local result_file="$3"
     local f1="${4:-S1}" f2="${5:-S2}" f3="${6:-S3}"
 
+    # /SH enables RSF_ShowThousandSeparator (matches Windows dev environment).
     echo "****************"
-    echo "Test (error expected): $GEODMS_RUN_PATH /$f1 /$f2 /$f3 $dms_file $item"
-    "$GEODMS_RUN_PATH" "/$f1" "/$f2" "/$f3" "$dms_file" "$item"
+    echo "Test (error expected): $GEODMS_RUN_PATH /$f1 /$f2 /$f3 /SH $dms_file $item"
+    "$GEODMS_RUN_PATH" "/$f1" "/$f2" "/$f3" "/SH" "$dms_file" "$item"
     local rc=$?
     echo ""
 
