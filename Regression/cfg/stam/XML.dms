@@ -23,7 +23,7 @@ container XML
 			parameter<string> ComSpec         := Expand(., '%env:ComSpec%');
 			parameter<string> FileNameDirInfo := '%LocalDataProjDir%/dirinfo_pand_nhr.str';
 
-			parameter<string> DirCmdOrg       := Expand(., 'Dir '+ XmlDir +'/*.xml > ' + FileNameDirInfo);
+			parameter<string> DirCmdOrg       := Expand(., 'Dir '+ XmlDir +'/*.xml > "' + FileNameDirInfo+'"');
 			parameter<string> DirCmd          := Replace(DirCmdOrg, '/', '\\') + ' /B';
 		}
 
@@ -204,18 +204,18 @@ container XML
 				attribute<string>  str_sequence       := '{'+string(uint32(count) * uint32(srsDimension)) + ':' + values + '}', IntegrityCheck = "srsDimension == '2' || srsDimension == '3'";
 				attribute<Float64> f64_sequence(poly) := Float64Seq(str_sequence);
 	
-				unit<uint32> posListUnit := range(uint32, 0, #posList) // trick to avoid coordinates/SequenceNr having an untraceable values unit.
+				unit<uint32> posListUnit := range(uint32, 0, #posList) // trick to avoid coordinates/Sequence_rel having an untraceable values unit.
 				{
 					attribute<uint32> nrCoordPerPoint := union_data(posListUnit, uint32(srsDimension));
 				}
 				unit<uint32> coordinates := sequence2points(union_data(posListUnit, f64_sequence));
 	
-				unit<uint32> p := select_with_org_rel(coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/SequenceNr] == 0)
+				unit<uint32> p := select_with_org_rel(coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/sequence_rel] == 0)
 				{
 					attribute<float64>     x    := coordinates/point[org_rel  ];
 					attribute<float64>     y    := coordinates/point[org_rel+1];
 					attribute<rdc_mm>      p_mm := point_yx(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
-					attribute<posListUnit> s    := coordinates/SequenceNr[org_rel];
+					attribute<posListUnit> s    := coordinates/sequence_rel[org_rel];
 					attribute<uint32>      fo   := coordinates/ordinal[org_rel] / posListUnit/nrCoordPerPoint[s]; // forward winding
 					attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding
 				}
