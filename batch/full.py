@@ -467,7 +467,17 @@ def run_full_regression_test(version:str="18.0.3", MT1="S1", MT2="S2", MT3="S3")
     # at the first I/O on the cfg path or log path.
     if geodms_paths.get("GeoDmsLocalFlavor") == "linux-release":
         for exp in operator_experiments:
-            exp.command = to_wsl_path(exp.command)
+            # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
+            # Linux-produced output (statistics HTML, test_log strings) matches
+            # the reference files captured on Windows where the dev's persistent
+            # registry setting has thousand-separator on. Insert just after the
+            # last /S<N> multithreading flag.
+            cmd = exp.command
+            for tail in (" /S3 ", " /S2 ", " /S1 "):
+                if tail in cmd:
+                    cmd = cmd.replace(tail, tail.rstrip() + " /SH ", 1)
+                    break
+            exp.command = to_wsl_path(cmd)
             if exp.environment_variables:
                 ev = to_wsl_path(exp.environment_variables)
                 # Build WSLENV listing every variable name so wsl.exe propagates
