@@ -1,13 +1,17 @@
 Echo off
 CLS
 
+REM Calling convention (changed 2026-05-12):
+REM   %1 = version selector (D32/R32/D64/R64/CD64/CR64 or numeric like 20.0.0)
+REM   %2 = flavor suffix    (m / c / l; required when %1 is numeric)
+REM   %3 %4 %5 = MT flags   (S1/S2/S3 or C1/C2/C3; defaulted below)
 set version=%1
-set flag1=%2
-set flag2=%3
-set flag3=%4
+set flavor=%2
+set flag1=%3
+set flag2=%4
+set flag3=%5
 
-if (%2)==() ( Echo off ) else ( Echo %2 )
-if (%1)==() ( Echo Usage: UNIT.BAT ^[D32^|R32^|D64^|R64^|^<versionNr^>]
+if (%1)==() ( Echo Usage: UNIT.BAT ^[D32^|R32^|D64^|R64^|^<versionNr^>] ^[flavor^]
 			  GoTo End)
 IF (%flag1%) ==() ( set flag1=S1 )
 IF (%flag2%) ==() ( set flag2=S2 )
@@ -17,7 +21,7 @@ REM SECTION SET RELEVANT DIRS
 Call generic\SetLocalDataDir.bat
 Set ResultDir=%LocalDataDir%\GeoDMSTestResults
 Set ResultFileName=%ResultDir%\unit\result.txt
-Call generic\SetGeoDMSPlatform.bat %version%
+Call generic\SetGeoDMSPlatform.bat %version% %flavor%
 
 Set GeoDmsRunCmdBase="%GeoDmsRunPath%" 
 Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
