@@ -190,7 +190,11 @@ REM IF %ERRORLEVEL% NEQ 0 Echo "%GeoDmsGuiQtPath%" FAILED >> %ResultFileName%
 
 REM SECTION MAKE FINAL RESULT FILE AND PRESENT IN NOTEPAD ++
 Set Sequence=%date:/=-%_%time::=-%
-SET ResultFileFinalName=v%1_%Sequence%.txt
+if "%flavor%"=="" (
+	SET ResultFileFinalName=v%version%_%Sequence%.txt
+) else (
+	SET ResultFileFinalName=v%version%.%flavor%_%Sequence%.txt
+)
 RENAME "%ResultFileName%" "%ResultFileFinalName%"
 
 START "" "%ProgramFiles%\Notepad++\Notepad++.exe"  "%ResultDir%\unit\%ResultFileFinalName%"
