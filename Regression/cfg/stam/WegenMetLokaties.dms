@@ -47,12 +47,13 @@ container WegenMetLokaties
 		}*/
 		unit<uint32> SubWegenMetVerbondenLocaties := connect(WegenVerbonden/resultaat/geen_snelwegen/geometry, locaties/geometry) // hiermee verbinden we de herkomst en bestemmingslocaties aan het wegenNetwerk
 		//,	DialogData = "UnionData"
-		,	DialogType = "Map"
-//		,	StorageName = "%SourceDataDir%/OperatorLarge/PC6_connect.fss"
+//		,	DialogType = "Map"
+//		,	StorageName = "%SourceDataDir%/RegressionTests/PC6_connect.fss"
 		{
-			attribute<point_rd>       geometry(arc);
-			attribute<eenheden/km_hr> KMH           := WegenVerbonden/resultaat/geen_snelwegen/KMH[arc_rel];
-			attribute<s>              traveltime_s  := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[arc_rel];
+			attribute<point_rd>       geometry(arc): DisableStorage = "True";
+//			attribute<point_rd>       UnionData(arc) := geometry;
+			attribute<eenheden/km_hr> KMH           := WegenVerbonden/resultaat/geen_snelwegen/KMH[arc_rel], DisableStorage = "True";
+			attribute<s>              traveltime_s  := WegenVerbonden/resultaat/geen_snelwegen/traveltime_s[arc_rel], DisableStorage = "True";
 		}
 		
 		container SubWegenMetVerbondenLocatiesInfo := connect_info(WegenVerbonden/resultaat/geen_snelwegen/geometry, locaties/geometry), DialogType = "Map", DialogData = "CutPoint"

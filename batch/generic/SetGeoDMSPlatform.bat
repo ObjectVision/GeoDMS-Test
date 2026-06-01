@@ -9,8 +9,16 @@ if "%ProgramFiles(x86)%"=="" (
 
 if ("%geodms_rootdir%") EQU ("") Set geodms_rootdir=C:\dev\GeoDMS
 
-Rem Verwerk de meegegeven parameter die bepaalt welke exe getest moet worden
-Set GeoDmsPath=%ProgramFiles%\ObjectVision\GeoDms%1%
+Rem %1 = version selector. %2 = flavor suffix (m / c / l). The flavor is
+Rem only meaningful for the installed-build case below (line 13); the
+Rem dev-tree shortcuts (D32/R32/D64/R64/CD64/CR64) overwrite GeoDmsPath
+Rem after that, so a flavor passed alongside a dev-tree shortcut is
+Rem harmlessly discarded.
+IF "%2"=="" (
+    Set GeoDmsPath=%ProgramFiles%\ObjectVision\GeoDms%1
+) ELSE (
+    Set GeoDmsPath=%ProgramFiles%\ObjectVision\GeoDms%1.%2
+)
 IF %1 == D32  Set GeoDmsPath=%geodms_rootdir%\bin\Debug\Win32
 IF %1 == R32  Set GeoDmsPath=%geodms_rootdir%\bin\Release\Win32
 IF %1 == D64  Set GeoDmsPath=%geodms_rootdir%\bin\Debug\x64

@@ -20,11 +20,20 @@ container XML
 	{
 		container impl
 		{
+			// StartChildProcess on Linux detects modules containing "cmd" /
+			// "ComSpec" (and any unresolved placeholder like "env:ComSpec")
+			// and routes through /bin/sh; the "/c " prefix is stripped. So
+			// the shell+/c is portable — only the listing command itself
+			// needs to be POSIX on Linux. Detect via the *resolved* ComSpec
+			// path containing "cmd" (Windows) vs not (Linux's unresolved
+			// "env:ComSpec" sentinel).
 			parameter<string> ComSpec         := Expand(., '%env:ComSpec%');
+			parameter<bool>   isWindows       := strcount(ComSpec, 'cmd') > 0;
 			parameter<string> FileNameDirInfo := '%LocalDataProjDir%/dirinfo_pand_nhr.str';
 
-			parameter<string> DirCmdOrg       := Expand(., 'Dir '+ XmlDir +'/*.xml > ' + FileNameDirInfo);
-			parameter<string> DirCmd          := Replace(DirCmdOrg, '/', '\\') + ' /B';
+			parameter<string> DirCmdWin       := Replace(Expand(., 'Dir ' + XmlDir + '/*.xml > "' + FileNameDirInfo + '"'), '/', '\\') + ' /B';
+			parameter<string> DirCmdPosix     := Expand(., 'ls -1 ' + XmlDir + '/*.xml > "' + FileNameDirInfo + '"');
+			parameter<string> DirCmd          := isWindows ? DirCmdWin : DirCmdPosix;
 		}
 
 		parameter<UInt32> writePandenlijst_ec := exec_ec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataProjDir%'));
@@ -36,13 +45,18 @@ container XML
 			parameter<uint32> nr_regels:=strcount(pandenlijst,'\n');
 			unit<uint32> alle_regels := range(uint32, 0, nr_regels)
 			{
-				attribute<string> inhoud     := uppercase(readLines(pandenlijst, ., 0));
-				attribute<bool>   isxmlfile  := strcount(inhoud,'.XML') > 0;
+				// Keep `inhoud` at original case — it's later used as the
+				// filesystem path for parse_xml, and Linux is case-sensitive.
+				// Use a separate uppercase view only for the .XML / PND
+				// extension/marker checks.
+				attribute<string> inhoud     := readLines(pandenlijst, ., 0);
+				attribute<string> inhoud_uc  := uppercase(inhoud);
+				attribute<bool>   isxmlfile  := strcount(inhoud_uc,'.XML') > 0;
 				attribute<.>      id         := id(.);
 			}
 			container xml_bestanden
 			{
-				unit<uint32> pand := select_with_org_rel(alle_regels/isxmlfile && strcount(alle_regels/inhoud,'PND')> 0)
+				unit<uint32> pand := select_with_org_rel(alle_regels/isxmlfile && strcount(alle_regels/inhoud_uc,'PND')> 0)
 				{
 					attribute<string> naam := alle_regels/inhoud[org_rel];
 				}
@@ -205,7 +219,7 @@ container XML
 				attribute<string>  str_sequence       := '{'+string(uint32(count) * uint32(srsDimension)) + ':' + values + '}', IntegrityCheck = "srsDimension == '2' || srsDimension == '3'";
 				attribute<Float64> f64_sequence(poly) := Float64Seq(str_sequence);
 	
-				unit<uint32> posListUnit := range(uint32, 0, #posList) // trick to avoid coordinates/SequenceNr having an untraceable values unit.
+				unit<uint32> posListUnit := range(uint32, 0, #posList) // trick to avoid coordinates/Sequence_rel having an untraceable values unit.
 				{
 					attribute<uint32> nrCoordPerPoint := union_data(posListUnit, uint32(srsDimension));
 				}

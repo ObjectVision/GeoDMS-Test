@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 import importlib
@@ -28,6 +29,7 @@ def import_module_from_path(path):
 _BUILT_IN_DEFAULTS = {
     "RegressionTestsSourceDataDir": "C:/SourceData/RegressionTests",
     "RegressionTestsAltSourceDataDir": "D:/SourceData",
+    "SourceDataDir": "",  # if blank, derived from RegressionTestsSourceDataDir
     "LocalDataDir": "C:/LocalData",
     "ProfilerDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
     "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
@@ -115,6 +117,18 @@ def get_local_machine_parameters() -> dict:
     local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"] = s["RegressionTestsSourceDataDir"]
     local_machine_parameters["RegressionTestsAltSourceDataDir"] = s["RegressionTestsAltSourceDataDir"]
     local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"] = s["LocalDataDir"]
+
+    # SourceDataDir mirrors the value the Windows registry holds (set via
+    # GUI Options). On Linux there is no registry, so we forward it via the
+    # GEODMS_directories_SourceDataDir env var. Falls back to stripping the
+    # trailing /RegressionTests off RegressionTestsSourceDataDir, which is
+    # how the cfg-side fallback (`%sourcedataDir%\RegressionTests`) reverses
+    # the relation.
+    src = s.get("SourceDataDir") or ""
+    if not src:
+        rts = s["RegressionTestsSourceDataDir"].rstrip("/")
+        src = rts[:-len("/RegressionTests")] if rts.lower().endswith("/regressiontests") else rts
+    local_machine_parameters["GEODMS_directories_SourceDataDir"] = src
 
     # derived
     local_machine_parameters["LocalDataDirRegression"] = f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/regression"
@@ -306,6 +320,52 @@ def workaround_issue_1101(local_data_dir_regression:str):
         print(f"[1101 workaround] cleaned: {path}")
     return
 
+_FLAVOR_RE = re.compile(r'^(\d+(?:\.\d+)+)([a-z])$')
+
+# Windows absolute paths anywhere in a string. The "preceded by" alternation
+# avoids URL false positives (`https://` — where `s` is part of a multi-letter
+# scheme name) while still matching switch-attached paths (`/LC:/foo` — where
+# `C` is preceded by `/L`, i.e. a slash + a single switch-letter). Drive
+# letters used in actual cmds are always exactly one letter.
+_WIN_PATH_RE = re.compile(r"(^|[\s;=\"']|/[A-Za-z])([A-Za-z]):[/\\]([^\s;\"']*)")
+
+def to_wsl_path(s:str) -> str:
+    """Translate every Windows absolute path in `s` to its WSL `/mnt/<letter>/…`
+    equivalent. Non-path tokens, env-var names, switches like `/S1`, and the
+    `wsl --` prefix all pass through unchanged.
+
+    Examples:
+        "C:/dev/tst"                          -> "/mnt/c/dev/tst"
+        "F:\\\\SourceData\\\\BAG20"           -> "/mnt/f/SourceData/BAG20"
+        "wsl -- /opt/.../GeoDmsRun /LC:/log.txt /S1 C:/cfg/x.dms target"
+            -> "wsl -- /opt/.../GeoDmsRun /L/mnt/c/log.txt /S1 /mnt/c/cfg/x.dms target"
+        "https://example.com/page"            -> unchanged (URL scheme not a drive)
+    """
+    def repl(m):
+        prefix = m.group(1) or ''
+        letter = m.group(2).lower()
+        rest = m.group(3).replace(chr(92), '/')
+        return f"{prefix}/mnt/{letter}/{rest}"
+    return _WIN_PATH_RE.sub(repl, s)
+
+def _display_version_with_flavor_dot(version:str) -> str:
+    """Make sure the display-version inserts a dot before any one-letter
+    flavor suffix (m / c / l / …) so the folder name later splits cleanly
+    on `_` into [major, minor, patch, flavor, arch, …].
+
+    `20.0.0c` -> `20.0.0.c`     # split-on-`_` gives [20, 0, 0, c, …]
+    `20.0.0`  -> `20.0.0`       # no flavor letter, unchanged
+    `local`   -> `local`        # not numeric, unchanged
+
+    Without this, `20.0.0c` produces folder `20_0_0c_x64_…` which
+    `parse_folder_name` reads as patch=`0c`, no flavor, breaking the
+    report's column lookup for that run.
+    """
+    m = _FLAVOR_RE.match(version)
+    if m:
+        return f"{m.group(1)}.{m.group(2)}"
+    return version
+
 def get_geodms_paths(version:str) -> dict:
     assert(version)
     s = _load_local_settings()
@@ -324,16 +384,39 @@ def get_geodms_paths(version:str) -> dict:
         geodms_paths["GeoDmsExeSuffix"] = local_spec["ExeSuffix"]
         geodms_paths["GeoDmsLocalFlavor"] = local_spec["Flavor"]
     else:
-        geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{version}")}\""
-        geodms_paths["GeoDmsDisplayVersion"] = version
-        geodms_paths["GeoDmsRunPrefix"] = ""
-        geodms_paths["GeoDmsExeSuffix"] = ".exe"
-        geodms_paths["GeoDmsLocalFlavor"] = ""
+        # Canonicalise the user-supplied version to the dotted form the
+        # rest of the pipeline expects (folder name parser splits on `_`
+        # into [major, minor, patch, flavor, arch, …], install dirs are
+        # named GeoDms<ver>.<flavor>, etc.). Accepts either form on the
+        # CLI: `-version 20.0.0.l` (canonical) or `-version 20.0.0l`
+        # (compact, kept as a courtesy).
+        canonical = _display_version_with_flavor_dot(version)
+        if canonical.endswith(".l"):
+            # Linux flavor installed via .deb (nsi/CreateLinuxSetup.sh) at
+            # /opt/ObjectVision/GeoDms<canonical>. Invoked via `wsl --` so
+            # the rest of the test command (paths, env vars, args) is
+            # forwarded into the WSL distro.
+            geodms_paths["GeoDmsPath"] = f"/opt/ObjectVision/GeoDms{canonical}"
+            geodms_paths["GeoDmsDisplayVersion"] = canonical
+            geodms_paths["GeoDmsRunPrefix"] = "wsl --"
+            geodms_paths["GeoDmsExeSuffix"] = ""
+            geodms_paths["GeoDmsLocalFlavor"] = "linux-release"
+        else:
+            geodms_paths["GeoDmsPath"] = f"\"{os.path.expandvars(f"%ProgramFiles%/ObjectVision/GeoDms{canonical}")}\""
+            geodms_paths["GeoDmsDisplayVersion"] = canonical
+            geodms_paths["GeoDmsRunPrefix"] = ""
+            geodms_paths["GeoDmsExeSuffix"] = ".exe"
+            geodms_paths["GeoDmsLocalFlavor"] = ""
     geodms_paths["GeoDmsProfilerPath"] = f"{s["ProfilerDir"]}/profiler.py"
     geodms_paths["GeoDmsRegressionPath"] = f"{s["ProfilerDir"]}/regression.py"
     exe = geodms_paths["GeoDmsExeSuffix"]
-    geodms_paths["GeoDmsRunPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsRun{exe}"
-    geodms_paths["GeoDmsGuiQtPath"] = f"{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt{exe}"
+    # If a RunPrefix is set (e.g. "wsl --" for linux-release flavors), prepend
+    # it so any consumer that just builds f"{GeoDmsRunPath} <args>" actually
+    # invokes the binary through WSL rather than as a direct Windows process.
+    prefix = geodms_paths["GeoDmsRunPrefix"]
+    prefix_str = f"{prefix} " if prefix else ""
+    geodms_paths["GeoDmsRunPath"] = f"{prefix_str}{geodms_paths["GeoDmsPath"]}/GeoDmsRun{exe}"
+    geodms_paths["GeoDmsGuiQtPath"] = f"{prefix_str}{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt{exe}"
     return geodms_paths
 
 def run_full_regression_test(version:str="19.3.0", MT1="S1", MT2="S2", MT3="S3"):
@@ -342,6 +425,15 @@ def run_full_regression_test(version:str="19.3.0", MT1="S1", MT2="S2", MT3="S3")
     parser.add_argument("-MT1", help="Multithreading 1: S1 or C1")
     parser.add_argument("-MT2", help="Multithreading 2: S2 or C2")
     parser.add_argument("-MT3", help="Multithreading 3: S3 or C3")
+    parser.add_argument(
+        "-tests",
+        help=(
+            "Comma-separated test-name substrings to run. Substring is matched "
+            "against the full experiment name. Examples: '-tests t060' runs only "
+            "the t060_ test; '-tests t060,t301' runs both; '-tests t06' runs all "
+            "t06* (t060, t061, ...). Omit to run the full suite."
+        ),
+    )
     args = parser.parse_args()
     
     if args.version:
@@ -373,6 +465,71 @@ def run_full_regression_test(version:str="19.3.0", MT1="S1", MT2="S2", MT3="S3")
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3)
+
+    # Linux-flavor path translation. The whole command line + every env var
+    # value contains Windows-style paths (C:/…, F:/…); the WSL-side binary
+    # needs them in /mnt/<letter>/… form. Translate both, and prepend a
+    # `WSLENV=…` entry so wsl.exe forwards the (now POSIX-shaped) values
+    # to the Linux distro. Without this every linux-flavor test fails
+    # at the first I/O on the cfg path or log path.
+    if geodms_paths.get("GeoDmsLocalFlavor") == "linux-release":
+        for exp in operator_experiments:
+            # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
+            # Linux-produced output (statistics HTML, test_log strings) matches
+            # the reference files captured on Windows where the dev's persistent
+            # registry setting has thousand-separator on. Insert just after the
+            # last /S<N> multithreading flag.
+            cmd = exp.command
+            for tail in (" /S3 ", " /S2 ", " /S1 "):
+                if tail in cmd:
+                    cmd = cmd.replace(tail, tail.rstrip() + " /SH ", 1)
+                    break
+            exp.command = to_wsl_path(cmd)
+            if exp.environment_variables:
+                ev = to_wsl_path(exp.environment_variables)
+                # Build WSLENV listing every variable name so wsl.exe propagates
+                # them (without /p — we've already translated paths ourselves).
+                names = [pair.split('=', 1)[0].strip()
+                         for pair in ev.split(';') if '=' in pair]
+                ev = ev + ';WSLENV=' + ':'.join(names)
+                exp.environment_variables = ev
+
+        # Override results_folder.txt with the WSL-translated path so the
+        # cfg-side `results_folder` parameter (read via %LocalDataDir%/.../
+        # results_folder.txt) hands the Linux binary a /mnt/c/… path instead
+        # of a C:/… path that maps to nowhere on Linux.
+        rf_path = f"{local_machine_parameters['tmpFileDir']}/results_folder.txt"
+        with open(rf_path, "w") as f:
+            f.write(to_wsl_path(result_paths["results_folder"]))
+
+    # Optional test-name filter for fast iteration. The HTML report still
+    # picks up cached results for the unselected tests, so consistency with
+    # a full prior run is preserved — only the listed tests are re-executed.
+    # We also wipe the matching .bin caches so the runner actually re-runs
+    # the targeted tests (otherwise it skips them with "results are reused").
+    if args.tests:
+        filters = [t.strip() for t in args.tests.split(",") if t.strip()]
+        filtered = [exp for exp in operator_experiments
+                    if any(f in exp.name for f in filters)]
+        if not filtered:
+            print(f"-tests filter {filters} matched 0 experiments out of "
+                  f"{len(operator_experiments)}; available names:", file=sys.stderr)
+            for exp in operator_experiments:
+                print(f"  {exp.name}", file=sys.stderr)
+            sys.exit(2)
+        print(f"-tests filter {filters} -> running {len(filtered)} of "
+              f"{len(operator_experiments)} experiments:")
+        wiped = 0
+        for exp in filtered:
+            print(f"  {exp.name}")
+            cache = f"{result_paths['results_folder']}/{exp.name}.bin"
+            if os.path.exists(cache):
+                os.remove(cache)
+                wiped += 1
+        if wiped:
+            print(f"-tests: wiped {wiped} cached .bin file(s) to force re-run")
+        operator_experiments = filtered
+
     regression.run_experiments(operator_experiments)
     regression.collect_and_generate_test_results(display_version, result_paths)
 

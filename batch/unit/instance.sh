@@ -9,9 +9,12 @@ geodms_instance() {
     local result_file="$3"
     local f1="${4:-S1}" f2="${5:-S2}" f3="${6:-S3}"
 
+    # /SH enables RSF_ShowThousandSeparator so number formatting in test
+    # output matches Windows-captured norm files (Windows persists this via
+    # registry; Linux has no equivalent persistence so we set it here).
     echo "****************"
-    echo "Test: $GEODMS_RUN_PATH /$f1 /$f2 /$f3 $dms_file $item"
-    "$GEODMS_RUN_PATH" "/$f1" "/$f2" "/$f3" "$dms_file" "$item"
+    echo "Test: $GEODMS_RUN_PATH /$f1 /$f2 /$f3 /SH $dms_file $item"
+    "$GEODMS_RUN_PATH" "/$f1" "/$f2" "/$f3" "/SH" "$dms_file" "$item"
     local rc=$?
     echo ""
 

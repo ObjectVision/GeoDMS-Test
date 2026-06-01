@@ -93,6 +93,11 @@ if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
     GUI_RESULT_DIR="$RESULT_DIR/Unit/GUI"
     mkdir -p "$GUI_RESULT_DIR"
 
+    # %env:ResultFolder% in dmsscripts (e.g. DPGeneral_*.dmsscript) expands via
+    # AbstrStorageManager::Expand from this env var. Windows wrappers in
+    # tst/Unit/GUI/bat/*.bat do the same `Set ResultFolder=...`.
+    export ResultFolder="$GUI_RESULT_DIR"
+
     # MapViewClassification: opens DefaultView on a polygon layer, copies viewport,
     # exercises Edit Palette / Classify dialogs (Win32 SEND opcodes — most are
     # no-ops on Linux until the SEND code 4 path is implemented).

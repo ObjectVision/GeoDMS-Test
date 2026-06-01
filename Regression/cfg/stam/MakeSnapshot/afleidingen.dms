@@ -29,17 +29,17 @@ container afleidingen
 
 			container extents
 			{
-				attribute<geometries/rdc_mm> NW (pand/results/unique) := lower_bound(pand/results/unique/geometry_mm);
-				attribute<geometries/rdc_mm> SE (pand/results/unique) := upper_bound(pand/results/unique/geometry_mm);
-				attribute<int32> X_ext          (pand/results/unique) := PointCol(SE) - PointCol(NW);
-				attribute<int32> Y_ext          (pand/results/unique) := PointRow(SE) - PointRow(NW);
+				attribute<geometries/rdc_mm> SW (pand/results/unique) := lower_bound(pand/results/unique/geometry_mm);
+				attribute<geometries/rdc_mm> NE (pand/results/unique) := upper_bound(pand/results/unique/geometry_mm);
+				attribute<int32> X_ext          (pand/results/unique) := PointCol(NE) - PointCol(SW);
+				attribute<int32> Y_ext          (pand/results/unique) := PointRow(NE) - PointRow(SW);
 			}
 
 			unit<uint32> functioneel_pand := select_with_org_rel(pand/results/unique/vbo_count > 0 && extents/X_ext < 10000000i && extents/Y_ext < 10000000i), DialogType = "Map", DialogData = "geometry_mm"
 			{
 				attribute<geometries/rdc_mm> geometry_mm(poly) := pand/results/unique/geometry_mm[org_rel];
-				attribute<geometries/rdc_mm> NW := lower_bound(geometry_mm);
-				attribute<geometries/rdc_mm> SE := upper_bound(geometry_mm);
+				attribute<geometries/rdc_mm> SW := lower_bound(geometry_mm);
+				attribute<geometries/rdc_mm> NE := upper_bound(geometry_mm);
 				
 				// results collection
 				attribute<uint32> NeighbourCount  := pcount(unique_neighbour_pair/F1) + pcount(unique_neighbour_pair/F2);
@@ -76,12 +76,12 @@ container afleidingen
 				attribute<uint32> seq_x := id(.) % nr_x;
 				attribute<string> name := 'R'+string(seq_y)+'_C'+string(seq_x);
 
-				parameter<uint32> size_x := uint32(pointRow(BoundRange(geometries/rdc_mm))) / uint32(nr_x);
-				parameter<uint32> size_y := uint32(pointCol(BoundRange(geometries/rdc_mm))) / uint32(nr_y);
+				parameter<uint32> size_x := uint32(pointCol(BoundRange(geometries/rdc_mm))) / uint32(nr_x);
+				parameter<uint32> size_y := uint32(pointRow(BoundRange(geometries/rdc_mm))) / uint32(nr_y);
 
-				attribute<uint32> min_x := uint32(pointRow(lowerbound(geometries/rdc_mm))) + seq_x * size_x;
+				attribute<uint32> min_x := uint32(pointCol(lowerbound(geometries/rdc_mm))) + seq_x * size_x;
 				attribute<uint32> max_x := min_x + size_x;
-				attribute<uint32> min_y := uint32(pointCol(lowerbound(geometries/rdc_mm))) + seq_y * size_y;
+				attribute<uint32> min_y := uint32(pointRow(lowerbound(geometries/rdc_mm))) + seq_y * size_y;
 				attribute<uint32> max_y := min_y + size_y;
 			}
 			container rectangles := for_each_ne(rectangle/name, 'connect_neighbours('+string(ID(rectangle))+')');
@@ -94,10 +94,10 @@ container afleidingen
 			
 				unit<uint32> domain := 
 					select_with_org_rel(
-						uint32(PointCol(functioneel_pand/NW)) <= rectangle/max_x[rectangle_sel]
-					&&	uint32(PointRow(functioneel_pand/NW)) <= rectangle/max_y[rectangle_sel]
-					&&	uint32(PointCol(functioneel_pand/SE)) >= rectangle/min_x[rectangle_sel]
-					&&	uint32(PointRow(functioneel_pand/SE)) >= rectangle/min_y[rectangle_sel]
+						uint32(PointCol(functioneel_pand/SW)) <= rectangle/max_x[rectangle_sel]
+					&&	uint32(PointRow(functioneel_pand/SW)) <= rectangle/max_y[rectangle_sel]
+					&&	uint32(PointCol(functioneel_pand/NE)) >= rectangle/min_x[rectangle_sel]
+					&&	uint32(PointRow(functioneel_pand/NE)) >= rectangle/min_y[rectangle_sel]
 					)
 					,	DialogType = "Map", DialogData = "geometry"
 				{
