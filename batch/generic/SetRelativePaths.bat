@@ -1,7 +1,9 @@
 REM paden die worden afgeleid
 
 REM %RegressionTestsSourceDataDir% wordt hier machine specifiek ingesteld, buiten versie control.
-Call Generic\SetRegressionTestsDir.bat 
+REM Machine-specific file is git-ignored; auto-create from the tracked .example on first use.
+if not exist "%~dp0SetRegressionTestsDir.bat" copy "%~dp0SetRegressionTestsDir.bat.example" "%~dp0SetRegressionTestsDir.bat" >nul
+Call Generic\SetRegressionTestsDir.bat
 Set prj_snapshotsDir=%RegressionTestsSourceDataDir%\prj_snapshots
 
 Rem ========= projecten die uit het GeoDMS tst project
