@@ -1618,6 +1618,11 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			parameter<string> layer  := 'grijs';
 			parameter<string> host   := 'service.pdok.nl';
 
+			// #405 test: a WMS/WMTS layer may advertise a legend image (Style/LegendURL).
+			// The BRT 'grijs' basemap has none, so for testing we point at another PDOK
+			// legend png; right-click the layer in the map-view legend -> "Show Legend".
+			parameter<string> legend := 'https://service.pdok.nl/kadaster/brk-bestuurlijke-gebieden/wms/v1_0/legend/Provinciegebied/Provinciegebied.png';
+
 			parameter<string> target := '/brt/achtergrondkaart/wmts/v2_0'
 				'?service=WMTS'
 				'&request=gettile'
