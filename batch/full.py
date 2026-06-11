@@ -31,6 +31,7 @@ _BUILT_IN_DEFAULTS = {
     "RegressionTestsAltSourceDataDir": "D:/SourceData",
     "SourceDataDir": "",  # if blank, derived from RegressionTestsSourceDataDir
     "LocalDataDir": "C:/LocalData",
+    "RegressionResultsDir": "",  # base for Regression/GeoDMSTestResults; if blank -> {LocalDataDir}/GeoDMS-Test
     "ProfilerDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
     "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
     "LocalBuilds": {},
@@ -133,6 +134,11 @@ def get_local_machine_parameters() -> dict:
     # derived
     local_machine_parameters["LocalDataDirRegression"] = f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/regression"
     local_machine_parameters["tmpFileDir"] = f"{local_machine_parameters["LocalDataDirRegression"]}/log"
+    # Base of the regression RESULTS tree (Regression/GeoDMSTestResults). Keep it
+    # under C:\LocalData (not the source/tst tree) so results aren't entangled
+    # with the working copy. Default {LocalDataDir}/GeoDMS-Test; override via the
+    # RegressionResultsDir setting (local_settings.json / env) on e.g. OVSRV05.
+    local_machine_parameters["RegressionResultsDir"] = s.get("RegressionResultsDir") or f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/GeoDMS-Test"
     # Pass through additional roots used by get_geodms_paths.
     local_machine_parameters["ProfilerDir"] = s["ProfilerDir"]
     local_machine_parameters["LocalBuildDir"] = s["LocalBuildDir"]
@@ -143,6 +149,9 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["prj_snapshotsDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/prj_snapshots"
     regression_test_paths["BatchDir"] = str(os.getcwd()).replace("\\", "/")
     regression_test_paths["TstDir"] = str(Path(regression_test_paths["BatchDir"]).parent.absolute()).replace("\\", "/")
+    # Where get_result_paths roots Regression/GeoDMSTestResults (see full.py
+    # RegressionResultsDir). Falls back to TstDir if not provided.
+    regression_test_paths["ResultsBaseDir"] = local_machine_parameters.get("RegressionResultsDir") or regression_test_paths["TstDir"]
 
     regression_test_paths["OperatorPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/Operator.dms"
     regression_test_paths["StoragePath"] = f"{regression_test_paths["TstDir"]}/Storage/cfg/Regression.dms"
