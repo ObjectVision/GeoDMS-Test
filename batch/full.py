@@ -31,8 +31,11 @@ _BUILT_IN_DEFAULTS = {
     "RegressionTestsAltSourceDataDir": "D:/SourceData",
     "SourceDataDir": "",  # if blank, derived from RegressionTestsSourceDataDir
     "LocalDataDir": "C:/LocalData",
-    "RegressionResultsDir": "",  # base for Regression/GeoDMSTestResults; if blank -> {LocalDataDir}/GeoDMS-Test
-    "ProfilerDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
+    # Where result folders + the HTML report are stored. Keep this OUT of the
+    # per-user working copy so several working copies / users share one result
+    # history. If blank, falls back to <TstDir>/Regression/GeoDMSTestResults.
+    "ResultsBaseDir": "C:/LocalData/GeoDMS-Test/Regression",
+    "ProfilerDir": "C:/Program Files/ObjectVision/GeoDms20.0.4.m", #str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
     "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
     "LocalBuilds": {},
 }
@@ -116,6 +119,7 @@ def get_local_machine_parameters() -> dict:
     s = _load_local_settings()
     local_machine_parameters = {}
     local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"] = s["RegressionTestsSourceDataDir"]
+    local_machine_parameters["RegressionTestsSourceDataDir"] = s["RegressionTestsSourceDataDir"]
     local_machine_parameters["RegressionTestsAltSourceDataDir"] = s["RegressionTestsAltSourceDataDir"]
     local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"] = s["LocalDataDir"]
 
@@ -178,7 +182,7 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["Networkmodel_eu_regressietest"] = f"{regression_test_paths["prj_snapshotsDir"]}/networkmodel_eu_regressieTest/cfg"
     #regression_test_paths["GEODMS_Overridable_RslDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSL"
     regression_test_paths["GEODMS_Overridable_HestiaDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/SD51"
-    regression_test_paths["GEODMS_Overridable_RSo_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen" 
+    regression_test_paths["GEODMS_Overridable_RSo_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen"
     regression_test_paths["GEODMS_Overridable_RVF_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RS_Landbouw" 
     regression_test_paths["GEODMS_Overridable_RSo_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv" 
     #regression_test_paths["GEODMS_Overridable_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv" 
@@ -428,7 +432,7 @@ def get_geodms_paths(version:str) -> dict:
     geodms_paths["GeoDmsGuiQtPath"] = f"{prefix_str}{geodms_paths["GeoDmsPath"]}/GeoDmsGuiQt{exe}"
     return geodms_paths
 
-def run_full_regression_test(version:str="19.3.0", MT1="S1", MT2="S2", MT3="S3"):
+def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3"):
     parser = argparse.ArgumentParser()
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
     parser.add_argument("-MT1", help="Multithreading 1: S1 or C1")
@@ -461,13 +465,22 @@ def run_full_regression_test(version:str="19.3.0", MT1="S1", MT2="S2", MT3="S3")
     geodms_paths = get_geodms_paths(version)
     import_module_from_path(geodms_paths["GeoDmsRegressionPath"])
     regression.import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
-    
-    geodms_paths["GeoDmsProfilerPath"] = f'C:/Users/Cicada/dev/geodms/branches/geodms_v18/profiler/profiler.py'
-    geodms_paths["GeoDmsProfilerPath"] = f'C:/Users/Cicada/dev/geodms/branches/geodms_v18/profiler/profiler.py'
 
     display_version = geodms_paths["GeoDmsDisplayVersion"]
     regression_test_paths = get_regression_test_paths(local_machine_parameters)
     result_paths = regression.get_result_paths(geodms_paths, regression_test_paths, display_version, MT1, MT2, MT3)
+
+    # Redirect result storage out of the working copy when ResultsBaseDir is set
+    # (see _BUILT_IN_DEFAULTS / local_settings.json). This keeps the ~GB result
+    # history and the HTML report in a shared location so multiple working
+    # copies / users on this machine accumulate into one comparison set.
+    results_base = _load_local_settings().get("ResultsBaseDir")
+    if results_base:
+        folder_name = regression.get_result_folder_name(display_version, geodms_paths, MT1, MT2, MT3)
+        result_paths["results_base_folder"] = results_base
+        result_paths["results_folder"] = f"{results_base}/{folder_name}"
+        result_paths["results_log_folder"] = f"{result_paths["results_folder"]}/log"
+        os.makedirs(result_paths["results_log_folder"], exist_ok=True)
     #remove_local_data_dir_regression(local_machine_parameters["LocalDataDirRegression"])
     #import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
 

@@ -11261,9 +11261,21 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 				parameter<string> DirCmdOrg       := Expand(., 'dir %projDir%/data/*.shp > ' + QuotedFileNameDirInfo);
 				parameter<string> DirCmd          := Replace(DirCmdOrg, Slash, BackSlash) + ' /B /S /A-D';
+
+				// Make sure %LocalDataDir%/Operator exists before `dir` redirects
+				// dirinfo.str into it. `mkdir` returns errorlevel 1 when the folder
+				// already exists; chaining with `& ` makes cmd.exe report the *last*
+				// command's exit code (the `dir`), so that benign "already exists"
+				// code never propagates back as a test failure. 2>nul hides its message.
+				parameter<string> OperatorDir       := Expand(., '%LocalDataDir%/Operator');
+				parameter<string> QuotedOperatorDir := DQuote(Replace(OperatorDir, Slash, BackSlash));
+				parameter<string> MkDirPrefix       := 'mkdir ' + QuotedOperatorDir + ' 2>nul & ';
 			}
 
-			parameter<uint32> execDirCmdResultCode := exec_ec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataDir%/Operator'));
+			// Run from %LocalDataDir% (assumed to exist); the mkdir prefix creates
+			// %LocalDataDir%/Operator before the dir command writes dirinfo.str there.
+			parameter<string> targetDir := Expand(., '%LocalDataDir%');
+			parameter<uint32> execDirCmdResultCode := exec_ec(impl/ComSpec, '/c ' + impl/MkDirPrefix + impl/DirCmd, targetDir);
 			parameter<string> WrittenFile := iif(execDirCmdResultCode == 0, impl/FileNameDirInfo, ''), KeepData="True";
 			parameter<string> bestand: Storagename = "=WrittenFile";
 			parameter<uint32> nr_shapefiles := strcount(bestand,impl/NewLine) ;
