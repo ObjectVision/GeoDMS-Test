@@ -149,38 +149,44 @@ def get_local_machine_parameters() -> dict:
 
 def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths = {}
-    regression_test_paths["prj_snapshotsDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/prj_snapshots"
     regression_test_paths["BatchDir"] = str(os.getcwd()).replace("\\", "/")
     regression_test_paths["TstDir"] = str(Path(regression_test_paths["BatchDir"]).parent.absolute()).replace("\\", "/")
+    # Projectconfiguraties zijn gemigreerd van %RegressionTestsSourceDataDir%/prj_snapshots
+    # naar de repo zelf (GeoDMS-Test/projects) zodat ze onder versiebeheer staan;
+    # de bijbehorende (grote) data staat in SourceData en wordt via
+    # GEODMS_Overridable_*-env-vars aan de configs doorgegeven.
+    regression_test_paths["projectsDir"] = f"{regression_test_paths["TstDir"]}/Projects"
 
     regression_test_paths["OperatorPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/Operator.dms"
     regression_test_paths["StoragePath"] = f"{regression_test_paths["TstDir"]}/Storage/cfg/Regression.dms"
     regression_test_paths["StorageGDALPath"] = f"{regression_test_paths["TstDir"]}/Storage_gdal/cfg/Regression.dms"
     regression_test_paths["RegressionPath"] = f"{regression_test_paths["TstDir"]}/Regression/cfg/stam.dms"
-    regression_test_paths["BLRDConversiePath"] = f"{regression_test_paths["prj_snapshotsDir"]}/bl_rd_conversie/cfg/root.dms"
+    regression_test_paths["BLRDConversiePath"] = f"{regression_test_paths["projectsDir"]}/bl_rd_conversie/cfg/root.dms"
 
-    regression_test_paths["LusDemoRunPath2023"] = f"{regression_test_paths["prj_snapshotsDir"]}/lus_demo_2023/cfg/demo.dms"
-    regression_test_paths["RSLight_2020Path"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSLight_2020/cfg/Regression_test.dms"
-    regression_test_paths["HestiaRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/Hestia2024/Runs/HestiaRun.dms"
-    regression_test_paths["HestiaDevelopment"] = f"{regression_test_paths["prj_snapshotsDir"]}/model-hestia-development.main_18_0_4/Runs/HestiaRun.dms"
+    regression_test_paths["LusDemoRunPath2023"] = f"{regression_test_paths["projectsDir"]}/lus_demo_2023/cfg/demo.dms"
+    regression_test_paths["RSLight_2020Path"] = f"{regression_test_paths["projectsDir"]}/RSLight_2020/cfg/Regression_test.dms"
+    regression_test_paths["HestiaDevelopment"] = f"{regression_test_paths["projectsDir"]}/model-hestia-development.main_18_0_4/Runs/HestiaRun.dms"
 
-    regression_test_paths["TwoUPRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/2UP/cfg/stam.dms"
-    regression_test_paths["TwoBURPRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/2BURP/cfg/main.dms"
-    regression_test_paths["DynaPopPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/100m_DynaPop/cfg/StatusQuo.dms"
-    regression_test_paths["BAG20MakeSnapShotPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/BAG20/cfg/BAG20_MakeSnaphot.dms"
-    regression_test_paths["RSopen_RegressieTestPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/RsOpen_regressietest/cfg"
-    regression_test_paths["RSopen_RegressieTestPath_v2025"] = f"{regression_test_paths["prj_snapshotsDir"]}/RSopen_RegressieTest_v2025H2_wLB/cfg"
-    regression_test_paths["CusaRunPath"] = f"{regression_test_paths["prj_snapshotsDir"]}/geodms_africa_cusa2/cfg/africa.dms"
-    regression_test_paths["Networkmodel_pbl_regressietest"] = f"{regression_test_paths["prj_snapshotsDir"]}/NetworkModel_PBL_RegressieTest/cfg"
-    regression_test_paths["Networkmodel_eu_regressietest"] = f"{regression_test_paths["prj_snapshotsDir"]}/networkmodel_eu_regressieTest/cfg"
+    regression_test_paths["TwoUPRunPath"] = f"{regression_test_paths["projectsDir"]}/2UP/cfg/stam.dms"
+    regression_test_paths["TwoBURPRunPath"] = f"{regression_test_paths["projectsDir"]}/2BURP/cfg/main.dms"
+    regression_test_paths["DynaPopPath"] = f"{regression_test_paths["projectsDir"]}/100m_DynaPop/cfg/StatusQuo.dms"
+    regression_test_paths["BAG20MakeSnapShotPath"] = f"{regression_test_paths["projectsDir"]}/BAG20/cfg/BAG20_MakeSnaphot.dms"
+    regression_test_paths["RSopen_RegressieTestPath_v2025"] = f"{regression_test_paths["projectsDir"]}/RSopen_RegressieTest_v2025H2_wLB/cfg"
+    regression_test_paths["CusaRunPath"] = f"{regression_test_paths["projectsDir"]}/geodms_africa_cusa2/cfg/africa.dms"
+    regression_test_paths["Networkmodel_pbl_regressietest"] = f"{regression_test_paths["projectsDir"]}/NetworkModel_PBL_RegressieTest/cfg"
+    regression_test_paths["Networkmodel_eu_regressietest"] = f"{regression_test_paths["projectsDir"]}/NetworkModel_EU_regressietest/cfg"
     regression_test_paths["GEODMS_Overridable_HestiaDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/SD51"
     regression_test_paths["GEODMS_Overridable_RSo_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen"
-    regression_test_paths["GEODMS_Overridable_RVF_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RS_Landbouw" 
-    regression_test_paths["GEODMS_Overridable_RSo_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv" 
-    #regression_test_paths["GEODMS_Overridable_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv" 
+    # Env-namen moeten exact matchen met de parameternamen in ConfigSettings/Overridable
+    # van de RSopen-config (RS_Lb_DataDir, PrivDataDir) — anders valt GeoDMS terug op
+    # registry-overrides (HKCU\Software\ObjectVision\<machine>\GeoDMS) of de config-default.
+    regression_test_paths["GEODMS_Overridable_RS_Lb_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RS_Landbouw"
+    regression_test_paths["GEODMS_Overridable_PrivDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen_Priv"
     regression_test_paths["GEODMS_Overridable_ToBURPDataDir"]         = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/2BURP"
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = local_machine_parameters["LocalDataDirRegression"]
     regression_test_paths["GEODMS_Overridable_MondiaalDataDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/2UP"
+    regression_test_paths["GEODMS_Overridable_CUSA2_DataDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/CUSA2"
+    regression_test_paths["GEODMS_Overridable_LUSDemo_DataDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/LUS_Demo"
     regression_test_paths["GEODMS_Overridable_NetworkModel_Dir"]      = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_regressietest"
     regression_test_paths["GEODMS_Overridable_NetworkModelDataDir"]   = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_EU_RegressionTest"
     return regression_test_paths
@@ -244,10 +250,6 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t410 — NetworkModel EU: indicator-results regressietest.
     regression.add_exp(exps, name=f"{result_folder_name}__t410_NetworkModel_EU", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t410_NetworkModel_EU.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_eu_regressietest"]}/main.dms RegressieTest/t410_NetworkModel_EU_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t410_NetworkModel_EU.txt")
 
-    #regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Hestia"
-    #env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    #add_exp(exps, name=f"{result_folder_name}__t530_Hestia_2024", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t530_hestia2024.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaRunPath"]} t530_hestia2024/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t530_hestia2024.txt")
-    
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/LUSDemo2023"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t611 — LUS Demo 2023 (Land Use Scanner): allocatie-resultaten vergelijken.
@@ -255,10 +257,6 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/RSopen_RegressieTest_v2025"
     regression_test_paths["AlleenEindjaar"] = "FALSE"
-    #regression_test_paths["VariantDataOntkoppeld"] = "TRUE"
-    #env_vars = get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    #add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_results_test_Generate", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_results_test_Generate.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms Analysis/Allocatie/Zichtjaren/Y2050/Impl/Generate", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_results_test_Generate.txt")
-    #add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_results_test_result_html", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_results_test_result_html.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms t640_3_RSopen_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_results_test_result_html.txt")
     regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t641_1 — RuimteScanner Open v2025H2: basisdata genereren (WriteBasedata).
