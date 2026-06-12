@@ -1,0 +1,199 @@
+container CUSA2
+{
+	container ModelParameters : using = "units"
+	{
+		parameter<km_hr>   Maximum_Speed            := 130[km_hr];
+		parameter<km_hr>   FloodedSpeed             := 0.0001[km_hr];
+		parameter<string>  speed_def                := 'speed[km_hr] > 0[km_hr] ? speed[km_hr] : Classifications/SpeedStats/Mean_Speed[SpeedStatId]';
+		parameter<min_f>   MaxTraveltime            := 120[min_f]; 
+		parameter<min_f>   MaxAllocTraveltime		:= 300[min_f];
+		parameter<km>      BoundingBoxBufferSize    := 200[km];
+		parameter<string>  DestMass_variant         := 'Pop'; // 'POI' 'Pop'
+		parameter<float32>  MaxConnectDistSqr            := (1000f)^2f;
+		parameter<km_hr>    CarDefaultSpeed_low     := 30[km_hr];
+		parameter<string>   PopVersion              := 'GHS_Pop_20'; //GHS_Pop_20 GHS_Pop_15
+		parameter<bool>     UseCustomSpeeds         := FALSE;
+		parameter<km>       MinimumSubnetwork_Size  := 20[km];
+		parameter<string>   GDAL_LayerCreationOptions : ['SPATIAL_INDEX=NO'];
+		parameter<bool>     UseOntkoppeldeRoads       := FALSE;
+		
+		unit<uint8> DistanceDecayVersions : nrofrows = 1 
+		{
+			attribute<float32> value    :[-2];
+			attribute<string>  formula_old  := 'impedance^'+string(value)+'d';
+			attribute<string>  formula  := 'impedance_no_metric^'+string(value)+'d';
+			
+			attribute<string>  name     := 'Decay_'+replace(string(value), '-', 'min', '.', '_');
+		}
+		
+		unit<uint8> TransportPerformanceVersions : nrofrows = 1 
+		{
+			attribute<min_f>   Limit1    :[90];
+			attribute<km>      Limit2    :[120];
+			attribute<string>  DistType  :['Eucl'];
+			attribute<string>  name     := 'Limit_'+string(Limit1)+'min_'+string(Limit2)+'km'+DistType;
+		}
+		
+		parameter<string> raster_resolution:= '1k';
+	}
+	
+	container GenerateCorridorData
+	{
+		parameter<string> Generate_Roads    := 'Ready', explicitsuppliers = "=AsList('DataPreperation/PerCorridor/'+/Geometries/Corridors/name+'/Roads/Make_GPKG_Untiled', ';')";
+	}
+	
+	container Units
+	{
+		unit<float64> m         := baseunit('meter', float64);
+		unit<float64> m2        := m * m;
+		unit<float64> km        := 1000d * m;
+		unit<uint32>  s         := baseunit('seconde', uint32);
+		unit<float64> s_f       := baseunit('seconde', float64);
+		unit<uint32>  min       := 60 * s;
+		unit<float64> min_f     := float64(60d * s_f);
+		unit<uint32>  hr        := 60 * min;
+		unit<float64> hr_f      := float64(60d * min);
+
+		unit<float64> m_s       := m  / s_f;
+		unit<float64> km_hr     := km / hr_f;
+	}
+	
+	#include<Classifications.dms>
+	#include<MetaData.dms>
+	#include<Geometries.dms>
+	
+	container SourceData : using = "geometries;units;classifications"
+	{
+		unit<ipoint> Landuse
+		: StorageName = "%CUSA2_DataDir%/landuse/copernicus_GLC_v2_0_1_discr_class_Africa_EPSG_102022_clipped.tif"
+		, StorageType = "gdal.grid"
+		, StorageReadOnly = "True"
+		, DialogData = "BaseProjection"
+		{
+			// The following attributes are only read or calculated during the tiling operatons
+			attribute<uint8> GridData; // don't read this, it is a memory block of 82178 x 89023 bytes = 6.8 GB.
+
+			attribute<uint8>   RT_GridData    (geometries/RegularTiledRaster); // read this only for setting up the tiling.
+			attribute<bool>    RT_IsStudyArea (geometries/RegularTiledRaster) := RT_GridData < 200b;
+			unit<uint64>       RT_StudyAreaSelection := select_with_attr_by_cond(.,RT_IsStudyArea);
+			
+			// the following can be used when the decoupled StudyAreaTile has been generated
+			attribute<uint8>   ST_GridData    (geometries/SelectedTiledRaster);
+			attribute<bool>    ST_IsStudyArea (geometries/SelectedTiledRaster) := ST_GridData < 200b;
+		}
+		
+		container Roads
+		{
+			container Read_src_shps := 
+				for_each_ne(
+					Classifications/OSM_Countries/sub/Name
+					,'Templates/loadDataFile_polyline('+Quote(Classifications/OSM_Countries/sub/Path)+', ''shp'')'
+				);
+					
+			unit<uint32> Merge_Countries := ='union_unit('+AsList('SourceData/Roads/Read_src_shps/'+Classifications/OSM_Countries/sub/Name+'/inFile',',')+')'
+			{
+				attribute<BaseProjection>  Geometry (arc) := ='union_data(.,'+AsList('SourceData/Roads/Read_src_shps/'+Classifications/OSM_Countries/sub/Name+'/inFile/geometry_bp',',')+')';
+				attribute<string>          fclass         := ='union_data(.,'+AsList('SourceData/Roads/Read_src_shps/'+Classifications/OSM_Countries/sub/Name+'/inFile/fclass',',')+')';
+				// attribute<km_hr>           maxspeed       := ='union_data(.,'+AsList('SourceData/Roads/Read_src_shps/'+Classifications/OSM_Countries/sub/Name+'/inFile/maxspeed[km_hr]',',')+')';
+				// attribute<bool>            bridge         := ='union_data(.,'+AsList('SourceData/Roads/Read_src_shps/'+Classifications/OSM_Countries/sub/Name+'/inFile/bridge == ''T'' ? TRUE : FALSE',',')+')';
+				
+				attribute<RoadClasses>     Speed_cat      := switch(
+																	  case(fclass == 'motorway',    3[RoadClasses])
+																	, case(fclass == 'trunk',       4[RoadClasses])
+																	, case(fclass == 'primary',     5[RoadClasses])
+																	, case(fclass == 'secondary',   6[RoadClasses])
+																	, case(fclass == 'tertiary' || fclass == 'motorway_link' || fclass == 'trunk_link', 7[RoadClasses])
+																	, case(fclass == 'residential' || fclass == 'primary_link' || fclass == 'secondary_link' || fclass == 'tertiary_link' || fclass == 'unclassified' || fclass == 'busway', 8[RoadClasses])
+																	, case(fclass == 'path' || fclass == 'track' || fclass == 'living_street' || fclass == 'service' || fclass == 'pedestrian' || fclass == 'footway', 10[RoadClasses])
+																	, 11[RoadClasses]
+																);
+				attribute<km_hr>           Speed          := RoadClasses/speed[Speed_cat];
+				
+				// attribute<m>               Meters         := arc_length(geometry, m);
+				// attribute<min_f>           Minutes        := convert(convert(Meters, km) / Speed, min_f);
+			}
+			
+			container Check_Connectiveness := Templates/Check_Connectiveness_T(Merge_Countries);
+			
+			unit<uint32> Road         := select_with_attr_by_cond(Check_Connectiveness, Check_Connectiveness/IsVerbonden);
+		}
+		
+		
+		container ReadSpatialData := 
+			for_each_ne(
+				MetaData/SpatialDataToLoad/Name
+				,'Templates/loadDataFile_'+MetaData/SpatialDataToLoad/Type+'('+Quote(MetaData/SpatialDataToLoad/Path)+','+Quote(MetaData/SpatialDataToLoad/Ext)+')');
+		
+		
+		container Floods := 
+			for_each_ne(
+				Corridors/name
+				, 'FloodFiles_T('+quote(Corridors/corridorIntpaId)+')'
+			);
+			
+		Template FloodFiles_T
+		{
+			parameter<string> CorridorId;
+			//
+			
+			unit<uint32> domain := ='bp_split_polygon(ipolygon(SourceData/ReadSpatialData/floodsCorridorId'+CorridorId+'/inFile/geometry))'
+			{
+				attribute<BaseProjection> geometry_bp (poly) := geometry[BaseProjection];
+			}
+		}
+	}
+	
+	#include<DataPreperation.dms>
+	
+	container Analysis :=
+		for_each_ne(
+			Geometries/Corridors/name
+			, 'Templates/Analysis_PerVariant_T('+quote(Geometries/Corridors/name)+','+quote(ModelParameters/PopVersion)+')'
+		);
+			
+	container Results :=
+		for_each_ne(
+			Geometries/Corridors/name
+			, 'Templates/Results_PerCorridor_T('+quote(Geometries/Corridors/name)+')'
+		)
+	{
+		parameter<bool>    storeall := True, explicitsuppliers = "=AsList(Geometries/Corridors/name, ';')";
+	}
+	
+	#include<Templates.dms>
+	
+
+	container t910_cusa2_Africa_test
+	{
+		container indicatoren
+		{
+			parameter<float32> sum_NetworkEfficiency := Results/Abidjan_Ouagadougou/Regressie_export/sum_NetworkEfficiency;
+			parameter<float32> sum_PotentialAccess   := Results/Abidjan_Ouagadougou/Regressie_export/sum_PotentialAccess;
+			parameter<float32> sum_TP_Flood          := Results/Abidjan_Ouagadougou/Regressie_export/sum_TP_Flood;
+			parameter<float32> sum_Diff_TP_wFlood    := Results/Abidjan_Ouagadougou/Regressie_export/sum_Diff_TP_wFlood;
+			parameter<float32> sum_Diff_TA_wFlood    := Results/Abidjan_Ouagadougou/Regressie_export/sum_Diff_TA_wFlood;
+	}
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result_html := 
+			'<description>CUSA2, Africa, indicator results<br><I>version</i>: 2023-03-29</description>' + 
+			'<result>' + 
+			' Sum NetworkEfficiency : ' + replace(string(indicatoren/sum_NetworkEfficiency),'.',',') +'<br>' +
+			' Sum PotentialAccess   : ' + replace(string(indicatoren/sum_PotentialAccess)  ,'.',',') +'<br>' +
+			' Sum TP_Flood          : ' + replace(string(indicatoren/sum_TP_Flood)  ,'.',',') +'<br>' +
+			' Sum Diff TP wFlood    : ' + replace(string(indicatoren/sum_Diff_TP_wFlood)  ,'.',',') +'<br>'
+			' Sum Diff TA wFlood    : ' + replace(string(indicatoren/sum_Diff_TA_wFlood)  ,'.',',') +'<br>'
+		, StorageType = "str"
+		, storagename = "= results_folder + '/t910_cusa2_Africa_test.txt'";
+	}
+
+	container ConfigSettings
+	{
+		container Overridable
+		{
+			parameter<string> CUSA2_DataDir := '%SourceDataDir%/CUSA2';
+		}
+	}
+}

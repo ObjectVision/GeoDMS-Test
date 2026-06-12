@@ -1,0 +1,256 @@
+container Analyses: Using = "Units;Classifications;geometries;sourcedata" 
+{  
+	unit<uint32> Dest_populated_grid := ='select_with_attr_by_cond(Geometries/Base_grid_'+ModelParameters/DestGridsize+'/points, Geometries/Base_grid_'+ModelParameters/DestGridsize+'/points/population > 0)';
+
+	container Base_Analysis_Traveltime := =
+		'Avg_Traveltime_To_PopulatedCells_T('
+			'Geometries/Base_grid_'+ModelParameters/OrgGridsize+'/points'   //Org
+			',Dest_populated_grid' //Dest
+			',NetworkSetup/Base_Analysis/NetwerkSpec'
+		')';
+		
+	container Base_Analysis_Distance := =
+		'Avg_Distance_To_PopulatedCells_T('
+			'Geometries/Base_grid_'+ModelParameters/OrgGridsize+'/points'   //Org
+			',Dest_populated_grid' //Dest
+			',NetworkSetup/Base_Analysis/NetwerkSpec'
+		')';
+	
+	//Analysis for Felipe
+	container Pop_Weighted_NUTS_centroids := =
+		'Basic_OD_matrix_T('
+			'SourceData/RegionalUnits/NUTS3/CalcCentroids'   //Org
+			',SourceData/RegionalUnits/NUTS3/CalcCentroids' //Dest
+			',NetworkSetup/Pop_Weighted_NUTS_centroids/NetwerkSpec'
+		')';
+	
+	
+	Template Avg_Traveltime_To_PopulatedCells_T
+	{
+		unit<uint32>      Org;
+		unit<uint32>      Dest;
+		container         NetwerkSpec;
+		///
+		parameter<uint32> maxSqrDist   := 120 * 120; //km blokken
+		
+		container Indicator
+		{
+			unit<uint32> FinalLinkSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalLinkSet;
+			unit<uint32> FinalNodeSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalNodeSet;
+			unit<ipoint> Base_grid    := = 'Geometries/Base_grid_'+ModelParameters/OrgGridsize;
+			
+			
+			unit<uint64> Numerator_Di :=
+				impedance_matrix_od64('bidirectional(link_flag);startPoint(Node_rel,OrgZone_loc);endPoint(Node_rel,DstZone_loc);cut(OrgZone_max_imp);euclid(maxSqrDist);interaction(v_i,w_j,dist_decay):D_i'
+					, FinalLinkSet/impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					
+					, !FinalLinkSet/IsOneDirection
+					, FinalNodeSet/OrgNode_rel, NetwerkSpec/OrgLocations_spoint //startPoint(Node_rel,OrgZone_loc)
+					, FinalNodeSet/DestNode_rel, NetwerkSpec/destLocations_spoint //endPoint(Node_rel,DstZone_loc)
+					, convert(ModelParameters/MaxTravelTime, s_f) //cut impedance
+					, maxSqrDist
+					, 1.0 // v_i
+					, NetwerkSpec/DestDomain/Population[float64] // w_j
+					, -1.0 // dist_deacy
+				), KeepData = "True";
+				
+			unit<uint64> Denominator_Di :=
+				impedance_matrix_od64('bidirectional(link_flag);startPoint(Node_rel,OrgZone_loc);endPoint(Node_rel,DstZone_loc);cut(OrgZone_max_imp);euclid(maxSqrDist);interaction(v_i,w_j,dist_decay):D_i'
+					, FinalLinkSet/impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					
+					, !FinalLinkSet/IsOneDirection
+					, FinalNodeSet/OrgNode_rel, NetwerkSpec/OrgLocations_spoint //startPoint(Node_rel,OrgZone_loc)
+					, FinalNodeSet/DestNode_rel, NetwerkSpec/destLocations_spoint //endPoint(Node_rel,DstZone_loc)
+					, convert(ModelParameters/MaxTravelTime, s_f) //cut impedance
+					, maxSqrDist
+					, 1.0 // v_i
+					, NetwerkSpec/DestDomain/Population[float64] // w_j
+					, 0.0 // dist_deacy
+				), KeepData = "True";
+				
+			attribute<min_f> Avg_Traveltime_To_PopulatedCells    (NetwerkSpec/OrgDomain) := MakeDefined(convert(Numerator_Di/D_i[s_f] / Denominator_Di/D_i, min_f), 0[min_f]);
+			attribute<min_f> Avg_Traveltime_To_PopulatedCells_grid           (Base_grid) := Avg_Traveltime_To_PopulatedCells[invert(Base_grid/points/grid_domain_rel)], StorageName = "='%LocalDataProjDir%/Output/Avg_traveltime_To_PopulatedCells_grid-'+ModelParameters/CountryFolder+'_O-'+ModelParameters/OrgGridsize+'_D-'+/ModelParameters/DestGridsize+'.tif'", StorageType = "tif";
+			attribute<min_f> Read_Avg_Traveltime_To_PopulatedCells_grid           (Base_grid) : StorageName = "='%LocalDataProjDir%/Output/Avg_traveltime_To_PopulatedCells_grid-'+ModelParameters/CountryFolder+'_O-'+ModelParameters/OrgGridsize+'_D-'+/ModelParameters/DestGridsize+'.tif'", StorageReadOnly = "true";
+			
+			parameter<string>  Generator                                         := 'Ready', ExplicitSuppliers = "Avg_Traveltime_To_PopulatedCells_grid";
+		}
+	}
+	 
+	Template Avg_Distance_To_PopulatedCells_T
+	{
+		unit<uint32>      Org;
+		unit<uint32>      Dest;
+		container         NetwerkSpec;
+		///
+		parameter<uint32> maxSqrDist := 120 * 120; //km blokken
+		
+		container Indicator
+		{
+			unit<uint32> FinalLinkSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalLinkSet;
+			unit<uint32> FinalNodeSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalNodeSet;
+			unit<ipoint> Base_grid    := = 'Geometries/Base_grid_'+ModelParameters/OrgGridsize;
+			
+			unit<uint64> Numerator_Di :=
+				impedance_matrix_od64('bidirectional(link_flag);startPoint(Node_rel,OrgZone_loc);endPoint(Node_rel,DstZone_loc);cut(OrgZone_max_imp);euclid(maxSqrDist);alternative(link_imp);interaction(v_i,w_j,dist_decay):D_i'
+					, FinalLinkSet/impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					
+					, !FinalLinkSet/IsOneDirection
+					, FinalNodeSet/OrgNode_rel, NetwerkSpec/OrgLocations_spoint //startPoint(Node_rel,OrgZone_loc)
+					, FinalNodeSet/DestNode_rel, NetwerkSpec/destLocations_spoint //endPoint(Node_rel,DstZone_loc)
+					, convert(ModelParameters/MaxTravelTime, s_f) //cut impedance
+					, maxSqrDist
+					, FinalLinkSet/lengthkm
+					, 1.0 // v_i
+					, NetwerkSpec/DestDomain/Population[float64] // w_j
+					, -1.0 // dist_deacy
+				), KeepData = "True";
+				
+			unit<uint64> Denominator_Di :=
+				impedance_matrix_od64('bidirectional(link_flag);startPoint(Node_rel,OrgZone_loc);endPoint(Node_rel,DstZone_loc);cut(OrgZone_max_imp);euclid(maxSqrDist);alternative(link_imp);interaction(v_i,w_j,dist_decay):D_i'
+					, FinalLinkSet/impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					
+					, !FinalLinkSet/IsOneDirection
+					, FinalNodeSet/OrgNode_rel, NetwerkSpec/OrgLocations_spoint //startPoint(Node_rel,OrgZone_loc)
+					, FinalNodeSet/DestNode_rel, NetwerkSpec/destLocations_spoint //endPoint(Node_rel,DstZone_loc)
+					, convert(ModelParameters/MaxTravelTime, s_f) //cut impedance
+					, maxSqrDist
+					, FinalLinkSet/lengthkm
+					, 1.0 // v_i
+					, NetwerkSpec/DestDomain/Population[float64] // w_j
+					, 0.0 // dist_deacy
+				), KeepData = "True";
+				
+			attribute<km> Avg_Distance_To_PopulatedCells  (NetwerkSpec/OrgDomain) := MakeDefined(Numerator_Di/D_i[km] / Denominator_Di/D_i, 0[km]);
+			attribute<km> Avg_Distance_To_PopulatedCells_grid         (Base_grid) := Avg_Distance_To_PopulatedCells[invert(Base_grid/points/grid_domain_rel)], StorageName = "='%LocalDataProjDir%/Output/Avg_distance_To_PopulatedCells_grid-'+ModelParameters/CountryFolder+'_O-'+ModelParameters/OrgGridsize+'_D-'+/ModelParameters/DestGridsize+'.tif'", StorageType = "'tif'";
+			
+			parameter<string>  Generator                                         := 'Ready', ExplicitSuppliers = "Avg_Distance_To_PopulatedCells_grid";
+		}
+	}
+	
+
+	 
+	Template Basic_OD_matrix_T
+	{
+		unit<uint32>      Org;
+		unit<uint32>      Dest;
+		container         NetwerkSpec;
+		///
+
+		container Basic_OD_matrix
+		{
+			unit<uint32> FinalLinkSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalLinkSet;
+			unit<uint32> FinalNodeSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalNodeSet;
+			
+			unit<uint64> Dijkstra_fullOD := //calculation a full origin-destination matrix
+				impedance_matrix_od64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);od:impedance,OrgZone_rel,DstZone_rel'
+					, FinalLinkSet/impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					
+					, FinalNodeSet/OrgNode_rel
+					, FinalNodeSet/DestNode_rel
+				)
+			{
+				attribute<string> impedance_min := string(round(impedance / 60d)); //Convert the impedance from seconds to minutes, round it off, and store it as a string value.
+				
+				unit<uint32> Matrix_Array := org
+				{
+					attribute<string> org_name           := org/label;
+					attribute<string> impedance_min_list := AsList(impedance_min, ';', OrgZone_rel);
+				}
+
+				unit<uint32> Header : nrofrows = 1
+				{
+					attribute<string> values := AsList(dest/label, ';', const(0[Header],dest));
+				}
+
+				unit<uint32> Matrix_met_header := union_unit(Header, Matrix_Array) //This unit can easily be exported to csv and used in other applications.
+				, StorageName  = "%LocalDataProjDir%/Export/NUTS3_PopWeighted_Centroids_OD_matrix_20230804.csv"
+				, StorageType  = "gdalwrite.vect"
+				{
+					attribute<string> org_name := union_data(., const('',Header), Matrix_Array/org_name);
+					attribute<string> values   := union_data(., Header/values, Matrix_Array/impedance_min_list) ;
+				}
+			}
+		}
+	}
+	
+	#include<ComputeProxy.dms>
+	
+	// container RunPerMS:= 
+		// for_each_ne(
+			// RegionalUnits/Continental_EU/name
+			// , 'PerMemberState_T('+quote(RegionalUnits/Continental_EU/name)+')'
+		// );
+
+	Template PerMemberState_T
+	{
+		parameter<string> MS_name;
+		///
+		
+		unit<uint8>       MS          := select_with_attr_by_cond(RegionalUnits/Continental_EU, RegionalUnits/Continental_EU/name == MS_name);
+		unit<uint32>      Org         := ='select_with_attr_by_cond(Geometries/Base_grid_'+ModelParameters/OrgGridsize+'/points, IsDefined(point_in_polygon(Geometries/Base_grid_'+ModelParameters/OrgGridsize+'/points/geometry, MS/geometry)))';
+		unit<uint32>      Dest        := ='select_with_attr_by_cond(Dest_populated_grid, IsDefined(point_in_polygon(Dest_populated_grid/geometry, MS/geometry)))';
+		parameter<uint32> maxSqrDist   := 120 * 120; //km blokken
+		
+		container Create_Network := =
+			'NetworkSetup/Call_CreateNetwork_T('
+				'Org'   
+				',Dest'
+				','+quote('PopRaster_'+MS_name)+
+			')';
+		
+		container Indicator
+		{
+			unit<uint32> FinalLinkSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalLinkSet;
+			unit<uint32> FinalNodeSet := NetwerkSpec/CreateMoreEfficientNetwork/FinalNodeSet;
+			unit<ipoint> Base_grid    := = 'Geometries/Base_grid_'+ModelParameters/OrgGridsize;
+			
+			
+			unit<uint64> Numerator_Di :=
+				impedance_matrix_od64('bidirectional(link_flag);startPoint(Node_rel,OrgZone_loc);endPoint(Node_rel,DstZone_loc);cut(OrgZone_max_imp);euclid(maxSqrDist);interaction(v_i,w_j,dist_decay):D_i'
+					, FinalLinkSet/impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					
+					, !FinalLinkSet/IsOneDirection
+					, FinalNodeSet/OrgNode_rel, NetwerkSpec/OrgLocations_spoint //startPoint(Node_rel,OrgZone_loc)
+					, FinalNodeSet/DestNode_rel, NetwerkSpec/destLocations_spoint //endPoint(Node_rel,DstZone_loc)
+					, convert(ModelParameters/MaxTravelTime, s_f) //cut impedance
+					, maxSqrDist
+					, 1.0 // v_i
+					, NetwerkSpec/DestDomain/Population[float64] // w_j
+					, -1.0 // dist_deacy
+				);
+				
+			unit<uint64> Denominator_Di :=
+				impedance_matrix_od64('bidirectional(link_flag);startPoint(Node_rel,OrgZone_loc);endPoint(Node_rel,DstZone_loc);cut(OrgZone_max_imp);euclid(maxSqrDist);interaction(v_i,w_j,dist_decay):D_i'
+					, FinalLinkSet/impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					
+					, !FinalLinkSet/IsOneDirection
+					, FinalNodeSet/OrgNode_rel, NetwerkSpec/OrgLocations_spoint //startPoint(Node_rel,OrgZone_loc)
+					, FinalNodeSet/DestNode_rel, NetwerkSpec/destLocations_spoint //endPoint(Node_rel,DstZone_loc)
+					, convert(ModelParameters/MaxTravelTime, s_f) //cut impedance
+					, maxSqrDist
+					, 1.0 // v_i
+					, NetwerkSpec/DestDomain/Population[float64] // w_j
+					, 0.0 // dist_deacy
+				);
+				
+			attribute<min_f> Avg_Traveltime_To_PopulatedCells    (NetwerkSpec/OrgDomain) := MakeDefined(convert(Numerator_Di/D_i[s_f] / Denominator_Di/D_i, min_f), 0[min_f]);
+			attribute<min_f> Avg_Traveltime_To_PopulatedCells_grid           (Base_grid) := Avg_Traveltime_To_PopulatedCells[invert(Base_grid/points/grid_domain_rel)], StorageName = "='%LocalDataProjDir%/Output/Avg_traveltime_To_PopulatedCells_grid-'+ModelParameters/CountryFolder+'_O-'+ModelParameters/OrgGridsize+'_D-'+/ModelParameters/DestGridsize+'.tif'";
+			
+			parameter<string>  Generator                                         := 'Ready', ExplicitSuppliers = "Avg_Traveltime_To_PopulatedCells_grid";
+		}
+	}
+}

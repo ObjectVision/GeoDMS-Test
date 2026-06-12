@@ -1,0 +1,42 @@
+container Huisartsenpraktijken
+{
+	unit<uint32> y2022_jan
+	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Huisartsenpraktijken/Huisartsenpraktijken2022_xy.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Huisartsenpraktijken_jan2022_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(HP_ID);
+			attribute<uint32>               Nr_huisartsenpraktijken := const(1,.);
+			attribute<uint32>               Nr_items_of_interest    := Nr_huisartsenpraktijken;
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Org_type == 1w);
+		}
+	}
+
+	unit<uint32> y2022_nov
+	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Huisartsenpraktijken/Huisartsenpraktijken_nov2022_xy.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Huisartsenpraktijken_nov2022_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(HP_ID);
+			attribute<uint32>               Nr_huisartsenpraktijken := const(1,.);
+			attribute<uint32>               Nr_items_of_interest    := Nr_huisartsenpraktijken;
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Org_type == 1w);
+		}
+	}
+}

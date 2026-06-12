@@ -1,0 +1,137 @@
+container Classifications : using = "units"
+{
+	unit<uint8>  GHS_years  : nrofrows = 10 
+	{
+		attribute<uint16> year: [ 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020]; 
+		attribute<string> name := 'Y'+string(year); 
+	}
+	
+	unit<uint8> Continents : nrofrows = 6
+	{
+		attribute<string> name : ['Africa','Asia','Australia_Oceania','Europe','North_America','South_America'];
+		attribute<string> label := name;
+		container V := for_each_nedv(AsItemName(name), String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> Iter : nrofrows = 8
+	{
+		attribute<string> name := 'I'+string(id(.));
+		attribute<string> PrevPopName := MakeDefined(name[sub_or_null(ID(.),1)]+'/NextPop', 'CurrState/Pop');
+	}
+
+	unit<uint8> ProjectionYears := range(uint8, uint8(substr(ModelParameters/StartYear, 2,2))+1b, 11b) //11b-1b becomes 2100 in this setup.
+	{
+		attribute<Year>   Yr             := (float32(id(.)) * 10f + 2000f)[Year];
+		attribute<string> name           := 'Y'+string(Yr);
+		
+		attribute<string> prev_name      := id(.) != first(id(.)) ? name[id(.) - min_elem( id(.), 1b) ] : ModelParameters/StartYear;
+		attribute<string> prevStateName  := id(.) != first(id(.)) ? name[id(.) - min_elem( id(.), 1b) ]+'/NewState' : 'InitialState';
+	}
+	
+	unit<uint8> ProjectionYears_Delta := select_with_attr_by_cond(ProjectionYears, id(ProjectionYears) != first(id(ProjectionYears)));
+	
+	unit<uint8> TypologyK : nrofrows = 7, Descr = "Degree of urbanisation level 2 typologies", URL = "https://human-settlement.emergency.copernicus.eu/degurbaDefinitions.php"
+	{
+		attribute<uint8>  EK    : [30, 23, 22, 21, 13, 12, 11];
+		attribute<string> Label : ['Urban centre','Dense urban cluster','Semi-dense urban cluster','Suburban grid cell','Rural cluster','Low density rural grid cell','Very low density grid cell'];
+		attribute<uint32> BrushColor: [rgb(255,0,0),rgb(115,35,0),rgb(168,112,0),rgb(255,255,0),rgb(55,86,35),rgb(171,205,102),rgb(205,245,122)];
+		attribute<string> name  := AsItemName(label);
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	unit<uint32> Accessibility_Variants : nrofrows = 3, Descr = "Accessibility definitions used for endogenous accessibility grid-based calculations" 
+	{
+		attribute<string> label       : ['villages', 'towns', 'cities'];
+		attribute<string> definition  : ['degurba_class = 13[TypologyK] || degurba_class > 21[TypologyK]', 'degurba_class > 21[TypologyK]', 'degurba_class = 30[TypologyK]'];
+	}
+	
+	unit<uint32> Pot_fields : nrofrows = 8 
+	{
+		attribute<string> label : ['Pots_lin_5km', 'Pots_sqr_5km', 'Pots_lin_10km', 'Pots_sqr_10km', 'Pots_lin_20km', 'Pots_sqr_20km', 'Pots_lin_40km', 'Pots_sqr_40km'];
+	}
+	unit<uint32> percentages: nrofrows = 100 {
+		attribute<string> 	label:= string(id(.)+1)+'%';
+	}
+			
+	unit<uint8> AllShares := cat_range(0b, 101b)
+	{
+		attribute<string>         label                      := string(id(.));
+		attribute<BU_DensityBins> DensityBins_rel            := Classify(id(.), BU_DensityBins/LB);
+		attribute<Float32>        Moving_up_probability_data : 
+		[ 
+			0.024179 ,0.557334 ,0.833489 ,0.9228637,0.9508959,
+			0.9647802,0.9698947,0.9700665,0.9718882,0.9717724,
+			0.9667857,0.9626678,0.952769,0.9487741,0.9290178,
+			0.9127614,0.878824,0.855158,0.824441,0.806207,
+			0.773898,0.743286,0.724977,0.718502,0.699109,
+			0.68371075,0.66537925,0.6518985,0.6518985,0.62594925,
+			0.6172995,0.612974625,0.6,0.56282,0.50194975,
+			0.42705675,0.34759025,0.285422,0.2206985,0.16564325,
+			0.108825,0.09,0.071175,0.05235,0.033525,
+			0.024179,0.020,0.015,0.010,0.005,
+			0.000,
+			null,null,null,null,null,null,null,null,null,null,
+			null,null,null,null,null,null,null,null,null,null,
+			null,null,null,null,null,null,null,null,null,null,
+			null,null,null,null,null,null,null,null,null,null,
+			null,null,null,null,null,null,null,null,null,null
+		];
+		attribute<Float32>        Moving_up_probability      := MakeDefined(Moving_up_probability_data, 0f);
+		attribute<uint32>         BrushColor                 := BU_DensityBins/BrushColor[DensityBins_rel];
+	}
+	
+	unit<uint8> BU_DensityBins := cat_range(0b, 15b)
+	{
+		attribute<AllShares>  LB: [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
+		attribute<string> label := 'Share '+string(LB)+' - '+string(UB);
+		attribute<uint8>  UB    := id(.) == last(id(.)) ? 101b : LB[id(.)+1b];
+		
+		attribute<uint32> BrushColor := switch( 
+											case(LB == 0b, rgb(255,255,255))
+											, case(LB == 1b, rgb(171,213,213))
+											, case(LB == 2b, rgb(188,221,170))
+											, case(LB == 3b, rgb(205,230,127))
+											, case(LB == 4b, rgb(221,235,85))
+											, case(LB == 5b, rgb(238,246,42))
+											, case(LB == 10b, rgb(255,255,0))
+											, case(LB == 15b, rgb(250,230,0))
+											, case(LB == 20b, rgb(243,205,12))
+											, case(LB == 25b, rgb(237,180,20))
+											, case(LB == 30b, rgb(231,157,30))
+											, case(LB == 35b, rgb(225,133,34))
+											, case(LB == 40b, rgb(219,100,40))
+											, case(LB == 45b, rgb(213,84,48))
+											, case(LB == 50b, rgb(200,60,50))
+											, rgb(200,200,200)
+										), DialogType = "BrushColor";
+	}
+	// unit<uint8> Pop_DensityBins := cat_range(0b, 17b) 
+	unit<uint32> Pop_DensityBins := cat_range(0, 502) 
+	{
+	
+		attribute<string>  UB                := string(ClassBreaks[id(.) + 1]);
+		attribute<string>  label             := IsNull(UB) ? string(ClassBreaks)+ ' < '  : string(ClassBreaks)+' - '+string(UB);
+		attribute<uint32>  ClassBreaks_org   := uint32(sub_or_null(id(.),1)) * binsize;
+		attribute<float32> ClassBreaks       := IsNull(ClassBreaks_org) ? 0f : ClassBreaks_org == 0 ? 1f : float32(ClassBreaks_org);
+		// attribute<float32> ClassBreaks       : [0, 1, 10, 25, 50, 100, 200, 300, 600, 900, 1500, 3000, 4500, 6000, 7500, 10000, 20000];
+		
+		parameter<uint32> binsize :=100;
+	}
+	
+	unit<uint8> Pop_Bins := cat_range(0b, 10b) 
+	{
+		attribute<string>  Label             := 'LB_'+string(ClassBreaks);
+		attribute<float32> ClassBreaks       : [0, 1, 25, 50, 100, 500, 1000, 2000, 3000, 5000];
+	}
+	
+	unit<uint8> BU_Residential_Area_Bins := cat_range(0b, 10b) 
+	{
+		attribute<string>  Label             := 'LB_'+string(ClassBreaks);
+		attribute<float32> ClassBreaks       : [0, 0.0001, 0.001, 0.01, 0.05, 0.075, 0.1, 0.15, 0.2, 0.25];
+	}
+	
+	unit<uint8> BU_Total_Share_Bins := cat_range(0b, 10b) 
+	{
+		attribute<string>  Label             := 'LB_'+string(ClassBreaks);
+		attribute<float32> ClassBreaks       : [0, 0.0001, 0.001, 0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25];
+	}
+}

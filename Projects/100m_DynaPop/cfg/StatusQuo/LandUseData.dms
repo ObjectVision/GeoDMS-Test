@@ -1,0 +1,196 @@
+container LandUseData
+{
+	//attribute<UInt8> age0 (Geography/Albers1kmGrid): StorageName = "%sourceDataProjDir%/LandUse/age0.asc",     IsHidden = "True";
+	//attribute<Geography/Albers1kmGrid>	AlbersGridRel (Geography/Lambert100mGrid): expr = "id(Geography/Lambert100mGrid)[Geography/Albers1kmGrid]";
+	//attribute<uint8> age1 (Geography/Lambert100mGrid): expr = "age0[AlbersGridRel]", StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/age0.tif";
+	
+	attribute<uint8> age0 (Geography/Lambert100mGrid): StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/age0.tif" ;
+	
+	container CLC_100m
+	{
+		unit<WPoint> UK1990 : IsHidden = "True"
+			,	DialogData = "Geography/LambertEA"
+			,	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/CLC44_UK_1990.tif"
+			,	StorageReadOnly = "True"
+		{
+			attribute<Classifications/LU/Corine> GridData;
+			attribute<Classifications/LU/Corine> ReadData(Geography/RegionDomainSets/JrcRegions100m/United_kingdom);
+		}
+		container LC1990
+			:	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/clc100_90_laea_lzw.tif"
+			,	Expr = 
+					"for_each_nednv(Geography/Regions/JrcRegion/Label, "
+						"Geography/Regions/JrcRegion/Label == 'United_kingdom' ? 'UK1990/ReadData' : '',"
+						"Geography/RegionDomainSets/JrcRegions100m, Geography/Regions/JrcRegion/Label, Classifications/LU/Corine)"
+			,	StorageReadOnly = "True"
+		{
+			attribute<Classifications/LU/Corine>    GridData (Geography/Lambert100mGrid);
+			attribute<Classifications/LU/ModelType> ModelData(Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/MT [GridData]"; // DEBUG
+			attribute<Classifications/LU/ViewType>  ViewData (Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/VT2[GridData]";
+		}
+		container LC2000
+			:	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/elc100_00_laea_lzw.tif"
+			,	Expr = 
+					"for_each_ndnv(Geography/Regions/JrcRegion/Label, "
+						"Geography/RegionDomainSets/JrcRegions100m, Geography/Regions/JrcRegion/Label, Classifications/LU/Corine)"
+			,	StorageReadOnly = "True"
+		{
+			attribute<Classifications/LU/Corine>    GridData (Geography/Lambert100mGrid);
+			
+			attribute<Classifications/LU/ModelType> ModelData(Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/MT [GridData]"; // DEBUG
+			attribute<Classifications/LU/ViewType>  ViewData (Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/VT2[GridData]";
+		}
+		Unit<WPoint> LC2006
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/clc06_r_v3.tif"
+			, 	StorageType = "gdal.grid"
+			//,	Expr = 
+			//		"for_each_ndnv(Geography/Regions/JrcRegion/Label, "
+			//			"Geography/RegionDomainSets/JrcRegions100m, Geography/Regions/JrcRegion/Label, Classifications/LU/Corine)"
+			,	StorageReadOnly = "True"
+		{
+			attribute<Classifications/LU/Corine> GridData;
+			attribute<Classifications/LU/Corine> ReadData  (Geography/Lambert100mGrid);
+			
+			attribute<Classifications/LU/ModelType> ModelData(Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/MT [ReadData]"; // DEBUG
+			attribute<Classifications/LU/ViewType>  ViewData (Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/VT2[ReadData]";
+		}
+		unit<WPoint> LC2012
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/LUISA_basemap_2012_080521_100m.tif"
+			, 	StorageType = "gdal.grid"
+			//,	Expr = 
+			//		"for_each_ndnv(Geography/Regions/JrcRegion/Label, "
+			//			"Geography/RegionDomainSets/JrcRegions100m, Geography/Regions/JrcRegion/Label, Classifications/LU/Corine)"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint16> GridData;
+			attribute<uint16> ReadData  (Geography/Lambert100mGrid);
+			
+			attribute<Classifications/LU/Corine>	Indata 	 (Geography/Lambert100mGrid): Expr = "rlookup(ReadData, Classifications/Lu/Corine/BM18_code)";
+			attribute<Classifications/LU/ModelType> ModelData(Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/MT [Indata]"; // DEBUG
+			attribute<Classifications/LU/ViewType>  ViewData (Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/VT2[Indata]";
+		}
+		unit<WPoint> LC2018
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/LUISA_basemap_2018_020321_100m.tif"
+			, 	StorageType = "gdal.grid"
+			//,	Expr = 
+			//		"for_each_ndnv(Geography/Regions/JrcRegion/Label, "
+			//			"Geography/RegionDomainSets/JrcRegions100m, Geography/Regions/JrcRegion/Label, Classifications/LU/Corine)"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint16> GridData;
+			attribute<uint16> ReadData  (Geography/Lambert100mGrid);
+			
+			attribute<Classifications/LU/Basemap_2018>	Indata 	 (Geography/Lambert100mGrid): Expr = "rlookup(ReadData, Classifications/Lu/Corine/BM18_code)";
+			attribute<Classifications/LU/ModelType> ModelData(Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/MT [Indata]"; // DEBUG
+			attribute<Classifications/LU/ViewType>  ViewData (Geography/Lambert100mGrid): Expr = "Classifications/Lu/Corine/VT2 [Indata]";
+			container export {
+				attribute<Classifications/LU/ViewType> ViewData (Geography/Lambert100mGrid): expr = "LC2018/ViewData", StorageName = "%LocalDataProjDir%/baseyear/LandUseVT_P2018.tif";
+			}
+		}
+		
+		Unit<uint16> aggregation: expr = "Geography/Regions/Nuts2"
+		{
+			attribute<uint32> bu_1990: expr = "sum(uint32(Classifications/LU/ModelType/IsUrban[LC1990/ModelData]), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> bu_2000: expr = "sum(uint32(Classifications/LU/ModelType/IsUrban[LC2000/ModelData]), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> bu_2006: expr = "sum(uint32(Classifications/LU/ModelType/IsUrban[LC2006/ModelData]), Geography/RegionGrids/Nuts2)";
+			
+			attribute<uint32> c01_2006: expr = "sum(uint32(LC2006/ReadData = uint8( 1)), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> c02_2006: expr = "sum(uint32(LC2006/ReadData = uint8( 2)), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> c45_2006: expr = "sum(uint32(LC2006/ReadData = uint8(45)), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> c46_2006: expr = "sum(uint32(LC2006/ReadData = uint8(46)), Geography/RegionGrids/Nuts2)";
+			
+			attribute<uint32> ics_2006:			expr = "sum(uint32(Classifications/LU/ModelType/IsIndustrial[LC2006/ModelData]), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> forest_2006:		expr = "sum(uint32(Classifications/LU/ModelType/IsForest[LC2006/ModelData]), Geography/RegionGrids/Nuts2)";
+			
+			attribute<uint32> arable2006: 		expr = "sum(uint32(LC2006/ModelData = Classifications/LU/ModelType/OtherArable), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> permcrops2006: 	expr = "sum(uint32(LC2006/ModelData = Classifications/LU/ModelType/PermanentCrops), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> pasture2006:		expr = "sum(uint32(LC2006/ModelData = Classifications/LU/ModelType/Pastures), Geography/RegionGrids/Nuts2)";
+			
+		}
+		
+		Unit<WPoint> AgeFromCLC
+		{
+			unit<wpoint> domain_grid: 			Expr = "Geography/Lambert100mGrid";
+			
+			attribute<bool>		Is_90_00		(domain_grid): Expr = "CLC_100m/LC1990/ViewData == CLC_100m/LC2000/ViewData";
+			attribute<bool>		Is_00_06		(domain_grid): Expr = "CLC_100m/LC2000/ViewData == CLC_100m/LC2006/ViewData";
+			
+			attribute<uint8>	AgeCLC			(domain_grid): Expr =	
+																		"switch("	
+																		"case(and(not(Is_90_00), Is_00_06), uint8(6)), "
+																		"case(and(Is_90_00, Is_00_06), uint8(16)), "
+																		"uint8(0)"
+																		")";
+		}
+					
+					
+	}
+	
+	container GHSL
+	{
+		unit<wpoint> ghsl1990: StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl1990.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
+		{
+			attribute<uint16> GridData;
+			attribute<uint16> ReadData (Geography/Lambert100mGrid);
+			attribute<bool>	  BuiltUp35(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.35)";
+		}
+		unit<wpoint> ghsl2000: StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl2000.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
+		{
+			attribute<uint16> GridData;
+			attribute<uint16> ReadData (Geography/Lambert100mGrid);
+			attribute<bool>	  BuiltUp25(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.25)";
+			attribute<bool>	  BuiltUp30(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.30)";
+			attribute<bool>	  BuiltUp35(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.35)";
+			attribute<bool>	  BuiltUp40(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.40)";
+			attribute<bool>	  BuiltUp45(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.45)";
+			attribute<bool>	  BuiltUp50(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.50)";
+			attribute<bool>	  BuiltUp55(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.55)";
+			attribute<bool>	  BuiltUp60(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.60)";
+			attribute<bool>	  BuiltUp75(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.75)";
+			
+			// below used to find GHSL simplification that matches best with Corine 2000
+			parameter<float32> c25: expr = "corr(float32(BuiltUp25), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c30: expr = "corr(float32(BuiltUp30), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c35: expr = "corr(float32(BuiltUp35), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c40: expr = "corr(float32(BuiltUp40), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c45: expr = "corr(float32(BuiltUp45), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c50: expr = "corr(float32(BuiltUp50), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c55: expr = "corr(float32(BuiltUp55), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c60: expr = "corr(float32(BuiltUp60), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+			parameter<float32> c75: expr = "corr(float32(BuiltUp75), float32(Classifications/LU/ModelType/IsBuiltupArea[LandUseData/CLC_100m/LC2000/ModelData]))";
+		}
+	
+		unit<wpoint> ghsl2014: StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl2014.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
+		{
+			attribute<uint16> GridData;
+			attribute<uint16> ReadData (Geography/Lambert100mGrid);
+			attribute<bool>	  BuiltUp35(Geography/Lambert100mGrid): expr = "ReadData >= uint16(255.0 * 0.35)";
+		}
+		container aggregation
+		{			
+			attribute<uint32> bu_1990 (Geography/Regions/Nuts2): expr = "sum(uint32(ghsl1990/BuiltUp35), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> bu_2000 (Geography/Regions/Nuts2): expr = "sum(uint32(ghsl2000/BuiltUp35), Geography/RegionGrids/Nuts2)";
+			attribute<uint32> bu_2014 (Geography/Regions/Nuts2): expr = "sum(uint32(ghsl2014/BuiltUp35), Geography/RegionGrids/Nuts2)";
+		}
+		
+		container conversion {
+			unit<dpoint> Mollweide: Descr = "Mollweide Global Projection",	SpatialReference = "EPSG:54009"; // EPSG code for Lambert EA 
+		
+			unit<wpoint> ghsl: StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/temp/ghsl2014_v2018.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "LambertEA" {
+				attribute<float32> GridData;
+				//attribute<ghsl1990> rid		 (Geography/Lambert100mGrid): expr = "id(Geography/Lambert100mGrid)[.]";
+				attribute<uint8>   StoreGrid: Expr = "uint8(GridData)", StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl2014_v2018.tif";
+			}
+		}
+		
+	}
+}

@@ -1,0 +1,38 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Deze DMS-file wordt aangeroepen door Classifications.dms.                            //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Time
+{
+	parameter<Units/YearDiffRange> ZichtJaarDuration := SourceData/Claims/ZichtJaarDuration;
+	parameter<Units/YearRange>     StartYear         := SourceData/Claims/StartYear;
+	parameter<Units/YearRange>     FinalYear         := SourceData/Claims/FinalYear;
+
+	
+	parameter<YearRange> FirstZichtjaar := Max_Elem(value(rounddown(float32(StartYear) / float32(ZichtJaarDuration)), int16) * ZichtJaarDuration, StartYear);
+	parameter<YearRange> LastZichtjaar  := value(rounddown(float32(FinalYear) / float32(ZichtJaarDuration)), int16) * ZichtJaarDuration;
+		
+	parameter<YearDiffRange> NextYears := LastZichtjaar - FirstZichtJaar;
+	
+	unit<Int16> TigrisJaar := Range(YearRange, FirstZichtjaar, LastZichtjaar+1s) // tijdstip, of Init Final
+	{
+		attribute<YearRange> Jaar := ID(.);
+		attribute<string> name := 'Y' + string(Jaar), DialogType = "LabelText";
+	}
+	unit<Int16> ZichtJaar  := Range(Int16, 0s, 1s+(LastZichtjaar - FirstZichtjaar) / ZichtJaarDuration) // tijdstip
+	{
+		attribute<YearRange> Jaar := (LastZichtJaar - Int16(#.-1)* ZichtJaarDuration)+ ID(.) * ZichtJaarDuration;
+		attribute<string> name := 'Y' + string(Jaar), DialogType = "LabelText";
+	}
+	unit<Int16> Periode := Range(Int16, 0s, Int16(RoundUp(Float32(LastZichtjaar - FirstZichtjaar) / Float32(ZichtJaarDuration)))) // periode (aka tijdstap) 
+	{
+		attribute<ZichtJaar> InitialJaar_rel := value(ID(.)-1s, ZichtJaar);
+		attribute<ZichtJaar> FinalJaar_rel   := InitialJaar_rel + 1s;
+		attribute<YearRange> InitialJaar := MakeDefined(ZichtJaar/Jaar[InitialJaar_rel], StartYear);
+		attribute<YearRange> FinalJaar   := ZichtJaar/Jaar[FinalJaar_rel];
+		
+		attribute<string> name := 'Y' + string(InitialJaar) + '_Y' + string(FinalJaar), DialogType = "LabelText";
+	}
+}

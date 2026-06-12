@@ -1,0 +1,225 @@
+Template CreateNetwork_NotOptimised_T
+{
+	// begin case parameters
+	unit<uint32> OrgDomain;
+	unit<uint32> DestDomain;
+	unit<uint32> RoadDomain;
+	parameter<string> TransportType;
+	// end case parameters
+
+	attribute<rdc>                      OrgLocations  (OrgDomain)      := orgDomain/geometry;
+	attribute<rdc>                      destLocations (DestDomain)     := destDomain/geometry;
+	
+	unit<uint32> Locations := union_unit(orgDomain, destDomain)
+	{
+		attribute<rdc>                  geometry                       := union_data(.,orgLocations, destLocations);
+		attribute<bool>                            IsOrg                          := union_data(.,const(TRUE , OrgDomain), const(FALSE,DestDomain));
+		attribute<bool>                            IsDest                         := union_data(.,const(FALSE, OrgDomain), const(TRUE ,DestDomain));
+	}
+	unit<uint32> UniqueLocations    := unique(Locations/geometry) 
+	, DialogType = "map", DialogData = "values"
+	{ 
+		attribute<NodeSet>   Node_rel      := rlookup(values, NodeSet/values); 
+		attribute<Locations> Locations_rel := rlookup(values, Locations/geometry);
+		attribute<bool>      IsOrg         := rjoin(values, Locations/geometry, Locations/IsOrg);
+	}
+	
+	unit<uint32> RoadsWithLocations := connect(roadDomain/geometry, UniqueLocations/values)
+	{ 
+		attribute<rdc>                             geometry (arc)                  := uniondata; 
+		attribute<km_hr>                           max_speed                       := ='MakeDefined(RoadDomain/max_speed_'+TransportType+'[arc_rel], ModelParameters/Advanced/'+TransportType+'DefaultSpeed)';  
+		attribute<km_hr>                           congested_speed                 := ='MakeDefined(RoadDomain/congestion_speed_'+TransportType+'[arc_rel], ModelParameters/Advanced/'+TransportType+'DefaultSpeed)';  
+	}
+
+	unit<uint32> LinkSet := arc2segm(RoadsWithLocations/geometry)
+	, Descr = "The original link set"
+	{
+		attribute<NodeSet>                         F1                             := rlookup(point, NodeSet/Values);
+		attribute<NodeSet>                         F2                             := rlookup(nextpoint, NodeSet/Values);
+		attribute<km_hr>                           Max_Speed                      := RoadsWithLocations/Max_Speed[SequenceNr];
+		attribute<km_hr>                           Congested_Speed                := RoadsWithLocations/Congested_Speed[SequenceNr];
+		attribute<s_f>                             Impedance_max_speed            := (arc_length(geometry, m) == 0[m] ? 0.01[m] : arc_length(geometry, m)) / (Max_Speed / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                             Impedance_congested            := (arc_length(geometry, m) == 0[m] ? 0.01[m] : arc_length(geometry, m)) / (Congested_Speed / 3600[s_f / hr_f] * 1000[m / km]);
+		
+		attribute<bool>                            IsPartOfJunctionFreeSection    :=   F1 -> WillBeDeleted || F2 -> WillBeDeleted;
+		attribute<bool>                            IsInsideJunctionFreeSection    :=   F1 -> WillBeDeleted && F2 -> WillBeDeleted; 
+		attribute<bool>                            IsNotInsideJunctionFreeSection := IsPartOfJunctionFreeSection && !IsInsideJunctionFreeSection; // IsConnectorLink
+		attribute<bool>                            IsFinalLink                    := !(F1 -> WillBeDeleted || F2 -> WillBeDeleted);
+		
+		//For visualisation
+		attribute<rdc>                             geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+		unit<uint32> PointSet := union_unit(.,.)
+		{
+			attribute<rdc>                         Point   := Union_Data(., ../Point, ../NextPoint);
+			attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+			attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+		}
+	}
+	
+	unit<uint32> NodeSet  := unique(Linkset/PointSet/Point)
+	, Descr = "The original node set"
+	{
+		attribute<uint32>                          NrConnectedLinks               := pcount(LinkSet/F1) + pcount(LinkSet/F2);
+		attribute<bool>                            WillBeDeleted                  := NrConnectedLinks == 2 && pcount(UniqueLocations/Node_rel) == 0;
+
+		//Forward relations
+		attribute<JunctionFreeSection>             JunctionFreeSection_rel        := ConnectedParts_rel -> JunctionFreeSection_rel;
+		attribute<FinalNodeSet>                    FinalNodeSet_rel               := invert(FinalNodeSet/org_rel); // todo: sneller, mbv sequentiele select_data variant toe te voegen aan GeoDMS
+		
+		//For visualisation
+		attribute<rdc>                             geometry                       := values;
+		attribute<ConnectedParts>                  ConnectedParts_rel             := ConnectedParts/part_rel;
+	}
+
+	unit<uint32> LinksInsideJunctionFreeSection := select_with_org_rel(LinkSet/IsInsideJunctionFreeSection)
+	, Descr = "Those links that are in the junction free section"
+	{
+		attribute<s_f>                             Impedance_freeflow             := org_rel -> Impedance_freeflow;
+		attribute<s_f>                             Impedance_congested            := org_rel -> Impedance_congested;
+		attribute<NodeSet>                         F1                             := org_rel -> F1;
+		attribute<NodeSet>                         F2                             := org_rel -> F2; 
+		attribute<JunctionFreeSection>             JunctionFreeSection_rel        := F1->JunctionFreeSection_rel;
+		
+		//For visualisation
+		attribute<rdc>                             geometry  (arc)                := org_rel -> geometry;
+	}
+	
+	unit<uint32> ConnectedParts := connected_parts(LinksInsideJunctionFreeSection/F1, LinksInsideJunctionFreeSection/F2)
+	{
+		attribute<NodeSet>                         FirstNode_rel                   := invert(part_rel);
+		attribute<bool>                            IsJunctionFreeSection           := FirstNode_rel -> WillBeDeleted;
+		attribute<JunctionFreeSection>             JunctionFreeSection_rel         := invert(JunctionFreeSection/org_rel);
+	}
+	
+	unit<uint32> JunctionFreeSection := select_with_org_rel(ConnectedParts/IsJunctionFreeSection)
+	, Descr = "Those nodes that are redundant, because there are no junctions on the links"
+	{
+		attribute<ConnectorLink>                   First_ConnectorLink_rel        := min(id(ConnectorLink), ConnectorLink/JunctionFreeSection_rel); //todo sneller
+		attribute<ConnectorLink>                   Last_ConnectorLink_rel         := max(id(ConnectorLink), ConnectorLink/JunctionFreeSection_rel); //todo sneller
+		
+		attribute<s_f>                             Aggregated_Impedence_freeflow           := sum(LinksInsideJunctionFreeSection/impedance_freeflow, LinksInsideJunctionFreeSection/JunctionFreeSection_rel);
+		attribute<s_f>                             First_ConnectorLink_Impedance_freeflow  := First_ConnectorLink_rel -> impedance_freeflow;
+		attribute<s_f>                             Last_ConnectorLink_Impedance_freeflow   := Last_ConnectorLink_rel -> impedance_freeflow;
+		attribute<s_f>                             Total_Impedance_freeflow                := Aggregated_Impedence_freeflow + First_ConnectorLink_Impedance_freeflow + Last_ConnectorLink_Impedance_freeflow;
+		
+		attribute<s_f>                             Aggregated_Impedence_congested           := sum(LinksInsideJunctionFreeSection/impedance_congested, LinksInsideJunctionFreeSection/JunctionFreeSection_rel);
+		attribute<s_f>                             First_ConnectorLink_Impedance_congested  := First_ConnectorLink_rel -> Impedance_congested;
+		attribute<s_f>                             Last_ConnectorLink_Impedance_congested   := Last_ConnectorLink_rel -> Impedance_congested;
+		attribute<s_f>                             Total_Impedance_congested                := Aggregated_Impedence_congested + First_ConnectorLink_Impedance_congested + Last_ConnectorLink_Impedance_congested;
+		
+		attribute<FinalNodeSet>                    FN1                            := First_ConnectorLink_rel -> FinalNodeSet_rel;
+		attribute<FinalNodeSet>                    FN2                            := Last_ConnectorLink_rel -> FinalNodeSet_rel;  
+		
+		//For visualisation
+		attribute<rdc>                             FirstPoint                     := FN1 -> Geometry;
+		attribute<rdc>                             LastPoint                      := FN2 -> Geometry;
+		attribute<rdc>                             geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+		unit<uint32> PointSet := union_unit(.,.)
+		{
+			attribute<rdc>                         Point   := Union_Data(., ../FirstPoint, ../LastPoint);
+			attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+			attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+		}
+	}
+	
+	unit<uint32> UnchangedLinkSet := select_with_org_rel(LinkSet/IsFinalLink)
+	, Descr = "Those links that can be used without changes, i.e. no nodes need to be removed"
+	{
+		attribute<FinalNodeSet>                    FN1                            := NodeSet/FinalNodeSet_rel[org_rel -> F1];
+		attribute<FinalNodeSet>                    FN2                            := NodeSet/FinalNodeSet_rel[org_rel -> F2];
+		attribute<s_f>                             impedance_freeflow             := LinkSet/impedance_freeflow[org_rel];
+		attribute<s_f>                             impedance_congested            := LinkSet/impedance_congested[org_rel];
+		
+		//For visualisation
+		attribute<rdc>                             FirstPoint                     := FinalNodeSet/geometry[FN1];
+		attribute<rdc>                             LastPoint                      := FinalNodeSet/geometry[FN2];
+		attribute<rdc>                             geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+		unit<uint32> PointSet := union_unit(.,.)
+		{
+			attribute<rdc>                         Point   := Union_Data(., ../FirstPoint, ../LastPoint);
+			attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+			attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+		}
+	}
+	
+	unit<uint32> ConnectorLink := select_with_org_rel(LinkSet/IsNotInsideJunctionFreeSection)
+	, Descr = "Those links that connect the unchanged links with the junction free links"
+	{
+		attribute<NodeSet>                         Fa                             := LinkSet/F1[org_rel];
+		attribute<NodeSet>                         Fb                             := LinkSet/F2[org_rel]; 
+		attribute<NodeSet>                         F1                             := NodeSet/WillBeDeleted[Fa] ? Fb : Fa; // Unchanged Node
+		attribute<NodeSet>                         F2                             := NodeSet/WillBeDeleted[Fa] ? Fa : Fb; // Node in JunctionFreeSection
+		attribute<JunctionFreeSection>             JunctionFreeSection_rel        := NodeSet/JunctionFreeSection_rel[F2];
+		attribute<FinalNodeSet>                    FinalNodeSet_rel               := invert(FinalNodeSet/org_rel)[F1];
+		attribute<s_f>                             Impedance_freeflow             := LinkSet/Impedance_freeflow[org_rel];
+		attribute<s_f>                             Impedance_congested            := LinkSet/Impedance_congested[org_rel];
+	}
+	
+	
+	unit<uint32> FinalNodeSet := select_with_org_rel(!Nodeset/Willbedeleted)
+	, Descr = "The final node set"
+	{
+		//For visualisation
+		attribute<rdc>                             geometry                       := NodeSet/geometry[org_rel];
+		attribute<uint32>                          NrConnectedLinks               := pcount(FinalLinkSet/F1) + pcount(FinalLinkSet/F2);
+	}
+	
+	unit<uint32> FinalLinkSet := union_unit(UnchangedLinkSet, JunctionFreeSection)
+	, Descr = "The final link set"
+	{
+		attribute<FinalNodeSet>                    FN1                            := union_data(., UnchangedLinkSet/FN1, JunctionFreeSection/FN1);
+		attribute<FinalNodeSet>                    FN2                            := union_data(., UnchangedLinkSet/FN2, JunctionFreeSection/FN2);
+		attribute<s_f>                             impedance_freeflow             := union_data(., UnchangedLinkSet/impedance_freeflow, JunctionFreeSection/Total_Impedance_freeflow);
+		attribute<s_f>                             impedance_augmented_freeflow   := impedance_freeflow + CorrectImpedanceForCrossroads/impedance_Start[s_f] + CorrectImpedanceForCrossroads/impedance_End[s_f];
+		attribute<s_f>                             impedance_congested            := union_data(., UnchangedLinkSet/impedance_congested, JunctionFreeSection/Total_Impedance_congested);
+		attribute<s_f>                             impedance_augmented_congested  := impedance_congested + CorrectImpedanceForCrossroads/impedance_Start[s_f] + CorrectImpedanceForCrossroads/impedance_End[s_f];
+		attribute<FinalNodeSet>                    F1                             := FN1;
+		attribute<FinalNodeSet>                    F2                             := FN2;
+		attribute<FinalNodeSet>                    OrgNode_rel  (OrgDomain)       := rlookup(orgLocations, FinalNodeSet/geometry);
+		attribute<FinalNodeSet>                    DestNode_rel (DestDomain)      := rlookup(destLocations, FinalNodeSet/geometry);
+
+		//For visualisation
+		attribute<rdc>                             FirstPoint                     := FinalNodeSet/geometry[FN1];
+		attribute<rdc>                             LastPoint                      := FinalNodeSet/geometry[FN2];
+		parameter<int16>                           PenWidth                       := 3s, DialogType = "PenWidth";
+		attribute<rdc>                             geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+		unit<uint32> PointSet := union_unit(.,.)
+		{
+			attribute<rdc>                         Point   := Union_Data(., ../FirstPoint, ../LastPoint);
+			attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+			attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+		}
+		
+		
+		container CorrectImpedanceForCrossroads
+		// hiermee wordt voor ieder begin en eind node het aantal geconnecte links bepaald
+		// dit bepaalt of het een bocht (2 links), zijweg (3 links), kruising (4 links) of complexe kruising (meer dan 4 links) is
+		// afhankelijk van dit aantal wordt een aantal seconden opgeteld bij de totale impedance
+		{
+			// helft van de opgegeven waarden omdat er zowel bij begin als einde een factor wordt opgeteld
+			parameter<s>       Impedance2Links    := 0[s];
+			parameter<s>       Impedance3Links    := 2[s];
+			parameter<s>       Impedance4Links    := 5[s];
+			parameter<s>       Impedance_gt4Links := 6[s];
+
+			attribute<uint32>  Start(FinalLinkSet)     := FinalNodeSet/NrConnectedLinks[FinalLinkSet/F1];
+			attribute<uint32>  End  (FinalLinkSet)     := FinalNodeSet/NrConnectedLinks[FinalLinkSet/F2];
+		
+			attribute<s> impedance_Start (FinalLinkSet):=
+				switch(
+					 case(Start <= 2, Impedance2Links)
+					,case(Start  = 3, Impedance3Links)
+					,case(Start  = 4, Impedance4Links)
+					,Impedance_gt4Links
+				);
+		
+			attribute<s> impedance_End (FinalLinkSet):=
+				switch(
+					 case(End <= 2, Impedance2Links)
+					,case(End  = 3, Impedance3Links)
+					,case(End  = 4, Impedance4Links)
+					,Impedance_gt4Links
+				);
+		}
+	}
+}

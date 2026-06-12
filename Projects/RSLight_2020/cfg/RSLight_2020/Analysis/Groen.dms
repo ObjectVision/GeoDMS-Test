@@ -1,0 +1,69 @@
+container Groen
+{
+	attribute<bool> bbg2015_groen_buff (rdc_10m) := potential((Classifications/LandUsePreparation/CBSKlasse/IsGroen_breed[SourceData/Grondgebruik/BBG/dominant/per_10m/j2015])[float32], Geography/Distmatrices/Impl_10m/pot100m/potrange/binair) == 0f ? FALSE : TRUE, FreeData = "false";
+
+	// unit<uint32> AggRegio := = 'Regioindelingen/'+ModelParameters/AggRegioRef;
+
+	attribute<LandUsePreparation/CBSKlasse> Grondgebruik (rdc_100m)      := SourceData/Grondgebruik/BBG/dominant/per_domain_grid/j2015;
+	unit<uint8>                             WP_groen                     := Classifications/Vastgoed/WP_groen;
+	
+	attribute<bool> IsTotaal (domain_grid) := Classifications/Groen/Grondgebruik/IsGroen[Grondgebruik];
+	attribute<bool> IsInBBG  (domain_grid) := IsTotaal && Geography/RegioIndelingen/Bevolkingskern_2011/Is_bbg;
+	
+	parameter<NrEur_woning> Groenwaarde_Euro_per_woning := 100[NrEur_woning];
+	
+	container Nabijheid := Templates/Nabijheid(SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet/count_per_domain_grid[uint32]);
+	
+	container Schaarste :=
+		for_each_ne(
+			Classifications/Groen/Functie/name
+			, 'Templates/Schaarste('+string(id(Classifications/Groen/Functie))+'[Classifications/Groen/Functie])'
+		)
+	{
+		parameter<String> Generate_ontkoppelde_data := 'Ready', 
+			ExplicitSuppliers = "=AsList(Classifications/Groen/Functie/name+'/potential/MakeResult', ';')", IsHidden = "True";
+		
+		container rijtjeswoning
+		{
+			attribute<float32> result (domain_grid) := const(0f, domain_grid);
+		}
+		container vrijstaand
+		{
+			attribute<float32> result (domain_grid) := const(0f, domain_grid);
+		}
+		container twee_onder_1_kap
+		{
+			attribute<float32> result (domain_grid) := const(0f, domain_grid);
+		}
+		container appartement
+		{
+			attribute<float32> result (domain_grid) := const(0f, domain_grid);
+		}
+		container geen_woonpand
+		{
+			attribute<float32> result (domain_grid) := const(0f, domain_grid);
+		}
+	}
+			
+	container Geschiktheid := // needs work: waarde per ha: wat heeft één huishouden (woning in ons geval) over voor een bepaald type groen? Hoe verschilt dit tussen doelgroepen (WOZ klassen in ons geval)?
+		for_each_nedv(
+			WP_Groen/name
+			, WP_Groen/IsWP
+				? 'const(0, domain_grid, NrEur_ha)'
+				: 'Schaarste/'+WP_Groen/name+'/result == 0f
+					 ? 0[NrEur_ha]'                                                  // zeer sterk negatief, zodat er geen groen op nieuwe plekken ontstaat
+					': Schaarste/'+WP_Groen/name+'/result[NrWoningenHa] * Groenwaarde_Euro_per_woning' // nu heeft een woning dus 1 eur over per ha groen in de buurt * waardering per doelgroep (0-1). Zeer weinig uiteraard.
+			, domain_grid
+			, NrEur_ha
+		);
+		
+	container Claims :=
+		for_each_nedv(
+			Classifications/Groen/Functie/name
+			, 'uint32(float32(Nabijheid/PerFunctie/'+Classifications/Groen/Functie/name+'/IsFunctie) * domain_grid/NrHaPerCell)'
+			, domain_grid
+			, uint32
+		);
+	
+	#include <Templates.dms>
+}

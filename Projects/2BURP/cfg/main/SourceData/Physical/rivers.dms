@@ -1,0 +1,55 @@
+container Rivers
+{
+	parameter<String> Generate_RiverFSS := 'Ready', 	ExplicitSuppliers = "MakeFSS/geometry";
+	
+	container HydroRIVERS_v10 //as of february 2024 is this still the latest version.
+	:  StorageName     = "%ToBURPDataDir%/physical/water/HydroRIVERSVersion1/HydroRIVERS_v10.gdb"
+	,  StorageType     = "gdal.vect"
+	,  URL             = "https://www.hydrosheds.org/products/hydrorivers#downloads"
+	,  StorageReadOnly = "True"
+	{
+		//Indicator of river order using river flow to distinguish logarithmic size classes: order 1 represents river reaches with a long-term average discharge . 100,000 m3/s;
+		//order 2 represents river reaches with a long-term average discharge . 10,000 m3/s and < 100,000 m3/s;
+		// c order 9 represents river reaches with a long-term average discharge . 0.001 m3/s and < 0.01 m3/s; 
+		// and order 10 represents river reaches with a long-term average discharge < 0.001 m3/s (i.e., 0 in the provided data due to rounding to 3 digits).
+		
+		unit<uint32> River
+		:	SQLString  = "SELECT * FROM HydroRIVERS_v10 WHERE ORD_FLOW < 6"
+		{
+			attribute<LatLong> Geometry (arc);
+			parameter<uint32>  PenColor      := rgb(255,0,0),DialogType = "PenColor";
+			parameter<float64> PenWorldWidth := 0.00001[float64],  DialogType = "PenWorldWidth";
+		}
+	}
+
+	unit<uint32> MakeFSS := HydroRIVERS_v10/River
+	, 	StorageName = "%ToBURPDataDir%/physical/water/HydroRIVERSVersion1/HydroRIVERS_v10.fss"
+	{
+		attribute<LatLong> Geometry (arc) := HydroRIVERS_v10/River/geometry;
+	}
+
+	unit<uint32> River
+	: 	StorageName = "%ToBURPDataDir%/physical/water/HydroRIVERSVersion1/HydroRIVERS_v10.fss"
+	,  StorageReadOnly = "True"
+	{
+		attribute<LatLong>           Geometry (arc);
+		attribute<SphericalMercator> geometry_mer (arc):= Geometry[SphericalMercator];
+		
+		parameter<uint32>                PenColor      := rgb(255,0,0),DialogType = "PenColor";
+		parameter<float64>               PenWorldWidth := 0.00001[float64],  DialogType = "PenWorldWidth";
+	}
+
+	attribute<Float32> sqr_dist                (CompactedDomain) := Sqr(250000[meter] / CompactedDomain/lat_factor);
+	attribute<Float32> Location2River_distInfo (CompactedDomain) := dist_info(River/geometry_mer, CompactedDomain/Geometry_mer, sqr_dist);
+	attribute<km>      Location2River_km       (CompactedDomain) := (Location2River_distInfo * CompactedDomain/lat_factor)[meter] * 0.001[km / meter];
+	attribute<km>      Location2River_km_domain_export (domain) := min_elem(Location2River_km[CompactedDomain/BaseGrid], 250[km]), StorageName = "%ToBURPDataDir%/Physical/water/Location2River_km.tif";
+
+	unit<ipoint> Dist_River_km:
+	StorageName     = "%ToBURPDataDir%/physical/water/Location2River_km.tif",
+	StorageType     = "gdal.grid",
+	StorageReadOnly = "True",
+	DialogData      = "LatLong"
+	{
+		attribute<km> GridData (domain);
+	}
+}

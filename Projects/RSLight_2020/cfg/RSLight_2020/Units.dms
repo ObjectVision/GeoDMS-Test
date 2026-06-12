@@ -1,0 +1,91 @@
+container Units
+{ 
+	unit<Float32> Meter := BaseUnit('m', float32);
+	unit<int32>   NrMeter := BaseUnit('m', int32);
+	unit<Float32> hm := 100.0 * Meter;
+	unit<Float32> km := 1000.0 * Meter;
+	unit<Float32> cm := 0.01 * Meter;
+	unit<Float32> mm := 0.001 * Meter;
+	unit<Float32> Meter2   := Meter * Meter;
+	unit<int32>   NrMeter2 := NrMeter * NrMeter;
+	unit<Float32> km2    := km * km;
+	unit<float32> ha     := 10000.0 * Meter2;
+	unit<int32>   NrHa   := 10000 * NrMeter2;
+	unit<Float32> per_ha := 1.0 / ha;
+	
+	unit<float32> sec := BaseUnit('s', float32);
+	unit<float32> min := 60 * sec;
+	unit<float32> uur := 60 * min;
+	unit<float32> dag := 24 * uur;
+	
+	unit<Float32> jaar:= BaseUnit('Yr', float32);
+	unit<Float32> maand := (1.0/12.0) * jaar;
+	unit<float32> jaarlijks:= 1.0 / jaar;
+	
+	unit<Float32> mm_dag := mm / dag;
+	
+// ============ RB: Required ranges
+	unit<Int16>  YearRange     := Range(jaar,  1900s, 2200s);
+	unit<Int16>  YearDiffRange := Range(jaar, -100s,  100s);
+	
+//	monetary
+	unit<Float32> Eur := BaseUnit('EURO', float32);
+	unit<int32>   NrEur := BaseUnit('EURO', int32);
+	unit<Float32> kEur:= 1000.0 * Eur;
+	unit<Float32> Eur_m2 := EUR / Meter2;
+	unit<Float32> Eur_ha := EUR / ha; //, cdf = "Classifications/Vastgoed/Euro_ha_9K/ClassBreaks";
+	unit<int32>   NrEur_ha := NrEUR / NrHa;
+	unit<int32>   NrEur_woning := NrEUR / NrWoningen;
+	unit<float32> Eur_woning := EUR / Woning;
+	unit<float32> Eur_jaarlijks := Eur / jaar;
+	unit<float32> Eur_yr := Eur / jaar;
+	unit<float32> Eur_m2_jaarlijks := Eur_M2 / jaar;
+	unit<Float32> kEur_Ha:= 1000.0 * Eur_Ha;
+	unit<Float32> mEur_Ha:= 1000.0 * kEur_Ha;
+	
+// ============ actor and object based units
+	unit<float32> Job         := BaseUnit('Job', float32);
+	unit<int32>   NrJobs      := BaseUnit('Job', int32);
+	unit<float32> Job_min     := Job / min;
+	unit<int32>   FTE         := BaseUnit('FTE', int32);
+	unit<float32> Persoon     := BaseUnit('P', float32);
+	unit<int32>   NrPersonen  := BaseUnit('P', int32);
+	unit<float32> Household       := BaseUnit('HH', float32);
+	unit<int32>   NrHouseholds    := BaseUnit('HH', int32);
+	unit<float32> Woning          := BaseUnit('W', float32);
+	unit<float32> Woning_ha       := Woning / ha;
+	unit<int32>   NrWoningen      := BaseUnit('W', int32);
+	unit<int32>   NrWoningenHa    := NrWoningen / NrHa;
+	unit<float32> Verblijfsobject := BaseUnit('VBO', float32);
+	unit<float32> PandUnit            := BaseUnit('Pand', float32);
+	unit<float32> Vbo_ha          := Verblijfsobject / ha;
+	unit<int32>   NrVerblijfsobjecten := BaseUnit('VBO', int32);
+	
+	unit<float32> Household_Woning := Household / Woning;
+	unit<float32> Woning_Household := Woning / Household;
+	unit<Float32> NrWoningen_ha    := NrWoningen  / ha;
+	unit<Float32> m2_ha            := Meter2  / ha;
+	unit<Float32> NrJobs_ha        := Job     / ha;
+	
+	unit<Float32> Inw_ha           := Persoon / ha;
+	unit<Float32> m2_Job           :=  Meter2 / Job;
+	unit<Float32> m2_Woning        :=  Meter2 / Woning;
+	unit<Float32> m2_Vbo           :=  Meter2 / Verblijfsobject;
+	unit<Float32> eur_Vbo           :=  Eur / Verblijfsobject;
+	unit<Float32> m2_pand          :=  Meter2 / PandUnit;
+	unit<Float32> m2_FTE           :=  Meter2 / FTE;
+	unit<Float32> FTE_ha           := NrJobs / ha;
+	
+	unit<Float32> Ratio   := 1.0 * ha / ha;
+	unit<Float32> Percent := 100.0 * Ratio;
+	
+	unit<float32> m2footprint     := BaseUnit('m2footprint', float32);
+	unit<float32> m2footprint_ha  := m2footprint / ha;
+	unit<float32> m2footprint_job := m2footprint / job;
+
+// ============  External Codes, TODO: move to classifications
+	unit<uint32> CBSGemeentecode;       // REMOVE? : cdf = "Classifications/Regions/Gemeente/WeergaveIndeling/Classes";
+
+	
+	unit<uint8>   YesNo : cdf = "Classifications/YesNo_K2/ClassBreaks";
+}

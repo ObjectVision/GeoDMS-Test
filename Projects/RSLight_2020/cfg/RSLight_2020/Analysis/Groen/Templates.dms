@@ -1,0 +1,112 @@
+container Templates
+{
+	Template Nabijheid
+	{
+		//
+		attribute<uint32> Woningen (domain_grid);
+		//
+		
+		container WoningenPerWOZKlasse :=
+			for_each_nedv(
+				Classifications/Groen/WOZ/name,
+				'Woningen * uint32(PerWOZKlasse == '+string(id(Classifications/Groen/WOZ))+'[Classifications/Groen/WOZ])',
+				domain_grid, uint32
+			)
+		{
+			attribute<uint32> Total (domain_grid) := = 'add('+AsItemList(Classifications/Groen/WOZ/name)+')';
+		}
+		
+		container PerFunctie :=
+			for_each_ne(
+				Classifications/Groen/Functie/name,
+				'Afstand('+string(id(Classifications/Groen/Functie))+'[Classifications/Groen/Functie], Woningen)'
+			);
+	}
+	
+	Template Afstand
+	{
+		//
+		parameter<Classifications/Groen/Functie> id;
+		attribute<uint32> Woningen (domain_grid);
+		//
+		attribute<bool> IsFunctie (domain_grid) := invert(Classifications/Groen/Functie/org_rel)[Grondgebruik] == id;
+		attribute<bool> Extent    (domain_grid) := = 'IsFunctie && Woningen < 5[uint32] && '+Classifications/Groen/Functie/Extent_ref[id];
+	}
+	
+	Template Schaarste
+	{
+		//
+		parameter<Classifications/Groen/Functie> id;
+		//
+		
+		parameter<Classifications/Groen/Afstand> afstand_id := Classifications/Groen/Functie/Afstand_rel[id];
+		parameter<meter> Afstand := Classifications/Groen/Afstand/Bovengrens[afstand_id];
+		
+		parameter<string> RegioRef_src := Classifications/Groen/Afstand/RegioRef[afstand_id];
+		parameter<string> RegioRef     := RegioRef_src == 'Gemeente2019' 
+											? 'Gemeente/Gemeente2019'
+											: 'Provincie';
+		
+		
+		unit<uint32> Regio := = 'Geography/Regioindelingen/'+RegioRef;
+		
+		attribute<bool> IsExtent0 (domain_grid) := = 'Groen/Nabijheid/PerFunctie/'+Classifications/Groen/Functie/name[id]+'/Extent';
+		
+		unit<uint32> ExtentDistrict := district(uint32(IsExtent0))
+		{
+			attribute<.> per_domain_grid (domain_grid):= Districts;
+			attribute<ha> Oppervlakte := pcount(per_domain_grid)[float32] * Geography/rdc_100m/NrHaPerCell;
+		}
+		
+		attribute<bool> IsExtent (domain_grid) := = 'IsExtent0 && ExtentDistrict/Oppervlakte[ExtentDistrict/per_domain_grid] >= '+string(Classifications/Groen/Afstand/MinimumOppervlakte[afstand_id])+'[ha]';
+
+		container PerWOZKlasse :=
+			for_each_nedv(
+				Classifications/Groen/WOZ/name,
+				'uint32(
+					float32(Groen/Nabijheid/WoningenPerWOZKlasse/'+Classifications/Groen/WOZ/name+') * 
+					Classifications/Groen/Functie/Doelgroep/'+Classifications/Groen/WOZ/name+'[id]
+				)',
+				domain_grid, uint32
+			);
+		
+		attribute<uint32> Totaal (domain_grid) := = 'add('+AsItemList('PerWOZKlasse/'+Classifications/Groen/WOZ/name)+')';
+
+		container Potential := // dit lijkt niet te kloppen met de intentie qua potentie. checken met OV
+			for_each_nedv(
+				Regio/name
+				,'potential('
+					'Totaal[float32] * float32(Regio/per_rdc_100m == '+string(id(Regio))+'[Regio]),' // Alleen bescherming van groen o.b.v. woningen in betreffende gemeente
+					'geography/Distmatrices/Impl_100m/pot'+string(Afstand * 2f)+'m/potrange/Flat2'
+				') * float32(Regio/per_rdc_100m == '+string(id(Regio))+'[Regio])' //Maar ook alleen voor het groen in betreffende gemeente
+				,domain_grid
+				, float32
+			)
+		{
+			attribute<float32> MakeResult (domain_grid) := = 'add('+AsItemList(Regio/name)+')', StorageName = "= '%ProjDir%/Data/UnlinkedData/Groen/Schaarste/'+Classifications/Groen/Functie/name[id]+'/Result.tif'";
+			attribute<float32> ReadResult (domain_grid) : StorageName = "= '%ProjDir%/Data/UnlinkedData/Groen/Schaarste/'+Classifications/Groen/Functie/name[id]+'/Result.tif'";
+			attribute<float32> Result     (domain_grid) := ReadResult;
+		}
+		
+		attribute<float32> Result (domain_grid) := Potential/Result * IsExtent[float32];
+		
+		container Geclassificeerd := Class(Result);
+	}
+	
+	Template Class
+	{
+		//
+		attribute<float32> Src (domain_grid);
+		//
+		
+		unit<uint8> ResultK: NrOfRows = 12
+		{
+			attribute<string> Label := 'Plus'+string(ClassBreaks), DialogType = "LabelText";
+			attribute<float32> ClassBreaks := ClassifyJenksFisher(Src, .);
+			attribute<UInt32> BrushColor: DialogType = "BrushColor",
+				[rgb(0,64,0),rgb(0,128,0),rgb(63,159,32),rgb(127,191,64),rgb(191,223,96),rgb(255,255,128),rgb(255,204,102),rgb(255,153,76),rgb(255,102,51),rgb(255,51,25),rgb(255,0,0),rgb(128,0,0)];
+		}
+		
+		attribute<ResultK> Result  (domain_grid) := Classify(Src, ResultK/Classbreaks) / (Src <> 0[float32])[ResultK];
+	}
+}

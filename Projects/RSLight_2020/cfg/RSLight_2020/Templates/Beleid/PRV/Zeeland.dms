@@ -1,0 +1,52 @@
+container Zeeland := PRVT('Zeeland')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Regionale_waterkering (domain_grid) := Src/NL_IMRO_9929_vrpz2012_0001/Waterkering/Regionale_waterkering/Bestand/Multi/Result;
+			attribute<bool> bestaande_natuur      (domain_grid) := Src/NL_IMRO_9929_vrpz2012_0001/bestaande_natuur/bestaande_natuur/Bestand/Multi/Result;
+			attribute<bool> nieuwe_natuur         (domain_grid) := Src/NL_IMRO_9929_vrpz2012_0001/nieuwe_natuur/nieuwe_natuur/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Regionale_waterkering
+					, bestaande_natuur
+					, nieuwe_natuur
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> glastuinbouw (domain_grid) := provincie && !Src/NL_IMRO_9929_vrpz2012_0001/glastuinbouw/glastuinbouw/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  glastuinbouw
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

@@ -1,0 +1,104 @@
+container Overigen
+{
+	container Src := .../Src/Overigen;
+	
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Rijksmonumenten         (domain_grid) := Src/Monumenten/RijksMonumenten/Totaal/per_domain_grid > 0[uint32];
+			attribute<bool> Stads_en_Dorpsgezichten (domain_grid) := Src/Monumenten/Stads_en_Dorpsgezichten/IsHard[poly2grid(Src/Monumenten/Stads_en_Dorpsgezichten/Geometry, domain_grid)];
+			
+			attribute<bool> Totaal (domain_grid) := or(Rijksmonumenten, Stads_en_Dorpsgezichten);
+		}
+
+		container Middel
+		{
+			attribute<bool> Stads_en_Dorpsgezichten (domain_grid) := Src/Monumenten/Stads_en_Dorpsgezichten/IsNietHard[poly2grid(Src/Monumenten/Stads_en_Dorpsgezichten/Geometry, domain_grid)];
+			attribute<bool> Totaal (domain_grid) := Stads_en_Dorpsgezichten;
+		}
+
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container woongebied
+	{
+		container Hard
+		{
+			attribute<bool> Regionale_luchthavens (domain_grid) := Src/Regionale_luchthavens/Totaal_lden_70_hoger;
+			attribute<bool> Eindhoven_Airport     (domain_grid) := Src/Regionale_luchthavens/Eindhoven_Airport/ke_35_40/Bestand/Multi/Result;
+
+			attribute<bool> Totaal (domain_grid) := Max_elem(
+				woongebied_en_werk_bedrijventerrein/hard/totaal,
+				Regionale_luchthavens,
+				Eindhoven_Airport
+			);
+		}
+
+		container Middel
+		{
+			attribute<bool> Regionale_luchthavens (domain_grid) := Src/Regionale_luchthavens/Totaal_lden_56_70;
+			
+			attribute<bool> Totaal (domain_grid) := Max_elem(
+				woongebied_en_werk_bedrijventerrein/middel/totaal,
+				Regionale_luchthavens
+			);
+		}
+
+		container Zacht
+		{
+			attribute<bool> Regionale_luchthavens (domain_grid) := Src/Regionale_luchthavens/Totaal_lden_48_56;
+			
+			attribute<bool> Totaal (domain_grid) := Max_elem(
+				woongebied_en_werk_bedrijventerrein/zacht/totaal,
+				Regionale_luchthavens
+			);
+		}
+	}
+
+	container Bedrijventerrein
+	{
+		container hard
+		{
+			attribute<bool> beperkingengebied_voor_bedrijven_en_kantoren (domain_grid) := Src/Schiphol/beperkingengebied_voor_bedrijven_en_kantoren;
+			attribute<bool> Schiphol                                     (domain_grid) := Src/Schiphol/Schiphol;
+			
+			attribute<bool> Totaal (domain_grid) := Max_elem(
+				woongebied_en_werk_bedrijventerrein/hard/totaal,
+				beperkingengebied_voor_bedrijven_en_kantoren,
+				Schiphol
+			);
+		}
+
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

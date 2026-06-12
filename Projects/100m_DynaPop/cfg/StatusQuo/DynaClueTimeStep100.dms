@@ -1,0 +1,195 @@
+container DynaClueTimeStep100:	IsTemplate = "True"
+{
+	parameter<YearRange> CurrYear;
+	parameter<UInt16> PeriodID;
+	parameter<Float32> ClaimFraction;
+	
+	unit<UInt8>  ModelType;
+	unit<WPoint> domain_grid;
+	unit<UInt32> domain;
+	unit<uint16> OrgPopClaimRegion;
+	unit<uint16> DestPopClaimRegion;
+	
+	
+	container PrevState;
+
+	// 
+	
+	parameter<string> test := RunParameters/SuitabilityTraits;
+
+	// ======== end of template parameters
+	parameter<float32>   ComingPeriodLength:		Expr = "Periods/PeriodLength[PeriodId + uint16(1)]";
+	
+	container Claims : Expr = "ModelTraits/ClaimTablegenerators/ClaimTemplate(ModelType, MetaData/DemandCharacteristics, MetaData/DemandModelsList)";
+
+	container DynamicComponent: Expr = "SuitabilityGenerator/CalcSuitability(domain)";
+
+	container FeasibleSolution; // NYI, Reserved for future use
+	container ScaledTransPot: Expr = "for_each_nedv(ModelType/Name, 'roundUp(DynamicComponent/TransPot/'+ModelType/Name+' * CaseData/SuitScaleFactor)', domain, Int32)";
+
+	attribute<uint8> check (modeltype): expr = "rlookup(CaseData/DestClaimTableName, CaseData/UniqueDestRegionRefs/Values)";
+	attribute<string> demandregions (modeltype): expr = "CaseData/UniqueDestRegionRefs/Values[check]";
+	
+	/*container d_alloc :=
+		"discrete_alloc(ModelType/Name, domain, "
+		"   ScaledTransPot, "
+		"   MakeDefined(rlookup(CaseData/DestClaimTableName, CaseData/UniqueDestRegionRefs/Values), UInt8(0)), "
+		"   CaseData/UniqueDestRegionRefs/Values, "
+		"   CaseData/AtomicRegions, "
+		"   CaseData/AtomicRegions/geometry, "
+		
+		"   Claims/DemandMin, "
+		"   Claims/DemandMax, "
+		"   Int32(value(-9999, EUR_M2) * CaseData/SuitScaleFactor)," // Dit is de threshold!
+//		"   Int32(value(0 / 0, EUR_HA))," // Dit is de threshold! GEEN Threshold => geen dis-allowed cells
+		"   FeasibleSolution"
+		" )"*/
+		
+		
+		
+	container d_alloc :=
+		discrete_alloc(ModelType/Name, domain,
+		ScaledTransPot,
+		MakeDefined(rlookup(CaseData/DestClaimTableName, CaseData/UniqueDestRegionRefs/Values), UInt8(0)),
+		CaseData/UniqueDestRegionRefs/Values,
+		CaseData/AtomicRegions,
+		CaseData/AtomicRegions/geometry,
+		Claims/DemandMin,
+		Claims/DemandMax,
+		Int32(value(-9999, EUR_M2) * CaseData/SuitScaleFactor), // Dit is de threshold!
+		FeasibleSolution)
+	{
+		attribute<ModelType> landuse(domain);
+	}
+	
+	#include<diagnostics.dms>
+	
+	parameter<String> TimeStepDirName: Expr = "simulation_results/metadata/DirName + '/'+Periods/Name[PeriodID]";
+	
+	container ResultingState
+	{	
+		//		"case(Allowed/ggModelMatr/TransitionCode> int16(1000), 'PrevState/Age == value('+String(Allowed/ggModelMatr/TransitionCode-int16(100))+', YearDiffRage)'),"
+
+		parameter<YearRange> RefTime 			:= CurrYear;
+		
+		attribute<ModelType> AllocLandUse(domain): Expr = "d_alloc/landuse", IntegrityCheck = "cumulStatusFlag";
+		attribute<ModelType> LandUse_EUCS(domain): Expr = "=Rules/PostProcStep";
+		//attribute<bool>		becomesUrban 			(domain): Expr = "((Qi >= Rules/AbandonmentThreshold) && (PrevState/LandUse == Classifications/LU/ModelType/Urban)) || (Qi > Rules/UrbanizationThreshold) || CaseData/getOptimalk/ProbableTouristFacility";
+		//attribute<bool>		becomesAbandonedUrban	(domain): Expr = "(LandUse_EUCS == Classifications/LU/ModelType/Urban || LandUse_EUCS == Classifications/LU/ModelType/AbanUrban) && "
+		//	"Qi < Rules/AbandonmentThreshold && Qi < PrevState/Qi && !CaseData/getOptimalk/ProbableTouristFacility";	
+		//attribute<bool>		 ViolatesCap (domain): Expr = "becomesUrban && !DynamicComponent/Population/claimPopCapi/urbanAllowed";
+		attribute<ModelType> LandUse     (domain): Expr = "LandUse_EUCS", Label = "= 'Land use ' + string(RefTime)";
+		attribute<ModelType> LandUse_Grid(domain_grid): Expr = "LandUse[domain/BasisGrid]";
+		attribute<bool> 	 abandoned_urb (domain): Expr = "ModelType/IsAbandonedUrban[LandUse]";
+		attribute<bool>		 new_urb	 (domain): Expr = "HasChanged && ModelType/IsUrban[LandUse] ";
+		attribute<int32>	 Qi_Grid	 (domain_grid): Expr = "int32(Qi)[domain/BasisGrid]";
+		attribute<float32>	 Ai_Grid	 (domain_grid): Expr = "DynamicComponent/DynamicAccessibility/Accessibility_grav[domain/BasisGrid]";
+		attribute<float32> 	 Qi_pres_dif_Grid (domain_grid): Expr = "DynamicComponent/Population/Pressure_dif[domain/BasisGrid]", StorageName = "%LocalDataProjDir%/Results/Qi_Pres_dif.tif";
+		attribute<float32> 	 Qi_dist_dif_Grid (domain_grid): Expr = "DynamicComponent/Population/Distribution_dif[domain/BasisGrid]", StorageName = "%LocalDataProjDir%/Results/Qi_Dist_dif.tif";
+		
+		attribute<float32> AgriAbandonmentRisk_Grid (domain_grid): Expr = "DynamicComponent/AgriculturalAbandonment/AgriAbandonmentRiskMap/AgriAbandonmentRisk[domain/BasisGrid]";
+		attribute<float32> RuralRemoteness_Grid (domain_grid): Expr = "DynamicComponent/AgriculturalAbandonment/AgriAbandonmentRiskMap/Remoteness[domain/BasisGrid]";	
+		attribute<float32> LowPopDensity_Grid (domain_grid): Expr = "DynamicComponent/AgriculturalAbandonment/AgriAbandonmentRiskMap/LowPopDensity[domain/BasisGrid]";	
+		
+		attribute<bool > HasChanged(domain): Expr = "LandUse != PrevState/LandUse";
+	
+		attribute<YearDiffRange> Age(domain): Expr = "(HasChanged ? value(0, YearDiffRange) : PrevState/Age) + 1[YearDiffRange]";
+		
+		attribute<float32> 			Si(domain): 				  			Expr = "DynamicComponent/Population/Si", Label = "= 'Housing Supply ' + string(RefTime)";
+		attribute<Year> S_Agei	   (domain): 				  				Expr = "DynamicComponent/Population/S_Agei", Label = "= 'Age of housing supply ' + string(RefTime)";
+		attribute<float32> Qi(domain):                 			Expr = "DynamicComponent/Population/Qi", Label = "= 'Qi ' + string(RefTime)"; //, IntegrityCheck = "DynamicComponent/Population/Solved";
+		attribute<float32> Qj(DestPopClaimRegion): 	Expr = "Sum(Qi, CaseData/DestPopRasterLink[domain/grid_rel])", Label = "= 'Qj ' + string(RefTime)";
+		//attribute<float32> PotQi (domain): 						Expr = "MakeDefined(potential(Qi[domain/BasisGrid], Parameters/FuncKernels/RooksNeighbours/Matr)[domain/grid_rel] / StartingState/NeighboursWeight, 0[NrResidents])";
+
+		attribute<float32> PopDensity_km2 (domain): 				Expr = "MakeDefined(potential(Qi[domain/BasisGrid], Parameters/FuncKernels/Area1km2/AbsWeight)[domain/grid_rel] , 0[NrResidents])";		
+				
+		container dFactors: expr = "for_each_nedv(DynamicFactors/Name, DynamicFactors/DynExpr, domain, float32)";
+		
+		container regionalFactors: expr = "for_each_ne(CaseData/AllRegionRefs/Values, 'rules/Templates/getRegionalVariables('+ quote(CaseData/AllRegionRefs/Values) +')')"
+		{
+			attribute<float32> ClaimPop (OrgPopClaimRegion): expr = "Claims/proto_Pop1";
+			attribute<float32> AllocPop	(OrgPopClaimRegion): expr = "Sum(DynamicComponent/Population/Qi, CaseData/OrgPopRasterLink[domain/grid_rel])";
+		
+			unit<uint32> UrbanClaimZoneMatrix: expr = "CaseData/NetworkAnalysis/urbanclaimzones_x_urbanclaimzones" 
+			{
+				attribute<float32> tij: expr = "DynamicComponent/DynamicAccessibility/UrbanClaimZoneMatrix/tij";
+			}
+			unit<uint32> ms_rel: expr = "MetaData/RegionalFactorDefinitions/ModelSpecificFactorsList";	
+			unit<uint16> UrbanZones: expr = "= 'RunRegions/UnitSets/' + MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Urban]";
+			attribute<float32> urban_lu		(UrbanZones): expr = "= MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Urban]+'/RegionalVariables/Urban'";
+			//attribute<float32> touristic_lu (UrbanZones): expr = "urban_lu * Claims/DynamicDemandModels/PercTouristicUrbanProj";
+//			attribute<float32> touristic_lu (UrbanZones): expr = "Claims/DynamicDemandModels/tourism_induced_urban/proj_Touristic"; // new code, more realistic touristic, no sudden jumps in residential density
+			container ModelSpecificFactors: expr = "for_each_nednv(ms_rel/Name, ms_rel/RegExpr + '[RunRegions/UnitSets/'+ ms_rel/TargetZones +'/org_rel]', RunRegions/UnitSets, ms_rel/TargetZones, float32)";
+		}
+		
+		unit<SPoint> ForestNeigbourhood: Expr = "Range(domain_grid, point_yx(Int16(-10),Int16(-10)), point_yx(Int16(11), Int16(11)))" // TODO: Move to outsize template to avoid duplicate instantiation
+		{
+			attribute<UInt32>  Dist2: Expr = "dist2(point_yx(int16(0),int16(0),ForestNeigbourhood), uint32)";
+			attribute<Float64> Dist:  Expr = "sqrt(Float64(dist2))";
+			attribute<Float32> Weight: Expr = "Float32( ScaleSum( Dist <= 10.0 && Dist > 0.0 ? 1.0 / (3.0 + Dist) : 0.0, 1.0 ) )";
+		}
+		
+		container ForestPotential: 
+			Expr = 
+				"for_each_nedv("
+					"Classifications/LU/ForestType/Name, "
+					"'potential(Float32(PrevState/ForestType == UInt8('+String(ID(Classifications/LU/ForestType))+')), ForestNeigbourhood/Weight)', "
+					"domain_grid, Float32"
+				")";
+		
+		attribute<Classifications/LU/ForestType>    ForestType(domain_grid): 
+			Expr = 
+				"switch("
+					"case(LandUse_Grid <> ModelType/ForestsMature || LandUse_Grid <> ModelType/ForestsYoung || not(IsDefined(LandUse_Grid)), Classifications/LU/ForestType/NoForest)," // if current land use is no (longer) forest
+					"case(PrevState/ForestType > UInt8(0), PrevState/ForestType),"                                                     // if it already was a kind of forest
+					"case(ForestPotential/Mixed       > ForestPotential/BroadLeaved && ForestPotential/Mixed       > ForestPotential/Coniferous, Classifications/LU/ForestType/Mixed )," // Mixed dominates
+					"case(ForestPotential/BroadLeaved > ForestPotential/Coniferous , Classifications/LU/ForestType/BroadLeaved),"      // BroadLeaved dominates or is equal to Mixed
+					"case(ForestPotential/Coniferous  > ForestPotential/BroadLeaved, Classifications/LU/ForestType/Coniferous ),"      // Coniferous  dominates or is equal to Mixed
+				"Classifications/LU/ForestType/Mixed" // BroadLeaved must then be equal to Coniferous so Mixed is the default value
+				")";
+
+		parameter<bool> cumulStatusFlag: Expr = "and(PrevState/cumulStatusFlag, d_alloc/statusFlag)";
+		
+		container RegCounts
+		{
+			container AllocLandUseRes: Expr = "reg_count(AllocLandUse, ModelType/Name, CaseData/RegionData, MakeDefined(CaseData/RegionRefs, 'Nuts2'))";
+			container PostProcLandUse: Expr = "reg_count(LandUse,      ModelType/Name, CaseData/RegionData, MakeDefined(CaseData/RegionRefs, 'Nuts2'))";
+		}
+		
+//		container endstate;	
+		container OutputGeneration: Expr = "ModelTraits/OutputGenerators/OutputGenerator(domain_grid, domain, TimeStepDirName)";
+			
+//	NYI: ALSO WRITE: TotalSuitability
+		parameter<string> GeneratedFiles := 'Ready',
+			ExplicitSuppliers = "PrevState/GeneratedFiles;OutputGeneration/Results";//PrevState/GeneratedFiles; // ;OutputGeneration/Results;LandUse;	
+			
+		parameter<string> GeneratedFilesEx := 'Ready',
+			ExplicitSuppliers = "OutputGeneration/Results";//PrevState/GeneratedFiles; // ;OutputGeneration/Results;LandUse;	
+			
+			
+			
+			
+			//PrevState/GeneratedFiles + ';' + TimeStepDirName
+			
+			
+			
+			
+		container StateVariables
+		{
+			attribute<ModelType> LandUse     (domain) 						 := ResultingState/LandUse;
+			parameter<bool> cumulStatusFlag 		  						 := ResultingState/cumulStatusFlag;
+			attribute<Classifications/LU/ForestType> ForestType(domain_grid) := ResultingState/ForestType;
+			attribute<YearDiffRange> Age    (domain) 						 := ResultingState/Age;
+			container dFactors    											 := ResultingState/dFactors;
+			attribute<float32> Qi	(domain)							     := ResultingState/Qi;
+			//attribute<float32> Qj	(DestPopClaimRegion)					 := ResultingState/Qj;
+			container regionalFactors									     := ResultingState/regionalFactors;
+			attribute<float32> Si (domain)									 := ResultingState/Si;
+			attribute<Year>	S_Agei (domain)								     := ResultingState/S_Agei;
+			//attribute<float32> PopDensity_km2 (domain)						 := ResultingState/PopDensity_km2;
+			
+			container OutputGeneration										 := ResultingState/OutputGeneration;
+			parameter<string> GeneratedFiles								 := ResultingState/GeneratedFiles;
+		}
+	}
+}

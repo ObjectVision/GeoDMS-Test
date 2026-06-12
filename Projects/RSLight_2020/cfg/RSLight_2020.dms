@@ -1,0 +1,25 @@
+container RSLight_2020: url = "!=ExistingFile(FullPathName(this, '%storageBaseName%.xml'), FullPathName(this, '%storageBaseName%.htm'))"
+{
+	parameter<string> domain_grid_ref     := 'rdc_' +domain_grid_ref_short; 
+	parameter<string> SrcDomain_grid_ref  := 'rdc_' +SrcDomain_grid_ref_short; 
+	
+	parameter<string> domain_grid_ref_short    := '100m'; //Mag geen hogere resolutie hebben dan SrcDomain en voorlopig geen lagere dan rdc_100m. Werkt nu op rdc_25m en rdc_100m, icm SrcDomain op rdc_25m
+	parameter<string> SrcDomain_grid_ref_short := '25m'; //@BR, 20180906: later op rdc_10m zetten, of grid vervangen door bouwblokken/percelen; voorlopig laten staan op rdc_25 m
+	
+	unit<spoint> domain_grid := = 'Geography/'+domain_grid_ref;
+	unit<spoint> SrcDomain_grid := = 'Geography/'+SrcDomain_grid_ref
+	{
+		attribute<domain_grid> domain_grid_rel := = domain_grid_ref + '_rel';
+	}
+	
+	#include <MaakOntkoppeldeData.dms>
+	#include <ModelParameters.dms>
+	#include <Units.dms>
+	#include <Geography.dms>
+	#include <Classifications.dms>
+	#include <SourceData.dms>
+	#include <Analysis.dms>
+	container RelevantPad : = /Analysis/perVariant/UrbaanBulldozer_LMSSubzone_Referentie/Allocatie/Results;
+	#include <Templates.dms>
+	#include <ConfigSettings.dms>
+}

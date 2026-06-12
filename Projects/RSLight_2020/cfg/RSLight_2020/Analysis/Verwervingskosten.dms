@@ -1,0 +1,131 @@
+container Verwervingskosten : FreeData = "False" 
+{ 
+	unit<uint32> Vbo  := SourceData/Vastgoed/BAG/vbos/GebruiksdoelSets/woon/GebruiksdoelSet;
+	
+	container Woningen
+	{
+		// TODO: Let op, exp(Mean(Vbo/Oppervlakte)) *n != sum(exp(Vbo/Oppervlakte))
+		// Deze resultaten worden voor uitkoop en ook voor aankoop door huidige en nieuwe bewoners (in AllocatieNaar Inkomen) toegepast
+		// NEEDS WORK: Aanpassing naar berekening per individuele woning is gewenst
+		
+		container PerWP4PerWoning := 
+			for_each_nedv(
+				Vastgoed/WP4/name
+				, replace(
+					'MakeDefined('//value(Vbo/count_Vastgoed/WP4/@W@, Woning_ha) *'
+						'('
+							'exp('
+								'@C@/constant'
+								
+	//							Woonpand
+								'+ @WS@_d_highrise                            * @C@/d_highrise' //BR@Jip, 181128: kan dit niet, per pand, uit  BAG en OHN worden bepaald ipv afgeleid uit NVM? //JC@Bart 181129: Kan maar is erg lastig omdat we hier al per ha zijn geaggregeerd ipv individueel pandniveau.
+								'+ log(Vbo/Oppervlakte_4WP/@W@)               * @C@/lnsize'
+								'+ log(@WS@_lotsize)                          * @C@/lnlotsize' //BR@Jip, 181128: kan dit niet uit openbare bronnen met hoge resolutie worden bepaald ipv afgeleid uit NVM? //JC@Bart 181129: Zou kunnen, op basis van Kadaster percelen? Niet altijd corresponderen met individuele panden, dus erg lastig denk ik.
+								'+ @WS@_nrooms                                * @C@/nrooms'
+								'+ @WS@_nbadk                                 * @C@/nbadk'
+								'+ @WS@_d_maintgood                           * @C@/d_maintgood'
+								'+ @WS@_d_kk                                  * @C@/d_kk'
+								'+ @WS@_d_centralheating                      * @C@/d_centralheating'
+								'+ @WS@_d_erfpacht                            * @C@/d_erfpacht'
+								'+ @WS@_d_isol_compl                          * @C@/d_isol_compl'
+								'+ @WS@_d_privpark                            * @C@/d_privpark'
+								'+ 1[EUR]                                     * @C@/y2019'
+								'+ value('+String(Vastgoed/WP4/IsDetached    )+', EUR) * @C@/d_detached'
+								'+ value('+String(Vastgoed/WP4/IsSemiDetached)+', EUR) * @C@/d_semidetached'
+								
+	//							Locatie
+								'+ RegionalAvgCharacteristics/Overige_vars/uai_5000m_dcsq              * @C@/uai_2018'
+								'+ log(RegionalAvgCharacteristics/Overige_vars/reistijd_100k_inw_edit) * @C@/lnreistijd_100k_inw'
+								'+ RegionalAvgCharacteristics/Overige_vars/Reistijd_stations_edit      * @C@/reistijd_station_2006_edit'
+								'+ RegionalAvgCharacteristics/Overige_vars/bbg2015_groen_100mbuff_100m * @C@/groennabij_2015'
+							')[Eur_woning]'+
+						'), 0[Eur_woning]'
+					')',
+					'@W@', Vastgoed/WP4/name,
+					'@C@', 'PrijsIndex/ReadCoefficients/'+Vastgoed/WP2/name[Vastgoed/WP4/WP2_rel]+'/Result',
+					'@WS@', 'RegionalAvgCharacteristics/result/'+Vastgoed/WP4/name
+				  )
+				, /domain_grid
+				, EUR_woning
+			);
+		
+		attribute<EUR> PerVBO (vbo) :=
+			= 'max_elem('
+					'merge('
+						'Vbo/WP4_rel[uint16],'
+						'EUR_woning ,'+
+						AsItemList('PerWP4PerWoning/'+Vastgoed/WP4/name+'[vbo/NL_grid_domain_rel]')+
+					')'
+					', 0[EUR_woning]'
+			') * 1[Woning]';
+		
+		attribute<EUR_ha> Totaal          (/domain_grid) := sum(PerVBO, vbo/NL_grid_domain_rel) / /domain_grid/NrHaPerCell, cdf = "Classified/Target_9K/ClassBreaks";
+		attribute<EUR_woning> Per_woning  (/domain_grid) := Totaal / /SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet/count_per_domain_grid[Woning_ha];
+		
+		attribute<EUR_ha> TotaalS         (/Srcdomain_grid) := sum(PerVBO, vbo/NL_grid_Srcdomain_rel) / /Srcdomain_grid/NrHaPerCell, cdf = "Classified/Target_9K/ClassBreaks";
+		attribute<EUR_woning> Per_woningS (/Srcdomain_grid) := TotaalS / /SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet/count_per_Srcdomain_grid[Woning_ha];
+	}
+	
+	container Niet_woningen: FreeData = "False"
+	{
+		attribute<eur_ha> WOZ_totaal      (/domain_grid) := SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/niet_woon/Sum_WOZ_ha;
+		attribute<eur_ha> WOZ_totaal_2017 (/domain_grid) := (SourceData/Vastgoed/WOZ/Y2017/Niet_woningen/Sum_domain_grid / domain_grid/NrHaPerCell);
+		
+		parameter<Eur_m2> prijs := ModelParameters/Verwervingskosten/NietWoningen;
+		
+		attribute<m2_pand>    oppervlakte (SourceData/Vastgoed/BAG/panden/Pand)     := SourceData/Vastgoed/BAG/panden/Pand/sum_vbo_pand_opp_niet_woon;
+		attribute<uint32>     per_rdc_10m                     (rdc_10m)             := poly2grid(SourceData/Vastgoed/BAG/panden/Pand/geometry, rdc_10m);
+		attribute<float32>    count_10m_per_pand              (rdc_10m)             := (pcount(per_rdc_10m)[per_rdc_10m])[float32];
+		attribute<meter2>     opp_uitgesmeerd_op_grid         (rdc_10m)             := oppervlakte[per_rdc_10m] / count_10m_per_pand * 1[PandUnit];
+		attribute<m2_ha>      opp_per_domain_grid             (domain_grid)         := = 'sum(opp_uitgesmeerd_op_grid, rdc_10m/'+domain_grid_ref+'_rel)[meter2] / 1[Ha]';
+		
+		attribute<Eur_ha> kental_totaal (/domain_grid) :=
+			max_elem(
+				(opp_per_domain_grid * prijs)
+			);
+		
+		attribute<Eur_ha> Totaal (/domain_grid) := max_elem(WOZ_totaal_2017, kental_totaal), cdf = "Classified/Target_9K/ClassBreaks";
+	}
+	
+	container Werken := 
+		for_each_nedv(
+			classifications/Actor/AllocSector/name
+			,replace(
+				'exp('
+					'@C@/constant'
+					
+	//				Pand
+					'+ log(@RAT@/'+classifications/Actor/AllocSector/name+'_size)                  * @C@/lnfloorarea' 
+					'+ IsInvestmentProperty                                                        * @C@/IsInvestmentProperty' 
+					
+	//				Locatie
+					'+ RegionalAvgCharacteristics/Overige_vars/impl/uai_2002                       * @C@/UAI'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/reistijd_100k_inw_edit)         * @C@/ln_TravelTime_nearest100kInhab '
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Airports)           * @C@/ln_DistTo_Airports'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_HighwayAccessExit)  * @C@/ln_DistTo_HighwayAccessExit'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Trainstations)      * @C@/ln_DistTo_Trainstations'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Seaport)            * @C@/ln_DistTo_Seaport'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Urban_Contour_2000) * @C@/ln_DistTo_Urban_Contour_2000'
+					'+ RegionalAvgCharacteristics/Overige_vars/impl/LU_Share_Residential_2000      * @C@/LU_Share_Residential_2000 '
+					'+ RegionalAvgCharacteristics/Overige_vars/impl/LU_Diversity_index_2000        * @C@/LU_Diversity_index_2000 '
+					//Apeksha used 2016 price dummy
+				')[Eur] / 1[verblijfsobject] * Banen_Ruimtebeslag/SumVBOFunctie_grid/'+classifications/Actor/AllocSector/name,
+
+				'@AS@',  'Actor/AllocSector/V/'+classifications/Actor/AllocSector/name,
+				'@RAT@', 'RegionalAvgCharacteristics/Result_werken',
+				'@C@',   'PrijsIndex/ReadCoefficients_werken/'+Actor/AllocSector/name+'/Result_werken'
+			) 
+			, domain_grid
+			, Eur_ha
+	), FreeData = "false"
+	{
+		attribute<Eur_ha> Totaal (domain_grid) := = 'add('+AsItemList(classifications/Actor/AllocSector/name)+')';
+		parameter<float32> IsInvestmentProperty := 1f;
+	}
+	
+	attribute<Eur_ha> Totaal_woningbag_woz    (/domain_grid) := Woningen/totaal + Niet_woningen/totaal, cdf = "Classified/Target_9K/ClassBreaks";
+	attribute<Eur_ha> Totaal_woningbag_werken (/domain_grid) := Woningen/totaal + Werken/totaal, cdf = "Classified/Target_9K/ClassBreaks";
+	attribute<Eur_ha> Totaal                  (/domain_grid) := Totaal_woningbag_woz, cdf = "Classified/Target_9K/ClassBreaks";
+	
+	container Classified := /Templates/Classify_9K_EurHa(Totaal, /domain_grid);
+}

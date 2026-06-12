@@ -1,0 +1,84 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                               (C) NEDERLAND LATER  2.0 		2009                    //
+//                                                                                      //
+//                               Planbureau voor de Leefomgeving                        //
+//                               FEBRUARI 2009                                          //
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//     * In het geval van externe publicatie van onderzoeksresultaten waarbij gebruik   //               
+//       is gemaakt van de verstrekte gegevens dient de gebruiker deze resultaten aan   //
+//       het PBL mede te delen middels de toezending van 2 exemplaren van de betref-    //
+//       fende publicatie aan het hoofd van het team RIM van het PBL.                   //
+//                                                                                      //
+//     * In elke publicatie waarin de gegevens van het PBL in enige vorm zijn opgenomen,//
+//       zal de gebruiker de vermelding opnemen: "Bron: Planbureau voor de Leefomgeving"//
+//       Indien het een bewerking van de gegevens betreft, dient te worden opgenomen:   //
+//       "Gebaseerd op Planbureau voor de Leefomgeving gegevens".                       //
+//                                                                                      //
+//     * Het PBL is onder geen enkele voorwaarde aansprakelijk tegenover gebruiker voor //
+//       enige schade, mede begrepen winstderving, verlies van gegevens, schade         // 
+//       tengevolge van fouten of onjuistheden in gegevens, schade tengevolge van fouten// 
+//       of onvolkomenheden in de documentatie of andere incidentele of gevolgschade    // 
+//       welke voortvloeit uit of in verband staat met gebruik of het niet kunnen ge-   //
+//       bruiken van gegevens.                                                          //
+//                                                                                      //
+//     * Het PBL staat niet in voor de juistheid van de resultaten die worden verkregen //
+//       door combinatie van diverse, op zichzelf staande PBL-gegevens onderling,       //
+//       of met die uit andere bronnen.                                                 //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Deze DMS-file wordt geincludeerd door de root-configuratie file                      //
+//       In deze configuratiefile worden Export settings gedefinieerd                   //
+//       die nodig zijn voor het exporteren van bitmaps vanuit de GUI                   //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container ExportSettings: IsHidden = "true"
+	// url = "='#'+ExportSettings/Docdata +'/ExportSettings.adms'"
+{
+	parameter<String> FileNameBase:
+		Expr = "'results/result'";
+		
+	parameter<String> DocData:
+		Expr = "expand(.,'%projdir%/html')";
+		
+	parameter<Float64> width:
+		[null];
+		
+	parameter<Float64> height:
+		[null];
+		
+	parameter<DPoint> PaperSize:
+		Expr = "Point_xy(width / 100.0 , height / 100.0)",
+		url = "about:papersize is <B>defined</B> as height * width";
+		
+	parameter<Float64> ScaleDenom:
+		[1000000];
+		
+	parameter<Float64> Scale:
+		Expr = "1.0 / ScaleDenom";
+		
+	parameter<Float64> dwsc:
+		[null];
+		
+	parameter<DPoint> DotWorldSize:
+		Expr = "Point_xy(dwsc,dwsc)";
+		
+	parameter<UInt32> NrSubDotsPerDot:
+		[1];
+		
+	parameter<Float64> dpi:
+		[300];
+		
+	parameter<DPoint> DotSize:
+		Expr = " Point_xy(0.0254/dpi,0.0254/dpi)";
+		
+	parameter<Float64> ViewFactor:
+		[1];
+		
+	parameter<IPoint> MaxNrSubDotsPerTile:
+		[xy(4096, 4096)];
+		
+}

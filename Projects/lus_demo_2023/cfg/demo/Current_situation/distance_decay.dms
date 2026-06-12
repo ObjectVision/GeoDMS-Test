@@ -1,0 +1,73 @@
+// ///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                 Configuration Land Use Scanner - Student Edition                     //
+//                          using GeoDMS version 7.130 or newer                         //
+//                                                                                      //
+//                           Vrije Universiteit Amsterdam                               //
+//                               July 2004 - January 2023                               //
+//                                                                                      //
+// ///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// This DMS-file is being referred to by Present.dms                                    //
+//                                                                                      //
+// ///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// In this configurationfile the DMS with distance decay functions is worked out:       //
+// - landuse                                                                            //
+// - policy_maps                                                                        //
+//                                                                                      //
+// ///////////////////////////////////////////////////////////////////////////////////////
+
+container Distance_decay : Using    = "DistMatrices"
+{
+	container Landuse
+	{
+		container Km1 := for_each_nedvld(
+					  Classifications/ggModel/Name
+					// , 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', pot02Range/RelWeightSqrt))'
+					, 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', /Geography/Distmatrices/Impl_'+ModelParameters/ModelResolution+'/pot1000m/potrange/RelWeightSqrt_demo))[Potentiaal]'
+					, domain
+					, Potentiaal
+					, Classifications/ggModel/Label
+					, Classifications/ggModel/Descr
+				), Descr = "Cells > 1km have a rescaled potential of less than 0.05";
+
+		container Km5 := for_each_nedvld(
+					  Classifications/ggModel/Name
+					// , 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', pot10Range/RelWeightSqrt))'
+					, 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', /Geography/Distmatrices/Impl_'+ModelParameters/ModelResolution+'/pot5000m/potrange/RelWeightSqrt_demo))[Potentiaal]'
+					, domain
+					, Potentiaal
+					, Classifications/ggModel/Label
+					, Classifications/ggModel/Descr
+				), Descr = "Cells > 5km have a rescaled potential of less than 0.05";
+
+		container Km25 := for_each_nedvld(
+					  Classifications/ggModel/Name
+					// , 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', pot50Range/RelWeightSqrt))'
+					, 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', /Geography/Distmatrices/Impl_'+ModelParameters/ModelResolution+'/pot25000m/potrange/RelWeightSqrt_demo))[Potentiaal]'
+					, domain
+					, Potentiaal
+					, Classifications/ggModel/Label
+					, Classifications/ggModel/Descr
+				), Descr = "Cells > 25km have a rescaled potential of less than 0.05";
+				
+		container Km50 := for_each_nedvld(
+					  Classifications/ggModel/Name
+					// , 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', pot100Range/RelWeightSqrt))'
+					, 'rescale( potential(current_landuse/'+ /Classifications/ggModel/Name + ', /Geography/Distmatrices/Impl_'+ModelParameters/ModelResolution+'/pot50000m/potrange/RelWeightSqrt_demo))[Potentiaal]'
+					, domain
+					, Potentiaal
+					, Classifications/ggModel/Label
+					, Classifications/ggModel/Descr
+				), Descr = "Cells > 50km have a rescaled potential of less than 0.05";
+	}
+	container PolicyMaps
+	{
+		container Km1
+		{
+			attribute<Potentiaal> birdhabitat (domain) := ='rescale( potential(policy_maps/NatureLandscape/birdHabitat [float32], /Geography/Distmatrices/Impl_'+ModelParameters/ModelResolution+'/pot1000m/potrange/RelWeightSqrt_demo))[Potentiaal]';
+			attribute<Potentiaal> net_EHS03   (domain) := ='rescale( potential(policy_maps/NatureLandscape/net_EHS03 [float32], /Geography/Distmatrices/Impl_'+ModelParameters/ModelResolution+'/pot1000m/potrange/RelWeightSqrt_demo))[Potentiaal]';
+		}
+	}
+}

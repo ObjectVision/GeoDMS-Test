@@ -1,0 +1,27 @@
+container Zeeland: url = "%RSLDataDir%/Beleid/Ruimte/Pmv/fl/BEHEER_GRONDWATERBESCHERM_v.xml"
+{
+	attribute<bool> Grondwaterbeschermingsgebied (domain_grid):
+		Source      = "Per email aangeleverd op 28 april 2015 door Daniël Hafkenscheid, Provincie Zeeland"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\ze\PMV.gdb"
+	,	url         = "http://decentrale.regelgeving.overheid.nl/cvdr/xhtmloutput/Historie/Zeeland/63805/63805_4.html"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/ze/grondwaterbeschermingsgebied.tif";
+
+	attribute<bool> Waterwingebied (domain_grid):
+		Source      = "Per email aangeleverd op 28 april 2015 door Daniël Hafkenscheid, Provincie Zeeland"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\ze\PMV.gdb"
+	,	url         = "http://decentrale.regelgeving.overheid.nl/cvdr/xhtmloutput/Historie/Zeeland/63805/63805_4.html"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/ze/waterwingebied.tif";
+
+	parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/pmv_2017/ze/geonam_milbsmgbdvlk.shp';
+	parameter<string> Source:      = 'https://opengeodata.zeeland.nl/geoserver/inspire/wfs?&request=GetCapabilities&service=WFS.';
+		
+	container StilteGebieden : = VergriddingT
+	(
+		'=Bestandsloc'
+		,'SELECT * FROM geonam_milbsmgbdvlk'
+		,''
+		,'=Source'
+	);
+
+	attribute<bool> Totaal (domain_grid) := max_elem(Grondwaterbeschermingsgebied, Waterwingebied, Stiltegebieden/Bestand/Multi/result);
+}

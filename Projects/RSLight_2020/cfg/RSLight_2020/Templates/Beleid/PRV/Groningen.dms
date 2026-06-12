@@ -1,0 +1,88 @@
+container Groningen := PRVT('Groningen')
+{
+	// container werk_bedrijventerrein
+	// {
+		// container Hard
+		// {
+			// attribute <bool> Nieuw_bedrijventerrein_toegestaan (domain_grid): = provincie && !Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart2/Nieuw_bedrijventerrein_toegestaan/Bestand/Multi/Result;
+			
+			// attribute<bool> Totaal (domain_grid):= Max_elem
+				// (
+					  // Nieuw_bedrijventerrein_toegestaan
+				// );
+		// }
+		
+		// container Middel
+		// {
+			// attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		// }
+		
+		// container Zacht
+		// {
+			// attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		// }
+	// }
+
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Grondwaterbeschermingsgebieden   (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart3/Grondwaterbeschermingsgebieden/Bestand/Multi/Result;
+			attribute<bool> Waterkeringszone                 (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart3/Waterkeringszone/Bestand/Multi/Result;
+			attribute<bool> Waterwingebieden                 (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart3/Waterwingebieden/Bestand/Multi/Result;
+			attribute<bool> pro_NNN_beheer_aanpassingsgebied (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart6/NNN_beheer_aanpassingsgebied/Bestand/Multi/Result;
+			attribute<bool> NNN_beheergebieden               (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart6/NNN_beheergebieden/Bestand/Multi/Result;
+			attribute<bool> NNN_natuur_aanpassingsgebied     (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart6/NNN_natuur_aanpassingsgebied/Bestand/Multi/Result;
+			attribute<bool> NNN_natuurgebieden               (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart6/NNN_natuurgebieden/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Grondwaterbeschermingsgebieden
+					, Waterkeringszone
+					, Waterwingebieden
+					, pro_NNN_beheer_aanpassingsgebied
+					, NNN_beheergebieden
+					, NNN_natuur_aanpassingsgebied
+					, NNN_natuurgebieden
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute <bool> Stiltegebieden (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart3/Stiltegebieden/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Stiltegebieden
+				);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Glastuinbouw_Buitengebied (domain_grid): = Src/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart1/Buitengebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Glastuinbouw_Buitengebied
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

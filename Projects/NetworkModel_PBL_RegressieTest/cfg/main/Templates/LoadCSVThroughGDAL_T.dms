@@ -1,0 +1,31 @@
+Template LoadCSVThroughGDAL_T
+{
+	unit<uint32> File_Structure;
+	parameter<File_Structure> inFile;
+	
+	container CreateFSS
+	{
+		unit<uint32> ReadCSV
+		: StorageName     = "= '%NetworkModel_dir%/Infrastructuur/GTFS/'+ModelParameters/GTFS_file_date+'/'+File_Structure/Name[inFile]+'.csv'"
+		, StorageType     = "gdal.vect"
+		, StorageReadOnly = "True";
+
+		unit<uint32> CSV_attributes := SubItem_PropValues(ReadCSV,'name');
+		
+		container MakeFSSDomain : StorageName = "= '%LocalDataProjDir%/Infrastructuur/GTFS/'+ModelParameters/GTFS_file_date+'/fss/'+File_Structure/Name[inFile]+'_domain.fss'"
+		{
+			unit<uint32> domain := ReadCSV;
+		}
+
+		container MakeFSS := 
+			for_each_nedv(
+				CSV_attributes/name
+				, 'ReadCSV/' + CSV_attributes/name
+				, MakeFSSDomain/domain
+				, string
+			),	StorageName = "= '%LocalDataProjDir%/Infrastructuur/GTFS/'+ModelParameters/GTFS_file_date+'/fss/'+File_Structure/Name[inFile]+'.fss'"
+		{
+			unit<uint32> domain := MakeFSSDomain/domain;
+		}
+	}
+}

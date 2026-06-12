@@ -1,0 +1,229 @@
+container Zuid_Holland : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=zuiddholland&striVersion=STRI2008"
+{
+	container NL_IMRO_9928_Vr2014_GC03 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9928.Vr2014-GC03"
+	//http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9928.Vr2014-GC04
+	{
+		//Verordening ruimte 2014 (geconsolideerd)
+		//planstatus: geconsolideerd 2017-01-12
+		//identificatie: NL.IMRO.9928.Vr2014-GC03
+		//type plan: provinciale verordening
+		//naam overheid: provincie Zuid-Holland
+		//ondergrond: basisregistratie topografie (BRT) (2017-01-12)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (14)
+		//Kantoren
+		//Detailhandel
+		//Teeltgebieden
+		//Provinciale vaarwegen
+		//Recreatieve vaarwegen
+		//Veiligheidszonering Nieuwe Waterweg en Nieuwe Maas
+		//Beschermingscategorieën ruimtelijke kwaliteit
+		//NatuurNetwerk Nederland
+		//Cultureel erfgoed
+		//Windenergie
+		//Waterveiligheid
+		//Archeologie
+		//20 Ke-contour Schiphol
+		//Duurzame verstedelijking, bebouwing en bedrijven (provinciaal grondgebied)
+
+		parameter<string> Bestandsloc      : = '%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/NL_IMRO_9928_Vr2014_GC03_Besluitsubvlak_P.shp';
+		parameter<string> Bestandsloc_vlak : = '%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P.shp';
+		parameter<string> OGRQuery         :    = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\zh\NL_IMRO_9928_Vr2014_GC03_Besluitsubvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitsubvlak_P.gml -where ""besluitgebied=""NL.IMRO.9928.Vr2014-GC03"" -skipfailures -overwrite';
+		parameter<string> OGRQuery_vlak    :    = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\zh\NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitvlak_P.gml -where ""besluitgebied=""NL.IMRO.9928.Vr2014-GC03"" -skipfailures -overwrite';
+
+		container  kantoren : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Verordening ruimte 2014 (geconsolideerd).mht"
+		{
+			//kantoren
+			//	  concentratielocatie voor kantoren met treinhalte  --> TODOBAS: puntbestand niet aanwezig?
+			//	x concentratielocatie voor kantoren zonder treinhalte
+			//	x sciencepark
+
+			//&&&&&Bart: aanroepen als stimuli?
+			// niet gelijk aan vorige versie: 118 (was 94)    ///StudieGebieden//NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZH/kaart1_kantoren/kaart1_kantoren_PRV_ZH_concentratielocatie_voor_kantoren_zonder_treinhalte
+			container concentratielocatie_voor_kantoren_zonder_treinhalte : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitsubvlak_P WHERE naam =''concentratielocatie voor kantoren zonder treinhalte'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s1f9f106d-01ad-4d89-b635-24f391a31e4d'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Vr2014-GC04_212_kantoren.jpg'
+				
+				,'=OGRQuery'
+			);
+
+			//&&&&&Bart: aanroepen als stimuli?
+			//gelijk aan vorige versie 373 cellen. Zie: ///StudieGebieden//NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZH/kaart1_kantoren/kaart1_kantoren_PRV_ZH_sciencepark
+			container sciencepark : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitsubvlak_P WHERE naam =''sciencepark'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s1f9f106d-01ad-4d89-b635-24f391a31e4d'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Vr2014-GC04_212_kantoren.jpg'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Teeltgebieden  : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Verordening ruimte 2014 (geconsolideerd).mht"
+		{
+			// De verder onderverdeling is in subvlak opgenomen
+
+			//Teeltgebieden
+			//	x  glastuinbouwgebied
+			//		  glastuinbouwgebied Westland-Oostland
+			//		  uitzondering glastuinbouwgebied Glasparel en Knibbelweg Oost
+			//		  uitzondering glastuinbouwgebied Tinte
+			//	  bollenteeltgebied
+			//	  boom- en sierteeltgebied
+			//	  boom- en sierteeltgebied PCT-terrein
+			//	  compensatiegebied bollenteelt
+			//	  maatwerkgebied greenport Aalsmeer
+
+			// Was wel in de oude processing opgenomen maar werd uiteindelijk niet gebruikt!
+			container glastuinbouwgebied : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''glastuinbouwgebied'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.se52a5d47-6f27-42ab-8839-d544ecd36ec2'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Vr2014-GC04_215_glastuinbouwgebied.jpg'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Beschermingscategorieen_ruimtelijke_kwaliteit  : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Verordening ruimte 2014 (geconsolideerd).mht"
+		{
+			// De verder onderverdeling is in subvlak opgenomen
+			
+			//Beschermingscategorieën ruimtelijke kwaliteit
+			//	x beschermingscategorie 1
+			//		  (cat.1) NatuurNetwerk Nederland
+			//		  (cat.1) beschermd grasland in de Bollenstreek
+			//		  (cat.1) kroonjuweel cultureel erfgoed
+			//		  (cat.1) landgoed- en kasteelbiotoop
+		
+			//	x beschermingscategorie 2
+			//		  (cat.2) belangrijk weidevogelgebied
+			//		  (cat.2) groene buffer
+			//		  (cat.2) recreatiegebied
+
+			// niet gelijk aan vorige versie: 60004 (was 55774)    //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZH/kaart7_beschermingscategorieen_ruimtelijke_kwaliteit/kaart7_beschermingscategorieen_ruimtelijke_kwaliteit_PRV_ZH_beschermingscategorie_1
+			container beschermingscategorie_1 : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''beschermingscategorie 1'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s3150f973-907a-4900-80a8-7ce2a8ea7dd0'
+				,'=OGRQuery'
+			);
+
+			// niet gelijk aan vorige versie: 68148 (was 68863)    //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZH/kaart7_beschermingscategorieen_ruimtelijke_kwaliteit/kaart7_beschermingscategorieen_ruimtelijke_kwaliteit_PRV_ZH_beschermingscategorie_2
+			//Rienk Kuiper december 2017: ZIET ER NOGAL RESTRICTIEF UIT
+
+			container beschermingscategorie_2 : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''beschermingscategorie 2'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s3150f973-907a-4900-80a8-7ce2a8ea7dd0'
+				,'=OGRQuery'
+			);
+		}
+
+		container  NatuurNetwerk_Nederland  : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Verordening ruimte 2014 (geconsolideerd).mht"
+		{
+			// De verder onderverdeling is in subvlak opgenomen
+
+			//NatuurNetwerk Nederland
+			//	x NatuurNetwerk Nederland (NNN)
+			//		  bestaande en nieuwe natuur
+			//		  blijvend agrarisch gebied binnen Natura2000-gebied --> wordt niet in  de tekst genoemd
+			//		  ecologische verbinding
+			//		  waternatuurgebied
+
+			//	  Krimpenerwaard en Bodegraven-Noord
+			//	x strategische reservering natuur
+
+			container NatuurNetwerk_Nederland_NNN : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''NatuurNetwerk Nederland (NNN)'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s137b6507-a7db-4584-9f6c-fa3a0c789ef0'
+				,'=OGRQuery'
+			);
+
+			container strategische_reservering_natuur : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''strategische reservering natuur'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s137b6507-a7db-4584-9f6c-fa3a0c789ef0'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Cultureel_erfgoed  : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Verordening ruimte 2014 (geconsolideerd).mht"
+		{
+			//Cultureel erfgoed
+			//	  molenbiotoop
+			//		  bijzondere molenbiotoop
+			//		  blijvend agrarisch gebied binnen Natura2000-gebied --> wordt niet in  de tekst genoemd
+			//	x kasteelbiotoop
+			//	x landgoedbiotoop
+
+			//gelijk aan vorige versie 165 cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZH/kaart9_cultureel_erfgoed/kaart9_cultureel_erfgoed_PRV_ZH_kasteelbiotoop
+			container kasteelbiotoop : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''kasteelbiotoop'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s8008ce40-f9eb-41a3-8c27-e10c26042190'
+				,'=OGRQuery'
+			);
+
+			//gelijk aan vorige versie 3599 cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZH/kaart9_cultureel_erfgoed/kaart9_cultureel_erfgoed_PRV_ZH_landgoedbiotoop
+			container landgoedbiotoop : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''landgoedbiotoop'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s8008ce40-f9eb-41a3-8c27-e10c26042190'
+				,'=OGRQuery'
+			);
+		}
+
+		container Schiphol_contouren_20ke  : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/zh/Verordening ruimte 2014 (geconsolideerd).mht"
+		{
+			//20ke Schiphol contouren 
+			//	x 20ke Schiphol contouren 
+
+			// Artikel 2.1.11 20 Ke-contour Schiphol     
+			// toelichting artikel 2.1.11 
+			// Lid 1 Woningbouw uitsluitend binnen bestaand stads- en dorpsgebied     
+			// Voor de gronden binnen de 20 Ke-contour, waarvan de plaats geometrisch is bepaald en verbeeld op Kaart 13 20 Ke-contour Schiphol, kan een bestemmingsplan voorzien in nieuwe woningen, uitsluitend binnen het bestaand stads- en dorpsgebied. 
+			// Lid 2 Uitzonderingen buiten bestaand stads- en dorpsgebied     
+			// In afwijking van het eerste lid kan een bestemmingsplan in onderstaande gevallen voorzien in nieuwe woningen buiten bestaand stads- en dorpsgebied als het betreft: 
+			// a.woningbouw binnen de voormalige bebouwingscontour van de streekplannen uit 2003, waarvan de plaats geometrisch is bepaald en verbeeld op Kaart 13 20 Ke-contour Schiphol; 
+			// b.de toevoeging van ten hoogste enkele woningen in reeds aanwezige lintbebouwing buiten bestaand stads- en dorpsgebied; 
+			// c.de toevoeging van ten hoogste enkele greenportwoningen, als bedoeld in de Intergemeentelijke Structuurvisie Greenport Duin- en Bollenstreek; 
+			// d.de toevoeging van ten hoogste enkele woningen volgens het principe ruimte voor ruimte, waarbij de ruimtelijke kwaliteit wordt verbeterd door de sloop van overtollige bebouwing en kassen; 
+			// e.het omzetten van bedrijfswoningen naar burgerwoningen, of
+			// f.bedrijfswoningen, voor zover noodzakelijk voor de bedrijfsvoering.
+			// Lid 3 Motivering met betrekking tot geluid     
+			// Voor zover een bestemmingsplan nieuwe woningen toestaat op de gronden binnen de 20 Ke-contour, wordt in de toelichting van dat plan rekenschap gegeven van het feit dat op de betreffende locatie sprake is van geluid vanwege het luchtverkeer en worden de redenen vermeld die er toe hebben geleid om op de betreffende locatie nieuwe woningen te bestemmen. 
+
+			// niet aanwezig in vorige versie. Loopt niet door in Noord-Holland
+			container Schiphol_contouren_20ke : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''20 Ke-contour Schiphol'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s5215e35c-61eb-4ad3-a2d6-707e547ca62f'
+				,'=OGRQuery'
+			);
+
+			container bebouwingscontour_2003 : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P WHERE naam =''bebouwingscontour 2003 binnen de 20 Ke-contour Schiphol'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9928.Vr2014-GC03/pt_NL.IMRO.9928.Vr2014-GC03.xml#NL.IMRO.PT.s5215e35c-61eb-4ad3-a2d6-707e547ca62f'
+				,'=OGRQuery'
+			);
+		}
+
+		//NHW: structuurvisie
+		//kwaliteitskaart van de Visie ruimte en mobiliteit.
+	}
+}

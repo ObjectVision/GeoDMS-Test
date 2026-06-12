@@ -1,0 +1,1169 @@
+Container Templates  : using = "units;Geometries;classifications"
+{ 
+	unit<ipoint>      StandardRaster    := SelectedTiledRaster1k;
+	parameter<string> General_indicator := 'General';
+	
+	Template Results_PerCorridor_T
+	{
+		parameter<string> CorridorName;
+		/// 
+		// unit<uint32>       SrcRoadDomain                     := ='DataPreperation/PerCorridor/'+CorridorName+'/Roads/Read_GPKG/Roads';
+		// parameter<bool>    storeall := True, explicitsuppliers = "='/Analysis/'+CorridorName+'/Indicators/NetworkEfficiency/store/NetworkEfficiency;Analysis/'+CorridorName+'/Indicators/PotentialAccessibility/Decay_min2/store/PotentialAccessibility;Analysis/'+CorridorName+'/Indicators/TransportPerformance/StoreAll;/Analysis/'+CorridorName+'/Indicators/TransportPerformance_FloodedNetwork/StoreAll;/Analysis/'+CorridorName+'/Indicators/TrafficAllocation/StoreAll;/Analysis/'+CorridorName+'/Indicators/TrafficAllocation_FloodedNetwork/StoreAll'";
+	
+		unit<ipoint> domain := ='/Analysis/'+CorridorName+'/Domain';
+		
+		attribute<float32> NetworkEfficiency            (domain) := ='Analysis/'+CorridorName+'/Indicators/NetworkEfficiency/NetworkEfficiency_g';
+		attribute<float32> PotentialAccessibility       (domain) := ='Analysis/'+CorridorName+'/Indicators/PotentialAccessibility/Decay_min2/PotentialAccessibility_g';
+		attribute<float32> TransportPerformance         (domain) := ='Analysis/'+CorridorName+'/Indicators/TransportPerformance/Limit_90min_120kmEucl/TP_g';
+		attribute<float32> TransportPerformance_Flooded (domain) := ='Analysis/'+CorridorName+'/Indicators/TransportPerformance_FloodedNetwork/Limit_90min_120kmEucl/TP_g';
+		attribute<float32> TrafficAllocation            (domain) := ='Analysis/'+CorridorName+'/Indicators/TrafficAllocation/Decay_min2/store/FlowGrid';
+		attribute<float32> TrafficAllocation_Flooded    (domain) := ='Analysis/'+CorridorName+'/Indicators/TrafficAllocation_FloodedNetwork/Decay_min2/store/FlowGrid';
+		
+		attribute<float32> Diff_TP_wFlood               (domain) := TransportPerformance_Flooded - TransportPerformance;
+		attribute<float32> Diff_TA_wFlood               (domain) := TrafficAllocation_Flooded - TrafficAllocation;
+		
+		container Regressie_export
+		{
+			parameter<float32> sum_NetworkEfficiency := sum(NetworkEfficiency);
+			parameter<float32> sum_PotentialAccess   := sum(PotentialAccessibility);
+			parameter<float32> sum_TP_Flood          := sum(TransportPerformance_Flooded);
+			parameter<float32> sum_Diff_TP_wFlood    := sum(Diff_TP_wFlood);
+			parameter<float32> sum_Diff_TA_wFlood    := sum(Diff_TA_wFlood);
+		}
+	}
+	
+	Template Analysis_PerVariant_T : Using = "Classifications;geometries;units" 
+	{
+		parameter<string>                CorridorName;
+		parameter<string>                population_grid_version;
+		///
+		
+		unit<uint32>                     SingleCorridorDomain                  := ='Geometries/Corridor_BoundingBoxes/'+CorridorName+'/Corridor';
+		unit<uint32>                     FloodDomain                           := ='/SourceData/Floods/'+CorridorName+'/domain';
+		attribute<BaseProjection>        geometry (poly, SingleCorridorDomain) := ='Geometries/Corridor_BoundingBoxes/'+CorridorName+'/Corridor/Geometry';
+		
+		attribute<uint32>                per_grid (domain)                     := poly2grid(Geometry, domain)[uint32];
+		
+		unit<ipoint>                     domain                                 := ='Geometries/CorridorDomains'+ModelParameters/raster_resolution+'/'+CorridorName;
+		attribute<domain>                SrcDomain_rel (SelectedTiledRaster1k)  := ='SelectedTiledRaster1k/m'+ModelParameters/raster_resolution+'_rel[domain]';
+		
+		attribute<float32>               DestMass      (domain)                 := =ModelParameters/DestMass_variant = 'POI' ? 'POI' : 'Population';
+		attribute<float32>               Population    (domain)                 := ='sum(SourceData/ReadSpatialData/'+population_grid_version+'/inFile/ReadData[float32] < 0f ? 0f : SourceData/ReadSpatialData/'+population_grid_version+'/inFile/ReadData[float32], srcdomain_rel)';
+		
+		attribute<BaseProjection>        Floods (poly, FloodDomain)             := FloodDomain/Geometry_bp;
+
+		container Network := ='Templates/Accessibility_Setup(domain, DestMass, '+replace('DataPreperation/PerCorridor/@COR@/Roads/read/Roads', '@COR@', CorridorName)+')';
+		
+		container Indicators : FreeData = "false"
+		{
+			container Prep
+			{
+				container          Centroids                       := Network/Centroids;
+				unit<uint32>       Dests                           := Centroids/j_inside; //j_inside
+				unit<uint32>       Orgs                            := Centroids/i; //i
+				unit<uint32>	   Populated_Orgs                  := Network/Network_Original/Populated_Orgs_ConnectedToNetwork;
+				unit<uint32>	   Populated_Dests                 := Network/Network_Original/Populated_Dests_ConnectedToNetwork;
+				unit<uint32>	   Populated_Orgs_Flooded          := Network/Network_Flooded/Populated_Orgs_ConnectedToNetwork;
+				unit<uint32>	   Populated_Dests_Flooded         := Network/Network_Flooded/Populated_Dests_ConnectedToNetwork;
+				unit<uint64>       Traveltimes                     := Network/Combine_OrgDest;  
+				unit<uint64>	   AllocTravelTimes_FloodedNetwork := Network/Network_Flooded/Allocation_Matrix;
+				unit<uint64>	   AllocTravelTimes                := Network/Network_Original/Allocation_Matrix;
+				unit<uint32>	   Linkset_FloodedNetwork          := Network/Network_Flooded/Allocation_Matrix/links;
+				unit<uint32>	   Linkset                         := Network/Network_Original/Allocation_Matrix/links;
+				unit<uint32>	   Roads_FloodedNetwork            := Network/Network_Flooded/FinalLinkSet;
+				unit<uint32>	   Roads                           := Network/Network_Original/FinalLinkSet;
+				attribute<float32> Sum_DestMass            (Dests) := sum(DestMass, Centroids/j_inside_ref)[id(Dests)]; //DestMass Pj
+			}  
+			
+			//proxy of economic opportunity: potential interactions or market access, given different distance decays
+			container PotentialAccessibility := 
+				for_each_ne(
+					ModelParameters/DistanceDecayVersions/name
+					, 'PotentialAccessibility_T('+quote(ModelParameters/DistanceDecayVersions/formula_old)+')'
+				), Descr = "Proxy of economic opportunity: potential interactions or market access, given different distance decays"
+			{
+				parameter<bool> storeall :=  True, explicitsuppliers = "= AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')";
+			}
+			
+			//how well does the road network perform compared to euclidean distances given an ideal speed (developed by DG REGIO)
+			container TransportPerformance   := 
+				for_each_ne(
+					ModelParameters/TransportPerformanceVersions/name
+					, 'TransportPerformance_T('+string(ModelParameters/TransportPerformanceVersions/Limit1)	+'[min_f],'+string(ModelParameters/TransportPerformanceVersions/Limit2)+'[km],'+quote(ModelParameters/TransportPerformanceVersions/DistType)+', FALSE, Network/Combine_OrgDest)'
+				), Descr = "How well does the road network perform compared to euclidean distances given an ideal speed (developed by DG REGIO)", FreeData = "false"
+			{
+				parameter<bool> storeall:= True, explicitsuppliers = "= AsList(ModelParameters/TransportPerformanceVersions/name+'/store',';')";
+			}
+			
+			container TransportPerformance_FloodedNetwork   := 
+				for_each_ne(
+					ModelParameters/TransportPerformanceVersions/name
+					, 'TransportPerformance_T('+string(ModelParameters/TransportPerformanceVersions/Limit1)	+'[min_f],'+string(ModelParameters/TransportPerformanceVersions/Limit2)+'[km],'+quote(ModelParameters/TransportPerformanceVersions/DistType)+', TRUE, Network/Combine_OrgDest)'
+				), Descr = "How well does the road network perform compared to euclidean distances given an ideal speed (developed by DG REGIO)"
+			{
+				parameter<bool> storeall:= True, explicitsuppliers = "= AsList(ModelParameters/TransportPerformanceVersions/name+'/store',';')";
+			}
+			
+			//Modelled traffic flow by population size in origin en destinations DestMass using a gravity model.
+			container TrafficAllocation := 
+				for_each_ne(
+					ModelParameters/DistanceDecayVersions/name
+					, 'TrafficAllocation_T('+quote(ModelParameters/DistanceDecayVersions/formula)+',FALSE)'
+				), Descr = "Modelled traffic flow by population size in origin en destinations DestMass using a gravity model"
+			{
+				parameter<bool> storeall :=  True, explicitsuppliers = "=AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')+''";
+				
+				// container Flow_Roads := 
+					// for_each_nedv(
+						// ModelParameters/DistanceDecayVersions/name
+						// , 'TrafficAllocation/'+ModelParameters/DistanceDecayVersions/name+'/Flow'
+						// , Prep/Roads
+						// , float32
+					// ), StorageName = "= '%LocalDataProjDir%/results/'+CorridorName+'/TrafficFlow_Dest-'+ModelParameters/DestMass_variant+'.gpkg'", StorageType = "gdalwrite.vect"
+				// {
+					// attribute<BaseProjection> geometry (Prep/Roads,arc) := Prep/Roads/geometry;
+				// }
+			}
+				
+			container TrafficAllocation_FloodedNetwork := 
+				for_each_ne(
+					ModelParameters/DistanceDecayVersions/name
+					, 'TrafficAllocation_T('+quote(ModelParameters/DistanceDecayVersions/formula)+',TRUE)'
+				), Descr = "Modelled traffic flow by population size in origin en destinations DestMass using a gravity model"
+			{
+				parameter<bool> storeall :=  True, explicitsuppliers = "=AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')+''";
+				
+				// container Flow_Roads := 
+					// for_each_nedv(
+						// ModelParameters/DistanceDecayVersions/name
+						// , 'TrafficAllocation_FloodedNetwork/'+ModelParameters/DistanceDecayVersions/name+'/Flow'
+						// , Prep/Roads_FloodedNetwork
+						// , float32
+					// ), StorageName = "= '%LocalDataProjDir%/results/'+CorridorName+'/TrafficFlow_Flooded_Dest-'+ModelParameters/DestMass_variant+'.gpkg'", StorageType = "gdalwrite.vect"
+				// {
+					// attribute<BaseProjection> geometry (Prep/Roads_FloodedNetwork,arc) := Prep/Roads_FloodedNetwork/geometry;
+				// }
+			}
+			
+			
+			// It represents the relative “ease of access” (i.e. network efficiency) of each location (Martın et al., 2004).
+			container NetworkEfficiency
+			: Source = "Juan Carlos MartÍn, Javier Gutiérrez & Concepción Román (2004) Data Envelopment Analysis (DEA) Index to Measure the Accessibility Impacts of New Infrastructure Investments: The Case of the High- speed Train Corridor Madrid-Barcelona-French Border, Regional Studies, 38:6, 697-712, DOI: 10.1080/003434042000240987"
+			{
+				// sum(DestMass in dest * (network traveltime / euclidiah traveltime), origins)
+				attribute<float32> NetworkEfficiency_left_i    (Prep/Orgs) := sum(Prep/Sum_DestMass[Prep/Traveltimes/DstZone_rel] * (float32(Prep/Traveltimes/Imp_Original) / (float32(Prep/Traveltimes/EuclDist_km / ModelParameters/Maximum_Speed) * 60f)), Prep/Traveltimes/OrgZone_rel); //pre stap
+				
+				attribute<float32> NetworkEfficiency_i         (Prep/Orgs) := 1f / (NetworkEfficiency_left_i / sum(Prep/Sum_DestMass[Prep/Traveltimes/DstZone_rel], Prep/Traveltimes/OrgZone_rel));
+				attribute<float32> NetworkEfficiency_g         (domain)    := MakeDefined(NetworkEfficiency_i[Prep/Centroids/i_ref], (potential(NetworkEfficiency_i[Prep/Centroids/i_ref], MetaData/Wij/AccessInterpolation/Attr) /  Prep/Centroids/OrgsWeight));
+			
+				container store 
+				{
+					attribute<float32> NetworkEfficiency (domain):= NetworkEfficiency_g, StorageName = "= '%LocalDataProjDir%/results/'+CorridorName+'/NetworkEfficiency_Dest-'+ModelParameters/DestMass_variant+'.tif'";
+				}
+			}
+			
+			Template PotentialAccessibility_T
+			{
+				parameter<string> formula0;
+				///
+				parameter<string> formula := replace(formula0, 'impedance', 'Imp_Original_no_metric');
+				parameter<string> IndicatorName:= 'pot_acc_'+propValue(.,'Name');
+				
+				attribute<float32> PotentialAccessibility      (Prep/Orgs) := ='sum(Prep/Sum_DestMass[Prep/Traveltimes/DstZone_rel] * float32(Prep/Traveltimes/'+formula+'), Prep/Traveltimes/OrgZone_rel)'; //Ai = potential accesibility
+				attribute<float32> PotentialAccessibility_g    (domain)    := MakeDefined(PotentialAccessibility[Prep/Centroids/i_ref], (potential(PotentialAccessibility[Prep/Centroids/i_ref], MetaData/Wij/AccessInterpolation/Attr) /  Prep/Centroids/OrgsWeight)); //potential accesibility spatially interpolated to grid
+				
+				container store 
+				{
+					attribute<float32> PotentialAccessibility (domain):= PotentialAccessibility_g, StorageName = "= '%LocalDataProjDir%/results/'+CorridorName+'/'+IndicatorName+'_Dest-'+ModelParameters/DestMass_variant+'.tif'";
+				}
+			}
+			
+			Template TransportPerformance_T
+			{
+				parameter<min_f>  TraveltimeLimit_1;
+				parameter<km>     TraveltimeLimit_2;
+				parameter<string> DistType;
+				parameter<bool>   UseFloodNetwork;
+				unit<uint64>      Combine_OrgDest;
+				///
+				parameter<string> IndicatorName := 'trans_perf_'+propValue(.,'Name'); 
+
+				attribute<float64> Impedances (Combine_OrgDest) := =UseFloodNetwork ? 'Combine_OrgDest/Imp_Flooded' : 'Combine_OrgDest/Imp_Original';
+				attribute<float64> Distances  (Combine_OrgDest) := =UseFloodNetwork 
+																		? DistType == 'Netw' 
+																			? 'Combine_OrgDest/NetwDist_Flooded'
+																			: 'Combine_OrgDest/EuclDist_km'
+																		: DistType == 'Netw' 
+																			? 'Combine_OrgDest/NetwDist_Original'
+																			: 'Combine_OrgDest/EuclDist_km';
+				
+				attribute<float32> Pop_within_limit1_i         (Prep/Orgs)        := ='sum(Prep/Sum_DestMass[Combine_OrgDest/DstZone_rel] * float32(convert(Impedances, min_f) <= '+string(TraveltimeLimit_1)+'[min_f]), Combine_OrgDest/OrgZone_rel)'; //population within xxx min drive
+				attribute<float32> Pop_within_limit2_i         (Prep/Orgs)        := ='sum(Prep/Sum_DestMass[Combine_OrgDest/DstZone_rel] * float32(Distances <= '+string(TraveltimeLimit_2)+'[km]), Combine_OrgDest/OrgZone_rel)'; //population within xxx km drive
+				attribute<float32> TP_i                        (Prep/Orgs)        := Pop_within_limit1_i / Pop_within_limit2_i;
+				attribute<float32> TP_g                        (domain)           := MakeDefined(TP_i[Prep/Centroids/i_ref], (potential(TP_i[Prep/Centroids/i_ref], MetaData/Wij/AccessInterpolation/Attr) / Prep/Centroids/OrgsWeight)); //per grid
+				
+				container store 
+				{
+					attribute<float32> TransportPerformance     (domain)    := TP_g, StorageName = "= '%LocalDataProjDir%/Results/'+CorridorName+'/'+IndicatorName+''+FloodStr+'_Dest-'+PopStr+'.tif'";
+					parameter<string>  FloodStr                             := UseFloodNetwork ? '_Flooded' : '';
+					parameter<string>  PopStr                               := ModelParameters/DestMass_variant == 'Pop' ? ModelParameters/PopVersion : ModelParameters/DestMass_variant;
+				}
+			}
+			
+			Template TrafficAllocation_T
+			{
+				parameter<string> formula;
+				parameter<bool>   UseFloodNetwork;
+				////
+				unit<uint64> AllocTravelTimes := = UseFloodNetwork ? 'Prep/AllocTravelTimes_FloodedNetwork' : 'Prep/AllocTravelTimes';
+				unit<uint32> Linkset          := = UseFloodNetwork ? 'Prep/Linkset_FloodedNetwork' : 'Prep/Linkset';
+				unit<uint32> Roads            := = UseFloodNetwork ? 'Prep/Roads_FloodedNetwork' : 'Prep/Roads';
+				
+				unit<uint32> Populated_Orgs   := = UseFloodNetwork ? 'Prep/Populated_Orgs_Flooded' : 'Prep/Populated_Orgs';
+				unit<uint32> Populated_Dests  := = UseFloodNetwork ? 'Prep/Populated_Dests_Flooded' : 'Prep/Populated_Dests';
+				
+				parameter<string> IndicatorName := 'TrafficFlow_'+propValue(.,'Name');
+				
+				attribute<float32> P_org                  (Populated_Orgs)        := float32(Populated_Orgs/Population);
+				attribute<float32> P_dest                 (Populated_Dests)       := float32(Populated_Dests/Population);
+				attribute<float32> Balancing_Org          (Populated_Orgs)        := ='sum(P_dest[AllocTravelTimes/DstZone_rel] * float32(AllocTravelTimes/'+formula+'), AllocTravelTimes/OrgZone_rel)'; //Ai = potential accesibility
+				attribute<float32> Interaction            (AllocTravelTimes)      := = '(Balancing_Org[AllocTravelTimes/OrgZone_rel]^-1f) * P_org[AllocTravelTimes/OrgZone_rel] * P_dest[AllocTravelTimes/DstZone_rel] * float32(AllocTravelTimes/'+formula+')';
+				attribute<float32> Interaction_by_linkset (Linkset)               := Interaction[Linkset/Sequence_rel];
+				attribute<float32> Flow                   (Roads)                 := sum(Interaction_by_linkset, Linkset/Point);
+				
+				unit<uint32> linkswithflow:= select_with_org_rel(Flow > 0f)
+				{
+					attribute<BaseProjection> Geometry (arc) := Roads/Geometry[org_rel];
+					attribute<float32>	      roadFlow       := Flow[org_rel];
+					
+					unit<uint32> segmentpoints := arc2segm(linkswithflow/Geometry)
+					{
+						attribute<float32> roadFlow:= linkswithflow/roadFlow[Sequence_rel];
+					}
+					unit<uint32> roadpoints:= dyna_point(segmentpoints/point, segmentpoints/nextpoint, 1000d)
+					{
+						attribute<float32>  roadFlow    := segmentpoints/roadFlow[Sequence_rel];
+						attribute<domain>   domain_rel  := point[domain];
+					}
+				}
+				
+				container store 
+				{
+					attribute<float32> FlowGrid (domain):= sum(linkswithflow/roadpoints/roadFlow, linkswithflow/roadpoints/domain_rel);
+						// , storageName = "= '%LocalDataProjDir%/results/'+CorridorName+'/'+IndicatorName+''+FloodStr+'_Dest-'+ModelParameters/DestMass_variant+'.tif'";
+					parameter<string> FloodStr := UseFloodNetwork ? '_Flooded' : '';
+				}
+				
+				// attribute<float32> ReadFlowGrid (domain) : storageName = "= '%LocalDataProjDir%/results/'+CorridorName+'/'+IndicatorName+''+store/FloodStr+'_Dest-'+ModelParameters/DestMass_variant+'.tif'";
+				
+			}
+		}
+	}
+	
+	
+	Template Accessibility_Setup 
+	{
+		unit<ipoint>       RegioGrid;
+		attribute<float32> Population (RegioGrid);
+		unit<uint32>       Road_src;
+		///
+		
+		container Road_src_Connectiveness := Templates/Check_Connectiveness_T(Road_src);
+		
+		unit<uint32> Road := select_with_org_rel(Road_src_Connectiveness/IsVerbonden)
+		{
+			attribute<BaseProjection>      geometry (arc) := Road_src_Connectiveness/geometry[org_rel];
+			attribute<km_hr>               speed          := Road_src_Connectiveness/speed[org_rel];
+		}
+		
+		container Centroids := GenerateCentroids(RegioGrid, Population, Base_grid_10km);
+		
+		unit<uint32> Org   := Centroids/i;
+		unit<uint32> Dest  := Centroids/j_inside;
+		
+		unit<uint32> Populated_Org:= select_with_org_rel(Org/Population > 0d) 
+		{
+			attribute<BaseProjection> Geometry   := Org/Geometry[org_rel];
+			attribute<float64> 	      Population := Org/Population[org_rel];
+		}
+		unit<uint32> Populated_Dest:= select_with_org_rel(Dest/Pj > 0d) 
+		{
+			attribute<BaseProjection> Geometry   := Dest/Geometry[org_rel];
+			attribute<float64> 	      Population := Dest/Population[org_rel];
+		}
+		
+		container Network_Original := CreateNetwork_T(org, dest, Road, 'Original');
+		container Network_Flooded := CreateNetwork_T(org, dest, Road, 'Flooded');
+		
+		
+		unit<uint64> Combine_OrgDest := combine_uint64(Org, Dest)
+		{
+			attribute<uint32>  OrgZone_rel         := first_rel;
+			attribute<uint32>  DstZone_rel         := second_rel;
+			attribute<string>  OrgName             := Org/label[OrgZone_rel];
+			attribute<string>  DestName            := Dest/label[DstZone_rel];
+			attribute<string>  Label               := OrgName +'_'+DestName, DialogType = "LabelText";
+			
+			attribute<float64> Imp_Original        := MakeDefined(rjoin(label, Network_Original/Full_Traveltime_Matrix/label, Network_Original/Full_Traveltime_Matrix/impedance), 99999d);
+			attribute<float64> Imp_Original_no_metric := Imp_Original / float64(1[s]);
+			attribute<float64> Imp_Flooded         := MakeDefined(rjoin(label, Network_Flooded/Full_Traveltime_Matrix/label, Network_Flooded/Full_Traveltime_Matrix/impedance), 99999d);
+			attribute<bool>    Imp_FloodlesthanOrg := Imp_Flooded < Imp_Original;
+			attribute<km>      EuclDist_km         := convert(dist(Org/geometry[OrgZone_rel], Dest/geometry[DstZone_rel])[m], km);
+		}
+		
+		Template CreateNetwork_T
+		{
+			// begin case parameters
+			unit<uint32> OrgDomain;
+			unit<uint32> DestDomain;
+			unit<uint32> RoadDomain;
+			parameter<string> Version;
+			// end case parameters
+
+			attribute<BaseProjection>                      OrgLocations  (OrgDomain)      := orgDomain/geometry;
+			attribute<BaseProjection>                      destLocations (DestDomain)     := destDomain/geometry;
+			
+			unit<uint32> Locations := union_unit(orgDomain, destDomain)
+			{
+				attribute<BaseProjection>                  geometry                       := union_data(.,orgLocations, destLocations);
+				attribute<bool>                            IsOrg                          := union_data(.,const(TRUE , OrgDomain), const(FALSE,DestDomain));
+				attribute<bool>                            IsDest                         := union_data(.,const(FALSE, OrgDomain), const(TRUE ,DestDomain));
+				attribute<uint32>                          Population                     := union_data(.,OrgDomain/Population, DestDomain/Population)[uint32];
+			}
+			unit<uint32> UniqueLocations    := unique(Locations/geometry) 
+			, DialogType = "map", DialogData = "values"
+			{ 
+				attribute<NodeSet>   Node_rel      := rlookup(values, NodeSet/values); 
+				attribute<Locations> Locations_rel := rlookup(values, Locations/geometry);
+				attribute<bool>      IsOrg         := rjoin(values, Locations/geometry, Locations/IsOrg);
+			}
+			
+			unit<uint32> RoadsWithLocations := connect(roadDomain/geometry, UniqueLocations/values, ModelParameters/MaxConnectDistSqr)
+			{
+				attribute<BaseProjection>                  geometry (arc)                 := uniondata;
+				attribute<km_hr>                           Speed_Normal                   := MakeDefined(RoadDomain/speed[arc_rel], Classifications/SpeedStats/Connector_Speed);
+				attribute<km_hr>                           Speed_Flooded                  := rjoin(id(.), DetermineFloodedRoads/Sequence_rel, DetermineFloodedRoads/IsInFloodedArea) ? ModelParameters/FloodedSpeed : Speed_Normal;
+				attribute<km_hr>                           Speed                          := =Version == 'Original' 
+																								? 'Speed_Normal'
+																								: 'Speed_Flooded';
+																								
+				unit<uint32> DetermineFloodedRoads := arc2segm(Geometry)
+				, DialogType = "map", DialogData = "point"
+				{
+					attribute<bool>           IsInFloodedArea          := IsPointInFloodedArea || IsNextPointInFloodedArea;
+					attribute<bool>           IsPointInFloodedArea     := IsDefined(point_in_polygon(point, Floods));
+					attribute<bool>           IsNextPointInFloodedArea := IsDefined(point_in_polygon(nextpoint, Floods));
+					
+					attribute<..>             Sequence_rel;
+				}
+				
+			}
+			
+			container Orgs_ConnectedToNetwork0   := connect_info(roadDomain/geometry, Locations/geometry, ModelParameters/MaxConnectDistSqr);
+			unit<uint32> Orgs_ConnectedToNetwork := select_with_org_rel(Orgs_ConnectedToNetwork0/dist <= sqrt(ModelParameters/MaxConnectDistSqr) && Locations/IsOrg)
+			{
+				attribute<BaseProjection>                  geometry                       := org_rel -> Locations/geometry;
+				attribute<uint32>                          population                     := org_rel -> Locations/Population;
+				// attribute<spoint>                          spoint                         := org_rel -> as_spoint;
+				attribute<string>                          Label                          := rjoin(geometry, org/geometry, org/label);
+			}
+			
+			unit<uint32> Populated_Orgs_ConnectedToNetwork := select_with_org_rel(Orgs_ConnectedToNetwork/population > 0)
+			{
+				attribute<BaseProjection>                  geometry                       := org_rel -> geometry;
+				attribute<uint32>                          population                     := org_rel -> Population;
+			}
+			
+			container Dests_ConnectedToNetwork0   := connect_info(roadDomain/geometry, Locations/geometry, ModelParameters/MaxConnectDistSqr);
+			unit<uint32> Dests_ConnectedToNetwork := select_with_org_rel(Dests_ConnectedToNetwork0/dist <= sqrt(ModelParameters/MaxConnectDistSqr) && Locations/IsDest)
+			{
+				attribute<BaseProjection>                  geometry                       := org_rel -> geometry;
+				attribute<uint32>                          Population                     := org_rel -> population;
+				// attribute<spoint>                          spoint                         := org_rel -> as_spoint;
+				attribute<string>                          Label                          := rjoin(geometry, dest/geometry, dest/label);
+			}
+			
+			unit<uint32> Populated_Dests_ConnectedToNetwork := select_with_org_rel(Dests_ConnectedToNetwork/population > 0)
+			{
+				attribute<BaseProjection>                  geometry                       := org_rel -> geometry;
+				attribute<uint32>                          population                     := org_rel -> Population;
+			}
+			
+			
+			unit<uint32> LinkSet := arc2segm(RoadsWithLocations/geometry)
+			, Descr = "The original link set"
+			{
+				attribute<NodeSet>                         F1                             := rlookup(point, NodeSet/Values);
+				attribute<NodeSet>                         F2                             := rlookup(nextpoint, NodeSet/Values);
+				attribute<km_hr>                           Speed                          := RoadsWithLocations/Speed[Sequence_rel];
+				attribute<m>                               Length                         := arc_length(geometry, m) == 0[m] ? 0.01[m] : arc_length(geometry, m);
+				attribute<km>                              Length_km                      := convert(length, km);
+				attribute<s_f>                             Impedance                      := Length / (Speed / 3600[s_f / hr_f] * 1000[m / km]);
+				
+				attribute<bool>                            IsPartOfJunctionFreeSection    :=   F1 -> WillBeDeleted || F2 -> WillBeDeleted;
+				attribute<bool>                            IsInsideJunctionFreeSection    :=   F1 -> WillBeDeleted && F2 -> WillBeDeleted;
+				attribute<bool>                            IsNotInsideJunctionFreeSection := IsPartOfJunctionFreeSection && !IsInsideJunctionFreeSection;
+				attribute<bool>                            IsFinalLink                    := !(F1 -> WillBeDeleted || F2 -> WillBeDeleted);
+				
+				//For visualisation
+				attribute<BaseProjection>                  geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+				unit<uint32> PointSet := union_unit(.,.)
+				{
+					attribute<BaseProjection>              Point   := Union_Data(., ../Point, ../NextPoint);
+					attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+					attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+				}
+			}
+			
+			unit<uint32> NodeSet  := unique(Linkset/PointSet/Point)
+			, Descr = "The original node set"
+			{
+				attribute<uint32>                          NrConnectedLinks               := pcount(LinkSet/F1) + pcount(LinkSet/F2);
+				attribute<bool>                            WillBeDeleted                  := NrConnectedLinks == 2 && pcount(UniqueLocations/Node_rel) == 0;
+
+				//Forward relations
+				attribute<JunctionFreeSection>             JunctionFreeSection_rel        := ConnectedParts_rel -> JunctionFreeSection_rel;
+				attribute<FinalNodeSet>                    FinalNodeSet_rel               := invert(FinalNodeSet/org_rel); // todo: sneller, mbv sequentiele select_data variant toe te voegen aan GeoDMS
+				
+				//For visualisation
+				attribute<BaseProjection>                  geometry                       := values;
+				attribute<ConnectedParts>                  ConnectedParts_rel             := ConnectedParts/PartNr;
+			}
+
+			unit<uint32> LinksInsideJunctionFreeSection := select_with_org_rel(LinkSet/IsInsideJunctionFreeSection)
+			, Descr = "Those links that are in the junction free section"
+			{
+				attribute<s_f>                             impedance                      := LinkSet/impedance[org_rel];
+				attribute<km>                              Length_km                      := LinkSet/Length_km[org_rel];
+				attribute<NodeSet>                         F1                             := LinkSet/F1[org_rel];
+				attribute<NodeSet>                         F2                             := LinkSet/F2[org_rel]; 
+				attribute<JunctionFreeSection>             JunctionFreeSection_rel        := F1->JunctionFreeSection_rel;
+				
+				//For visualisation
+				attribute<BaseProjection>                  geometry  (arc)                := LinkSet/geometry[org_rel];
+			}
+			
+			unit<uint32> ConnectedParts := connected_parts(LinksInsideJunctionFreeSection/F1, LinksInsideJunctionFreeSection/F2)
+			{
+				attribute<NodeSet>                         FirstNode_rel                   := invert(PartNr);
+				attribute<bool>                            IsJunctionFreeSection           := FirstNode_rel -> WillBeDeleted;
+				attribute<JunctionFreeSection>             JunctionFreeSection_rel         := invert(JunctionFreeSection/org_rel);
+			}
+			
+			unit<uint32> JunctionFreeSection := select_with_org_rel(ConnectedParts/IsJunctionFreeSection)
+			, Descr = "Those nodes that are redundant, because there are no junctions on the links"
+			{
+				attribute<s_f>                             Aggregated_Impedence           := sum(LinksInsideJunctionFreeSection/impedance, LinksInsideJunctionFreeSection/JunctionFreeSection_rel);
+				attribute<km>                              Aggregated_Length              := sum(LinksInsideJunctionFreeSection/Length_km, LinksInsideJunctionFreeSection/JunctionFreeSection_rel);
+				attribute<ConnectorLink>                   First_ConnectorLink_rel        := min(id(ConnectorLink), ConnectorLink/JunctionFreeSection_rel); //todo sneller
+				attribute<ConnectorLink>                   Last_ConnectorLink_rel         := max(id(ConnectorLink), ConnectorLink/JunctionFreeSection_rel); //todo sneller
+				attribute<s_f>                             First_ConnectorLink_Impedance  := First_ConnectorLink_rel->Impedance;
+				attribute<s_f>                             Last_ConnectorLink_Impedance   := Last_ConnectorLink_rel->Impedance;
+				attribute<km>                              First_ConnectorLink_Length     := First_ConnectorLink_rel->Length_km;
+				attribute<km>                              Last_ConnectorLink_Length      := Last_ConnectorLink_rel->Length_km;
+				attribute<s_f>                             Total_Impedance                := Aggregated_Impedence + First_ConnectorLink_Impedance + Last_ConnectorLink_Impedance;
+				attribute<km>                              Total_Length_km                := Aggregated_Length + First_ConnectorLink_Length + Last_ConnectorLink_Length;
+				attribute<FinalNodeSet>                    FN1                            := First_ConnectorLink_rel -> FinalNodeSet_rel;
+				attribute<FinalNodeSet>                    FN2                            := Last_ConnectorLink_rel -> FinalNodeSet_rel;  
+				
+				//For visualisation
+				attribute<BaseProjection>                  FirstPoint                     := FN1 -> Geometry;
+				attribute<BaseProjection>                  LastPoint                      := FN2 -> Geometry;
+				attribute<BaseProjection>                  geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+				unit<uint32> PointSet := union_unit(.,.)
+				{
+					attribute<BaseProjection>              Point   := Union_Data(., ../FirstPoint, ../LastPoint);
+					attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+					attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+				}
+			}
+			
+			unit<uint32> UnchangedLinkSet := select_with_org_rel(LinkSet/IsFinalLink)
+			, Descr = "Those links that can be used without changes, i.e. no nodes need to be removed"
+			{
+				attribute<FinalNodeSet>                    FN1                            := NodeSet/FinalNodeSet_rel[LinkSet/F1[org_rel]];
+				attribute<FinalNodeSet>                    FN2                            := NodeSet/FinalNodeSet_rel[LinkSet/F2[org_rel]];
+				attribute<s_f>                             impedance                      := linkset/impedance[org_rel];
+				attribute<km>                              Length_km                      := linkset/Length_km[org_rel];
+				
+				//For visualisation
+				attribute<BaseProjection>                  FirstPoint                     := FinalNodeSet/geometry[FN1];
+				attribute<BaseProjection>                  LastPoint                      := FinalNodeSet/geometry[FN2];
+				attribute<BaseProjection>                  geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+				unit<uint32> PointSet := union_unit(.,.)
+				{
+					attribute<BaseProjection>              Point   := Union_Data(., ../FirstPoint, ../LastPoint);
+					attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+					attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+				}
+			}
+			
+			unit<uint32> ConnectorLink := select_with_org_rel(LinkSet/IsNotInsideJunctionFreeSection)
+			, Descr = "Those links that connect the unchanged links with the junction free links"
+			{
+				attribute<NodeSet>                         Fa                             := LinkSet/F1[org_rel];
+				attribute<NodeSet>                         Fb                             := LinkSet/F2[org_rel]; 
+				attribute<NodeSet>                         F1                             := NodeSet/WillBeDeleted[Fa] ? Fb : Fa; // Unchanged Node
+				attribute<NodeSet>                         F2                             := NodeSet/WillBeDeleted[Fa] ? Fa : Fb; // Node in JunctionFreeSection
+				attribute<JunctionFreeSection>             JunctionFreeSection_rel        := F2 -> JunctionFreeSection_rel;
+				attribute<FinalNodeSet>                    FinalNodeSet_rel               := invert(FinalNodeSet/org_rel)[F1];
+				attribute<s_f>                             Impedance                      := LinkSet/Impedance[org_rel];
+				attribute<km>                              Length_km                      := LinkSet/Length_km[org_rel];
+			}
+			
+			
+			unit<uint32> FinalNodeSet := select_with_org_rel(!Nodeset/Willbedeleted)
+			, Descr = "The final node set"
+			{
+				//For visualisation
+				attribute<BaseProjection>                  geometry                       := Nodeset/geometry[org_rel];
+				attribute<uint32>                          NrConnectedLinks               := pcount(FinalLinkSet/F1) + pcount(FinalLinkSet/F2);
+			}
+			
+			unit<uint32> FinalLinkSet := union_unit(UnchangedLinkSet, JunctionFreeSection)
+			, Descr = "The final link set"
+			{
+				attribute<FinalNodeSet>                    FN1                            := union_data(., UnchangedLinkSet/FN1, JunctionFreeSection/FN1);
+				attribute<FinalNodeSet>                    FN2                            := union_data(., UnchangedLinkSet/FN2, JunctionFreeSection/FN2);
+				attribute<s_f>                             impedance                      := union_data(., UnchangedLinkSet/impedance, JunctionFreeSection/Total_Impedance);
+				attribute<km>                              Length_km                      := union_data(., UnchangedLinkSet/Length_km, JunctionFreeSection/Total_Length_km);
+				attribute<s_f>                             impedance_augmented            := impedance + CorrectImpedanceForCrossroads/impedance_Start[s_f] + CorrectImpedanceForCrossroads/impedance_End[s_f];
+				attribute<FinalNodeSet>                    F1                             := FN1;
+				attribute<FinalNodeSet>                    F2                             := FN2;
+				// attribute<FinalNodeSet>                    OrgNode_rel  (OrgDomain)       := rlookup(orgLocations, FinalNodeSet/geometry);
+				// attribute<FinalNodeSet>                    DestNode_rel (DestDomain)      := rlookup(destLocations, FinalNodeSet/geometry);
+				attribute<FinalNodeSet>                    OrgNode_rel  (Orgs_ConnectedToNetwork)       := rlookup(Orgs_ConnectedToNetwork/geometry, FinalNodeSet/geometry);
+				attribute<FinalNodeSet>                    DestNode_rel (Dests_ConnectedToNetwork)      := rlookup(Dests_ConnectedToNetwork/geometry, FinalNodeSet/geometry);
+				
+				
+				// attribute<NodeSet> OrgZone  (Org)  := rlookup(Org/geometry, NodeSet/Values);
+				// attribute<NodeSet> DestZone (Dest) := rlookup(Dest/geometry, NodeSet/Values);
+				// attribute<NodeSet> PopulatedOrgZone (Populated_Org):= OrgZone[Populated_Org/org_rel];
+				// attribute<NodeSet> PopulatedDestZone (Populated_Dest):= DestZone[Populated_Dest/org_rel];
+
+				attribute<FinalNodeSet>                    PopulatedOrgZone  (Populated_Orgs_ConnectedToNetwork) := OrgNode_rel[Populated_Orgs_ConnectedToNetwork/org_rel];
+				attribute<FinalNodeSet>                    PopulatedDestZone (Populated_Dests_ConnectedToNetwork):= DestNode_rel[Populated_Dests_ConnectedToNetwork/org_rel];
+				
+				//For visualisation
+				attribute<BaseProjection>                  FirstPoint                     := FinalNodeSet/geometry[FN1];
+				attribute<BaseProjection>                  LastPoint                      := FinalNodeSet/geometry[FN2];
+				parameter<int16>                           PenWidth                       := 3s, DialogType = "PenWidth";
+				attribute<BaseProjection>                  geometry (arc)                 := points2sequence(PointSet/Point, PointSet/SeqNr, PointSet/Ordinal);
+				unit<uint32> PointSet := union_unit(.,.)
+				{
+					attribute<BaseProjection>              Point   := Union_Data(., ../FirstPoint, ../LastPoint);
+					attribute<..>                          SeqNr   := value(id(.) % nrofrows(..), ..);
+					attribute<uint32>                      Ordinal := id(.) / nrofrows(..);
+				}
+				
+				
+				container CorrectImpedanceForCrossroads
+				// hiermee wordt voor ieder begin en eind node het aantal geconnecte links bepaald
+				// dit bepaalt of het een bocht (2 links), zijweg (3 links), kruising (4 links) of complexe kruising (meer dan 4 links) is
+				// afhankelijk van dit aantal wordt een aantal seconden opgeteld bij de totale impedance
+				{
+					// helft van de opgegeven waarden omdat er zowel bij begin als einde een factor wordt opgeteld
+					parameter<s>       Impedance2Links    := 0[s];
+					parameter<s>       Impedance3Links    := 2[s];
+					parameter<s>       Impedance4Links    := 5[s];
+					parameter<s>       Impedance_gt4Links := 6[s];
+
+					attribute<uint32>  Start(FinalLinkSet)     := FinalNodeSet/NrConnectedLinks[FinalLinkSet/F1];
+					attribute<uint32>  End  (FinalLinkSet)     := FinalNodeSet/NrConnectedLinks[FinalLinkSet/F2];
+				
+					attribute<s> impedance_Start (FinalLinkSet):=
+						switch(
+							 case(Start <= 2, Impedance2Links)
+							,case(Start  = 3, Impedance3Links)
+							,case(Start  = 4, Impedance4Links)
+							,Impedance_gt4Links
+						);
+				
+					attribute<s> impedance_End (FinalLinkSet):=
+						switch(
+							 case(End <= 2, Impedance2Links)
+							,case(End  = 3, Impedance3Links)
+							,case(End  = 4, Impedance4Links)
+							,Impedance_gt4Links
+						);
+				}
+			}
+			
+			unit<uint64> Full_Traveltime_Matrix := 
+				// impedance_matrix_od64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+				impedance_matrix_od64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel'
+					, FinalLinkSet/Impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					, FinalLinkSet/OrgNode_rel
+					, FinalLinkSet/DestNode_rel
+					, convert(ModelParameters/MaxTraveltime, s_f)
+					// , FinalLinkSet/Length_km
+				), FreeData = "false"
+			{	
+				// attribute<km>     NetwDist_km := alt_imp;
+				attribute<string> OrgName  := Orgs_ConnectedToNetwork/label[OrgZone_rel];
+				attribute<string> DestName := Dests_ConnectedToNetwork/label[DstZone_rel];
+				attribute<string> Label    := OrgName +'_'+DestName, DialogType = "LabelText";
+			}
+			
+			
+			unit<uint64> Allocation_Matrix := 
+				impedance_matrix_od64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel,LinkSet'
+					, FinalLinkSet/Impedance
+					, FinalLinkSet/F1
+					, FinalLinkSet/F2
+					, FinalLinkSet/PopulatedOrgZone
+					, FinalLinkSet/PopulatedDestZone
+					, convert(ModelParameters/MaxAllocTraveltime, s_f)
+					, FinalLinkSet/Length_km
+				), FreeData = "false"
+			{	
+				unit<uint32> links := sequence2points(linkset), DialogData = "line", DialogType = "map"
+				{
+					attribute<BaseProjection> Line (arc) := FinalLinkSet/Geometry[links/Point];
+					attribute<Org>      from       := OrgZone_rel[Sequence_rel];
+					attribute<Dest>	    to         := DstZone_rel[Sequence_rel];
+				}
+				attribute<km>      EuclDist_km := convert(dist(Populated_Orgs_ConnectedToNetwork/geometry[OrgZone_rel], Populated_Dests_ConnectedToNetwork/geometry[DstZone_rel])[m], km);
+				attribute<km>      NetwDist_km := alt_imp;
+				attribute<float64> impedance_no_metric := impedance / 1[units/s_f];
+			}
+			container TraveltimeToNearest_ServicePoint :=
+				for_each_ne(
+					Classifications/Services/name
+					, 'TraveltimeToNearestDest_T('+quote(Classifications/Services/label)+')'
+				);
+				
+			
+			
+		}
+		
+		
+		
+		
+		Template Network_Prep_T
+		{
+			parameter<string> Version;
+			/////
+			
+			unit<uint32> Roads := Road_src
+			{
+				attribute<BaseProjection> FromPoint      := first_point(Geometry);
+				attribute<BaseProjection> ToPoint        := last_point(Geometry);
+				
+				attribute<km>             Length_km      := convert(arc_length(Geometry, m), km);
+				attribute<km_hr>          Speed          := Road_src/Speed[km_hr];
+				
+				unit<uint32> PointSet := union_unit(Roads, Roads)
+				{
+					attribute<BaseProjection> Points := union_data(., FromPoint, ToPoint);
+				}
+				unit<uint32> NodeSet := unique(PointSet/Points);
+				
+				attribute<NodeSet>  F1     := rlookup(FromPoint, NodeSet/Values);
+				attribute<NodeSet>  F2     := rlookup(ToPoint, NodeSet/Values);
+				attribute<checkNet> NetNr  := checkNet/PartNr[F1];
+				attribute<km>       NetLengith := checkNet/LengthPerPart[NetNr];
+				attribute<bool>     Select        := =Version == 'Flooded' ? 'Select_Flood' : 'Select_Normal';
+				attribute<bool>     Select_Normal := checkNet/SelNet[NetNr], IntegrityCheck = "checkNet/NoSubstantialMisses";
+				attribute<bool>     Select_Flood  := const(true, .);
+				
+				unit<uint32> checkNet := connected_parts(F1, F2)
+				{
+					attribute<km>      LengthPerPart       := sum(Length_km, NetNr);
+					attribute<bool>    SelNet              := LengthPerPart = max(LengthPerPart);
+					attribute<bool>    SubstantialMiss     := !SelNet && ((LengthPerPart / sum(LengthPerPart)) > 0.25d);
+					parameter<bool>    NoSubstantialMisses := all(!SubstantialMiss);
+				}
+			}
+			unit<uint32> LinesToConnect: = select_with_org_rel(Roads/Select)
+			{
+				attribute<BaseProjection> Geometry (arc) := org_rel -> Geometry;
+				attribute<km>             Length_km      := convert(arc_length(Geometry, m), km);
+				attribute<km_hr>          Speed          := org_rel -> Roads/speed;
+			}
+			
+			unit<uint32> ConnectedNetworkToCentroids := connect(LinesToConnect/Geometry, Centroids/all_centroids/point)
+			{	
+				attribute<BaseProjection> Geometry (arc) := UnionData;
+				
+				unit<uint32> DetermineFloodedRoads := arc2segm(ConnectedNetworkToCentroids/Geometry)
+				{
+					attribute<bool>           IsInFloodedArea          := IsPointInFloodedArea || IsNextPointInFloodedArea;
+					attribute<bool>           IsPointInFloodedArea     := IsDefined(point_in_polygon(point, Floods));
+					attribute<bool>           IsNextPointInFloodedArea := IsDefined(point_in_polygon(nextpoint, Floods));
+				}
+				
+				
+				attribute<km_hr>          Speed_Normal   := MakeDefined(LinesToConnect/Speed[org_rel], Classifications/SpeedStats/Connector_Speed);
+				attribute<km_hr>          Speed_Flooded  := rjoin(id(.),DetermineFloodedRoads/Sequence_rel, DetermineFloodedRoads/IsInFloodedArea) ? ModelParameters/FloodedSpeed : Speed_Normal;
+				attribute<km_hr>          Speed          := =Version == 'Original' 
+																	? 'Speed_Normal'
+																	: 'Speed_Flooded';
+				
+				attribute<km>             Length_km      := convert(arc_length(Geometry, m), km);
+				attribute<BaseProjection> FromPoint      := first_point(Geometry);
+				attribute<BaseProjection> ToPoint        := last_point(Geometry);
+				attribute<min_f>          Impedance      := IsDefined(org_rel) ? convert(Length_km / Speed, min_f) : max_elem(convert(Length_km / Speed, min_f), 1d); // impedance in minutes
+				
+				unit<uint32> PointSet := union_unit(., .)
+				{
+					attribute<BaseProjection> Points:  = union_data(., FromPoint, ToPoint);
+				}
+				
+				unit<uint32> NodeSet := unique(PointSet/Points), DialogData = "Values", DialogType = "map";
+				
+				attribute<NodeSet> OrgZone  (Org)  := rlookup(Org/geometry, NodeSet/Values);
+				attribute<NodeSet> DestZone (Dest) := rlookup(Dest/geometry, NodeSet/Values);
+				attribute<NodeSet> PopulatedOrgZone (Populated_Org):= OrgZone[Populated_Org/org_rel];
+				attribute<NodeSet> PopulatedDestZone (Populated_Dest):= DestZone[Populated_Dest/org_rel];
+				attribute<NodeSet> F1              := rlookup(FromPoint, NodeSet/Values);
+				attribute<NodeSet> F2              := rlookup(ToPoint, NodeSet/Values);
+			}
+			
+			
+			
+		
+			unit<uint64> Full_Traveltime_Matrix := 
+				impedance_matrix_od64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+					, ConnectedNetworkToCentroids/Impedance
+					, ConnectedNetworkToCentroids/F1
+					, ConnectedNetworkToCentroids/F2
+					, ConnectedNetworkToCentroids/OrgZone
+					, ConnectedNetworkToCentroids/DestZone
+					, ModelParameters/MaxTraveltime
+					, ConnectedNetworkToCentroids/Length_km
+				), FreeData = "false"
+			{	
+				attribute<km>     NetwDist_km := alt_imp;
+				attribute<string> OrgName  := Org/label[OrgZone_rel];
+				attribute<string> DestName := Dest/label[DstZone_rel];
+				attribute<string> Label    := OrgName +'_'+DestName, DialogType = "LabelText";
+			}
+			
+			
+			unit<uint64> Allocation_Matrix := 
+				impedance_matrix_od64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel,LinkSet'
+					, ConnectedNetworkToCentroids/Impedance
+					, ConnectedNetworkToCentroids/F1
+					, ConnectedNetworkToCentroids/F2
+					, ConnectedNetworkToCentroids/PopulatedOrgZone
+					, ConnectedNetworkToCentroids/PopulatedDestZone
+					, ModelParameters/MaxAllocTraveltime
+					, ConnectedNetworkToCentroids/Length_km
+				), FreeData = "false"
+			{	
+				unit<uint32> links := sequence2points(linkset), DialogData = "line", DialogType = "map"
+				{
+					attribute<BaseProjection> Line (arc) := ConnectedNetworkToCentroids/Geometry[links/Point];
+					attribute<Org>      from       := OrgZone_rel[Sequence_rel];
+					attribute<Dest>	    to         := DstZone_rel[Sequence_rel];
+				}
+				attribute<km>      EuclDist_km := convert(dist(Populated_Org/geometry[OrgZone_rel], Populated_Dest/geometry[DstZone_rel])[m], km);
+				attribute<km>      NetwDist_km := alt_imp;
+			}
+			container TraveltimeToNearest_ServicePoint :=
+				for_each_ne(
+					Classifications/Services/name
+					, 'TraveltimeToNearestDest_T('+quote(Classifications/Services/label)+')'
+				);
+				
+		}
+		
+		Template TraveltimeToNearestDest_T
+		{
+			parameter<string> ServiceName;
+			//
+			unit<uint32> Org  := Centroids/i;
+			unit<uint32> Dest := ='DataPreperation/PerCorridor/'+CorridorName+'/Services/Read_GPKG/'+ServiceName; 
+			
+			unit<uint32> PointsToConnect := union_unit(Org, Dest)
+			{
+				attribute<BaseProjection> geometry := union_data(.,Org/geometry, Dest/geometry);
+			}
+			
+			unit<uint32> ConnectedNetwork := connect(LinesToConnect/Geometry, PointsToConnect/geometry)
+			{	
+				attribute<BaseProjection> Geometry (arc) := UnionData;
+				attribute<km>             Length_km      := convert(arc_length(Geometry, m), km);
+				attribute<BaseProjection> FromPoint      := first_point(Geometry);
+				attribute<BaseProjection> ToPoint        := last_point(Geometry);
+				
+				attribute<km_hr>          Speed          := MakeDefined(LinesToConnect/Speed[org_rel], Classifications/SpeedStats/Connector_Speed);
+				attribute<min_f>          Impedance      := IsDefined(org_rel) ? convert(Length_km / Speed, min_f) : max_elem(convert(Length_km / Speed, min_f), 1d); // impedance in minutes
+				
+				unit<uint32> PointSet := union_unit(., .)
+				{
+					attribute<BaseProjection> Points:  = union_data(., FromPoint, ToPoint);
+				}
+				
+				unit<uint32> NodeSet := unique(PointSet/Points), DialogData = "Values", DialogType = "map";
+				
+				attribute<NodeSet> OrgZone  (Org)  := rlookup(Org/geometry, NodeSet/Values);
+				attribute<NodeSet> DestZone (Dest) := rlookup(Dest/geometry, NodeSet/Values);
+				attribute<NodeSet> F1              := rlookup(FromPoint, NodeSet/Values);
+				attribute<NodeSet> F2              := rlookup(ToPoint, NodeSet/Values);
+			}
+		
+			attribute<float64> TravelTimeToNearestDest (ConnectedNetwork/NodeSet) := 
+				impedance_table('bidirectional;startPoint(Node_rel)'
+					, ConnectedNetwork/Impedance
+					, ConnectedNetwork/F1
+					, ConnectedNetwork/F2
+					, ConnectedNetwork/DestZone
+				);
+			attribute<min_f> OD_Traveltime_org (org) := TravelTimeToNearestDest[ConnectedNetwork/OrgZone];
+		}
+	}
+	
+	
+	Template GenerateCentroids
+	{
+		unit<ipoint>              ModelGrid;
+		attribute<float32>        Pop (ModelGrid);
+		unit<ipoint>              j_grid; //j = bestemmingen
+		///
+		
+		attribute<j_grid>         j_grid_ref (ModelGrid)   := id(ModelGrid)[j_grid];
+		attribute<j_inside0>      j_inside0_ref (ModelGrid):= invert(j_inside0/org_rel)[j_grid_ref]; //bestemmingen binnen een runregion
+		attribute<j_inside>       j_inside_ref (ModelGrid) := invert(j_inside/geometry[j_grid])[j_grid_ref]; //bestemmingen binnen een runregion
+		attribute<BaseProjection> bpoint (ModelGrid)       := id(ModelGrid)[BaseProjection] + (GetProjectionFactor(ModelGrid) / point_yx(2d, 2d, dpoint)); // manier om minder bestemminge/destinations te hebben.
+		attribute<float64>        wPop (ModelGrid)         := float64(!IsNull(per_grid)) * float64(Pop); //weighted pop --> pop in runregion
+		
+		
+		attribute<bool>           inRunRegion (j_grid)     := any(!IsNull(per_grid), j_grid_ref);
+		// attribute<float32>        Pop_dests (j_grid)       := sum(Pop, j_grid_ref); //pop van dest
+
+		unit<uint32> j_inside0 := select_uint32_with_attr_by_org_rel(j_grid, inRunRegion) // deze punten set hebben een populatie gewogen geometrie. Dus niet ruimtelijk gelijk verspreid
+		{
+			attribute<BaseProjection> orgpoint  := org_rel[BaseProjection] + (GetProjectionFactor(j_grid) / point_yx(3d, 3d, dpoint));
+			attribute<BaseProjection> geometry  := Pj > 0d ? sum(bpoint * point_yx(wPop,wPop,BaseProjection), j_inside0_ref) / sum(point_yx(wPop,wPop,BaseProjection), j_inside0_ref) : orgpoint;
+			attribute<float64>        Pj        := sum(wPop, j_inside0_ref);
+			attribute<string>          label       := 'dest'+string(id(.)), DialogType = "LabelText";
+			
+			attribute<bool>           IsLand    := IsDefined(point_in_polygon(geometry, /SourceData/ReadSpatialData/Africa_countries_AEA/inFile/Geometry));
+		}
+		unit<uint32> j_inside := select_with_attr_by_cond(j_inside0, j_inside0/IsLand) // deze punten set hebben een populatie gewogen geometrie. Dus niet ruimtelijk gelijk verspreid
+		{
+			attribute<float64>        Population := Pj;
+			// attribute<string>         label      := 'dest'+string(id(.)), DialogType = "LabelText";
+		}
+		
+		unit<uint32> i0 := j_inside //origins, ruimtelijk in hexagonen
+		{
+			attribute<BaseProjection>  geometry    := j_inside/geometry + (j_grid/uneven[j_inside/geometry[j_grid]] ? (GetProjectionFactor(j_grid) / point_yx(2d, 1d, dpoint)) : (GetProjectionFactor(j_grid) / point_yx(2d, 2d, dpoint)));
+			attribute<bool>            overlap_w_j := !IsNull(rlookup(geometry, j_inside/geometry));
+			attribute<ModelGrid>       GridId      := geometry[ModelGrid];
+			attribute<string>          label       := 'org'+string(id(.)), DialogType = "LabelText";
+			attribute<bool>            IsLand      := IsDefined(point_in_polygon(geometry, /SourceData/ReadSpatialData/Africa_countries_AEA/inFile/Geometry));
+			attribute<float64>         Population  := Pj;
+		}
+		unit<uint32> i := select_with_attr_by_cond(i0, i0/IsLand) //origins, ruimtelijk in hexagonen
+		{
+			// attribute<BaseProjection>  geometry    := i0/geometry[org_rel];
+			// attribute<float64>         Pj          := i0/Pj[org_rel];
+			// attribute<float64>         Population  := Pj;
+			// attribute<ModelGrid>       GridId      := geometry[ModelGrid];
+			// attribute<string>          label       := 'org'+string(id(.)), DialogType = "LabelText";
+		}
+		
+		attribute<i>       i_ref      (ModelGrid) := invert(i/GridId);
+		attribute<float32> OrgsWeight (ModelGrid) := potential(float32(!IsNull(invert(i/GridId))), MetaData/Wij/AccessInterpolation/Attr);
+		
+		unit<uint32> all_centroids := union_unit(i, j_inside)
+		{
+			attribute<BaseProjection> point := union_data(., i/geometry, j_inside/geometry);
+		}
+	}
+	
+	
+	Template Check_Connectiveness_T
+	{
+		unit<uint32> src;
+		///
+		container Deduplicate
+		{
+			unit<uint32> segments := arc2segm(src/geometry)
+			{
+				attribute<km_hr>                 Speed          := src/speed[Sequence_rel];
+				attribute<string>                fclass         := src/fclass[Sequence_rel];
+				attribute<km_hr>                 maxspeed       := src/maxspeed[Sequence_rel];
+				attribute<bool>                  bridge         := src/bridge[Sequence_rel];
+				attribute<RoadClasses>           Speed_cat      := src/Speed_cat[Sequence_rel];
+				attribute<m>                     Meters         := src/Meters[Sequence_rel];
+				attribute<min_f>                 Minutes        := src/Minutes[Sequence_rel];
+				attribute<BaseProjection>        geometry (arc) := points2sequence(PointSet/Point, PointSet/ArcNr, PointSet/Ordinal);
+				attribute<uq_segments>           uq_segm_rel    := rlookup(geometry, uq_segments/values);
+			}
+			
+			attribute<BaseProjection>            FirstPoint    (segments)      := segments/point;
+			attribute<BaseProjection>            LastPoint     (segments)      := segments/nextpoint;
+			
+			unit<uint32> PointSet := union_unit(segments,segments)
+			{
+				attribute<BaseProjection>        Point          := union_data(., ../FirstPoint, ../LastPoint);
+				attribute<segments>              ArcNr          := value(id(.) % #(segments), segments);
+				attribute<uint32>                Ordinal        := id(.) / nrofrows(segments);
+			}
+			
+			unit<uint32> uq_segments := unique(segments/geometry)
+			{
+				attribute<BaseProjection>        geometry  (arc) := values;
+				attribute<km_hr>                 Speed           := first(segments/speed, segments/uq_segm_rel);
+				attribute<string>                fclass          := first(segments/fclass, segments/uq_segm_rel);
+				attribute<km_hr>                 maxspeed        := first(segments/maxspeed, segments/uq_segm_rel);
+				attribute<bool>                  bridge          := first(segments/bridge, segments/uq_segm_rel);
+				attribute<RoadClasses>           Speed_cat       := first(segments/Speed_cat, segments/uq_segm_rel);
+				attribute<m>                     Meters          := first(segments/Meters, segments/uq_segm_rel);
+				attribute<min_f>                 Minutes         := first(segments/Minutes, segments/uq_segm_rel);
+			}
+		}
+		
+		
+		unit<uint32> segments := arc2segm(Deduplicate/uq_segments/geometry);
+		attribute<BaseProjection>            FirstPoint  (segments) := segments/point;
+		attribute<BaseProjection>            LastPoint   (segments) := segments/nextpoint;
+		attribute<NodeSet>                   F1          (segments) := rlookup(FirstPoint, NodeSet/Values);
+		attribute<NodeSet>                   F2          (segments) := rlookup(LastPoint, NodeSet/Values);
+		attribute<bool>                      IsVerbonden (segments) := all(PointSet/isVerbonden, PointSet/ArcNr);
+		attribute<BaseProjection>            geometry    (segments, arc) := points2sequence(PointSet/Point, PointSet/ArcNr, PointSet/Ordinal);
+		
+		attribute<km_hr>                     Speed       (segments) := Deduplicate/uq_segments/speed[segments/Sequence_rel];
+		attribute<km>                        length      (segments) := convert(arc_length(geometry, m), km);
+		// attribute<string>                    fclass      (segments) := Deduplicate/uq_segments/fclass[segments/Sequence_rel];
+		// attribute<km_hr>                     maxspeed    (segments) := Deduplicate/uq_segments/maxspeed[segments/Sequence_rel];
+		// attribute<bool>                      bridge      (segments) := Deduplicate/uq_segments/bridge[segments/Sequence_rel];
+		// attribute<RoadClasses>               Speed_cat   (segments) := Deduplicate/uq_segments/Speed_cat[segments/Sequence_rel];
+		// attribute<m>                         Meters      (segments) := Deduplicate/uq_segments/Meters[segments/Sequence_rel];
+		// attribute<min_f>                     Minutes     (segments) := Deduplicate/uq_segments/Minutes[segments/Sequence_rel];
+		
+		unit<uint32> PointSet := union_unit(segments,segments)
+		{
+			attribute<BaseProjection>        Point            := union_data(., ../FirstPoint, ../LastPoint);
+			attribute<bool>                  isVerbonden      := isNull(rlookup(Point, NodesNotConnected/org_rel -> Values));
+			attribute<segments>              ArcNr            := value(id(.) % #(segments), segments);
+			attribute<uint32>                Ordinal          := id(.) / nrofrows(segments);
+			
+			attribute<km>                    ArcLength        := ../length[ArcNr];
+		}
+		
+		unit<uint32> NodeSet := unique(PointSet/Point)
+		, DialogType = "map"
+		, DialogData = "values"
+		{
+			attribute<Networks> PartNr           := Networks/PartNr; 
+			attribute<uint32>   PerNetwork_rel   := rlookup(PartNr, Networks/PerNetwork/values);
+			attribute<km>       ArcLength        := rjoin(values, PointSet/Point, PointSet/ArcLength);
+			attribute<km>       SubnetworkLength := Networks/PerNetwork/Network_length[PerNetwork_rel];
+		}
+
+		unit<uint32> Networks:= connected_parts(F1, F2) // Verzameling van alle netwerken, inclusief de subnetwerken.
+		, DialogType = "map"
+		, DialogData = "NodeSet/values"
+		{
+			attribute<uint32>   Nr_Nodes       := sum(const(1, NodeSet, uint32), PartNr);
+			parameter<uint32>   MaxNrNodes     := max(Nr_Nodes);
+			parameter<Networks> Main           := rlookup(MaxNrNodes, Nr_Nodes); // uitgangspunt: het netwerk met de meeste nodes is het relevante netwerk
+
+			unit<uint32> PerNetwork := unique(PartNr)
+			{
+				attribute<km>       Network_length := sum(NodeSet/ArcLength, NodeSet/PerNetwork_rel);
+			}
+		}
+
+		unit<uint32> NodesNotConnected := select_with_org_rel(Networks/PartNr <> Networks/main && NodeSet/SubnetworkLength < ModelParameters/MinimumSubnetwork_Size);
+	}
+
+
+	Template loadDataFile_point 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		
+		unit<ipoint>      TargetRaster := geometries/SelectedTiledRaster1k;
+		
+		attribute<inFile> RasterIds       (TargetRaster) := poly2grid(inFile/Geometry, TargetRaster);
+		attribute<inFile> CentroidsRaster (TargetRaster) := invert(inFile/CentroidsRaster);
+		
+		unit<uint32> inFile : StorageName = "= inPath+'.'+Ext", StorageType = "gdal.vect", StorageReadOnly = "True"
+		{
+			attribute<BaseProjection>     Geometry;
+			attribute<BaseProjection>     Centroid        := Geometry;
+			attribute<TargetRaster> CentroidsRaster := Centroid[TargetRaster];
+		}
+	}
+	
+	Template loadDataFile_polyshp 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		unit<ipoint>      TargetRaster := geometries/SelectedTiledRaster1k;
+		
+		attribute<inFile> RasterIds       (TargetRaster) := poly2grid(inFile/Geometry, TargetRaster);
+		attribute<inFile> CentroidsRaster (TargetRaster) := invert(inFile/CentroidsRaster);
+		unit<uint32> inFile: StorageName = "= inPath+'.'+Ext", StorageType = "gdal.vect", StorageReadOnly = "True"
+		{
+			attribute<BaseProjection>     Geometry (poly);
+			attribute<BaseProjection>     Centroid        := centroid_or_mid(Geometry);
+			attribute<TargetRaster>       CentroidsRaster := Centroid[TargetRaster];
+			attribute<string> ISO;
+		}
+	}
+	
+	Template loadDataFile_polyline 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		unit<ipoint>      TargetRaster:= geometries/SelectedTiledRaster1k;
+		attribute<inFile> RasterIds (TargetRaster):= poly2grid(inFile/Geometry, TargetRaster);
+		
+		unit<uint32> inFile: StorageName = "= inPath+'.'+Ext", StorageType = "gdal.vect", StorageReadOnly = "True", DialogData = "Geometry_bp", DialogType = "map"
+		{
+			attribute<WGS84>          Geometry            (arc);
+			attribute<BaseProjection> Geometry_bp         (arc) := geometry[BaseProjection];
+		}
+	}
+	
+	Template loadDataFile_uint8tiff 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		unit<ipoint>      TargetRaster := geometries/SelectedTiledRaster1k;
+		unit<wpoint>        inFile       : StorageName = "= inPath+'.'+Ext", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "BaseProjection", DialogType = "map"
+		{
+			attribute<uint8> GridData;
+			attribute<uint8> ReadData (TargetRaster);
+		}
+	}
+	
+	Template loadDataFile_int16tiff 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		unit<ipoint>        TargetRaster := geometries/SelectedTiledRaster1k;
+		unit<wpoint>        inFile       : StorageName = "= inPath+'.'+Ext", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "BaseProjection", DialogType = "map"
+		{
+			attribute<int16> GridData;
+			attribute<int16> ReadData (TargetRaster);
+		}
+	}
+	
+	Template loadDataFile_int32tiff 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		unit<ipoint>        TargetRaster := geometries/SelectedTiledRaster1k;
+		unit<wpoint>        inFile       : StorageName = "= inPath+'.'+Ext", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "BaseProjection", DialogType = "map"
+		{
+			attribute<int32> GridData;
+			attribute<int32> ReadData (TargetRaster);
+		}
+	}
+	
+	Template loadDataFile_float32tiff 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		unit<ipoint>        TargetRaster := geometries/SelectedTiledRaster1k;
+		unit<wpoint>        inFile       : StorageName = "= inPath+'.'+Ext", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "BaseProjection", DialogType = "map"
+		{
+			attribute<float32> GridData;
+			attribute<float32> ReadData (TargetRaster);
+		}
+	}
+	
+	Template loadDataFile_float64tiff 
+	{
+		parameter<string> inPath;
+		parameter<string> Ext;
+		unit<ipoint>        TargetRaster := geometries/SelectedTiledRaster1k;
+		unit<wpoint>        inFile       : StorageName = "= inPath+'.'+Ext", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "BaseProjection", DialogType = "map"
+		{
+			attribute<float64> GridData;
+			attribute<float64> ReadData (TargetRaster);
+		}
+	}
+	
+	Template loadDataFile_csv 
+	{
+		parameter<string>   inPath;
+		unit<uint32>        TargetUnit     := Geometries/Country;
+		parameter<string>   ZoneIdField    := 'ZoneId';
+		parameter<string>   FieldSeparator := ',';
+		unit<uint32>        Domain         := range(uint32, 0, #TargetUnit * 2);
+		
+		parameter<string>   fssPath        := replace(UpperCase(inPath), '%PROJDIR%', '%LocalDataProjDir%');
+		
+		parameter<string>   FileData       :  StorageType = "str",  StorageName = "=inPath+'.csv'";
+		parameter<string>   HeaderLine     := readLines(FileData, void, 0);
+		parameter<bool>     HeaderOK       := regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+');
+		
+		unit<uint32>        Field          := Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)
+		{
+			attribute<string> Name := ReadArray(HeaderLine, Field, String, 0);
+		}
+		
+		attribute<string>   BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos); //,  IntegrityCheck = "HeaderOK";
+		attribute<bool>     LinesAreSignedIntegerStringOrEmpy (Domain) := regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+');
+		
+		container Data := for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+ MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string);
+		
+		// General Domain modification: if there is a row with, as zone id, the term as specified in General_indicator, the final data takes the general row values if no zone-specific value is found.
+		// Thus, to add any zone-specific exceptions, make a new row in the csv with as zone id the unique zone identifier of that zone. 
+		unit<uint32>      General_Domain              := = 'select_with_org_rel(Data/'+ ZoneIdField + ' = General_indicator)';
+		container         General_Data                := for_each_nedv(Field/Name, 'Data/'+Field/Name+'[General_Domain/org_rel]',General_Domain,string);
+		parameter<bool>   General_Domain_Available    := #General_Domain > 0;
+		
+		attribute<Domain> DomainRefField (TargetUnit) := = 'rlookup(trim(UpperCase(TargetUnit/ZoneId)), trim(UpperCase(Data/'+ ZoneIdField +')))';
+		
+		container DefFile  := for_each_nedv(Field/Name, 'IsNull(DomainRefField) && General_Domain_Available ? General_Data/'+Field/Name+'[0] : Data/'+Field/Name+'[DomainRefField]',TargetUnit,string), KeepData = "True", FreeData = "False";
+		container inFile   := = ExistingFile('x:/x',fssPath+Field/Name[0]+'.fss') = 'x:/x' ? 'storeFSS' : 'loadFSS';
+		container storeFSS := for_each_nedva(Field/Name, 'DefFile/'+ Field/Name, TargetUnit, string, fssPath + Field/Name + '.fss');
+		container loadFSS  := for_each_ndva(Field/Name, TargetUnit, string, fssPath + Field/Name + '.fss');
+	}
+	
+	Template TableComposer_uint32
+	{
+		unit<uint32>      context        := ExportDomain;
+		container         RefFields;
+		parameter<String> FileName       := '%LocalDataProjDir%/dist.csv';
+		// ExportDomain is a domain unit 
+		// with two attributes as subitems configured: id & Dist
+		parameter<String> Fieldlist      := 'id;Dist';
+		parameter<String> FieldSeparator := ';';
+
+		unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
+		{
+			attribute<string> Name := ReadArray(FieldList,.,string,0);
+		}
+
+		parameter<string> NewLine := '\n';
+		parameter<String> Header  := FieldList;
+		attribute<String> Body (context) := =AsList(+'String(RefFields/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +');
+
+		parameter<String> Result  := Header + NewLine + AsList(Body, NewLine),  StorageName = "=FileName",  StorageType = "str";
+	}
+	
+	Template TableComposer_uint64
+	{
+		unit<uint64>      context:= ExportDomain;
+		container         RefFields;
+		parameter<String> FileName       := '%LocalDataProjDir%/dist.csv';
+		// ExportDomain is a domain unit 
+		// with two attributes as subitems configured: id & Dist
+		parameter<String> Fieldlist      := 'id;Dist';
+		parameter<String> FieldSeparator := ';';
+
+		unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
+		{
+		  attribute<string> Name := ReadArray(FieldList,.,string,0);
+		}
+		
+		parameter<string> NewLine := '\n';
+		parameter<String> Header  := FieldList;
+		attribute<String> Body (context) := =AsList(+'String(RefFields/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +');
+
+		parameter<String> Result:= Header + NewLine + AsList(Body, NewLine),  StorageName = "=FileName",  StorageType = "str";
+	}
+}

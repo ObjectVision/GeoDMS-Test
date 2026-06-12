@@ -1,0 +1,212 @@
+container Groningen : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=groningen&striVersion=STRI2008"
+{
+	container NL_IMRO_9920_POVgeconsolideerd_GV01 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9920.POVgeconsolideerd-GV01"
+	//nieuwste stand 9 juli 2017: http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9920.POVgeconsolideerd-GV02
+	{
+		//Omgevingsverordening geconsolideerde versie
+		//planstatus: geconsolideerd 2017-03-14
+		//identificatie: NL.IMRO.9920.POVgeconsolideerd-GV01
+		//type plan: provinciale verordening
+		//naam overheid: provincie Groningen
+		//ondergrond: basisregistratie grootschalige topografie (BGT) (2016-01-01)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (10)
+		//Kaart 1: Buitengebied 
+		//Kaart 2: Bedrijventerreinen
+		//Kaart 3: Veiligheid en milieu
+		//Kaart 4: Infrastructuur
+		//Kaart 5: Windenergie
+		//Kaart 6: Natuur
+		//Kaart 7: Landschap
+		//Kaart 8: Regionale waterkeringen
+		//Kaart 9: Normen bergings- en afvoercapaciteit regionale wateren
+		//Kaart 10: Intensieve veehouderij
+
+		parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P.shp';
+		parameter<string> OGRQuery: = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\gr\NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitsubvlak_P.gml -where ""besluitgebied=""NL.IMRO.9920.POVgeconsolideerd-GV01"" -skipfailures -overwrite';
+
+		container Kaart1 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Kaart 1: Buitengebied Lagen:
+			//	x Buitengebied
+
+			//restrictief voor glastuinbouw
+			//Artikel 2.27.1 Nieuwe glastuinbouwbedrijven niet toegestaan
+			//Een bestemmingsplan dat betrekking heeft op het buitengebied voorziet niet in de vestiging van nieuwe glastuinbouwbedrijven
+
+			container Buitengebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''Buitengebied'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/POVgeconsolideerd-GV02_212_glastuinbouw.jpg'
+				,'=OGRQuery'
+			);
+		}
+
+		container Kaart2 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Kaart 2: Bedrijventerreinen. Lagen:
+			//	x Nieuw bedrijventerrein toegestaan
+
+			//Een bestemmingsplan kan alleen voorzien in nieuw bedrijventerrein en in uitbreiding van een bedrijventerrein als deze stedelijke ontwikkeling past in 
+			//een regionale bedrijventerreinenvisie. Deze regionale visie is daarmee een gezamenlijke verantwoordelijkheid van alle in de regio vertegenwoordigde gemeenten, 
+			//ook al zullen de gemeenteraden de visie alleen kunnen vaststellen voor zover deze betrekking heeft op het grondgebied van de betreffende gemeente. 
+			//Het is raadzaam bij het opstellen van de regionale bedrijventerreinenvisie de ladder voor duurzame verstedelijking toe te passen, 
+			//zodat in de ruimtelijke onderbouwing van nieuwe bestemmingsplannen in beginsel hiernaar kan worden verwezen. 
+			//Totdat de gemeente beschikt over een regionale bedrijventerreinvisie kan een bestemmingsplan niet voorzien in een nieuw bedrijventerrein, 
+			//behalve ter plaatse van de aanduiding 'nieuw bedrijventerrein toegestaan' op kaart 2. 
+			//Een bestemmingsplan kan daarentegen wel voorzien in uitbreiding van een bedrijventerrein ten behoeve van uitbreiding van een op dat bedrijventerrein gevestigd bestaand bedrijf, 
+			//maar alleen als in de toelichting is aangetoond dat op het bedrijventerrein direct aansluitend aan het bedrijf redelijkerwijs geen ruimte 
+			//meer beschikbaar is of kan worden verkregen na herstructurering, revitalisering of intensivering. 
+	
+			//Van een bestaand bedrijventerrein is sprake indien en voor zover het terrein al in een vigerend bestemmingsplan als bedrijventerrein bestemd is. 
+			//Ook gronden die feitelijk niet in bedrijfsmatig gebruik zijn, kunnen deel uitmaken van een bestaand bedrijventerrein. 
+			//Als de gemeenteraad ervoor kiest de betreffende gronden na verloop van tijd opnieuw als bedrijventerrein aan te wijzen, 
+			//hoeft dit niet als 'nieuw' bedrijventerrein te worden aangemerkt. Dit sluit niet uit dat aanvullend onderzoek naar de actuele behoefte - mede op basis van jurisprudentie - 
+			//noodzakelijk kan zijn.
+
+
+			//TODOBAS keer defintief afstemmmen zie je de inverse als restrictief, of dit als een beleidsstimuli
+			//239
+			container Nieuw_bedrijventerrein_toegestaan : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''Nieuw bedrijventerrein toegestaan'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml#s5da22f10-252c-4d20-ae2a-2430afa4747b'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/POVgeconsolideerd-GV02_25_bedrijventerreinen.jpg'
+				,'=OGRQuery'
+			);
+		}
+
+		container Kaart3 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Kaart 3: Veiligheid en milieu. Lagen:
+			//Bebouwingszone (waterkeringszone)
+			//	  Bergingsgebieden
+			//	  Beschermingszone (waterkeringszone)
+			//	  Bufferzone rond voor verzuring gevoelige, zeer kwetsbare gebieden
+			//	  Gebieden met verbod op fysische bodemaantasting
+			//	  Gesloten stortplaatsen
+			//	x Grondwaterbeschermingsgebieden
+			//	  Noodbergingsgebieden
+			//	  Profiel van vrije ruimte (waterkeringszone)
+			//	x Stiltegebieden
+			//	  Veiligheidszone 1 provinciale wegen
+			//	  Veiligheidszone 2 invloedsgebied provinciale wegen
+			//	  Veiligheidszone 3 transport
+			//	  Vervoer gevaarlijke stoffen
+			//	  Voor verzuring gevoelige, zeer kwetsbare gebieden
+			//	x Waterkeringszone
+			//	x Waterwingebieden
+			//	  Zoekgebied noodberging
+
+			//2649
+			container Grondwaterbeschermingsgebieden : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''Grondwaterbeschermingsgebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml#NL.IMRO.PT.s841c665a-b664-48be-805d-bac4434d4e28'
+				,'=OGRQuery'
+			);
+
+			//45406
+			container Stiltegebieden : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''Stiltegebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml'
+				,'=OGRQuery'
+			);
+
+			//1870
+			container Waterkeringszone : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''Waterkeringszone'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml'
+				,'=OGRQuery'
+			);
+
+			//101
+			container Waterwingebieden : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''Waterwingebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml'
+				,'=OGRQuery'
+			);
+		}
+
+		//wordt uiteindelijk niet gebruikt, Rienk Kuiper: "WAT HIER STAAT IS NIET RESTRICTIEF VOOR WONINGBOUW", december 2017
+		container Kaart5 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Kaart 5: Windenergie Lagen:
+			//	x Concentratiegebieden grootschalige windenergie (concentratiegebied N33 kan gewijzigd worden door uitkomsten Rijksinpassingsplan)
+			//	  Nieuwe windturbines niet toegestaan
+			//	  Testveld onderzoeksturbines
+			//	  Testveld prototype offshore testturbines
+			//	  Zoekgebied vervanging windturbines
+
+			//Rienk 241117: niet restrictief
+			//&&&&&Bart: Meer algemeen wat voor plek neemt energie in binnen de modellering aangaande restricties?
+			container Concentratiegebieden_grootschalige_windenergie : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''Concentratiegebieden grootschalige windenergie (concentratiegebied N33 kan gewijzigd worden door uitkomsten Rijksinpassingsplan)'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml#NL.IMRO.PT.s67cf4d0e-fd15-4b21-848e-75ccd0df7c1d'
+				,'=OGRQuery'
+			);
+		}
+
+		container Kaart6 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/gr/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Kaart 6: Natuur. Lagen:
+			//	  Bos- en natuurgebieden buiten het Natuur Netwerk Nederland
+			//	  Leefgebied akkervogels
+			//	  Leefgebied weidevogels
+			//	x NNN-beheer aanpassingsgebied
+			//	x NNN-beheergebieden
+			//	x NNN-natuur aanpassingsgebied
+			//	x NNN-natuurgebieden
+			//	  Zoekgebied robuuste verbindingszone
+
+			//733
+			container NNN_beheer_aanpassingsgebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''NNN-beheer aanpassingsgebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml#NL.IMRO.PT.sa01f19fe-a788-4c90-ae55-1d745b59a475'
+				,'=OGRQuery'
+			);
+
+			//1865
+			container NNN_beheergebieden : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''NNN-beheergebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml#NL.IMRO.PT.sa01f19fe-a788-4c90-ae55-1d745b59a475'
+				,'=OGRQuery'
+			);
+
+			//255
+			container NNN_natuur_aanpassingsgebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''NNN-natuur aanpassingsgebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml#NL.IMRO.PT.sa01f19fe-a788-4c90-ae55-1d745b59a475'
+				,'=OGRQuery'
+			);
+
+			//74968
+			container NNN_natuurgebieden : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9920_POVgeconsolideerd_GV01_Besluitsubvlak_P WHERE naam =''NNN-natuurgebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9920.POVgeconsolideerd-GV01/pt_NL.IMRO.9920.POVgeconsolideerd-GV01.xml#NL.IMRO.PT.sa01f19fe-a788-4c90-ae55-1d745b59a475'
+				,'=OGRQuery'
+			);
+		}
+	}
+}

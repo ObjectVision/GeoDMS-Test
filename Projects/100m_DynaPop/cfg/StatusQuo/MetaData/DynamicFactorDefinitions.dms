@@ -1,0 +1,76 @@
+Container DynamicFactorDefinitions
+{
+	unit<uint32> DynamicFactors: expr = "combine(VariableInteractions, DynamicFactorsList)"
+	{
+		attribute<string> Name: 		expr = "VariableInteractions/Name[first_rel] + DynamicFactorsList/Name[second_rel]";
+		attribute<string> StartExpr:	expr = "VariableInteractions/StartExec[first_rel] + DynamicFactorsList/StartExpr[second_rel]";
+		attribute<string> DynExpr:		expr = "VariableInteractions/DynExec[first_rel] + DynamicFactorsList/DynExpr[second_rel]";
+		attribute<bool>	  Concurrent:	expr = "DynamicFactorsList/Concurrent[second_rel]";
+		attribute<uint32> Id:			expr = "Name = 'AbandonableUrban' ? 11 : 9999999";
+	}
+	
+	unit<uint32> VariableInteractions: NrOfRows = 6
+	{
+		attribute<string> Name: ['','Qi_below2_x_','Qi_2to5_x_','Qi_5to10_x_','Qi_10to50_x_','Qi_50plus_x_'];
+		attribute<string> StartExec: ['', 'float32(StartingState/Qi < float32(2)) * ', 
+			'float32(StartingState/Qi >= float32(2) && 	StartingState/Qi < float32(5)) * ','float32(StartingState/Qi >= float32(5) && 	StartingState/Qi < float32(10)) * ',
+			'float32(StartingState/Qi >= float32(10) && 	StartingState/Qi < float32(50)) * ', 'float32(StartingState/Qi >= float32(50)) * '];
+		attribute<string> DynExec: ['', 'float32(Qi < float32(2)) * ', 
+			'float32(Qi >= float32(2) && 	Qi < float32(5)) * ','float32(Qi >= float32(5) && 	Qi < float32(10)) * ',
+			'float32(Qi >= float32(10) && 	Qi < float32(50)) * ', 'float32(Qi >= float32(50)) * '];
+	}
+	unit<uint32> DynamicFactorsList: expr = "union_unit(OrgDynamicFactorsList, NeighDynamicFactorsList)"
+	{
+		attribute<string> Name: 		expr = "union_data(.,OrgDynamicFactorsList/Name, NeighDynamicFactorsList/Name)";
+		attribute<string> StartExpr: 	expr = "union_data(.,OrgDynamicFactorsList/StartExpr, NeighDynamicFactorsList/StartExpr)";
+		attribute<string> DynExpr: 		expr = "union_data(.,OrgDynamicFactorsList/DynExpr, NeighDynamicFactorsList/DynExpr)";
+		attribute<bool>   Concurrent:	expr = "union_data(.,OrgDynamicFactorsList/Concurrent, OrgDynamicFactorsList/Concurrent)";
+	}
+
+	unit<uint32> NeighDynamicFactorsList: expr = "OrgDynamicFactorsList"
+	{
+		attribute<string> Name: 		expr = "'Neigh_' + OrgDynamicFactorsList/Name";
+		attribute<string> StartExpr: 	expr = "'MakeDefined(potential('+ OrgDynamicFactorsList/Name +'[domain/BasisGrid], Parameters/FuncKernels/QueensNeighbours/Matr)[domain/grid_rel] / StartingState/NeighboursWeight, 0[float32])'";
+		attribute<string> DynExpr: 		expr = "StartExpr";
+	}
+	unit<uint32> OrgDynamicFactorsList: NrOfRows = 24 // internal set of actual factors, @USERINPUT: keep NrOfRows in sync with the actual nr of model classes1
+	{
+		parameter<uint32> nrAttr: Expr = "3", isHidden = "True";
+		unit<UInt32> Elements: Expr = "Range(uint32, 0, (nrAttr*#OrgDynamicFactorsList))", isHidden = "True"
+		{
+			attribute<string> Text: 
+			//Name,  			ValueType,		RegExpr,		concurrent?													StartExpr
+			['PotentialAccess'		,'DynamicComponent/DynamicAccessibility/Accessibility_grav'				,'CaseData/NetworkAnalysis/dom_a[domain/grid_rel] + CaseData/NetworkAnalysis/for_a[domain/grid_rel]'
+			,'DomesticAccess'		,'DynamicComponent/DynamicAccessibility/domestic_access'				,'CaseData/NetworkAnalysis/dom_a[domain/grid_rel]'
+			,'ForeignAccess'		,'DynamicComponent/DynamicAccessibility/foreign_access'					,'CaseData/NetworkAnalysis/for_a[domain/grid_rel]'
+			,'TownAccess'			,'DynamicComponent/DynamicAccessibility/TownAccess'						,'CaseData/NetworkAnalysis/DistTown[domain/grid_rel]'
+			,'RefinedTownAccess'	,'DynamicComponent/DynamicAccessibility/RefinedTownAccess'				,'CaseData/NetworkAnalysis/RefinedTownAccess[domain/grid_rel]'
+			,'RelPotAccess'			,'PotentialAccess / mean(StartingState/dFactors/PotentialAccess)'		,null
+			,'RelDomAccess'			,'DomesticAccess / mean(StartingState/dFactors/DomesticAccess)'			,null
+			,'RelForAccess'			,'ForeignAccess / mean(StartingState/dFactors/ForeignAccess)'			,null
+			,'Urban'				,'float32(ModelType/IsUrban[landuse])'									,null
+			,'Qi'					,'ResultingState/Qi'													,'StartingState/Qi'
+			,'Si'					,'ResultingState/Si'													,'StartingState/Si'
+			//,'PopulationPressure'	,'DynamicComponent/Population/Population_Pressure'						,'CaseData/getOptimalk/Population_Pressure'
+			,'PopulationPressure'	,'PrevState/Qi'													,'StartingState/Qi'
+			,'inv_PopPressure'		, 'MakeDefined(float32(1) / (float32(1) + Qi), float32(0.0))'			,null
+			,'LowPopDensity'     	,'DynamicComponent/AgriculturalAbandonment/LowPopDensity_factor'		,'AgriculturalAbandonment/LowPopDensity_factor'
+			,'Remoteness'        	,'DynamicComponent/AgriculturalAbandonment/RemoteAreas_factor'			,'AgriculturalAbandonment/RemoteAreas_factor'
+			,'central'				,'float32(TownAccess < float32(45))'									,null
+			,'ln_yieldmaize'		,'(CurrYear < 2040[YearRange] ? CaseData/JrcFactorData/yields_until_2040/ln_yieldmaize : CaseData/JrcFactorData/yields_from_2040/ln_yieldmaize)[domain/grid_rel]', '(CaseData/JrcFactorData/yields_until_2040/ln_yieldmaize)[domain/grid_rel]'
+			,'ln_yieldbarley'		,'(CurrYear < 2040[YearRange] ? CaseData/JrcFactorData/yields_until_2040/ln_yieldbarley : CaseData/JrcFactorData/yields_from_2040/ln_yieldbarley)[domain/grid_rel]', '(CaseData/JrcFactorData/yields_until_2040/ln_yieldbarley)[domain/grid_rel]'
+			,'ln_yieldsugbeet'		,'(CurrYear < 2040[YearRange] ? CaseData/JrcFactorData/yields_until_2040/ln_yieldsugbeet : CaseData/JrcFactorData/yields_from_2040/ln_yieldsugbeet)[domain/grid_rel]', '(CaseData/JrcFactorData/yields_until_2040/ln_yieldsugbeet)[domain/grid_rel]'
+			,'ln_yieldsunflow'		,'(CurrYear < 2040[YearRange] ? CaseData/JrcFactorData/yields_until_2040/ln_yieldsunflow : CaseData/JrcFactorData/yields_from_2040/ln_yieldsunflow)[domain/grid_rel]', '(CaseData/JrcFactorData/yields_until_2040/ln_yieldsunflow)[domain/grid_rel]'
+			,'ln_yieldwheat'		,'(CurrYear < 2040[YearRange] ? CaseData/JrcFactorData/yields_until_2040/ln_yieldwheat : CaseData/JrcFactorData/yields_from_2040/ln_yieldwheat)[domain/grid_rel]', '(CaseData/JrcFactorData/yields_until_2040/ln_yieldwheat)[domain/grid_rel]'
+			,'ln_yieldrapeseed'		,'(CurrYear < 2040[YearRange] ? CaseData/JrcFactorData/yields_until_2040/ln_yieldrapeseed : CaseData/JrcFactorData/yields_from_2040/ln_yieldrapeseed)[domain/grid_rel]', '(CaseData/JrcFactorData/yields_until_2040/ln_yieldrapeseed)[domain/grid_rel]'
+			,'ProbTouristic'		,'float32(ModelType/isUrban[StartingState/landuse] && StartingState/Qi = 0[float32])'									,null
+			,'AbandonableUrban' 	,'float32(Qi < 3[float32] && (Qi < (float32(0.25) * StartingState/Qi)) && ProbTouristic = 0[float32])'											,null
+			];
+		}
+		attribute<FactorID> ID:        	expr = "rlookup(Name, FactorId/Name)";
+		attribute<string> Name: 		expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+0, Elements)]";
+		attribute<string> DynExpr:		expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+1, Elements)]";
+		attribute<string> StartExpr:	expr = "MakeDefined(Elements/Text[value((uint32(id(.)) * nrAttr)+2, Elements)], DynExpr)";
+		attribute<bool>   Concurrent:	expr = "Name = 'PopulationPressure'";
+	}
+}

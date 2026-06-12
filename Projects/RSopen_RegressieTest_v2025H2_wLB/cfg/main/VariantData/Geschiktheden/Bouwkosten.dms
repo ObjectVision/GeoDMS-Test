@@ -1,0 +1,15 @@
+container Bouwkosten
+: Descr = "Berekening van bouwkosten van potentiele ontwikkelpakketen."
+{
+	container perOP := for_each_nedv(
+		  OP/name
+		, 'collect_by_cond(CompactedAdminDomain, AdminDomain/IsCompactedDomain, MakeDefined(BaseValues/'+OP/VSSH_name+', 1f)) 
+				* OP/Woonoppervlakte['+string(id(OP))+'[OP]]
+				* OP/Dichtheid['+string(id(OP))+'[OP]] 
+				* AdminDomain/NrHaPerCell'
+		, CompactedAdminDomain
+		, Eur
+	);
+	
+	unit<UInt32> BaseValues := ModelParameters/Wonen/Bouwkosten;
+}

@@ -1,0 +1,195 @@
+container Geography: Using = "Units"
+{
+	// reference WMS layer
+	#include<ngr_layer.dms>
+	
+	// rdCoords/100m van NW naar SE (3250 rows, 2700 cols)
+	
+	unit<fpoint> rdc_meter_base : DialogData = "ngr_layer";
+	unit<fpoint> rdc_meter      := range(rdc_meter_base, point(300000f, 0f), point(625000f, 280000f));
+	unit<dpoint> rdc_meter_64   := range(rdc_meter_base, point(300000d, 0d), point(625000d, 280000d));
+	unit<ipoint> rdc_mm_i32     := gridset(rdc_meter_64,  point(0.001, 0.001), point(0.0, 0.0), ipoint); // fka point_rd_mm
+	
+	unit<spoint> rdc_100m_monolith :=
+				range(
+					gridset(
+						 rdc_meter
+						,point( - 100f,   100f, rdc_meter)
+						,point(625000f, 10000f, rdc_meter)
+						,spoint
+					)
+					,point(0s   , 0s)
+					,point(3250s, 2700s)
+				);
+				
+	unit<spoint> rdc_100m_tiled := TiledUnit(point(650s, 540s, rdc_100m_monolith)); // in 5x5 tiles of 650 rows x 540 cols each
+		
+	unit<spoint> rdc_100m :=  rdc_100m_tiled
+	{
+		attribute<.> rdc_100m_rel  := id(.);
+		attribute<rdc_500m> rdc_500m_rel:= ID(.)[rdc_500m];
+		parameter<ha> NrHaPerCell := 1[ha];
+		parameter<km2> NrKm2PerCell := NrHaPerCell[km2];
+	
+		parameter<float32> gridsize     := 100f;
+
+		attribute<.>               id            := id(.);
+		attribute<rdc_meter>  point_rd      := id[rdc_meter] + point(0.0f * 100f, -0.0f * 100f, rdc_meter);
+
+		attribute<rdc_meter>  point_rdc      := id(rdc_100m)[rdc_meter] + point(-0.5f * 100f, 0.5f * 100f, rdc_meter);
+
+		attribute<bool>       IsNederland    := RegioIndelingen/NL/IsNederland;
+		
+		unit<uint32> sg_points := select_with_org_rel(isDefined(point_rdc) && IsNederland)
+		,	DialogData = "geometry"
+		,	DialogType = "map"
+		{
+			attribute<rdc_meter>    geometry  := rdc_100m/point_rdc[org_rel];
+			attribute<rdc_100m>     rdc_100m_rel  := org_rel;
+		}
+	}
+	
+	// ruimte rechthoek om de provincie Utrecht
+	unit<spoint> rdc_100m_centrum := Range( Geography/rdc_100m, point(1400s, 1000s), point(1900s, 1650s) );
+	
+	unit<spoint> domain_grid := rdc_100m; // of rdc_100m_centrum
+	
+	// rdCoords/25m van NW naar SE (13000 rows x 10.800 cols)
+	unit<spoint> rdc_25m_org := range(
+					gridset(
+						 rdc_meter
+						,point(   -25f,    25f, rdc_meter)
+						,point(625000f, 10000f, rdc_meter)
+						,spoint
+					)
+					,point(    0s,     0s)
+					,point(13000s, 10800s)
+	);
+	
+	unit<spoint> rdc_10m_org := range(
+					gridset(
+						 rdc_meter
+						,point(   -10f,    10f, rdc_meter)
+						,point(625000f, 10000f, rdc_meter)
+						,spoint
+					)
+					,point(0s    , 0s)
+					,point(32500s, 27000s)
+	);
+
+	unit<spoint> rdc_25m := TiledUnit(Point(1000s, 1200s, rdc_25m_org)) //, Descr = "rdCoords/25m van NW naar SE (13000 rows, 10.800 cols) in 13 x 9 tiles of about 1000*1200 cells"		
+	{
+		attribute<rdc_100m>  rdc_100m_rel := id(.)[rdc_100m];
+		attribute<.>         rdc_25m_rel  := id(.);
+		parameter<ha>        NrHaPerCell := (1f/16f)[ha];
+		
+		attribute<rdc_meter> point_rdc   := id(.)[rdc_meter] + point(-0.5f * 25f, 0.5f * 25f, rdc_meter);
+		attribute<bool>      IsNederland := RegioIndelingen/NL/IsNederland[rdc_100m_rel];
+		
+		unit<uint32> sg_points := select_with_org_rel(isDefined(point_rdc) && IsNederland)
+		,	DialogData = "geometry"
+		,	DialogType = "map"
+		{
+			attribute<rdc_meter> geometry := ../point_rdc[org_rel];
+			attribute<..>     rdc_25m_rel := geometry[..];
+		}
+	}
+	
+	unit<spoint> rdc_10m := TiledUnit(Point(1000s, 1200s, rdc_10m_org)) //, Descr = "rdCoords/25m van NW naar SE (32,500 rows, 27,000 cols) in 13 x 9 tiles of about 1000*1200 cells"		
+	{
+		attribute<rdc_100m> rdc_100m_rel := id(.)[rdc_100m];
+		attribute<rdc_25m> rdc_25m_rel := id(.)[rdc_25m];
+		attribute<.> rdc_10m_rel  := id(.);
+		parameter<ha> NrHaPerCell := (1f/100f)[ha];
+		
+		attribute<rdc_meter> point_rdc   := id(.)[rdc_meter] + point(-0.5f * 10f, 0.5f * 10f, rdc_meter);
+		
+		attribute<bool> IsNederland := RegioIndelingen/NL/IsNederland[rdc_100m_rel];
+		
+		unit<uint32> sg_points := select_with_org_rel(isDefined(point_rdc) && IsNederland)
+		,	DialogData = "geometry"
+		,	DialogType = "map"
+		{
+			attribute<rdc_meter> geometry := ../point_rdc[org_rel];
+			attribute<..>     rdc_25m_rel := geometry[..];
+		}
+	}
+
+	unit<spoint> rdc_250m := 
+		range( 
+			gridset(rdc_meter, point(-250f, 250f, rdc_meter), point(625000f, 10000f, rdc_meter), spoint)
+			,point(0s, 0s), point(650s, 540s)
+		)
+	{
+		attribute<.> rdc_250m_rel  := id(.);
+	}
+	
+	unit<spoint> rdc_500m := 
+		range( 
+			gridset(rdc_meter, point(-500f, 500f, rdc_meter), point(625000f, 10000f, rdc_meter), spoint)
+			,point(0s, 0s), point(650s, 540s)
+		)
+	{
+		attribute<.> rdc_500m_rel  := id(.);
+	}
+	
+	unit<spoint> rdc_1000m :=
+		range(
+			gridset(rdc_meter, point(-1000f, 1000f, rdc_meter), point(625000f, 10000f, rdc_meter), spoint)
+			,point(0s, 0s), point(325s, 270s)
+		);
+	
+	unit<uint8> Matrix : nrofrows = 19
+	{
+		attribute<meter> Size : [ 50, 100, 150, 200, 300, 500, 625, 1000, 1250, 2000, 2250, 2500, 3250, 5000, 5250, 10000, 10250, 20000, 20250 ];
+		attribute<string> name := 'pot'+string(size)+'m';
+	}
+	
+	container Distmatrices := for_each_nex(Matrix/name, 'Impl/'+Matrix/name+'/PotRange', spoint)
+	{
+		unit<uint32> Dist2Range;
+		
+		template potrange
+		{
+			parameter<meter>   gridgrootte;
+			parameter<meter>   afkapstraal;
+			parameter<float32> straal  := afkapstraal / gridgrootte;
+			parameter<float32> oppervlakte  := pi()[float32] * straal^2[float32];
+			
+			unit<spoint>       tmpRange:= range(spoint, point(-int16(straal), -int16(straal)), point(int16(straal) + 1s, int16(straal) + 1s));
+			unit<spoint>       potRange:= tmpRange // TODO 2017-09-26: remove indirection & clean-up
+			{
+				attribute<Dist2Range> distMatr     := dist2(point(0s, 0s, tmpRange), Dist2Range);
+				attribute<float32>    dist         := sqrt(float32(distMatr));
+				attribute<float32>    rev_dist     := max_elem(straal - dist, 0f);
+				parameter<float32>    rev_dist_max := max(rev_dist);
+				attribute<float32>    rev_dist_scaled := rev_dist / rev_dist_max;
+				attribute<float32> AbsWeight       := distMatr[float32] <= (straal * straal) 
+														? distMatr[float32] != 0f 
+															? 1f / (distMatr[float32] ^ 2f)
+															: 1f
+														: 0f;
+				attribute<float32> AbsWeight_ln       := distMatr[float32] <= (straal * straal) 
+														? distMatr[float32] != 0f 
+															? 1f / (distMatr[float32] / straal)
+															: 1f
+														: 0f;
+				attribute<Float32> RelWeight       := scalesum(     AbsWeight , 1.0f );
+				attribute<Float32> RelWeightSqrt   := scalesum(Sqrt(AbsWeight), 1.0f );
+				attribute<Float32> Flat            := distMatr <= straal[uint32] ? 1f : 0f;
+				attribute<Float32> Flat2           := dist <= straal ? 1f : 0f;
+				parameter<float32> oppervlakte     := sum(Flat2);
+				attribute<float32> binair          := distMatr <= 100 ? 1f : 0f;
+				
+			}
+		}
+		
+		container Impl      := for_each_ne(Matrix/name, 'potrange(25[meter],'+string(Matrix/size)+'[meter])');
+		container Impl_10m  := for_each_ne(Matrix/name, 'potrange(10[meter],'+string(Matrix/size)+'[meter])');
+		container Impl_100m := for_each_ne(Matrix/name, 'potrange(100[meter],'+string(Matrix/size)+'[meter])');
+	}
+	
+	container Distmatrices_100m := for_each_nex(Matrix/name, 'Distmatrices/Impl_100m/'+Matrix/name+'/PotRange', spoint);
+	
+	#include<RegioIndelingen.dms>
+}

@@ -1,0 +1,93 @@
+Container RegionalFactorDefinitions
+{
+	
+	unit<uint32> DemandModelFactors: expr = "union_unit(ProjectedFactors, ModelSpecificFactorsList, RegionalDynamicFactorsList)"
+	{
+		attribute<string> uniName: 			expr = "union_data(., 'proj_' + ProjectedFactors/Name, 'modelspec_' + ModelSpecificFactorsList/Name, RegionalDynamicFactorsList/Name)";
+		attribute<string> Name:				expr = "union_data(., ProjectedFactors/Name, ModelSpecificFactorsList/Name, RegionalDynamicFactorsList/Name)";
+		attribute<string> Reg:				expr = "union_data(., 'proj_' + ProjectedFactors/RegExpr, 'modelspec_' + ModelSpecificFactorsList/RegExpr, RegionalDynamicFactorsList/RegExpr)";
+		attribute<bool>   model_specific:	expr = "union_data(., const(true, ProjectedFactors, bool), const(true, ModelSpecificFactorsList, bool), const(false, RegionalDynamicFactorsList, bool))";
+		attribute<bool>   projected:		expr = "union_data(., const(true, ProjectedFactors, bool), const(false, ModelSpecificFactorsList, bool), const(false, RegionalDynamicFactorsList, bool))";
+		attribute<string> VariableRef:		expr = "switch(case(projected, 'ProjectedFactors/'+uniName), case(!projected && model_specific, 'ModelSpecificFactors/'+ Name),'DynamicRegionalFactors/' + uniName)";
+		attribute<string> Label:	expr = "uniName";
+	}
+	unit<uint32> ProjectedFactors: NrOfRows = 2
+	{
+		attribute<string> Name: 		['ln_GDP_pc', 'dln_employment'];
+		attribute<string> RegExpr:		['float32(log(proj_GDP_pc))', 'float32(log(proj_employment) - log(CaseData/EconomicBase/Employment_2012))'];
+		attribute<DemandCharacteristics> dc: expr = "const(DemandCharacteristics/urban, ., DemandCharacteristics)";
+	}
+	
+	unit<uint8> AbandonableUses: expr = "unique(Classifications/LU/ModelType/Abandoned_Use)"
+	{
+		attribute<string> Name: 		expr = "Values";
+		attribute<string> RegExpr:		expr = "pcount(ModelType/Abandoned_MT[landuse])";
+	}
+	
+	
+	unit<uint32> ModelSpecificFactorsList: NrOfRows = 6
+	{	
+		//Coastalregion;urban1;urban2;Rural;Urban;ln_Qj;ln_GDP_pc;dln_employment
+	
+		parameter<uint32> nrAttr: expr = "4", isHidden = "True";
+//		unit<uint32> Elements: expr = "range(uint32, 0, (nrAttr*#RegionalDynamicFactorsList))", isHidden = "True"
+		unit<uint32> Elements: expr = "range(uint32, 0, (nrAttr*#ModelSpecificFactorsList))", isHidden = "True"
+		
+		{
+			attribute<string> Text:
+			//Name, 						select_with_org_rel 		RegExpr, 										   							zones								
+			[
+				'Coastalregion',			'True', 'DataPreparation/residential_density_change/Nuts3Data/Coastalregion', 		'Nuts3_v8'
+				,'Metroregion',				'True', 'DataPreparation/residential_density_change/Nuts3Data/Metroregion', 		'Nuts3_v8'
+				,'urban1', 					'True', 'DataPreparation/residential_density_change/Nuts3Data/urban1',				'Nuts3_v8'	// tier 1 metropolitan region (Nuts3)
+				,'urban2',					'True', 'DataPreparation/residential_density_change/Nuts3Data/urban2',				'Nuts3_v8'	//tier 2 metropolitan region (Nuts3)
+				,'Rural', 					'True', 'DataPreparation/residential_density_change/Nuts3Data/Rural',				'Nuts3_v8' 	//rural region
+				,'Urban',					'True', 'DataPreparation/residential_density_change/Nuts3Data/Urban',				'Nuts3_v8' 	//urban region
+			];
+		}
+		attribute<string> Name: 				expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+0, Elements)]";
+		attribute<bool>   select_with_org_rel:				expr = "value(Elements/Text[value((uint32(id(.)) * nrAttr)+1, Elements)], bool)";
+		attribute<string> RegExpr:				expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+2, Elements)]";
+		attribute<string> TargetZones:			expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+3, Elements)]";
+	}	
+	
+	
+//	unit<uint32> RegionalDynamicFactorsList: NrOfRows = 21
+	unit<uint32> RegionalDynamicFactorsList: NrOfRows = 20
+	
+	{
+		parameter<uint32> nrAttr: expr = "3", isHidden = "True";
+		unit<uint32> Elements: expr = "range(uint32, 0, (nrAttr*#RegionalDynamicFactorsList))", isHidden = "True"
+		{
+			attribute<string> Text:
+			//Name, 						RegExpr, 										   aggregation						
+			[
+				'Base_Available_Land',		'float32(CaseData/FactorData/slope100_cont < float32(16) && CaseData/FactorData/natura2000_v2011 = float32(0) && CaseData/FactorData/nda = float32(0))', 	'sum'
+				,'Urban',					'float32(ModelType/isUrban[landuse])', 				'sum'
+				,'AbanUrban',				'float32(ModelType/isAbandonedUrban[landuse])', 	'sum'
+				,'Qj',						'float32(dFactors/Qi)',								'sum'
+				,'Built_up', 				'float32(ModelType/IsBuiltupArea[landuse])',		'sum'
+				,'PotAccess',				'dFactors/PotentialAccess',							'mean'
+				,'RelPotAccess',			'dFactors/RelPotAccess',							'mean'
+				,'Perc_Available_Land',		'float32(1) - (Built_up / Base_Available_land)',	null
+				,'ln_Qj',					'float32(log(Qj))',									null
+				,'Curr_dens',				'Qj / Urban',									null
+				,'ln_PotAccess',			'float32(log(PotAccess))',							null
+				,'ln_RelPotAccess',			'float32(log(RelPotAccess))',						null
+				,'ln_Curr_dens',			'float32(log(Curr_Dens))',							null
+				,'AbanArable',				'float32(ModelType/isAbanArable[landuse])',			'sum'
+				,'AbanPermanentCrops', 		'float32(ModelType/isAbanPermanentCrops[landuse])',	'sum'
+				,'AbanPastures',			'float32(ModelType/isAbanPastures[landuse])',		'sum'
+				,'ArableTypes_land',		'ComingPeriodLength * float32(CurrYear < 2030[YearRange] && ModelType/IsArableType[landuse])',			'sum'
+				,'PermanentTypes_land',		'ComingPeriodLength * float32(CurrYear < 2030[YearRange] && ModelType/IsPermanentType[landuse])',		'sum'
+				,'PasturesTypes_land',		'ComingPeriodLength * float32(CurrYear < 2030[YearRange] && ModelType/IsPasturesType[landuse])',		'sum'
+				,'AbandonableUrban', 		'float32(dFactors/AbandonableUrban)',				'sum'
+			];
+		}
+		attribute<string> Name: 				expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+0, Elements)]";
+		attribute<string> RegExpr:				expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+1, Elements)]";
+		attribute<string> AggregationFunction:	expr = "Elements/Text[value((uint32(id(.)) * nrAttr)+2, Elements)]";
+		attribute<bool>   ToAggregate:			expr = "IsDefined(AggregationFunction)";
+	}	
+
+}

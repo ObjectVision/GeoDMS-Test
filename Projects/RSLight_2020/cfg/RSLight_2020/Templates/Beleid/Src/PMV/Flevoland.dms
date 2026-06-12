@@ -1,0 +1,27 @@
+container Flevoland: url = "%RSLDataDir%/Beleid/Ruimte/Pmv/fl/BEHEER_GRONDWATERBESCHERM_v.xml"
+{
+	attribute<bool> Grondwaterbeschermingsgebied (domain_grid):
+		Source      = "Per email aangeleverd op 27 mei 2015 door Niels Vogelaar, Provincie Flevoland"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\fl\bewerk\grondwaterbeschermingsgebied.shp"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/fl/BEHEER_GRONDWATERBESCHERM_v.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/fl/grondwaterbeschermingsgebied.tif";
+
+	attribute<bool> Waterwingebied (domain_grid):
+		Source      = "Per email aangeleverd op 27 mei 2015 door Niels Vogelaar, Provincie Flevoland"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\fl\bewerk\waterwingebied.shp"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/fl/BEHEER_GRONDWATERBESCHERM_v.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/fl/waterwingebied.tif";
+
+	parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/pmv_2017/fl/STILTEGEBIEDEN.shp';
+	parameter<string> Source:      = 'per email aangeleverd door Alex lucassen op 4 juli 2018 in shp-formaat';
+		
+	container STILTEGEBIEDEN : = VergriddingT
+	(
+		'=Bestandsloc'
+		,'SELECT * FROM STILTEGEBIEDEN'
+		,''
+		,'=Source'
+	);
+	
+	attribute<bool> Totaal (domain_grid) := max_elem(Grondwaterbeschermingsgebied, Waterwingebied, STILTEGEBIEDEN/Bestand/Multi/result);
+}

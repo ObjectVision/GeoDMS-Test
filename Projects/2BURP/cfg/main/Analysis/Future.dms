@@ -1,0 +1,93 @@
+container Future : using = "units;geography;sourcedata/regionalunits;classifications;modelparameters"
+{
+	attribute<ClaimRegion>           Region_rel (CompactedDomain) := ClaimRegion/per_CompactedDomain;
+	
+	container InitialState 
+	{
+		container Impl
+		{
+			attribute<BuiltUpKm2>        BuiltUp_Total_Area_domain               (domain) := ='SourceData/BuiltUp/Total/'+ModelParameters/StartYear+'[km2] / 1[km2] * 1[BuiltUpKm2]';
+			attribute<BuiltUpKm2>        BuiltUp_Residential_Area_domain         (domain) := ='SourceData/BuiltUp/Residential/'+ModelParameters/StartYear+'[km2] / 1[km2] * 1[BuiltUpKm2]';
+			attribute<BuiltUpKm2>        BuiltUp_NonResidential_Area_domain      (domain) := ='SourceData/BuiltUp/NonResidential/'+ModelParameters/StartYear+'[km2] / 1[km2] * 1[BuiltUpKm2]';
+			attribute<float32>           BuiltUp_Total_Share_domain              (domain) := BuiltUp_Total_Area_domain / domain/area; // * 1[km2] / 1[BuiltUpKm2];
+			attribute<Person>            Population_domain                       (domain) := ='SourceData/Population/PerYear/'+ModelParameters/StartYear+'[Person]';
+			attribute<Person_BuiltUpKm2> Population_inRes_Density_domain         (domain) := Population_domain / BuiltUp_Residential_Area_domain; // DO NOT USE!
+			attribute<Person_BuiltUpKm2> Population_inRes_Density_Trunc_domain   (domain) := min_elem_alldefined(Population_inRes_Density_domain, maxmax_saturation);
+			attribute<Person>            Population_Trunc_domain                 (domain) := Population_inRes_Density_Trunc_domain * BuiltUp_Residential_Area_domain; //truncate for unrealistic densities (e.g. very much population in hardly any builtup area).
+			
+			attribute<Person>            Population_org                 (CompactedDomain) := Population_domain[CompactedDomain/org_rel]; 
+			attribute<Person_BuiltUpKm2> Population_inRes_Density_org   (CompactedDomain) := Population_org / BuiltUp_Residential_Area; // DO NOT USE!
+			attribute<Person_BuiltUpKm2> Population_inTot_Density_org   (CompactedDomain) := Population_org / BuiltUp_Total_Area; // DO NOT USE!
+			attribute<Person_BuiltUpKm2> Population_inRes_Density       (CompactedDomain) := min_elem_alldefined(Population_inRes_Density_org, maxmax_saturation);
+			attribute<Person_BuiltUpKm2> Population_inTot_Density       (CompactedDomain) := min_elem_alldefined(Population_inTot_Density_org, maxmax_saturation);
+
+			parameter<Person_BuiltUpKm2> maxmax_saturation                                := ModelParameters/Pop_maxmax_saturation;
+		}
+		
+		/// BUILT UP
+		attribute<float32>           Builtup_Total_Share            (CompactedDomain) := impl/BuiltUp_Total_Share_domain[CompactedDomain/org_rel];
+		attribute<BuiltUpKm2>        BuiltUp_Total_Area             (CompactedDomain) := impl/BuiltUp_Total_Area_domain[CompactedDomain/org_rel]; 
+		attribute<BuiltUpKm2>        BuiltUp_NonResidential_Area    (CompactedDomain) := impl/BuiltUp_NonResidential_Area_domain[CompactedDomain/org_rel]; 
+		attribute<BuiltUpKm2>        BuiltUp_Residential_Area       (CompactedDomain) := impl/BuiltUp_Residential_Area_domain[CompactedDomain/org_rel]; 
+		attribute<AllShares>         Perc_BuiltUp_Total             (CompactedDomain) := (100f * BuiltUp_Total_Share)[AllShares];
+		
+		/// POPULATION
+		attribute<Person>            Population_base                (CompactedDomain) := Impl/Population_inRes_Density * BuiltUp_Residential_Area;
+		
+		// use nth_element to find a rounding cutoff that makes population an interger version of population_base with the same sum per ClaimRegion
+		attribute<Person>            Population_trunc               (CompactedDomain) := uint32(Population_base)[Person];
+		attribute<Person>            Population_trunc_domain                 (domain) := recollect_by_cond(domain/IsCompactedDomain, Population_trunc);
+		attribute<Person>            Population_frac_rank           (CompactedDomain) := float32(Population_trunc + 1f) - Population_base;
+		attribute<Person>            RegionalDeficit                    (ClaimRegion) := sum(Population_base, region_rel) - float32(sum(Population_trunc, region_rel));
+		attribute<Person>            Max_rank                           (ClaimRegion) := nth_element(Population_frac_rank, uint32(RegionalDeficit), region_rel);
+		
+		attribute<NrPerson>          Population                     (CompactedDomain) := Population_trunc[NrPerson] + int32(Population_frac_rank < Max_rank[region_rel])[NrPerson];
+		attribute<Person_Km2>        Population_TotalLand_Density   (CompactedDomain) := (Population[Person] / CompactedDomain/area);
+		attribute<Person_BuiltUpKm2> Population_inRes_Density       (CompactedDomain) := Population[Person] / BuiltUp_Residential_Area; // DO NOT USE!
+		
+		
+		container PopulationDensity_8dir  := Preprocessing/Population_Neighbourhoods/Create_8dir_T((Population_Trunc_domain / domain/area)[float64]);
+	}
+
+	unit<uint32> ClaimRegion := FunctionalAreas;
+
+	container Claim
+	{
+		container Builtup    := Preprocessing/Claims_BuiltUp;
+		container Population := Preprocessing/Claims_Population;
+	}
+
+	container Allocate_Builtup := 
+		for_each_ne(
+			ProjectionYears/name 
+			,	'Allocate_Builtup_T('
+					+quote(ProjectionYears/name)+                              // (0) Year
+					','+quote(ProjectionYears/prev_name)+                      // (1) PrevYear
+					', Allocate_Builtup/'+ProjectionYears/prevStateName+       // (2) State builtup of previous period
+					', Allocate_Population/'+ProjectionYears/prevStateName+    // (3) State population of previous period (population_allocation container)
+					', Claim/Builtup/'+ProjectionYears/name+                   // (4) Expected amount of builtup per region in km2
+				')'
+		) 
+	{
+		container InitialState:= Future/InitialState;
+	}
+		
+	container Allocate_Population := 
+		for_each_ne(
+			ProjectionYears/name 
+			,	'Allocate_Population_T('
+					+quote(ProjectionYears/name)+
+					','+quote(ProjectionYears/prev_name)+
+					','+ProjectionYears/prevStateName+
+					', Allocate_Builtup/'+ProjectionYears/name+'/NewState'
+					', Claim/Population/'+ProjectionYears/name+
+				')'
+		) 
+	{
+		container InitialState:= Future/InitialState;
+	}
+	
+	#include<Indicators.dms>
+	#include<Allocate_Builtup_T.dms>
+	#include<Allocate_Population_T.dms>
+}

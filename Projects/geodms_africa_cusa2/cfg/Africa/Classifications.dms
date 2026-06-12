@@ -1,0 +1,244 @@
+container Classifications : using = "units"
+{
+	// parameter<string> FilesPath := '%ProjDir%/Classification/Reference';
+	unit<uint32> RoadClasses := range(uint8, 1, 12)
+	{
+		attribute<km_hr> Speed : [130, 100, 90, 80, 70, 60, 50, 30, 10, 5, 5];
+	}
+	
+	unit<uint8> OSM_Countries: NrOfRows = 55
+	{
+		unit<UInt32> Elements := range(uint32, 0, nrAttr * #.)
+		{
+			attribute<String> Text: [
+			// Name                                        ,Use
+			 'Algeria'                                     , '',
+			 'Angola'                                      , '',
+			 'Benin'                                       , '',
+			 'Botswana'                                    , '',
+			 'Burkina Faso'                                , 'TRUE',
+			 'Burundi'                                     , '',
+			 'Cameroon'                                    , '',
+			 'Canary Islands'                              , '',
+			 'Cape Verde'                                  , '',
+			 'Central African Republic'                    , '',
+			 'Chad'                                        , '',
+			 'Comores'                                     , '',
+			 'Congo Brazzaville'                           , '',
+			 'Congo Democratic Republic'                   , '',
+			 'Djibouti'                                    , '',
+			 'Egypt'                                       , '',
+			 'Equatorial Guinea'                           , '',
+			 'Eritrea'                                     , '',
+			 'Ethiopia'                                    , '',
+			 'Gabon'                                       , '',
+			 'Ghana'                                       , '',
+			 'Guinea'                                      , '',
+			 'Guinea-Bissau'                               , '',
+			 'Ivory Coast'                                 , 'TRUE',
+			 'Kenya'                                       , '',
+			 'Lesotho'                                     , '',
+			 'Liberia'                                     , '',
+			 'Libya'                                       , '',
+			 'Madagascar'                                  , '',
+			 'Malawi'                                      , '',
+			 'Mali'                                        , '',
+			 'Mauritania'                                  , '',
+			 'Mauritius'                                   , '',
+			 'Morocco'                                     , '',
+			 'Mozambique'                                  , '',
+			 'Namibia'                                     , '',
+			 'Niger'                                       , '',
+			 'Nigeria'                                     , '',
+			 'Rwanda'                                      , '',
+			 'Saint Helena Ascension and Tristan da Cunha' , '',
+			 'Sao Tome and Principe'                       , '',
+			 'Senegal and Gambia'                          , '',
+			 'Seychelles'                                  , '',
+			 'Sierra Leone'                                , '',
+			 'Somalia'                                     , '',
+			 'South Africa'                                , '',
+			 'South Sudan'                                 , '',
+			 'Sudan'                                       , '',
+			 'Swaziland'                                   , '',
+			 'Tanzania'                                    , '',
+			 'Togo'                                        , '',
+			 'Tunisia'                                     , '',
+			 'Uganda'                                      , '',
+			 'Zambia'                                      , '',
+			 'Zimbabwe'                                    , ''
+			];
+		}
+		
+	
+		attribute<string> label := Elements/Text[value(uInt32(id(.))* nrAttr + 0, Elements)];
+		attribute<string> Use        := Elements/Text[value(uInt32(id(.))* nrAttr + 1, Elements)];
+		attribute<bool>   IsToBeUsed := bool(Use);
+		attribute<string> name  := AsItemName(label);
+		attribute<string> path_name  := replace(label, ' ', '-');
+		
+		attribute<string> path  := '%CUSA2_DataDir%/OSM/20230111/'+path_name+'-latest-free.shp/gis_osm_roads_free_1';
+		
+		parameter<uint32> nrAttr := 2;
+		
+		unit<uint8> sub := select_with_attr_by_cond(., IsToBeUsed);
+	}
+	
+	
+	
+	unit<uint8> Services : = range(uint8, 0b, 2b)
+	{
+		attribute<string>            Name           := string(Matrix/Values[((id(.) * NrAttributes)+0b)[Matrix]]);
+		attribute<string>            Label          := string(Matrix/Values[((id(.) * NrAttributes)+1b)[Matrix]]);
+		
+		unit<uint8> Matrix: = range(uint8, 0b, uint8(#.) * NrAttributes)
+		{
+			attribute<string> Values: 
+			[
+				'Edu',    'Education',
+				'Health', 'Healthcenters'
+			];
+		}
+	
+		parameter<uint8> NrAttributes: = 2b;
+	}
+	
+/*	unit<uint8> Copernicus: = range(uint8, uint8(0), uint8(24)) //Copernicus version 1 used to be 20
+	{
+		attribute<uint8>     Class       := uint8(Matrix/Values[((id(.) * NrAttributes)+uint8(0))[Matrix]]);
+		attribute<string>    Name        := string(Matrix/Values[((id(.) * NrAttributes)+uint8(1))[Matrix]]);
+		attribute<uint8>     R           := uint8(Matrix/Values[((id(.) * NrAttributes)+uint8(2))[Matrix]]);
+		attribute<uint8>     G           := uint8(Matrix/Values[((id(.) * NrAttributes)+uint8(3))[Matrix]]);
+		attribute<uint8>     B           := uint8(Matrix/Values[((id(.) * NrAttributes)+uint8(4))[Matrix]]);
+		attribute<uint32>    Color       := rgb(R, G, B), DialogType = "BrushColor";
+		attribute<ModelType> ModelTypeId := rlookup(Matrix/Values[((id(.) * NrAttributes)+uint8(5))[Matrix]], ModelType/Name);
+		attribute<string>    Label       := Name, DialogType = "LabelText";
+		
+		parameter<uint8> NrAttributes: = 6b;
+		
+		unit<uint8> Matrix: = range(uint8, 0b, uint8(#Copernicus) * NrAttributes)
+		{
+			attribute<string> Values : [
+				//'Class', 'Name', 									'R', 	'G', 	'B', 	'Modeltype', 
+				'0', 		'no_data', 								'40', 	'40', 	'40', 	'NoData', 
+				'111', 		'evergreen_needleleaf_closed_forest', 	'0', 	'130', 	'0', 	'MatureForest', 
+				'112', 		'evergreen_broadleaf_closed_forest', 	'0', 	'153', 	'0', 	'MatureForest', 
+				'113', 		'deciduous_needleleaf_closed_forest', 	'0', 	'179', 	'0', 	'MatureForest', 
+				'114', 		'deciduous_broadleaf_closed_forest', 	'0', 	'204', 	'0', 	'MatureForest', 
+				'115', 		'mixed_closed_forest', 					'78', 	'117', 	'31', 	'MatureForest', 
+				'116', 		'unknown_closed_forest', 				'0', 	'120', 	'0', 	'MatureForest', 
+				'121', 		'evergreen_needleleaf_open_forest', 	'112', 	'153', 	'0', 	'MatureForest', 
+				'122', 		'evergreen_broadleaf_open_forest', 		'131', 	'179', 	'0', 	'MatureForest', 
+				'123', 		'deciduous_needleleaf_open_forest', 	'150', 	'204', 	'0', 	'MatureForest', 
+				'124', 		'deciduous_broadleaf_open_forest', 		'169', 	'230', 	'0', 	'MatureForest', 
+				'125', 		'mixed_open_forest', 					'146', 	'153', 	'0', 	'MatureForest', 
+				'126', 		'unknown_open_forest', 					'100', 	'140', 	'0', 	'MatureForest', 
+				'20', 		'shrubs', 								'254', 	'187', 	'34', 	'Shrubs', 
+				'30', 		'herbaceous_vegetation', 				'254', 	'254', 	'76', 	'Herbaceous', 
+				'40', 		'cropland', 							'240', 	'150', 	'254', 	'Crops', 
+				'50', 		'urban', 								'254', 	'0', 	'0', 	'Urban', 
+				'60', 		'bare_or_sparse_vegetation', 			'220', 	'220', 	'220', 	'Bare', 
+				'70', 		'snow_and_ice', 						'254', 	'254', 	'254', 	'Snow', 
+				'80', 		'permanent_water_bodies', 				'25', 	'25', 	'254', 	'Water', 
+				'90', 		'herbaceous_wetland', 					'0', 	'150', 	'160', 	'Wetland', 
+				'100', 		'moss_lichen', 							'250', 	'230', 	'160', 	'Wetland', 
+				'200', 		'open_sea', 							'0', 	'0', 	'128', 	'Water', 
+				'255', 		'not_classified', 						'0', 	'0', 	'0', 	'Null'
+			];
+		}
+		
+	}
+	*/
+
+/*	unit<uint8> ModelType: = range(uint8, 0b, 12b)
+	{
+		attribute<uint8>            Class           := uint8(Matrix/Values[((id(.) * NrAttributes)+0b)[Matrix]]);
+		attribute<string>           Name            := string(Matrix/Values[((id(.) * NrAttributes)+uint8(1))[Matrix]]);
+		attribute<bool>             Active          := bool(Matrix/Values[((id(.) * NrAttributes)+uint8(2))[Matrix]]);
+		attribute<string>           BaseMapClaimDef := string(Matrix/Values[((id(.) * NrAttributes)+uint8(3))[Matrix]]);
+		attribute<string>           ModelClaimDef   := string(Matrix/Values[((id(.) * NrAttributes)+uint8(4))[Matrix]]);
+		attribute<string>           Label           := Name, DialogType = "LabelText";
+		attribute<uint8>            R               := uint8(Matrix/Values[((id(.) * NrAttributes)+uint8(5))[Matrix]]);
+		attribute<uint8>            G               := uint8(Matrix/Values[((id(.) * NrAttributes)+uint8(6))[Matrix]]);
+		attribute<uint8>            B               := uint8(Matrix/Values[((id(.) * NrAttributes)+uint8(7))[Matrix]]);
+		attribute<uint32>           Color           := rgb(R, G, B), DialogType = "BrushColor";
+		// attribute<ActiveModelTypes>	ActiveLUref     := invert(ActiveModelTypes/org_rel);
+		
+		container ParamConstants: = for_each_nedv(Name, 'uint8('+ string(Class) +')', void, uint8);
+		
+		parameter<uint8> NrAttributes: = 8b;
+		
+		unit<uint8> Matrix: = range(uint8, 0b, uint8(#ModelType) * NrAttributes)
+		{
+			attribute<string> Values: [
+				//'Class', 	'Name', 		'Active', 	'BaseMapClaimDef', 	'ModelClaimDef', 	'R', 	'G', 	'B', 
+				'0', 		'NoData', 			'0', 	'Countries', 	null,		 	'51', 	'51', 	'51', 
+				'1', 		'Urban', 			'1', 	'Countries', 	'Countries', 	'254', 	'0', 	'0', 
+				'2', 		'Crops', 			'1', 	'Riverbasins', 	'Countries', 	'254', 	'254', 	'102', 
+				'3', 		'PermanentCrops', 	'1', 	'Riverbasins', 	'Countries', 	'254', 	'165', 	'0', 
+				'4', 		'MatureForest',		'1', 	'Countries', 	'Countries', 	'0', 	'130', 	'0', 
+				'5', 		'YoungForest',		'1', 	'Countries', 	'Countries', 	'0', 	'160', 	'0', 
+				'6', 		'Shrubs', 			'1', 	'Countries', 	null, 			'153', 	'204', 	'51', 
+				'7', 		'Herbaceous', 		'1', 	'Countries', 	null,		 	'153', 	'166', 	'51', 
+				'8', 		'Bare', 			'0', 	'Countries', 	null,		 	'254', 	'254', 	'203', 
+				'9', 		'Snow', 			'0', 	'Countries', 	null,		 	'254', 	'254', 	'254', 
+				'10', 		'Wetland', 			'0', 	'Countries', 	null,		 	'0', 	'150', 	'160', 
+				'11', 		'Water', 			'0', 	'Countries', 	null,		 	'25', 	'25', 	'254' 
+			];
+		}
+	}
+*/
+	unit<uint32> SpeedStats := range(uint32, 0, 33)
+	{
+		attribute<string>  Name            := string(Matrix/Values[((id(.) * NrAttributes)+0)[Matrix]]);
+		attribute<string>  RoadClass       := string(Matrix/Values[((id(.) * NrAttributes)+1)[Matrix]]);
+		attribute<string>  OSM_Surface     := string(Matrix/Values[((id(.) * NrAttributes)+2)[Matrix]]);
+		attribute<uint32>  Frequency       := uint32(Matrix/Values[((id(.) * NrAttributes)+3)[Matrix]]);
+		attribute<km_hr>   Mean_Speed      := Matrix/Values[((id(.) * NrAttributes)+4)[Matrix]][km_hr];
+		
+		parameter<km_hr>   Connector_Speed := Sum(Mean_Speed * float64(Name = 'tertiary_x_')) / 1.2d; //@CJ 220331 wat is deze 1.2?
+		
+		//matrix below: speed estimates from OSM depending on road class and road surface
+		//averaged from OSM observations by Konstantin Rosina, Fall 2018
+		unit<uint32> Matrix := range(uint32, 0, #SpeedStats * NrAttributes)
+		{
+			attribute<string> Values: [
+			//'id',						'road_class',		surface',	'frequency','mean_speed',
+			'motorway_x_',				'motorway',			'',			'3476',		'105.149597238',
+			'motorway_x_asphalt',		'motorway',			'asphalt',	'5787',		'104.644893727',
+			'motorway_x_paved',			'motorway',			'paved',	'269',		'108.550185874',
+			'motorway_link_x_',			'motorway_link',	'',			'802',		'54.0710723192',
+			'motorway_link_x_asphalt',	'motorway_link',	'asphalt',	'1708',		'49.9004683841',
+			'primary_x_',				'primary',			'',			'9806',		'63.2328166429',
+			'primary_x_asphalt',		'primary',			'asphalt',	'20633',	'59.284689575',
+			'primary_x_gravel',			'primary',			'gravel',	'136',		'89.625',
+			'primary_x_paved',			'primary',			'paved',	'499',		'64.370741483',
+			'primary_x_unpaved',		'primary',			'unpaved',	'184',		'84.5108695652',
+			'primary_link_x_',			'primary_link',		'',			'482',		'41.6701244813',
+			'primary_link_x_asphalt',	'primary_link',		'asphalt',	'561',		'39.5989304813',
+			'secondary_x_',				'secondary',		'',			'8410',		'57.2280618312',
+			'secondary_x_asphalt',		'secondary',		'asphalt',	'10878',	'55.009836367',
+			'secondary_x_gravel',		'secondary',		'gravel',	'264',		'84.7765151515',
+			'secondary_x_paved',		'secondary',		'paved',	'591',		'60.3384094755',
+			'secondary_x_unpaved',		'secondary',		'unpaved',	'277',		'66.7220216606',
+			'secondary_link_x_',		'secondary_link',	'',			'406',		'37.3645320197',
+			'secondary_link_x_asphalt',	'secondary_link',	'asphalt',	'405',		'39.5432098765',
+			'tertiary_x_',				'tertiary',			'',			'5121',		'50.4046084749',
+			'tertiary_x_asphalt',		'tertiary',			'asphalt',	'7565',		'53.9994712492',
+			'tertiary_x_compacted',		'tertiary',			'compacted','203',		'55.2216748768',
+			'tertiary_x_gravel',		'tertiary',			'gravel',	'433',		'75.3741339492',
+			'tertiary_x_ground',		'tertiary',			'ground',	'129',		'40.4108527132',
+			'tertiary_x_paved',			'tertiary',			'paved',	'605',		'58.0958677686',
+			'tertiary_x_unpaved',		'tertiary',			'unpaved',	'576',		'56.9097222222',
+			'tertiary_link_x_',			'tertiary_link',	'',			'292',		'32.7054794521',
+			'tertiary_link_x_asphalt',	'tertiary_link',	'asphalt',	'172',		'37.9651162791',
+			'trunk_x_',					'trunk',			'',			'6044',		'75.2339510258',
+			'trunk_x_asphalt',			'trunk',			'asphalt',	'15331',	'71.296523384',
+			'trunk_x_paved',			'trunk',			'paved',	'1154',		'83.0155979203',
+			'trunk_link_x_',			'trunk_link',		'',			'582',		'46.3505154639',
+			'trunk_link_x_asphalt',		'trunk_link',		'asphalt',	'927',		'52.1790722762'
+			];
+		}
+		parameter<uint32> NrAttributes := 5;
+	}
+}

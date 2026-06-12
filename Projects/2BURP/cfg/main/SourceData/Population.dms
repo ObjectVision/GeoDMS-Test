@@ -1,0 +1,67 @@
+container Population  : using = "units;geography;classifications;sourcedata/regionalunits"
+{
+	container Import_PerYear := 
+		for_each_ndvat(
+			GHS_years/name
+			, domain
+			, float64
+			, '%ToBURPDataDir%/Population/GHS_POP_E'+string(GHS_years/year)+'_GLOBE_R2023A_4326_'+string(ModelParameters/WGS_Gridsize)+'ss_V1_0.tif'
+			,'gdal.grid'
+		), URL = "https://human-settlement.emergency.copernicus.eu/download.php?ds=pop";
+		
+	//adhoc
+	unit<uint32> histogram_population := unique(int32(Import_PerYear/Y2020))
+	{
+		attribute<uint32> count := pcount(rlookup(int32(Import_PerYear/Y2020), values)); 
+	}
+
+	container PerYear_CorrectForNoData := 
+		for_each_nedv(
+			GHS_years/name
+			, 'Import_PerYear/'+GHS_years/name+' > 0d ? Import_PerYear/'+GHS_years/name+' : 0d'
+			, domain
+			, float64
+		);
+		
+	container PerYear := // Correct for population without no built-up area
+		for_each_nedv(
+			GHS_years/name
+			, 'Builtup/Total/'+GHS_years/name+' > 0[m2] ? PerYear_CorrectForNoData/'+GHS_years/name+' : 0d'
+			, domain
+			, float64
+		)
+	{
+		//adhoc
+		attribute<bool> NoBuiltUp_butPopulation (domain) := BuiltUp/Total/Y2020 == 0[m2] && PerYear_CorrectForNoData/Y2020 > 0d;
+		attribute<bool> BuiltUp_wihtPopulation (domain) := BuiltUp/Total/Y2020 > 0[m2] && PerYear_CorrectForNoData/Y2020 > 0d;
+		
+		parameter<float32> Pop_with_no_BU  := sum(float32(NoBuiltUp_butPopulation) * float32(PerYear_CorrectForNoData/Y2020));
+		
+	}
+	
+	unit<uint8> Population_OnLand_Density_Histogram := Pop_Bins
+	{
+		container PerYear_classes := 
+			for_each_nedv(
+				GHS_years/name
+				, 'pcount(Classify(float32(PerYear/'+GHS_years/name+'[CompactedDomain/domain_rel]), ClassBreaks))'
+				, .
+				, uint32
+			)
+		{
+			attribute<string>  Label     (..) := ../label;
+		}
+	}
+	
+	container Total_sums_5km:=  for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot5km/potRange/flat2)',  domain, float32);
+	
+	container Pots_lin_5km:=  for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot5km/potRange/RelWeight_ns)',  domain, float32);
+	container Pots_sqr_5km:=  for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot5km/potRange/RelWeightSqrt_ns)',  domain, float32);
+	container Pots_lin_10km:= for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot10km/potRange/RelWeight_ns)', domain, float32);
+	container Pots_sqr_10km:= for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot10km/potRange/RelWeightSqrt_ns)', domain, float32);
+	container Pots_lin_20km:= for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot20km/potRange/RelWeight_ns)', domain, float32);
+	container Pots_sqr_20km:= for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot20km/potRange/RelWeightSqrt_ns)', domain, float32);
+	container Pots_lin_40km:= for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot40km/potRange/RelWeight_ns)', domain, float32);
+	container Pots_sqr_40km:= for_each_nedv(GHS_years/name, 'potential(float32(PerYear/'+GHS_years/name+'), Distmatrices/Impl/pot40km/potRange/RelWeightSqrt_ns)', domain, float32);
+	
+}

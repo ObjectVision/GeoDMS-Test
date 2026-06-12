@@ -1,0 +1,461 @@
+container Scholen
+{
+	unit<uint32> Combinatie := union_unit(Basisscholen/y2022/basisscholen_okt_2022_xy, Voortgezet_onderwijs/y2022/scholen_voortgezet_onderwijs_okt2022, MBO/vestigingen_2021/MBO_vestigingen_okt2021, HO/vestigingen_2021/HO_vestigingen_okt2021)
+	{
+		attribute<rdc>   geometry := union_data(., 
+										Basisscholen/y2022/basisscholen_okt_2022_xy/geometry
+										, Voortgezet_onderwijs/y2022/scholen_voortgezet_onderwijs_okt2022/geometry
+										, MBO/vestigingen_2021/MBO_vestigingen_okt2021/geometry
+										, HO/vestigingen_2021/HO_vestigingen_okt2021/geometry
+									);
+		attribute<string> Name    := union_data(., 
+										'PO_'+Basisscholen/y2022/basisscholen_okt_2022_xy/Name
+										, 'VO_'+Voortgezet_onderwijs/y2022/scholen_voortgezet_onderwijs_okt2022/Name
+										, 'MBO_'+MBO/vestigingen_2021/MBO_vestigingen_okt2021/Name
+										, 'HO_'+HO/vestigingen_2021/HO_vestigingen_okt2021/Name
+									);
+		attribute<uint32> Nr_scholen              := const(1,.);
+	}
+	
+	container Basisscholen
+	{
+		unit<uint32> y2021
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/basisscholen_2021.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> basisscholen_okt_2021_xy
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(BS_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+		unit<uint32> y2022
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/basisscholen_okt_2022.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> basisscholen_okt_2022_xy
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(BS_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+	}
+	
+	
+	container Voortgezet_onderwijs
+	{
+		unit<uint32> y2012
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/scholen_voortgezet_onderwijs_2012.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> scholen_voortgezet_onderwijs_okt2012
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(VO_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_BJ_HAVO_VWO:= select_with_attr_by_cond(.,BJ_HAVO_VWO == 1i);
+				unit<uint32> sub_BJ_PRO_VBO := select_with_attr_by_cond(.,BJ_PRO_VBO == 1i);
+			}
+		}
+		
+		unit<uint32> y2012_analyse_2024
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/scholen_VO_2012_analyse_2024.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> scholen_VO_okt2012_analyse_2024
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(VO_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_BJ_HAVO_VWO:= select_with_attr_by_cond(.,BJ_HAVO_VWO == 1i);
+				unit<uint32> sub_BJ_VBO := select_with_attr_by_cond(.,BJ_PRO_VBO == 1i);
+			}
+		}
+	
+		unit<uint32> y2021
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/scholen_voortgezet_onderwijs_2021.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> scholen_voortgezet_onderwijs_okt2021
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point               := geometry;
+				attribute<string>               Name                := string(VO_ID);
+				attribute<uint32>               Nr_scholen     := const(1,.);
+				attribute<uint32>               Nr_items_of_interest     := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_BJ_HAVO_VWO:= select_with_attr_by_cond(.,BJ_HAVO_VWO == 1i);
+				unit<uint32> sub_BJ_PRO_VBO := select_with_attr_by_cond(.,BJ_PRO_VBO == 1i);
+			}
+		}
+
+	
+		unit<uint32> y2021_analyse_verdwenen_oostburg
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/scholen_voortgezet_onderwijs_2021_analyse_verdwenen_oostburg.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> scholen_voortgezet_onderwijs_okt2021_analyse_verdwenen_oostburg
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(VO_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_BJ_HAVO_VWO:= select_with_attr_by_cond(.,BJ_HAVO_VWO == 1i);
+				unit<uint32> sub_BJ_PRO_VBO := select_with_attr_by_cond(.,BJ_PRO_VBO == 1i);
+			}
+		}
+		
+		unit<uint32> y2022
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/scholen_voortgezet_onderwijs_2022.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		// ,   SyncMode		= "None"
+		{
+			unit<uint32> scholen_voortgezet_onderwijs_okt2022
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(VO_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_BJ_HAVO_VWO:= select_with_attr_by_cond(.,BJ_HAVO_VWO == 1i);
+				unit<uint32> sub_BJ_PRO_VBO := select_with_attr_by_cond(.,BJ_PRO_VBO == 1i);
+			}
+		}
+		
+		unit<uint32> y2022_analyse_2024
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/scholen_VO_2022_analyse_2024.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		// ,   SyncMode		= "None"
+		{
+			unit<uint32> scholen_VO_okt2022_analyse_2024
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(VO_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_BJ_HAVO_VWO:= select_with_attr_by_cond(.,BJ_HAVO_VWO == 1i);
+				unit<uint32> sub_BJ_VBO := select_with_attr_by_cond(.,BJ_PRO_VBO == 1i);
+			}
+		}
+
+		unit<uint32> y1222_BJ_HAVO_VWO_overlap_analyse_2024
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/scholen_VO_OVERLAP_1222_BJ_HAVO_VWO_analyse_2024.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		// ,   SyncMode		= "None"
+		{
+			unit<uint32> scholen_VO_BJ_HAVO_VWO_1222_overlap_analyse_2024
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(VO_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+		unit<uint32> y1222_BJ_VBO_overlap_analyse_2024
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/scholen_VO_OVERLAP_1222_BJ_VBO_analyse_2024.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		// ,   SyncMode		= "None"
+		{
+			unit<uint32> scholen_BJ_VBO_1222_overlap_analyse_2024
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(VO_ID);
+				attribute<uint32>               Nr_scholen              := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_scholen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+	}
+	
+	
+	container MBO
+	{
+		unit<uint32> hoofdvestigingen_2021
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/actieve_MBO_hoofdvest_20211011.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> MBO_hoofdvestigingen_okt2021
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_MBO_HOOFD);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_MBO_hoofdvestigingen_2021:= select_with_attr_by_cond(.,Vervallen == "nee");
+			}
+		}
+
+		unit<uint32> vestigingen_2012
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/actieve_MBO_vest_20121001.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> MBO_vestigingen_okt2012
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_MBO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+		// unit<uint32> vestigingen_2012 
+		// :	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/mbo_20121001.shp"
+		// ,	StorageType     = "gdal.vect"
+		// ,	StorageReadOnly = "True"
+		// {
+			// attribute<rdc>                   geometry;
+			// attribute<rdc>                   point               := geometry;
+			// attribute<string>                Name                := string(ID_MBO_ALL);
+			// attribute<uint32>                Nr_vestigingen      := const(1,.);
+			// attribute<uint32>                Nr_items_of_interest    := Nr_vestigingen;
+			// attribute<RegioUnit_Buurt>       buurt_rel           := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			// attribute<string>                buurtcode           := RegioUnit_Buurt/statcode[buurt_rel];
+			// attribute<string>                buurtnaam           := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			// unit<spoint> domain := ='rdc_'+Gridsize;
+			
+			// attribute<domain>                domain_rel                      := geometry[domain];
+			
+			// parameter<string>                Gridsize                        := ModelParameters/Advanced/Dest_location_scale;
+			
+			// // unit<uint32> HeeftHuisartsenposten := select_with_attr_by_org_rel(.,Count_IsPositive > 0)
+			// // {
+				// // attribute<rdc>    geometry            := domain/point[org_rel];
+				// // attribute<uint32> identificatie       := id(.);
+				// // attribute<string> id_name             := 'dest' + string(identificatie);
+				// // attribute<string> label               := id_name;
+				// // attribute<string> name                := id_name;
+				// // attribute<uint32> nr_huisartsenposten := Count_per_domain;
+			// // } 
+		// }	
+		
+		unit<uint32> vestigingen_1222
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/actieve_MBO_vest_1222.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> MBO_vestigingen_okt1222
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_MBO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+		unit<uint32> vestigingen_2021
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/actieve_MBO_vest_20211011.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> MBO_vestigingen_okt2021
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_MBO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_MBO_vestigingen_2021     := select_with_attr_by_cond(.,Vervallen == "nee");
+				unit<uint32> sub_MBO_vestigingen_2021_kl20:= select_with_attr_by_cond(.,Vervallen == "nee" && ID_MBO_ALLE < 20i);
+			}
+		}
+		
+		unit<uint32> vestigingen_2022
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/actieve_MBO_vest_20221024.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> MBO_vestigingen_okt2022
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_MBO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+	}
+	
+	
+	container HO
+	{
+		unit<uint32> vestigingen_2012
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/actieve_HO_vest_20121001.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> HO_vestigingen_okt2012
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_HO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+		unit<uint32> hoofdvestigingen_2021
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/actieve_HO_hoofdvest_20211011.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> HO_hoofdvestigingen_okt2021
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_HO_HOOFD);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_HO_hoofdvestigingen_2021     := select_with_attr_by_cond(.,Vervallen == "nee");
+			}
+		}
+
+		unit<uint32> vestigingen_2021
+		:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Onderwijs/actieve_HO_vest_20211011.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> HO_vestigingen_okt2021
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_HO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+				
+				unit<uint32> sub_HO_vestigingen_2021     := select_with_attr_by_cond(.,Vervallen == "nee");
+			}
+		}
+		
+		unit<uint32> vestigingen_2022
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/actieve_HO_vest_20221024.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> HO_vestigingen_okt2022
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_HO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+		unit<uint32> vestigingen_1222
+		:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Onderwijs/actieve_HO_vest_1222.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			unit<uint32> HO_vestigingen_okt1222
+			{
+				attribute<geometries/rdc>       geometry;
+				attribute<geometries/rdc>       point                   := geometry;
+				attribute<string>               Name                    := string(ID_HO_ALLE);
+				attribute<uint32>               Nr_vestigingen          := const(1,.);
+				attribute<uint32>               Nr_items_of_interest    := Nr_vestigingen;
+				attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+				attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+				attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+			}
+		}
+		
+		
+		
+	}
+}

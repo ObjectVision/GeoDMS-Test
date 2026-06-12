@@ -1,0 +1,16 @@
+container Duurzaamheid
+{
+	unit<uint8> ScoreK: NrOfRows = 5
+	{
+		attribute<string> name := 'S'+string(id(.));
+	}
+	
+	unit<uint32> BelastingK := /Classifications/BelastingK;
+	unit<uint32> SubsidieK := /Classifications/SubsidieK;
+	
+	attribute<bool> NabijStation       (domain_grid) :=  /SourceData/Omgeving/IsKleinerDan4;
+	attribute<bool> NietNabijStation   (domain_grid) := !NabijStation;
+	attribute<bool> OpSlappeBodem      (domain_grid) := /SourceData/Bodem/DraagkrachtKwel/AndersBouwen;
+	
+	// attribute<bool> IsVerouderd (domain_grid) := mean(/SourceData/Vastgoed/Energielabels/Woningen/CurrValue, /SourceData/Vastgoed/Energielabels/Woningen/domain_grid_rel) > 4[/SourceData/Vastgoed/energielabels/ELabelK]; //D of 'slechter'
+}

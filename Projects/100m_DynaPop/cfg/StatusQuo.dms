@@ -1,0 +1,203 @@
+container EuClueScanner
+:	IntegrityCheck = "GeoDmsVersion() >= 7.022"  // 7.022 needed for improved poly2grid function
+//:	IntegrityCheck = "GeoDmsVersion() >= 7.015"  // 7.015 needed for adaptations to the code-breaking new reprojections
+//:	IntegrityCheck = "GeoDmsVersion() >= 7.005"  // 7.005 needed for derivation of the platform specific %OdbcExcelDriver% placeHolder
+//:	IntegrityCheck = "GeoDmsVersion() >= 6.0309" // 6.031 required for array-based FullPathName
+//:	IntegrityCheck = "GeoDmsVersion() >= 6.0169" // required for d_alloc on checking that Suitabilities are Int32 for fixing issue 100
+//	"&& (GeoDmsVersion() < 6.0189 || GeoDmsVersion() > 6.0229)" // versions 6.018..6.022 seem to have a bug in exporting .dbf files. Is fixed in 6.023
+//:	IntegrityCheck = "GeoDmsVersion() >= 6.016"  // required for tile support of Unique operator used in the renumbering of ClaimRegions
+//:	IntegrityCheck = "GeoDmsVersion() >= 6.014"  // required for writing tiffs (as in LisFlood indicator production)
+//:	IntegrityCheck = "GeoDmsVersion() >= 6.012"  // required for reading/writing numeric arrays from/to str storage managers (for binary files).
+//:	IntegrityCheck = "GeoDmsVersion() >= 6.011"
+
+,	FreeData = "True"
+{
+	container ConfigSettings : IsHidden = "True"
+	{
+		
+		container Overridable: Descr = "From 6.069 on only this container will be overridable with Tools->Options->ConfigSettings that sets user/machine specific overrides in the registry"
+		{
+			parameter<String> RunRegions: [ 'JrcRegion' ]; // @USERINPUT: Nuts1 or JrcRegion
+			// parameter<String> SourceDataProjDir: ['%SourceDataDir%/RegressionTests/EuClueScanner'];
+			parameter<String> SourceDataProjDir: ['%SourceDataDir%'];
+		}
+		
+		// driver name is different on x64, after installing new x64 drivers (incl related SP1), see http://www.mantis.objectvision.nl/view.php?id=249
+		parameter<String> OdbcExcelDriver: Expr = "(GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'"; 
+		parameter<String> OdbcTxtDriver:   Expr = "(GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'"; 
+		
+		container Tools
+		{
+			parameter<Int32> NrGroups: [ 1 ]; // 1 for Zoom tools; 2 for additional selection tools; and 3 for addtional edit tools.
+		}
+	}
+	
+	container t810_ValLuisa_Czech_LU_POP
+	{
+		unit<WPoint> domainGrid := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/domainGrid;
+
+		container LU
+		{
+			// attribute<Classifications/LU/ViewType> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050.tif";
+			attribute<Classifications/LU/ViewType> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/EUCS_100m/Reference/Reference21_211001/Czechia/P2050.tif";
+			attribute<Classifications/LU/ViewType> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/ClippedLandUseVT;
+			
+			attribute<bool> test (domainGrid) := calculated == recorded;
+			parameter<bool> all := all(test);
+		}
+		
+		container POP
+		{
+			// attribute<Int32> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050_Qi.tif";
+			attribute<Int32> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/EUCS_100m/Reference/Reference21_211001/Czechia/P2050_Qi.tif";
+			attribute<Int32> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi ;
+			
+			attribute<bool> test (domainGrid) := MakeDefined(calculated, int32(0)) == MakeDefined(recorded, int32(0));
+			parameter<bool> all := all(test);
+		}
+
+		parameter<string> result := (LU/all && POP/all)  ? 'OK' : 'False';
+
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result_html := 
+			'<description>Calculate the LandUse & Population for Czechia in 2050, EuClueScanner, 100m_DynaPop, revision: 13287</description>'+
+			'<result>'+ result + '</result>'
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t810_ValLuisa_Czech_LU_POP.txt'";
+	}
+
+	#include <Units.dms>
+	#include <Geography.dms>
+	#include <Classifications.dms>
+
+	#include <LandUseData.dms>
+	#include <DataPreparation.dms>
+
+	#include <MetaData.dms>
+	
+	/*container FactorData: //is this container necesary anymore? only 1km factors are loaded here. CJ 22 Apr 2013
+			Expr = 
+				"for_each_ndvndacu((MetaData/Factors/Is100m || !IsDefined(MetaData/Factors/EuFileName)) ? '' : MetaData/Factors/Name, "
+					"Geography/Albers1kmGrid, "
+					"Units, MetaData/Factors/ValuesUnit2,"
+					"MetaData/Factors/Descr, "
+					"MakeDefined('%sourceDataProjDir%/'+MetaData/Factors/EuFileName+'.tif', ''),"
+					"MetaData/Factors/Cdf2,"
+					"MetaData/Factors/url2"
+				")"
+	{
+		// f(c) = [1+exp(a+b.LN(c/60)] ^-1 , being a = -6.899 and b = 2.326  (note that we are dividing the variable c by 60 in order to convert it to minutes).
+//		attribute<Float32> AccessGeursVanEck(Geography/Albers1kmGrid): Expr = "Float32(1) / (Float32(1)+exp(Float32(-6.899) + Float32(2.326) * log(Access1_06M / value(60, Units/sec))))"; // factor 70
+	}
+	*/		
+	#include <JrcFactorDataTempl.dms>
+
+	//#include <ShapeData.dms> // moved to DataPreparation
+	//container JrcFactorData: Expr = "JrcFactorDataTempl(Geography/Lambert100mGrid, Parameters/PeriodSet/result/BaseYearCorineDataFileName)"; // moved to within runzone-specific context
+
+	#include <Parameters.dms>
+
+	container LandUseModels: Using = "Units;Geography;Classifications", isHidden = "True"
+	{
+		#include <ModelTraits.dms>
+		#include <DynaClueTimeStep100.dms>
+		
+		#include <JrcClueWrap.dms>
+	}
+	#include <Runs.dms>
+	container CompareResultsContainer;
+	#include <GenerateEU.dms>
+	#include <IndicatorData.dms>
+	container Indicators
+	{
+		parameter<string> LandUseDirname: 		Expr = "GenerateContainer/MozaikLandUse/impl/DirName"; // decoupled mozaiking from indicator calculations 
+		parameter<string> PopulationDirname:	Expr = "GenerateContainer/MozaikPopulation/impl/DirName"; // decoupled mozaiking from indicator calculations 
+		
+		unit<UInt16> Periods: Expr = "Parameters/PeriodSet/result";
+		unit<UInt16> Lustrum:   Expr = "Periods/Lustrum";
+		unit<UInt16> Decennium: Expr = "Periods/Decennium";
+		
+		container LandUseGridPerYearVT: Expr = 
+			"for_each_ndva("
+				"Periods/Name, "
+				"Geography/Lambert100mGrid, "
+				"Classifications/LU/ViewType, "
+				"LandUseDirname+'/LandUseVT_'+Periods/YearStr+'.tif'"
+			")";
+		unit<UInt32> domain: Expr = "='select_with_org_rel(IsDefined(LandUseGridperYearVT/'+First(Periods/Name)+'))'"
+			,	DialogType = "Map"
+			,	DialogData = "BasisGrid"
+		{
+			attribute<Geography/Lambert100mGrid> Grid_rel(.): Expr = "org_rel";
+			attribute<.> BasisGrid(Geography/Lambert100mGrid): Expr = "invert(org_rel)", FreeData = "True";
+		}
+
+		container LandUsePerYearVT: Expr =
+			"for_each_nedv("
+				"Periods/Name, "
+				"'LandUseGridPerYearVT/'+Periods/Name+'[domain/org_rel]', "
+				"domain, "
+				"Classifications/LU/ViewType"
+			")";
+		Container AggLUPerYear: 		Expr = 	"for_each_ne(Periods/Name, 'AggrLUGrids('+quote(Periods/Name)+',LandUseGridPerYearVT/'+Periods/Name+')')" {
+			parameter<bool> Trigger: expr = "True", ExplicitSuppliers = "= AsList(Periods/Name+'/HaPerClass',';')";
+		}
+		container PopulationPerYear: Expr = 
+			"for_each_ndva("
+				"Periods/Name, "
+				"Geography/Lambert100mGrid, "
+				"int32, "
+				"PopulationDirname+'/Qi_'+Periods/YearStr+'.tif'"
+			")";
+		Container AggPopPerYear: 		Expr = 
+			"for_each_nedva("
+				"Periods/Name, "
+				"'sum(PopulationPerYear/'+Periods/Name+', Geography/Lambert100mGrid/m1000_rel)', "
+				"Geography/LambertEA/m1000, "
+				"int32, "
+				"PopulationDirname+'/1km/Qi_'+Periods/YearStr+'.tif'"
+			")";
+		container LandUseGridPerYearMT: Expr = 
+			"for_each_nedv("
+				"Periods/Name, "
+				"'Classifications/LU/ViewType/MT[LandUseGridPerYearVT/'+Periods/Name+']',"
+				"Geography/Lambert100mGrid, "
+				"Classifications/LU/ModelType "
+			")";
+		container LandUsePerYearMT: Expr =
+			"for_each_nedv("
+				"Periods/Name, "
+				"'Classifications/LU/ViewType/MT[LandUsePerYearVT/'+Periods/Name+']',"
+				"domain, "
+				"Classifications/LU/ModelType"
+			")";
+		container EU: Expr = 
+			"IndicatorData/EvaluationTemplate100("
+				"Classifications/LU/ModelType, "
+				"Periods, "
+				"Geography/Lambert100mGrid, domain, "
+				"LandUseGridPerYearMT, LandUsePerYearMT, "
+				"JrcFactorData, "
+				"'%LocalDataProjDir%/Indicators',"
+				"Parameters/PopSets/RegionalPopulation/Demands/Qj,"
+				"Geography/Regions/Nuts2,"
+				"JrcFactorData/Nuts2, "
+				"ID(Geography/Regions/Nuts2) "
+			")";
+		
+		Template AggrLUGrids {
+			parameter<string> 								Year;
+			attribute<Classifications/LU/ViewType> 			LandUse 				(Geography/Lambert100mGrid);
+			attribute<Classifications/LU/SimpleViewType> 	SimpleLandUse			(Geography/Lambert100mGrid): 	expr = "Classifications/LU/ViewType/svt_id[LandUse]";
+			attribute<float32> 								ValidPixels				(Geography/LambertEA/m1000): 	expr = "sum(float32(IsDefined(SimpleLandUse)), Geography/Lambert100mGrid/m1000_rel)";
+			container HaPerClass: expr = "for_each_nedva(Classifications/LU/SimpleViewType/Label, 'sum(float32(SimpleLandUse = '+string(id(Classifications/LU/SimpleViewType))+'[Classifications/LU/SimpleViewType]), Geography/Lambert100mGrid/m1000_rel)',"
+				"Geography/LambertEA/m1000, float32, LandUseDirname+'/1km/Ha_'+Classifications/LU/SimpleViewType/Label+'_'+Year+'.tif')";
+	}
+	}
+	#include <ExploreTools.dms>
+	#include <ExportSettings.dms>
+	#include <Templates.dms>
+}

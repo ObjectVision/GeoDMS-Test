@@ -1,0 +1,72 @@
+Template FinalResultsWerken_perTredeT
+{  
+	//
+	parameter<string> SrcRef;
+	parameter<string> AllocSectorType;
+	//
+	
+	parameter<string> StorageRef := '%LocalDataProjDir%/Indicatoren/'+AllocRegioKxVariantKxDensityK_name;
+	
+	container Toevoeging_bruto
+	{
+		attribute<m2footprint> Per_domain0 (domain) := = SrcRef+' * AllocSector/density[AllocSector/V/'+AllocSectorType+']'
+		{
+			attribute<m2footprint> Export (domain_grid) := Per_domain0[domain/BaseMap], StorageName = "= StorageRef+'/Toevoeging_bruto/'+AllocSectorType+'.tif'";
+			attribute<m2footprint> Import (domain_grid) : StorageName = "= StorageRef+'/Toevoeging_bruto/'+AllocSectorType+'.tif'";
+		}
+		
+		attribute<m2footprint> Per_domain (domain) := = iif(ModelParameters/ResultatenOntkoppeld, 'Per_domain0/Import', 'Per_domain0/Export')+'[domain/org_rel]';
+		attribute<m2footprint> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+		attribute<m2footprint> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+	}
+	#include<Verdringing.dms>
+	
+	container Toevoeging_netto
+	{
+		attribute<m2footprint> Per_domain (domain) := Toevoeging_bruto/Per_domain - Verdringing/InMeter2footprint/Per_domain
+		{
+			attribute<m2footprint> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Toevoeging_netto/'+AllocSectorType+'.tif'";
+			attribute<m2footprint> Import (domain_grid) : StorageName = "= StorageRef+'/Toevoeging_netto/'+AllocSectorType+'.tif'";
+		}
+		
+		attribute<m2footprint> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+		attribute<m2footprint> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+	}
+	
+	container Claim_realisatie
+	{
+		attribute<m2footprint>  OrgClaim   (AllocRegio) := ='sum(Analysis/BaseData/Banen_Ruimtebeslag/ClaimsForAlloc/'+AllocSectorType+', Regios/SrcRegio/AllocRegio_rel) * AllocSector/density[AllocSector/V/'+AllocSectorType+']';
+		attribute<m2footprint>  Realisatie (AllocRegio) := Toevoeging_netto/Per_AllocRegio;
+		attribute<float32>      Fractie    (AllocRegio) := Realisatie[float32] / OrgClaim[float32];
+		attribute<m2footprint>  RestClaim  (AllocRegio) := OrgClaim - Realisatie
+		{
+			attribute<m2footprint> Per_AllocRegio0 (AllocRegio0) := RestClaim[invert(AllocRegio/org_rel)];
+		}
+		
+		container Tabel
+		{
+			unit<uint8> Kolom: NrOfRows = 3
+			{
+				attribute<string> name: ['OrgClaim', 'Realisatie', 'RestClaim'];
+				attribute<string> Label := name;
+			}
+			
+			container Result := /Templates/TableComposer(
+				Kolom,
+				AllocRegio,
+				Claim_realisatie,
+				StorageRef+'/Claim_realisatie.csv'
+			);
+		}
+	}
+	
+	container OVBereikbaarheid
+	{
+		attribute<Job_min> Per_domain (domain) := VariantSpecifiek/OVBereikbaarheid/SrcSrc / float32(Verdringing/GeeftVerdringing);
+	}
+	
+	container Suitability
+	{
+		attribute<Eur> Per_domain (domain) := VariantSpecifiek/Kosten/Suitability / float32(Verdringing/GeeftVerdringing);
+	}
+}

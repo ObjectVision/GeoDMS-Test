@@ -1,0 +1,321 @@
+container PostAnalysis : using = "units;geometries"
+{
+/* 	Template Merge_Times_T
+	{
+		container src;
+		unit<uint32> org;
+		unit<uint32> dest;
+		//
+		
+		unit<uint64> Combine_OrgDest        := combine_uint64(org, dest)
+		{
+			attribute<string> OrgName  := org/name[first_rel];
+			attribute<string> DestName := dest/name[second_rel];
+			attribute<string> Label    := OrgName +'_'+DestName, DialogType = "LabelText";
+			
+			attribute<min_f> shortest_avg_traveltime (org) := min(GetAverageTimes/avg_traveltime, first_rel);
+			
+			container GetAverageTimes := 
+				for_each_nedv(
+					ModelParameters/Advanced/MeasureMoments/name
+					, 'rjoin(Label, src/'+ModelParameters/Advanced/MeasureMoments/name+'/ReadCSV/Data/OrgDestName, src/'+ModelParameters/Advanced/MeasureMoments/name+'/ReadCSV/Data/Traveltime)'
+					, Combine_OrgDest
+					, min_f
+				)
+			{
+				attribute<min_f> avg_traveltime (Combine_OrgDest) := ='add('+AsItemList('IsDefined('+ModelParameters/Advanced/MeasureMoments/name+') ? '+ModelParameters/Advanced/MeasureMoments/name+' : 0f')+') / float32(count_values)';
+				attribute<uint32> count_values (Combine_OrgDest) := ='add('+AsItemList('uint32(IsDefined('+ModelParameters/Advanced/MeasureMoments/name+'))')+')';
+			}
+		}
+	}
+ */	
+	
+	// container ReadExport_Car_PC4         := ReadExport_PrivateTransport_T('car','PC4','PC4')
+	// {
+		// unit<uint64> Combine_OrgDest        := combine_uint64(SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids, SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids)
+		// {
+			// attribute<string> OrgName  := SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids/name[first_rel];
+			// attribute<string> DestName := SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids/name[second_rel];
+			// attribute<string> Label    := OrgName +'_'+DestName, DialogType = "LabelText";
+			// attribute<min_f>  Traveltime := convert(rjoin(Label, ReadCSV/data/org + '_' + ReadCSV/data/dst, value(ReadCSV/data/maxspeed,s_f)), min_f);
+		// }
+		
+		// attribute<uint32> Count_Reached_Dests (SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids) := sum(uint32(IsDefined(Combine_OrgDest/Traveltime)), Combine_OrgDest/second_rel);
+	// }
+	
+	// container ReadExport_OV_RSL := 
+		// for_each_ne(
+			// ModelParameters/Advanced/Export_CombinationTypes/name
+			// , 'Per_Export_CombinationTypes_T('+quote(ModelParameters/Advanced/Export_CombinationTypes/name)+')'
+		// ) 
+	// {
+		// parameter<string> Generate := 'Ready', ExplicitSuppliers = "=AsList(ModelParameters/Advanced/Export_CombinationTypes/name+'/ReadExport_OV/generate', ';')";
+	// } 
+	
+	// container ReadExport_OV_Groen := 
+		// for_each_ne(
+			// ModelParameters/Advanced/Export_CombinationTypes/name
+			// , 'Per_Export_CombinationTypes_T('+quote(ModelParameters/Advanced/Export_CombinationTypes/name)+')'
+		// ) 
+	// {
+		// parameter<string> Generate := 'Ready', ExplicitSuppliers = "=AsList(ModelParameters/Advanced/Export_CombinationTypes/name+'/ReadExport_OV/generate', ';')";
+	// } 
+	
+	// container ReadExport_Pedestrian_Groen  := ReadExport_PrivateTransport_T('pedestrian')
+	// {
+		// parameter<string> Generate := 'Ready', ExplicitSuppliers = "ExportTable_Traveltimes/File";
+	// }
+	// container ReadExport_Bike_Groen        := ReadExport_PrivateTransport_T('bike')
+	// {
+		// parameter<string> Generate := 'Ready', ExplicitSuppliers = "ExportTable_Traveltimes/File";
+	// }
+	// container ReadExport_Car_Groen         := ReadExport_PrivateTransport_T('car')
+	// {
+		// parameter<string> Generate := 'Ready', ExplicitSuppliers = "ExportTable_Traveltimes/File";
+	// }
+	
+/* 	Template Per_Export_CombinationTypes_T
+	{
+		parameter<string> Export_CombinationTypes;
+		///
+		
+		container ReadExport_OV := 
+			for_each_ne(
+				ModelParameters/Advanced/MeasureMoments/name
+				, 'ReadExport_OV_T('+quote(/ModelParameters/Advanced/MeasureMoments/name)+', '+quote(Export_CombinationTypes)+')'
+			)
+		{
+			parameter<string> Generate := 'Ready', ExplicitSuppliers = "=AsList(ModelParameters/Advanced/MeasureMoments/name+'/ExportTable_Traveltimes/File', ';')";
+		}
+		container ReadExport_OV_mergeTimes := 
+			for_each_ne(
+				ModelParameters/Advanced/MeasureMoments/name
+				, 'ReadExport_OV_mergeTimes_T('+quote(/ModelParameters/Advanced/MeasureMoments/name)+', '+quote(Export_CombinationTypes)+')'
+			)
+		{
+			// parameter<string> Generate := 'Ready', ExplicitSuppliers = "=AsList(ModelParameters/Advanced/MeasureMoments/name+'/ExportTable_Traveltimes/File', ';')";
+			
+			unit<uint64> Combine_OrgDest        := combine_uint64(/NetworkSetup/ConfigurationPerRegio/all/org, /NetworkSetup/ConfigurationPerRegio/all/dest)
+			{
+				attribute<string> OrgName  := /NetworkSetup/ConfigurationPerRegio/all/org/name[first_rel];
+				attribute<string> DestName := /NetworkSetup/ConfigurationPerRegio/all/dest/name[second_rel];
+				attribute<string> Label    := OrgName +'_'+DestName, DialogType = "LabelText";
+				
+				attribute<min_f> shortest_avg_traveltime (/NetworkSetup/ConfigurationPerRegio/all/org) := min(GetAverageTimes/avg_traveltime, first_rel);
+				
+				container GetAverageTimes := 
+					for_each_nedv(
+						ModelParameters/Advanced/MeasureMoments/name
+						, 'rjoin(Label, ReadExport_OV_mergeTimes/'+ModelParameters/Advanced/MeasureMoments/name+'/ReadCSV/Data/OrgDestName, ReadExport_OV_mergeTimes/'+ModelParameters/Advanced/MeasureMoments/name+'/ReadCSV/Data/Traveltime)'
+						, Combine_OrgDest
+						, min_f
+					)
+				{
+					attribute<min_f> avg_traveltime (Combine_OrgDest) := ='add('+AsItemList('IsDefined('+ModelParameters/Advanced/MeasureMoments/name+') ? '+ModelParameters/Advanced/MeasureMoments/name+' : 0f')+') / float32(count_values)';
+					
+					attribute<uint32> count_values (Combine_OrgDest) := ='add('+AsItemList('uint32(IsDefined('+ModelParameters/Advanced/MeasureMoments/name+'))')+')';
+				}
+			}
+			
+			
+			unit<uint64> ExportTable_Traveltimes := select_with_org_rel(IsDefined(Combine_OrgDest/GetAverageTimes/avg_traveltime))
+			{
+				attribute<min_f>  avg_traveltime_piek := Combine_OrgDest/GetAverageTimes/avg_traveltime[org_rel];
+				attribute<string> OrgName             := Combine_OrgDest/OrgName[org_rel];
+				attribute<string> DestName            := Combine_OrgDest/OrgName[org_rel];
+				attribute<string> Label               := OrgName +'_'+DestName, DialogType = "LabelText";
+				
+				attribute<string> BodyLines :=
+					OrgName + ';' + 
+					DestName + ';' + 
+					string(avg_traveltime_piek);
+				parameter<string> File := 'OrgName;DestName;avg_traveltime_piek\n'++AsList(BodyLines, '\n'), StorageName = "=ModelParameters/Advanced/fileNamePrefix+'Traveltime_'+Export_CombinationTypes+''+fileNameSuffix+'_avg_traveltime.csv'", StorageType = "str";
+			
+				parameter<string> fileNameSuffix :=  
+					'_' + ModelParameters/Analysis_Date + 
+					'_ORG-'    + ModelParameters/Orgset + '-All' + 
+					'_DEST-'   + ModelParameters/Advanced/DestSet_string +
+					'_O2SWtime-' + string(ModelParameters/MaxWalkingTime_Org2Stop)+'min';
+			}
+		}
+	}
+ */	
+ 
+/* 	Template ReadExport_OV_T
+	{
+		parameter<string> Time;
+		parameter<string> Export_CombinationTypes;
+
+		///
+		
+		container ReadCSV
+		{ 
+			parameter<string> filename       := ModelParameters/Advanced/fileNamePrefix+'Traveltime_Long_'+Export_CombinationTypes+''+fileNameSuffix+'.csv';
+			
+			parameter<string> fileNameSuffix :=  
+				'_' + ModelParameters/Analysis_Date + 
+				'_' + ModelParameters/Arrival_or_Departure_at_time + 
+				'_' + Time + 
+				'_ORG-'    + ModelParameters/Orgset + '-All' + 
+				'_DEST-'   + ModelParameters/Advanced/DestSet_string +
+				'_O2SWtime-' + string(ModelParameters/MaxWalkingTime_Org2Stop)+'min';
+			
+			unit<uint64>      domain         := range(uint64, 0[uint64], count_rows);
+			parameter<string> fieldseparator := ';';
+			parameter<string> filedata       :  StorageType   = "str",  StorageName = "=filename",  StorageReadOnly = "true";
+			parameter<uint64> count_rows     := (strcount(filedata, fieldseparator) / strcount(headerline, fieldseparator))[uint64] - 1[uint64];
+			parameter<string> headerline     := readLines(filedata, void, 0);
+			
+			unit<uint32> field := Range(uint32, 0, strcount(headerline, fieldseparator) + 1)
+			{
+				attribute<string> name := ReadArray(headerline , field, string, 0);
+			}
+				
+			attribute<string> bodylines (domain) := readLines(filedata, domain, headerline/ReadPos);
+
+			container data := 
+				for_each_nedv(
+					field/name
+					,'ReadElems(
+						BodyLines
+						,string
+						,'+ MakeDefined(field/name[sub_or_null(id(field),1)] + '/ReadPos','const(0, domain)')+'
+						, 17
+					)'
+					,domain
+					,string
+				)
+			{
+				attribute<uint32>              Groen_id                (domain) := rjoin(DestName[uint32], /NetworkSetup/ConfigurationPerRegio/all/dest/GROEN_pnt_ID, NetworkSetup/ConfigurationPerRegio/all/dest/GROEN_ID);
+				attribute<string>              org_groen_id_key        (domain) := OrgName + '_' + string(groen_id);
+				attribute<min_f>               Traveltime              (domain) := ='Traveltime_m_'+Time+'[float32] * 1[min_f]';
+				attribute<string>              groen_id_tt_key         (domain) := string(groen_id) + '_' + string(Traveltime);
+				attribute<uq_org_groen_id_key> uq_org_groen_id_key_rel (domain) := rlookup(org_groen_id_key, uq_org_groen_id_key/values);
+				
+				
+				unit<uint64> uq_org_groen_id_key := unique(org_groen_id_key)
+				{
+					attribute<string>  org                       := first(data/OrgName, data/uq_org_groen_id_key_rel);
+					attribute<uint32>  groen_id                  := first(data/Groen_id, data/uq_org_groen_id_key_rel);
+					attribute<string>  groen_id_tt_key           := string(groen_id) + '_' + string(Traveltime);
+					attribute<uint32>  groen_pnt_id              := rjoin(groen_id_tt_key, data/groen_id_tt_key, DestName[uint32]);
+					attribute<string>  ModeUsed                  := ='rjoin(groen_id_tt_key, data/groen_id_tt_key, ModeUsed_'+Time+')';
+					attribute<min_f>   Traveltime                := min(data/Traveltime, data/uq_org_groen_id_key_rel);
+					
+				}
+			}
+		}
+		
+		unit<uint64> ExportTable_Traveltimes := ReadCSV/Data/uq_org_groen_id_key
+		{
+			attribute<string> BodyLines :=
+				org + ';' + 
+				string(groen_pnt_id) + ';' +
+				string(groen_id) + ';' +
+				string(Traveltime) + ';' +
+				ModeUsed;
+			parameter<string> File := 'OrgName;DestName;Groen_ID;Traveltime_'+Time+';ModeUsed_'+Time+'\n'++AsList(BodyLines, '\n'), StorageName = "=ModelParameters/Advanced/fileNamePrefix+'Traveltime_Long_'+Export_CombinationTypes+''+ReadCSV/fileNameSuffix+'_GroenAggr.csv'", StorageType = "str";
+		}
+	}
+	
+ */	
+	
+	
+
+	
+/* 	Template ReadExport_PrivateTransport_T
+	{
+		parameter<string> NetwerkType;
+		parameter<string> org_str;
+		parameter<string> dest_str;
+		///
+		parameter<string> MaxTravelTime := NetwerkType == 'car' 
+											? string(ModelParameters/MaxCarTime)
+											: NetwerkType == 'bike'
+												? string(ModelParameters/MaxBikeTime_Org2Dest)  
+												: NetwerkType == 'pedestrian'
+													? string(ModelParameters/MaxPedestrianTime_Org2Dest)
+													: '';
+	
+		parameter<string> fileNameSuffix := NetwerkType == 'car' 
+												? fileNameSuffix_car
+												: fileNameSuffix_other;
+		
+		parameter<string> fileNameSuffix_car :=  
+			'_ORG-'      + org_str + '-All' + 
+			'_DEST-'     + dest_str +
+			'_NETWERK-'  + NetwerkType + 
+			'_DayGroup-' + ModelParameters/CongestionSpeed_DaygroupSelection +
+			'_MaxTime-'  + MaxTravelTime+'min';
+			
+		parameter<string> fileNameSuffix_other :=  
+			'_ORG-'      + org_str + '-All' + 
+			'_DEST-'     + dest_str +
+			'_NETWERK-'  + NetwerkType + 
+			'_MaxTime-'  + MaxTravelTime+'min';
+			
+		container ReadCSV
+		{ 
+			parameter<string> filename       := ModelParameters/Advanced/fileNamePrefix+'Traveltimes'+fileNameSuffix+'.csv';
+			
+			unit<uint64>      domain         := range(uint64, 0[uint64], count_rows);
+			parameter<string> fieldseparator := ';';
+			parameter<string> filedata       :  StorageType   = "str",  StorageName = "=filename",  StorageReadOnly = "true";
+			parameter<uint64> count_rows     := (strcount(filedata, fieldseparator) / strcount(headerline, fieldseparator))[uint64] - 1[uint64];
+			parameter<string> headerline     := readLines(filedata, void, 0);
+			
+			unit<uint32> field := Range(uint32, 0, strcount(headerline, fieldseparator) + 1)
+			{
+				attribute<string> name := ReadArray(headerline , field, string, 0);
+			}
+				
+			attribute<string> bodylines (domain) := readLines(filedata, domain, headerline/ReadPos);
+
+			container data := 
+				for_each_nedv(
+					field/name
+					,'ReadElems(
+						BodyLines
+						,string
+						,'+ MakeDefined(field/name[sub_or_null(id(field),1)] + '/ReadPos','const(0, domain)')+'
+						, 17
+					)'
+					,domain
+					,string
+				)
+			{
+				// attribute<uint32>              Groen_id                (domain) := rjoin(Dst[uint32], /NetworkSetup/ConfigurationPerRegio/all/dest/GROEN_pnt_ID, NetworkSetup/ConfigurationPerRegio/all/dest/GROEN_ID);
+				// attribute<string>              org_groen_id_key        (domain) := org + '_' + string(groen_id);
+				
+				// attribute<uq_org_groen_id_key> uq_org_groen_id_key_rel (domain) := rlookup(org_groen_id_key, uq_org_groen_id_key/values);
+				
+				
+				// unit<uint64> uq_org_groen_id_key := unique(org_groen_id_key)
+				// {
+					// attribute<string>  org                  := first(data/org, data/uq_org_groen_id_key_rel);
+					// attribute<uint32>  groen_id             := first(data/Groen_id, data/uq_org_groen_id_key_rel);
+					// attribute<min_f>   max_speed_min        := min(data/maxspeed[float32] / 60f * 1[min_f], data/uq_org_groen_id_key_rel);
+					// attribute<min_f>   MorningRush_min      := min(data/MorningRush[float32] / 60f * 1[min_f], data/uq_org_groen_id_key_rel);
+					// attribute<min_f>   NoonRush_min         := min(data/NoonRush[float32] / 60f * 1[min_f], data/uq_org_groen_id_key_rel);
+					// attribute<min_f>   LateEveningRush_min  := min(data/LateEveningRush[float32] / 60f * 1[min_f], data/uq_org_groen_id_key_rel);
+					
+				// }
+			}
+		}
+ */		
+/* 		unit<uint64> ExportTable_Traveltimes := ReadCSV/Data/uq_org_groen_id_key
+		{
+			attribute<string> BodyLines :=
+				org + ';' + 
+				string(groen_id) + ';' +
+				// string(max_speed_min);
+				string(max_speed_min) + ';' + 
+				string(MorningRush_min)+';' +
+				string(NoonRush_min)+';' +
+				string(LateEveningRush_min);
+			parameter<string> File := 'Org;Dst;MaxSpeed;MorningRush;NoonRush;LateEveningRush\n'++AsList(BodyLines, '\n'), StorageName = "=ModelParameters/Advanced/fileNamePrefix+'Traveltimes'+ReadCSV/fileNameSuffix+'_GroenAggr.csv'", StorageType = "str";
+			// parameter<string> File := 'Org;Dst;MaxSpeed\n'++AsList(BodyLines, '\n'), StorageName = "=ModelParameters/Advanced/fileNamePrefix+'Traveltimes'+ReadCSV/fileNameSuffix+'_GroenAggr.csv'", StorageType = "str";
+		}
+ }
+ */	
+}

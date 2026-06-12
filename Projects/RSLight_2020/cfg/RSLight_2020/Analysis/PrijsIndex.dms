@@ -1,0 +1,77 @@
+container PrijsIndex : using = "Classifications/vastgoed"
+{
+	// unit<uint8>  HouseCharacteristics_src := Classifications/Vastgoed/HouseCharacteristics_src;
+	// unit<uint8> WP2 := Classifications/Vastgoed/WP2;
+	
+	parameter<string> Schattingen_StAreaRef := /ModelParameters/Schattingen_StAreaRef;
+	
+	container ReadCoefficients := 
+		for_each_ne(
+			WP2/name
+			, 'T('+string(id(WP2))+'[WP2],WP2,Schattingen_StAreaRef,''Dec2019'')'
+		);
+	
+	container ReadCoefficients_werken := 
+	for_each_ne(
+		Actor/AllocSector/name
+		, 'T('+string(id(classifications/Actor/AllocSector))+'[classifications/Actor/AllocSector],classifications/Actor/AllocSector,''Apeksha'',''Sep2020'')'
+	);
+
+	
+	Template T
+	{
+		//
+		parameter<Types_dom> id;
+		unit<uint8> Types_dom;
+		parameter<string> Schattingen_StAreaRef;
+		parameter<string> Datum;
+		//
+		
+		unit<uint32> Domain
+		:  StorageName = "= '%RSLDataDir%/Vastgoed/Estimates_'+Types_dom/name[id]+'_'+Datum+'_'+Schattingen_StAreaRef+'.csv'"
+		,  StorageType = "gdal.vect"
+		,  StorageReadOnly = "True" 
+		{
+			attribute<string> parm;
+			attribute<string> name := replace(parm, '2019.trans_year', 'y2019', '_cons', 'constant','2.building_type', 'd_detached', '3.building_type', 'd_semidetached');
+		}
+		
+		container MakeResult := 
+			for_each_nedva(
+				HouseCharacteristics_src/name
+				, 'rjoin(rlookup('+quote(HouseCharacteristics_src/name)+', Domain/name), id(Domain), Domain/p)[float32] <= 0.05f
+					? rjoin(rlookup('+quote(HouseCharacteristics_src/name)+', Domain/name), id(Domain), Domain/estimate)[float32]
+					: 0f'
+				, void
+				, float32
+				, '%RSLDataDir%/Vastgoed/Estimates_'+WP2/name[id]+'_'+Datum+'_'+Schattingen_StAreaRef+'/'+HouseCharacteristics_src/name+'.fss'
+			);
+			
+		container MakeResult_Werken := 
+			for_each_nedva(
+				SectorCharacteristics/name
+				, 'rjoin(rlookup('+quote(SectorCharacteristics/name)+', Domain/name), id(Domain), Domain/p)[float32] <= 0.05f
+					? rjoin(rlookup('+quote(SectorCharacteristics/name)+', Domain/name), id(Domain), Domain/estimate)[float32]
+					: 0f'
+				, void
+				, float32
+				, '%RSLDataDir%/Vastgoed/Estimates_'+Actor/AllocSector/name[id]+'_'+Datum+'_'+Schattingen_StAreaRef+'/'+SectorCharacteristics/name+'.fss'
+			);
+		
+		container Result := 
+			for_each_ndva(
+				HouseCharacteristics_src/name
+				, void
+				, float32
+				, '%RSLDataDir%/Vastgoed/Estimates_'+WP2/name[id]+'_'+Datum+'_'+Schattingen_StAreaRef+'/'+HouseCharacteristics_src/name+'.fss'
+			), StorageReadOnly = "true";
+			
+		container Result_werken := 
+			for_each_ndva(
+				SectorCharacteristics/name
+				, void
+				, float32
+				, '%RSLDataDir%/Vastgoed/Estimates_'+Actor/AllocSector/name[id]+'_'+Datum+'_'+Schattingen_StAreaRef+'/'+SectorCharacteristics/name+'.fss'
+			), StorageReadOnly = "true";
+	}
+}

@@ -1,0 +1,108 @@
+container PandFootprint_baan
+{
+	parameter<String> Year                := ModelParameters/werken/PandFootprint_per_job_calc_yr;
+	parameter<String> distance_decay_Type := 'rev_dist_scaled';
+	
+	container LISA            := SourceData/Actoren/Banen/Per_TXLJobs7_AdminDomain;
+	unit<UInt32> Pand         := ='BaseData/StartState/PandFootprint/PerYear_AdminDomain/'+string(Year)+'/pand_met_vbo';   
+	container PandFootprint   := Pand/Footprint_perJobs6_AdminDomain;
+	container Opp_inPand      := Pand/Opp_perJobs6;
+	container PerGebruiksdoel := Pand/PerGebruiksdoel_corr;
+	
+	unit<UInt32> RegioUnit := SourceData/RegioIndelingen/NVM;
+	
+	container Banen_perJobs6_per_grid :=
+		for_each_nedv(
+			Actor/Jobs6/name
+			, 'sum(LISA/'+Actor/Jobs6/name+', AdminDomain/AllocDomain_rel)'
+			, AllocDomain
+			, Job
+		);
+	
+	container Smoothed
+	{
+		container Potential_Banen :=
+			for_each_nedv(
+				Actor/Jobs6/name,
+				'IsDefined(SourceData/RegioIndelingen/CBS/Last/Buurt/Per_AllocDomain) ? max_elem(potential(Banen_perJobs6_per_grid/'+Actor/Jobs6/name+', Distmatrices/Impl_100m/pot5000m/PotRange/'+distance_decay_Type+'), ModelParameters/Werken/Job_Ondergrens) : (0f/0f)[Job]',
+				AllocDomain, Job
+			);
+		
+		container Potential_m2PandFootprint :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, 'IsDefined(SourceData/RegioIndelingen/CBS/Last/Buurt/Per_AllocDomain) ? max_elem(potential(sum(PandFootprint/'+Actor/Jobs6/name+',AdminDomain/AllocDomain_rel), Distmatrices/Impl_100m/pot5000m/PotRange/'+distance_decay_Type+'), ModelParameters/Werken/PandFootprint_Ondergrens) : (0f/0f)[m2PandFootprint]'
+				, AllocDomain
+				, m2PandFootprint
+			);
+		
+		container Result :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, 'Potential_m2PandFootprint/'+Actor/Jobs6/name+' / Potential_Banen/'+Actor/Jobs6/name
+				, AllocDomain
+				, m2PandFootprint_job
+			);
+	}
+	
+	container PerRegio : using = "Classifications"
+	{
+		container Banen_perRegio :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, 'sum(Banen_perJobs6_per_grid/'+Actor/Jobs6/name+', RegioUnit/Per_AllocDomain)'
+				, RegioUnit
+				, Job
+			);
+		
+		container m2PandFootprint_perRegio :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, 'sum(PandFootprint/'+Actor/Jobs6/name+', RegioUnit/Per_AdminDomain)'
+				, RegioUnit
+				, m2PandFootprint
+			);
+		
+		container Opp_perRegio :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, 'sum(Opp_inPand/'+Actor/Jobs6/name+', RegioUnit/Per_AdminDomain)'
+				, RegioUnit
+				, meter2
+			);
+		
+		container Fractie_Opp_inJobs6_perVBOfuctie :=
+			for_each_nedv(
+				Vastgoed/vbo_gebruiksdoel_plus/name
+				, 'sum(PerGebruiksdoel/'+Vastgoed/vbo_gebruiksdoel_plus/name+'/Opp, pand/nvm_rel)  / sum(Pand/Opp_perJobs6_perPand/'+Actor/Jobs6/name[Vastgoed/vbo_gebruiksdoel_plus/Jobs6_rel]+', pand/nvm_rel)'
+				, RegioUnit
+				, float32
+			);
+		
+		container Ratio_Footprint_Opp_perAdminDomain :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, '(Opp_perRegio/'+Actor/Jobs6/name+' / m2PandFootprint_perRegio/'+Actor/Jobs6/name+')[RegioUnit/Per_AdminDomain]'
+				, AdminDomain
+				, float32
+			);
+		
+		container Result_PerRegio :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, 'm2PandFootprint_perRegio/'+Actor/Jobs6/name+' / Banen_perRegio/'+Actor/Jobs6/name
+				, RegioUnit
+				, m2PandFootprint_job
+			);
+		
+		container Result :=
+			for_each_nedv(
+				Actor/Jobs6/name
+				, 'Result_PerRegio/'+Actor/Jobs6/name+'[RegioUnit/Per_AllocDomain]'
+				, AllocDomain
+				, m2PandFootprint_job
+			); 
+	}
+	
+	container Result := = ModelParameters/Werken/Type_m2perBaan+'/Result'; //used in VariantData/dichtheid; baseData/bag_nieuwbouw; templates/indicatoren; templates/Overstromingschades
+}

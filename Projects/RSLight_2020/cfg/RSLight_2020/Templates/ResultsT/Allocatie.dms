@@ -1,0 +1,71 @@
+container Allocatie : using = "Classifications/Actor;VariantSpecifiek/Parameters;VariantSpecifiek/Regios;VariantSpecifiek/Plannen;VariantSpecifiek/Zeefinput;VariantSpecifiek/WoningSpecifiek;VariantSpecifiek/Kosten"
+{     
+	unit<uint8> IterK := range(uint8, 0[uint8], ModelParameters/NrOfIters)
+	{
+		attribute<string> name       := 'Iter_'+string(id(.));
+		attribute<string> PrevName   := MakeDefined(name[id(.) - 1[.]], '');
+		attribute<string> Label      := name, DialogType = "LabelText";
+		attribute<bool>   HasStopped_Wonen  := ='union_data(., '+AsItemList('Wonen/'+name+'/StopIter')+')';
+		attribute<bool>   HasStopped_Werken := ='union_data(., '+AsItemList('Werken/'+name+'/StopIter')+')';
+	}
+	
+	container Wonen := 
+		for_each_ne(
+			IterK/name
+			, 'IterT('+string(id(IterK))+'[IterK],''Wonen'')'
+		)
+	{
+		container DetermineLastIter
+		{
+			unit<uint8>       StoppedIter  := select_with_org_rel(IterK/HasStopped_Wonen);
+			parameter<IterK>  StopIter     := first(StoppedIter/org_rel);
+			parameter<string> StopIterName := IterK/Name[StopIter];
+		}
+		
+		container LastIter := = DetermineLastIter/StopIterName;
+	}	
+	
+	container Werken := 
+		for_each_ne(
+			IterK/name
+			, 'IterT('+string(id(IterK))+'[IterK],''Werken'')'
+		)
+	{
+		container DetermineLastIter
+		{
+			unit<uint8>       StoppedIter  := select_with_org_rel(IterK/HasStopped_Werken);
+			parameter<IterK>  StopIter     := first(StoppedIter/org_rel);
+			parameter<string> StopIterName := IterK/Name[StopIter];
+		}
+		
+		container LastIter := = DetermineLastIter/StopIterName;
+	}	
+	
+	container DisplacedWonenDoorWerken
+	{
+		attribute<Woning> DisplacedWonen (domain) := =AsList('Results/FinalWerken/'+AllocSector/name+'/Final/Verdringing/Woningen/per_domain', ' + ');
+	}
+	
+	Template IterT
+	{
+		//
+		parameter<IterK> IterK_id;
+		parameter<string> Type;
+		//
+		
+		container PerExtent := 
+			for_each_ne(
+				VariantSpecifiek/Extent/K/name_short
+				, 'PerExtentT_'+Type+'('+string(id(VariantSpecifiek/Extent/K))+'[VariantSpecifiek/Extent/K])'
+			);
+		
+		//voor dynamic itereren dit aanzetten, maar maakt uitklappen langzaam
+		// parameter<bool>   DynamicStopCriterium      := = 'PerExtent/'+VariantSpecifiek/Extent/K/LastExtentName+'/StopCriterium';
+		// parameter<bool>   StopIter                  := ModelParameters/DynamischItereren ? DynamicStopCriterium : StaticStopCriterium;
+		parameter<bool>   StaticStopCriterium       := IterK_id == 2[IterK];
+		parameter<bool>   StopIter                  := StaticStopCriterium;
+	}	
+	#include<PerExtentT_Wonen.dms>	
+	#include<PerExtentT_Werken.dms>	
+	#include<Results.dms>
+}

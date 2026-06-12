@@ -1,0 +1,144 @@
+container Opbrengsten 
+{ 
+	container Wonen := 
+		for_each_ind(
+			'nedvc'
+			, OntwikkelPakketten/name
+			,	replace(
+					'add('+
+						AsItemList(
+							replace(
+								'PerWP4/@P@/@W@  * OntwikkelPakketten/densities/@P@[Vastgoed/WP4/V/@W@] ',
+								'@W@', Vastgoed/WP4/name
+							)
+						)+
+					')'
+					, '@P@', OntwikkelPakketten/name
+				)
+			, /domain_grid
+			, Eur_ha
+			, 'Classified_per_OP/'+OntwikkelPakketten/name+'/Target_9K/ClassBreaks'
+		), FreeData = "false"
+	{
+		container Classified_per_OP := 
+			for_each_ne(
+				OntwikkelPakketten/name
+				, '/Templates/Classify_9K_EurHa(Opbrengsten/Wonen/'+OntwikkelPakketten/name+', /domain_grid)'
+			);
+			
+		container PerWP4 := for_each_nedv(OntwikkelPakketten/x_WP4/name,
+				replace(
+					'(exp('
+						'@C@/constant'
+						
+		//				Woonpand
+						'+ OntwikkelPakketten/is_Hoogbouw/@P@           * @C@/d_highrise' // kenmerk uit ontwikkeloptie
+						'+ OntwikkelPakketten/opp_Woning_log/@P@[@WID@] * @C@/lnsize'     // kenmerk uit ontwikkeloptie
+						'+ log(@RAT@/lotsize[@WID@])                    * @C@/lnlotsize'  // perceeloppervlak gemiddeld in NL voor betreffend woningtype
+						'+ @RAT@/nrooms[@WID@]                          * @C@/nrooms'     // idem voor aantal kamers etc.
+						'+ @RAT@/nbadk[@WID@]                           * @C@/nbadk'
+						'+ @RAT@/d_maintgoodNewHouses[@WID@]            * @C@/d_maintgood' // wordt 100% voorondersteld bij nieuw te bouwen woningen
+						'+ @RAT@/d_kk[@WID@]                            * @C@/d_kk'
+						'+ @RAT@/d_centralheatingNewHouses[@WID@]       * @C@/d_centralheating' //wordt aanwezig voorondersteld bij nieuw te bouwen woningen
+						'+ @RAT@/d_erfpacht[@WID@]                      * @C@/d_erfpacht'
+						'+ @RAT@/d_isol_complNewHouses[@WID@]           * @C@/d_isol_compl' // wordt 100% voorondersteld bij nieuw te bouwen woningen
+						'+ @RAT@/d_privparkNewHouses[@WID@]             * @C@/d_privpark'
+						'+ 1[EUR]                                       * @C@/y2019' // in alle gevallen gaat het om nieuwbouw
+						
+						'+ value(Vastgoed/WP4/IsDetached[@WID@], EUR)            * @C@/d_detached'
+						'+ value(Vastgoed/WP4/IsSemiDetached[@WID@], EUR)        * @C@/d_semidetached'
+						
+		//				Locatie
+						'+ RegionalAvgCharacteristics/Overige_vars/uai_5000m_dcsq              * @C@/uai_2018'
+						'+ log(RegionalAvgCharacteristics/Overige_vars/reistijd_100k_inw_edit) * @C@/lnreistijd_100k_inw'
+						'+ RegionalAvgCharacteristics/Overige_vars/Reistijd_stations_edit      * @C@/reistijd_station_2006_edit'
+						'+ RegionalAvgCharacteristics/Overige_vars/bbg2015_groen_100mbuff_100m * @C@/groennabij_2015 '
+					')[Eur_woning])'
+					,
+					
+					'@WID@', 'Vastgoed/WP4/V/@W@',
+					'@W@', Vastgoed/WP4/name[OntwikkelPakketten/x_WP4/second_rel],
+					'@RAT@', 'RegionalAvgCharacteristics/AvgValueTable',
+					'@C@', 'PrijsIndex/ReadCoefficients/'+Vastgoed/WP2/name[Vastgoed/WP4/WP2_rel[OntwikkelPakketten/x_WP4/second_rel]]+'/Result',
+					'@P@', OntwikkelPakketten/name[OntwikkelPakketten/x_WP4/first_rel]
+				),
+			/domain_grid, Eur_Woning
+		), FreeData = "false";
+		/*
+		container Statistics := for_each_ne(OntwikkelPakketten/name, 'StatisticsT('+quote(OntwikkelPakketten/name)+')');
+		
+		container Exportable
+		{
+			parameter<string> SrcStr := 'Statistics/@O@/result/@E@/@I@';
+			
+			container Results :=
+				for_each_nedv(
+					OntwikkelPakketten/name,
+					replace(
+						'union_data(
+							Grondproductiekosten/C/ExtentxIndicator,'+
+							AsItemList(
+								replace(SrcStr, '@E@', Grondproductiekosten/C/ExtentxIndicator/Extent_name, '@I@', Grondproductiekosten/C/ExtentxIndicator/Indicator_name)
+							)+
+						')',
+						'@O@', OntwikkelPakketten/name
+					),
+					Grondproductiekosten/C/ExtentxIndicator, Eur_Ha
+				)
+			{
+				attribute<string> Extent_name    (Grondproductiekosten/C/ExtentxIndicator) := Grondproductiekosten/C/ExtentxIndicator/Extent_name;
+				attribute<string> Indicator_name (Grondproductiekosten/C/ExtentxIndicator) := Grondproductiekosten/C/ExtentxIndicator/Indicator_name;
+			}
+		}
+		
+		Template StatisticsT
+		{
+			//
+			parameter<string> SrcStr;
+			//
+			
+			attribute<Eur_Ha> Src (domain_grid) := = 'Opbrengsten/'+SrcStr;
+			
+			attribute<bool> bbg (domain_grid) := Geography/RegioIndelingen/begrenzing_bebouwd_gebied;
+			
+			container Result := for_each_ne(Grondproductiekosten/C/Extent/name, 'Grondproductiekosten/T/Statistics/bbgT('+Grondproductiekosten/C/Extent/CalcStr+', Src)');
+		}
+		*/
+	}
+	
+	container Werken := 
+		for_each_nedv(
+			classifications/Actor/AllocSector/name
+			,replace(
+				'exp('
+					'@C@/constant'
+					
+	//				Pand
+					'+ log(@RAT@/'+classifications/Actor/AllocSector/name+'_size)                        * @C@/lnfloorarea' 
+					'+ IsInvestmentProperty                                                              * @C@/IsInvestmentProperty' 
+					'+ IsY2016                                                                           * @C@/y2016' 
+					
+	//				Locatie
+					'+ RegionalAvgCharacteristics/Overige_vars/impl/uai_2002                                    * @C@/UAI'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/reistijd_100k_inw_edit)         * @C@/ln_TravelTime_nearest100kInhab '
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Airports)           * @C@/ln_DistTo_Airports'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_HighwayAccessExit)  * @C@/ln_DistTo_HighwayAccessExit'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Trainstations)      * @C@/ln_DistTo_Trainstations'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Seaport)            * @C@/ln_DistTo_Seaport'
+					'+ log(RegionalAvgCharacteristics/Overige_vars/impl/DistTo_Urban_Contour_2000) * @C@/ln_DistTo_Urban_Contour_2000'
+					'+ RegionalAvgCharacteristics/Overige_vars/impl/LU_Share_Residential_2000      * @C@/LU_Share_Residential_2000 '
+					'+ RegionalAvgCharacteristics/Overige_vars/impl/LU_Diversity_index_2000        * @C@/LU_Diversity_index_2000 '
+				')[Eur_Ha]',
+
+				'@AS@',  'Actor/AllocSector/V/'+classifications/Actor/AllocSector/name,
+				'@RAT@', 'RegionalAvgCharacteristics/Result_werken',
+				'@C@',   'PrijsIndex/ReadCoefficients_werken/'+Actor/AllocSector/name+'/Result_werken'
+			)
+			, domain_grid
+			, Eur_ha
+	), FreeData = "false"
+	{
+		parameter<float32> IsInvestmentProperty := 1f;
+		parameter<float32> IsY2016              := 1f;
+	}
+}

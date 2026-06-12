@@ -1,0 +1,97 @@
+container Sloopkosten
+{
+	unit<uint32> Vbo  := SourceData/Vastgoed/BAG/vbos/GebruiksdoelSets/woon/GebruiksdoelSet; 
+	
+	unit<uint32> Gemeente := RegioIndelingen/Gemeente/Gemeente2019
+	{
+		attribute<float32>	regionale_kosten_invloeden_wadden :=  //BRON: Bouwkostenkompas
+			switch(
+				 case(GEMNAAM == 'Schiermonnikoog', 1.08f)  
+				,case(GEMNAAM == 'Ameland', 1.08f) 
+				,case(GEMNAAM == 'Terschelling', 1.08f) 
+				,case(GEMNAAM == 'Vlieland', 1.08f)  
+				,case(GEMNAAM == 'Texel', 1.08f) 
+				,1f
+			);
+			
+		attribute<.> per_domain_grid (domain_grid) := poly2grid(geometry, domain_grid);
+	}
+	
+	unit<uint32> Grootstedelijke_agglomeraties := RegioIndelingen/Grootstedelijke_agglomeraties //BRON: Bouwkostenkompas
+	{
+		attribute<float32> regionale_kosten_invloeden_stedelijk := id(RegioIndelingen/Grootstedelijke_agglomeraties) == 0 ? 1f : 1.04f;
+		attribute<.> per_domain_grid (domain_grid) := poly2grid(geometry, domain_grid);
+	}
+	
+	unit<uint32>  Corop := RegioIndelingen/Corop 
+	{
+		attribute<float32>	regionale_kosten_invloeden_grensgebieden := //BRON: Bouwkostenkompas
+			switch(
+				 case(label == 'Delfzijl e.o.', 0.96f)  
+				,case(label == 'Oost-Groningen', 0.96f) 
+				,case(label == 'Zuidoost-Drenthe', 0.96f) 
+				,case(label == 'Twente', 0.96f)  
+				,case(label == 'Achterhoek', 0.96f) 
+				,case(label == 'Arnhem-Nijmegen', 0.96f) 
+				,1f
+			);
+		
+		attribute<.>        per_domain_grid (domain_grid) := poly2grid(polygons, domain_grid);
+	}
+	
+	unit<uint32>  Provincie := RegioIndelingen/Provincie 
+	{
+		attribute<float32>	regionale_kosten_invloeden_provincie := //BRON: Bouwkostenkompas
+			switch(
+				 case(label == 'Groningen', 0.95f)  
+				,case(label == 'Friesland', 0.93f) 
+				,case(label == 'Drenthe', 0.92f) 
+				,case(label == 'Overijssel', 0.93f) 
+				,case(label == 'Gelderland', 0.94f) 
+				,case(label == 'Flevoland', 0.96f) 
+				,case(label == 'Noord-Holland', 0.99f) 
+				,case(label == 'Zuid-Holland', 1f) 
+				,case(label == 'Utrecht', 1f) 
+				,case(label == 'Zeeland', 0.95f) 
+				,case(label == 'Noord-Brabant', 0.93f) 
+				,case(label == 'Limburg', 0.90f) 
+				,1f
+			); 
+		
+		attribute<.> per_domain_grid (domain_grid) := poly2grid(polygons, domain_grid);
+	}
+	
+	container BaseValues
+	{
+		parameter<Eur_m2> Rijtjeswoning     := ModelParameters/Sloopkosten/Rijtjeswoning;
+		parameter<Eur_m2> Twee_onder_1_kap  := ModelParameters/Sloopkosten/Twee_onder_1_kap;
+		parameter<Eur_m2> Vrijstaand        := ModelParameters/Sloopkosten/Vrijstaand;
+		parameter<Eur_m2> Appartement       := ModelParameters/Sloopkosten/Appartement;
+		parameter<Eur_m2> Kantoor           := ModelParameters/Sloopkosten/Kantoor;
+	}
+	
+	attribute<float32> RegioFactor (domain_grid) := 
+		Provincie/regionale_kosten_invloeden_provincie[Provincie/per_domain_grid]
+		* Grootstedelijke_agglomeraties/regionale_kosten_invloeden_stedelijk[Grootstedelijke_agglomeraties/per_domain_grid]
+		* Corop/regionale_kosten_invloeden_grensgebieden[Corop/per_domain_grid]
+		* Gemeente/regionale_kosten_invloeden_wadden[Gemeente/per_domain_grid];
+		
+	container Regionaal := for_each_nedv(Vastgoed/WP4/name, 'value(RegioFactor * BaseValues/'+Vastgoed/WP4/name+', Eur_m2)', domain_grid, Eur_m2)
+	{
+		attribute<Eur_m2> Kantoor (domain_grid) := value(RegioFactor * BaseValues/kantoor, eur_m2);
+	}
+		
+	container Actueel :=
+		for_each_nedv(Vastgoed/WP4/name,
+			'Regionaal/'+Vastgoed/WP4/name+' * vbo/Oppervlakte_4WP_per_domain_grid/'+Vastgoed/WP4/name+'',
+			domain_grid, Eur_ha
+		)
+	{
+		attribute<Eur_ha> Totaal  (domain_grid) := ='add_list('+asItemList(Vastgoed/WP4/name)+')', FreeData = "False";
+		attribute<Eur_ha> Kantoor (domain_grid) := Regionaal/Kantoor * Verwervingskosten/niet_woningen/opp_per_domain_grid;
+	}
+	
+	attribute<Eur_ha> Totaal (domain_grid) := actueel/totaal + actueel/kantoor; //, cdf = "Classified/Target_9K/ClassBreaks";
+	
+	attribute<Eur_ha> Totaal_NoDataEdit  (domain_grid) := !IsDefined(totaal) ? 0[Eur_ha] : totaal;
+}

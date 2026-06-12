@@ -1,0 +1,28 @@
+Template Beleid
+{
+	unit<spoint> domain_grid;
+
+	unit<uint32> ProvincieK := Geography/RegioIndelingen/Provincie
+	{
+		attribute<.> Per_domain_grid (domain_grid):= poly2grid(ProvincieK/polygons, domain_grid);
+	}
+	#include <Plancapaciteit.dms>
+	
+	container OmgRecht
+	{
+		#include<Src.dms>
+
+		container Restricties
+		{
+			#include<EU.dms>
+			#include<AMVB.dms>
+			#include<Bevi.dms>
+			#include<PRV.dms>
+			#include<PMV.dms>
+			#include<Overigen.dms>
+			#include<Totaal.dms>
+		}
+
+		#include<stimuli.dms>
+	}
+}

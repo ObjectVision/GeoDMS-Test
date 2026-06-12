@@ -1,0 +1,379 @@
+container GenerateContainer
+{
+	unit<UInt8>  LandUseType: Expr = "Classifications/LU/ViewType";
+	
+	//unit<UInt16> Periods: Expr= "Parameters/PeriodSet/result";
+	
+	unit<uint16> Periods: Expr = "select_with_org_rel(Parameters/PeriodSet/result/ProjectedYear <= float32(2050))"
+	//unit<uint16> Periods: Expr = "range(uint16, 0[uint16], uint16(#Parameters/PeriodSet/result + 1))"
+	{
+		//attribute<Parameters/PeriodSet/result> PeriodSet_id: expr = "";
+		attribute<string> Name: 		expr = "Parameters/PeriodSet/result/Name[org_rel]";
+		attribute<string> YearStr:		expr = "Parameters/PeriodSet/result/YearStr[org_rel]";
+	}
+	
+	unit<UInt16> Run: Expr= "Parameters/Meta/Run";
+	
+	unit<UInt32> ExceptionList: NrOfRows = 1 // @USERINPUT, must be equal to the number of codes.
+	{
+		attribute<String> code: [        // @USERINPUT, give a list of RunRegion codes that should be excluded from Calculation and/or Mozaiking.
+			"Balkans"  
+			//"DISABLED FR6",  // issue 110
+			//"DISABLED ITC",  // issue 111
+			//"DISABLED PT1",  // issue 108
+			//"DISABLED DE2"   // new issue in GeoDms 6.027: cumulStatusFlag of 2011 is false
+		];
+	}
+	
+	unit<uint16> ActiveRun: Expr = "select_with_org_rel(not(IsDefined(rlookup(Run/Name, ExceptionList/code))) )"
+//	unit<uint16> ActiveRun: Expr = "select_with_org_rel(not(IsDefined(rlookup(Run/Name, ExceptionList/code))) && (ID(Run) >= 52[run])&& (ID(Run) <= 57[run]))"
+	{
+		attribute<String> Name: Expr = "Run/Name[org_rel]";
+	}
+	
+	// decoupled simulation from mozaiking
+	container CalcRunRegions
+	{
+		container impl 
+		{
+			// calcorder per run-region: first all years for AT1, then AT2 etc.
+			
+			container GeneratePeriodTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				container TimeStep;
+				
+				container result: ExplicitSuppliers = "TimeStep/ResultingState/OutputGeneration/ClippedLandUseVT;TimeStep/ResultingState/CumulStatusFlag"
+				{
+					parameter<bool> StatusFlag: Expr = "TimeStep/ResultingState/CumulStatusFlag";
+				}
+			}
+			
+			container GenerateRunRegionTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				container RunRegion;
+				container CalculatedPeriods: Expr = 
+					"for_each_ne(Periods/Name, "
+						"'GeneratePeriodTemplate('"
+							"+'RunRegion/TimeSteps/'+Periods/Name"
+						"+')'"
+					")";
+				container result : ExplicitSuppliers = "=AsList('CalculatedPeriods/'+Periods/Name+'/result', ';')"
+				{
+					attribute<bool> StatusFlags(Periods) : Expr = "='union_data(Periods, '+AsList('CalculatedPeriods/'+Periods/Name+'/result/StatusFlag', ',')+')'";
+				}
+			}
+			container All: Expr = 
+				"for_each_ne(ActiveRun/Name, "
+					"'GenerateRunRegionTemplate('+"
+						"'Runs/'+ActiveRun/Name+"
+					"+')'"
+				")";
+		}
+		
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<String> GenerateDataPreparation: Expr = "DataPreparation/CAP/LOCSPECS/Generate";
+			container StatusFlags
+				:	Expr = "for_each_nedv(ActiveRun/Name, 'impl/All/'+ActiveRun/Name+'/result/StatusFlags', Periods, bool)"
+				,	StoreData = "True"
+				,	FreeData  = "False";
+			parameter<String> results
+				:	Expr = "'calculated'"
+				,	ExplicitSuppliers = "=AsList('impl/All/'+ActiveRun/Name+'/result',';')"
+				,	IntegrityCheck   = "='and('+AsItemList('all(StatusFlags/'+ActiveRun/Name+')')+')'";
+		}
+	}
+	container MozaikLandUse
+	{
+		container impl 
+		{
+			parameter<string> CombineExpr: IsHidden = "True", Expr = 
+				"'raster_merge(invert(ActiveRun/org_rel)[Geography/Regions/Runs/Grid], LandUseType, '+"
+					"AsItemList("
+						"'Runs/'+ActiveRun/Name +'/XXX'"
+					")+"
+				"')'";		
+			attribute<String> CombineExprPerPeriod(Periods): Expr = 
+				"replace(CombineExpr, 'XXX', 'simulation_results/LandUse/ClippedGridPerYearVT_ReadOnly/'+Periods/Name)",  isHidden = "True";
+				
+			container LandusePerYear: Expr = "for_each_nedv(Periods/Name, 'MakeDefined('+CombineExprPerPeriod+', 0[LandUseType])', Geography/Lambert100mGrid, LandUseType)" {
+				attribute<LandUseType> P2012 (Geography/Lambert100mGrid): expr = "= 'MakeDefined('+replace(CombineExpr, 'XXX', 'simulation_results/LandUse/ClippedGridPerYearVT_ReadOnly/P2012')+', 0[LandUseType])'";
+			}
+			
+			// Mozaiking the generated RunRegion maps per Period
+			parameter<String> DirName: Expr = "'%LocalDataProjDir%/'+Parameters/ParamSets/ActiveSet/ParamName+'/Results/EU/LandUse'";
+			container GeneratePeriodTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				attribute<LandUseType> LandUse(Geography/Lambert100mGrid);				
+				parameter<String> PeriodYearStr;				
+				
+				attribute<LandUseType> result(Geography/Lambert100mGrid): Expr = "Landuse", StorageName = "=DirName+'/LandUseVT_'+PeriodYearStr+'.tif'"
+				{
+					attribute<UInt32> PaletteData(LandUseType): Expr = "LandUseType/Color";
+				}
+				attribute<LandUseType> result_readOnly (Geography/Lambert100mGrid): StorageName = "=DirName+'/LandUseVT_'+PeriodYearStr+'.tif'", StorageReadOnly = "True";
+			}
+		
+			container AllPeriods: Expr = 
+				"for_each_ne(Periods/Name, "
+					"'GeneratePeriodTemplate('"
+						"+'LandusePerYear/'+Periods/Name+','"
+						"+Quote(Periods/YearStr)"
+					"+')'"
+				")"
+				{
+					container P2012: expr = "GeneratePeriodTemplate(LandUsePerYear/P2012, '2012')"
+					{
+						attribute<LandUseType> result_readOnly (Geography/Lambert100mGrid): expr = "LandUseData/CLC_100m/LC2012/ViewData";
+					}
+				}
+		}
+
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<string> Generate: Expr = "'ready'", ExplicitSuppliers = "=AsList('impl/AllPeriods/'+Periods/Name+'/result',';')";
+		}
+	}		
+	container MozaikPopulation
+	{
+		container impl 
+		{
+			parameter<string> CombineExpr: IsHidden = "True", Expr = 
+				"'raster_merge(invert(ActiveRun/org_rel)[Geography/Regions/Runs/Grid], int32, '+"
+					"AsItemList("
+						"'Runs/'+ActiveRun/Name +'/XXX'"
+					")+"
+				"')'";		
+			attribute<String> CombineExprPerPeriod(Periods): Expr = 
+				"replace(CombineExpr, 'XXX', 'simulation_results/landuse/ClippedQiPerYearVT_ReadOnly/'+Periods/Name)",  isHidden = "True";
+				
+			container PopulationPerYear: Expr = "for_each_nedv(Periods/Name, 'MakeDefined('+CombineExprPerPeriod+', 0[int32])', Geography/Lambert100mGrid, int32)" {
+				attribute<int32> P2012 (Geography/Lambert100mGrid): expr = "= 'MakeDefined('+replace(CombineExpr, 'XXX', 'simulation_results/LandUse/ClippedQiPerYearVT_ReadOnly/P2012')+', 0[int32])'";
+			}
+			
+			// Mozaiking the generated RunRegion maps per Period
+			parameter<String> DirName: Expr = "'%LocalDataProjDir%/'+Parameters/ParamSets/ActiveSet/ParamName+'/Results/EU/Population'";
+			container GeneratePeriodTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				attribute<int32> Qi(Geography/Lambert100mGrid);
+				parameter<String> PeriodYearStr;
+				
+				attribute<int32> result (Geography/Lambert100mGrid): Expr = "max_elem(Qi, int32(0))", StorageName = "=DirName+'/Qi_'+PeriodYearStr+'.tif'";
+				
+				attribute<int32> Qi_per_N2merged 	(Geography/Regions/Nuts2_Merged): expr = "sum(result, Geography/RegionGrids/Nuts2_Merged)";
+				attribute<float32> dif_Qi			(Geography/Regions/Nuts2_Merged): expr = "float32(Qi_per_N2merged) - Parameters/PopSets/RegionalPopulation/Demands/Qj/s2050";
+				
+			}
+		
+			container AllPeriods: Expr = 
+				"for_each_ne(Periods/Name, "
+					"'GeneratePeriodTemplate('"
+						"+'PopulationPerYear/'+Periods/Name+','"
+						"+Quote(Periods/YearStr)"
+					"+')'"
+				")" {					container P2012: expr = "GeneratePeriodTemplate(PopulationPerYear/P2012, '2012')";}
+		}
+
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<string> Generate: Expr = "'ready'", ExplicitSuppliers = "=AsList('impl/AllPeriods/'+Periods/Name+'/result',';')+";
+		}
+	}		
+	container MozaikAccessibility
+	{
+		container impl 
+		{
+			parameter<string> CombineExpr: IsHidden = "True", Expr = 
+				"'raster_merge(invert(ActiveRun/org_rel)[Geography/Regions/Runs/Grid], float32, '+"
+					"AsItemList("
+						"'Runs/'+ActiveRun/Name +'/XXX'"
+					")+"
+				"')'";		
+			attribute<String> CombineExprPerPeriod(Periods): Expr = 
+				"replace(CombineExpr, 'XXX', 'TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/ClippedAi_ReadOnly')",  isHidden = "True";
+				
+			container PerYear: Expr = "for_each_nedv(Periods/Name, 'MakeDefined('+CombineExprPerPeriod+', 0[Float32])', Geography/Lambert100mGrid, Float32)";
+			
+			// Mozaiking the generated RunRegion maps per Period
+			parameter<String> DirName: Expr = "'%LocalDataProjDir%/'+Parameters/ParamSets/ActiveSet/ParamName+'/Results/EU/Accessibility'";
+			container GeneratePeriodTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				attribute<Float32> Ai(Geography/Lambert100mGrid);
+				parameter<String> PeriodYearStr;
+				
+				attribute<Float32> result(Geography/Lambert100mGrid): Expr = "Ai", StorageName = "=DirName+'/Ai_'+PeriodYearStr+'.tif'";
+			}
+		
+			container AllPeriods: Expr = 
+				"for_each_ne(Periods/Name, "
+					"'GeneratePeriodTemplate('"
+						"+'PerYear/'+Periods/Name+','"
+						"+Quote(Periods/YearStr)"
+					"+')'"
+				")";
+		}
+
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<string> Generate: Expr = "'ready'", ExplicitSuppliers = "=AsList('impl/AllPeriods/'+Periods/Name+'/result',';')";
+		}
+	}
+	container checkPop
+	{
+		
+		unit<uint32> N3: expr = "Geography/AdministrativeBoundaries/sets/NUTS3_v8/UniqueZones";
+		unit<uint32> N0: expr = "Geography/AdministrativeBoundaries/sets/NUTS0_v8/UniqueZones";
+		
+		attribute<int32> Qi15_RO 	(Geography/Lambert100mGrid): StorageName = "= MozaikPopulation/Impl/DirName + '/Qi_2015.tif'", StorageReadOnly = "True";
+		attribute<N3> N3Id 			(Geography/Lambert100mGrid): expr = "poly2grid(N3/Geometry, Geography/Lambert100mGrid)";
+		attribute<N0> N0Id 			(Geography/Lambert100mGrid): expr = "poly2grid(N0/Geometry, Geography/Lambert100mGrid)";
+		attribute<int32> Qi15_mod	(N3): expr = "Sum(Qi15_RO, N3Id)";
+		attribute<int32> Qi15_mod_N0(N0): expr = "Sum(Qi15_RO, N0Id)";
+		attribute<int32> Qi15_proj	(N3): expr = "int32(rjoin(N3/ZoneId, Parameters/DemandSets/Global/Population/BodyDomain/ZoneId, Parameters/DemandSets/Global/Population/BodyDomain/Data/y2015))";
+		attribute<Geography/AdministrativeBoundaries/BoundaryDomains/RunAreas> RA_id	(N3): expr = "point_in_polygon(N3/centroid, Geography/AdministrativeBoundaries/BoundaryDomains/RunAreas/Geometry)";
+		attribute<int32> Qi15_Proj_EU28	(N3): expr = "IsDefined(RA_id) && Geography/AdministrativeBoundaries/BoundaryDomains/RunAreas/ZoneId[RA_id] <> 'BA' ? Qi15_proj : 0[int32]";
+		attribute<int32> dQi		(N3): expr = "IsDefined(point_in_polygon(N3/centroid, Geography/AdministrativeBoundaries/BoundaryDomains/RunAreas/Geometry)) ? Qi15_proj - Qi15_mod : int32(0)";
+	}
+	
+	container Mozaik_AgriAbandonmentRisk
+	{
+		container impl 
+		{
+			parameter<string> CombineExpr: IsHidden = "True", Expr = 
+				"'raster_merge(invert(ActiveRun/org_rel)[Geography/Regions/Runs/Grid], float32, '+"
+					"AsItemList("
+						"'Runs/'+ActiveRun/Name +'/XXX'"
+					")+"
+				"')'";		
+			attribute<String> CombineExprPerPeriod(Periods): Expr = 
+				"replace(CombineExpr, 'XXX', 'TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/ClippedAgriAbandonmentRisk_ReadOnly')",  isHidden = "True";
+				
+			container PerYear: Expr = "for_each_nedv(Periods/Name, 'MakeDefined('+CombineExprPerPeriod+', 0[Float32])', Geography/Lambert100mGrid, Float32)";
+			
+			// Mozaiking the generated RunRegion maps per Period
+			parameter<String> DirName: Expr = "'%LocalDataProjDir%/'+Parameters/ParamSets/ActiveSet/ParamName+'/Results/EU/AgriAbandonmentRisk'";
+			container GeneratePeriodTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				attribute<Float32> AgriAbandonmentRisk(Geography/Lambert100mGrid);
+				parameter<String> PeriodYearStr;
+				
+				attribute<Float32> result(Geography/Lambert100mGrid): Expr = "AgriAbandonmentRisk", StorageName = "=DirName+'/'+PeriodYearStr+'_AgriAbandonmentRisk.tif'";
+			}
+		
+			container AllPeriods: Expr = 
+				"for_each_ne(Periods/Name, "
+					"'GeneratePeriodTemplate('"
+						"+'PerYear/'+Periods/Name+','"
+						"+Quote(Periods/YearStr)"
+					"+')'"
+				")";
+		}
+
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<string> Generate: Expr = "'ready'", ExplicitSuppliers = "=AsList('impl/AllPeriods/'+Periods/Name+'/result',';')";
+		}
+	}		
+	container Mozaik_RuralRemoteness
+	{
+		container impl 
+		{
+			parameter<string> CombineExpr: IsHidden = "True", Expr = 
+				"'raster_merge(invert(ActiveRun/org_rel)[Geography/Regions/Runs/Grid], float32, '+"
+					"AsItemList("
+						"'Runs/'+ActiveRun/Name +'/XXX'"
+					")+"
+				"')'";		
+			attribute<String> CombineExprPerPeriod(Periods): Expr = 
+				"replace(CombineExpr, 'XXX', 'TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/Clipped_RuralRemoteness_ReadOnly')",  isHidden = "True";
+				
+			container PerYear: Expr = "for_each_nedv(Periods/Name, 'MakeDefined('+CombineExprPerPeriod+', 0[Float32])', Geography/Lambert100mGrid, Float32)";
+			
+			// Mozaiking the generated RunRegion maps per Period
+			parameter<String> DirName: Expr = "'%LocalDataProjDir%/'+Parameters/ParamSets/ActiveSet/ParamName+'/Results/EU/RuralRemoteness'";
+			container GeneratePeriodTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				attribute<Float32> RuralRemoteness(Geography/Lambert100mGrid);
+				parameter<String> PeriodYearStr;
+				
+				attribute<Float32> result(Geography/Lambert100mGrid): Expr = "RuralRemoteness", StorageName = "=DirName+'/'+PeriodYearStr+'_RuralRemoteness.tif'";
+			}
+		
+			container AllPeriods: Expr = 
+				"for_each_ne(Periods/Name, "
+					"'GeneratePeriodTemplate('"
+						"+'PerYear/'+Periods/Name+','"
+						"+Quote(Periods/YearStr)"
+					"+')'"
+				")";
+		}
+
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<string> Generate: Expr = "'ready'", ExplicitSuppliers = "=AsList('impl/AllPeriods/'+Periods/Name+'/result',';')";
+		}
+	}
+	container Mozaik_UAA_change
+	{
+		parameter<String> DirName: Expr = "'%LocalDataProjDir%/'+Parameters/ParamSets/ActiveSet/ParamName+'/Results/EU/AgriChanges'";
+		
+		container AllPeriods: expr = "for_each_ne(Periods/Name, 'GenerateMaps(GenerateContainer/MozaikLandUse/impl/AllPeriods/P2015, GenerateContainer/MozaikLandUse/impl/AllPeriods/'+Periods/Name+', '+ +Quote(Periods/YearStr) +')')";
+		
+		container GenerateMaps: IsTemplate = "True"
+		{
+			container refMap;
+			container currMap;
+			parameter<String> PeriodYearStr;
+			
+			attribute<uint16> AgriLoss (Geography/Lambert100mGrid): expr = "uint16(LandUseType/IsAgriCultural[refMap/result_readOnly] && LandUseType/IsPossiblyAgriAbandoned[currMap/result_readOnly])", StorageName = "=DirName+'/'+PeriodYearStr+'_AgriLoss.tif'";
+			attribute<uint16> AgriGain (Geography/Lambert100mGrid): expr = "uint16(!LandUseType/IsAgriCultural[refMap/result_readOnly] && LandUseType/IsAgriCultural[currMap/result_readOnly])", StorageName = "=DirName+'/'+PeriodYearStr+'_AgriGain.tif'";
+		}
+		
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<string> Generate: Expr = "'ready'", ExplicitSuppliers = "=AsList('AllPeriods/'+Periods/Name+'/AgriLoss;AllPeriods/'+Periods/Name+'/AgriGain',';')";
+		}
+			
+	}
+	
+	container Mozaik_LowPopDensity
+	{
+		container impl 
+		{
+			parameter<string> CombineExpr: IsHidden = "True", Expr = 
+				"'raster_merge(invert(ActiveRun/org_rel)[Geography/Regions/Runs/Grid], float32, '+"
+					"AsItemList("
+						"'Runs/'+ActiveRun/Name +'/XXX'"
+					")+"
+				"')'";		
+			attribute<String> CombineExprPerPeriod(Periods): Expr = 
+				"replace(CombineExpr, 'XXX', 'TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/Clipped_LowPopDensity_ReadOnly')",  isHidden = "True";
+				
+			container PerYear: Expr = "for_each_nedv(Periods/Name, 'MakeDefined('+CombineExprPerPeriod+', 0[Float32])', Geography/Lambert100mGrid, Float32)";
+			
+			// Mozaiking the generated RunRegion maps per Period
+			parameter<String> DirName: Expr = "'%LocalDataProjDir%/'+Parameters/ParamSets/ActiveSet/ParamName+'/Results/EU/LowPopDensity'";
+			container GeneratePeriodTemplate:IsTemplate = "True", isHidden = "True"
+			{
+				attribute<Float32> LowPopDensity(Geography/Lambert100mGrid);
+				parameter<String> PeriodYearStr;
+				
+				attribute<Float32> result(Geography/Lambert100mGrid): Expr = "LowPopDensity", StorageName = "=DirName+'/'+PeriodYearStr+'_LowPopDensity.tif'";
+			}
+		
+			container AllPeriods: Expr = 
+				"for_each_ne(Periods/Name, "
+					"'GeneratePeriodTemplate('"
+						"+'PerYear/'+Periods/Name+','"
+						"+Quote(Periods/YearStr)"
+					"+')'"
+				")";
+		}
+
+		container ButtonCan: Descr = "The Generate parameter is contained in order to allow impl/All to be opened without all the meta info procesing that comes with getting Generate in the TreeView"
+		{
+			parameter<string> Generate: Expr = "'ready'", ExplicitSuppliers = "=AsList('impl/AllPeriods/'+Periods/Name+'/result',';')";
+		}
+	}
+	
+}

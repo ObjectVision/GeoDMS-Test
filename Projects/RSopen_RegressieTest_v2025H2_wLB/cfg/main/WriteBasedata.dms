@@ -1,0 +1,58 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Dit is RSOpen, de open source versie van het model RuimteScanner. Het scipt wordt uitgegeven onder GNU-GPL licentie.
+//
+// RSOpen is ontwikkeld door PBL Planbureau voor de Leefomgeving, i.s.m Object Vision B.V. en VU Vrije Universiteit Amsterdam.
+// Opdrachtgever/ontwikkelaar PBL: Bart Rijken
+// Contactpersoon/ontwikkelaar Object Vision B.V.: Jip Claassens (jclaassens@objectvision.nl)
+// Contacpersoon PBL: Bas van Bemmel (Bas.vanBemmel@pbl.nl)
+//
+// Met deze file kan in achtereenvolgende runs de zgn. baseData (Data die generiek zijn en relatief veel rekentijd kosten om te produceren) worden geexporteerd.
+// De Data worden weggeschreven naar de LocalDataDir. Het model gaat er default vanuit dat het deze 'ontkoppelde' Data kan gebruiken, en dus niet hoeft te (her)genereren.
+// Dit laatste kan worden aangepast in de /ModelParameters of worden 'overruled' vanuit de batch omgeving
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container WriteBaseData : using = "Classifications"
+{
+	parameter<String> Generate_Run1 := 
+		   Impl/StateBasisjaar
+		 + Impl/Verdeling_VSSH_Proxy
+		 + Impl/IsAutoweg
+		 + Impl/IsAutowegKlaverbladFix
+		 + Impl/IsSpoorweg
+		 + Impl/EvidentBenut_AdminDomain_All
+		 + Impl/PopK_Buffers
+		 + Impl/Verwervingskosten
+		 + Impl/MakeNVK //nodig voor Landbouw modellering
+		 + Impl/MakeZonneladder
+		 + Impl/MakeVerblijfsrecreatie_Trends
+		 ;
+
+	container Impl
+	{
+		parameter<String> StateBasisjaar                := 'Ready', ExplicitSuppliers = "BaseData/StartState/StateBasisjaar/Write/Generate";
+		parameter<String> Verdeling_VSSH_Proxy          := 'Ready', ExplicitSuppliers = "BaseData/StartState/Verdeling_VSSH/Per_AllocRegios/Generate_Wonen";
+		parameter<String> IsAutoweg                     := 'Ready', ExplicitSuppliers = "SourceData/Grondgebruik/BGT/IsDefinedAndNotNoData/IsAutoweg/Make_Per_AdminDomain";
+		parameter<String> IsAutowegKlaverbladFix        := 'Ready', ExplicitSuppliers = "SourceData/Grondgebruik/BGT/IsDefinedAndNotNoData/IsAutoweg/FixKlaverbladen/Make_Per_AdminDomain";
+		parameter<String> IsSpoorweg                    := 'Ready', ExplicitSuppliers = "SourceData/Grondgebruik/BGT/IsDefinedAndNotNoData/IsSpoorbaan/Make_Per_AdminDomain";
+		parameter<String> EvidentBenut_AdminDomain      := 'Ready', ExplicitSuppliers = "SourceData/Grondgebruik/BGT/IsDefinedAndNotNoData/Make_IsEvidentBenut_AdminDomain";
+		parameter<String> PopK_Buffers                  := 'Ready', ExplicitSuppliers = "SourceData/RegioIndelingen/Bevolkingskern_2011/Maak_PopK_Buffers/Generate";
+		parameter<String> Verwervingskosten             := 'Ready', ExplicitSuppliers = "BaseData/Suitabilities/Wonen/Verwervingskosten/Generate";
+		parameter<String> Zonneladder                   := 'Ready', ExplicitSuppliers = "BaseData/Zonneladder/PerAllocDomain/Write";
+		parameter<String> Verblijfsrecreatie_Trends     := 'Ready', ExplicitSuppliers = "BaseData/StartState/Verblijfsrecreatie_Trends/Trends/Write_Betas_Objecten";
+		
+		parameter<String> MakeNVK                       := =VariantParameters/SectorAllocRegio/Uq_Sectors/HasLandbouwSector ? 'NVK' : quote('NotNeeded');
+		parameter<String> EvidentBenut_AdminDomain_All  := =VariantParameters/SectorAllocRegio/Uq_Sectors/HasZonSector ? 'EvidentBenut_AdminDomain + EvidentBenutZon_AdminDomain' : 'EvidentBenut_AdminDomain';
+		parameter<String> MakeVerblijfsrecreatie_Trends := =VariantParameters/SectorAllocRegio/Uq_Sectors/HasVerblijfsrecreatieSector ? 'Verblijfsrecreatie_Trends' : quote('NotNeeded');
+		parameter<String> MakeZonneladder               := =VariantParameters/SectorAllocRegio/Uq_Sectors/HasZonSector ? 'Zonneladder' : quote('NotNeeded');
+		parameter<String> NVK                           := 'Ready', ExplicitSuppliers = "SourceData/Grondgebruik/NVK/Huidig/Write_Huidig_25m_LU_ModelType;/SourceData/Grondgebruik/NVK/HDB/Write_HDB2050_25m_LU_ModelType", Descr = "Nodig voor Landbouw modellering";
+		parameter<String> EvidentBenutZon_AdminDomain   := 'Ready', ExplicitSuppliers = "SourceData/Grondgebruik/BGT/IsDefinedAndNotNoData/Make_IsEvidentBenutZon_AdminDomain";
+		
+		container BBG
+		{
+			parameter<String> Generate_25m_Modus  := 'Ready', ExplicitSuppliers = "=asList('SourceData/Grondgebruik/BBG/Dominant/Impl/Make25mgrids_Modus/'+/Classifications/Grondgebruik/ReeksJaren/naam+'/DominantCBSKlasse_25m',';')";
+			// parameter<String> Generate_100m_Modus := 'Ready', ExplicitSuppliers = "=asList('SourceData/Grondgebruik/BBG/Dominant/Impl/Make100mgrids_Modus/'+/Classifications/Grondgebruik/ReeksJaren/naam+'/DominantCBSKlasse_100m',';')";
+		}
+	}
+}

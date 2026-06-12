@@ -1,0 +1,37 @@
+unit<uint32> Fietstelweek  
+:	StorageName     = "='%NetworkModel_Dir%/Infrastructuur/Fietstelweek/links-met-snelheden-routeerbaar-2015-2016-2017-900913-v2.shp'"
+, 	Descr           = "download via http://opendata.cyclingintelligence.eu/"
+,	StorageType     = "gdal.vect"
+,	StorageReadOnly = "True"
+, 	DialogType      = "map"
+, 	DialogData      = "geometry_rd" 
+,	SyncMode        = "none"
+{
+	attribute<geometries/WebMercator_base>         geometry    (arc);
+	attribute<geometries/rdc>                      geometry_rd (arc) := convert(geometry,geometries/rdc);
+	// attribute<geometries/rdc>                      geometry_simplified (arc) := bg_simplify_linestring(geometry_rd, 1d);
+	attribute<float64>                             SNEL_ABS;
+	attribute<float32>                             bike_speed        := SNEL_ABS[float32] != 0f ? SNEL_ABS[float32] : 0f/0f;
+	
+	unit<uint32> links_with_speed := select_with_attr_by_cond(.,IsDefined(bike_speed));
+
+	unit<uint32> Arc2Segments := arc2segm(links_with_speed/geometry_rd)
+	, DialogData = "point"
+	, DialogType = "map"
+	{
+		attribute<float32> bike_speed := rjoin(Sequence_rel, id(Fietstelweek/links_with_speed), Fietstelweek/links_with_speed/bike_speed);
+	}
+	
+	unit<uint32> DynaPoint_untiled := dyna_point(Arc2Segments/point, Arc2Segments/nextpoint, 25f)
+	, DialogData = "point"
+	, DialogType = "map"
+	{
+		// attribute<float32> bike_speed := rjoin(Sequence_rel, id(Fietstelweek/links_with_speed), Fietstelweek/links_with_speed/bike_speed);
+		attribute<float32> bike_speed := Arc2Segments/bike_speed[Sequence_rel];
+	}
+	unit<uint32> DynaPoint := TiledUnit(100000[DynaPoint_untiled])
+	{
+		attribute<float32> bike_speed := DynaPoint_untiled/bike_speed[id(.)[DynaPoint_untiled]];
+		attribute<rdc>     point      := DynaPoint_untiled/point[id(.)[DynaPoint_untiled]];
+	}
+}

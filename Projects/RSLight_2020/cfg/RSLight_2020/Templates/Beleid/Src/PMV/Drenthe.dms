@@ -1,0 +1,16 @@
+container Drenthe: url = "%RSLDataDir%/Beleid/Ruimte/Pmv/dr/GBI.MILIEU_POV_V.pdf"
+{
+	attribute<bool> Grondwaterbeschermingsgebied (domain_grid):
+		Source      = "Raadpleging en download van geoportaal provincie Drenthe 20mei 2015"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\dr\GBI_MILIEU_POV_V.shp"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/dr/GBI.MILIEU_POV_V.pdf"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/dr/grondwaterbeschermingsgebied.tif";
+
+	attribute<bool> Waterwingebied (domain_grid):
+		Source      = "Raadpleging en download van geoportaal provincie Drenthe 20mei 2015"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\dr\GBI_MILIEU_POV_V.shp"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/dr/GBI.MILIEU_POV_V.pdf"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/dr/waterwingebied.tif";
+	
+	attribute<bool> Totaal (domain_grid) := max_elem(Grondwaterbeschermingsgebied, Waterwingebied);
+}

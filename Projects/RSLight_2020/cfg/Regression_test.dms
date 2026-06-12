@@ -1,0 +1,46 @@
+container RSLight_2020: url = "!=ExistingFile(FullPathName(this, '%storageBaseName%.xml'), FullPathName(this, '%storageBaseName%.htm'))"
+{
+	parameter<string> domain_grid_ref     := 'rdc_' +domain_grid_ref_short; 
+	parameter<string> SrcDomain_grid_ref  := 'rdc_' +SrcDomain_grid_ref_short; 
+	
+	parameter<string> domain_grid_ref_short    := '100m'; //Mag geen hogere resolutie hebben dan SrcDomain en voorlopig geen lagere dan rdc_100m. Werkt nu op rdc_25m en rdc_100m, icm SrcDomain op rdc_25m
+	parameter<string> SrcDomain_grid_ref_short := '25m'; //@BR, 20180906: later op rdc_10m zetten, of grid vervangen door bouwblokken/percelen; voorlopig laten staan op rdc_25 m
+	
+	unit<spoint> domain_grid := = 'Geography/'+domain_grid_ref;
+	unit<spoint> SrcDomain_grid := = 'Geography/'+SrcDomain_grid_ref
+	{
+		attribute<domain_grid> domain_grid_rel := = domain_grid_ref + '_rel';
+	}
+	
+	#include <%projDir%/cfg/RSLight_2020/MaakOntkoppeldeData.dms>
+	#include <%projDir%/cfg/RSLight_2020/ModelParameters.dms>
+	#include <%projDir%/cfg/RSLight_2020/Units.dms>
+	#include <%projDir%/cfg/RSLight_2020/Geography.dms>
+	#include <%projDir%/cfg/RSLight_2020/Classifications.dms>
+	#include <%projDir%/cfg/RSLight_2020/SourceData.dms>
+	#include <%projDir%/cfg/RSLight_2020/Analysis.dms>
+	container RelevantPad : = /Analysis/perVariant/UrbaanBulldozer_LMSSubzone_Referentie/Allocatie/Results;
+	#include <%projDir%/cfg/RSLight_2020/Templates.dms>
+	#include <%projDir%/cfg/RSLight_2020/ConfigSettings.dms>
+	
+	container t1630_expandtest
+	{
+		parameter<bool> label_is_ok := classifications/Vastgoed/vbo_gebruiksdoel/name[4b] == 'kantoor';
+
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result := label_is_ok ? 'OK' : 'False';
+
+		parameter<string> result_html := 
+			'<description>RSLight 2020 expanding test , https://pbl.sliksvn.com/ruimtescanner/PBL/ProjDir/branches/RSLight_2020, revision: 6517</description>'+
+			'<issue>1429</issue>'+
+			'<result>'+ result + '</result>';
+
+		parameter<string> C1C2 := result_html, StorageType = "str", Storagename = "= results_folder + '/t1630_expandtest_C1C2.txt'";
+		parameter<string> S1C2 := result_html, StorageType = "str", Storagename = "= results_folder + '/t1630_expandtest_S1C2.txt'";
+		parameter<string> S1S2 := result_html, StorageType = "str", Storagename = "= results_folder + '/t1630_expandtest_S1S2.txt'";
+		parameter<string> C1S2 := result_html, StorageType = "str", Storagename = "= results_folder + '/t1630_expandtest_C1S2.txt'";	
+	}
+}

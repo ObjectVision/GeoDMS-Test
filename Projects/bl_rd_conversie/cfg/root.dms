@@ -1,0 +1,30 @@
+container root
+{
+	#include <units.dms>
+	#include <geography.dms>
+	#include <Vlaanderen.dms>
+	
+	container t151_conversie_bl_rd_test
+	{
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> test                     := all(isDefined(Vlaanderen/municipality/Geometry_rd)) ? 'OK' : 'False';
+
+		parameter<uint32>  nr_polygons    := #Vlaanderen/municipality ;
+		parameter<uint32>  nr_coordinates := #Vlaanderen/municipality_coordinate;
+		
+		parameter<string> size   := 'number of polygons :' + string(nr_polygons) + ', number of coordinates:' + string(nr_coordinates) ;
+
+		parameter<string> result := 
+			'<description>Conversion Belgium to RD Coordinets for Belgium municipalities</description>'+
+			'<size>' + size + '</size>' +
+			'<result>testresult is ' + test + ',  <B>duration should also be a few seconds !</B></result>';
+
+		parameter<string> result_html := result
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t151_conversie_bl_rd_test.txt'";
+		
+	}
+}

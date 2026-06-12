@@ -1,0 +1,197 @@
+container CAP: IntegrityCheck = "GeoDmsVersion() >= 7.021"
+{	
+	unit<uint32> Zones: Expr = "RunRegions/UnitSets/RunAreas";
+	
+	container sourceData : IsHidden = "True", Using = "DataPreparation/ShapeData"
+	{
+
+		attribute<lfa> 	lfa_grid 			(domain_grid):      Expr = "poly2grid(DataPreparation/ShapeData/lfa/Geometry, domain_grid)", FreeData = "True";
+		attribute<bool> art18_totally		(domain_grid): 		Expr = "lfa/art18_totally[lfa_grid]", DisableStorage = "True";
+		attribute<bool> art18_partially 	(domain_grid): 	 	Expr = "lfa/art18_partially[lfa_grid]", DisableStorage="True";
+		attribute<bool> art19_all 			(domain_grid): 		Expr = "lfa/art19_all[lfa_grid]", DisableStorage="True";
+		attribute<bool> art20_totally		(domain_grid): 		Expr = "lfa/art20_totally[lfa_grid]", DisableStorage = "True";
+		attribute<bool> art20_partially 	(domain_grid): 	 	Expr = "lfa/art20_partially[lfa_grid]", DisableStorage="True";		
+		attribute<bool> floodRiskMap        (domain_grid):  	Expr = "JrcFactorData/TiffData/floodRisk/floodRisk",DisableStorage = "True";
+		attribute<bool> coastMap        	(domain_grid):   	Expr = "JrcFactorData/TiffData/coastalZone/Coast",DisableStorage = "True";	
+//	    attribute<JrcFactorData/ShapeData/coastalZones> cz_grid (domain_grid): expr = "poly2grid(JrcFactorData/ShapeData/coastalZones/Geometry, Geography/Lambert100mGrid)", FreeData = "True";
+		attribute<bool> buff_ndaMap (domain_grid) : 			Expr = "JrcFactorData/TiffData/NDAs/NDA", DisableStorage = "True";
+		attribute<bool> riparianAreaMap  	(domain_grid):  	Expr = "JrcFactorData/TiffData/RiparianAreas/RiparianAreas", DisableStorage = "True";
+		attribute<Int16> erosionRiskMap     (domain_grid):  	Expr = "JrcFactorData/TiffData/erosionRisk/erosionRisk ", DisableStorage = "True";
+		attribute<bool> Natura2000		    (domain_grid): 	    Expr = "JrcFactorData/TiffData/Natura2000/Natura2000", DisableStorage = "True";
+
+		//GAECS
+//		attribute<bool> IsGrassland    (domain_grid): expr = "LandUseData/CLC_100m/LC2006/ReadData = classifications/LU/GAEC_classes/Grassland " , DisableStorage = "True";
+		attribute<bool> IsOlive        (domain_grid):= JrcFactorData/TiffData/CorineGrid/CorineLandUse == Classifications/LU/Corine/V/Olive_groves        , DisableStorage = "True";
+		attribute<bool> IsPasture      (domain_grid):= JrcFactorData/TiffData/CorineGrid/CorineLandUse == Classifications/LU/Corine/V/Pastures            , DisableStorage = "True";
+		attribute<bool> IsAgroFor      (domain_grid):= JrcFactorData/TiffData/CorineGrid/CorineLandUse == Classifications/LU/Corine/V/Agro_forestry_areas , DisableStorage = "True";	
+		attribute<bool> IsHeterogArable(domain_grid):= 
+			   JrcFactorData/TiffData/CorineGrid/CorineLandUse == Classifications/LU/Corine/V/Complex_cultivation_patterns
+			|| JrcFactorData/TiffData/CorineGrid/CorineLandUse == Classifications/LU/Corine/V/Land_principally_occupied_by_agriculture_with_significant_areas_of_natural_vegetation 
+            , DisableStorage = "True";
+		                                                                    
+		 //NECR                                                                  
+		 attribute<UInt32> NECR_Map   (domain_grid): expr = "UInt32(JrcFactorData/TiffData/SuitabilityMapNECR/ReadData < int8(100) ? uint32(JrcFactorData/TiffData/SuitabilityMapNECR/ReadData): uint32(0))" , DisableStorage = "True"; 
+		 attribute<uint8> IsPeatlands (domain_grid): expr = "JrcFactorData/TiffData/Peatlands/IsPeatlands" , DisableStorage = "True";                                                                    
+		 attribute<uint8> salinity    (domain_grid): expr = "JrcFactorData/TiffData/salinity" , DisableStorage = "True";  
+		 attribute<uint16> Erodibility(domain_grid): expr = "JrcFactorData/TiffData/Erodibility" , DisableStorage = "True";
+		 attribute<bool> CDDA         (domain_grid): Expr = "JrcFactorData/NDA", DisableStorage = "True";
+		 attribute<uint8> Pot_Contamnated (domain_grid): Expr = "JrcFactorData/TiffData/ContaminatedLands/IsContaminated ", DisableStorage = "True";
+	}
+	
+	container ExTemplate
+	{
+		
+		
+		attribute<RunRegions/UnitSets/RunAreas> RegionGrid	(domain_grid):  expr = "RunRegions/RasterSets/RunAreas";
+
+//		attribute<uint16>  JrcRegionId  (RegionDomain): Expr= "id(RunRegions/UnitSets/RunAreas)";
+		
+		//FOR ARTICLE 16
+		attribute<bool>    Natura2000_agri  (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Natura2kAgri[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    Natura2000_forest(RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Natura2kFor[RunRegions/UnitSets/RunAreas/org_rel]"; 
+		//FOR ARTICLE 18   CRITERIA
+		attribute<int16>   MaxElev      	(RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_MaxElev[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<int16>   MaxSlope    	 (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_MaxSlope[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<int16>   Elev4Comb   	 (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Elev4Comb[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<int16>   Slope4Comb  	 (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Slope4Comb[RunRegions/UnitSets/RunAreas/org_rel]";
+		//FOR ARTICLE 20 CRITERIA
+		attribute<units/tonne_ha>   MinErosionRisk(RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Erosion[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    floodRisk    (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_FloodRisk[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    coastalZone  (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Coast[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    ndaBuffer500 (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Nda[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    riparian     (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Riparian[RunRegions/UnitSets/RunAreas/org_rel]";
+		//FOR GAEC CRITERIA
+		attribute<bool>    Grassland    (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Grassland[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    Olive        (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Olive[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    Pasture      (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_Pasture[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    AgroFor      (RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_AgroFor[RunRegions/UnitSets/RunAreas/org_rel]";
+		attribute<bool>    HeterogArable(RunRegions/UnitSets/RunAreas): Expr= "CaseData/Nuts0_HeterogAra[RunRegions/UnitSets/RunAreas/org_rel]";
+
+		attribute<bool>    maxElev_isok    	  (domain_grid):  expr = "JrcFactorData/TiffData/Eu27_e/ReadData > MaxElev[RegionGrid]";
+		attribute<bool>    maxSlope_isok   	  (domain_grid):  expr = "JrcFactorData/TiffData/slope_continuous/ReadData > MaxSlope[RegionGrid]";
+		attribute<bool>    maxElev_Slope_ok   (domain_grid):  expr = "maxElev_isok && maxSlope_isok";
+		attribute<bool>    ElevSlopeComb_isok (domain_grid):  expr = "JrcFactorData/TiffData/Eu27_e/ReadData > Elev4Comb[RegionGrid] && JrcFactorData/TiffData/slope_continuous/ReadData > Slope4Comb[RegionGrid]";
+		attribute<bool>    ErosionRisk_isok	  (domain_grid):  expr = "JrcFactorData/TiffData/erosionRisk/erosionRisk > MinErosionRisk[RegionGrid]";
+		
+		attribute<int8> Art16Agri(domain_grid): expr = "SourceData/Natura2000 && Natura2000_agri[RegionGrid] ? int8(35) : int8(0)";
+		attribute<int8> Art16For(domain_grid): expr = "SourceData/Natura2000 && Natura2000_forest[RegionGrid] ? int8(35) : int8(0)";
+		attribute<int8> Art18Areas (domain_grid): expr = 
+			"switch("
+				"case(SourceData/art18_totally, int8(15)), "
+				"case(SourceData/art18_partially && maxElev_Slope_ok, int8(35)), "
+				"case(SourceData/art18_partially && ElevSlopeComb_isok, int8(35)), "
+				"case(SourceData/art18_partially, int8(15)), "
+				"int8(0)"
+			")";
+		attribute<int8> Art19Areas(domain_grid): expr =
+			"SourceData/art19_all ? int8(35) : int8(0)";
+		attribute<int8> Art20Areas(domain_grid): expr = 
+			"switch("
+				"case(SourceData/art20_totally, int8(35)), "
+				"case(SourceData/art20_partially && ErosionRisk_isok ,int8(35)),"
+				"case(SourceData/art20_partially && SourceData/floodRiskMap    && floodRisk[RegionGrid],    int8(35)),"
+				"case(SourceData/art20_partially && SourceData/coastMap        && coastalZone[RegionGrid],  int8(35)), "
+				"case(SourceData/art20_partially && SourceData/buff_ndaMap     && ndaBuffer500[RegionGrid], int8(35)),"
+				"case(SourceData/art20_partially && SourceData/riparianAreaMap && riparian[RegionGrid],     int8(35)),"
+				"case(SourceData/art20_partially, int8(25)), "
+				"int8(0)"
+			")";
+
+//		attribute<int8> gaecGrassland(domain_grid): expr = 
+//			"SourceData/IsGrassland && Grassland ? int8(35) : int8(0)";
+		attribute<int8> gaecOlive  (domain_grid): expr = "SourceData/IsOlive   && Olive  [RegionGrid] ? int8(35) : int8(0)";	
+		attribute<int8> gaecPasture(domain_grid): expr = "SourceData/IsPasture && Pasture[RegionGrid] ? int8(35) : int8(0)";
+
+		attribute<int8> LocSpecsAra  (domain_grid): expr = "max_elem(Art16Agri, Art18Areas, Art19Areas, Art20Areas)";
+		attribute<int8> LocSpecsPast (domain_grid): expr = "max_elem(Art16Agri, Art18Areas, Art19Areas, Art20Areas, gaecPasture)";
+		attribute<int8> LocSpecsPC   (domain_grid): expr = "max_elem(Art16Agri, Art18Areas, Art19Areas, Art20Areas, gaecOlive)";
+		//     		 attribute<int8> LocSpecsSNV  (domain_grid): expr = "max_elem(Art16Agri, Art18Areas, Art19Areas, Art20Areas, gaecGrassland)";    
+		attribute<bool> areLocSpecsUAA(domain_grid): expr = "LocSpecsAra + LocSpecsPast + LocSpecsPC > int8(1)";
+	//	attribute<int8> LocSpecsNecr  (domain_grid): expr = "switch("
+	//			"case(!areLocSpecsUAA && (SourceData/erosionRiskMap > 1[Int16]), int8(35)),"
+	//			" int8(0)"
+	//		")";
+		attribute<int8> LocSpecsFor  (domain_grid): expr = "Art16For";
+	}
+
+	container CaseData: IsHidden="True"
+	{
+	    //ART 16
+		attribute<bool> Nuts0_Natura2kAgri (Geography/Regions/RunAreas):
+		[0,0,0,0,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1,0,1,0,1,0,0,1,0]; //boolean
+//       FI,SE,UK,FR,EE,DK,IE,LT,DE,NL,PT,LV,PL,BE,CZ,SK,ES,AT,HU,RO,IT,SI,GR,BG,MT,CY
+	    attribute<bool> Nuts0_Natura2kFor (Geography/Regions/RunAreas):
+		[0,0,0,0,1,0,0,1,1,0,1,1,0,1,1,1,0,1,0,0,1,0,1,0,0,0,0]; //boolean
+		//ART 18
+//	    no data for RO and BG, so all art 18 sites included (there are no partial polygons anyway in these countries)
+		attribute<int16> Nuts0_MaxElev (Geography/Regions/RunAreas):
+		[5000,5000,5000,800,5000,5000,5000,5000,800,5000,750,5000,500,5000,600,700,1000,700,5000,5000,800,700,800,5000,5000,800,null]; //meters
+		attribute<int16> Nuts0_MaxSlope (Geography/Regions/RunAreas):
+		[100,100,100,11,100,100,100,100,100,100,14,100,100,100,100,11,11,11,100,100,11,11,11,100,100,100,null];	//degrees
+		attribute<int16> Nuts0_Elev4Comb (Geography/Regions/RunAreas):
+		[5000,5000,5000,500,5000,5000,5000,5000,600,5000,400,5000,5000,5000,500,500,600,500,5000,5000,600,500,600,5000,5000,500,null]; //meters
+		attribute<int16> Nuts0_Slope4Comb (Geography/Regions/RunAreas):
+		[100,100,100,9,100,100,100,100,10,100,9,100,100,100,7,8,8,9,100,100,9,9,9,100,100,9,null]; //degrees
+		//ART 20
+		attribute<units/tonne_ha> Nuts0_Erosion (Geography/Regions/RunAreas):
+		[500,500,500,500,500,500,500,500,500,500,500,500,10,500,500,500,500,500,500,500,500,500,500,500,500,500,null]; //tonne/ha/a
+		attribute<bool> Nuts0_FloodRisk (Geography/Regions/RunAreas):
+		[0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,1,0,1,1,0,0,0,0,null]; //boolean
+		attribute<bool> Nuts0_Coast (Geography/Regions/RunAreas):
+//		[0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; //boolean
+		['False','False','False','False','True','False','False','False','True','False','False','False','False','False','False','False','False','False','False','False','False'
+		,'False','False','False','False','False','False']; //boolean
+		attribute<bool> Nuts0_Nda (Geography/Regions/RunAreas):
+		[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0]; //boolean
+		attribute<bool> Nuts0_Riparian (Geography/Regions/RunAreas):
+		[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; //boolean
+		//GAECs
+//		attribute<bool> Nuts0_Grassland (RunRegions/UnitSets/RunAreas):
+//		[1,0,1,1,0,0,0,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,1,0,0,0]; //boolean
+	    attribute<bool> Nuts0_Olive (Geography/Regions/RunAreas):
+		[0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0]; //boolean
+	    attribute<bool> Nuts0_Pasture (Geography/Regions/RunAreas):
+		[1,0,1,1,0,0,0,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,1,0,0,0,0]; //boolean
+	    attribute<bool> Nuts0_AgroFor (Geography/Regions/RunAreas):
+		[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]; //boolean
+	    attribute<bool> Nuts0_HeterogAra (Geography/Regions/RunAreas):
+		[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; //boolean
+	}
+
+	container LOCSPECS
+	{
+		attribute<int8> LocSpecsAra (domain_grid): expr = "ExTemplate/LocSpecsAra";
+		attribute<int8> written_LocSpecsAra (domain_grid): expr= "LocSpecsAra",
+			StorageName = "%LocalDataDir%/100m/LocSpecsAra.tif";
+		attribute<int8> read_LocSpecsAra (domain_grid): StorageReadOnly = "True",
+			StorageName = "%LocalDataDir%/100m/LocSpecsAra.tif";
+
+		attribute<int8> LocSpecsPC (domain_grid): expr = "ExTemplate/LocSpecsPC";
+		attribute<int8> written_LocSpecsPC (domain_grid): expr= "LocSpecsPC",
+			StorageName = "%LocalDataDir%/100m/LocSpecsPC.tif";
+		attribute<int8> read_LocSpecsPC (domain_grid): StorageReadOnly = "True",
+			StorageName = "%LocalDataDir%/100m/LocSpecsPC.tif";
+
+		attribute<int8> LocSpecsPast (domain_grid): expr = "ExTemplate/LocSpecsPast";
+		attribute<int8> written_LocSpecsPast (domain_grid): expr = "LocSpecsPast",
+			StorageName = "%LocalDataDir%/100m/LocSpecsPast.tif"; 
+		attribute<int8> read_LocSpecsPast (domain_grid): StorageReadOnly = "True",
+			StorageName = "%LocalDataDir%/100m/LocSpecsPast.tif";
+			
+		attribute<int8> LocSpecsFor (domain_grid): expr = "ExTemplate/LocSpecsFor";
+		attribute<int8> written_LocSpecsFor (domain_grid): expr = "LocSpecsFor",
+			StorageName = "%LocalDataDir%/100m_CAP/LocSpecsFor.tif"; 
+		attribute<int8> read_LocSpecsFor (domain_grid): StorageReadOnly = "True",
+			StorageName = "%LocalDataDir%/100m/LocSpecsFor.tif";
+		
+		attribute<bool> areLocSpecsUAA (domain_grid): expr = "ExTemplate/areLocSpecsUAA";
+		
+		attribute<int8> LocSpecNecr  (domain_grid): expr = "int8(JrcFactorData/LocSpec_NECR/NECR_LocSpec)"; //!areLocSpecsUAA &&
+		attribute<int8> written_LocSpecsNECR (domain_grid): expr= "LocSpecNecr",
+			StorageName = "%LocalDataDir%/100m/LocSpecsNECR.tif";
+		attribute<int8> read_LocSpecsNecr (domain_grid): StorageReadOnly = "True",
+			StorageName = "%LocalDataDir%/100m/LocSpecsNecr.tif";
+			
+		parameter<String> Generate: Expr = "'Ready'", ExplicitSuppliers = "written_LocSpecsAra;written_LocSpecsPC;written_LocSpecsPast;written_LocSpecsFor;written_LocSpecsNECR";
+	}
+}

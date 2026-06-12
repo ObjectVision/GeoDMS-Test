@@ -1,0 +1,224 @@
+Template PerExtentT_Werken : using = "VariantSpecifiek;VariantSpecifiek/Regios"
+{     
+	// PerExtentT
+	parameter<Extent/K> id;
+	//
+	
+	parameter<string> Extent_name            := Extent/K/name_short[id];
+	parameter<bool>   FirstExtentIndicator   := id == 0[Extent/K];
+	parameter<bool>   FirstIterIndicator     := IterK_id == 0[IterK];
+	parameter<string> PrevIter               := IterK/PrevName[IterK_id];
+	parameter<string> PrevExtent             := Extent/K/PrevName_short[id];
+	parameter<string> LastExtentName         := Extent/K/LastExtentName;
+	
+	
+	// attribute<bool> GeenAllocatieDoorWonen (domain) := =VariantSpecifiek/Parameters/VariantSrc_string+'/Allocatie/Results/FinalWonen/Final/Woningbouw_netto/Totaal/per_domain == 0f';
+	attribute<bool> GeenAllocatieDoorWonen (domain) := const(TRUE,domain);
+			
+	attribute<bool> GeenAllocatieInVorigeIter (domain) := =
+		FirstIterIndicator
+			? 'const(true, domain)'
+			: '!('+IterK/PrevName[IterK_id]+'/PerExtent/'+Extent_name+'/HasBeenAllocated)';
+		
+	attribute<bool> GeenAllocatieInVorigeExtent (domain) := =
+		FirstExtentIndicator
+			? 'const(true, domain)'
+			: '!PerExtent/'+Extent/K/name_short[id - 1]+'/HasBeenAllocated';
+	
+	attribute<bool> AllocationAllowedInThisIterOrExtent (domain) := =
+		FirstExtentIndicator && FirstIterIndicator
+			? Extent/K/RefSrc[id]+' && GeenAllocatieDoorWonen'
+			: Extent/K/RefSrc[id]+' && GeenAllocatieInVorigeIter && GeenAllocatieInVorigeExtent && GeenAllocatieDoorWonen';
+	
+	attribute<ha> Capaciteit (domain) := = '('+Extent/K/RefSrc[id]+' && GeenAllocatieInVorigeIter && GeenAllocatieInVorigeExtent)[float32] * VariantSpecifiek/ZeefInput/Capaciteit'
+	{
+		attribute<ha> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		
+		attribute<ha> OverExtents (domain) := ='MakeDefined(Capaciteit,0[ha])'+iif(FirstExtentIndicator,'',' + PerExtent/'+Extent/K/PrevName_short[id]+'/Capaciteit/OverExtents')
+		{
+			attribute<ha> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		}
+	}
+	container Winst_src := 
+		for_each_nedv(
+			AllocSector/name
+			, 'VariantSpecifiek/Kosten/ResidueleWaarde/'+AllocSector/name+' < 0[Eur_ha] ? 0[Eur_ha] : VariantSpecifiek/Kosten/ResidueleWaarde/'+AllocSector/name
+			, domain
+			, Eur_ha
+		)
+	{
+		attribute<Eur_ha> GeenAlloc (domain) := const(0[Eur_ha],domain);
+	}
+		
+	container Winst := 
+		for_each_nedv(
+			AllocSector_src/name
+			, FirstExtentIndicator && FirstIterIndicator
+				? 'Winst_src/'+AllocSector_src/name
+				: 'AllocationAllowedInThisIterOrExtent ? Winst_src/'+AllocSector_src/name+' : 0[Eur_ha]'
+			, domain
+			, Eur_ha
+		);
+	
+	container Claims
+	{
+		container claim_src := Analysis/BaseData/Banen_Ruimtebeslag/ClaimsForAlloc
+		{
+			attribute<Ha> GeenAlloc (AllocRegio) := const(0[Ha],AllocRegio);
+			attribute<Ha> Winkel    (AllocRegio) := sum(Analysis/BaseData/Banen_Ruimtebeslag/ClaimsForAlloc/Winkel, Regios/SrcRegio/AllocRegio_rel);
+			attribute<Ha> Kantoor   (AllocRegio) := sum(Analysis/BaseData/Banen_Ruimtebeslag/ClaimsForAlloc/Kantoor, SrcRegio/AllocRegio_rel);
+			attribute<Ha> Industrie (AllocRegio) := sum(Analysis/BaseData/Banen_Ruimtebeslag/ClaimsForAlloc/Industrie, SrcRegio/AllocRegio_rel);
+		}
+		
+		container maxclaims_src := 
+			for_each_nedv(
+				AllocSector/name
+				, FirstIterIndicator && FirstExtentIndicator
+					? 'claim_src/'+AllocSector/name
+					: !FirstIterIndicator && FirstExtentIndicator
+						? PrevIter+'/PerExtent/'+Extent/K/LastExtentName+'/claims/maxclaims_src/'+AllocSector/name+' - '+PrevIter+'/PerExtent/'+Extent/K/LastExtentName+'/Indicators/NrOfHa/'+AllocSector/name+ ' + '+PrevIter+'/PerExtent/'+Extent/K/LastExtentName+'/Displacement/'+AllocSector/name+' / AllocSector/Density[AllocSector/V/'+AllocSector/name+']'
+						: 'PerExtent/'+PrevExtent+'/claims/maxclaims_src/'+AllocSector/name+' - PerExtent/'+PrevExtent+'/Indicators/NrOfHa/'+AllocSector/name+ ' + PerExtent/'+PrevExtent+'/Displacement/'+AllocSector/name+' / AllocSector/Density[AllocSector/V/'+AllocSector/name+']'
+				, AllocRegio
+				, Ha
+			)
+		{
+			attribute<Ha> GeenAlloc (AllocRegio) := claim_src/GeenAlloc;
+		}
+		
+		container maxclaims := 
+			for_each_nedv(
+				AllocSector_src/name
+				, 'roundup(maxclaims_src/'+AllocSector_src/name+') < 0i
+					? 0[Ha]
+					: roundup(maxclaims_src/'+AllocSector_src/name+')[Ha]'
+				, AllocRegio
+				, Ha
+			);
+		
+		container minclaims := 
+			for_each_nedv(
+				AllocSector_src/name
+				, 'const(0, AllocRegio, uint32)'
+				, AllocRegio
+				, uint32
+			);
+			
+	}
+	
+	//dit geeft het winst niveau waarbij de claims volledig behaald worden en de winst nog positief is.
+	container nth_element_perAllocSector := 
+		for_each_nedv(
+			AllocSector_src/name
+			, '-nth_element_weighted(
+					  -MakeDefined(Winst/'+AllocSector_src/name+'[Eur_ha], 0f)'   //rank
+					', Claims/maxclaims/'+AllocSector_src/name+                   //targetweight
+					', const(1[Ha], domain)'                                  //weight
+					', AllocRegio/per_rdc_100m[domain/org_rel])'         //relation
+			, AllocRegio
+			, EUR_ha
+		);
+	
+	unit<uint32>         unit_claimset                  := combine(AllocSector_src, AllocRegio);
+	
+	attribute<EUR_ha>    zaaglijn_union (unit_claimset) := ='union_data(unit_claimset,' +AsItemList('nth_element_perAllocSector/' +AllocSector_src/name)+ ')';
+	
+	attribute<EUR_ha>      max_elem (domain)        := ='max_elem(' +AsItemList('Winst/' +AllocSector_src/name)+ ')[Eur_ha]';
+	attribute<AllocSector_src> arg_max  (domain)        := ='argmax(
+																' +AsItemList(
+																	replace(
+																		'Winst/@AS@[Eur_ha] > nth_element_perAllocSector/@AS@[AllocRegio/per_rdc_100m[domain/org_rel]] 
+																			? Winst/@AS@[Eur_ha]
+																			: (0/0)[Eur_ha]'
+																	, '@AS@',  +AllocSector_src/name)
+																)+
+															')[AllocSector_src]';
+
+	attribute<AllocSector_src> allocatie (domain) := ='max_elem > zaaglijn_union[combine_data(unit_claimset, arg_max, AllocRegio/per_rdc_100m[domain/org_rel])] ? arg_max[AllocSector_src] : (0/0)[AllocSector_src]', FreeData = "true", StoreData = "true";
+	
+	attribute<bool>        HasBeenAllocated (domain) := = FirstExtentIndicator && FirstIterIndicator 
+																? 'allocatie > 0b'
+																: FirstExtentIndicator && !FirstIterIndicator
+																	? 'allocatie > 0b || '+PrevIter+'/PerExtent/'+LastExtentName+'/HasBeenAllocated'
+																	: 'allocatie > 0b || PerExtent/'+Extent/K/name_short[id - 1]+'/HasBeenAllocated';
+	
+	container AllocatiePerAllocSector :=
+		for_each_nedv(
+			AllocSector_src/name
+			, 'Allocatie == '+string(id(AllocSector_src))+'[AllocSector_src] ? 1[Ha] : 0[Ha]'
+			, domain
+			, Ha
+		);
+
+	container OverIters :=
+		for_each_nedv(
+			AllocSector/name
+			, FirstIterIndicator 
+				? 'MakeDefined(AllocatiePerAllocSector/'+AllocSector/name+',0[Ha])'
+				: PrevIter+'/PerExtent/'+Extent_name+'/OverIters/'+AllocSector/name+' + MakeDefined(AllocatiePerAllocSector/'+AllocSector/name+',0[Ha])'
+			, domain
+			, Ha
+		)
+		{
+			attribute<Ha> Totaal (domain) := = 'add('+AsItemList(AllocSector/name)+')';
+		}
+	
+	container OverExtents := 
+		for_each_nedv(
+			AllocSector/name
+			, FirstExtentIndicator
+				? 'MakeDefined(AllocatiePerAllocSector/'+AllocSector/name+',0[Ha])'
+				: 'PerExtent/'+Extent/K/PrevName_short[id]+'/OverExtents/'+AllocSector/name+' + MakeDefined(AllocatiePerAllocSector/'+AllocSector/name+',0[Ha])'
+			, domain
+			, Ha
+		)
+		{
+			attribute<Ha> Totaal (domain) := = 'add('+AsItemList(AllocSector/name)+')';
+		}
+		
+	container Indicators 
+	{
+		container NrOfHa :=
+			for_each_nedv(
+				AllocSector/name
+				, 'sum(Allocatie == '+string(id(AllocSector))+'[AllocSector] ? 1[Ha] : 0[Ha], domain/AllocRegio_rel)'
+				, AllocRegio
+				, Ha
+			);
+			
+		container NrOfm2footprint :=
+			for_each_nedv(
+				AllocSector/name
+				, 'NrOfHa/'+AllocSector/name+' * '+string(AllocSector/density)+'[m2footprint_ha]'
+				, AllocRegio
+				, m2footprint
+			);
+			
+		container NrofJobs :=
+			for_each_nedv(
+				AllocSector/name
+				, 'NrOfm2footprint/'+AllocSector/name+' / sum(Analysis/BaseData/Banen_Ruimtebeslag/Ruimtebeslag_InBasisjaar_perAllocSector/'+AllocSector/name+', SrcRegio/AllocRegio_rel)'
+				, AllocRegio
+				, job
+			);
+	}
+	
+	container Displacement := // voor volgende iter
+		for_each_nedv(
+			AllocSector/name
+			, 'sum(allocatie > 0b
+				? Analysis/BaseData/Banen_Ruimtebeslag/Meter2Basisjaar_grid/'+AllocSector/name+'[domain/org_rel]
+				: 0[m2footprint], domain/AllocRegio_rel)'
+			, AllocRegio
+			, m2footprint
+		);
+		
+		
+	parameter<bool> HasNoAllocationInCurrentIterExtent := sum(Allocatie) == 0b;
+	parameter<bool> HasAllocationInCurrentIter := =
+		id == 0[Extent/K]
+			? '!HasNoAllocationInCurrentIterExtent'
+			: 'PerExtent/'+Extent/K/PrevName_short[id]+'/HasAllocationInCurrentIter || !HasNoAllocationInCurrentIterExtent';
+	
+	parameter<bool> StopCriterium  := = quote(Extent/K/name_short[id])+' == '+quote(Extent/K/LastExtentName)+' ? !HasAllocationInCurrentIter : FALSE';
+
+}

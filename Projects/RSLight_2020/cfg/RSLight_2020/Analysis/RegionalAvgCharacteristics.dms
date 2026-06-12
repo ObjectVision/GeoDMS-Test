@@ -1,0 +1,271 @@
+container RegionalAvgCharacteristics // opschonen
+{  
+	unit<uint8>  HouseCharacteristics := Classifications/Vastgoed/HouseCharacteristics;
+	unit<uint32> HousetypeHouseChar   := Classifications/Vastgoed/HouseTypeHouseChar;
+	unit<uint8>  WP4 := Classifications/Vastgoed/WP4;
+	unit<uint32> vbo := SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/woon/GebruiksdoelSet;
+	unit<uint32> Pand := SourceData/Vastgoed/BAG/panden/pand ;
+	unit<uint32> Vbo_ := /SourceData/Vastgoed/BAG/VBOs/src, DialogType = "map",	DialogData = "geometry_mm";
+
+	container MakeAvgValueTable := 
+		for_each_nedv(
+			HouseCharacteristics/name,
+			replace(
+				'union_data('
+					'WP4,'+
+					AsItemList(
+						replace(
+							'mean(SourceData/Vastgoed/NVM/Types/@TW4@/select_with_org_rel/Nl_rel ? SourceData/Vastgoed/NVM/Types/@TW4@/select_with_org_rel/@VT@[float32] : (0/0)[float32])',
+							'@TW4@', WP4/name
+						)
+					)+
+				')',
+				'@VT@', HouseCharacteristics/name
+			),
+			WP4, float32
+		), StorageName = "%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_karakteristieken.fss";
+
+
+	container MakeAvgValueTable_Werken := 
+		for_each_nedv(
+			SectorCharacteristics_src/name,
+			replace(
+				'union_data('
+					'Actor/AllocSector,'+
+					AsItemList(
+						replace(
+							'mean(SourceData/Vastgoed/NVM/Types_werken/@AS@/select_with_org_rel/Nl_rel ? SourceData/Vastgoed/NVM/Types_werken/@AS@/select_with_org_rel/@SC@[float32] : (0/0)[float32])',
+							'@AS@', Actor/AllocSector/name
+						)
+					)+
+				')',
+				'@SC@', SectorCharacteristics_src/name
+			),
+			Actor/AllocSector, float32
+		), StorageName = "%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_karakteristieken_werken.fss";
+		
+	container AvgValueTable: StorageName = "%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_karakteristieken.fss", StorageReadOnly = "True" //BR 181128: is Gemiddelde per WP4 voor heel NL
+	{
+		attribute<float32> size             (WP4);
+		attribute<float32> lotsize          (WP4);
+		attribute<float32> nrooms           (WP4);
+		attribute<float32> nbadk            (WP4);
+		attribute<float32> d_maintgood      (WP4);
+		attribute<float32> d_kk             (WP4); //BR@Jip 181128: kosten koper neem ik aan. Wat moeten we hiermee tav nieuwbouw? Daar gelden geen kosten-koper maar wel andere transactiekosten...
+		attribute<float32> d_centralheating (WP4);
+		attribute<float32> d_erfpacht       (WP4);
+		attribute<float32> d_isol_compl     (WP4);
+		attribute<float32> d_privpark       (WP4);
+		attribute<float32> d_highrise       (WP4);
+		
+		attribute<float32> d_maintgoodNewHouses      (WP4) := const(1f,WP4);
+		attribute<float32> d_centralheatingNewHouses (WP4) := const(1f,WP4);
+		attribute<float32> d_isol_complNewHouses     (WP4) := const(1f,WP4);
+		attribute<float32> d_privparkNewHouses       (WP4) := id(WP4) = WP4/V/twee_onder_1_kap || id(WP4) = WP4/V/vrijstaand ? 1f :	d_privpark;
+	}
+	
+	unit<uint32> Buurt := RegioIndelingen/buurt/src_2019
+	{
+		attribute<.> per_grid (domain_grid)  := poly2grid(geometry, domain_grid);
+		attribute<.> per_rdc_100m (rdc_100m)  := poly2grid(geometry, rdc_100m);
+	}
+	
+	unit<uint32> Wijk := RegioIndelingen/wijk/src_2019
+	{
+		attribute<.> per_grid (domain_grid)  := poly2grid(geometry, domain_grid);
+		attribute<.> per_rdc_100m (rdc_100m)  := poly2grid(geometry, rdc_100m);
+	}
+	
+	unit<uint32> Gemeente2019 := RegioIndelingen/Gemeente/Gemeente2019
+	{
+		attribute<.> per_grid (domain_grid)  := poly2grid(geometry, domain_grid);
+		attribute<.> per_rdc_100m (rdc_100m)  := poly2grid(geometry, rdc_100m);
+	}
+	
+	unit<uint32> Provincie := RegioIndelingen/Provincie
+	{
+		attribute<.> per_grid (domain_grid)  := poly2grid(geometry, domain_grid);
+		attribute<.> per_rdc_100m (rdc_100m)  := poly2grid(geometry, rdc_100m);
+	}
+	
+	container MakeRegionalAvgCharacteristics := 
+		for_each_ne(
+			HousetypeHouseChar/name
+			, 'Write2FSS_RegionalAvgCharacteristics(' +quote(HousetypeHouseChar/name)+ ',' +quote(HousetypeHouseChar/WP)+ ',' +quote(HousetypeHouseChar/HouseChar)+ ')'
+		);
+		
+	container MakeRegionalAvgCharacteristics_werken := 
+		for_each_ne(
+			AllocSectorSectorChar/name
+			, 'Write2FSS_RegionalAvgCharacteristics_Werken(' +quote(AllocSectorSectorChar/name)+ ',' +quote(AllocSectorSectorChar/AllocSector)+ ',' +quote(AllocSectorSectorChar/SectorChar)+ ')'
+		);
+		
+	container ReadRegionalAvgCharacteristics := // rdc_100m omdat deze bestanden op deze resolutie zijn gemaakt. Een hogere resolutie is gezien het aggregatieniveau van onderliggende analyse zinloos
+		for_each_ndva(
+			HousetypeHouseChar/name,
+			rdc_100m, float32,
+			'%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_regiokarakteristieken_' +HousetypeHouseChar/name+ '.fss'
+		), StorageReadOnly = "True";
+		
+	container ReadRegionalAvgCharacteristics_werken := // rdc_100m omdat deze bestanden op deze resolutie zijn gemaakt. Een hogere resolutie is gezien het aggregatieniveau van onderliggende analyse zinloos
+		for_each_ndva(
+			AllocSectorSectorChar/name,
+			rdc_100m, float32,
+			'%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_regiokarakteristieken_' +AllocSectorSectorChar/name+ '.fss'
+		), StorageReadOnly = "True";
+		
+	container Result: =
+		for_each_nedv(
+			HousetypeHouseChar/name,
+			'ReadRegionalAvgCharacteristics/'+HousetypeHouseChar/name+'[domain_grid/rdc_100m_rel]',
+			domain_grid, float32
+		);
+		
+	container Result_werken :=
+		for_each_nedv(
+			AllocSectorSectorChar/name,
+			'ReadRegionalAvgCharacteristics_werken/'+AllocSectorSectorChar/name+'[domain_grid/rdc_100m_rel]',
+			domain_grid, float32
+		);
+	
+	Template Write2FSS_RegionalAvgCharacteristics
+	{
+		//
+		parameter<string> HousetypeHouseChar;
+		parameter<string> WP;
+		parameter<string> HouseChar;
+		//
+		
+		//BR@Jip 181128: een aantal characteristics weten we per pand, uit o.a bag, of kunnen we daaruit berekenen. Bijv highrise. En lotsize. Tav isolatie kunenn we wel wat met energielabels ( hebben we landsdekkend). Nemen we die gedetailleerde info verderop mee bij bereklening van verwervingskosten aka Verwervingskosten?
+		//BR@Jip 181128: van welke characteristics gaan we uit als het gaat om nieuw te bouwen woningen? Nationale neem ik aan. Klopt dat? En nemen we alle kenmerken over of vooronderstellen we afwijkingen bij nieubouw? Maintenance is bijv altijd 100% bij nieuwbouw.
+		attribute<float32> Per_buurt (Buurt) := = 
+			'count(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/buurt_rel) >= 4 
+				? mean(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/buurt_rel)[float32]
+				: (0/0)[Float32]';
+			
+		attribute<float32> Per_wijk (Wijk) := =
+			'count(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/wijk_rel) >= 4 
+				? mean(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/wijk_rel)[float32]
+				: (0/0)[Float32]';
+			
+		attribute<float32> Per_gemeente2019 (Gemeente2019) := =
+			'count(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/gem_rel) >= 4 
+				? mean(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/gem_rel)[float32]
+				: (0/0)[Float32]';
+			
+		attribute<float32> grid (rdc_100m) := = 'max_elem(Per_buurt[Buurt/per_rdc_100m], Per_wijk[Wijk/per_rdc_100m], Per_gemeente2019[Gemeente2019/per_rdc_100m])' //per_rdc_100m. Een hogere resolutie is gezien het aggregatieniveau van onderliggende analyse zinloos
+			, StorageName = "='%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_regiokarakteristieken_' +HouseTypeHouseChar+ '.fss'";
+	}
+
+	Template Write2FSS_RegionalAvgCharacteristics_Werken
+	{
+		//
+		parameter<string> AllocSectorSectorChar;
+		parameter<string> AllocSector;
+		parameter<string> SectorChar;
+		//
+		
+		//BR@Jip 181128: een aantal characteristics weten we per pand, uit o.a bag, of kunnen we daaruit berekenen. Bijv highrise. En lotsize. Tav isolatie kunenn we wel wat met energielabels ( hebben we landsdekkend). Nemen we die gedetailleerde info verderop mee bij bereklening van verwervingskosten aka Verwervingskosten?
+		//BR@Jip 181128: van welke characteristics gaan we uit als het gaat om nieuw te bouwen woningen? Nationale neem ik aan. Klopt dat? En nemen we alle kenmerken over of vooronderstellen we afwijkingen bij nieubouw? Maintenance is bijv altijd 100% bij nieuwbouw.
+		attribute<float32> Per_buurt (Buurt) := = 
+			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/buurt_rel) >= 4 
+				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/buurt_rel)[float32]
+				: (0/0)[Float32]';
+			
+		attribute<float32> Per_wijk (Wijk) := =
+			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/wijk_rel) >= 4 
+				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/wijk_rel)[float32]
+				: (0/0)[Float32]';
+			
+		attribute<float32> Per_gemeente2019 (Gemeente2019) := =
+			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/gem_rel) >= 4 
+				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/gem_rel)[float32]
+				: (0/0)[Float32]';
+				
+		attribute<float32> Per_provincie (Provincie) := =
+			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/prov_rel) >= 4 
+				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/prov_rel)[float32]
+				: (0/0)[Float32]';
+			
+		attribute<float32> grid (rdc_100m) := = 'max_elem(Per_buurt[Buurt/per_rdc_100m], Per_wijk[Wijk/per_rdc_100m], Per_gemeente2019[Gemeente2019/per_rdc_100m], Per_provincie[Provincie/per_rdc_100m])' //per_rdc_100m. Een hogere resolutie is gezien het aggregatieniveau van onderliggende analyse zinloos
+			, StorageName = "='%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_regiokarakteristieken_' +AllocSectorSectorChar+ '.fss'";
+	}
+	
+	container Overige_vars
+	//BR@BR, 181128: dit is nog steeds heel mager. Er ontbreken push factoren zoals nabeiheid industrie. UAI is grof. Reistijd ook. Er ontbreekt een index en bijbehorende var voor nabijheid tot aantrekkelijk water/landschap.
+	{
+		container impl
+		{
+			attribute<float32> DistTo_Airports_src (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/DistTo_AirportsMain5_2019.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> DistTo_Airports (domain_grid) := DistTo_Airports_src == 0f ? 1f : (DistTo_Airports_src / 1000f) < 1f ? 1f : DistTo_Airports_src / 1000f;
+			
+			attribute<float32> DistTo_HighwayAccessExit_src (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/DistTo_highway_acces_exit_2018.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> DistTo_HighwayAccessExit (domain_grid) := DistTo_HighwayAccessExit_src == 0f ? 1f : (DistTo_HighwayAccessExit_src / 1000f) < 1f ? 1f : DistTo_HighwayAccessExit_src / 1000f;
+
+			attribute<float32> DistTo_Trainstations_src (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/DistTo_Trainstation_2001.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> DistTo_Trainstations (domain_grid) := DistTo_Trainstations_src == 0f ? 1f : (DistTo_Trainstations_src / 1000f) < 1f ? 1f : DistTo_Trainstations_src / 1000f;
+			
+			attribute<float32> DistTo_Seaport_src (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/DistTo_Zeehavens2018.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> DistTo_Seaport (domain_grid) := DistTo_Seaport_src == 0f ? 1f : (DistTo_Seaport_src / 1000f) < 1f ? 1f : DistTo_Seaport_src / 1000f;
+			
+			attribute<float32> DistTo_Urban_Contour_2000_src (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/DistTo_Urban_Contour_2000.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> DistTo_Urban_Contour_2000 (domain_grid) := DistTo_Urban_Contour_2000_src == 0f ? 1f : (DistTo_Urban_Contour_2000_src / 1000f) < 1f ? 1f : DistTo_Urban_Contour_2000_src / 1000f;
+			
+			attribute<float32> LU_Share_Residential_2000 (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/LU_share_residential_2000.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			
+			attribute<float32> LU_Diversity_index_2000_src (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/LU_simpson_diversity_index_2000.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> LU_Diversity_index_2000 (domain_grid) := LU_Diversity_index_2000_src / 100f;
+			
+			attribute<float32> UAI_2002_src (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/UAI_2002.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> UAI_2002 (domain_grid) := UAI_2002_src / 100f;
+
+			attribute<float32> Reistijd_100k_inw (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/Reistijd100kInw.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			attribute<float32> Reistijd_100k_inw_edit (domain_grid) := (Reistijd_100k_inw / 60f) < 1f ? 1f : (Reistijd_100k_inw / 60f) > 120f ? 120f : (Reistijd_100k_inw / 60f) , StorageName = "%RSLDataDir%/Omgeving/Bereikbaarheid/Reistijd_100k_inw_edit.fss";
+			
+			attribute<uint32> Reistijd_stations_2006 (domain_grid)
+			:	StorageName     = "%RSLDataDir%/Omgeving/Bereikbaarheid/reistijd_minuten_station_2006.tif"
+			,	StorageType     = "gdal.grid"
+			,	StorageReadOnly = "True";
+			
+			attribute<float32> Reistijd_stations_edit (domain_grid) := Reistijd_stations_2006 == 0 ? (0/0)[float32] : (Reistijd_stations_2006 > 15 ? 15 : Reistijd_stations_2006)[float32], StorageName = "%RSLDataDir%/Omgeving/Bereikbaarheid/Reistijd_stations_edit.fss";
+		}
+
+		attribute<float32> Reistijd_100k_inw_edit (domain_grid) : StorageName = "%RSLDataDir%/Omgeving/Bereikbaarheid/Reistijd_100k_inw_edit.fss", StorageReadOnly = "true";
+		attribute<float32> Reistijd_stations_edit (domain_grid) : StorageName = "%RSLDataDir%/Omgeving/Bereikbaarheid/Reistijd_stations_edit.fss", StorageReadOnly = "true";
+	
+		attribute<float32> UAI_5000m_dcsq (domain_grid) := Analysis/BaseData/UrbanAttractivityIndex/R_5000m_AbsWeight;
+		
+		attribute<bool>    bbg2015_groen_100mbuff (Geography/rdc_10m) := Analysis/BaseData/Groen/bbg2015_groen_buff;
+		attribute<float32> bbg2015_groen_100mbuff_100m (domain_grid)  := sum(bbg2015_groen_100mbuff[float32], geography/rdc_10m/rdc_100m_rel) >= 50f ? 1f : 0f, FreeData = "False";
+	
+					// ln dist to urban area
+					// IsRandstad
+	}
+}

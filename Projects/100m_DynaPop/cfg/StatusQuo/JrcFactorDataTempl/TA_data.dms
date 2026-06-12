@@ -1,0 +1,21 @@
+Container TA_data: Using = "Geography;"
+{
+	
+	container TripAdvisor_inputs: expr = "for_each_ne(ShapeData/TripAdvisor_data/Types/Values, 'TypeSplit('+ string(id(ShapeData/TripAdvisor_data/Types)) +', '+ string(JrcRegionId) +'[Regions/JrcRegion])')";
+	
+	container TypeSplit: IsTemplate = "True"
+	{
+		parameter<uint32> SelId;
+		parameter<Regions/JrcRegion> runzone_id;
+		
+		unit<uint32> SelSet: expr = "select_with_org_rel(ShapeData/TripAdvisor_data/Type = ShapeData/TripAdvisor_data/Types/Values[SelId] && ShapeData/TripAdvisor_data/runzone_id == runzone_id)", 
+			DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<LambertEA> Geometry: expr = "ShapeData/TripAdvisor_data/Geometry[org_rel]";
+			attribute<domain_grid> domain_grid_id: expr = "Geometry[domain_grid]";
+			
+		}
+	}
+	
+
+}

@@ -1,0 +1,695 @@
+container Geography: Using = "Units", IsHidden = "True"
+{
+	unit<dpoint> LambertEA: Descr = "ETRS_1989_LAEA_52N_10E" // "coords from SW to NE";
+		,	SpatialReference = "EPSG:3035" // EPSG code for Lambert EA
+	{
+		parameter<LambertEA> Origin: Expr = "point_xy(1500000.0,  900000.0, LambertEA)"; // Left-Bottom coord
+		parameter<LambertEA> Extent: Expr = "point_xy(6000000.0, 4530000.0, LambertEA)";
+
+		parameter<LambertEA> LeftBottom: Expr = "Origin";
+		parameter<LambertEA> LeftTop:    Expr = "point_xy(pointcol(Origin), pointrow(Origin)+pointrow(Extent), LambertEA)";
+		unit<wpoint> m1000:
+			Expr  =
+				"range("
+					"gridset(LambertEA, "
+						"point_xy(1000.0, -1000.0, LambertEA), "
+						"LeftTop, "
+						"wpoint"
+					"), "
+					"point_xy(UInt16(0),UInt16(0)),"
+					"wpoint(Extent  / point_xy(1000.0, 1000.0, LambertEA))"
+				")"
+		{
+			attribute<LambertEA> pixelPoint: expr = "LeftTop + (dpoint_xy(id(.)) * point_xy(1000.0, -1000.0, LambertEA))";
+		}
+		unit<wpoint> m100:
+			Expr  =
+				"range("
+					"gridset(LambertEA, "
+						"point_xy(100.0, -100.0, LambertEA), "
+						"LeftTop, "
+						"wpoint"
+					"), "
+					"point_xy(UInt16(0),UInt16(0)),"
+					"Wpoint(Extent  / point_xy(100.0, 100.0, LambertEA))"
+				")";
+		container Tiles
+		{
+			parameter<UInt16> TileSizeY: [ 256 ];
+			parameter<UInt16> TileSizeX: Expr = "PointCol(BoundRange(m100))";
+			parameter<m100>   JrcTileExtent: Expr = "point_xy(TileSizeX, TileSizeY, m100)";
+			unit<wpoint> JrcStripes:
+				Expr  = 
+					"range("
+						"gridset(m100, "
+							"JrcTileExtent, "
+							"point_xy(UInt16(0), UInt16(0), m100), "
+							"wpoint"
+						"), "
+						"point_xy(UInt16(0), UInt16(0)),"
+						"wpoint((Upoint(BoundRange(m100)) + Upoint(JrcTileExtent) - Upoint(point_xy(UInt16(1), UInt16(1), m100))) / Upoint(JrcTileExtent))"
+					")"
+			{
+				attribute<m100> LB100_7013:    Expr = "value(ID(.) * JrcTileExtent, m100)", KeepData = "False";
+				attribute<m100> LB100_7014:    Expr = "value(ID(.), m100)", KeepData = "False";
+				attribute<m100> LB100:    Expr = "=(GeoDmsVersion() < 7.014) ? 'LB100_7013' : 'LB100_7014'", KeepData = "False";
+				attribute<m100> UB100Org: Expr = "LB100 + JrcTileExtent", KeepData = "False";
+				attribute<m100> UB100:    
+					Expr     = "point_xy(min_elem(PointCol(UB100Org), PointCol(UpperBound(m100))),min_elem(PointRow(UB100Org), PointRow(UpperBound(m100))), m100)", 
+					KeepData = "False";
+			}
+		}
+	}
+
+// Projection    ALBERS
+// Datum         WGS72
+// Spheroid      WGS72
+// Units         METERS
+// Zunits        NO
+// Xshift        0.0
+// Yshift        0.0
+// Parameters    
+//   32 30  0.0 /* 1st standard parallel
+//   54 30  0.0 /* 2nd standard parallel
+//   22 39  0.0 /* central meridian
+//   51 24  0.0 /* latitude of projection's origin
+// 0.0 /* false easting (meters)
+// 0.0 /* false northing (meters)
+
+
+	unit<dpoint> AlbersEA  // "coords from SW to NE";
+		:	Descr      = "Albers Equal_Area WGS72"
+		,	Expr       = "range(dpoint, point_xy(-3932373.5, -1869965.125), point_xy(-3932373.5 + 1000.0*5856.0, -1869965.125+1000.0* 4092.0))"
+		,	SpatialReference = "+proj=aea +lat_1=32.5 +lat_2=54.5 +lat_0=51.40 +lon_0=22.65 +x_0=0 +y_0=0 +ellps=intl +units=m +no_defs ";
+	unit<fpoint> AlbersEA_F32: Expr = "range(AlbersEA, fpoint(LowerBound(AlbersEA)), fpoint(UpperBound(AlbersEA)))";
+
+
+// ncols         5856
+// nrows         4092
+// xllcorner     -3932373.5
+// yllcorner     -1869965.125
+// cellsize      1000
+// xurcorner     -3932373.500 + 5856*1000 = 1923626.500
+// yurcorner     -1869965.125 + 4092*1000 = 2222034.875
+
+	unit<wpoint> Albers1kmGrid:
+		Expr  = 
+			"range("
+				"gridset(AlbersEA, "
+					"point_xy( 1000.0, -1000.0,      AlbersEA), "
+					"point_xy(-3932373.5, -1869965.125 + 1000.0 * 4092.0     , AlbersEA), "
+					"wpoint), "
+				"point_xy(UInt16(0), UInt16(0)),"
+				"point_xy(UInt16(5856), UInt16(4092))"
+			")"
+	{
+		attribute<fpoint> P:   Expr = "(fpoint(id(.)) + point_xy(Float32(0.5), Float32(0.5))) *  fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.))";
+		attribute<AlbersEA> Q: Expr = "(ID(.)[AlbersEA] + (ID(.)+point_xy(UInt16(1),UInt16(1)))[AlbersEA])*point_xy(0.5, 0.5)";
+	}
+	unit<wpoint> Lambert100mStripedGrid: Expr = "TiledUnit(LambertEA/Tiles/JrcStripes/LB100, LambertEA/Tiles/JrcStripes/UB100)";
+	unit<wpoint> Lambert100mGrid:        Expr = "RegionGrids_100m/Tiles/Lambert100mSelectedTileGrid"
+	{
+		attribute<uint16> pcol1k: 	expr = "pointcol(id(.)) / uint16(10)";
+		attribute<uint16> prow1k: 	expr = "pointrow(id(.)) / uint16(10)";
+		attribute<LambertEA/m1000>  m1000_rel:expr = "point_xy(pcol1k, prow1k, LambertEA/m1000)"; 
+	}
+	
+	// http://spatialreference.org/
+	// http://www.gdal.org/ogr/classOGRSpatialReference.html#a096b8dde4fd2eb475acd376060940b02
+	unit<dpoint> WGS84: SpatialReference = "EPSG:4326"; // could also be WGS84
+	
+	#include<AdministrativeBoundaries.dms>
+	
+	container Regions: expr = "AdministrativeBoundaries/BoundaryDomains", KeepData = "False"
+	{
+		
+		unit<uint32> base_zones: expr = "AdministrativeBoundaries/sets/LAU2/UniqueZones";
+		
+		// Runs is now read from /ConfigSettings/Overridable/RunRegions, 
+		// which is overridable by the registry with can be edited by the Tools->Options->ConfigSettings in the GUI.
+		unit<UInt16> Runs: Expr= "=Expand(., '%RunRegions%')"; 
+		
+		/*unit<Uint16> Country: Expr = "range(uint16, uint16(0), uint16(#Nuts0_v10))"
+			, DialogType = "Map"
+			, DialogData = "Geometry"
+			, Descr  	 = "All countries of Europe (used for forest claims)"
+		{
+			attribute<Nuts0_v10>			Nuts0Ref:	expr = "rlookup(id(.), uint16(id(Nuts0_v10)))";
+			attribute<LambertEA>			Geometry (polygon): expr = "Nuts0_v10/Geometry[Nuts0Ref]";
+			attribute<string> 				Name: 		expr = "MakeDefined(Nuts0_name, Code)";
+			attribute<string> 				Code: 		expr = "Nuts0_v10/ZoneId[Nuts0Ref]"; // differs from ModelCode; LU = LU here.
+			attribute<string>				ModelCode:	expr = "uppercase(Code) <> 'LU' ? Nuts0_v10/ZoneId[Nuts0Ref] : 'BE'"; // differs from Code; LU = BE here. // edit by Chris Jacobs-Crisioni to be consistent with old method, not sure if this is still necessary or used
+			attribute<string> 				ICC:		expr = "Code";
+			attribute<string> 				Nuts0_name:	expr = "Nuts0_v10/Label[Nuts0Ref]";
+			attribute<string>				Label:		expr = "Code + ': ' + Name";
+		}
+	
+		unit<Uint16> Nuts2_Merged: Expr = "range(uint16, uint16(0), uint16(#NUTS2_merged_LUISA_old))"
+			, DialogType = "Map"
+			, DialogData = "Geometry"
+			, Descr  	 = "Original Nuts2 zones in Europe, with small zones in metropolitan areas merged with its neighbours by Filipe Batista e Silva and Claudia Baranzelli (2014)"
+		{
+			attribute<NUTS2_merged_LUISA_old>	N2M_Ref:	expr = "rlookup(id(.), uint16(id(NUTS2_merged_LUISA_old)))";
+			attribute<LambertEA>			Geometry (polygon): expr = "NUTS2_merged_LUISA_old/Geometry[N2M_Ref]";
+			attribute<string> 				Name: 		expr = "MakeDefined(Nuts0_name, Code)";
+			attribute<string> 				Code: 		expr = "NUTS2_merged_LUISA_old/ZoneId[N2M_Ref]";
+			attribute<string> 				ICC:		expr = "Code";
+			attribute<string> 				Nuts0_name:	expr = "NUTS2_merged_LUISA_old/Label[N2M_Ref]";
+			attribute<string>				Label:		expr = "NUTS2_merged_LUISA_old/Label[N2M_Ref]";
+		
+		}*/
+		/*unit<UInt16> Nuts0: NrOfRows = 44
+			,	DialogType = "Map"
+			,	DialogData = "Geometry"
+			,	Descr      = "42 countries of Europe (belglux is one), separately numbered 1-42"
+			,	Source     = "Alterra:EURURALIS_technical_report1_4.doc"
+		{
+			attribute<String> Name:
+			[
+				'geen'
+			,	'Iceland', 'Norway',         'Finland',  'Sweden',      'United_kingdom'
+			,	'France',  'Estonia',        'Denmark',  'Ireland',     'Lithuania'
+			,	'Germany', 'Netherlands',    'Portugal', 'Latvia',      'Poland'
+			,	'BelgLux', 'Czech_republic', 'Slovakia', '19',          'Spain'
+			,	'Austria', 'Hungary',        'Romania',  'Switzerland', 'Italy'
+			,	'26',      'Kroatia',        '28',       'Slovenia',    'Bosnia'
+			,	'31',      'Serbia',         '33',       'Greece',      'FYROM'
+			,	'Turkey',  'Bulgaria',       '38',       'Albania',     '40'
+			,	'Malta',   'Cyprus',		 'Montenegro'
+			];
+			attribute<string> JrcRegionName:
+			[
+				'geen'
+			,	'Iceland', 'Norway',         'Finland',  'Sweden',      'United_kingdom'
+			,	'France',  'Estonia',        'Denmark',  'Ireland',     'Lithuania'
+			,	'Germany', 'Netherlands',    'Portugal', 'Latvia',      'Poland'
+			,	'BelgLux', 'Czech_republic', 'Slovakia', '19',          'Spain'
+			,	'Austria', 'Hungary',        'Romania',  'Switzerland', 'Italy'
+			,	'26',      'Kroatia',        '28',       'Slovenia',    'Bosnia'
+			,	'31',      'Balkans',        '33',       'Greece',      'FYROM'
+			,	'Turkey',  'Bulgaria',       '38',       'Albania',     '40'
+			,	'Malta',   'Cyprus',		 'Montenegro'
+			];
+			attribute<String> OldName:
+			[
+				'geen'
+			,	'ICELAND', 'NORWAY',         'FINLAND',  'SWEDEN',      'UNITED_KINGDOM'
+			,	'FRANCE',  'ESTONIA',        'DENMARK',  'IRELAND',     'LITHUANIA'
+			,	'GERMANY', 'NETHERLANDS',    'PORTUGAL', 'LATVIA',      'POLAND'
+			,	'BELGLUX', 'CZECH_REPUBLIC', 'SLOVAKIA', '19',          'SPAIN'
+			,	'AUSTRIA', 'HUNGARY',        'ROMANIA',  'SWITZERLAND', 'ITALY'
+			,	'26',      'KROATIA',        '28',       'SLOVENIA',    'BOSNIA'
+			,	'31',      'SERBIA',         '33',       'GREECE',      'FYROM'
+			,	'TURKEY',  'BULGARIA',       '38',       'ALBANIA',     '40'
+			,	'MALTA',   'CYPRUS',		 'MONTENEGRO'
+			];
+			
+			attribute<String> GTAPName:
+			[
+				'geen'
+			,	'Iceland',           'Norway',           'Finland',  'Sweden',      'UnitedKingdom'
+			,	'France',            'Estonia',          'Denmark',  'Ireland',     'Lithuania'
+			,	'Germany',           'Netherlands',      'Portugal', 'Latvia',      'Poland'
+			,	'BelgiumLuxembourg', 'CzechRepublic',    'Slovakia', '19',          'Spain'
+			,	'Austria',           'Hungary',          'Romania',  'Switzerland', 'Italy'
+			,	'26',                'Croatia',          '28',       'Slovenia',    'BosniaHerzegovina'
+			,	'31',                'Serbia', 			 '33',       'Greece',      'Macedonia'
+			,	'Turkey',            'Bulgaria',         '38',       'Albania',     '40'
+			,	'Malta',             'Cyprus', 			 'Montenegro'
+			];
+			attribute<String> ICC:
+			[   // Unrelated: LI(chtenstein),LU(xembourg)->BE,ND (Northern Ireland)->UK, GB->UK,MO(ntenegro)->RS
+				''
+			,	'IS', 'NO', 'FI', 'SE', 'UK'
+			,	'FR', 'EE', 'DK', 'IE', 'LT'
+			,	'DE', 'NL', 'PT', 'LV', 'PL'
+			,	'BE', 'CZ', 'SK', '19', 'ES'
+			,	'AT', 'HU', 'RO', 'CH', 'IT'
+			,	'26', 'HR', '28', 'SI', 'BA'
+			,	'31', 'RS', '33', 'GR', 'MK'
+			,	'TR', 'BG', '38', 'AL', '40'
+			,	'MT', 'CY', 'ME'
+			];
+			attribute<string> 	 Code: 			Expr = "ICC";
+			attribute<LambertEA> Geometry(poly): Expr = "rjoin(ICC, Nuts0_v10/ZoneId, Nuts0_v10/Geometry)";
+			attribute<JrcRegion> JrcRegion_rel: Expr = "point_in_polygon(centroid_or_mid(Geometry), JrcRegion/Geometry)";
+
+			attribute<bool> IsJrcRegion:
+			[
+				false,
+				false, false, true,  true,  true,
+				true,  true,  true,  true,  true,
+				true,  true,  true,  true,  true,
+				true,  true,  true,  false, true,
+				true,  true,  true,  false, true,
+				false, true,  false, true,  false,
+				false, true,  false, true,  false,
+				false, true,  false, false, false,
+				true,  true,  false
+			];
+
+			attribute<String> Label:      Expr = "Name";
+		}*/
+		unit<uint16> JrcRegion: Expr = "range(uint16, uint16(0), uint16(#AdministrativeBoundaries/LUISA_zones/RunAreas))", DialogType = "Map", DialogData = "Geometry"
+		{
+			attribute<AdministrativeBoundaries/LUISA_zones/RunAreas> Ra_id: expr = "id(.)[AdministrativeBoundaries/LUISA_zones/RunAreas]";
+			attribute<String> Label:             Expr = "AdministrativeBoundaries/LUISA_zones/RunAreas/Name[Ra_id]"; 
+			attribute<String> Name:              Expr = "Label";
+			attribute<String> AllocDirName:      Expr = "ICC"; // always use parameterization per country
+			attribute<String> AllocDirNameN0:    Expr = "ICC"; // no fall-back
+			attribute<String> DemandDirName:     Expr = "ICC";
+			attribute<string> ZoneId: 			 Expr = "ICC";
+			attribute<String> ICC:               Expr = "AdministrativeBoundaries/LUISA_zones/RunAreas/ICC[Ra_id]"; 
+			//attribute<Nuts0>  Nuts0_rel:		 Expr = "rlookup(ICC, Nuts0/ICC)";
+			//attribute<Nuts0>  Nuts0Code:         Expr = "org_rel"; 
+			attribute<String> SuitabilityTraits: Expr = "const('MNL100',.)"; 
+			
+			attribute<.> Grid(Lambert100mGrid):  Expr = "poly2grid(Geometry, Lambert100mGrid)";
+
+			attribute<LambertEA> Geometry(poly): Expr = "AdministrativeBoundaries/LUISA_zones/RunAreas/Polygons[Ra_id]";
+			
+			attribute<LambertEA> lb: 			 Expr = "lower_bound(Geometry)";
+			attribute<LambertEA> ub:			 Expr = "upper_bound(Geometry)";	
+			
+			attribute<UInt32>   Width   : Expr = "UInt32(pointCol(ub)-pointCol(lb))+1", KeepData = "False"; 
+			attribute<UInt32>   Height  : Expr = "UInt32(pointRow(ub)-pointRow(lb))+1", KeepData = "False"; 
+			attribute<UInt32>   RectArea: Expr = "Width*Height", KeepData = "False"; 
+			
+			attribute<Lambert100mGrid> LB100: Expr = "lb[Lambert100mGrid]", KeepData = "False"; 
+			attribute<Lambert100mGrid> UB100: Expr = "ub[Lambert100mGrid]", KeepData = "False"; 
+			
+			parameter<String> RegionDomainSetName: Expr = "'JrcRegions100m'";
+		}
+		unit<uint32> MicroStates: nrofrows = 3
+		{
+			attribute<string> GTAPnames:        ['Andorra', 'SanMarino', 'LiechtenStein'];
+			attribute<string> ClueCountryNames: ['France', 'Italy', 'Austria'];
+		}
+		unit<uint32> Capri: Expr = "unique(getCapriData/CapriLookup/CapriCode)", DialogData = "Geometry", DialogType = "map", IntegrityCheck = "all(getCapriData/CapriLookup/Nuts2Found)"
+		{
+			attribute<LambertEA> Geometry (poly): expr = "bp_union_polygon(value(Geography/getCapriData/Nuts2/Geometry, ipoint), /Geography/getCapriData/Nuts2/Capri_rel)[LambertEA]";
+			attribute<String> Code: Expr = "Values";
+			attribute<string> ZoneId: expr = "Code";
+			attribute<string> Name: Expr = "rjoin(Values, getCapriData/CapriLookup/CapriCode, getCapriData/CapriLookup/CapriName)";
+			attribute<string> Label: Expr = "Code+': '+Name", DialogType = "LabelText";
+			attribute<string> AggZoneCode: expr = "MakeDefined(rjoin(ZoneId, CLCTranslate/CapriAggCodes/OldCode, CLCTranslate/CapriAggCodes/NewCode), ZoneId)";
+			attribute<CapriAggr> AggZoneId: expr = "rlookup(AggZoneCode, CapriAggr/Values)";
+			attribute<string> AggZoneName: expr = "AggZoneCode = Code ? Name : AggZoneCode";
+			// unclear for what below is used, no hits in search for files.
+			/*container RunRegionTester
+			{
+				attribute<Nuts1> FirstNuts1    (Capri): Expr = "min(Nuts2/Nuts1_rel, Nuts2/Capri_rel)";
+				attribute<Nuts1> LastNuts1     (Capri): Expr = "max(Nuts2/Nuts1_rel, Nuts2/Capri_rel)";
+				attribute<bool> HasUniqueNuts1(Capri): Expr = "FirstNuts1 == LastNuts1";
+				
+				attribute<JrcRegion> FirstJrcRegion(Capri): Expr = "min(Nuts2/JrcRegion_rel, Nuts2/Capri_rel)";
+				attribute<JrcRegion> LastJrcRegion (Capri): Expr = "max(Nuts2/JrcRegion_rel, Nuts2/Capri_rel)";
+				attribute<bool> HasUniqueJrcRegion(Capri): Expr = "FirstJrcRegion == LastJrcRegion";
+			}
+			*/
+			#include<CLCTranslate.dms>
+		}
+		unit<uint32> CapriAggr: expr = "unique(Capri/AggZoneCode)", DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<LambertEA> Geometry (poly): expr = "bp_union_polygon(value(Capri/Geometry, ipoint), Capri/AggZoneId)[LambertEA]";
+			attribute<String> Code: Expr = "Values";
+			attribute<string> ZoneId: expr = "Code";
+			attribute<string> Name: Expr = "First(Capri/AggZoneName, Capri/AggZoneId)";
+			attribute<string> Label: Expr = "Code+': '+Name", DialogType = "LabelText";
+		}
+		
+		
+		
+/*		unit<uint32> Nuts1All: Expr = "Unique(Nuts2All/Nuts1_Code)", DialogType = "Map", DialogData = "Geometry"
+		{
+			attribute<String> Name: Expr = "Values";
+			attribute<String> ICC: Expr = "rjoin(values, Nuts2All/Nuts1_Code, Nuts2All/nuts0_ICC)";
+			attribute<Nuts0>  Nuts0_rel: Expr = "rlookup(ICC, Nuts0/ICC)";
+			
+			attribute<LambertEA> Geometry(poly): Expr = "rjoin(Name, RegionShapes/Nuts1/Nuts_code, RegionShapes/Nuts1/Polygons)";
+		}
+		
+		unit<uint32> Nuts1: Expr = "select_with_org_rel(Nuts0/IsJrcRegion[Nuts1All/Nuts0_rel])", DialogType = "Map", DialogData = "Geometry"
+		{
+			attribute<String> Name: Expr = "Nuts1All/Name[org_rel]";
+			attribute<String> Code: Expr = "Name";
+			attribute<String> ICC:  Expr = "Nuts1All/ICC [org_rel]";
+			
+			attribute<LambertEA> Geometry(poly): Expr = "Nuts1All/Geometry[org_rel]";
+			
+			attribute<String> AllocDirName:   Expr = "name"; // try to find Nuts1 specific alloc files first
+			attribute<String> AllocDirNameN0: Expr = "ICC";  // fall-back to Country level parameter files if a nuts1 file is missing.
+			attribute<String> DemandDirName:  Expr = "ICC";
+			
+			attribute<Lambert100mGrid> LB100: Expr = "min(Nuts2/LB100, Nuts2/Nuts1_rel)"; 
+			attribute<Lambert100mGrid> UB100: Expr = "max(Nuts2/UB100, Nuts2/Nuts1_rel)"; 
+			
+			attribute<String> SuitabilityTraits: Expr = "const('MNL100',.)"; 
+			
+			parameter<String> RegionDomainSetName: Expr = "'Nuts1Regions100m'";
+			
+			attribute<.> Grid(Lambert100mGrid):    Expr = "/JrcFactorData/Nuts1";
+		}
+		unit<uint32> Nuts3: Expr = "RegionShapes/Nuts3";
+		*/
+	}
+	container RegionDomainSets
+	{
+		container JrcRegions100m
+			:	Expr = 
+					"for_each_ind('nex', Regions/JrcRegion/Label, "
+						"'Range(Lambert100mGrid, "
+							"Regions/JrcRegion/LB100[value('+String(ID(Regions/JrcRegion))+', Regions/JrcRegion)], "
+							"Regions/JrcRegion/UB100[value('+String(ID(Regions/JrcRegion))+', Regions/JrcRegion)]+point_xy(UInt16(1),UInt16(1),LambertEA/m100)"
+						")'"
+					",  WPoint)";
+/*		container Nuts1Regions100m
+			:	Expr = 
+					"for_each_ind('nex', Regions/Nuts1/Name, "
+						"'Range(Lambert100mGrid, "
+							"Regions/Nuts1/LB100[value('+String(ID(Regions/Nuts1))+', Regions/Nuts1)], "
+							"Regions/Nuts1/UB100[value('+String(ID(Regions/Nuts1))+', Regions/Nuts1)]+point_xy(UInt16(1),UInt16(1),LambertEA/m100)"
+						")'"
+					",  WPoint)";*/
+	}
+	unit<UInt8> IndicatorRegions: NrOfRows = 5 { attribute<String> Name: [ 'Nuts0', 'Nuts1', 'Nuts2', 'Nuts2_Merged', 'Nuts3' ]; }
+	
+	container RegionGrids: expr = "AdministrativeBoundaries/RegionGrids";
+	/*{
+		attribute<Regions/Nuts3> nuts3 (Lambert100mGrid): expr = "poly2grid(RegionShapes/Nuts3/Polygons, Lambert100mGrid)", StorageName = "X:/01_EUClueScanner/03_JRC_Customers/PanEuropean_modelling/Balkans/Administrative_areas/Processing/EU_N3_zones.tif";
+		attribute<Regions/Nuts2> nuts2 (Lambert100mGrid): expr = "RegionShapes/Nuts3/Nuts2_rel[nuts3]";
+		attribute<Regions/Nuts2_merged> nuts2_merged (Lambert100mGrid): expr = "Geography/Regions/Nuts2/Nuts2_Merged_rel[nuts2]";
+		attribute<Regions/Nuts1> nuts1 (Lambert100mGrid): expr = "RegionShapes/Nuts3/Nuts1_rel[nuts3]";
+		attribute<Regions/Nuts0> nuts0 (Lambert100mGrid): expr = "RegionShapes/Nuts3/Nuts0_rel[nuts3]";
+	}*/
+	/*container RegionShapes // CJ: 15 feb 2012 derived from EurostatBoundary maps 5.1, which are similar to the above defined NUTS2 regions (!except Nuts0!)
+	{
+		container src: isHidden = "True" // Original nuts shapefile, including not modelled regions
+		{	
+			unit<uint32> composite_LAU:
+				DialogData      = "Polygons",
+				DialogType      = "Map",
+				StorageName     = "%sourceDataProjDir%/Geography/nuts_Lambert/LAU_2.dbf",
+				StorageReadOnly = "True"
+			{
+				attribute<string> 	LAU_Code:			 expr 		 = "ICC_LAU_CO";
+				attribute<LambertEA>point:               expr        = "centroid_or_mid(Polygons)", DisableStorage = "True";
+				attribute<String>   Label:               expr        = "LAU_Code", DialogType = "LabelText", DisableStorage = "True";
+				attribute<LambertEA>Polygons(poly):      StorageName = "%sourceDataProjDir%/Geography/nuts_Lambert/LAU_2.shp";
+				attribute<bool>     isOrPartOfClueNuts0: expr        = "Nuts0/isOrPartOfClueNuts0[point_in_polygon(point, Nuts0/Polygons)]", DisableStorage = "True";
+			}
+			unit<uint32> Nuts3:
+				DialogData      = "Polygons",
+				DialogType      = "Map",
+				StorageName     = "%sourceDataProjDir%/Geography/nuts_Lambert/n3_jul16.dbf",
+				StorageReadOnly = "True"
+			{
+				attribute<string> 	Nuts_code;
+				attribute<string> 	Nuts_label;
+				attribute<LambertEA>point:				 expr = "centroid_or_mid(Polygons)";
+				attribute<String>   Label:               expr        = "Nuts_label", DialogType = "LabelText", DisableStorage = "True";
+				attribute<LambertEA>Polygons(poly):      StorageName = "%sourceDataProjDir%/Geography/nuts_Lambert/n3_jul16.shp";
+				attribute<bool>     isOrPartOfClueNuts0: expr        = "Nuts0/isOrPartOfClueNuts0[point_in_polygon(point, Nuts0/Polygons)]", DisableStorage = "True";
+			}
+			unit<uint32> Nuts2:
+				DialogData      = "Polygons",
+				DialogType      = "Map",
+				StorageName     = "%sourceDataProjDir%/Geography/nuts_Lambert/n2_jul16.dbf",
+				StorageReadOnly = "True"
+			{
+
+				attribute<string> 	Nuts_label;
+				attribute<LambertEA>point:				 expr = "centroid_or_mid(Polygons)";
+				attribute<String>   Label:               expr        = "Nuts_label", DialogType = "LabelText", DisableStorage = "True";
+				attribute<LambertEA>Polygons(poly):      StorageName = "%sourceDataProjDir%/Geography/nuts_Lambert/n2_jul16.shp";
+				attribute<Meter2>   area:                expr        = "value(area(Polygons, float64), Meter2)",             DisableStorage = "True";
+				attribute<bool>     isOrPartOfClueNuts0: expr        = "Nuts0/isOrPartOfClueNuts0[point_in_polygon(point, Nuts0/Polygons)]", DisableStorage = "True";
+			}
+			unit<uint32> Nuts2_Merged:
+				DialogData      = "Polygons",
+				DialogType      = "Map",
+				StorageName     = "%sourceDataProjDir%/Geography/nuts_Lambert/n2_merged_jul16.dbf",
+				StorageReadOnly = "True"
+			{
+				attribute<string> 	Merge;
+				attribute<string> 	Nuts_code: 			 expr 			= "Merge", DisableStorage = "True";
+				attribute<String>   Nuts_Label:          expr        	= "Nuts_code + ' (merged zoneset)'", DialogType = "LabelText", DisableStorage = "True";
+				attribute<LambertEA>point:				 expr 			= "centroid_or_mid(Polygons)", DisableStorage = "True";
+				attribute<String>   Label:               expr        	= "Nuts_label", DialogType = "LabelText", DisableStorage = "True";
+				attribute<LambertEA>Polygons(poly):      StorageName 	= "%sourceDataProjDir%/Geography/nuts_Lambert/n2_merged_jul16.shp", StorageReadOnly = "True";
+				attribute<Meter2>   area:                expr        	= "value(area(Polygons, float64), Meter2)",             DisableStorage = "True";
+				attribute<bool>     isOrPartOfClueNuts0: expr        	= "Nuts0/isOrPartOfClueNuts0[point_in_polygon(point, Nuts0/Polygons)]", DisableStorage = "True";
+			}
+			unit<uint32> Nuts1:
+				DialogData      = "Polygons",
+				DialogType      = "Map",
+				StorageName     = "%sourceDataProjDir%/Geography/nuts_Lambert/n1_jul16.dbf",
+				StorageReadOnly = "True"
+			{
+				attribute<string> 	Nuts_code;
+				attribute<string> 	Nuts_label;
+				attribute<String>   Label:               expr        = "Nuts_label", DialogType = "LabelText", DisableStorage = "True";
+				attribute<LambertEA>Polygons(poly):      StorageName = "%sourceDataProjDir%/Geography/nuts_Lambert/n1_jul16.shp";
+				attribute<bool>     isOrPartOfClueNuts0: expr        = "Nuts0/isOrPartOfClueNuts0[point_in_polygon(centroid_or_mid(Polygons), Nuts0/Polygons)]", DisableStorage = "True";
+			}
+			unit<uint32> Nuts0:
+				DialogData      = "Polygons",
+				DialogType      = "Map",
+				StorageName     = "%sourceDataProjDir%/Geography/nuts_Lambert/n0_jul16.dbf",
+				StorageReadOnly = "True"
+			{
+				attribute<String>   FIRST_N2_3: isHidden = "True";
+				attribute<String>   N0CD:  Expr = "FIRST_N2_3", DisableStorage = "True";
+				attribute<String>   Label: Expr = "FIRST_N2_3", DialogType = "LabelText", DisableStorage = "True";
+				attribute<LambertEA>Polygons(poly): StorageName = "%sourceDataProjDir%/Geography/nuts_Lambert/n0_jul16.shp";
+				attribute<bool>     isOrPartOfClueNuts0: 
+					Expr = "N0CD <> 'CS' && N0CD <> 'BY' && N0CD <> 'NO' && N0CD <> 'UA' && N0CD <> 'MD' && N0CD <> 'TR' && N0CD <> 'RU' &&"
+					       "N0CD <> 'CH' && N0CD <> 'AL' && N0CD <> 'XK' && N0CD <> 'MK' && N0CD <> 'LI' && N0CD <> 'GF' && N0CD <> 'MQ' && N0CD <> 'AD' &&"
+						   "N0CD <> 'SM' && N0CD <> 'IS' && N0CD <> 'RE' && N0CD <> 'MC' && N0CD <> 'GP' && N0CD <> 'VA'";
+			}			
+		}
+		
+		unit<uint32> composite_LAU:
+			DialogData  = "Polygons",
+			DialogType  = "Map",
+			expr        = "select_with_org_rel(src/composite_LAU/isOrPartOfClueNuts0)"
+		{
+			attribute<String>   Nuts_code:      expr = "src/composite_LAU/LAU_code[org_rel]";
+			attribute<LambertEA>Polygons(poly): expr = "src/composite_LAU/Polygons[org_rel]";
+			attribute<LambertEA>point:			expr = "src/composite_LAU/point[org_rel]";
+			attribute<Meter2>   area:           expr = "value(area(Polygons, float64), Meter2)";
+			attribute<Regions/Nuts2> Nuts2Id: 	expr = "Nuts2/Nuts2Id[point_in_polygon(point, Nuts2/Polygons)]";
+		}
+		unit<uint32> Nuts3:
+			DialogData  = "Polygons",
+			DialogType  = "Map",
+			expr        = "select_with_org_rel(src/Nuts3/isOrPartOfClueNuts0)"
+		{
+			attribute<String>   Nuts_code:      expr = "src/Nuts3/Nuts_code[org_rel]";
+			attribute<String>   N2CD:           expr = "substr(Nuts_code, 0, 4)";
+			attribute<String>   N1CD:           expr = "substr(Nuts_code, 0, 3)";
+			attribute<String>   N0CD:           expr = "substr(Nuts_code, 0, 2)";
+			attribute<Regions/Nuts2> Nuts2_rel: expr = "rlookup(N2CD, Regions/Nuts2/code)";
+			attribute<Regions/Nuts1> Nuts1_rel: expr = "rlookup(N1CD, Regions/Nuts1/name)";
+			attribute<Regions/Nuts0> Nuts0_rel: expr = "rlookup(N0CD, Regions/Nuts0/ICC )";
+			
+			attribute<String>   Nuts_label:     expr = "src/Nuts3/Nuts_label[org_rel]";
+			attribute<String>   Label:          expr = "Nuts_code + ': ' + Nuts_label", DialogType = "LabelText";
+			attribute<LambertEA>Polygons(poly): expr = "src/Nuts3/Polygons[org_rel]";
+			attribute<LambertEA>point:			expr = "src/Nuts3/point[org_rel]";
+			attribute<Meter2>   area:           expr = "value(area(Polygons, float64), Meter2)";
+			attribute<Regions/Nuts2> Nuts2Id: 	expr = "Nuts2/Nuts2Id[point_in_polygon(point, Nuts2/Polygons)]";
+		}
+		unit<uint32> Nuts2:
+			DialogData  = "Polygons",
+			DialogType  = "Map",
+			expr        = "select_with_org_rel(src/Nuts2/isOrPartOfClueNuts0)"
+		{
+			attribute<String>   Nuts_code:         expr = "src/Nuts2/Nuts_code[org_rel]";
+			attribute<String>   Nuts_label:        expr = "src/Nuts2/Nuts_label[org_rel]";
+			attribute<String>   Label:             expr = "Nuts_code + ': ' + Nuts_label", DialogType = "LabelText";
+			attribute<LambertEA>Polygons(poly):    expr = "src/Nuts2/Polygons[org_rel]";
+			attribute<Meter2>   area:              expr = "value(area(Polygons, float64), Meter2)";
+			attribute<Regions/Nuts2> Nuts2Id:      expr = "rlookup(Nuts_code, Regions/Nuts2/Code)";
+			attribute<Regions/Nuts2> RegionId:     expr = "Nuts2Id";
+			attribute<string>	ICC:			   expr = "src/Nuts2/ICC[org_rel]";
+//			attribute<string>	Merge:         expr = "src/Nuts2/Merge[org_rel]";
+			attribute<Nuts2_Merged>	MergedZonesId: expr  = "point_in_polygon(centroid_or_mid(Polygons), Nuts2_merged/Polygons)";
+		}
+	
+		unit<uint32> Nuts2_merged:
+			DialogData  = "Polygons",
+			DialogType  = "Map",
+			expr        = "select_with_org_rel(src/Nuts2_Merged/isOrPartOfClueNuts0)"
+		{
+			attribute<String>   Nuts_code:      expr = "src/Nuts2_Merged/Nuts_code[org_rel]";
+			attribute<String>   Nuts_label:     expr = "src/Nuts2_Merged/Nuts_label[org_rel]";
+			attribute<String>   Label:          expr = "Nuts_label", DialogType = "LabelText";
+			attribute<LambertEA>Polygons(poly): expr = "src/Nuts2_Merged/Polygons[org_rel]";
+			attribute<Meter2>   area:           expr = "value(area(Polygons, float64), Meter2)";
+			//attribute<Nuts2>	Nuts2Id:		expr = "rlookup(Nuts_code, Nuts2/Merge)";
+			//attribute<Regions/Nuts2> RegionId:	expr = "Nuts2Id";
+		}
+		unit<uint32> Nuts1:
+			DialogData  = "Polygons",
+			DialogType  = "Map",
+			expr        = "select_with_org_rel(src/Nuts1/isOrPartOfClueNuts0)"
+		{
+			attribute<String>   Nuts_code:      expr = "src/Nuts1/Nuts_code[org_rel]";
+			attribute<String>   Nuts_label:     expr = "src/Nuts1/Nuts_label[org_rel]";
+			attribute<String>   Label:          expr = "Nuts_code + ': ' + Nuts_label", DialogType = "LabelText";
+			attribute<LambertEA>Polygons(poly): expr = "src/Nuts1/Polygons[org_rel]";
+			attribute<Meter2>   area:           expr = "value(area(Polygons, float64), Meter2)";
+			attribute<Regions/Nuts1> RegionId:	expr = "rlookup(Nuts_code, Regions/Nuts1/Name)";
+		}
+		unit<uint32> Nuts0:
+			DialogData  = "Polygons",
+			DialogType  = "Map",
+			expr        = "select_with_org_rel(src/Nuts0/isOrPartOfClueNuts0)"
+		{
+			attribute<String>   N0CD:           expr = "src/Nuts0/N0CD[org_rel]";
+			attribute<string>	Nuts_code:		expr = "N0CD <> 'LU' ? N0CD: 'BE'";
+			attribute<string> 	RunAreaCode:	expr = "switch(case(N0CD = 'LU', 'BE'), case(N0CD = 'BA' || N0CD = 'ME', 'RS'), N0CD)";
+			attribute<RunAreas>  RunAreaId:		expr = "rlookup(RunAreaCode, RunAreas/Values)";
+			attribute<Regions/Nuts0> RegionId:	expr = "rlookup(Nuts_code, Regions/Nuts0/ICC)";
+			attribute<String>   Label:          expr = "N0CD", DialogType = "LabelText";
+			attribute<LambertEA>Polygons(poly): expr = "src/Nuts0/Polygons[org_rel]";
+			attribute<Meter2>   area:           expr = "value(area(Polygons, float64), Meter2)";
+			attribute<string> 	name:			expr = "";
+			attribute<String>   Name_econ_ind:  DialogType = "LabelText",
+			['fra','aut','belu','apeu','euis','cze','deu','dnk','euba','esp','fin','fra','grc','hun','irl','ita',
+			 'aut','euba','belu','euba',null,'euis','nld','pol','prt','apeu','swe',null,'svk','ita','gbr','ita'];
+		}
+		unit<uint32> RunAreas:
+			DialogData = "Polygons",
+			DialogType = "map",
+			expr 	   = "Unique(Nuts0/RunAreaCode)"
+		{
+			attribute<LambertEA> Polygons (poly): 	expr = "bp_union_polygon(value(Nuts0/Polygons, ipoint), Nuts0/RunAreaId)[LambertEA]";
+			attribute<string>	 Nuts_code:			expr = "Values";
+			attribute<String>    N0CD:           	expr = "Values";
+			attribute<string> 	 ICC:				expr = "Values";
+			attribute<Regions/Nuts0> RegionId:	expr = "rlookup(Nuts_code, Regions/Nuts0/ICC)";
+			attribute<String>    Label:          expr = "N0CD", DialogType = "LabelText";
+			attribute<Meter2>   area:           expr = "value(area(Polygons, float64), Meter2)";	
+		}
+		unit<uint32> OutsideEU: 
+			DialogData  = "Polygons",
+			DialogType  = "Map",
+			StorageName     = "%sourceDataProjDir%/Geography/outside_EU_Lambert/outside_EU_LambertEA.dbf",
+			StorageReadOnly = "True"
+		{
+			attribute<LambertEA> Polygons (poly): StorageName = "%sourceDataProjDir%/Geography/outside_EU_Lambert/outside_EU_LambertEA.shp", StorageReadOnly = "True";
+		}
+	}*/
+	
+	container RegionGrids_100m
+	{
+		/*container NutsDbfTempl: IsTemplate = "True"
+		{
+			parameter<String> FileName;
+			unit<uint32> VAT:
+				StorageName     = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/'+FileName+'.tif.vat.dbf'",
+				StorageReadOnly = "True"
+			{
+				attribute<Regions/Nuts2All> Value;
+				attribute<uint32> Count;
+				attribute<String> NUTS_CODE;
+				attribute<String> ICC;
+				attribute<String> SHORT_NAME;
+				attribute<String> Label: Expr = "SHORT_NAME", DialogType = "LabelText", DisableStorage = "True";
+			}
+		}
+
+		container Nuts2a:   Expr = "NutsDbfTempl('nuts2_a')";
+		container Nuts2b:   Expr = "NutsDbfTempl('nuts2_b')";
+		container Nuts2c:   Expr = "NutsDbfTempl('nuts2_c')";
+		container Nuts2d:   Expr = "NutsDbfTempl('nuts2_d')";
+		container Canarias: Expr = "NutsDbfTempl('Canarias')";
+		
+		
+		container Nuts2:
+			StorageReadOnly = "True",
+			StorageName = "%SourceDataProjDir%/EUCS_100m/nuts2_100m/Nuts2All.tif"
+		{
+			attribute<Regions/Nuts2All> GridData(Lambert100mGrid);
+		}
+
+*/
+		attribute<Regions/Nuts2All>  Nuts2GridOrg(Lambert100mStripedGrid):
+			StorageReadOnly = "True",
+			StorageName = "%SourceDataProjDir%/EUCS_100m/nuts2_100m/Nuts2All.tif";
+		
+		container Tiles
+		{
+			parameter<UInt16> TileSizeY: [ 1024 ];
+			parameter<UInt16> TileSizeX: [ 1024 ];
+			parameter<Lambert100mStripedGrid>  JrcTileExtent: Expr = "point_xy(TileSizeX, TileSizeY, Lambert100mStripedGrid)";
+			unit<wpoint> TileSetNew:
+				Expr  = 
+					"range("
+						"gridset(Lambert100mStripedGrid, "
+							"JrcTileExtent, "
+							"point_xy(UInt16(0), UInt16(0), Lambert100mStripedGrid), "
+							"wpoint"
+						"), "
+						"point_xy(UInt16(0), UInt16(0)),"
+						"wpoint((BoundRange(Lambert100mStripedGrid) + JrcTileExtent - point_xy(UInt16(1), UInt16(1), Lambert100mStripedGrid)) / JrcTileExtent)"
+					")"
+			{
+				attribute<Lambert100mStripedGrid> LB100_7013:    Expr = "value(ID(.) * JrcTileExtent, Lambert100mStripedGrid)", KeepData = "False"; // COMPATIBILITY ISSUE
+				attribute<Lambert100mStripedGrid> LB100_7014:    Expr = "value(ID(.), Lambert100mStripedGrid)", KeepData = "False"; // COMPATIBILITY ISSUE
+				attribute<Lambert100mStripedGrid> LB100:    Expr = "=(GeoDmsVersion() < 7.014) ? 'LB100_7013' : 'LB100_7014'", KeepData = "False";
+				attribute<Lambert100mStripedGrid> UB100Org: Expr = "LB100 + JrcTileExtent", KeepData = "False";
+				attribute<Lambert100mStripedGrid> UB100:    Expr = "point_xy(min_elem(PointCol(UB100Org), PointCol(UpperBound(Lambert100mStripedGrid))),min_elem(PointRow(UB100Org), PointRow(UpperBound(Lambert100mStripedGrid))), Lambert100mStripedGrid)", KeepData = "False";
+			}
+			attribute<TileSetNew> AggrRel(Lambert100mStripedGrid): Expr = "value((ID(Lambert100mStripedGrid) - LowerBound(Lambert100mStripedGrid)) / JrcTileExtent, TileSetNew)";
+			attribute<Bool> HasLandOrg(TileSetNew): Expr = "any(IsDefined(Nuts2GridOrg), AggrRel)", StorageName = "%SourceDataProjDir%/EUCS_100m/data/SelectedTiles.bmp"
+			{
+				attribute<UInt32> PaletteData(Bool): Expr = "Classifications/Boolean/Palette";
+			}
+
+			#include <HasLand.dms>
+
+			unit<uint32> SelectedTiles: Expr = "select_with_org_rel(HasLand)", KeepData = "False"
+			{
+				attribute<Lambert100mStripedGrid> LB100: Expr = "TileSetNew/LB100[org_rel]";
+				attribute<Lambert100mStripedGrid> UB100: Expr = "TileSetNew/UB100[org_rel]";
+			}
+			unit<wpoint> Lambert100mSelectedTileGrid: Expr = "TiledUnit(SelectedTiles/LB100, SelectedTiles/UB100)";
+		}
+	}
+	container AggrRegions
+	{
+		
+		container km10 
+		{
+			
+			// BEGIN redundant data 
+			unit<uint32> poly: storagename = "%SourceDataProjDir%/EUCS_100m/Geography/Grid_LAEA5210_10K_polygons.dbf"
+			{
+				attribute<LambertEA> Geometry(poly): storagename = "%SourceDataProjDir%/EUCS_100m/Geography/Grid_LAEA5210_10K_polygons.shp";
+			}
+			// END redundand data
+			
+// 			parameter<LambertEA> Origin: Expr = "point_xy(1500000.0,  900000.0, LambertEA)"; // Left-Bottom coord
+// 			parameter<LambertEA> Extent: Expr = "point_xy(6000000.0, 4530000.0, LambertEA)";
+			parameter<LambertEA> Origin: Expr = "point_xy(      0.0,  700000.0, LambertEA)"; // Left-Bottom coord
+			parameter<LambertEA> Extent: Expr = "point_xy(8400000.0, 6700000.0, LambertEA)";
+			
+			parameter<LambertEA> LeftTop:    Expr = "point_xy(pointcol(Origin), pointrow(Origin)+pointrow(Extent), LambertEA)";
+			unit<wpoint> grid:
+				Expr  =
+					"range("
+						"gridset(LambertEA, "
+							"point_xy(10000.0, -10000.0, LambertEA), "
+							"LeftTop, "
+							"wpoint"
+						"), "
+						"point_xy(UInt16(0),UInt16(0)),"
+						"wpoint(Extent  / point_xy(10000.0, 10000.0, LambertEA))"
+					")";
+		}
+	}
+	#include<CapriLookup.dms>
+}

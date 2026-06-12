@@ -1,0 +1,163 @@
+////////////////////////////////////////////////////////////////////////////////////////// 
+//                                                                                      //
+// Deze DMS-file wordt aangeroepen door Classifications.dms.                            //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+ 
+container Actor 
+{ 
+	unit<uint8> AllocSector_src : nrofrows = 4
+	{
+		attribute<string>         name         : ['GeenAlloc','Winkel', 'Kantoor', 'Industrie'];
+		attribute<string>         label        := name, DialogType = "LabelText";
+		attribute<uint32>         BrushColor   : [rgb(0,0,0), rgb(75,75,254), rgb(150,150,150), rgb(150,50,50)], DialogType = "BrushColor";
+		attribute<TXLJobs7>       TXLJobs7_rel := union_data(.,(0/0)[TXLJobs7], 3[TXLJobs7], 5[TXLJobs7], 1[TXLJobs7]);
+		attribute<m2footprint_ha> Density      := union_data(.,(0/0)[m2footprint_ha], ModelParameters/AllocSector_Densities/winkel, ModelParameters/AllocSector_Densities/kantoor, ModelParameters/AllocSector_Densities/industrie);
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> AllocSector := select_with_org_rel(IsDefined(AllocSector_src/Density))
+	{
+		attribute<string>         name         := AllocSector_src/name[org_rel];
+		attribute<string>         label        := AllocSector_src/label[org_rel];
+		attribute<uint32>         BrushColor   := AllocSector_src/BrushColor[org_rel], DialogType = "BrushColor";
+		attribute<TXLJobs7>       TXLJobs7_rel := AllocSector_src/TXLJobs7_rel[org_rel];
+		attribute<m2footprint_ha> Density      := AllocSector_src/Density[org_rel];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> SBI08
+	:  StorageName = "%SourceDataDir%/LUMOS/SBI2008_2018_TIGRIS_sector.csv"
+	,  StorageType = "gdal.vect"
+	,  StorageReadOnly = "True" 
+	{
+		attribute<TXLJobs9> TXLJobs9_rel := Tigris_sector[TXLJobs9];
+		attribute<TXLJobs7> TXLJobs7_rel := TXLJobs9/TXLJobs7_rel[TXLJobs9_rel];
+	}
+
+	unit<uint8> TXLJobs9: NrOfrows = 9
+	{
+		attribute<string> name: ['Onbekend', 'landbouw', 'nijverheid', 'logistiek', 'zak_dienstverlening', 'overheid_kw_diensten', 'ov_consumentendiensten', 'detailhandel', 'Zorg'];
+		attribute<TXLJobs7> TXLJobs7_rel := union_data(., (0/0)[TXLJobs7], 0[TXLJobs7], 1[TXLJobs7], 2[TXLJobs7], 5[TXLJobs7], 6[TXLJobs7], 4[TXLJobs7], 3[TXLJobs7], 6[TXLJobs7]);
+		attribute<string> Label := name, DialogType = "LabelText";
+		attribute<string> TXLTbl_Ref := name;
+	}
+
+	unit<uint8> TXLJobs7: NrOfrows = 7
+	{
+		attribute<string> name: ['landbouw', 'nijverheid', 'logistiek', 'detailhandel', 'ov_consumentendiensten', 'zak_dienstverlening', 'overheid_kw_diensten'];
+		attribute<string> Label := name, DialogType = "LabelText";
+		attribute<string> TXLTbl_Ref := name;
+	}
+	
+	unit<uint8> HHtype13opleiding := combine_uint8(./TXLhh13, ./Opleiding_Aggr)
+	{
+		attribute<string> name                := TXLhh13 + '_' + Opleiding_Aggr;
+		attribute<string> TXLhh13             := rjoin(first_rel, id(../TXLhh13), ../TXLhh13/name);
+		attribute<string> Opleiding_Aggr      := rjoin(second_rel, id(../Opleiding_Aggr), ../Opleiding_Aggr/name);
+	}
+
+	unit<uint8> Percentielen_10K: nrofrows = 10
+	{
+		attribute<string> name  := 'P' + string(id(.)) + '0_' + string(id(.) + 1b) + '0';
+		attribute<string> label := name, DialogType = "LabelText";
+	}
+
+	unit<uint8> Opleiding : nrofrows = 7
+	{
+		attribute<uint8>  EK   : [0,1,2,3,4,5,9];
+		attribute<string> name : ['NoData', 'lager_onderwijs', 'lbo', 'MAVO_MULO_VMBO', 'HAVO_VWO_MBO', 'HBO_Universiteit', 'Anders'];
+		attribute<string> label := name, DialogType = "LabelText";
+	}
+	
+	unit<uint8> Opleiding_Aggr : nrofrows = 2
+	{
+		attribute<uint8>  EK   : [0,1];
+		attribute<string> name : ['Niet_hoogopgeleid', 'Een_of_beide_hoogopgeleid'];
+		attribute<string> label := name, DialogType = "LabelText";
+	}
+
+	unit<uint8> HuurKoop : nrofrows = 3
+	{
+		attribute<uint8>  EK   : [0,1,2];
+		attribute<string> name : ['NoData', 'Koop', 'Huur'];
+		attribute<string> label := name, DialogType = "LabelText";
+	}
+
+	unit<uint8> TXLhh13: nrofrows = 13
+	{
+		attribute<uint8> EK: Expr = "id(.) + 1[uint8]";
+		attribute<string> Name: [
+			'SingleNoJob', 
+			'Young1Job', 'Middle1Job', 
+			'CoupleNoJob', 'YoungCouple1Job', 'MiddleCouple1Job',
+			'Young2Jobs', 'Middle2Jobs',
+			'KidsNoJobs', 'Kids1Job', 'Kids2Jobs',
+			'SingleElderly', 'CoupleElderly'
+		];
+		attribute<String> Descr:
+		[
+			 '  1 person,   0 kids,    0 jobs, age  < 65'
+			,'  1 person,   0 kids,  > 0 jobs, age  < 35'
+			,'  1 person,   0 kids,  > 0 jobs, age 35-65'
+			,'> 1 person,   0 kids,    0 jobs, age  < 65'
+			,'> 1 person,   0 kids,    1  job, age  < 35'
+			,'> 1 person,   0 kids,    1  job, age 35-65'
+			,'> 1 person,   0 kids,    2 jobs, age  < 35'
+			,'> 1 person,   0 kids,    2 jobs, age 35-65'
+			,'> 1 person, > 0 kids,    0 jobs,   any age'
+			,'> 1 person, > 0 kids,    1  job,   any age'
+			,'> 1 person, > 0 kids,    2 jobs,   any age'
+			,'  1 person,   0 kids, any #jobs, age >= 65'
+			,'> 1 person,   0 kids, any #jobs, age >= 65'
+		];
+		attribute<String> Label: DialogType = "LabelText", Expr = "Name";
+		
+		parameter<.> SingleNoJob:      [ 0 ];
+		parameter<.> Young1Job:        [ 1 ];
+		parameter<.> Middle1Job:       [ 2 ];
+		parameter<.> CoupleNoJob:      [ 3 ];
+		parameter<.> YoungCouple1Job:  [ 4 ];
+		parameter<.> MiddleCouple1Job: [ 5 ];
+		parameter<.> Young2Jobs:       [ 6 ];
+		parameter<.> Middle2Jobs:      [ 7 ];
+		parameter<.> KidsNoJobs:       [ 8 ];
+		parameter<.> Kids1Job:         [ 9 ];
+		parameter<.> Kids2Job:         [10 ];
+		parameter<.> SingleElderly:    [11 ];
+		parameter<.> CoupleElderly:    [12 ];
+		
+		attribute<Bool> IsMeerpersoons: [ false, false, false, true, true, true, true, true, true, true, true, false, true];
+		attribute<Bool> HeeftInwonendeKinderen:  [ false, false, false, false, false, false, false, false, true, true, true, false, false];
+		attribute<Int8> AantalJobs:     [ 0, 1, 1, 0, 1, 1, 2, 2, 0, 1, 2, 0, 0], Descr = ">=2 -> 2; age >= 65 -> 0"; // @MH, klopt dit? 2e en 3e rij moet bv > 0 zijn ipv 1
+		attribute<bool> AgeGroup1: [ true,  true,  false, true,  true,  false, true,  false, true, true, true, false, false], Descr = "age < 35";
+		attribute<bool> AgeGroup2: [ true,  false, true,  true,  false, true , false, true,  true, true, true, false, false], Descr = "35 <= age < 65";
+		attribute<bool> AgeGroup3: [ false, false, false, false, false, false, false, false, true, true, true, true,  true ], Descr = "65 <= age";
+		
+		attribute<Float32> AgeGroup0Share: [ 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 2.5, 2.5, 2.5, 0.0, 0.0], Descr = "age < 18";
+		attribute<Float32> AgeGroup1Share: [ 0.5, 1.0, 0.0, 1.0,  2.0, 0.0, 2.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0], Descr = "age < 35";
+		attribute<Float32> AgeGroup2Share: [ 0.5, 0.0, 1.0, 1.0,  0.0, 2.0, 0.0, 2.0, 1.0, 1.0, 1.0, 0.0, 0.0], Descr = "35 <= age < 65";
+		attribute<Float32> AgeGroup3Share: [ 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0], Descr = "65 <= age";
+		attribute<Float32> HouseholdSize: Expr = "AgeGroup0Share + AgeGroup1Share + AgeGroup2Share + AgeGroup3Share";
+		
+		attribute<float32> Income : [
+		20235,
+		30620,
+		42203,
+		58597,
+		46303,
+		60323,
+		63424,
+		85521,
+		41237,
+		64856,
+		85441,
+		28432,
+		48043
+		];
+		attribute<bool>    FitsInSmallApp : [true, true, true, true, true, true, true, true, false, false, false, true, true];
+	}
+	
+}

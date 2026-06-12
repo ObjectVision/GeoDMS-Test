@@ -1,0 +1,33 @@
+container Noord_Holland
+{
+	attribute<bool> GrondwaterbeschermingsgebiedI (domain_grid):
+		Source      = "Per email aangeleverd op 28 april 2015 door Daniël Hafkenscheid, Provincie Zeeland"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\nh\ShapeFiles\WA_GRONDW_BESCHERM.shp veld GRONDWATER=Grondwaterbeschermingsgebied I"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/nh/Grondwaterbeschermingsgebieden.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/nh/grondwaterbeschermingsgebiedI.tif";
+
+	attribute<bool> GrondwaterbeschermingsgebiedII (domain_grid):
+		Source      = "Per email aangeleverd op 28 april 2015 door Daniël Hafkenscheid, Provincie Zeeland"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\nh\ShapeFiles\WA_GRONDW_BESCHERM.shp veld GRONDWATER=Grondwaterbeschermingsgebied II"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/nh/Grondwaterbeschermingsgebieden.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/nh/grondwaterbeschermingsgebiedII.tif";
+
+	attribute<bool> Waterwingebied (domain_grid):
+		Source      = "Per email aangeleverd op 28 april 2015 door Daniël Hafkenscheid, Provincie Zeeland"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\nh\ShapeFiles\WA_GRONDW_BESCHERM.shp veld GRONDWATER=Waterwingebied"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/nh/Grondwaterbeschermingsgebieden.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/nh/waterwingebied.tif";
+	
+	parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/pmv_2017/nh/Provinciale_Milieu_Verordening_Stiltegebieden.shp';
+	parameter<string> Source:      = 'http://gisservices.noord-holland.nl/ags/services/pnh_dataservice_gsps_alg/MapServer/WFSServer?request=GetCapabilities&service=WFS ';
+		
+	container Provinciale_Milieu_Verordening_Stiltegebieden : = VergriddingT
+	(
+		'=Bestandsloc'
+		,'SELECT * FROM Provinciale_Milieu_Verordening_Stiltegebieden'
+		,''
+		,'=Source'
+	);
+
+	attribute<bool> Totaal (domain_grid) := max_elem(GrondwaterbeschermingsgebiedI, GrondwaterbeschermingsgebiedII, Waterwingebied, Provinciale_Milieu_Verordening_Stiltegebieden/Bestand/Multi/result);
+}

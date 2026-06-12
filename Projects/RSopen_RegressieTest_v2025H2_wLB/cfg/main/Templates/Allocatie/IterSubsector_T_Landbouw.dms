@@ -1,0 +1,24 @@
+Template IterSubsector_T_Landbouw
+{
+	parameter<Subsector> id;
+	unit<UInt8> Subsector;
+	container StateVoorAllocatie;
+	container Context0;
+	//
+	
+	container Context := Context0
+	{
+		container ThisSubsector := ..;
+	}
+	
+	parameter<String> name               := Subsector/name[id];
+	parameter<String> Subsector_pathname := Subsector/Sector_name_Thisname[id];
+	parameter<String> Zichtjaar_name     := Context/ThisZichtjaar/name;
+	parameter<String> AllocRegio_name    := Context/ThisSectorAllocRegio/AllocRegio_name;
+	
+	unit<uint64> CompactedAdminDomain := Geography/CompactedAdminDomain
+	{
+		attribute<Bool>    Beschikbaar                := = 'PotentieleState/'+Zichtjaar_name+'/per_SectorxSubsectoren/'+Subsector_pathname+'/IsBeschikbaar_zichtjaar && IsNull(StateVoorAllocatie/SubSector_rel) && !ExtraRestrictieDoorWindAllocatie  && !ExtraRestrictieDoorHuidigeZonneweide && !GeeftOnvoldoendeRuimte_Landbouw';
+		attribute<Bool>    GeeftOnvoldoendeRuimte_Landbouw := = '/VariantData/Zeef/'+Zichtjaar_name+'/SectorxSubsectoren/'+Subsector_pathname+'/src/GeeftOnvoldoendeRuimte_Landbouw';
+	}
+}

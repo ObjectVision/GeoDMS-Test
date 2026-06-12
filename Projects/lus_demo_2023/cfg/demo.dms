@@ -1,0 +1,137 @@
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                //
+//                 Configuration Land Use Scanner - Student Edition                               //
+//                          using GeoDMS version 7.130 or newer                                   //
+//                                                                                                //
+//                                July 2004 - January 2023                                        //
+//                                                                                                //
+//                            Vrije Universiteit Amsterdam                                        //
+//                            Spatial Information Laboratory                                      //
+//                Dr. Jasper Dekkers & Dr. Eric Koomen & Jip Claassens                            //
+//                                                                                                //
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                //
+// This is the base file for the configuration                                                    //
+//                                                                                                //
+// Using include-statements, this file refers to the dms-files with:                              //
+// - Units                                                                            (Units.dms) //
+// - Geography                                                                    (Geography.dms) //
+// - Classifications                                                        (Classifications.dms) //
+// - Cuurent landuse (landuse, thematic_maps, policy_maps, DistanceDecay) (Current_situation.dms) //
+// - Components for determining future landuse                           (ScenarioComponents.dms) //
+// - Algorithms procedures (continuous & discrete)                                (Templates.dms) //
+// - Simulations for future landuse                                             (Simulations.dms) //
+//                                                                                                //
+// /////////////////////////////////////////////////////////////////////////////////////////////////
+
+container demo
+{
+	container ConfigSettings: isHidden = "True"
+	{
+		container Overridable
+		{
+			// Projectdata verhuisd uit %ProjDir%/data naar de regressie-SourceData
+			// (zie GeoDMS-Test). Default werkt voor GUI-sessies (registry SourceDataDir
+			// = C:\SourceData/RegressionTests); full.py overschrijft via
+			// GEODMS_Overridable_LUSDemo_DataDir.
+			parameter<String> LUSDemo_DataDir := '%SourceDataDir%/LUS_Demo';
+		}
+	}
+
+	unit<SPoint> domain := =ModelParameters/ModelResolution == '100m' ? 'Geography/rdc_100lu' : 'Geography/rdc_500lu', IsHidden = "true"
+	{
+		attribute<Geography/rdc_100lu> rdc_100lu_rel := id(.)[Geography/rdc_100lu];
+		attribute<Geography/rdc_500lu> rdc_500lu_rel := id(.)[Geography/rdc_500lu];
+	}
+	container ModelParameters : using = "Units"
+	{
+		parameter<string>    ModelResolution     := '100m'; // '100m' '500m'
+		parameter<bool>      EnableBackgroundMap := FALSE; // TRUE FALSE
+		
+		container Advanced : IsHidden = "true"
+		{
+			parameter<Year>      StartYear       := 2017[year];
+			parameter<Year>      ModelYear       := 2040[year];
+			parameter<IterRange> NrOfIterations  := 30[IterRange];
+			parameter<m2_Eur>    BetaFactor      := 1[m2_Eur];
+		}
+	}
+	
+	#include <Units.dms>
+	#include <Geography.dms>
+	#include <Classifications.dms>
+	#include <Templates.dms>
+	#include <Current_situation.dms>
+	#include <ScenarioComponents.dms>
+	#include <Simulations.dms>
+	
+	container Final_Results : IsHidden = "true"
+	{
+		attribute <Classifications/LUclasses> A1_GE_Discr     (domain) := Simulations/A1_GE/Results/Discrete/LandUse/Model;
+		attribute <Classifications/LUclasses> A1_GE_Cont      (domain) := Simulations/A1_GE/Results/Continuous/LandUse/predominant;
+		attribute <Classifications/LUclasses> A2_TM_Discr     (domain) := Simulations/A2_TM/Results/Discrete/LandUse/Model;
+		attribute <Classifications/LUclasses> A2_TM_Cont      (domain) := Simulations/A2_TM/Results/Continuous/LandUse/predominant;
+		attribute <Classifications/LUclasses> B1_SE_Discr     (domain) := Simulations/B1_SE/Results/Discrete/LandUse/Model;
+		attribute <Classifications/LUclasses> B1_SE_Cont      (domain) := Simulations/B1_SE/Results/Continuous/LandUse/predominant;
+		attribute <Classifications/LUclasses> B2_RC_Discr     (domain) := Simulations/B2_RC/Results/Discrete/LandUse/Model;
+		attribute <Classifications/LUclasses> B2_RC_Cont      (domain) := Simulations/B2_RC/Results/Continuous/LandUse/predominant;
+	}
+	
+	
+	container t611_lus_demo_2023_results_test
+	{
+		attribute<Classifications/LUclasses> A1_GE_Discr_calculated (domain) := Final_Results/A1_GE_Discr; //, Storagename = "%LUSDemo_DataDir%/A1_GE_Discr.tif";
+		attribute<Classifications/LUclasses> A1_GE_Discr_recorded   (domain): Storagename = "%LUSDemo_DataDir%/A1_GE_Discr.tif";
+
+		attribute<Classifications/LUclasses> A1_GE_Cont_calculated (domain) := Final_Results/A1_GE_Cont; //, Storagename = "%LUSDemo_DataDir%/A1_GE_Cont.tif";
+		attribute<Classifications/LUclasses> A1_GE_Cont_recorded   (domain): Storagename = "%LUSDemo_DataDir%/A1_GE_Cont.tif";
+		
+		attribute<bool> test_A1_GE_Disc (domain) := A1_GE_Discr_calculated == A1_GE_Discr_recorded;
+		attribute<bool> test_A1_GE_Cont (domain) := A1_GE_Cont_calculated  == A1_GE_Cont_recorded;
+
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result := all(test_A1_GE_Disc) && all(test_A1_GE_Cont) ? 'OK' : 'False';	
+
+		parameter<string> result_html := 
+			'<description>LUS Demo 2023, Allocation results, http://svn.objectvision.nl/public/geodms/prj/lus_demo</description>'+
+			'<size>a discrete allocation and a continuous result on 100 meter grid cell level</size>' +
+			'<result>'+ result + '</result>'
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t611_lus_demo_2023_results_test.txt'";
+		
+	}
+	
+	
+	container ExportSettings
+	{
+		container MetaInfo 
+		{
+			parameter<string> FileName : ='%storageBaseName%.xml';
+			parameter<string> FileType : ='xml'; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
+			
+			container Contents
+			{
+				container Software
+				{
+					parameter<string> GeoDmsVersion: [ '=string(GeoDmsVersion())' ];
+				}
+				container Config
+				{
+					parameter<string> FullName := '=PropValue(this, '+Quote('FullName')+')';
+					parameter<string> Expr     := '=PropValue(this, '+Quote('Expr'    )+')';
+				}
+				container Environment
+				{
+					parameter<string> Processor    := expand(., '%env:PROCESSOR_IDENTIFIER%');
+					parameter<string> User         := expand(., '%env:USERNAME%');
+					parameter<string> ComputerName := expand(., '%env:COMPUTERNAME%');
+					parameter<string> Date         := expand(., '%env:DATE%');
+					parameter<string> Time         := expand(., '%env:TIME%');
+				}
+			}
+		}
+	}
+}

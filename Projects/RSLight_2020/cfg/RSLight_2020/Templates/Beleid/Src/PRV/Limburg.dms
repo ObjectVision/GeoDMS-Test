@@ -1,0 +1,136 @@
+container Limburg : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=limburg&striVersion=STRI2008"
+{
+	container NL_IMRO_9928_Vr2014_GC03 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9931.GCVOOmgeving2014-GC03"
+	{
+		//Geconsolideerde versie Omgevingsverordening Limburg 2014   
+		//planstatus: geconsolideerd 2017-03-31
+		//identificatie: NL.IMRO.9931.GCVOOmgeving2014-GC03
+		//type plan: provinciale verordening
+		//naam overheid: provincie Limburg
+		//ondergrond: basisregistratie topografie (BRT) (2015-02-01)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (13)
+		//Algemeen
+		//Duurzame verstedelijking en bestuursafspraken regionale uitwerking POL2014
+		//Provinciale wegen en reserveringszones
+		//Beschermingszones natuur en landschap
+		//Uitsluitingsgebieden windturbines
+		//Intensieve veehouderijen en glastuinbouwbedrijven
+		//Natuurbescherming
+		//Milieubeschermingsgebieden
+		//Regionale waterkeringen
+		//Normering regionale wateroverlast
+		//Grondwateronttrekking
+		//Rioolplichtontheffing en gesloten stortplaatsen
+		//Bedrijventerrein met provinciale geluidscontour
+
+		parameter<string> Bestandsloc_vlak : = '%RSLDataDir%/Beleid/Ruimte/prv_2017/li/NL_IMRO_9931_GCVOOmgeving2014_GC03_Besluitvlak_P.shp';
+		parameter<string> OGRQuery_vlak    :    = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\li\NL_IMRO_9928_Vr2014_GC03_Besluitvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitvlak_P.gml -where ""besluitgebied=""NL.IMRO.9931.GCVOOmgeving2014-GC03"" -skipfailures -overwrite';
+
+		
+		//In het Besluit algemene regels ruimtelijke ordening (Barro) is door het Rijk vastgelegd dat de Provincie verantwoordelijk is voor de begrenzing van de Ecologische Hoofdstructuur (EHS, 
+		//inmiddels door het Rijk Nationaal Natuurnetwerk genoemd) en begrenzing en bescherming van de EHS dient vast te leggen in een provinciale verordening.
+		//In Limburg hebben wij de EHS vastgelegd in de Goudgroene natuurzone.
+
+		container  Beschermingszones_natuur_en_landschap : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/li/Geconsolideerde versie Omgevingsverordening Limburg 2014.mht"
+		{
+			//Beschermingszones natuur en landschap
+			//	  Beschermingsgebied Nationaal Landschap Zuid-Limburg
+			//	  Bronsgroene landschapszone
+			//	x Goudgroene natuurzone
+			//	  Zone Natuurbeek
+
+			// niet gelijk aan vorige versie: 53025 (was 99076)    ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_LI/Kaart4_Beschermingszones_natuur_en_landschap/Goudgroene_natuurzone
+			// lijkt een fout te zijn in de oude kaart te zitten, zijn veel meer contouren met name rond Maas
+			container Goudgroene_natuurzone : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9931_GCVOOmgeving2014_GC03_Besluitvlak_P WHERE naam =''Goudgroene natuurzone'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9931.GCVOOmgeving2014-GC03/pt_NL.IMRO.9931.GCVOOmgeving2014-GC03.xml#NL.IMRO.PT.sd48c34c5-b631-4af2-9e20-b62ab0ad19d3'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Intensieve_veehouderijen_en_glastuinbouwbedrijven : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/li/Geconsolideerde versie Omgevingsverordening Limburg 2014.mht"
+		{
+			//Intensieve veehouderijen en glastuinbouwbedrijven
+			//	  Bedrijventerrein
+			//	  Extensiveringsgebied intensieve veehouderij
+			//	  Goudgroene natuurzone
+			//	x Ontwikkelingsgebied glastuinbouw
+			//	  Ontwikkelingsgebied intensieve veehouderij
+			//	  Zilvergroene natuurzone
+
+			//Artikel 2.12.2 Nieuwvestiging en uitbreiding van glastuinbouwbedrijven 
+			//1. Een ruimtelijk plan voorziet niet in de nieuwvestiging van een glastuinbouwbedrijf buiten een op de kaarten behorende bij deze verordening als ontwikkelingsgebied glastuinbouw aangewezen gebied. 
+
+			// gelijk aan vorige versie: 371 ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_LI/Kaart6_Intensieve_veehouderijen_en_glastuinbouwbedrijven/Ontwikkelingsgebied_glastuinbouw
+			container Ontwikkelingsgebied_glastuinbouw : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9931_GCVOOmgeving2014_GC03_Besluitvlak_P WHERE naam =''Ontwikkelingsgebied glastuinbouw'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9931.GCVOOmgeving2014-GC03/pt_NL.IMRO.9931.GCVOOmgeving2014-GC03.xml#NL.IMRO.PT.sb0413435-87c3-4c60-a251-fbfc575c646b'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/li/GCVOOmgeving2014-GC03_212_Glastuinbouw.jpg'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Milieubeschermingsgebieden : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/li/Geconsolideerde versie Omgevingsverordening Limburg 2014.mht"
+		{
+			//Milieubeschermingsgebieden
+			//	  Beschermingsgebied Nationaal Landschap Zuid-Limburg
+			//	  Boringsvrije zone Roerdalslenk I
+			//	  Boringsvrije zone Roerdalslenk II
+			//	  Boringsvrije zone Roerdalslenk III
+			//	  Boringsvrije zone Roerdalslenk IV
+			//	  Boringsvrije zone Venloschol
+			//	x Grondwaterbeschermingsgebieden
+			//	x Stiltegebieden
+			//	x Waterwingebieden
+
+			// vrijwel gelijk aan vorige versie: 16382 (was 16381)    ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_LI/Kaart4_Beschermingszones_natuur_en_landschap/Goudgroene_natuurzone
+			container Grondwaterbeschermingsgebieden : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9931_GCVOOmgeving2014_GC03_Besluitvlak_P WHERE naam =''Grondwaterbeschermingsgebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9931.GCVOOmgeving2014-GC03/pt_NL.IMRO.9931.GCVOOmgeving2014-GC03.xml#NL.IMRO.PT.sa4d93f06-9177-4c35-b8c5-7258020b2815'
+				,'=OGRQuery_vlak'
+			);
+
+			// niet gelijk aan vorige versie: 17928 (was 18615)      ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_LI/milieubeschermingsgebieden/milieubeschermingsgebieden_PRV_LI_stiltegebieden
+			container Stiltegebieden : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9931_GCVOOmgeving2014_GC03_Besluitvlak_P WHERE naam =''Stiltegebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9931.GCVOOmgeving2014-GC03/pt_NL.IMRO.9931.GCVOOmgeving2014-GC03.xml#NL.IMRO.PT.sf8bc971a-1fdf-4a52-868b-62e85eb1dc60'
+				,'=OGRQuery_vlak'
+			);
+
+			// gelijk aan vorige versie: 1611  ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_LI/Kaart8_Milieubeschermingsgebieden/Waterwingebieden
+			container Waterwingebieden : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9931_GCVOOmgeving2014_GC03_Besluitvlak_P WHERE naam =''Waterwingebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9931.GCVOOmgeving2014-GC03/pt_NL.IMRO.9931.GCVOOmgeving2014-GC03.xml#NL.IMRO.PT.s0c61f76d-df07-41ae-a043-949ba30a1121'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Rioolplichtontheffing_en_gesloten_stortplaatsen : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/li/Geconsolideerde versie Omgevingsverordening Limburg 2014.mht"
+		{
+			//Rioolplichtontheffing en gesloten stortplaatsen
+			//	x Gesloten stortplaats
+			//	  Rioolplichtontheffing 
+
+			// gelijk aan vorige versie: 139  //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_LI/Kaart12_Rioolplichtontheffing_en_afgesloten_stortplaatsen/Afgesloten_stortplaatsen
+			container Gesloten_stortplaats : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9931_GCVOOmgeving2014_GC03_Besluitvlak_P WHERE naam =''Gesloten stortplaats'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9931.GCVOOmgeving2014-GC03/pt_NL.IMRO.9931.GCVOOmgeving2014-GC03.xml#NL.IMRO.PT.se608453d-78d2-4170-928f-fd1714c186c0'
+				,'=OGRQuery_vlak'
+			);
+		}
+	}
+}

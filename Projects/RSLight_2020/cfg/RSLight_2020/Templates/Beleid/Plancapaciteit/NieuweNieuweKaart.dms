@@ -1,0 +1,78 @@
+container NieuweNieuweKaart
+{
+	unit<uint32> Src
+	: StorageName     = "%RSLDataDir%/Beleid/Ruimte/NieuweNieuweKaart/NieuweKaart_wonen_juni2019_april2020d.gdb"
+	, StorageType     = "gdal.vect"
+	, StorageReadOnly = "True"
+	, DialogType      = "Map"
+	, DialogData      = "Polygons"
+	, Source          = "download website https://nieuwekaartnl.nl/_download/ op 18 juni 2020. coneresie van shp naar gdb in ArcGIS (+repair geomtery)"
+	, url             = "https://nieuwekaartnl.nl/_download/"
+	{
+		attribute<rdc_meter> Polygons (polygon);
+		attribute<bool> IsHard := rjoin(PlanStatus, PlanStatusK/values, PlanStatusK/IsHard);
+		attribute<bool> IsZacht := !IsHard;
+		attribute<bool> IsSymbool := const(false, .); //@Bas, kan je (semi) automatisch de symbolen (driehoeken, cirkels, vierkanten) eruit vissen, ahv geometrie?
+		
+		unit<uint32> Gemeente := /Geography/RegioIndelingen/Gemeente;
+		
+		attribute<Gemeente> Gemeente_rel := point_in_polygon(centroid_or_mid(Src/Polygons), gemeente/polygons);
+		
+		attribute<bool> IsSymboolGrof :=
+			Gemeente_rel == 350[Gemeente] ||
+			Gemeente_rel == 351[Gemeente] ||
+			Gemeente_rel == 164[Gemeente] ||
+			Gemeente_rel == 192[Gemeente] ||
+			Gemeente_rel == 168[Gemeente] ||
+			Gemeente_rel == 368[Gemeente] ||
+			Gemeente_rel == 192[Gemeente] ||
+			Gemeente_rel == 366[Gemeente] ||
+			Gemeente_rel == 205[Gemeente] ||
+			Gemeente_rel == 203[Gemeente] ||
+			Gemeente_rel ==  48[Gemeente] ||
+			Gemeente_rel ==  37[Gemeente] ||
+			Gemeente_rel ==  49[Gemeente] ||
+			Gemeente_rel ==  47[Gemeente] ||
+			Gemeente_rel == 346[Gemeente] ||
+			Gemeente_rel == 348[Gemeente] ||
+			Gemeente_rel ==  58[Gemeente] ||
+			Gemeente_rel ==  70[Gemeente] ||
+			Gemeente_rel ==  44[Gemeente] ||
+			Gemeente_rel == 109[Gemeente] ||
+			Gemeente_rel ==  41[Gemeente] ||
+			Gemeente_rel ==  42[Gemeente] ||
+			Gemeente_rel ==  51[Gemeente] ||
+			Gemeente_rel ==  35[Gemeente] ||
+			Gemeente_rel ==  36[Gemeente] ||
+			Gemeente_rel == 344[Gemeente] ||
+			Gemeente_rel ==  53[Gemeente] ||
+			Gemeente_rel ==  39[Gemeente] ||
+			Gemeente_rel ==  45[Gemeente] ||
+			Gemeente_rel == 349[Gemeente] ||
+			Gemeente_rel == 325[Gemeente] ||
+			Gemeente_rel ==  54[Gemeente];
+		
+		attribute<bool> IsSymboolFijn := !IsSymboolGrof;
+		
+		attribute<float32> FractieOplNa2030 := float32(add(Op20302050, OPLONB)) / float32(add(OP2019, OP202024, Op202529, Op20302050, OPLONB));
+	}
+	
+	unit<uint32> PlanStatusK := unique(Src/PlanStatus)
+	{
+		attribute<string> name_long          := 'S'+replace(values, '/', '_', '-', '_', ' ', '_', '+', '');
+		attribute<string> name               := id(.) == last(id(.)) ? 'ONB' : left(name_long, 3);
+		attribute<string> Label              := name, DialogType = "LabelText";
+		attribute<bool>   IsHard             : [true, true, true, false, false, true, true, true, true, false, false, false, false, false, false, false, false, false, false]; //@BR20191218, waar komt dit vandaan?
+	}
+	
+	unit<uint32> Fijn := select_with_org_rel(Src/IsSymboolFijn)
+	, StorageReadOnly = "True"
+	, DialogType      = "Map"
+	, DialogData      = "Polygons"
+	{
+		attribute<rdc_meter> Polygons (polygon) := Src/polygons[org_rel];
+		attribute<bool> IsHard := Src/IsHard[org_rel];
+		attribute<bool> IsZacht := Src/IsZacht[org_rel];
+		attribute<float32> FractieOplNa2030 := Src/FractieOplNa2030[org_rel];
+	}
+}

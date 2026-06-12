@@ -1,0 +1,32 @@
+container Templates: Using = "Units;geometries;Classifications"
+{      
+	#include<CreateNetwerk_Basic_T.dms> //network creation basic, used for determining congestion speeds
+	#include<PrivateTransport_Car_T.dms>
+	// #include<CreateNetwork_NotOptimised_T.dms> //network creation with part that omits junction free sections
+	#include<CreateNetwork_Pedestrian_Bike_T.dms>
+	#include<CreateNetwork_Efficient_T.dms>   //network creation with part that omits JFS, and dead branches
+	#include<CreateNetwork_TomTom_T.dms>   //network creation without optimisation. Used for TomTom with Directions
+	// #include<Determine_CongestedSpeeds_T.dms> 
+	#include<StaticNetsCreator.dms>
+	// #include<MakeNetwerkType_T.dms>
+	#include<Check_Connectiveness_T.dms>
+	// #include<Check_Connectiveness_T_adhoc.dms>
+	#include<LoadCSVThroughGDAL_T.dms>
+	#include<doDateSelection_T.dms>
+	
+	#include<ReadMergeExports_OV_perType_T.dms>
+	#include<Merge_Regions_OV_T.dms>
+	#include<ReadExport_OV_perTime_T.dms>
+	#include<Merge_Regions_Car_T.dms>
+	#include<ReadExport_Car_T.dms>
+	#include<ReadExport_PedestrianBike_T.dms>
+	#include<Merge_Regions_PedestrianBike_T.dms>
+	
+	unit<SPoint> Neighbourhood := range(spoint, point_xy(int16(-1), int16(-1)), point_xy(int16(2), int16(2))), Descr = "Rooks case contiguous neighbours (first order)"
+	{
+		attribute<uint32> Top     := uint32(id(.) = point_xy(int16(0),int16(1),spoint));
+		attribute<uint32> Right   := uint32(id(.) = point_xy(int16(1),int16(0),spoint));
+		attribute<uint32> Bottom  := uint32(id(.) = point_xy(int16(0),int16(-1),spoint));
+		attribute<uint32> Left    := uint32(id(.) = point_xy(int16(-1),int16(0),spoint));
+	}
+}

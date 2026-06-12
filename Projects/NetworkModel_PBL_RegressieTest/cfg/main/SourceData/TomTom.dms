@@ -1,0 +1,403 @@
+container TomTom
+{ 
+	parameter<string> file_date := ModelParameters/Advanced/CarCongestionSpeed_date;
+	
+	unit<uint8> Moments : nrofrows = 11
+	{
+		attribute<string> name : ['weekday','weekend','week','freeflow','sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+	}
+		
+	container Impl
+	{
+		parameter<string> dir       := '%NetworkModel_PrivDir%/TomTom/'+file_date+''; //must have forward slashes!
+		
+		parameter<string> Generate_FileList_CSVs := 'Ready', ExplicitSuppliers = "GetFileNames_Network/WriteFilesCSV;GetFileNames_Speedprofiles/WriteFilesCSV";
+		parameter<string> Generate_FSS           := 'Ready', ExplicitSuppliers = "Merge_Roads;Merge_Junctions;Merge_Speednetworks;Merge_Speedprofiles";
+		
+		unit<uint32> FileNames_Roads         := GetFileNames_Network/Files/Files_polylines;
+		unit<uint32> FileNames_Junctions     := GetFileNames_Network/Files/Files_points;
+		unit<uint32> FileNames_Speedprofiles_network := GetFileNames_Speedprofiles/Files/Files_HSNP;
+		unit<uint32> FileNames_Speedprofiles_profile := GetFileNames_Speedprofiles/Files/Files_HSPR;
+	
+		container Read_TomTom_Files_Roads := 
+			for_each_ne(
+				FileNames_Roads/name
+				,'Read_TomTom_Files_T('+quote(FileNames_Roads/path)+')'
+			);
+			
+		container Read_TomTom_Files_Junctions := 
+			for_each_ne(
+				FileNames_Junctions/name
+				,'Read_TomTom_Files_T('+quote(FileNames_Junctions/path)+')'
+			);
+			
+		container Read_TomTom_Files_SP_network := 
+			for_each_ne(
+				FileNames_Speedprofiles_network/name
+				,'Read_TomTom_Files_T('+quote(FileNames_Speedprofiles_network/path)+')'
+			);
+		container Read_TomTom_Files_SP_profiles := 
+			for_each_ne(
+				FileNames_Speedprofiles_profile/name
+				,'Read_TomTom_Files_T('+quote(FileNames_Speedprofiles_profile/path)+')'
+			);
+			
+		Template Read_TomTom_Files_T
+		{
+			parameter<string> File_path;
+			///
+			
+			unit<uint32> Read 
+			:	StorageName     = "= File_path"
+			,	StorageType     = "gdal.vect"
+			,	StorageReadOnly = "True";
+		}
+	
+		unit<uint32>  Merge_Roads := ='union_unit('+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read', ',')+')'
+		, StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Roads_FSS.fss'"
+		{
+			attribute<rdc>    geometry (arc)               := ='union_data(., '+AsList('LatLongWgs842RD(Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/geometry, dpoint)[rdc]', ',')+')';
+			attribute<uint64> NW_ID                        := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/ID[uint64]', ',')+')';
+			attribute<uint8>  FRC                          := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/FRC[uint8]', ',')+')', Descr = "functional road class";
+			attribute<int32>  FeatureType                  := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/FEATTYP', ',')+')', Descr = "4110=Road element, 4130=Ferry connection, 4165= address boundary element";
+			attribute<uint8>  FerryType                    := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/FT[uint8]', ',')+')', Descr = "0=no ferry, 1 = ferry conn operated by ship or hovercraft, 2 = rail connection ferry operated by train";
+			attribute<uint64> F_JNCTID                     := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/F_JNCTID[uint64]', ',')+')', Descr = "From junction identifier";
+			attribute<uint64> T_JNCTID                     := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/T_JNCTID[uint64]', ',')+')', Descr = "To junction identifier";
+			attribute<uint8>  F_JNCTTYP                    := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/F_JNCTTYP[uint8]', ',')+')', Descr = "From junction type; 0=junction, 2, bifurcation, 3 = railway crossing, 4 = country border crossing, 5 = ferry operated by train crossing, 6 = internal data set border crossing";
+			attribute<uint8>  T_JNCTTYP                    := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/T_JNCTTYP[uint8]', ',')+')', Descr = "To junction type; 0=junction, 2, bifurcation, 3 = railway crossing, 4 = country border crossing, 5 = ferry operated by train crossing, 6 = internal data set border crossing";
+			attribute<m>      METERS                       := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/METERS[m]', ',')+')', Descr = "Feature length";
+			attribute<min_f>  MINUTES                      := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/MINUTES[min_f]', ',')+')', Descr = "travel time in minutes";
+			attribute<string> ONEWAY                       := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/ONEWAY', ',')+')', Descr = "Direction of traffic flow: FT positive direction, N closed in both directions, TF negative direction";
+			attribute<km_hr>  KPH                          := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/KPH[km_hr]', ',')+')', Descr = "Average speed";
+			attribute<int8>   F_ELEV                       := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/F_ELEV[int8]', ',')+')', Descr = "From Z-level, -9 to 9";
+			attribute<int8>   T_ELEV                       := ='union_data(., '+AsList('Read_TomTom_Files_Roads/'+FileNames_Roads/name+'/Read/T_ELEV[int8]', ',')+')', Descr = "To Z-level, -9 to 9";
+		}
+		
+		unit<uint32>  Merge_Junctions := ='union_unit('+AsList('Read_TomTom_Files_Junctions/'+FileNames_Junctions/name+'/Read', ',')+')'
+		, StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Junctions_FSS.fss'"
+		{
+			attribute<rdc>    geometry                     := ='union_data(., '+AsList('LatLongWgs842RD(Read_TomTom_Files_Junctions/'+FileNames_Junctions/name+'/Read/geometry, dpoint)[rdc]', ',')+')';
+			attribute<int32>  FeatureType                  := ='union_data(., '+AsList('Read_TomTom_Files_Junctions/'+FileNames_Junctions/name+'/Read/FEATTYP', ',')+')', Descr = "4110=Road element, 4130=Ferry connection, 4165= address boundary element";
+			attribute<uint64> JNCTID                       := ='union_data(., '+AsList('Read_TomTom_Files_Junctions/'+FileNames_Junctions/name+'/Read/ID[uint64]', ',')+')', Descr = "junction identifier";
+			attribute<uint8>  JNCTTYP                      := ='union_data(., '+AsList('Read_TomTom_Files_Junctions/'+FileNames_Junctions/name+'/Read/JNCTTYP[uint8]', ',')+')', Descr = "junction type; 0=junction, 2, bifurcation, 3 = railway crossing, 4 = country border crossing, 5 = ferry operated by train crossing, 6 = internal data set border crossing";
+			attribute<int8>   ELEV                         := ='union_data(., '+AsList('Read_TomTom_Files_Junctions/'+FileNames_Junctions/name+'/Read/ELEV[int8]', ',')+')', Descr = "Z-level, -9 to 9";
+		}
+		
+		unit<uint32>  Merge_Speednetworks := ='union_unit('+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read', ',')+')'
+		, StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Speednetworks_FSS.fss'"
+		{
+			attribute<uint64> NW_ID                        := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/network_id[uint64]', ',')+')', Descr = "network id";
+			attribute<string> region_code                  := ='union_data(., '+AsList('const('+quote(FileNames_Speedprofiles_network/SP_regioncode)+', Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read)', ',')+')', Descr = "file region code";
+			attribute<uint16> SP_freeflow                  := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/spfreeflow[uint16]', ',')+')', Descr = "speedprofile freeflow";
+			attribute<uint16> SP_weekday                   := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/spweekday[uint16]', ',')+')', Descr = "speedprofile weekday";
+			attribute<uint16> SP_weekend                   := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/spweekend[uint16]', ',')+')', Descr = "speedprofile weekend";
+			attribute<uint16> SP_week                      := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/spweek[uint16]', ',')+')', Descr = "speedprofile week";
+			
+			attribute<uint16> SP_Sunday                    := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/profile_1[uint16]', ',')+')', Descr = "speedprofile sunday";
+			attribute<uint16> SP_Monday                    := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/profile_2[uint16]', ',')+')', Descr = "speedprofile monday";
+			attribute<uint16> SP_Tuesday                   := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/profile_3[uint16]', ',')+')', Descr = "speedprofile tuesday";
+			attribute<uint16> SP_Wednesday                 := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/profile_4[uint16]', ',')+')', Descr = "speedprofile wednesday";
+			attribute<uint16> SP_Thursday                  := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/profile_5[uint16]', ',')+')', Descr = "speedprofile thursday";
+			attribute<uint16> SP_Friday                    := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/profile_6[uint16]', ',')+')', Descr = "speedprofile friday";
+			attribute<uint16> SP_Saturday                  := ='union_data(., '+AsList('Read_TomTom_Files_SP_network/'+FileNames_Speedprofiles_network/name+'/Read/profile_7[uint16]', ',')+')', Descr = "speedprofile saturday";
+		}
+		
+		unit<uint32>  Merge_Speedprofiles := ='union_unit('+AsList('Read_TomTom_Files_SP_profiles/'+FileNames_Speedprofiles_profile/name+'/Read', ',')+')'
+		, StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Speedprofiles_FSS.fss'"
+		{
+			attribute<int32>   profile_id                   := ='union_data(., '+AsList('Read_TomTom_Files_SP_profiles/'+FileNames_Speedprofiles_profile/name+'/Read/profile_id', ',')+')', Descr = "profile id";
+			attribute<string>  region_code                  := ='union_data(., '+AsList('const('+quote(FileNames_Speedprofiles_profile/SP_regioncode)+', Read_TomTom_Files_SP_profiles/'+FileNames_Speedprofiles_profile/name+'/Read)', ',')+')', Descr = "file region code";
+			attribute<int32>   time_slot                    := ='union_data(., '+AsList('Read_TomTom_Files_SP_profiles/'+FileNames_Speedprofiles_profile/name+'/Read/time_slot', ',')+')', Descr = "";
+			attribute<float32> rel_sp                       := ='union_data(., '+AsList('Read_TomTom_Files_SP_profiles/'+FileNames_Speedprofiles_profile/name+'/Read/rel_sp[float32]', ',')+')', Descr = "relative speed";
+		}
+
+		container GetFileNames_Network       := GetFileNames_T(dir, 'multinet', 'shp');
+		container GetFileNames_Speedprofiles := GetFileNames_T(dir, 'speedprofiles', 'dbf');
+		
+		Template GetFileNames_T
+		{
+			parameter<string> dir;
+			parameter<string> type; 
+			parameter<string> ext; 
+			///
+			parameter<string> FOI     := '"'+Expand(.,dir)+'/'+type;       //Folder Of Interest 
+			parameter<string> slash          : ['\\'];
+			
+			parameter<bool> WriteFilesCSV := GetFolderInfo/writeObjectList == 0 ? TRUE : FALSE;
+			
+			container GetFolderInfo
+			{
+				parameter<string> FOI_edit          := replace(FOI, '/', '\\');
+				parameter<string> ComSpec           := Expand(., '%env:ComSpec%');
+				parameter<string> FileNameDirInfo   := Expand(., '%LocalDataProjDir%/TomTom/dirinfo_'+file_date+'_'+type+'.csv');
+				parameter<string> DirCmdOrgMD       := Expand(., 'MD "%LocalDataProjDir%/TomTom"');
+				parameter<string> DirCmdOrgHeader   := 'echo path > '+FileNameDirInfo;
+				parameter<string> DirCmdOrgDir      := 'Dir '+ FOI_edit +'\\*.'+ext+'" >> ' + FileNameDirInfo ;
+
+				parameter<string> DirCmd            := Replace(DirCmdOrgMD, '/', '\\') + ' & ' + Replace(DirCmdOrgHeader, '/', '\\') + ' & ' + Replace(DirCmdOrgDir, '/', '\\') + ' /B /S';
+				parameter<string> NewLine           : ['\n'];
+				parameter<uint32> writeObjectList   := exec_ec(ComSpec, '/c ' + DirCmd, Expand(., '%LocalDataProjDir%'));
+			}
+			
+			unit<uint32> Files 
+			: Storagename = "=GetFolderInfo/FileNameDirInfo"
+			, StorageType = "gdal.vect"
+			, StorageReadOnly = "true"
+			{
+				attribute<string> name            := AsItemName(FileName);
+				attribute<uint32> pos_last_slash  := strrpos(path, slash);
+				attribute<string> FileName        := substr(path, pos_last_slash + 1);
+				attribute<string> FolderName      := substr(path, 0, pos_last_slash);
+				attribute<string> file_str_values : StorageName     = "=FolderName",	StorageType     = "strfiles",	StorageReadOnly = "True", URL = "https://www.esri.com/content/dam/esrisites/sitecore-archive/Files/Pdfs/library/whitepapers/pdfs/shapefile.pdf";
+				attribute<string> ShapeType       := AsHex(substr(file_str_values, 32, 1));
+				attribute<bool>   IsPolyline      := ShapeType == '03'; // 1 == point, 3 == polyline, 5 == polygon
+				attribute<bool>   IsPoint         := ShapeType == '01'; // 1 == point, 3 == polyline, 5 == polygon
+				attribute<uint32> post_last__     := MakeDefined(strrpos(FileName, '_') + 1, strlen(FileName) - 6);
+				attribute<string> Suffix0         := substr(FileName, post_last__);
+				attribute<uint32> Suffix0_len     := strlen(Suffix0);
+				attribute<string> Suffix          := substr(Suffix0, 0, strlen(Suffix0) - 4);
+				
+				attribute<bool>   IsRoadGeom      := IsDefined(rlookup(Suffix, Road_Suffices/values));
+				attribute<bool>   IsNetworkGeom   := IsDefined(rlookup(Suffix, Network_Suffices/values));
+				attribute<bool>   IsJunctionGeom  := IsDefined(rlookup(Suffix, Junction_Suffices/values));
+				attribute<bool>   IsHSNP          := IsDefined(rlookup(Suffix, Speed_network_Suffices/values));
+				attribute<bool>   IsHSPR          := IsDefined(rlookup(Suffix, Speed_profile_Suffices/values));
+				
+				attribute<string> SP_regioncode   := substr(FileName, 0, 6);
+				
+				unit<uint8> Road_Suffices : nrofrows = 9
+				{
+					attribute<string> values : ['00','01','02','03','04','05','06','07','08']; //,'fe'];
+				}
+				
+				unit<uint8> Network_Suffices : nrofrows = 1
+				{
+					attribute<string> values : ['nw']; 
+				}
+				
+				unit<uint8> Junction_Suffices : nrofrows = 1
+				{
+					attribute<string> values : ['jc']; 
+				}
+				
+				unit<uint8> Speed_network_Suffices : nrofrows = 1
+				{
+					attribute<string> values : ['hsnp']; 
+				}
+				unit<uint8> Speed_profile_Suffices : nrofrows = 1
+				{
+					attribute<string> values : ['hspr']; 
+				}
+				
+				
+				unit<uint32> Files_polylines := select_with_org_rel(IsPolyline && IsNetworkGeom)
+				{
+					attribute<string> name            := ../name[org_rel];
+					attribute<string> path            := ../path[org_rel];
+				}
+				unit<uint32> Files_points := select_with_org_rel(IsPoint && IsJunctionGeom)
+				{
+					attribute<string> name            := ../name[org_rel];
+					attribute<string> path            := ../path[org_rel];
+				}
+				unit<uint32> Files_HSNP := select_with_org_rel(IsHSNP)
+				{
+					attribute<string> name            := ../name[org_rel];
+					attribute<string> path            := ../path[org_rel];
+					attribute<string> SP_regioncode   := ../SP_regioncode[org_rel];
+				}
+				unit<uint32> Files_HSPR := select_with_org_rel(IsHSPR)
+				{
+					attribute<string> name            := ../name[org_rel];
+					attribute<string> path            := ../path[org_rel];
+					attribute<string> SP_regioncode   := ../SP_regioncode[org_rel];
+				}
+			}
+		}
+	}
+
+	unit<uint32>  Junctions0
+	: StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Junctions_FSS.fss'"
+	, StorageReadOnly = "true"
+	{
+		attribute<rdc>    geometry;
+		attribute<int32>  FeatureType;
+		attribute<uint64> JNCTID;
+		attribute<uint8>  JNCTTYP;
+		attribute<int8>   ELEV;
+		
+		attribute<Junctions> Junctions_rel := rlookup(JNCTID, junctions/values);
+	}
+	
+	unit<uint32>  Junctions := unique(Junctions0/JNCTID)
+	{
+		attribute<rdc>            geometry         := first(Junctions0/geometry, Junctions0/Junctions_rel);
+		attribute<int32>          FeatureType      := first(Junctions0/FeatureType, Junctions0/Junctions_rel);
+		attribute<uint64>         JNCTID           := values;
+		attribute<uint8>          JNCTTYP          := first(Junctions0/JNCTTYP, Junctions0/Junctions_rel);
+		attribute<int8>           ELEV             := first(Junctions0/ELEV, Junctions0/Junctions_rel);
+		attribute<bool>           Connectable      := rjoin(JNCTID, Roads/F_JNCTID, Roads/Connectable) || rjoin(JNCTID, Roads/T_JNCTID, Roads/Connectable);
+	}
+	
+	unit<uint32> TexelHack : nrofrows = 1, Using = "units"
+	{
+		parameter<rdc> top_left     := point_xy(113790f, 557996f, rdc); // X=113790.89; Y=557996.776; ZL=0.297619048
+		parameter<rdc> top_right    := point_xy(114661f, 557946f, rdc); // X=114661.13; Y=557946.376; ZL=0.297619048
+		parameter<rdc> bottom_left  := point_xy(113952f, 557344f, rdc); // X=113952.17; Y=557344.936; ZL=0.297619048
+		parameter<rdc> bottom_right := point_xy(114580f, 557472f, rdc); // X=114580.49; Y=557472.616; ZL=0.297619048
+
+		
+		unit<uint32> point_set : nrofrows = 5
+		{
+			attribute<rdc>  point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+			attribute<..>   sequence_rel := const(0, .);
+			attribute<.>    ordinal      := id(.);
+		}
+		
+		attribute<rdc> polygon (poly)      := points2sequence(point_set/point, point_set/sequence_rel, point_set/ordinal);
+	}
+	
+	unit<uint32>  Roads 
+	: StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Roads_FSS.fss'"
+	, StorageReadOnly = "true"
+	{
+		attribute<rdc>            geometry (arc);
+		attribute<uint64>         NW_ID;
+		attribute<uint8>          FRC;
+		attribute<FuncRoadClass>  FRC_rel               := (FRC + 1[FuncRoadClass_EK])[FuncRoadClass];
+		
+		attribute<int32>          FeatureType;
+		attribute<uint8>          FerryType;
+		attribute<uint64>         F_JNCTID;
+		attribute<uint64>         T_JNCTID;
+		attribute<uint64>         F_JNCTID_directed := Direction == Directions/v/backwards ? T_JNCTID : F_JNCTID;
+		attribute<uint64>         T_JNCTID_directed := Direction == Directions/v/backwards ? F_JNCTID : T_JNCTID;
+		attribute<Junctions>      F_JNCT_rel             := rlookup(F_JNCTID_directed, Junctions/JNCTID);
+		attribute<Junctions>      T_JNCT_rel             := rlookup(T_JNCTID_directed, Junctions/JNCTID);
+		
+		attribute<uint8>          F_JNCTTYP;
+		attribute<uint8>          T_JNCTTYP;
+		attribute<m>              METERS;
+		attribute<min_f>          MINUTES;
+		attribute<string>         ONEWAY;
+		attribute<bool>           IsInTexelHack         := IsDefined(point_in_polygon(first_point(geometry), TexelHack/polygon)) || IsDefined(point_in_polygon(last_point(geometry), TexelHack/polygon));
+		attribute<Directions>     Direction0            := MakeDefined(rlookup(Oneway, Directions/code), 0[Directions]); // relevant voor latere routen (bij direction = 3 moet je f_ en t_ swappen, bij 3 & 4 geldt eenrichtingsverkeer)
+		attribute<Directions>     Direction             := IsInTexelHack ? Directions/v/dual : Direction0;
+		attribute<bool>           IsOneDirection        := Direction == Directions/v/backwards || Direction == Directions/v/forwards;
+		attribute<km_hr>          KPH;
+		attribute<int8>           F_ELEV;
+		attribute<int8>           T_ELEV;
+		attribute<bool>           IsFerry               := FerryType == 1b;
+		attribute<bool>           IsStreetTypeSelectie  := ='FRC_rel <= '+ModelParameters/Advanced/TomTom_StreetTypeSelectie;
+		attribute<bool>           Connectable           := FRC_rel != Classifications/FuncRoadClass/V/Motorway_Freeway_or_Other_Major_Road;
+	}
+	
+	unit<uint32> Roads_selection := select_with_attr_by_cond(Roads, Roads/IsStreetTypeSelectie)
+	{
+		attribute<Speednetworks>  Speednetworks_rel      := rlookup(NW_ID, Speednetworks/NW_ID);
+		
+		container CalcTimes :=
+			for_each_ne(
+				ModelParameters/Advanced/CongestionTimes/name
+				, 'CalcTimes_T('+quote(ModelParameters/Advanced/CongestionTimes/name)+')'
+			);
+		
+		Template CalcTimes_T
+		{ 
+			parameter<string> Time;
+			///
+			
+			container PerMoment :=
+				for_each_ne(
+					Moments/name
+					, 'PerMoment_T('+quote(Moments/name)+')'
+				);
+			
+			Template PerMoment_T
+			{
+				parameter<string> Moment;
+				//
+				attribute<min_f> Minutes       (Roads_selection) := ='Roads_selection/Minutes / MakeDefined(Speednetworks/CalcTimes/'+Time+'/PerMoment/'+Moment+'/factor[Speednetworks_rel], 1f)';
+				attribute<km_hr> kph_src       (Roads_selection) := convert(Roads_selection/meters, km) / convert(Minutes, hr_f);
+				attribute<km_hr> kph           (Roads_selection) := IsFerry ? ModelParameters/Advanced/Ferry_Speed : kph_src;
+				attribute<km_hr> Speed_PerRPS  (RoadPointSet)    := kph[RoadPointSet/Sequence_rel];
+			}
+		}
+		
+		unit<uint32> RoadPointSet := sequence2points(geometry)
+		, DialogData = "point"
+		, DialogType = "map";
+	}
+	
+	unit<uint32>  Speednetworks
+	: StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Speednetworks_FSS.fss'"
+	, StorageReadOnly = "true"
+	{
+		attribute<uint64> NW_ID;
+		attribute<string> region_code;
+		
+		attribute<uint16> SP_freeflow;
+		attribute<uint16> SP_weekday;
+		attribute<uint16> SP_weekend;
+		attribute<uint16> SP_week;
+		
+		attribute<uint16> SP_Sunday;
+		attribute<uint16> SP_Monday;
+		attribute<uint16> SP_Tuesday;
+		attribute<uint16> SP_Wednesday;
+		attribute<uint16> SP_Thursday;
+		attribute<uint16> SP_Friday;
+		attribute<uint16> SP_Saturday;
+		
+		attribute<Roads>  Roads_rel    := rlookup(NW_ID, Roads/NW_ID);
+		
+		container CalcTimes :=
+			for_each_ne(
+				ModelParameters/Advanced/CongestionTimes/name
+				, 'CalcTimes_T('+quote(ModelParameters/Advanced/CongestionTimes/Time)+')'
+			);
+			
+		Template CalcTimes_T
+		{
+			parameter<string> Time;
+			///
+			
+			parameter<uint32> Time_hour_in_sec := uint32(substr(Time, 0, 2)) * 3600;
+			parameter<uint32> Time_min_in_sec  := uint32(substr(Time, 2, 2)) * 60;
+			parameter<uint32> Time_in_seconds  := Time_hour_in_sec + Time_min_in_sec;
+			
+			container PerMoment :=
+				for_each_ne(
+					Moments/name
+					, 'PerMoment_T('+quote(Moments/name)+')'
+				);
+			
+			Template PerMoment_T
+			{
+				parameter<string> Moment;
+				//
+				
+				attribute<uint16>  SP            (Speednetworks) := ='SP_'+Moment;
+				attribute<string>  Region_SP_key (Speednetworks) := region_code + '_' + string(SP) + '_' + string(Time_in_seconds);
+				attribute<float32> factor        (Speednetworks) := rjoin(Region_SP_key, Speedprofiles/Region_Profile_TimeSlot_key, Speedprofiles/rel_sp / 100f); 
+			}
+		}
+	}
+	
+	unit<uint32>  Speedprofiles
+	: StorageName = "='%NetworkModel_PrivDir%/TomTom/'+file_date+'/Speedprofiles_FSS.fss'"
+	, StorageReadOnly = "true"
+	{
+		attribute<int32>   profile_id;
+		attribute<string>  region_code;
+		attribute<string>  SP_profile_ID := region_code + '_' +string(profile_id);
+		attribute<int32>   time_slot;
+		attribute<float32> rel_sp;
+		
+		attribute<string>  Region_Profile_TimeSlot_key  := region_code + '_' + string(profile_id) + '_' + string(time_slot);
+		
+		attribute<int32>   hour          := time_slot / (60i * 60i);
+		attribute<int32>   minutes       := (time_slot - (hour * 60i * 60i)) / 60i;
+		attribute<upoint>  unipt         := point(uint32(profile_id), uint32(time_slot), upoint);
+	}
+}

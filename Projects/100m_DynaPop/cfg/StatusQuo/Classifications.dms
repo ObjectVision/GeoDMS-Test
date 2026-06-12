@@ -1,0 +1,430 @@
+container Classifications: Using = "Units", KeepData = "False", IsHidden = "True"
+{
+	#include <LU.dms>
+	
+	unit<uint8> LandUseHa9K: nrofrows = 9
+	{
+		attribute<luHa> Classes: DialogType = "Classification",
+			[0.0, 0.05, 0.1, 0.25, 0.5, 1.0,	2.5, 5.0, 10.0 ];
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(192,192,192),	rgb(128,255,128), rgb(170,170,85), rgb(212,85,42), rgb(255,0,0), rgb(0,0,255), rgb(32,64,224), rgb(64,128,192), rgb(96,192,160)];
+		attribute<String> Label: DialogType = "LabelText",
+			[' 0.00 -  0.05', ' 0.05 -  0.10', ' 0.10 -  0.25', ' 0.25 -  0.50', ' 0.50 -  1.00', ' 1.00 -  2.50', ' 2.50 -  5.00', ' 5.00 - 10.00', '10.00 - 25.00'];
+	}
+	unit<uint8> LuHaDiff11K: nrofrows = 11
+	{
+		attribute<LuHaDiff> Classes: DialogType = "Classification",
+			[-25, -20, -15,	-10, -5, -0.01, 0.01, 5, 10, 15, 20];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(255,0,0), rgb(255,104,104), rgb(255,149,149), rgb(255,206,206), rgb(255,236,236), rgb(219,219,219), rgb(200,240,200), rgb(150,200,150), rgb(89,172,89), rgb(29,112,29), rgb(0,64,0)];
+
+		attribute<String> Label: DialogType = "LabelText",
+			['-25..-20','-20..-15','-15..-10','-10.. -5',' -5..  0','     0     ','  0..  5','  5.. 10',' 10.. 15',' 15.. 20','> 20 '];
+	}
+	unit<uint8> ClaimHa9K: nrofrows = 9
+	{
+		attribute<claimHa> Classes: DialogType = "Classification",
+			[0, 2000, 5000, 10000, 20000, 50000, 100000, 300000, 1000000];
+			
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(192,192,192), rgb(0,0,255), rgb(32,64,224), rgb(64,128,192), rgb(96,192,160), rgb(128,255,128), rgb(170,170,85), rgb(212,85,42), rgb(255,0,0)];
+			
+		attribute<String> Label: DialogType = "LabelText",
+			['        0 -     2.000','    2.000 -     5.000','    5.000 -    10.000','   10.000 -    20.000','   20.000 -    50.000','   50.000 -   100.000','  100.000 -   300.000','  300.000 - 1.000.000','1.000.000 - 4.000.000'];		
+	}
+	unit<uint8> ratio_10K: nrofrows = 10
+	{
+		attribute<ratio> Classes: DialogType = "Classification",
+			[0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.60, 0.80];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['  0 -   5 %','  5 - 10 %','10 - 15 %','15 - 20 %','20 - 25 %','25 - 30 %', '30 - 40 %','40 - 60 %','60 - 80 %',' >= 80%'];
+	}
+	unit<uint8> RatioChange_11K: nrofrows = 11
+	{
+		attribute<ratio> Classes: DialogType = "Classification",
+			[-999, -0.20, -0.15, -0.10, -0.05, -0.0001, 0.0001, 0.05, 0.10, 0.15, 0.20];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(255,0,0), rgb(255,104,104), rgb(255,149,149), rgb(255,206,206), rgb(255,236,236), rgb(219,219,219), rgb(200,240,200), rgb(150,200,150), rgb(89,172,89), rgb(29,112,29), rgb(0,64,0)];
+
+		attribute<String> Label: DialogType = "LabelText",
+			['< -0.20','-0.20..-0.15','-0.15..-0.10','-0.10.. -0.05',' -0.05..  0','     0     ','  0..  0.05','  0.05.. 0.10',' 0.10.. 0.15',' 0.15.. 0.20','> 0.20 '];
+	}
+	unit<uint8> percent_10K: nrofrows = 10
+	{
+		attribute<percent> Classes: DialogType = "Classification",
+			[0, 5, 10, 15, 20, 25, 30, 40, 60, 80];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['  0 -   5 %','  5 - 10 %','10 - 15 %','15 - 20 %','20 - 25 %','25 - 30 %', '30 - 40 %','40 - 60 %','60 - 80 %',' >= 80%'];
+	}
+	unit<uint8> Percent_13K: nrofrows = 13
+	{
+		attribute<Percent> Classes: DialogType = "Classification",
+			[  0,10,20,30,40,50,60,70,80,90,100,120,150];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[
+				rgb(255,255,255),rgb(255,229,204),rgb(255,204,153),
+				rgb(255,178,102),rgb(255,153,51), rgb(255,128,0),
+				rgb(223,96,32),  rgb(191,64,64),  rgb(180,0,0),
+				rgb(120,0,0), rgb(60,0,0),rgb(120,0,128),rgb(255,0,200)];
+
+		attribute<String> Label: DialogType = "LabelText",
+			[' 0 -  10','10 -  20','20 -  30','30 -  40','40 -  50','50 -  60','60 -  70','70 -  80','80 -  90','90 - 100','100- 120','120- 150','150- 200'];
+	}
+	unit<uint8> PercentChange_11K: nrofrows = 11
+	{
+		attribute<Percent> Classes: DialogType = "Classification",
+			[-999, -20, -15, -10, -5, -0.01, 0.01, 5, 10, 15, 20];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(255,0,0), rgb(255,104,104), rgb(255,149,149), rgb(255,206,206), rgb(255,236,236), rgb(219,219,219), rgb(200,240,200), rgb(150,200,150), rgb(89,172,89), rgb(29,112,29), rgb(0,64,0)];
+
+		attribute<String> Label: DialogType = "LabelText",
+			['< -20','-20..-15','-15..-10','-10.. -5',' -5..  0','     0     ','  0..  5','  5.. 10',' 10.. 15',' 15.. 20','> 20 '];
+	}
+	unit<uint8> Eur_M2_15K: nrofrows = 15
+	{
+		attribute<EUR_M2> Classes: DialogType = "Classification",
+			[	-500,-25, -15, -5, -0.01, 0.01,	2, 3, 4	, 5, 6, 8, 10, 15, 25 ];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(9,9,145),rgb(34,89,194), rgb(92,163,230),rgb(182,237,240),rgb(196,196,196), rgb(255,245,0),rgb(255,216,0),rgb(255,180,0),
+			 rgb(255, 163, 0), rgb(255,140,0), rgb(255,132,0),rgb(255,128,0),rgb(255,51,0),rgb(230,0,0), rgb(153,0,0)];
+
+		attribute<String> Label: DialogType = "LabelText",
+			[' < -25','-25..-15','-15..-5',' -5..0','     0     ','  0.. 2','  2.. 3','  3.. 4','  4.. 5',
+			'  5.. 6','  6.. 8','  8..10',' 10..15',' 15..25',' > 25'];
+	}
+	unit<uint8> Eur_M2_0_1_15K: nrofrows = 15
+	{
+		attribute<EUR_M2> Classes: DialogType = "Classification",
+			[0.00, 0.07, 0.14, 0.21, 0.28, 0.35,	0.42, 0.49,	0.56, 0.63,	0.70, 0.77,	0.84, 0.91,	0.98];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(0,0,255),rgb(128,128,255), rgb(204,225,236),rgb(192,192,192),rgb(128,128,128), // blauw -> grijs
+			 rgb(0,128,0),rgb(0,192,0),rgb(0,255,0), // donger -> licht groen
+			 rgb(232, 232,0), rgb(255,255,0), rgb(255,255,155),rgb(255,192,62),rgb(255,128,128),rgb(255,0,0), rgb(192,0,0)];
+
+		attribute<String> Label:DialogType = "LabelText",
+			['0.00..0.07','0.07..0.14','0.14..0.21','0.21..0.28','0.28..0.35','0.35..0.42','0.42..0.49','0.49..0.56','0.56..0.63',
+			 '0.63..0.70','0.70..0.77','0.77..0.84','0.84..0.91','0.91..0.98','0.98..1.00'];
+	}
+	unit<bool> Boolean: Expr = "BaseUnit('' , Bool)" 
+	{
+		attribute<uint32> Palette: DialogType = "BrushColor", [rgb(192,192,192),rgb(255,0,0)];
+		attribute<String> Label:   DialogType = "LabelText",  ['No','Yes'];
+	}
+	unit<uint8> LUChange_4k:= range(uint8, uint8(0), uint8(4)) {
+		attribute<string> Name: 	['Irrelevant', 'Not_changed', 'New', 'Gone'];
+		attribute<uint32> R: 		[255,	128,	255,	0];
+		attribute<uint32> G: 		[255,	128,	0,		0];
+		attribute<uint32> B: 		[255,	128,	0,		190];
+		attribute<uint32> Color: 	expr = "rgb(R, G, B)", DialogType = "BrushColor";
+		attribute<string> LabelText: expr = "Name", DialogData = "LabelText";
+	}	
+	unit<uint8> residents_10K: nrofrows = 12
+	{
+		attribute<NrResidents> Classes: DialogType = "Classification",
+			[0.00, 1, 5, 10, 20, 40, 75, 125,  175,  250, 500, 750];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(255,255,255),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0),rgb(128,0,0),rgb(64,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['0 .. 1','1 .. 5','5 .. 10','10 .. 20','20 .. 40','40 .. 75','75 .. 125','125 .. 175','175 .. 250','250 .. 500','500 .. 750','750 =>'];
+	}
+	unit<uint8> Res_ha_10K: nrofrows = 10
+	{
+		attribute<Res_ha> Classes: DialogType = "Classification",
+			[0, 0.1, 0.2, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0, 2.5];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['0.0 .. 0.1','0.1 .. 0.2','0.2 .. 0.3','0.3 .. 0.5','0.5 .. 0.7','0.7 .. 1.0','1.0 .. 1.5','1.5 .. 2.0','2.0 .. 2.5','>= 2.5'];
+	}		
+	unit<uint8> residents_dif_10K: nrofrows = 11
+	{
+		attribute<NrResidents> Classes: DialogType = "Classification",
+			[-50, -20, -15, -10, -5, 0, 5, 10, 15, 20, 50];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [ 	rgb(255,0,0), 		//-50
+				rgb(255,64,0),  	//-20
+				rgb(255,128,0), 	//-15
+				rgb(255,191,0), 	//-10
+				rgb(255,255,0), 	//-5
+				rgb(255,255,255),	// 0
+				rgb(204,242,0), 	// 5
+				rgb(153,230,0), 	// 10
+				rgb(102,217,0), 	// 15
+				rgb(51,205,0),  	// 20
+				rgb(0,192,0)];  	// 50
+		attribute<string> Label: DialogType = "LabelText",
+			['< -50',' -50 .. -20',' -20 .. -10',' -10 .. -5',' -5 .. 0',' -1 .. 0',' 0 .. 5',' 1 .. 10',' 10 .. 15',' 15 .. 20', ' 20 .. 50'];
+	}
+	unit<uint8> Res_ha_dif_10K: nrofrows = 10
+	{
+		attribute<Res_ha> Classes: DialogType = "Classification",
+			[-99, -0.5, -0.2, -0.1, 0.0, 0.1, 0.2, 0.5, 1.0, 2.0];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['< -0.5','-0.5 .. -0.2','-0.2 .. -0.1',' 0.1 ..  0.0',' 0.0 ..  0.1',' 0.1 ..  0.2',' 0.2 ..  0.5',' 0.5 ..  1.0',' 1.0 ..  2.0','>= 2.0'];
+	}	
+	unit<uint8> secInHrs: nrofrows = 10
+	{
+		attribute<sec> Classes: DialogType = "Classification",
+			[0, 1800, 3600, 5400, 7200, 9000, 10800, 14400, 18000, 27000];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['0   - 0.5 hour','0.5 - 1   hour','1   - 1.5 hour','1.5 - 2   hour','2   - 2.5 hour','2.5 - 3   hour', '3   - 4   hour','4   - 5   hour','5   - 7.5 hour','>= 7.5 hour'];
+	}
+	unit<uint8> meterInKm: nrofrows = 10
+	{
+		attribute<meter> Classes: DialogType = "Classification",
+			[0, 2000, 5000, 10000, 15000, 20000, 25000, 30000, 50000, 75000];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['  0 -   2 km','  2 -   5 km','  5 - 10 km','10 - 15 km','15 - 20 km','20 - 25 km', '25 - 30 km','30  - 50 km','50 - 75 km','>= 75 km'];
+	}
+	unit<uint8> megaPersons: nrofrows = 10
+	{
+		attribute<nrOfPersons> Classes: DialogType = "Classification",
+			[0, 500, 1000, 2000, 5000, 10000, 15000, 25000, 50000, 75000];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",		 
+			 [rgb(0,192,0),rgb(51,205,0),rgb(102,217,0),rgb(153,230,0),rgb(204,242,0),
+			  rgb(255,255,0),rgb(255,191,0),rgb(255,128,0),rgb(255,64,0),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['  0 -   499 persons','500 -   999 persons','1.000 - 1.999 persons','2.000 - 4.999 persons','5.000 - 9.999 persons','10.000 - 14.999 persons', '15.000 - 24.999 persons','25.000  - 49.999 persons','50.000 - 74.999 persons','>= 75.000 persons'];
+	}
+	
+	// EuRuralis indicator related unit classifications
+	unit<uint8> tonneC_km2_K7: nrofrows = 8
+	{
+		attribute<tonneC_km2> Classes: DialogType = "Classification",
+			[  -40,-26,-13,-1,1,50,100,150];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[
+				rgb(128,0,0), rgb(192,64,64),rgb(255, 128, 128),
+				rgb(128, 128, 128),
+				rgb(128,128,255), rgb(64,64,192),  rgb(0,0,128),
+				rgb(255,255,255) // out of range color
+			];
+
+		attribute<String> Label: DialogType = "LabelText",
+			['High loss', 'Loss', 'Small loss', 'No change', 'Small gain', 'Gain', 'High gain', 'Out of range'];
+	}
+
+	unit<uint8> tonneE_ha_K7: nrofrows = 7
+	{
+		attribute<tonneE_ha> Classes: DialogType = "Classification",
+			[  0, 1, 5, 10, 50, 100,200];
+
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[
+			//Range green-yellow-red
+				rgb(  0, 255, 0),   //Green
+				rgb( 85, 255, 0),
+				rgb(170, 255, 0),
+				rgb(255, 255, 0), //Yellow
+				rgb(255, 170, 0),
+				rgb(255,  85, 0),
+				rgb(255,   0, 0)   //Red
+			];
+
+		attribute<String> Label: DialogType = "LabelText",
+			[
+				'No erosion risk', 
+				'Slight erosion risk', 
+				'Slight to moderate erosion risk', 
+				'Moderate erosion risk', 
+				'Moderate to severe erosion risk', 
+				'Severe erosion risk', 
+				'Very severe erosion risk'
+			];
+	}
+	unit<UInt8> SlopeClass: nrofrows = 7
+	{
+		attribute<Degrees> ClassBreaks: DialogType = "Classification",
+			[0, 1, 3, 8, 15, 30, 60 ];
+		attribute<uint32> Palette: DialogType = "BrushColor",
+			[rgb(255,255,255), rgb(0,0,255), rgb(51,0,204), rgb(102,0,153), rgb(153,0,102), rgb(204,0,51), rgb(255,0,0)];
+		attribute<String> Label: DialogType = "LabelText",
+			[
+				'Flat ',	
+				'Gently sloping',
+				'Sloping',
+				'Moderately Sloping',
+				'Moderately steep',
+				'steep',
+				'very steep'
+			];
+	}
+	unit<Uint8> MinuteClass: nrofrows = 16
+	{
+		attribute<units/min> ClassBreaks: DialogType = "Classification",
+		[
+			0 ,  5 ,10, 15, 20, 30,
+			45, 60, 75, 90,120,180,
+			240,300,420,600
+		];
+		attribute<uint32> BrushColor: DialogType = "BrushColor",
+		[
+			rgb(254,254,254),
+			rgb(253,249,184),
+			rgb(253,237,129),
+			rgb(253,217, 78),
+			rgb(253,191, 32),
+			rgb(254,157,  1),
+			rgb(230,114,  0),
+			rgb(204, 77,  0),
+			rgb(180, 46,  0),
+			rgb(156, 25,  0),
+			rgb(132,  9,  0),
+			rgb(112,  0,  0),
+			rgb( 90,  0,  0),
+			rgb( 72,  0,  0),
+			rgb( 53,  0,  0),
+			rgb( 36,  0,  0)
+		];
+		attribute<uint32> SymbolColor: expr = "SymbolColor", expr ="BrushColor";
+	}
+	unit<UInt8> lfaType: Expr = "Range(uint8, UInt8(0), UInt8(10))"
+	{
+		parameter<uint32> cols: Expr = "8";
+		unit<UInt32> Elements: Expr = "Range(uint32, 0, cols*#lfaType)"
+		{
+			attribute<String> Text: [ // @USERINPUT
+			//   ID,     R,    G,    B, Label,    art18, art19, art20
+				'1' ,'219','000','000','NNP',      '0',    '0', '1'  ,
+				'2' ,'128','000','128','NNT',      '0',    '0', '2'  ,
+				'3' ,'254','250','194','NPN',      '0',    '1', '2'  ,
+				'4' ,'207','152','107','NPP',      '0',    '1', '1'  ,
+				'5' ,'163','222','133','NTN',      '0',    '2', '0'  ,
+				'6' ,'001','099','000','PNN',      '1',    '0', '0'  ,
+				'7' ,'114','137','068','PNP',      '1',    '0', '1'  ,
+				'8' ,'227','201','053','PPN',      '0',    '1', '0'  ,
+				'9' ,'254','254','000','PPP',      '1',    '1', '1'  ,
+				'10','236','110','050','TNN',      '2',    '0', '0'
+
+			];
+		}
+		attribute<String>           Name: Expr = "Label";
+//		attribute<id>           ID: Expr =" value(Elements/Text[value(UInt32(ID(.))* cols + 0, Elements)], id)";
+		attribute<UInt8>               R: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* cols + 1, Elements)])";
+		attribute<UInt8>               G: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* cols + 2, Elements)])";
+		attribute<UInt8>               B: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* cols + 3, Elements)])";
+		attribute<String>          Label: Expr ="       Elements/Text[value(UInt32(ID(.))* cols + 4, Elements)]" , DialogType = "LabelText";
+		attribute<uint32>          Color: Expr ="rgb(R,G,B)", DialogType = "BrushColor";
+		
+		attribute<string> isArt18:     Expr ="Elements/Text[value(UInt32(ID(.))* cols + 5, Elements)]";
+		attribute<String> isArt19:     Expr ="Elements/Text[value(UInt32(ID(.))* cols + 6, Elements)]";
+		attribute<String> isArt20:     Expr ="Elements/Text[value(UInt32(ID(.))* cols + 7, Elements)]";
+
+		// value enumeration
+		parameter<.> NNP:    expr = "value( 0, .)";
+		parameter<.> NNT:    expr = "value( 1, .)";
+		parameter<.> NPN:    expr = "value( 2, .)";
+		parameter<.> NPP:    expr = "value( 3, .)";
+		parameter<.> NTN:    expr = "value( 4, .)";
+		parameter<.> PNN:    expr = "value( 5, .)";
+		parameter<.> PNP:    expr = "value( 6, .)";
+		parameter<.> PPN:    expr = "value( 7, .)";
+		parameter<.> PPP:    expr = "value( 8, .)";
+		parameter<.> TPP:    expr = "value( 9, .)";
+		
+		attribute<bool> IsMtnLFA:      expr = "ID(.) == PNN || ID(.) == PNP || ID(.) == PPN || ID(.) == PPP || ID(.) == TPP";
+		attribute<bool> IsNotMtnLFA:   expr = "!IsMtnLFA";
+	}
+	unit<uint8> Soilsealing: nrofrows = 11
+	{
+		attribute<units/SoilSealing100> Classes: DialogType = "Classification", expr = "(id(Soilsealing) *  uint8(10))[units/SoilSealing100]";
+		attribute<uint32> ProtoRgb: expr = "256 - uint32(float32(256) * ((float32(Classes) + float32(1)) / float32(101)))";
+		attribute<uint32> Palette: DialogType = "BrushColor", expr = "rgb(ProtoRgb, ProtoRgb, ProtoRgb)";
+		attribute<string> Label: DialogType = "LabelText", expr = "string(Classes)";
+	}
+	
+	unit<uint8> CapriClasses: nrofrows = 37, KeepData = "False"
+	{
+		parameter<uint32> nrAttr: expr = "3", isHidden = "True";
+		unit<UInt32> elements: expr = "Range(uint32, 0, nrAttr*#CapriClasses)", isHidden = "True"
+		{
+			attribute<String> Text: [ // @USERINPUT
+			// capri   , Group,          uaa
+			 'PARI',    'OtherArable',  'uaa'
+			,'OFAR',    'OtherArable',  'uaa'
+			,'TEXT',    'OtherArable',  'uaa'
+			,'TOBA',    'OtherArable',  'uaa'
+			,'OIND',    'OtherArable',  'uaa'
+			,'OCRO',    'OtherArable',  'uaa'
+			,'TOMA',    'OtherArable',  'uaa'
+			,'OVEG',    'OtherArable',  'uaa'
+			,'OILS',    'OtherArable',  'uaa'
+			,'PULS',    'OtherArable',  'uaa'
+			,'APPL',    'PermCrop',     'uaa'
+			,'OFRU',    'PermCrop',     'uaa'
+			,'CITR',    'PermCrop',     'uaa'
+			,'TAGR',    'PermCrop',     'uaa'
+			,'OLIV',    'PermCrop',     'uaa'
+			,'TABO',    'PermCrop',     'uaa'
+			,'TWIN',    'PermCrop',     'uaa'
+			,'NURS',    'PermCrop',     'uaa'
+			,'FLOW',    'PermCrop',     'uaa'
+			,'GRAE',    'Pasture',      'uaa'
+			,'GRAI',    'Pasture',      'uaa'
+			,'SWHE',    'Cereals',      'uaa'
+			,'DWHE',    'Cereals',      'uaa'
+			,'RYEM',    'Cereals',      'uaa'
+			,'BARL',    'Cereals',      'uaa'
+			,'OATS',    'Cereals',      'uaa'
+			,'OCER',    'Cereals',      'uaa'
+			,'MAIZ',    'Maize',        'uaa'
+			,'MAIF',    'Maize',        'uaa'
+			,'POTA',    'RootCrops',    'uaa'
+			,'SUGB',    'RootCrops',    'uaa'
+			,'ROOF',    'RootCrops',    'uaa'
+			,'NECR',    'NewEnergy',    'uaa'
+			,'GSET',    '',             'uaa'
+			,'ISET',    '',             'uaa'
+			,'FALL',    '',             'uaa'
+			,'VSET',    '',             'uaa'
+			];
+		}
+		attribute<string>  Name:   expr = "Elements/Text[value(uint32(id(.)) * nrAttr + 0, elements)]";
+		attribute<string>  Group:  expr = "Elements/Text[value(uint32(id(.)) * nrAttr + 1, elements)]";
+		attribute<string>  UAA:    expr = "Elements/Text[value(uint32(id(.)) * nrAttr + 2, elements)]";
+	}
+	
+	unit<uint8> CapriCLC: nrofrows = 3, KeepData = "False"
+	{
+		parameter<uint32> nrAttr: expr = "2", isHidden = "True";
+		unit<uint32> elements: expr = "Range(uint32, 0, nrAttr*#CapriCLC)", isHidden = "True"
+		{
+			attribute<string> Text: [
+			 'OtherArable',  'arable'
+			,'PermCrop',     'pc'
+			,'Pasture',      'pasture'
+			];
+		}
+		attribute<string> CapriCode:  expr = "Elements/Text[value(uint32(id(.)) * nrAttr + 0, elements)]";
+		attribute<string> CLCCode:    expr = "Elements/Text[value(uint32(id(.)) * nrAttr + 1, elements)]";
+	}
+	unit<uint8> EnvZoneClass: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Env_mask.tif.vat.dbf"
+	{
+		attribute<uint8> VALUE;
+		attribute<String> ENZ_NAME;
+	}
+}

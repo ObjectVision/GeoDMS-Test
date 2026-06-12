@@ -1,0 +1,45 @@
+container Infrastructuur
+{
+	unit<uint32> Read_NS_Stations_SHP
+	:	StorageName     = "%NetworkModel_dir%/Infrastructuur/NS_treinstations_20230301.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	,	URL             = "https://hub.arcgis.com/datasets/822b7e9ad10e476e9092265416ad484d/explore?location=50.006768%2C8.947104%2C6.62"
+	{
+		attribute<wgs84_base>                geometry;
+		attribute<rdc>                       geometry_rd := LatLongWgs842RD(geometry, dpoint)[rdc];
+		attribute<string>                    Land;
+		attribute<string>                    lang;
+		attribute<string>                    Type;
+		attribute<string>                    type_code      := (Type == 'knooppuntintercitystation' || Type == 'intercitystation' || Type == 'megastation')
+															? 'IC'
+															: (Type == 'knooppuntsneltreinstation' || Type == 'sneltreinstation')
+																? 'ST'
+																: (Type == 'knooppuntstoptreinstation' || Type == 'stoptreinstation')
+																	? 'SPR'
+																	: 'Anders';
+	}
+	
+	unit<uint32> IC_Stations := select_with_org_rel(Read_NS_Stations_SHP/type_code == 'IC' && Read_NS_Stations_SHP/Land == 'NL')
+	{
+		attribute<rdc>       geometry := Read_NS_Stations_SHP/geometry_rd[org_rel];
+		attribute<string>    code     := Read_NS_Stations_SHP/code[org_rel];
+		attribute<string>    label    := Read_NS_Stations_SHP/lang[org_rel];
+		
+		unit<uint32> uq := unique(geometry)
+		{
+			attribute<rdc>     geometry := values;
+		}
+	}
+	unit<uint32> Trainstations := select_with_org_rel(Read_NS_Stations_SHP/Land == 'NL')
+	{
+		attribute<rdc>       geometry := Read_NS_Stations_SHP/geometry_rd[org_rel];
+		attribute<string>    code     := Read_NS_Stations_SHP/code[org_rel];
+		attribute<string>    label    := Read_NS_Stations_SHP/lang[org_rel];
+		
+		unit<uint32> uq := unique(geometry)
+		{
+			attribute<rdc>     geometry := values;
+		}
+	}
+}

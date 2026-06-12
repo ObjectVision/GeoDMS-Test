@@ -1,0 +1,166 @@
+container Calibration : using = "geography;SourceData/RegionalUnits;SourceData;Classifications;"
+{
+	unit <uint32> Create_DataForCalibration := CompactedDomain
+	{
+		attribute<Countries>  Country_id                              := Countries/per_domain[CompactedDomain/org_rel];
+		attribute<float32>	  latitude_factor                         := lat_factor;
+		attribute<float32>    BU_RES_2000                             := SourceData/Builtup/Residential/Y2000[CompactedDomain/org_rel];
+		attribute<float32>    BU_RES_2020                             := SourceData/Builtup/Residential/Y2020[CompactedDomain/org_rel];
+		attribute<float32>    BUTOT_2000                              := SourceData/Builtup/Total/Y2000[CompactedDomain/org_rel];
+		attribute<float32>    BUTOT_2020                              := SourceData/Builtup/Total/Y2020[CompactedDomain/org_rel];
+		attribute<float32>	  BUPERCTOT_2000                          := makedefined(BUTOT_2000 / (1000f * 1000f * latitude_factor), 0f);
+		attribute<float32>	  BUPERCTOT_2020                          := makedefined(BUTOT_2020 / (1000f * 1000f * latitude_factor), 0f);
+		attribute<float64>    Pop_2000                                := SourceData/Population/PerYear/Y2000[CompactedDomain/org_rel];
+		attribute<float64>    Pop_2020                                := SourceData/Population/PerYear/Y2020[CompactedDomain/org_rel];
+		attribute<float64>    PopulationDensity_2000_8dir             := Preprocessing/Population_Neighbourhoods/PopulationDensity_8dir_Y2000/ItemOfInterest[CompactedDomain/org_rel];
+		attribute<float64>    PopulationDensity_2020_8dir             := Preprocessing/Population_Neighbourhoods/PopulationDensity_8dir_StartYear/ItemOfInterest[CompactedDomain/org_rel];
+		
+		attribute<int32>      Elevation                               := Physical/Elevation/Mean_1k[CompactedDomain/org_rel];
+		attribute<float32>    Slope                                   := Physical/Slope_2021/ReadData[CompactedDomain/org_rel];
+		attribute<float32>    TRI_mean                                := Physical/TerrainRoughnessIndex/TRI_mean_30ss_World[CompactedDomain/org_rel];
+		
+		attribute<uint8>      IsProtectedArea                         := Policy/ProtectedAreas/ReadData[CompactedDomain/org_rel];
+		attribute<uint8>      IsFloodProneArea_RP100                  := Physical/Water/FloodProneArea/RP100/ReadData[CompactedDomain/org_rel];
+		
+		attribute<uint8>      Earthquakes_MMI_Index                   := Physical/Natural_Hazards/Earthquake/Earthquakes_Modified_Mercalli_Intensity/ReadData[CompactedDomain/org_rel];
+		attribute<int16>      LandSlide_risk  	 			          := Physical/Natural_Hazards/Landslide/LS_risk[CompactedDomain/org_rel];
+		
+		attribute<float32>    Distance2Coastline                      := Physical/Coast/Location2Coast_km/Coastline[CompactedDomain/org_rel];
+		attribute<float32>    Distance2AnyInlandWater                 := Physical/Water/AllWater/Dist_AllInland_km/GridData[CompactedDomain/org_rel];
+		attribute<float32>    Distance2LargeInlandWater               := Physical/Water/AllWater/Dist_LargeInland_km/GridData[CompactedDomain/org_rel];
+		attribute<float32>    Distance2MajorRoads                     := Socioeconomic/Infrastructure/Road/GRIP4_grid/Road123/Road123[CompactedDomain/org_rel];
+		attribute<float32>    Distance2SecundaryRoads                 := Socioeconomic/Infrastructure/Road/GRIP4_grid/Road45/Road45[CompactedDomain/org_rel];
+		
+		//attribute<float32>    Distance2Villages_GridBased             := Preprocessing/GridDists/AccessGrids_grid/villages/costsgrid_untiled_maximp_latitude_specific[CompactedDomain/org_rel];
+		//attribute<float32>    Distance2Town_GridBased                 := Preprocessing/GridDists/AccessGrids_grid/towns/costsgrid_untiled_maximp_latitude_specific[CompactedDomain/org_rel];
+		//attribute<float32>    Distance2Cities_GridBased               := Preprocessing/GridDists/AccessGrids_grid/cities/costsgrid_untiled_maximp_latitude_specific[CompactedDomain/org_rel];
+		//attribute<float32>    Distance2Villages_NetworkBased          := Preprocessing/GridDists/AccessGrids_nw/villages/distancegrid[CompactedDomain/org_rel];
+		//attribute<float32>    Distance2Town_NetworkBased              := Preprocessing/GridDists/AccessGrids_nw/towns/distancegrid[CompactedDomain/org_rel];
+		//attribute<float32>    Distance2Cities_NetworkBased            := Preprocessing/GridDists/AccessGrids_nw/cities/distancegrid[CompactedDomain/org_rel];
+		  
+		
+		
+		// needs to be first of containers with template variables
+		// container access_to_settlements   := for_each_nedv('Road_distance_atleast_to_'+Socioeconomic/access_to_settlements/gridslist/label, 'Socioeconomic/access_to_settlements/readgrids/'+Socioeconomic/access_to_settlements/gridslist/label+'/infile/ReadData_LL[CompactedDomain/org_rel]', CompactedDomain, uint32);
+		container gridcost_to_settlements := for_each_nedv('Grid_costs_atleast_to_'+Accessibility_Variants/Label, 'uint32(Preprocessing/GridDistances/Y2000/Grid_costs_atleast_to/'+Accessibility_Variants/Label+'[CompactedDomain/org_rel])', CompactedDomain, uint32);
+		//container pots_pop_2000           := for_each_nedv(pot_fields/label, 'round(SourceData/Population/'+pot_fields/label+'/Y2000[CompactedDomain/org_rel])', CompactedDomain, int32);
+		//container pots_pop_2020           := for_each_nedv(pot_fields/label, 'round(SourceData/Population/'+pot_fields/label+'/Y2020[CompactedDomain/org_rel])', CompactedDomain, int32);
+	}
+	container Export_DataForCalibration 
+	{
+		unit<uint32> properties : nrofrows = 2 
+		{
+			attribute<string> name: ['name', 'DomainUnit'];
+		}
+		  
+		unit<uint32> directnames := SubItem_PropValues(Create_DataForCalibration, properties/name) 
+		{
+			attribute<bool> isvalue:= DomainUnit = '.';
+		}
+		
+		//parameter<string> fieldnamelist:= aslist(directnames/name, fieldseparator)+fieldseparator+aslist(Socioeconomic/access_to_settlements/gridslist/label, fieldseparator);
+		parameter<string> fieldnamelist:= aslist(directnames/isvalue ? directnames/name : '', fieldseparator)
+		//	+fieldseparator+aslist('Road_distance_atleast_to_'+Socioeconomic/access_to_settlements/gridslist/label, fieldseparator)
+			+fieldseparator+aslist('Grid_costs_atleast_to_'+Accessibility_Variants/Label, fieldseparator)
+		//	+fieldseparator+aslist('pop2000_'+pot_fields/label, fieldseparator)
+		//	+fieldseparator+aslist('pop2020_'+pot_fields/label, fieldseparator)	
+			;
+		//parameter<string> fieldreflist:= aslist('Create_DataForCalibration/'+directnames/name, fieldseparator)+fieldseparator+aslist('Create_DataForCalibration/access_to_settlements/'+Socioeconomic/access_to_settlements/gridslist/label, fieldseparator);
+		parameter<string> fieldreflist:= aslist(directnames/isvalue ? 'Create_DataForCalibration/'+directnames/name : '', fieldseparator)
+		//	+fieldseparator+aslist('Create_DataForCalibration/access_to_settlements/Road_distance_atleast_to_'+Socioeconomic/access_to_settlements/gridslist/label, fieldseparator)
+			+fieldseparator+aslist('Create_DataForCalibration/gridcost_to_settlements/Grid_costs_atleast_to_'+Accessibility_Variants/Label, fieldseparator)
+		//	+fieldseparator+aslist('Create_DataForCalibration/pots_pop_2000/'+pot_fields/label, fieldseparator)
+		//	+fieldseparator+aslist('Create_DataForCalibration/pots_pop_2020/'+pot_fields/label, fieldseparator)
+			;
+
+		// assume ExportDomain is a configured domain unit with two attributes as subitems: id & dist
+		parameter<string> fieldseparator := ';';
+		parameter<string> filename       := '%LocalDataProjDir%/Calibration_export/'+ModelParameters/StudyArea+'/calibset.csv';
+
+		unit<uint32> field := range(uint32, 0,strcount(fieldnamelist, ';') +1)
+		{
+			attribute<string> name := ReadArray(fieldnamelist, ., string, 0);
+			attribute<string> ref := ReadArray(fieldreflist, ., string, 0);
+		}
+
+		parameter<string> newline := '\n';
+		parameter<string> header  := fieldnamelist;
+		attribute<string> body (Create_DataForCalibration) := = AsList(
+			+'makedefined(string(' + field/ref + '),'+quote('-9999')+')',' + '+quote(fieldseparator)+' +'
+			);
+		 
+		  parameter<string> result := header + newline + AsList(body, newline)
+		  ,  StorageName = "= filename"
+		  ,  StorageType = "str";
+		
+		container Export_Tiffs_ForCalibration:= for_each_nedva(field/name, 'uint32('+field/ref+'[CompactedDomain/BaseGrid])',domain,uint32,'%LocalDataProjDir%/Calibration_export/'+ModelParameters/StudyArea+'/tiffs/'+field/name+'.tif');
+	}
+	
+	container ReadCoffecients
+	{
+		container Read_XLSX 
+		: StorageName = "='%ProjDir%/Data/Calibration/Calibration_continents_'+ModelParameters/Calibration_filedate+'.xlsx'"
+		, StorageType = "gdal.vect"
+		, StorageReadOnly = "true"
+		, SyncMode = "AllTables";
+		
+		unit<uint32> Calibration_variables := Read_XLSX/full_sample
+		{
+			attribute<string> name := AsItemName(Variables);
+			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		}
+		
+		unit<uint8> Continents_InCalib : nrofrows = 6
+		{
+			attribute<string> name : ['Africa','Asia','Australia_Oceania','Europe','North_America','South_America'];
+
+			attribute<string> label := name;
+			container V := for_each_nedv(AsItemName(name), String(ID(.))+'[..]', void, .);
+		}
+	
+		container PerContinent := 
+			for_each_nedv(
+				Continents_InCalib/name
+				, 'Calibration_variables/' + Continents_InCalib/name + '[float32]'
+				, Calibration_variables
+				, float32
+			)
+		{
+			attribute<string> var_name (Calibration_variables) := Calibration_variables/name;
+		}
+
+		container PerVar := 
+			for_each_nedv(
+				Calibration_variables/name
+				, 'union_data(Continents_InCalib,'+replace(AsItemList('PerContinent/'+Continents_InCalib/name+'[Calibration_variables/V/@CV@]'),'@CV@', Calibration_variables/Name)+')'
+				, Continents_InCalib
+				, float32
+			);
+		
+		container Coef2domain := Coef2domain_T(PerVar);
+	}
+
+	Template Coef2domain_T
+	{
+		container Continent;
+		///
+		
+		attribute<uint8>   Continent_id (Countries)   := rlookup(Countries/Continent_name, Continents_InCalib/name);
+		
+		container Country := 
+			for_each_nedv(
+				Calibration_variables/name
+				, 'Continent/'+Calibration_variables/name+'[Continent_id]'
+				, Countries 
+				, float32
+			);
+			
+		container Domain := 
+			for_each_nedv(
+				Calibration_variables/name
+				, 'MakeDefined(Country/'+Calibration_variables/name+'[Countries/per_domain],0f)'
+				, geography/domain 
+				, float32
+			);
+	}
+}

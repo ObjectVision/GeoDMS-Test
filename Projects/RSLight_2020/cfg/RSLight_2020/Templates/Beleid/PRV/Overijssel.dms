@@ -1,0 +1,59 @@
+container Overijssel := PRVT('Overijssel')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Bestaande_natuur_NNN_voorheen_EHS (domain_grid) := Src/NL_IMRO_9923_VerordeningOv01_va01/Natuurnetwerk_Nederland/Bestaande_natuur_NNN_voorheen_EHS/Bestand/Multi/Result;
+			attribute<bool> Waterwingebied                    (domain_grid) := Src/NL_IMRO_9923_VerordeningOv01_va01/Drinkwatervoorziening_en_grondwaterbescherming/Waterwingebied/Bestand/Multi/Result;
+			attribute<bool> Grondwaterbeschermingsgebied      (domain_grid) := Src/NL_IMRO_9923_VerordeningOv01_va01/Drinkwatervoorziening_en_grondwaterbescherming/Grondwaterbeschermingsgebied/Bestand/Multi/Result;
+			attribute<bool> Overstromingsrisicogebied         (domain_grid) := Src/NL_IMRO_9923_VerordeningOv01_va01/Watergebiedsreserveringen/Overstromingsrisicogebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Bestaande_natuur_NNN_voorheen_EHS
+					, Waterwingebied
+					, Grondwaterbeschermingsgebied
+					, Overstromingsrisicogebied
+				);
+		}
+		
+		container Middel
+		{
+			attribute <bool> Bos_en_natuurgebieden_buiten_het_NNN_voorheen_EHS (domain_grid): = Src/NL_IMRO_9923_VerordeningOv01_va01/Bos_en_natuurgebieden_buiten_het_NNN_voorheen_EHS/Bos_en_natuurgebieden_buiten_het_NNN_voorheen_EHS;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Bos_en_natuurgebieden_buiten_het_NNN_voorheen_EHS
+				);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Glastuinbouw_niet_toegestaan (domain_grid) := Src/NL_IMRO_9923_VerordeningOv01_va01/Glastuinbouwlocaties/Glastuinbouw_niet_toegestaan/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Glastuinbouw_niet_toegestaan
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

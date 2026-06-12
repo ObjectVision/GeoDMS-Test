@@ -1,0 +1,40 @@
+container MetaData: KeepData = "False", IsHidden = "False"
+{
+	// =========== Factor
+	unit<uint32> FactorID:  Expr = "union_unit(StaticFactors, DynamicFactors)"// constant ID that is used to relate alloc1 equations, allow.txt, and sample creation specification; it is made UInt16 to better detect confusion with Factors.
+	{
+		attribute<string> Name: 		expr = "union_data(.,StaticFactors/UniqueName, DynamicFactors/Name)";
+		attribute<string> VariableRef: 	expr = "switch(case(Dynamic && Concurrent, 'ResultingState/dFactors/'), case(Dynamic && !Concurrent, 'PrevState/dFactors/'), 'CaseData/FactorData/') + Name";
+		attribute<bool>	  Dynamic:		expr = "union_data(.,const(False,StaticFactors,bool),const(True,DynamicFactors,bool))";
+		attribute<bool>   Concurrent:	expr = "union_data(.,const(False,StaticFactors,bool),DynamicFactors/Concurrent)";
+		attribute<string> Label:		expr = "Name";
+	}
+	unit<uint8> DemandCharacteristics: Expr = "Parameters/ParamSets/ActiveSet/DemandCharacteristics"
+	{	
+		parameter<bool> PopulationSpillovers: expr = "Parameters/ParamSets/ActiveSet/PopulationSpillovers";
+		
+		parameter<.> Population: 	expr = "rlookup('population', Name)";
+		parameter<.> Urban: 	 	expr = "rlookup('urban', Name)";
+		parameter<.> Touristic: 	expr = "rlookup('touristic', Name)";
+		parameter<.> AbandonedAgri: expr = "rlookup('abandoned_agri', Name)";
+		parameter<.> AbandonedUrban:expr = "rlookup('abandoned_urban', Name)";
+		
+	}
+	unit<uint8> DemandModelsList: NrOfRows = 9
+	{
+		attribute<string> Name: 				['residential_density_change', 'min_AbanArable', 'max_AbanArable',	'min_AbanPermanentCrops',  	'max_AbanPermanentCrops', 'min_AbanPastures',  		'max_AbanPastures', 'min_AbanUrban', 'max_AbanUrban'];
+		attribute<uint32> firstFactor:			expr = "id(.) < uint8(1) ? 2 : 1"; //org: 1
+		attribute<string> arranging_template:	expr = "id(.) < uint8(1) ? 'SARparams' : 'LinearParams'"; //org: 1
+		attribute<bool>   AbandonedAgri:		expr = "id(.) > uint8(0) && id(.) < uint8(7)"; //org: 0
+		attribute<string> Label: 				expr = "Name";
+	}
+	#include<StaticFactorDefinitions.dms>
+	#include<DynamicFactorDefinitions.dms>
+	#include<RegionalFactorDefinitions.dms>
+	
+	unit<uint32> StaticFactors: 				expr = "StaticFactorDefinitions/StaticFactors";
+	unit<uint32> DynamicFactors:				expr = "DynamicFactorDefinitions/DynamicFactors";
+	unit<uint32> DemandModelFactors: 			expr = "RegionalFactorDefinitions/DemandModelFactors";
+	
+}	
+

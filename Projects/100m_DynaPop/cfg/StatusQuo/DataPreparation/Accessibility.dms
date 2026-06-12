@@ -1,0 +1,327 @@
+container Accessibility: using = "Units"
+{
+	
+	unit<wpoint> domain_grid: expr = "Geography/Lambert100mGrid";
+	
+	unit<Float32> ImpedanceUnit: Expr ="min";
+	unit<Float32> ImpedanceDensityUnit: Expr = "ImpedanceUnit / m";
+	
+	unit<uint32>  ObservedYears: nrOfRows = 2 {attribute<uint32> Year: [2006, 2030];}
+	
+	parameter<uint32> FirstYear: 	Expr = "min(ObservedYears/Year)";
+	parameter<uint32> LastYear: 	Expr = "max(ObservedYears/Year)";
+	
+	parameter<float32> DistanceDecay: expr = "float32(-1.5)";
+	
+	// although the access to cities and towns factors are not currently used (?), those factors are kept in for the moment.
+	container SourceData {
+		
+		unit<uint32> remoteness_points
+			:	StorageType = "gdal.vect"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/RefinedPointsRemoteness.shp"
+			,	StorageReadOnly = "True"
+		{
+			attribute<Geography/LambertEA> Geometry;
+			attribute<String>    Name;
+			
+			attribute<float32> Attraction := const(1[float32], .);
+			attribute<ImpedanceUnit> SrcImp:= const(0[ImpedanceUnit], .);
+		}
+		
+		unit<uint32> cityPoint
+			:	StorageType = "gdal.vect"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/citycentres_URAU2011.shp"
+			,	StorageReadOnly = "True"
+		{
+			attribute<Geography/LambertEA> Geometry;
+			attribute<String>    Name;
+			
+			attribute<float32> Attraction := const(1[float32], .);
+			attribute<ImpedanceUnit> SrcImp:= const(0[ImpedanceUnit], .);
+		}
+			
+		unit<uint32> townPoint
+			:	StorageType = "gdal.vect"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/towns_final_points.shp"
+			,	StorageReadOnly = "True"
+		{
+			attribute<Geography/LambertEA> Geometry;
+			attribute<Float32>  Attraction:= const(1.0f, .);
+			attribute<bool>     Foreign   := const(false, .);
+			attribute<ImpedanceUnit> SrcImp:= const(0[ImpedanceUnit], .);		}
+		
+		unit<uint32> collect_masspoints: expr = "= 'union_unit('+ AsItemList('Runs/'+ Parameters/Meta/Run/Name +'/CaseData/NetworkAnalysis/SaveZones') +')'"
+		{
+			attribute<string>	 Code:	expr = "= 'union_data(.,'+ AsItemList('Runs/'+ Parameters/Meta/Run/Name +'/CaseData/NetworkAnalysis/SaveZones/Code') +')'", StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/composite_LAU_masspoints.dbf";
+			attribute<uint16>	 ObjId: expr = "= 'union_data(.,'+ AsItemList('Runs/'+ Parameters/Meta/Run/Name +'/CaseData/NetworkAnalysis/SaveZones/ObjId') +')'", StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/composite_LAU_masspoints.dbf";
+			attribute<Geography/LambertEA> point: expr = "= 'union_data(.,'+ AsItemList('Runs/'+ Parameters/Meta/Run/Name +'/CaseData/NetworkAnalysis/SaveZones/point') +')'", StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/composite_LAU_masspoints.shp";
+		}
+			
+		
+		unit<uint32> destinationPoints
+//			:	StorageType = "gdal.vect" // TEMPORARY WORKAROUND FOR LIMITED TILE SUPPORT OF impedance_matrix
+			:	StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/origins_final_LAEA.shp"
+			,	StorageReadOnly = "True", DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<Geography/LambertEA> Geometry;
+			attribute<Geography/Regions/Nuts2> Nuts2id: expr = "Geography/Regionshapes/Nuts2/Nuts2Id[point_in_polygon(Geometry, Geography/Regionshapes/Nuts2/Polygons[Geography/LambertEA])]";
+			attribute<Geography/Lambert100mGrid> grid_id: expr = "Geometry[Geography/Lambert100mGrid]"; // reprojection is part of recasting.
+			attribute<float32> Attraction := const(1[float32], .);
+			attribute<bool> Foreign := const(false, .);
+		}
+	
+		unit<uint32> Roads
+			:	StorageType = "gdal.vect"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/accessData/RN.shp"
+			,	StorageReadOnly = "True"
+		{
+			// some attributes that read from the .shp layer
+			attribute<Geography/LambertEA> Geometry(arc);
+			attribute<m>         Length:	expr = "arc_length(Geometry, float64)[m]"; 
+			attribute<km_hr>	 FreeSpeed: expr = "CurrSpeed[km_hr]";
+			attribute<km_hr>	 y2006S: 	expr = "CurrSpeed[km_hr]";
+			attribute<km_hr> 	 y2030S:	expr = "FutSpeed[km_hr]";
+			attribute<float32> 	 CurrSpeed;
+			attribute<float32> 	 FutSpeed;
+			attribute<bool> 	 NewLink:	expr = "y2006S = 0[km_hr]";
+			
+			// calculated attribute
+			container y2006
+			{
+				attribute<km_hr>				adaptedSpeed	(Roads): Expr = "NewLink ? -1[km_hr]: y2006S";
+				attribute<ImpedanceUnit>        Impedance		(Roads): Expr = "float32(Length) / adaptedSpeed * (60[min / hr] / 1000[m / km])"; // @USERINPUT: Define your own combination of Road attributes here
+				attribute<ImpedanceDensityUnit> ImpedanceDensity(Roads): Expr = "MakeDefined(Impedance / Length, 1.0[min] / 250.0[m])"; // intermediate for calculating Impedance Per ConnectedRoad [min/m]
+			}
+			container y2030
+			{
+				attribute<km_hr>				Speed			(Roads): Expr = "y2030S";
+				attribute<ImpedanceUnit>        Impedance		(Roads): Expr = "Length / y2030S * (60[min / hr] / 1000[m / km])"; // @USERINPUT: Define your own combination of Road attributes here
+				attribute<ImpedanceDensityUnit> ImpedanceDensity(Roads): Expr = "MakeDefined(Impedance / Length, 1.0[min] / 250.0[m])"; // intermediate for calculating Impedance Per ConnectedRoad [min/m]
+			}
+		}
+		unit<wpoint> TeleAtlasRoadsRaster: 
+			StorageName 	 = "%SourceDataProjDir%/EUCS_100m/accessData/roads_eu_lev2to6_binary.tif",
+			DialogData 		 = "Geography/LambertEA",
+			StorageReadOnly = "True"
+		{
+			attribute<bool> GridData: IsHidden = "True";
+			attribute<bool> ReadData(Geography/Lambert100mGrid);
+		}
+		unit<wpoint> BG_RO_OSMRoadsraster: 
+			StorageName 	 = "%SourceDataProjDir%/EUCS_100m/accessData/OSM_BG_RO2.tif",
+			DialogData 		 = "Geography/LambertEA",
+			StorageReadOnly = "True"
+		{
+			attribute<uint8> GridData: IsHidden = "True";
+			attribute<uint8> ReadData(Geography/Lambert100mGrid);
+		}
+		unit<wpoint> GR_OSMRoadsraster:
+			StorageName 	 = "%SourceDataProjDir%/EUCS_100m/accessData/osm_gr.tif",
+			DialogData 		 = "Geography/LambertEA",
+			StorageReadOnly = "True"
+		{
+			attribute<uint8> GridData: IsHidden = "True";
+			attribute<uint8> ReadData(Geography/Lambert100mGrid);
+		}
+		
+		attribute<bool> patchedRoadRaster (Geography/Lambert100mGrid): expr = "TeleAtlasRoadsRaster/ReadData || BG_RO_OSMRoadsraster/ReadData > uint8(0) || GR_OSMRoadsraster/ReadData > uint8(0)";
+		
+		attribute<int16> 	 DistToTeleAtlasRoads(Geography/Lambert100mGrid): 
+			expr = 		 	"int16((float32(50) - proximity(float32(patchedRoadRaster), float32(Parameters/FuncKernels/LinearDecay5km/Attr))) * float32(100))",
+			StorageName = 	"%SourceDataProjDir%/EUCS_100m/accessData/m5000dist_to_lvl2to6roads.tif";
+		
+		Container getNeighbours150: expr = "neighbourrange(int16(150))";
+		
+		Container neighbourrange: isTemplate = "true"
+		{
+			parameter<int16>  	nRings;
+			parameter<int16>	CellCondition_small:	Expr = "nRings * nRings";
+			parameter<int16>	CellCondition_large:	Expr = "CellCondition_small + int16(1)";
+			unit<spoint>       	tmpRange: 				Expr = "range(spoint, point_yx(-nRings - int16(1), -nRings), point_yx(nRings + int16(1), nRings + int16(1)))";
+			unit<spoint>       	NeighbourRange: 		Expr = "tmpRange"
+			{
+				attribute<int16> 		distMatr     		: Expr = "int16(dist2(point_yx(Int16(0), Int16(0), tmpRange), uint32))";
+				attribute<bool>	  		neighbour_small		: Expr = "(distMatr <= CellCondition_small) && (distMatr > int16(0))";
+				attribute<bool>	  		neighbour_large		: Expr = "(distMatr <= CellCondition_large) && (distMatr > int16(0))";
+				attribute<float32>		relWeight			: Expr = "neighbour_small ? float32(1) / (float32(distMatr)) : float32(0)";
+			}
+		}
+	}
+	container getDistToTowns
+	{
+		attribute<float32> 							DistTown_n_i06	(domain_grid): expr = "MakeDefined(min_elem(DistToTowns/ImpedanceToNearestSource_06, float32(600))[Rel_map], float32(0))";
+		attribute<SourceData/destinationPoints> 	Rel_map       	(domain_grid): expr = "rlookup(id(domain_grid), SourceData/destinationPoints/grid_id)";
+		attribute<float32>    						Weightmap     	(domain_grid): expr = "potential(float32(!IsNull(Rel_map)), SourceData/getNeighbours150/neighbourrange/relWeight)";						
+		attribute<float32> 							DistTown 		(domain_grid): expr = "(IsNull(Rel_map) ? (potential(DistTown_n_i06, SourceData/getNeighbours150/neighbourrange/relWeight) / Weightmap): DistTown_n_i06)", StorageName = "%LocalDataDir%/results/dist_to_town.tif";	
+	}
+	
+	container DistToTempl: IsTemplate = "True"
+	{
+		unit<uint32> Dsts;
+		unit<uint32> SrcSet;
+		parameter<string> 	 Pj_now_ref;
+		parameter<string>	 Foreign_ref;
+		parameter<string>	 Pj_future_ref: expr = "Pj_now_ref";
+		
+		parameter<float32>   daily_accessibility_minutes: expr = "float32(4 * 60)";
+		
+		attribute<float32> Pj_now 		(SrcSet): expr = "subitem(SrcSet, Pj_now_ref)";
+		attribute<float32> Pj_future 	(SrcSet): expr = "subitem(SrcSet, Pj_future_ref)";
+		attribute<bool>	   Domestic		(SrcSet): expr = "subitem(SrcSet, Foreign_ref)";
+		
+		unit<uint32> DstSet: Expr = "Dsts", DialogType = "Map", DialogData = "Geometry"
+		{
+			attribute<NodeSet>        NodeSet_rel: Expr = "rlookup(Dsts/Geometry, NodeSet/Values)";
+			attribute<ConnectedRoads> LinkSet_rel: Expr = "rlookup(NodeSet_rel, ConnectedRoads/F1)";
+			attribute<ImpedanceUnit>  ExitCosts:   Expr =  "const(0, . , ImpedanceUnit)"; // "ConnectedRoads/Length[LinkSet_rel] / 60 [km / hr] / 1000 [m / km] * 60 [ min / hr]"; // assume 60 km/hr on secondary road network.
+			
+			attribute<ImpedanceUnit>  ImpedanceToNearestSource_06: Expr = "NodeSet/ImpedanceToNearestSource_06[NodeSet_rel]", FreeData = "True";
+			attribute<ImpedanceUnit>  ImpedanceToNearestSource_30: Expr = "NodeSet/ImpedanceToNearestSource_30[NodeSet_rel]", FreeData = "True";
+			//attribute<Float32>        Accessibility: url = "http://wiki.objectvision.nl/index.php/Accessibility", FreeData = "True",
+			//	Expr = "sum(od_pairs/TravelPotential *  SrcSet/Zone/Attraction[od_pairs/SrcZones], od_pairs/DstZones)";
+		}
+		
+		unit<uint32> EndPointSet: Expr = "union_unit(SrcSet, DstSet)"
+		{
+			attribute<Geography/LambertEA> Geometry: Expr = "union_data(., SrcSet/Geometry, DstSet/Geometry)";  // requires GeoDms 6.056
+		}
+		
+		unit<uint32> UniqueEndpointSet: Expr = "Unique(EndPointSet/Geometry)";
+		
+		unit<uint32> FutureRoads:	Expr = "select_with_org_rel(SourceData/Roads/NewLink || bool(SourceData/Roads/Ferry))" 
+		{
+			attribute<Geography/LambertEA> Geometry (arc): expr = "SourceData/Roads/Geometry[org_rel]"; 
+			container y2006 {attribute<km_hr>	Speed (FutureRoads): expr = "SourceData/Roads/y2006/adaptedSpeed[org_rel]";}
+			container y2030	{attribute<km_hr>	Speed (FutureRoads): expr = "SourceData/Roads/y2030/Speed[org_rel]";}
+		}
+		
+		unit<uint32> CurrentRoads:	Expr = "select_with_org_rel(!SourceData/Roads/NewLink && !bool(SourceData/Roads/Ferry) && !SourceData/Roads/Length <= 0[m])"
+		{attribute<Geography/LambertEA> Geometry (arc): expr = "SourceData/Roads/Geometry[org_rel]";}
+		
+		unit<uint32> ConnectedCurrentRoads: expr = "connect(CurrentRoads/Geometry, EndPointSet/Geometry)",	DialogType  = "Map"
+		{
+			attribute<Geography/LambertEA> 		geometry(arc);
+			attribute<CurrentRoads> 	arc_rel;
+			attribute<m>        		Length: Expr = "arc_length(geometry, float64)[m]";
+			container y2006 
+			{attribute<km_hr>				Speed			 (ConnectedCurrentRoads): Expr = "MakeDefined((SourceData/Roads/y2006/adaptedSpeed[CurrentRoads/org_rel])[arc_rel], 20[km_hr])";}
+			container y2030 
+			{ attribute<km_hr>				Speed			 (ConnectedCurrentRoads): Expr = "MakeDefined((SourceData/Roads/y2030/Speed[CurrentRoads/org_rel])[arc_rel], 20[km_hr])";}
+		}
+		
+		unit<uint32> ConnectedRoads: Expr = "select_with_org_rel(ConnectedCurrentRoads/Length > 0[m])", DialogType = "map"
+		{
+			// resulting from parent's connect operator
+			
+			attribute<Geography/LambertEA>      geometry(arc)	: 	expr = "ConnectedCurrentRoads/geometry[org_rel]";
+			attribute<m>         		Length: 		 			expr = "arc_length(geometry, float64)[m]";
+			container y2006 
+			{
+				attribute<km_hr>		 Speed		(ConnectedRoads): Expr = "ConnectedCurrentRoads/y2006/Speed[org_rel]";
+				attribute<bool>			 impedance0	(ConnectedRoads): Expr = "Impedance = 0[ImpedanceUnit]";
+				attribute<ImpedanceUnit> Impedance  (ConnectedRoads): Expr = "Speed >= 0[km_hr] ? MakeDefined(float32(Length) / Speed * (60[min / hr] / 1000[m / km]), 0[ImpedanceUnit]): Sum(Length / Speed * (60[min / hr] / 1000[m / km]))";
+			}
+			container y2030 
+			{
+				attribute<km_hr> 		 Speed 		(ConnectedRoads): Expr = "ConnectedCurrentRoads/y2030/Speed[org_rel]";
+				attribute<ImpedanceUnit> Impedance  (ConnectedRoads): Expr = "Speed >= 0[km_hr] ? MakeDefined(float32(Length) / Speed * (60[min / hr] / 1000[m / km]), 0[ImpedanceUnit]): Sum(Length / Speed * (60[min / hr] / 1000[m / km]))";
+			}
+			attribute<bool>		 SpeedImproves: expr = "y2006/Impedance < y2030/Impedance";
+			attribute<bool>		 SpeedDeclines: expr = "y2006/Impedance > y2030/Impedance";
+			
+			// other attributes for the ConnectedRoads entity
+			
+			parameter<km_hr>	maxSpeed: expr = "max_elem(max(y2006/Speed), max(y2030/Speed))";
+				
+			attribute<Geography/LambertEA> BeginPoint: 	Expr = "first_point(geometry)";
+			attribute<Geography/LambertEA> EndPoint  : 	Expr = "last_point (geometry)";
+			attribute<NodeSet>   F1: 			Expr = "rlookup(BeginPoint, NodeSet/Values)";
+			attribute<NodeSet>   F2: 			Expr = "rlookup(EndPoint,   NodeSet/Values)";
+		}
+		unit<uint32> RawNodeSet: Expr = "union_unit(ConnectedRoads, ConnectedRoads)"
+		{
+			attribute<Geography/LambertEA>  Point: Expr = "union_data(RawNodeSet, ConnectedRoads/BeginPoint, ConnectedRoads/EndPoint)";
+		}
+		unit<uint32> NodeSet: Expr = "Unique(RawNodeSet/Point)"
+			,	DialogType  = "Map"
+			,	DialogData  = "Values"
+		{
+			// resulting from parent's Unique operator
+			
+			attribute<Geography/LambertEA> Values;
+			
+			// other attributes for the ConnectedRoads entity
+			attribute<ImpedanceUnit> ImpedanceToNearestSource_06 := impedance_table('bidirectional;startPoint(Node_rel)', ConnectedRoads/y2006/Impedance, ConnectedRoads/F1, ConnectedRoads/F2, rlookup(SrcSet/Geometry , Values));
+			attribute<ImpedanceUnit> ImpedanceToNearestSource_30 := impedance_table('bidirectional;startPoint(Node_rel)', ConnectedRoads/y2030/Impedance, ConnectedRoads/F1, ConnectedRoads/F2, rlookup(SrcSet/Geometry , Values));
+		}
+		
+		attribute<NodeSet> Dst_nodes (Dsts): 	expr = "rlookup(Dsts/Geometry, NodeSet/Values)";
+		attribute<NodeSet> Src_nodes (SrcSet): 	expr = "rlookup(SrcSet/Geometry, NodeSet/Values)";
+		attribute<bool>	   src_node_null (SrcSet): expr = "IsNull(Src_nodes)";
+		
+		attribute<float32> ImpedanceToNearestSource_06 (Dsts): expr = "float32(NodeSet/ImpedanceToNearestSource_06[Dst_nodes]) * float32(1)";
+		attribute<float32> ImpedanceToNearestSource_30 (Dsts): expr = "float32(NodeSet/ImpedanceToNearestSource_30[Dst_nodes]) * float32(1)";
+				
+		unit<Uint32> 	od_pairs: 	expr = "od_pairs_2006";
+		container 		od_aggr:	expr = "od_aggr_2006";
+		
+		unit<UInt32> od_pairs_2006 := 
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel,impedance);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+					ConnectedRoads/y2006/Impedance[ImpedanceUnit], ConnectedRoads/F1, ConnectedRoads/F2,
+					rlookup(SrcSet/Geometry , NodeSet/Values),
+					DstSet/NodeSet_rel, DstSet/ExitCosts,
+					600[ImpedanceUnit]
+				),
+			Keepdata = "False", FreeData = "True"
+		{
+			attribute<SrcSet>  i                    := OrgZone_rel;
+			attribute<DstSet>  j                    := DstZone_rel;
+			attribute<float32> Pj_now_in			:= Pj_now[i];
+			attribute<float32> Grav                 := Pj_now[i] * (((Impedance+ SrcSet/SrcImp[i])/1[ImpedanceUnit])^DistanceDecay);
+			attribute<float32> Gravity_costs        := ((Impedance + SrcSet/SrcImp[i]) / 1[ImpedanceUnit])^DistanceDecay;
+			attribute<float32> Eucl_dist            := float32(dist(Dsts/Geometry[j], SrcSet/Geometry[i]));
+			attribute<float32> IdealImpedance       := (((Eucl_dist / 1000f) / float32(ConnectedRoads/maxSpeed)) * 60f);
+			attribute<float32> DisEfficiency        := float32(Impedance) / float32(IdealImpedance);
+			attribute<float32> WeightedDisefficiency:= DisEfficiency * Pj_now[i];
+		}
+		unit<UInt32> od_pairs_2030  :=
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel,impedance);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+					ConnectedRoads/y2030/Impedance[ImpedanceUnit], ConnectedRoads/F1, ConnectedRoads/F2,
+					rlookup(SrcSet/Geometry , NodeSet/Values),
+					DstSet/NodeSet_rel, DstSet/ExitCosts,
+					600[ImpedanceUnit]
+				),
+			Keepdata = "False", FreeData = "True"
+		{
+			attribute<SrcSet>  i                    := OrgZone_rel;
+			attribute<DstSet>  j                    := DstZone_rel;
+			attribute<float32> Pj_now_in			:= Pj_now[i];
+			attribute<float32> Grav                 := Pj_future[i] * (((Impedance+ SrcSet/SrcImp[i]) / 1[ImpedanceUnit] )^DistanceDecay);
+			attribute<float32> Gravity_costs        := ((Impedance + SrcSet/SrcImp[i]) / 1[ImpedanceUnit]) ^DistanceDecay;
+			attribute<float32> Eucl_dist            := float32(dist(Dsts/Geometry[j], SrcSet/Geometry[i]));
+			attribute<float32> IdealImpedance       := (((Eucl_dist / 1000f) / float32(ConnectedRoads/maxSpeed)) * 60f);
+			attribute<float32> DisEfficiency        := float32(Impedance) / float32(IdealImpedance);
+			attribute<float32> WeightedDisefficiency:= DisEfficiency * Pj_future[i];
+		}
+		container od_aggr_1990 {
+			
+		}
+		container od_aggr_2006 {
+			attribute<Float32> PerDstPnt_grav150(DstSet): 	Expr = "sum(od_pairs_2006/Grav, od_pairs_2006/j)";
+			attribute<Float32> Dom_grav150		(DstSet): 	Expr = "sum(float32(Domestic[od_pairs_2006/i]) 	* od_pairs_2006/Grav, od_pairs_2006/j)";
+			attribute<Float32> For_grav150		(DstSet): 	Expr = "sum(float32(!Domestic[od_pairs_2006/i]) 	* od_pairs_2006/Grav, od_pairs_2006/j)";
+			attribute<float32> NetworkEfficiency(DstSet):	Expr = "sum(od_pairs_2006/WeightedDisefficiency, od_pairs_2006/j) / sum(Pj_now)";
+			attribute<float32> DailyAccess		(DstSet): 	Expr = "sum(float32(od_pairs_2006/Impedance <= daily_accessibility_minutes) * Pj_now[od_pairs_2006/i], od_pairs_2006/j) / float32(1000 * 1000)";
+		}
+		container od_aggr_2030 {
+			attribute<Float32> PerDstPnt_grav150(DstSet): 	Expr = "sum(od_pairs_2030/Grav, od_pairs_2030/j)";
+			attribute<Float32> Dom_grav150		(DstSet): 	Expr = "sum(float32(Domestic[od_pairs_2030/i]) 	* od_pairs_2030/Grav, od_pairs_2030/j)";
+			attribute<Float32> For_grav150		(DstSet): 	Expr = "sum(float32(!Domestic[od_pairs_2030/i]) 	* od_pairs_2030/Grav, od_pairs_2030/j)";
+			attribute<float32> NetworkEfficiency(DstSet):	Expr = "sum(od_pairs_2030/WeightedDisefficiency, od_pairs_2030/j) / sum(Pj_future)";
+			attribute<float32> DailyAccess		(DstSet): 	Expr = "sum(float32(od_pairs_2030/Impedance <= daily_accessibility_minutes) * Pj_future[od_pairs_2030/i], od_pairs_2030/j) / float32(1000 * 1000)";
+		}
+	}
+	
+	container DistToCities := DistToTempl(SourceData/cityPoint, SourceData/destinationPoints, 'Attraction', 'Foreign');
+	container DistToTowns  := DistToTempl(SourceData/destinationPoints, SourceData/townPoint, 'Attraction', 'Foreign');
+}

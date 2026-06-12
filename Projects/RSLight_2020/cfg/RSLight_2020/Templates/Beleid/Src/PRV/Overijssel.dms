@@ -1,0 +1,149 @@
+container Overijssel : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=overijssel&striVersion=STRI2008"
+{
+	container NL_IMRO_9923_VerordeningOv01_va01 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9923.VerordeningOv01-va01"
+	{
+		//Omgevingsverordening Overijssel 2017
+		//planstatus: vastgesteld 2017-04-12
+		//identificatie: NL.IMRO.9923.VerordeningOv01-va01
+		//type plan: provinciale verordening
+		//naam overheid: provincie Overijssel
+		//ondergrond: basisregistratie topografie (BRT) (2016-01-01)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (10)
+		//Kaart 1: Buitengebied
+		//Kaarten (17)
+		//Sturen op ruimtelijke kwaliteit, duurzaamheid en sociale kwaliteit
+		//Gebiedskenmerken Natuurlijke laag (Hoe)
+		//Gebiedskenmerken Laag van het agrarisch cultuurlandschap (Hoe)
+		//Gebiedskenmerken Stedelijke laag (Hoe)
+		//Gebiedskenmerken Laag van de beleving (Hoe)
+		//Nationale Landschappen in Overijssel
+		//Natuurnetwerk Nederland (NNN, voorheen Ecologische Hoofdstructuur (EHS))
+		//Deelgebieden NNN (voorheen EHS)
+		//Glastuinbouwlocaties
+		//Drinkwatervoorziening en grondwaterbescherming
+		//Watergebiedsreserveringen
+		//Windturbines
+		//Recreatie
+		//Externe veiligheid
+		//Waterkeringen en peilbesluiten
+		//Provinciale wegen en vaarwegbeheer
+		//Luchthavens
+
+		parameter<string> Bestandsloc:                 = '%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/NL_IMRO_9923_VerordeningOv01_va01_Besluitsubvlak_P.shp';
+		parameter<string> Bestandsloc_vlak:            = '%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/NL_IMRO_9923_VerordeningOv01_va01_Besluitvlak_P.shp';
+		//eerst met OGR shape formaat van NL_IMRO_9923_VerordeningOv01_va01_Enkelbestemming_bos_natuur daarna in ArcGIS gdb-fromaat + selectie rakend aan provincie Overijssel
+		parameter<string> Bestandsloc_Enkelbestemming: = '%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/NL_IMRO_9923_VerordeningOv01_va01_Enkelbestemming_bos_natuur_OV.gdb';
+
+		parameter<string> OGRQuery:                = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\ov\NL_IMRO_9923_VerordeningOv01_va01_Besluitsubvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitsubvlak_P.gml -where ""besluitgebied=""NL.IMRO.9923.VerordeningOv01-va01"" -skipfailures -overwrite';
+		parameter<string> OGRQuery_vlak:           = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\ov\NL_IMRO_9923_VerordeningOv01_va01_Besluitvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitvlak_P.gml -where ""besluitgebied=""NL.IMRO.9923.VerordeningOv01-va01"" -skipfailures -overwrite';
+		parameter<string> OGRQuery_Enkelbestemming:= 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\ov\NL_IMRO_9923_VerordeningOv01_va01_Enkelbestemming_bos_natuur.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Enkelbestemming.gml -where ""bestemmingshoofdgroep=""bos" or ""bestemmingshoofdgroep=""natuur"" -skipfailures -overwrite';
+
+		container  Natuurnetwerk_Nederland: url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Natuurnetwerk Nederland (NNN, voorheen Ecologische Hoofdstructuur (EHS))
+				//	x Bestaande natuur NNN (voorheen EHS) --> bestaat uit de volgende 3 klassen (niet meer te onderscheiden)
+				//	  Bestaande natuur NNN, land
+				//	  Bestaande natuur NNN, water
+				//	  Zeer kwetsbare natuurgebieden
+
+			//Te realiseren natuur NNN (voorheen EHS)
+				//	  Overig te realiseren natuur
+				//	  Uitwerkingsgebied ontwikkelopgave Natura 2000
+				//	  Zoekgebied natuur NNN (voorheen EHS)
+
+			// niet gelijk aan vorige versie: 57349 (was 63545)    /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_OV/kaart6_ecologische_hoofdstructuur/ecologische_hoofdstructuur
+			container Bestaande_natuur_NNN_voorheen_EHS : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9923_VerordeningOv01_va01_Besluitsubvlak_P WHERE naam =''Bestaande natuur NNN (voorheen EHS)'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9923.VerordeningOv01-va01/pt_NL.IMRO.9923.VerordeningOv01-va01.xml#NL.IMRO.PT.s117173ac-6967-400a-97d7-dac8f602053c'
+				,'=OGRQuery'
+			);
+		}
+
+
+		// Let op dit is geen standaard kaart uit het bestand zelf aangemaakt op basis van de tekst
+		//Titel 2.8 Bos en natuurgebieden buiten het NNN (voorheen EHS)
+		container Bos_en_natuurgebieden_buiten_het_NNN_voorheen_EHS: url="http://www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9923.VerordeningOv01-va01/pt_NL.IMRO.9923.VerordeningOv01-va01.xml#NL.IMRO.PT.sdd5022f6-818b-4f60-bb29-b941b38a7c9d"
+		{
+
+			container Enkelbestemming_bos_natuur : = VergriddingT
+			(
+				'=Bestandsloc_Enkelbestemming'
+				,'SELECT * FROM NL_IMRO_9923_VerordeningOv01_va01_Enkelbestemming_bos_natuur_OV'
+				,''
+				,'=OGRQuery'
+			);
+
+			attribute<bool> Bos_en_natuurgebieden_buiten_het_NNN_voorheen_EHS (domain_grid):= 
+				Natuurnetwerk_Nederland/Bestaande_natuur_NNN_voorheen_EHS/Bestand/Multi/Result ? 0[bool] : Enkelbestemming_bos_natuur/Bestand/Multi/Result;
+		}
+
+		container Glastuinbouwlocaties : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Glastuinbouwlocaties. Lagen:
+			//	  Glastuinbouw
+			//	x Glastuinbouw niet toegestaan 
+
+			container Glastuinbouw_niet_toegestaan : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9923_VerordeningOv01_va01_Besluitvlak_P WHERE naam =''Glastuinbouw niet toegestaan'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9923.VerordeningOv01-va01/pt_NL.IMRO.9923.VerordeningOv01-va01.xml#NL.IMRO.PT.sb3b04d4c-ea3c-40a1-8dfc-5bec81a3df01'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/VerordeningOv01-va01_21011_Glastuinbouw_niet_toegestaan.jpg'
+				,'=OGRQuery'
+			);
+		}
+
+		container Drinkwatervoorziening_en_grondwaterbescherming : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Drinkwatervoorziening en grondwaterbescherming. Lagen:
+			//	  Boringsvrije zone
+			//	  Boringsvrije zone Salland Diep
+			//	  Grondwaterbeschermingsgebied
+			//	  Grondwaterbeschermingsgebied met stedelijke functies
+			//	  Intrekgebied
+			//	  Intrekgebied met stedelijke functies
+			//	x Waterwingebied
+
+			//gelijk aan vorige versie 774 cellen. Zie: /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_OV/kaart14_drinkwatervoorziening/waterwingebied
+			container Waterwingebied : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9923_VerordeningOv01_va01_Besluitvlak_P WHERE naam =''Waterwingebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9923.VerordeningOv01-va01/pt_NL.IMRO.9923.VerordeningOv01-va01.xml#NL.IMRO.PT.sb3b04d4c-ea3c-40a1-8dfc-5bec81a3df01'
+				,'=OGRQuery'
+			);
+
+			//niet gelijk aan vorige versie: 10598 cellen (was 12417). Zie: /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_OV/kaart14_drinkwatervoorziening/grondwaterbeschermingsgebied
+			container Grondwaterbeschermingsgebied : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9923_VerordeningOv01_va01_Besluitvlak_P WHERE naam =''Grondwaterbeschermingsgebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9923.VerordeningOv01-va01/pt_NL.IMRO.9923.VerordeningOv01-va01.xml#NL.IMRO.PT.sb3b04d4c-ea3c-40a1-8dfc-5bec81a3df01'
+				,'=OGRQuery'
+			);
+		}
+
+		container Watergebiedsreserveringen : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ov/Omgevingsverordening geconsolideerde versie.mht"
+		{
+			//Watergebiedsreserveringen. Lagen:
+			//	  Essentiële waterlopen
+			//	x Overstromingsrisicogebied (vrijwaringsgebied in verband met het overstromingsrisico)
+			//	  Overstroombaar gebied
+			//	  Primaire watergebieden
+			//	  Waterbergingsgebieden
+
+			//niet gelijk aan vorige versie: 4074 cellen (was 4577). Zie: /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_OV/kaart15_waterveiligheid/gebieden_met_risico_op_overstroming_snel_en_diep_onderlopende_gebieden
+			container Overstromingsrisicogebied : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9923_VerordeningOv01_va01_Besluitvlak_P WHERE naam =''Overstromingsrisicogebied (vrijwaringsgebied in verband met het overstromingsrisico)'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9923.VerordeningOv01-va01/pt_NL.IMRO.9923.VerordeningOv01-va01.xml#NL.IMRO.PT.seaf721b0-4b4f-47b0-ad62-e14adb74ec37'
+				,'=OGRQuery'
+			);
+		}
+	}
+}

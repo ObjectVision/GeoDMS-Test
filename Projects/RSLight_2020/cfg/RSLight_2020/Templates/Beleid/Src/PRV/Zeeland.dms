@@ -1,0 +1,142 @@
+container Zeeland : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=zeeland&striVersion=STRI2008"
+{
+	container NL_IMRO_9929_vrpz2012_0001 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9929.vrpz2012-0001"
+	{
+		//verordening ruimte provincie Zeeland
+		//planstatus: vastgesteld 2012-09-28
+		//identificatie: NL.IMRO.9929.vrpz2012-0001
+		//type plan: provinciale verordening
+		//naam overheid: provincie Zeeland
+		//ondergrond: Top 250 zelf opgewerkt
+		//IMRO-versie: IMRO2008
+
+		//Kaarten (9)
+		//	x Grootschalige bedrijventerreinen
+		//	x Detailhandelsvoorzieningen
+		//	  Windenergie
+		//	x Glastuinbouw
+		//	x Waterkering
+		//	x Bestaande natuur
+		//	x Agrarisch gebied van ecologische betekenis
+		//	x Nieuwe natuur
+		//	  Landschap en erfgoed
+
+		parameter<string> Bestandsloc_vlak      : = '%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P.shp';
+		parameter<string> OGRQuery_vlak         : = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\ze\NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitvlak_P.gml -where ""besluitgebied=""NL.IMRO.9929.vrpz2012-0001"" -skipfailures -overwrite';
+
+		container  Grootschalige_bedrijventerreinen : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/r_NL_IMRO_9929_vrpz2012-0001.mht"
+		{
+			//Grootschalige bedrijventerreinen
+			//	x grootschalige bedrijventerreinen 
+
+		//&&&&&Bart noodzaak tot nieuwe ruimtelijke benadering moet aangrenzend zijn aan: decay function zoals afstand tot bestaand stedelijk gebied bijvoorbeeld!
+		//"het plan bijdraagt aan of niet in strijd is met de doelstelling dat 80 procent van de bedrijvigheid regionaal wordt geclusterd op of "
+		//aansluitend aan grootschalige bedrijventerreinen en
+			//gelijk aan vorige versie 1237 cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZE/grootschalige_bedrijventerreinen/grootschalige_bedrijventerreinen_PRV_ZE_grootschalige_bedrijventerreinen
+			container grootschalige_bedrijventerreinen : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P WHERE naam =''grootschalige bedrijventerreinen'''
+				//,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9929.vrpz2012-0001/r_NL.IMRO.9929.vrpz2012-0001_a2.2.html'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/vrpz2012-0001_22_Bedrijven_en_detailhandelsvoorzieningen.jpg'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Detailhandelsvoorzieningen : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/r_NL_IMRO_9929_vrpz2012-0001.mht"
+		{
+			//Detailhandelsvoorzieningen
+			//	x detailhandelsvoorzieningen
+
+			//&&&&&Bart: toegelaten in "bestaande kernwinkelgebieden"
+			//gelijk aan vorige versie 63 cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZE/detailhandelsvoorzieningen/detailhandelsvoorzieningen_PRV_ZE_detailhandelsvoorzieningen
+			container detailhandelsvoorzieningen : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P WHERE naam =''detailhandelsvoorzieningen'''
+				//,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9929.vrpz2012-0001/r_NL.IMRO.9929.vrpz2012-0001_a2.2.html'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/vrpz2012-0001_22_Bedrijven_en_detailhandelsvoorzieningen.jpg'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Glastuinbouw : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/r_NL_IMRO_9929_vrpz2012-0001.mht"
+		{
+			//Glastuinbouw
+			//	x glastuinbouw
+
+			//gelijk aan vorige versie 359 cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZE/glastuinbouw/glastuinbouw_PRV_ZE_glastuinbouw
+			container glastuinbouw : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P WHERE naam =''glastuinbouw'''
+				//,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9929.vrpz2012-0001/r_NL.IMRO.9929.vrpz2012-0001_a2.8.html'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/vrpz2012-0001_28_glastuinbouw.jpg'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Waterkering : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/r_NL_IMRO_9929_vrpz2012-0001.mht"
+		{
+			//Waterkering
+			//	x regionale waterkering
+
+			//vrijwel gelijk aan vorige versie 1541 (was 1542) cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZE/regionale_keringen_met_waterstaatkundige_functie/regionale_keringen_met_waterstaatkundige_functie_PRV_ZE_regionale_keringen_met_waterstaatkundige_functie
+			container regionale_waterkering : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P WHERE naam =''regionale waterkering'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9929.vrpz2012-0001/r_NL.IMRO.9929.vrpz2012-0001_a2.11.html'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  bestaande_natuur : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/r_NL_IMRO_9929_vrpz2012-0001.mht"
+		{
+			//Bestaande natuur
+			//	x bestaande natuur
+			//		afwegingszone natuurgebieden
+
+			//vrijwel gelijk aan vorige versie 20491 (was 20492) cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZE/bestaande_natuur/bestaande_natuur_PRV_ZE_bestaande_natuur
+			container bestaande_natuur : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P WHERE naam =''bestaande natuur'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9929.vrpz2012-0001/r_NL.IMRO.9929.vrpz2012-0001_a2.12.html'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Agrarisch_gebied_van_ecologische_betekenis : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/r_NL_IMRO_9929_vrpz2012-0001.mht"
+		{
+			//Agrarisch gebied van ecologische betekenis
+			//	x agrarisch gebied van ecologische betekenis
+
+			//gelijk aan vorige versie 718 cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZE/agrarisch_gebied_van_ecologische_betekenis/agrarisch_gebied_van_ecologische_betekenis_PRV_ZE_agrarisch_gebied_van_ecologische_betekenis
+			container agrarisch_gebied_van_ecologische_betekenis : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P WHERE naam =''agrarisch gebied van ecologische betekenis'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9929.vrpz2012-0001/r_NL.IMRO.9929.vrpz2012-0001_a2.13.html'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Nieuwe_natuur : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ze/r_NL_IMRO_9929_vrpz2012-0001.mht"
+		{
+			//Nieuwe natuur
+			//	x nieuwe natuur
+
+			//gelijk aan vorige versie 2082 cellen. Zie: ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_ZE/nieuwe_natuur/nieuwe_natuur_PRV_ZE_nieuwe_natuur
+			container nieuwe_natuur : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9929_vrpz2012_0001_Besluitvlak_P WHERE naam =''nieuwe natuur'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9929.vrpz2012-0001/r_NL.IMRO.9929.vrpz2012-0001_a2.14.html'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+
+	}
+}

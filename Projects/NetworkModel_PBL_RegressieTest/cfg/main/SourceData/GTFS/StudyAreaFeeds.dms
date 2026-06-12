@@ -1,0 +1,150 @@
+container StudyAreaFeeds 
+{
+	unit<uint32> Stops := LoadFeeds/Stops
+	{
+		attribute<rdc>      geometry                 := LoadFeeds/Stops/geometry;
+		attribute<uint32>   orgStopId                := id(LoadFeeds/Stops);
+		attribute<uint32>   feedId                   := const(0, LoadFeeds/Stops, uint32);
+		attribute<upoint>   uni_StopId               := point_xy(feedId, orgStopId, upoint);
+		attribute<string>   Name                     := LoadFeeds/Stops/stop_name;
+		attribute<string>   Label                    := Name;
+		attribute<m>        Dist2_ICtrainstation     := rjoin(geometry, uq_points/values, Define_Stopgroups_ICstations/dist);
+		attribute<m>        Dist2_Trainstation       := rjoin(geometry, uq_points/values, Define_Stopgroups_Trainstations/dist);
+		attribute<bool>     IsMetroStation           := ModesServed/Metro > 0;
+		attribute<bool>     IsTramStation            := ModesServed/Tram > 0;
+		attribute<bool>     IsRailStation            := ModesServed/Rail > 0;
+		
+		container Recollect
+		{
+			attribute<SourceData/Infrastructuur/OVprijzen/NS/NS_Stations> NS_Stations_rel (..) := recollect_by_cond(Dist2_Trainstation  < 200[m],Stops_Trainstation/NS_Stations_rel);
+		}
+		
+		unit<uint32> uq_points := unique(geometry)
+		{
+			attribute<float32>  x           := PointCol(values);
+			attribute<float32>  y           := PointRow(values);
+		}
+		
+		container Define_Stopgroups_ICstations    := Define_Stopgroups_T(SourceData/Infrastructuur/Infrastructuur/IC_Stations/uq);
+		container Define_Stopgroups_Trainstations := Define_Stopgroups_T(SourceData/Infrastructuur/Infrastructuur/Trainstations/uq);
+		
+		Template Define_Stopgroups_T
+		{
+			unit<uint32>                Station_dom;
+			///
+			attribute<rdc>              geometry  (Station_dom)      := Station_dom/Geometry;
+			attribute<float32>          x         (Station_dom)      := PointCol(geometry);
+			attribute<float32>          y         (Station_dom)      := PointRow(geometry);
+			
+			attribute<uint32>           point_rel (uq_points)       := connect(geometry, uq_points/values);
+
+			attribute<float32>          x_targetdomain (uq_points)  := PointCol(geometry)[point_rel];
+			attribute<float32>          y_targetdomain (uq_points)  := PointRow(geometry)[point_rel];
+			attribute<float32>          delta_x (uq_points)         := abs(x_targetdomain - uq_points/x)^2f;
+			attribute<float32>          delta_y (uq_points)         := abs(y_targetdomain - uq_points/y)^2f;
+
+			attribute<m>                dist (uq_points)            := sqrt(delta_x + delta_y)[m];
+		}
+		
+		container ModesServed := 
+			for_each_nedv(
+				AvailableModes/Name
+				, 'sum(uint32(Links/Mode_rel = '+string(AvailableModes/Values)+'), Links/FromStop) + sum(uint32(Links/Mode_rel = '+string(AvailableModes/Values)+'), Links/ToStop)'
+				, Stops
+				, uint32
+			)
+		{
+			attribute<uint32> Total (Stops) := ='add('+AsItemList(AvailableModes/Name)+')';
+		}
+		
+		attribute<StopsGrid> GridId       := geometry[StopsGrid];
+		attribute<uint32>    Grid1D       := StopsGrid/uniId[GridId];
+		attribute<uint32>    cumu_in_grid := cumulate(const(1,.,uint32), GridId) - 1;
+		attribute<upoint>    unique_id    := point_xy(cumu_in_grid, Grid1D, upoint);
+		attribute<uint32>    nTransfers   := StopsGrid/nTransfers[GridId];
+		
+		unit<spoint> StopsGrid := ='rdc_'+string(ModelParameters/Advanced/MaxTransferDistKm)+'m'
+		{
+			attribute<uint32> nStops     := pcount(GridId);
+			attribute<uint32> nTransfers := nTop + nRight + nBottom + nLeft + (sub_or_null(nStops,1));
+			attribute<uint32> nTop       := potential(float32(nStops), float32(Templates/Neighbourhood/Top))[uint32];
+			attribute<uint32> nRight     := potential(float32(nStops), float32(Templates/Neighbourhood/Right))[uint32];
+			attribute<uint32> nBottom    := potential(float32(nStops), float32(Templates/Neighbourhood/Bottom))[uint32];
+			attribute<uint32> nLeft      := potential(float32(nStops), float32(Templates/Neighbourhood/Left))[uint32];
+			attribute<uint32> uniId      := cumulate(const(1,.,uint32))-1;
+		}
+	}
+	
+	unit<uint32> Stops_ICstation := select_with_attr_by_org_rel(Stops,Stops/Dist2_ICtrainstation < 200[m])
+	{
+		attribute<uint32>   Stops_rel   := org_rel;
+	}
+	
+	unit<uint32> Stops_Trainstation := select_with_attr_by_org_rel(Stops,Stops/Dist2_Trainstation  < 200[m])
+	{
+		attribute<uint32>   Stops_rel   := org_rel;
+		
+		attribute<SourceData/Infrastructuur/OVprijzen/NS/NS_stations> NS_Stations_rel := rlookup(name, /SourceData/Infrastructuur/OVprijzen/NS/NS_stations/label);
+	}
+	
+	unit<uint32> Stops_Metrostation := select_with_attr_by_org_rel(Stops,Stops/IsMetroStation)
+	{
+		attribute<uint32>   Stops_rel   := org_rel;
+	}
+	
+	unit<uint32> Stops_Tramstation := select_with_attr_by_org_rel(Stops,Stops/IsTramStation)
+	{
+		attribute<uint32>   Stops_rel   := org_rel;
+	}
+	
+	unit<uint32> Stops_TrainMetrostation := union_unit(Stops_Trainstation, Stops_Metrostation)
+	{
+		attribute<rdc>      geometry    := union_data(., Stops_Trainstation/geometry, Stops_Metrostation/geometry);
+		attribute<uint32>   orgStopId   := union_data(., Stops_Trainstation/orgStopId, Stops_Metrostation/orgStopId);
+		attribute<uint32>   feedId      := union_data(., Stops_Trainstation/feedId, Stops_Metrostation/feedId);
+		attribute<upoint>   uni_StopId  := union_data(., Stops_Trainstation/uni_StopId, Stops_Metrostation/uni_StopId);
+		attribute<string>   Name        := union_data(., Stops_Trainstation/Name, Stops_Metrostation/Name);
+		attribute<string>   Label       := union_data(., Stops_Trainstation/Label, Stops_Metrostation/Label);
+		
+		attribute<uint32>   Stops_rel   := union_data(., Stops_Trainstation/Stops_rel, Stops_Metrostation/Stops_rel);
+	}
+	
+	unit<uint32> Stops_TrainMetroTramstation := union_unit(Stops_Trainstation, Stops_Metrostation, Stops_Tramstation)
+	{
+		attribute<rdc>      geometry    := union_data(., Stops_Trainstation/geometry, Stops_Metrostation/geometry, Stops_Tramstation/geometry);
+		attribute<uint32>   orgStopId   := union_data(., Stops_Trainstation/orgStopId, Stops_Metrostation/orgStopId, Stops_Tramstation/orgStopId);
+		attribute<uint32>   feedId      := union_data(., Stops_Trainstation/feedId, Stops_Metrostation/feedId, Stops_Tramstation/feedId);
+		attribute<upoint>   uni_StopId  := union_data(., Stops_Trainstation/uni_StopId, Stops_Metrostation/uni_StopId, Stops_Tramstation/uni_StopId);
+		attribute<string>   Name        := union_data(., Stops_Trainstation/Name, Stops_Metrostation/Name, Stops_Tramstation/Name);
+		attribute<string>   Label       := union_data(., Stops_Trainstation/Label, Stops_Metrostation/Label, Stops_Tramstation/Label);
+		attribute<uint32>   Stops_rel   := union_data(., Stops_Trainstation/Stops_rel, Stops_Metrostation/Stops_rel, Stops_Tramstation/Stops_rel);
+	}
+	
+	unit<uint32> Links := LoadFeeds/ScheduledLinks
+	{
+		attribute<rdc>                     geometry (arc)   := LoadFeeds/ScheduledLinks/geometry;
+		attribute<uint32>                  feedId           := const(0, LoadFeeds/ScheduledLinks, uint32);
+		attribute<uint32>                  OrgfromStop      := LoadFeeds/ScheduledLinks/fromStop;
+		attribute<uint32>                  OrgtoStop        := LoadFeeds/ScheduledLinks/toStop;
+		attribute<Time>                    depTime          := LoadFeeds/ScheduledLinks/depTime;
+		attribute<Time>                    arrTime          := LoadFeeds/ScheduledLinks/arrTime;
+		attribute<ModesList/List_selectie> Mode_rel         := LoadFeeds/ScheduledLinks/Mode_rel;
+		attribute<Stops>                   FromStop         := rlookup(uni_fStopId, Stops/uni_StopId);
+		attribute<Stops>                   ToStop           := rlookup(uni_tStopId, Stops/uni_StopId);
+		attribute<upoint>                  uni_fStopId      := point_xy(feedId, OrgfromStop, upoint);
+		attribute<upoint>                  uni_tStopId      := point_xy(feedId, OrgtoStop, upoint);
+		attribute<AvailableModes>          avMode_id        := rlookup(Mode_rel, AvailableModes/Values);
+		attribute<uint32>                  Trips_rel          := LoadFeeds/ScheduledLinks/Trips_rel;
+		attribute<Agencies>                Agency_rel       := LoadFeeds/ScheduledLinks/Agency_rel;
+
+		attribute<string>                  RouteName        := LoadFeeds/ScheduledLinks/RouteName;
+		attribute<string>                  RouteName_short  := LoadFeeds/ScheduledLinks/RouteName_short;
+	}
+	
+	unit<uint32> AvailableModes := unique(Links/Mode_rel)
+	{
+		attribute<string>  Name    := ModesList/List_selectie/Name[Values];
+		attribute<uint32>  NrLinks := pcount(Links/avMode_id);
+	}
+	
+}

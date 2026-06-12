@@ -1,0 +1,19 @@
+container Winkelsdagelijks 
+{
+	unit<uint32> okt2018
+	:	StorageName     = "%SourceDataDir%/LOCATUS/Winkels_dagelijkse_behoeften/2018_Oktober/Data.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Winkelsdagelijks_okt2018_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(UnitID);
+			attribute<uint32>               Nr_winkelsdagelijks     := const(1,.);
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}
+}

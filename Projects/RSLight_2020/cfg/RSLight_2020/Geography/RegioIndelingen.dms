@@ -1,0 +1,478 @@
+container RegioIndelingen
+{ 
+	container Impl
+	{
+		unit<uint32> Nl_src : nrofrows = 2
+		,	DialogData = "polygons"
+		,	DialogType = "Map"
+		{
+			attribute<rdc_meter>  polygons (poly)                := union_data(.,NL_BoundingBox/BoudingBox_minus_NL[rdc_meter], NL_BoundingBox/union_gemeente[rdc_meter]);
+			attribute<.>          per_grid        (rdc_100m)     := poly2grid(polygons, rdc_100m);
+			attribute<.>          per_domain_grid (/domain_grid) := poly2grid(polygons, /domain_grid);
+			attribute<bool>       IsNederland     (rdc_100m)     := per_grid == 1;
+			attribute<.>          Ontwikkeld      (rdc_100m)     := per_grid;
+			attribute<string>     name                           : ['BuitenlandZee', 'Nederland'];
+			attribute<.>          NL_src_rel                     := id(.);
+			
+			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		}
+	
+		unit<uint32> NL_BoundingBox : nrofrows = 1
+		{
+			parameter<ipoint>  union_gemeente    (poly)     := union_polygon(ipolygon(Gemeente/Gemeente2019/geometry));
+			parameter<ipoint>  BoudingBox_minus_NL (poly)   := union_polygon - union_gemeente;
+			
+			unit<uint32> OutsideNL : nrofrows = 1
+			{
+				attribute<rdc_meter> geometry (poly) := union_data(.,BoudingBox_minus_NL[rdc_meter]);
+			}
+		
+			parameter<meter> x_min  := 0[meter];
+			parameter<meter> x_max  := 280000[meter]; 
+			parameter<meter> y_min  := 300000[meter];
+			parameter<meter> y_max  := 625000[meter];
+			
+			parameter<rdc_meter> top_left     := point(y_max, x_min, rdc_meter);
+			parameter<rdc_meter> top_right    := point(y_max, x_max, rdc_meter);
+			parameter<rdc_meter> bottom_left  := point(y_min, x_min, rdc_meter);
+			parameter<rdc_meter> bottom_right := point(y_min, x_max, rdc_meter);
+			
+			unit<uint32>              point_set    : nrofrows = 5
+			{
+				attribute<rdc_meter>      point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+				attribute<NL_BoundingBox> sequence_rel := const(0, .);
+				attribute<.>              ordinal      := id(.);
+			}
+			
+			attribute<rdc_meter> polygon (poly)      := points2sequence(point_set/point, point_set/sequence_rel, point_set/ordinal);
+			parameter<ipoint>    union_polygon (poly) := union_polygon(ipolygon(polygon));
+		}
+	
+		unit<uint32> Read_Provincie_GML
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/Provincie_2019.gml"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter> geometry (poly);
+			attribute<string>    ProvincieNaam;
+			attribute<string>    label           := ProvincieNaam;
+			attribute<string>    name            := replace(Label, '-', '_');
+			attribute<string>    afko            : ['FR', 'NH', 'GE', 'DR', 'UT', 'LI', 'FL', 'ZE', 'NB', 'ZH', 'OV', 'GR'];
+		}
+		
+		unit<uint32> Make_Provincie := union_unit(impl/NL_BoundingBox/OutsideNL, Read_Provincie_GML)
+		, StorageName = "%RSLDataDir%/RegioIndelingen/provincie_2019.fss"
+		, DialogData  = "Polygons"
+		, DialogType  = "Map"
+		{
+			attribute<rdc_meter> Polygons (poly) := union_data(., impl/NL_BoundingBox/OutsideNL/geometry, Read_Provincie_GML/geometry);
+			attribute<String>    Label           := union_data(., const('Buitengebied', impl/NL_BoundingBox/OutsideNL), Read_Provincie_GML/Label);
+			attribute<string>    name            := union_data(., const('Buitengebied', impl/NL_BoundingBox/OutsideNL), Read_Provincie_GML/name);
+			attribute<string>    afko            := union_data(., const('', impl/NL_BoundingBox/OutsideNL), Read_Provincie_GML/afko);
+		}
+		
+		unit<uint32>  Read_Corop_SHP
+		: StorageName = "%RSLDataDir%/RegioIndelingen/COROP_2020.shp"
+		, StorageReadOnly = "True"
+		, StorageType = "gdal.vect"
+		, DialogData  = "Geometry_rd"
+		, DialogType  = "Map"
+		{
+			attribute<rdc_meter> Geometry    (poly);
+			attribute<rdc_meter> Geometry_rd (poly) := LatLongWgs842RD(Geometry, rdc_meter);
+			attribute<string>    label              := omschrijvi;
+			attribute<string>    name               := replace(omschrijvi, ' ', '_', '-', '_', '''', '', '/', '_', 'Zeeuws', 'Zeeuwsch','.','');
+			attribute<string>    numbered_name      := 'corop' + string(id(.));
+		}
+		
+		unit<uint32>  Make_Corop := Read_Corop_SHP
+		, StorageName = "%RSLDataDir%/RegioIndelingen/COROP_2020.fss"
+		, DialogData  = "Polygons"
+		, DialogType  = "Map"
+		{
+			attribute<rdc_meter> Polygons (poly) := Read_Corop_SHP/Geometry_rd;
+			
+			attribute<String>    Label           := Read_Corop_SHP/Label;
+			attribute<string>    name            := Read_Corop_SHP/name;
+			attribute<string>    numbered_name   := Read_Corop_SHP/numbered_name;
+		}
+		
+		unit<uint32>  Read_Randstad_SHP
+		: StorageName = "%RSLDataDir%/RegioIndelingen/Randstad.shp"
+		, StorageReadOnly = "True"
+		, StorageType = "gdal.vect"
+		, DialogData  = "Geometry_rd"
+		, DialogType  = "Map"
+		{
+			attribute<rdc_meter> Geometry    (poly);
+			attribute<int32>     NL_Randsta;
+		}
+		
+		unit<uint32>  Make_Randstad := Read_Randstad_SHP
+		, StorageName = "%RSLDataDir%/RegioIndelingen/Randstad.fss"
+		, DialogData  = "Polygons"
+		, DialogType  = "Map"
+		{
+			attribute<rdc_meter> Polygons (poly) := Read_Randstad_SHP/Geometry;
+			attribute<int32>     IsRandstad      := Read_Randstad_SHP/NL_Randsta;
+		}
+		
+		unit<uint32> GemMRA8
+		: StorageName = "%RSLDataDir%/RegioIndelingen/RegioindelingMRA.csv"
+		, StorageType = "gdal.vect"
+		, StorageReadOnly = "True"
+		{
+			attribute<string>   gem_name  := replace(gemeente, '/', '_', '-', '_', ' ', '_');
+			attribute<string>   MRA8_name := replace(regio, '/', '_', '-', '_', ' ', '_');
+			attribute<MRA8>     MRA8_rel  := rjoin(MRA8_name, MRA8/name, id(MRA8));
+			attribute<RegioIndelingen/gemeente/Gemeente2018>   gem_rel   := rlookup(gemeente, RegioIndelingen/gemeente/Gemeente2018/GEMNAAM);
+			
+			unit<uint32> MRA8 := unique(MRA8_name)
+			{
+				attribute<string>    name                := replace(values, '/', '_', '-', '_', ' ', '_');
+				attribute<ipoint>    geometry0 (polygon) : = bp_union_polygon(ipolygon(MakeMRA/geometry), MakeMRA/MRA8_rel);
+				attribute<rdc_meter> geometry (polygon)  : = geometry0[rdc_meter];
+			}
+		}
+	
+		unit<uint32> MakeMRA := select_with_org_rel(IsDefined(Gemeente/Gemeente2018/MRA_rel))
+		,	StorageName = "%RSLDataDir%/RegioIndelingen/MRA.fss"
+		,	DialogData = "geometry"
+		,	DialogType = "Map"
+		{
+			attribute<rdc_meter>    geometry (poly) := Gemeente/Gemeente2018/Polygons[org_rel];
+			attribute<GemMRA8/MRA8> MRA8_rel        := Gemeente/Gemeente2018/MRA8_rel[org_rel];
+			attribute<string>       Label           := Gemeente/Gemeente2018/MRA8_naam[org_rel];
+		}
+		
+		unit<uint32> Read_Gemeente2018_shp 
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/Gemeentegrenzen_2018_A1_PBL_RES.gdb"
+		,	StorageType     = "gdal.vect"
+		,	DialogData      = "Polygons"
+		,	DialogType      = "Map"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter>    Polygons (poly);
+			attribute<string>       GEMNAAM;
+			attribute<string>       RESNAAM;
+		}
+		
+		unit<uint32>  Make_Gemeente2018 := Read_Gemeente2018_shp
+		, StorageName = "%RSLDataDir%/RegioIndelingen/gem_2018.fss"
+		, DialogData  = "Polygons"
+		, DialogType  = "Map"
+		{
+			attribute<rdc_meter> Polygons (poly) := Read_Gemeente2018_shp/Polygons;
+			attribute<string>    GEMNAAM         := Read_Gemeente2018_shp/GEMNAAM;
+			attribute<string>    RESNAAM         := Read_Gemeente2018_shp/RESNAAM;
+		}
+		
+		unit<uint32> Read_NVM_shp
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/nvmafdelingen_2015.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter>       geometry (poly) ;
+		}
+		
+		unit<uint32>  Make_NVM := Read_NVM_shp
+		, StorageName = "%RSLDataDir%/RegioIndelingen/NVMregios.fss"
+		, DialogData  = "Polygons"
+		, DialogType  = "Map"
+		{
+			attribute<rdc_meter> geometry (poly) := Read_NVM_shp/geometry;
+			attribute<String>    Label           := Read_NVM_shp/afdeling;
+		}
+	}
+	
+	unit<uint32> NL := select_with_org_rel(id(impl/Nl_src) == 1)
+	,	DialogData = "polygons"
+	,	DialogType = "Map"
+	{
+		attribute<rdc_meter>  polygons    (poly)            := impl/Nl_src/polygons[org_rel];
+		attribute<.>          per_rdc_100m (rdc_100m)       := poly2grid(polygons, rdc_100m);
+		attribute<.>          per_domain_grid (domain_grid) := poly2grid(polygons, domain_grid);
+		attribute<bool>       IsNederland  (rdc_100m)       := per_rdc_100m == 0;
+		attribute<string>     name                          := impl/Nl_src/name[org_rel];
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> Provincie 
+	: StorageName = "%RSLDataDir%/RegioIndelingen/provincie_2019.fss"
+	, StorageReadOnly = "True"
+	, DialogData  = "Polygons"
+	, DialogType  = "Map"
+	{
+		attribute<rdc_meter>    Polygons (poly);
+		attribute<rdc_meter>    geometry (poly) := polygons;
+		attribute<string>       Label;
+		attribute<string>       name;
+		attribute<string>       afko;
+		
+		attribute<.>            per_rdc_100m       (rdc_100m)        := poly2grid(Polygons, rdc_100m);
+		attribute<.>            per_rdc_25m        (rdc_25m)         := poly2grid(Polygons, rdc_25m);
+		attribute<.>            Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+		attribute<.>            Per_Domain_grid    (/Domain_grid)    := poly2grid(Polygons, /Domain_grid);
+		attribute<impl/Nl_src>  NL_src_rel                           := const(1[impl/Nl_src], .);
+	
+		unit<uint32> Sub := select_with_org_rel(id(Provincie) > 0[Provincie])
+		{
+			attribute<string> name := ../name[org_rel];
+		}
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}
+	
+	unit<uint32>  Corop
+	: StorageName = "%RSLDataDir%/RegioIndelingen/corop_2020.fss"
+	, StorageReadOnly = "True"
+	, DialogData  = "Polygons"
+	, DialogType  = "Map"
+	{
+		attribute<rdc_meter> Polygons (poly);
+		attribute<.>         id                      := id(.); //laten staan tbv discrete_alloc vereiste
+		attribute<String>    Label;
+		attribute<string>    name;
+		attribute<string>    numbered_name;
+		
+		attribute<.>         per_rdc_100m (rdc_100m) := poly2grid(Polygons, rdc_100m);
+		attribute<.>         per_rdc_25m  (rdc_25m)  := poly2grid(Polygons, rdc_25m);
+		attribute<.>         per_rdc_10m  (rdc_10m)  := poly2grid(Polygons, rdc_10m);
+	}
+	
+	unit<uint32>  Randstad
+	: StorageName = "%RSLDataDir%/RegioIndelingen/Randstad.fss"
+	, StorageReadOnly = "True"
+	, DialogData  = "Polygons"
+	, DialogType  = "Map"
+	{
+		attribute<rdc_meter> Polygons (poly);
+		attribute<int32>     IsRandstad;
+		
+		attribute<.>         per_rdc_100m (rdc_100m) := poly2grid(Polygons, rdc_100m);
+		attribute<.>         per_rdc_25m  (rdc_25m)  := poly2grid(Polygons, rdc_25m);
+		attribute<.>         per_rdc_10m  (rdc_10m)  := poly2grid(Polygons, rdc_10m);
+	}
+	
+	unit<uint32>  NVM 
+	: StorageName = "%RSLDataDir%/RegioIndelingen/NVMregios.fss"
+	, StorageReadOnly = "True"
+	, DialogData  = "geometry"
+	, DialogType  = "Map"
+	{
+		attribute<rdc_meter> geometry (poly);
+		attribute<String>    Label;
+		attribute<String>    name  := replace(Label, '/', '_', '-', '_', ' ', '_');
+		attribute<MRA1>      MRA1_rel := point_in_polygon(centroid_or_mid(geometry), MRA1/geometry);
+		attribute<.>         per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+	}
+	
+	unit<uint32> RESregio := unique(Gemeente/Gemeente2018/RESnaam)
+	, DialogData  = "geometry"
+	, DialogType  = "Map"
+	{
+		attribute<string>    label := values;
+		attribute<rdc_meter> geometry (polygon) := bp_union_polygon(ipolygon(Gemeente/Gemeente2018/Polygons),Gemeente/Gemeente2018/RESregio_rel)[rdc_meter];
+	}
+	
+	container Gemeente
+	{
+		unit<uint32> Gemeente2018 
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/Gemeentegrenzen_2018_A1_PBL_RES.gdb"
+		,	StorageType     = "gdal.vect"
+		,	DialogData      = "Polygons"
+		,	DialogType      = "Map"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter>    Polygons (poly);
+			attribute<string>       GEMNAAM;
+			attribute<rdc_meter>    geometry (poly)            := Polygons;
+			attribute<RESregio>     RESregio_rel               := rlookup(RESnaam, RESregio/values);
+			attribute<.>            per_domain_grid (rdc_100m) := poly2grid(Polygons, rdc_100m);
+			attribute<.>            per_rdc_100m (rdc_100m)    := poly2grid(Polygons, rdc_100m);
+			attribute<.>            per_rdc_25m   (rdc_25m)    := poly2grid(polygons, rdc_25m);
+			attribute<string>       label                      := GEMNAAM, DialogType = "LabelText";
+			attribute<Impl/GemMRA8> MRA_rel                    := rlookup(GEMNAAM, Impl/GemMRA8/gemeente);
+			attribute<MRA1>         MRA1_rel                   := IsDefined(MRA_rel) ? 1[MRA1] : (0/0)[MRA1];
+			attribute<Impl/GemMRA8> MRA8_rel                   := Impl/GemMRA8/MRA8_rel[MRA_rel];
+			attribute<string>       MRA8_naam                  := Impl/GemMRA8/MRA8_name[MRA_rel];
+		}
+		
+		unit<uint32> Gemeente2019
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/gem_2019.fss"
+		,	StorageReadOnly = "True"
+		,	DialogData      = "geometry"
+		,	DialogType      = "Map"
+		{
+			attribute<rdc_meter>    geometry (poly);
+			attribute<rdc_meter>    polygons (poly) := geometry;
+			attribute<.>            per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+			attribute<.>            per_rdc_25m   (rdc_25m) := poly2grid(geometry, rdc_25m);
+			attribute<string>       code;
+			attribute<string>       label                   : DialogType = "LabelText";
+			attribute<string>       GM_CODE                 := 'GM' + code;
+			attribute<string>       GEMNAAM                 := replace(label, '/', '_', '-', '_', ' ', '_','(','',')','','\''','','â','a','ú','u',',','');
+			attribute<string>       name                    := GEMNAAM;
+			
+			attribute<MRA8> MRA8_rel := rjoin(GEMNAAM, MRA8/name, id(MRA8));
+		}
+	}
+
+	container wijk
+	{
+		unit<uint32> src_2015
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/wijk_2015.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter>    geometry (polygon);
+			attribute<string>       label               := WK_NAAM ;
+			attribute<string>       Gemeente_wijk       := GM_NAAM + "_" + WK_NAAM;
+			attribute<.>            per_grid (rdc_100m) := poly2grid(geometry, rdc_100m);
+			attribute<.>            per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+		}
+		unit<uint32> src_2019
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/wijk_2019.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter>    geometry (polygon);
+			attribute<string>       label               := WK_NAAM ;
+			attribute<.>            per_grid (rdc_100m) := poly2grid(geometry, rdc_100m);
+			attribute<.>            per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+		}
+	}
+	
+	container buurt
+	{
+		unit<uint32> src_2015
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/buurt_2015.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter>    geometry (polygon);
+			attribute<string>       label               := BU_NAAM ;
+			attribute<.>            per_grid (rdc_100m) := poly2grid(geometry, rdc_100m);
+			attribute<.>            per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+		}
+		unit<uint32> src_2019
+		:	StorageName     = "%RSLDataDir%/RegioIndelingen/buurt_2019.shp"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		{
+			attribute<rdc_meter>    geometry (polygon);
+			attribute<string>       label               := BU_NAAM ;
+			attribute<.>            per_grid (rdc_100m) := poly2grid(geometry, rdc_100m);
+			attribute<.>            per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+		}
+	}
+	
+	unit<uint32> LMSSubzone 
+	:	StorageName     = "%RSLDataDir%/RegioIndelingen/LMS_2011_versie_2012_12_13.shp"
+	,	StorageType     = "gdal.vect"
+	,	DialogData      = "Polygons"
+	,	DialogType      = "Map"
+	,	SyncMode        = "none"
+	,	StorageReadOnly = "True"
+	{
+		attribute<rdc_meter>    Polygons(poly) : Label       = "LMS Subzones 1406";
+		attribute<rdc_meter>    geometry (poly) := polygons;
+		attribute<uint32>       code := ZONE_ID;
+		attribute<string>       name := RegioIndelingen/Gemeente/Gemeente2019/Label[Relaties/Gemeente2019] + '_' + string(ZONE_ID);
+		attribute<uint32>       ZONE_ID;
+		attribute<uint32>       GEM2011;
+		attribute<string>       GEM_NAAM;
+		attribute<uint32>       LMSSUB;
+		attribute<uint32>       LMSSUB2004; // = LMSSubzone1379 zo lijkt het. Checken!
+		attribute<uint8>        LAND;
+		attribute<uint32>       gem11nr: = GEM2011;
+ 		// attribute<Gemeente2011> Gem2011_rel := rlookup(gem11nr, geography/RegioIndelingen/Gemeente2011/gemnr);
+		attribute<.>            LMSSubzone_rel := id(.);
+		attribute<bool> IsIjburg := id(.) == 620[.] || id(.) == 621[.];
+		attribute<Bool>         InNl := LAND == 1[uint8];
+		attribute<uint32>       LmsSubF := LmsSub;
+		attribute<.> Per_rdc_100m (rdc_100m) := poly2grid(Polygons, rdc_100m);
+		attribute<.> Per_rdc_25m (rdc_25m) := poly2grid(Polygons, rdc_25m);
+		attribute<.> per_domain_grid (rdc_100m):= Per_rdc_100m;
+		attribute<string> Label := name, DialogType = "LabelText";
+
+		container Relaties
+		{
+			attribute<..> LMSSubzone (..) := id(..);
+			// attribute<RegioIndelingen/Gemeente2012> Gemeente2012 (..) := point_in_polygon(centroid(../polygons), RegioIndelingen/Gemeente2012/geometry);
+			// attribute<RegioIndelingen/Gemeente2015> Gemeente2015 (..) := point_in_polygon(centroid(../polygons), RegioIndelingen/Gemeente2015/geometry);
+			// attribute<RegioIndelingen/Gemeente2017> Gemeente2017 (..) := point_in_polygon(centroid(../polygons), RegioIndelingen/Gemeente2017/geometry);
+			attribute<RegioIndelingen/Gemeente/Gemeente2018> Gemeente2018 (..) := point_in_polygon(centroid_or_mid(../polygons), RegioIndelingen/Gemeente/Gemeente2018/polygons);
+			attribute<RegioIndelingen/Gemeente/Gemeente2019> Gemeente2019 (..) := point_in_polygon(centroid_or_mid(../polygons), RegioIndelingen/Gemeente/Gemeente2019/polygons);
+			attribute<RegioIndelingen/MRA8>                 MRA8 (..) := point_in_polygon(centroid_or_mid(../polygons), RegioIndelingen/MRA8/geometry);
+			attribute<RegioIndelingen/MRA8>                 AllocRegio_rel (..) := point_in_polygon(centroid_or_mid(../polygons), RegioIndelingen/MRA8/geometry);
+			attribute<RegioIndelingen/MRA1>                 MRA1 (..) := point_in_polygon(centroid_or_mid(../polygons), RegioIndelingen/MRA1/geometry);
+			// attribute<Geography/RegioIndelingen/NLDeel>    NLDeel    (..): Expr = "rjoin(gem11nr,Gemeente2011/gemnr,value(Gemeente2011/nldeelnr,Geography/RegioIndelingen/NLDeel))";
+			// attribute<Geography/RegioIndelingen/Nl>        Nl        (..): Expr = "rjoin(gem11nr,Gemeente2011/gemnr,value(Gemeente2011/Nlnr,Geography/RegioIndelingen/Nl))";
+			// attribute<Geography/RegioIndelingen/Provincie> Provincie (..): Expr = "rjoin(gem11nr,Gemeente2011/gemnr,value(Gemeente2011/prvnr,Geography/RegioIndelingen/Provincie))";
+			// attribute<Geography/RegioIndelingen/Socrates>  Socrates  (..): Expr = "rjoin(gem11nr,Gemeente2011/gemnr,value(Gemeente2011/socrnr,Geography/RegioIndelingen/Socrates))";
+			// attribute<Geography/RegioIndelingen/Corop>     Corop     (..): Expr = "rjoin(gem11nr,Gemeente2011/gemnr,value(Gemeente2011/cornr,Geography/RegioIndelingen/Corop))";
+			// attribute<Geography/RegioIndelingen/NVM>       NVM       (..): Expr = "rjoin(gem11nr,Gemeente2011/gemnr,value(Gemeente2011/nvmregio,Geography/RegioIndelingen/NVM))";
+		}
+	}
+	
+	unit<uint32> Grootstedelijke_agglomeraties 
+	:	StorageName     = "%RSLDataDir%/RegioIndelingen/CBS_grootstedelijke_agglomeratie_2012.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		attribute<rdc_meter>  geometry  (polygon) ;
+		attribute<string>     label := statnaam ;
+		attribute<.>          per_rdc_100m  (rdc_100m) := poly2grid(geometry, rdc_100m);
+	}
+	
+	unit<uint32> Bevolkingskern_2011
+	:	StorageName     = "%RSLDataDir%/RegioIndelingen/bevolkingskern_2011.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		attribute<rdc_meter> geometry (polygon);
+		attribute<float64> BEV11TOT;
+		attribute<bool>   isMeerdan5000inw  := BEV11TOT >= 5000[float64];
+		
+		attribute<.>    Per_Srcdomain_grid (SrcDomain_grid) := poly2grid(geometry, SrcDomain_grid);
+		
+		attribute<.>    Per_domain_grid (domain_grid) := poly2grid(geometry, domain_grid);
+		attribute<bool> Is_bbg          (domain_grid) := IsDefined(Per_domain_grid);
+	}
+	
+	
+	unit<uint32> MRA8
+	:	StorageName = "%RSLDataDir%/RegioIndelingen/MRA.fss"
+	,	StorageReadOnly = "true"
+	,	DialogData = "geometry"
+	,	DialogType = "Map"
+	{
+		attribute<rdc_meter>   geometry (poly);
+		attribute<string>      Label                   : DialogType = "LabelText";
+		attribute<string>      name                    := label;
+		attribute<MRA1>        MRA1_rel                := const(0[MRA1], .);
+		attribute<.>           per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+		attribute<.>           per_domain (rdc_100m)   := poly2grid(geometry, rdc_100m);
+		attribute<.>           per_rdc_25m (rdc_25m)   := poly2grid(geometry, rdc_25m);
+	}
+	
+	unit<uint32> MRA1: NrOfRows = 1
+	,	DialogData = "geometry"
+	,	DialogType = "Map"
+	{
+		attribute<rdc_meter> geometry (polygon)      := bp_union_polygon(ipolygon(MRA8/geometry), MRA8/MRA1_rel)[rdc_meter];
+		attribute<string>    name                    : ['MRA'];
+		attribute<string>    Label                   := name, DialogType = "LabelText";
+		attribute<.>         MRA1_rel                := const(0[MRA1], .);
+		attribute<.>         per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
+		attribute<.>         per_rdc_25m (rdc_25m)   := poly2grid(geometry, rdc_25m);
+	}
+	
+	attribute<bool> begrenzing_bebouwd_gebied (domain_grid)
+	:	Label       = "Grens Bebouwd Gebied 2003, orginele versie tbv monitoringsdoeleinden"
+	,	Source      = "VROM dataportaal 111011, Y:\data\PBLbase\Data\BegrenzingBebouwdGebied.gdb\BegrBG_2003_org_VROM"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/overig/begrenzing_bebouwd_gebied_2003_vrom.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/overig/begrenzing_bebouwd_gebied_2003_vrom.tif";
+}

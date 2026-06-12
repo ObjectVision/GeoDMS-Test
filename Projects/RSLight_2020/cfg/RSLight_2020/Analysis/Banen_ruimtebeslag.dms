@@ -1,0 +1,161 @@
+container Banen_Ruimtebeslag : FreeData = "False"
+{
+	unit<uint32> Pand := /SourceData/Vastgoed/BAG/Panden/pand/pand_met_vbo_alle_functies;
+	
+	container SumBuildingFootprint_perVBOFunctie :=
+		for_each_nedv(
+			Classifications/vastgoed/vbo_gebruiksdoel/name
+			,'sum(Pand/Fractie_VBOOpp_per_vbo_functie/'+Classifications/vastgoed/vbo_gebruiksdoel/name+' * Pand/footprint, Pand/SrcRegio_rel) * 1[units/pandunit]'
+			, SrcRegio
+			, Meter2
+		), StoreData = "true";
+		
+	container SumBuildingFootprint_perVBOFunctie_grid :=
+		for_each_nedv(
+			Classifications/vastgoed/vbo_gebruiksdoel/name
+			,'sum(Pand/Fractie_VBOOpp_per_vbo_functie/'+Classifications/vastgoed/vbo_gebruiksdoel/name+' * Pand/footprint, Pand/NL_grid_domain_rel) * 1[units/pandunit]'
+			, domain_grid
+			, Meter2
+		), StoreData = "true";
+		
+	container SumVBOFunctie_grid :=
+		for_each_nedv(
+			Classifications/vastgoed/vbo_gebruiksdoel/name
+			,'sum(SourceData/Vastgoed/BAG/VBOs/src/gebruiksdoelen/'+Classifications/vastgoed/vbo_gebruiksdoel/name+' ? 1[verblijfsobject] : 0[verblijfsobject], SourceData/Vastgoed/BAG/VBOs/src/NL_grid_domain_rel) / 1[ha]'
+			, domain_grid
+			, vbo_ha
+		);
+		
+		
+	// attribute<Classifications/IBIS> IBIS (SrcDomain_grid) := /SourceData/Grondgebruik/IBIS/Y2018_edit;
+	
+	container Claims 
+	{
+		container InBasisjaar :=
+			for_each_nedv(
+				classifications/Actor/TXLJobs7/name
+				, 'SourceData/Claims/TXL/AggrSrc/WLO_hoog/Y2015/Banen/Results/'+classifications/Actor/TXLJobs7/name
+				, SrcRegio
+				, nrJobs
+			);
+		container Y2050 :=
+			for_each_nedv(
+				classifications/Actor/TXLJobs7/name
+				, 'SourceData/Claims/TXL/AggrSrc/WLO_hoog/Y2050/Banen/Results/'+classifications/Actor/TXLJobs7/name
+				, SrcRegio
+				, nrJobs
+			);
+			
+		container InBasisjaar_grid :=
+			for_each_nedv(
+				classifications/Actor/TXLJobs7/name
+				, 'InBasisjaar/'+classifications/Actor/TXLJobs7/name+'[SrcRegio/per_domain_grid]'
+				, domain_grid
+				, nrJobs
+			);
+		container Y2050_grid :=
+			for_each_nedv(
+				classifications/Actor/TXLJobs7/name
+				, 'Y2050/'+classifications/Actor/TXLJobs7/name+'[SrcRegio/per_domain_grid]'
+				, domain_grid
+				, nrJobs
+			);
+	}
+	
+	container Area_BAG_perTXL7
+	{ 
+		attribute<m2footprint> Landbouw                (SrcRegio) := const(0[m2footprint], SrcRegio);
+		attribute<m2footprint> Nijverheid              (SrcRegio) := SumBuildingFootprint_perVBOFunctie/industrie * 1[m2footprint / Meter2];
+		attribute<m2footprint> Logistiek               (SrcRegio) := const(0[m2footprint], SrcRegio);
+		attribute<m2footprint> Zak_dienstverlening     (SrcRegio) := SumBuildingFootprint_perVBOFunctie/kantoor * 1[m2footprint / Meter2];
+		attribute<m2footprint> Overheid_kw_diensten    (SrcRegio) := SumBuildingFootprint_perVBOFunctie/onderwijs * 1[m2footprint / Meter2] + SumBuildingFootprint_perVBOFunctie/gezondheidszorg * 1[m2footprint / Meter2];
+		attribute<m2footprint> ov_consumentendiensten  (SrcRegio) := SumBuildingFootprint_perVBOFunctie/logies * 1[m2footprint / Meter2];
+		attribute<m2footprint> detailhandel            (SrcRegio) := SumBuildingFootprint_perVBOFunctie/winkel * 1[m2footprint / Meter2];
+	}
+	
+	container Area_BAG_perTXL7_grid
+	{ 
+		attribute<m2footprint> Landbouw                (domain_grid) := const(0[m2footprint], domain_grid);
+		attribute<m2footprint> Nijverheid              (domain_grid) := Area_BAG_perTXL7/Nijverheid[SrcRegio/per_domain_grid];
+		attribute<m2footprint> Logistiek               (domain_grid) := const(0[m2footprint], domain_grid);
+		attribute<m2footprint> Zak_dienstverlening     (domain_grid) := Area_BAG_perTXL7/Zak_dienstverlening[SrcRegio/per_domain_grid];
+		attribute<m2footprint> Overheid_kw_diensten    (domain_grid) := Area_BAG_perTXL7/Overheid_kw_diensten[SrcRegio/per_domain_grid];
+		attribute<m2footprint> ov_consumentendiensten  (domain_grid) := Area_BAG_perTXL7/ov_consumentendiensten[SrcRegio/per_domain_grid];
+		attribute<m2footprint> detailhandel            (domain_grid) := Area_BAG_perTXL7/detailhandel[SrcRegio/per_domain_grid];
+	}
+	
+	container Meter2Basisjaar_grid
+	{
+		attribute<m2footprint> Winkel    (domain_grid) := (SumBuildingFootprint_perVBOFunctie_grid/winkel * 1[m2footprint / Meter2]);
+		attribute<m2footprint> Kantoor   (domain_grid) := (SumBuildingFootprint_perVBOFunctie_grid/kantoor * 1[m2footprint / Meter2]);
+		attribute<m2footprint> Industrie (domain_grid) := (SumBuildingFootprint_perVBOFunctie_grid/industrie * 1[m2footprint / Meter2]);
+	}
+	
+	container Ruimtebeslag_InBasisjaar_perTXL7 :=
+		for_each_nedv(
+			classifications/Actor/TXLJobs7/name
+			, 'Area_BAG_perTXL7/'+classifications/Actor/TXLJobs7/name+' / Claims/InBasisjaar/'+classifications/Actor/TXLJobs7/name+'[Job]'
+			, SrcRegio
+			, m2footprint_Job
+		);
+		
+	container Ruimtebeslag_InBasisjaar_perTXL7_grid :=
+		for_each_nedv(
+			classifications/Actor/TXLJobs7/name
+			, 'Area_BAG_perTXL7_grid/'+classifications/Actor/TXLJobs7/name+' / Claims/InBasisjaar_grid/'+classifications/Actor/TXLJobs7/name+'[Job]'
+			, domain_grid
+			, m2footprint_Job
+		);
+		
+	container Ruimtebeslag_InBasisjaar_perAllocSector 
+	{
+		attribute<m2footprint_Job> Winkel    (SrcRegio) := Ruimtebeslag_InBasisjaar_perTXL7/detailhandel;
+		attribute<m2footprint_Job> Kantoor   (SrcRegio) := Ruimtebeslag_InBasisjaar_perTXL7/Zak_dienstverlening;
+		attribute<m2footprint_Job> Industrie (SrcRegio) := Ruimtebeslag_InBasisjaar_perTXL7/Nijverheid;
+	}
+	container Ruimtebeslag_InBasisjaar_perAllocSector_grid
+	{
+		attribute<m2footprint_Job> Winkel    (domain_grid) := Ruimtebeslag_InBasisjaar_perTXL7_grid/detailhandel;
+		attribute<m2footprint_Job> Kantoor   (domain_grid) := Ruimtebeslag_InBasisjaar_perTXL7_grid/Zak_dienstverlening;
+		attribute<m2footprint_Job> Industrie (domain_grid) := Ruimtebeslag_InBasisjaar_perTXL7_grid/Nijverheid;
+	}
+		
+	container Ruimtevraag_Y2050_perTXL7 :=
+		for_each_nedv(
+			classifications/Actor/TXLJobs7/name
+			, 'Claims/Y2050/'+classifications/Actor/TXLJobs7/name+'[Job] * Ruimtebeslag_InBasisjaar_perTXL7/'+classifications/Actor/TXLJobs7/name
+			, SrcRegio
+			, m2footprint
+		);
+		
+	container Ruimtevraag_Y2050_perTXL7_grid :=
+		for_each_nedv(
+			classifications/Actor/TXLJobs7/name
+			, 'Claims/Y2050_grid/'+classifications/Actor/TXLJobs7/name+'[Job] * Ruimtebeslag_InBasisjaar_perTXL7_grid/'+classifications/Actor/TXLJobs7/name
+			, domain_grid
+			, m2footprint
+		);
+	
+	container Ruimtevraag_Delta2050_perTXL7 :=
+		for_each_nedv(
+			classifications/Actor/TXLJobs7/name
+			, 'Ruimtevraag_Y2050_perTXL7/'+classifications/Actor/TXLJobs7/name+' - Area_BAG_perTXL7/'+classifications/Actor/TXLJobs7/name
+			, SrcRegio
+			, m2footprint
+		);
+		
+	container Ruimtevraag_Delta2050_perTXL7_grid :=
+		for_each_nedv(
+			classifications/Actor/TXLJobs7/name
+			, 'Ruimtevraag_Y2050_perTXL7_grid/'+classifications/Actor/TXLJobs7/name+' - Area_BAG_perTXL7_grid/'+classifications/Actor/TXLJobs7/name
+			, domain_grid
+			, m2footprint
+		);
+		
+	container ClaimsForAlloc
+	{
+		attribute<Ha> Winkel    (SrcRegio) := Ruimtevraag_Delta2050_perTXL7/Detailhandel / Classifications/Actor/AllocSector/Density[Classifications/Actor/AllocSector/V/winkel];
+		attribute<Ha> Kantoor   (SrcRegio) := Ruimtevraag_Delta2050_perTXL7/Zak_dienstverlening / Classifications/Actor/AllocSector/Density[Classifications/Actor/AllocSector/V/kantoor];
+		attribute<Ha> Industrie (SrcRegio) := Ruimtevraag_Delta2050_perTXL7/Nijverheid / Classifications/Actor/AllocSector/Density[Classifications/Actor/AllocSector/V/industrie];
+	}
+}

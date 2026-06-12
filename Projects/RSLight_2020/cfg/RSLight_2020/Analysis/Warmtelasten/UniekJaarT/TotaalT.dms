@@ -1,0 +1,33 @@
+Template TotaalT
+{
+	//
+	parameter<string> Woningtype_name;
+	unit<uint32> UnitSrc;
+	//
+	parameter<string> UnitSrcStr := 'PerWoningtype/'+Woningtype_name;
+	
+	unit<uint32> DomainUnit := UnitSrc
+	{
+		attribute<uint32>             src_tabel_rel := rlookup(id, src_tabel/id);
+		
+		attribute<Classifications/Vastgoed/ELabelK> E_label := src_tabel/Elabel[src_tabel_rel];
+		
+		attribute<Eur>                InvestGebouw              := MakeDefined(value(src_tabel/Invest_Gebouw[src_tabel_rel], Eur), 0[Eur]);
+		attribute<Eur>                AansluitBijdrageGas       := value(src_tabel/AansluitBijdrage_Gas[src_tabel_rel], Eur);
+		attribute<Eur>                AansluitBijdrageElek      := value(src_tabel/AansluitBijdrage_Elek[src_tabel_rel], Eur);
+		attribute<Eur>                AansluitBijdrageWarmte    := value(src_tabel/AansluitBijdrage_Warmte[src_tabel_rel], Eur);
+		attribute<Eur>                TotaalNietJaarlijks       := add(InvestGebouw, AansluitBijdrageGas, AansluitBijdrageElek, AansluitBijdrageWarmte);
+		// > aanname: het gaat om 1 jan van betreffend zichtjaar
+		// > in zn geheel toedelen aan één uniekjaar binnen zichtjaar: het laatste uniekJaar
+		
+		attribute<Eur_yr>             Eindgebruik_exGas         := value(src_tabel/Eindgebruik_ex_Gas[src_tabel_rel], Eur_yr);
+		attribute<Eur_yr>             Eindgebruik_exElek        := value(src_tabel/Eindgebruik_ex_Elek[src_tabel_rel], Eur_yr);
+		attribute<Eur_yr>             Eindgebruik_exWarmte      := value(src_tabel/Eindgebruik_ex_Warmte[src_tabel_rel], Eur_yr);
+		attribute<Eur_yr>             VastrechtGas              := value(src_tabel/Vastrecht_Gas[src_tabel_rel], Eur_yr);
+		attribute<Eur_yr>             VastrechtElek             := value(src_tabel/Vastrecht_Elek[src_tabel_rel], Eur_yr);
+		attribute<Eur_yr>             VastrechtWarmte           := value(src_tabel/Vastrecht_Warmte[src_tabel_rel], Eur_yr);
+		
+		attribute<Eur>                TotaalJaarlijks           := (Eindgebruik_exGas + Eindgebruik_exElek + Eindgebruik_exWarmte + VastrechtGas + VastrechtElek + VastrechtWarmte) * 1[jaar];
+		attribute<Eur>                TotaalStYrPrijzen         := value((TotaalNietJaarlijks + TotaalJaarlijks) * DiscontoFactor[float32], Eur);
+	}
+}

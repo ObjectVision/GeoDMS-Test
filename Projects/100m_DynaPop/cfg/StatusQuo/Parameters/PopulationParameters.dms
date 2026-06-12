@@ -1,0 +1,74 @@
+Container PopulationParameters
+{	
+	unit<uint16> 		PopParamZones: expr = "Meta/Run";
+	
+	container ExpressionSets: expr = "for_each_ne(Meta/Run/Name, 'Collect_All_Expressions('+ quote(Meta/Run/Name)+')')";
+	
+	container Population_Pressure: expr = "Templ/getPopulationParams(Meta/Run, uint8(0))"
+	{
+		unit<uint32> FactorReferences: expr = "TableChopper/Field";
+	
+		container ParameterSet: expr = "for_each_nedv(FactorReferences/FactorName, 'value(TableChopper/Data/'+ TableChopper/Field/FactorName +', float32)[TableChopper/ZoneId]',PopParamZones,float32)"
+		{	
+			attribute<float32> 				Constant (PopParamZones): expr = "TableChopper/Constant"; 
+			attribute<PopParamZones>	ZoneId	 (PopParamZones): expr = "id(PopParamZones)";
+		}
+		Container genExpressions: expr = "for_each_ne(Meta/Run/Name, 'Templ/arrangePopulationParams(' + string(id(Meta/Run)) + ', ParameterSet)' )";
+	}
+	container Population_Def_NotUrban: expr = "Templ/getPopulationParams(Meta/Run, uint8(1))"
+	{	
+		unit<uint32> FactorReferences: expr = "TableChopper/Field";
+	
+		container ParameterSet: expr = "for_each_nedv(FactorReferences/FactorName, 'value(TableChopper/Data/'+ TableChopper/Field/FactorName +', float32)[TableChopper/ZoneId]',PopParamZones,float32)"
+		{	
+			attribute<float32> 				Constant (PopParamZones): expr = "TableChopper/Constant"; 
+			attribute<PopParamZones>	ZoneId	 (PopParamZones): expr = "id(PopParamZones)";
+		}
+		
+		Container genExpressions: expr = "for_each_ne(Meta/Run/Name, 'Templ/arrangePopulationParams(' + string(id(Meta/Run)) + ', ParameterSet)' )";
+	}
+	container Population_Def_IsUrban_central: expr = "Templ/getPopulationParams(Meta/Run, uint8(2))"
+	{
+		unit<uint32> FactorReferences: expr = "TableChopper/Field";
+	
+		container ParameterSet: expr = "for_each_nedv(FactorReferences/FactorName, 'value(TableChopper/Data/'+ TableChopper/Field/FactorName +', float32)[TableChopper/ZoneId]',PopParamZones,float32)"
+		{	
+			attribute<float32> 				Constant (PopParamZones): expr = "TableChopper/Constant"; 
+			attribute<PopParamZones>	ZoneId	 (PopParamZones): expr = "id(PopParamZones)";
+		}
+		
+		Container genExpressions: expr = "for_each_ne(Meta/Run/Name, 'Templ/arrangePopulationParams(' + string(id(Meta/Run)) + ', ParameterSet)' )";
+	}
+	container Population_Def_IsUrban_remote: expr = "Templ/getPopulationParams(Meta/Run, uint8(3))"
+	{
+		unit<uint32> FactorReferences: expr = "TableChopper/Field";
+	
+		container ParameterSet: expr = "for_each_nedv(FactorReferences/FactorName, 'value(TableChopper/Data/'+ TableChopper/Field/FactorName +', float32)[TableChopper/ZoneId]',PopParamZones,float32)"
+		{	
+			attribute<float32> 				Constant (PopParamZones): expr = "TableChopper/Constant"; 
+			attribute<PopParamZones>	ZoneId	 (PopParamZones): expr = "id(PopParamZones)";
+		}
+		
+		Container genExpressions: expr = "for_each_ne(Meta/Run/Name, 'Templ/arrangePopulationParams(' + string(id(Meta/Run)) + ', ParameterSet)' )";
+	}
+	container Collect_All_Expressions: IsTemplate = "True"
+	{
+		Parameter<string> ZoneName;
+		
+		
+		parameter<string> Population_Pressure_expr: 			expr = "= 'Population_Pressure/genExpressions/'+ ZoneName +'/EvalSuitExpr'";
+		parameter<string> Population_Def_expr:					expr = "'ModelType/IsUrban[ResultingState/landuse] ? ((PrevState/dFactors/central * '+ Population_Def_IsUrban_central_expr + ') + (float32(1) - PrevState/dFactors/central * '+ Population_Def_IsUrban_remote_expr +')) : (' + Population_Def_NotUrban_expr +')'";
+		parameter<string> Population_Def_NotUrban_expr: 		expr = "= 'Population_Def_NotUrban/genExpressions/'+ ZoneName +'/EvalSuitExpr'";
+		parameter<string> Population_Def_IsUrban_central_expr: 	expr = "= 'Population_Def_IsUrban_central/genExpressions/'+ ZoneName +'/EvalSuitExpr'";
+		parameter<string> Population_Def_IsUrban_remote_expr: 	expr = "= 'Population_Def_IsUrban_remote/genExpressions/'+ ZoneName +'/EvalSuitExpr'";
+	}
+	
+	//attribute<bool>		k_perNuts2 				(PopParamZones): expr = "const(false, PopParamZones, bool)"; //PopParamZones/name <> 'Netherlands' && PopParamZones/name <> 'Sweden' && PopParamZones/name <> 'BelgLux' && PopParamZones/name <> 'Kroatia' && PopParamZones/name <> 'Spain' && PopParamZones/name <> 'Romania'  && PopParamZones/name <> 'Bulgaria' && PopParamZones/name <> 'Greece' && PopParamZones/name <> 'Portugal'"; // && PopParamZones/name <> 'Czech_republic'";
+		
+	
+	
+	
+	
+
+	
+}

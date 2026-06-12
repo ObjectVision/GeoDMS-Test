@@ -1,0 +1,338 @@
+container Vastgoed : using = "Units"
+{
+	unit<uint8> HuurKoop : nrofrows = 2
+	{
+		attribute<string> name: ['Koop', 'Huur'];
+		attribute<string> label := name, DialogType = "LabelText";
+	}
+	
+	unit<uint8> vbo_gebruiksdoel: nrofrows = 11, using = "Actor"
+	{
+		attribute<uint8> ID := ID(.);
+		attribute<string> label:
+		[
+			'bijeenkomstfunctie','celfunctie','gezondheidszorgfunctie','industriefunctie','kantoorfunctie','logiesfunctie'
+			,'onderwijsfunctie','overige gebruiksfunctie','sportfunctie','winkelfunctie','woonfunctie'
+		];
+		attribute<string> name := replace(replace(label,' ','_'), 'functie','');
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",[rgb(255,255,255), rgb(  0,129,  0),rgb(  0,  0,255),rgb(255,220,  0),rgb(255,  0,  0)];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		
+		attribute<TXLJobs9> TXLJobs9_rel := union_data(., 0[TXLJobs9], 0[TXLJobs9], 8[TXLJobs9], 2[TXLJobs9], 4[TXLJobs9], 6[TXLJobs9], 5[TXLJobs9], 0[TXLJobs9], 0[TXLJobs9], 7[TXLJobs9], 0[TXLJobs9]);
+	}
+	
+	unit<uint8> WPSrc: nrofrows = 6
+	{
+		attribute<string>             label              :  ['geen woonpand','vrijstaand','twee onder 1 kap','hoekwoning','tussenwoning','appartement'], DialogType = "LabelText";
+		attribute<string>             name               := replace(label, ' ', '_');
+		attribute<WP>                 WP_rel             :  [0,1,2,3,3,4];
+		attribute<WP3>                WP3_rel            :  [0,1,1,1,1,2];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> WP: nrofrows = 5
+	{
+		attribute<uint8>             id                  := id(.);
+		attribute<string>            name_nl             :  ['geen woonpand','vrijstaand','twee onder 1 kap','rijtjeswoning','appartement'];
+		attribute<string>            label               :  ['no_house','detached','semi-detached','terraced','apartment'], DialogType = "LabelText";
+		attribute<string>            name                := replace(name_nl, ' ', '_');
+		attribute<uint32>            BrushColor          :  [rgb(255,255,255), rgb(150, 0, 0),rgb(118, 159, 255),rgb(255, 180, 0),rgb(255, 100, 255)], DialogType = "BrushColor";
+		attribute<WP4>               WP4_rel             := invert(WP4/WP_rel);
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		
+		attribute<WP2>               WP2_rel             := union_data(., WP2/V/eengezins, WP2/V/eengezins, WP2/V/eengezins, WP2/V/eengezins, WP2/V/meergezins);
+		attribute<bool>              IsDetached          :  [false, true, false, false, false];
+		attribute<bool>              IsSemiDetached      :  [false, false, true, false, false];
+	}
+
+	unit<uint8> WP3: nrofrows = 3
+	{
+		attribute<string>            label               :  ['geen woonpand','eengezins','meergezins'], DialogType = "LabelText";
+		attribute<string>            name                := replace(label, ' ', '_');
+		attribute<WP2>               WP2_rel             := invert(WP2/WP3_rel);
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> WP2 := select_with_org_rel(id(WP3) <> WP3/V/geen_woonpand) 
+	{
+		attribute<WP3>    WP3_rel := org_rel;
+		attribute<string> name    := WP3/name[WP3_rel];
+		attribute<string> label   := WP3/label[WP3_rel], DialogType = "LabelText";
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> WP4 := select_with_org_rel(id(WP) <> WP/V/geen_woonpand) 
+	{
+		attribute<uint8>             id                  := id(.);
+		attribute<WP>                WP_rel              := org_rel;
+		attribute<string>            name                := WP/name[WP_rel];
+		attribute<string>            name_english        := WP/label[WP_rel];
+		
+		attribute<string>            abbrev              : ['vrij', 'Tweeo1', 'rij', 'app']; //BR@Jip, 20190110: graag deze abbreviation onnodig maken en verwijderen
+		attribute<string>            label               := WP/label[WP_rel], DialogType = "LabelText";
+		attribute<uint32>            BrushColor          := WP/BrushColor[WP_rel], DialogType = "BrushColor";
+		attribute<WP2>               WP2_rel             := union_data(., WP2/V/eengezins, WP2/V/eengezins, WP2/V/eengezins, WP2/V/meergezins);
+		attribute<bool>              IsDetached          : [true, false, false, false];
+		attribute<bool>              IsSemiDetached      : [false, true, false, false];
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		
+		container Per_WP2 := for_each_ne(WP2/name, 'T('+string(id(WP2))+'[WP2])');
+		
+		Template T
+		{
+			parameter<WP2> id;
+			
+			unit<uint8> domain := select_with_org_rel(WP4/WP2_rel == id)
+			{
+				attribute<string> name := WP4/name[org_rel];
+			}
+		}
+	}
+	
+	unit<uint8> WP_groen := union_unit_uint8(WP, Groen/Functie)
+	{
+		attribute<string>    name        := union_data(., WP/name, Groen/Functie/name);
+		attribute<string>    label       := name, DialogType = "LabelText";
+		attribute<uint32>    BrushColor  := union_data(., WP/BrushColor, Groen/Functie/BrushColor), DialogType = "BrushColor";
+		attribute<bool>      IsWP        := union_data(., const(TRUE, WP), const(FALSE, Groen/Functie));
+		attribute<bool>      IsWP4       := id(.) == 0b ? FALSE : IsWP;
+		attribute<bool>      IsGroen     := union_data(., const(FALSE, WP), const(TRUE, Groen/Functie));
+		attribute<bool>      IsAllocatable := id(.) == 0b ? FALSE : TRUE;
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> HouseCharacteristics : nrofrows = 11
+	{
+		attribute<string> name :
+		[
+			'size', 
+			'lotsize', 
+			'nrooms', 
+			'nbadk', 
+			'd_maintgood', 
+			'd_kk', 
+			'd_centralheating', 
+			'd_erfpacht', 
+			'd_isol_compl', 
+			'd_privpark', 
+			'd_highrise'
+		];
+		
+		attribute<string> name2 := 'char_' + name;
+		attribute<string> label := name;
+	}
+	
+	unit<uint8> HouseCharacteristics_src : nrofrows = 19
+	{
+		attribute<string> name_src :
+		[
+			'lnsize', //
+			'lnlotsize', //
+			'nrooms', //
+			'nbadk', //
+			'd_centralheating', //
+			'd_maintgood', //
+			'd_isol_compl', //
+			'd_privpark', //
+			'd_highrise',//
+			'd_kk', //
+			'd_erfpacht', //
+			'd_semidetached',  //
+			'd_detached', //
+			'uai_2018', //
+			'lnreistijd_100k_inw',//
+			'reistijd_station_2006_edit', //
+			'groennabij_2015',//
+			'2019.trans_year', //
+			'_cons' //
+		];
+		
+		attribute<string> name := replace(name_src, '2019.trans_year', 'y2019', '_cons', 'constant');
+	}
+	
+	unit<uint8> SectorCharacteristics_src : nrofrows = 2
+	{
+		attribute<string> name :
+		[
+			'size', //
+			'IsInvestmentProperty' //
+		];
+	}
+	
+	unit<uint8> SectorCharacteristics : nrofrows = 13
+	{
+		attribute<string> name :
+		[
+			'lnfloorarea', //
+			'IsInvestmentProperty', //
+			'ln_DistTo_HighwayAccessExit', //
+			'ln_DistTo_Seaport', //
+			'ln_DistTo_Airports', //
+			'ln_DistTo_Trainstations', //
+			'ln_TravelTime_nearest100kInhab', //
+			'UAI', //
+			'ln_DistTo_Urban_Contour_2000',//
+			'LU_Share_Residential_2000', //
+			'LU_Diversity_index_2000',  //
+			'Constant', //
+			'y2016' //
+		];
+	}
+	
+	unit<uint32> HouseTypeHouseChar := combine(WP4, HouseCharacteristics)
+	{
+		attribute<string> name           :=  WP + '_' + HouseChar;
+		attribute<string> WP             := rjoin(first_rel, id(WP4), WP4/name);
+		attribute<string> HouseChar      := rjoin(second_rel, id(HouseCharacteristics), HouseCharacteristics/name);
+	}
+	
+	unit<uint32> AllocSectorSectorChar := combine(Actor/AllocSector, SectorCharacteristics_src)
+	{
+		attribute<string> name           :=  AllocSector + '_' + SectorChar;
+		attribute<string> AllocSector             := rjoin(first_rel, id(Actor/AllocSector), Actor/AllocSector/name);
+		attribute<string> SectorChar      := rjoin(second_rel, id(SectorCharacteristics_src), SectorCharacteristics_src/name);
+	}
+	
+	unit<uint8> OntwikkelPakket : nrofrows = 11
+	{
+		attribute<string> name         : ['Mix_rij', 'Mix_2o1', 'Mix_vrij', 'Rij', 'Rij_HD', 'Vrij', 'App_mid', 'App_LD_hoog', 'App_HD_hoog', 'Tweeo1', 'App_MD_hoog'];
+		attribute<string> name_english : ['Mixed terraced', 'Mixed semi-detached', 'Mixed detached', 'Terraced', 'Terraced high-density', 'Detached', 'Apartment semi-high-rise', 'Apartment low-density high-rise', 'Apartment high-density high-rise', 'semi-detached', 'Apartment mid-density high-rise'];
+		attribute<uint32> BrushColor   : [rgb(166,206,227),rgb(31,120,180),rgb(178,223,138),rgb(254, 50,0),rgb(254, 50,0),rgb(115,76,0),rgb(173,164,254),rgb(173,164,254),rgb(173,164,254), rgb(254,132,25), rgb(173,164,254)], DialogType = "BrushColor";
+		attribute<string> label        := name_english, DialogType = "labelText";
+		attribute<string> tree_name    : ['Optie1', 'Optie2', 'Optie3', 'Optie4', 'Optie5', 'Optie6', 'Optie7', 'Optie8', 'Optie9', 'Optie10', 'Optie11'];
+		attribute<string> EK           := replace(tree_name, 'Optie', 'Pakket');
+		attribute<uint8>  Base_code    := id(.) + 1b;
+		attribute<uint8>  Change_code  : [1, 7, 2, 3, 8, 5, 4, 6, 9, 10, 11];
+		attribute<bool>   IsMeergezins := id(.) == V/App_mid || id(.) == V/App_LD_hoog || id(.) == V/App_HD_hoog || id(.) == V/App_MD_hoog;
+		attribute<bool> IsHDEnOfRelevant: [false, false, false, false, true , true , false, false, true , true , false];
+		attribute<bool> IsLDEnOfRelevant: [false, false, false, true , false, true , true , false, false, true , false];
+		attribute<bool> IsMDEnOfRelevant: [false, false, false, false, true , false, false, false, false, false, true ];
+//		attribute<bool> IsMDEnOfRelevant: [false, false, false, false, true , true , false, false, false, true, true ];
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		
+		unit<uint8> Meergezins := select_with_org_rel(IsMeergezins)
+		{
+			attribute<string> name := ../name[org_rel];
+		}
+		
+		unit<uint8> Eengezins := select_with_org_rel(!IsMeergezins)
+		{
+			attribute<string> name := ../name[org_rel];
+		}
+	}
+	
+	unit<uint8> Dichtheid_3K: nrofrows = 3
+	{
+		attribute<string> name        : ['High-density', 'Medium-density', 'Low-density'];
+		attribute<string> label       := name, DialogType = "labelText";
+		attribute<uint32> BrushColor  : DialogType = "BrushColor",
+		[
+				 rgb(255,  0,  0)
+				,rgb(  0,  0,255)
+				,rgb(  0,100,  0)
+		];
+	}
+	
+	unit<uint32> OntwikkelPakkettenHouseType := combine(OntwikkelPakket, WP4)
+	{
+		attribute<string> name                :=  OntwikkelPakketten + '_' + WP4;
+		attribute<string> OntwikkelPakketten  := rjoin(first_rel, id(../OntwikkelPakketten), ../OntwikkelPakketten/name);
+		attribute<string> WP4                 := rjoin(second_rel, id(../WP4), ../WP4/name);
+	}
+	
+	unit<uint8> TXLHouseType: NrOfRows = 4
+	{
+		attribute<string> name:        ['eengezins_koop', 'eengezins_huur', 'meergezins_koop', 'meergezins_huur'];
+		attribute<string> Label := name, DialogType = "LabelText";
+		attribute<string> TXLTableRef: ['h1', 'h2', 'h3', 'h4'];
+		attribute<string> TXLTbl_Ref: ['Totaal_aantal_koop_eengezinswoningen', 'Totaal_aantal_huur_eengezinswoningen', 'Totaal_aantal_koop_meergezinswoningen', 'Totaal_aantal_huur_meergezinswoningen'];
+		attribute<string> BouwprogrammaTbl_Ref: ['Koop_ggb', 'Huur_ggb','Koop_app', 'Huur_app'];
+		attribute<string> BAGRef: ['singlefamily', 'singlefamily', 'multifamily', 'multifamily'];
+		attribute<string> COHouseTypeRef: ['eengezinswoning', 'eengezinswoning', 'etagewoning', 'etagewoning'];
+		attribute<booL> IsMultifam: [false, false, true, true];
+		attribute<bool> IsPrivate: [true, false, true, false];
+		attribute<WP2> WP2_rel: ['eengezins', 'meergezins'];
+		
+		unit<uint8> Meergezins := select_with_org_rel(TXLHouseType/IsMultifam);
+		unit<uint8> Eengezins := select_with_org_rel(!TXLHouseType/IsMultifam);
+	}
+	unit<uint32> VariantKxTXLHouseType := combine(/classifications/VariantK, TXLHouseType)
+	{
+		attribute<string> VariantK_name := /classifications/VariantK/name[first_rel];
+		attribute<string> TXLHouseType_name := TXLHouseType/name[second_rel];
+		attribute<string> name := VariantK_name+'_'+TXLHouseType_name;
+		attribute<string> Label := replace(name, '_', '/');
+		attribute<string> TXLStocksTbl_Ref := /classifications/VariantK/TXLStocksTbl_Ref[first_rel]+'_'+TXLHouseType_name;
+	}
+	
+	unit<uint8> Gebruiksdoel: nrofrows = 11
+	{
+		attribute<string> ShortLabel:[
+			'Winkel',
+			'Logies',
+			'Gezondheidszorg',
+			'Kantoor',
+			'Bijeenkomst',
+			'Woon',
+			'Onderwijs',
+			'Industrie',
+			'Overige gebruiks',
+			'Sport',
+			'Cel'
+		];
+		attribute<string> ShortName: Expr = "replace(ShortLabel, ' ', '_')";
+		
+		attribute<string> Label := ShortLabel + 'functie',  DialogType = "LabelText";
+		
+		attribute<string> Name: Expr = "ShortName + 'functie'";
+		container V := for_each_nedv(Name, string(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> WOZ: NrOfRows = 6
+	{
+		attribute<string> name := 'Plus_'+string(ClassBreaks);
+		attribute<string> Label := name, DialogType = "LabelText";
+		attribute<Eur> ClassBreaks := ClassifyEqualCount(/SourceData/Vastgoed/WOZ/Y2017/Mean_domain_grid, .), DialogType = "CLASS_BREAKS";
+		attribute<uint32> BrushColor: DialogType = "BrushColor",
+		[
+			rgb(0,64,0), rgb(0,128,0), rgb(128,255,128), rgb(255,255,128), rgb(128,128,0), rgb(255,255,255)
+		];
+	}
+	
+	unit<uint8> Vierkanten : NrOfRows = 16
+	{
+		attribute<uint32> value     : [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2015, 2016, 2017];
+		attribute<string> name      := 'J' + string(value);
+		attribute<string> Label     := name, DialogType = "LabelText";
+	}
+	
+	unit<uint8> ELabelK: nrofrows = 9
+	{
+		attribute<String> Name:  ['eWP', 'EWV', 'Aplus', 'LabelB', 'LabelC', 'LabelD', 'LabelE', 'LabelF', 'LabelG'];
+		attribute<String> Label: DialogType = "LabelText",  ['eWP', 'EWV', 'A+', 'B', 'C', 'D', 'E', 'F', 'G'];
+		attribute<UInt32> Color: DialogType = "BrushColor",
+		[
+				rgb(000,255,255)
+			,	rgb(000,255,000)
+			,	rgb(053,152,000)
+			,	rgb(114,167,017)
+			,	rgb(176,196,001)
+			,	rgb(247,230,000)
+			,	rgb(251,182,001)
+			,	rgb(249,097,014)
+			,	rgb(249,026,031)
+		];
+		
+		attribute<UInt32> SymbColor: DialogType = "SymbolColor", Expr = "Color";
+		
+		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+	}
+}

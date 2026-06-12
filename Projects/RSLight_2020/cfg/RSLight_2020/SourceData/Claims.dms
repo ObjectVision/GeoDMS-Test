@@ -1,0 +1,162 @@
+container Claims
+{
+	parameter<Units/YearDiffRange> ZichtJaarDuration := 5[Units/YearDiffRange];
+	parameter<Units/YearRange> StartYear :=  2015[Units/YearRange]; //Start datum. We spreken af dat bij standgegevens voor een bepaald jaar 1 jan wordt bedoeld
+	parameter<Units/YearRange> FinalYear :=  2050[Units/YearRange];
+	
+	parameter<String> ClaimSrcRef: ['%RSLDataDir%/Claims/TXLv70_beta9'];
+	parameter<String> ClaimSrcDir := ClaimSrcRef + '/@S@';
+	parameter<string> SrcRegioRef    : ['LMSSubzone'];
+	// parameter<string> AggRegioRef    := /ModelParameters/AggRegioRef;
+	parameter<string> StartYearRef   := 'Y' + string(StartYear); 
+	parameter<string> CurrentYearRef : ['Y2017']; 
+	parameter<string> FinalYearRef   := 'Y' + string(FinalYear); 
+	
+	container Model_Classifications
+	{
+		unit<uint8> Scenarios : NrOfRows = 2
+		{
+			attribute<string> name : ['WLO_laag', 'WLO_hoog'];
+			
+			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		}
+	
+		unit<uint8> ModelJaar: NrOfRows = 3
+		{
+			attribute<string> name          := union_data(., StartYearRef, 'Y2030', FinalYearRef);
+			attribute<bool>   IsFirst       := ID(.) == 0b;
+			attribute<string> prevName      := id(.) == 1b 
+												? ./name[0[ModelJaar]]
+												: id(.) == 2b 
+													? ./name[1[ModelJaar]]
+													: 'StartYear';
+		}
+		
+		unit<uint8> ZichtJaar := select_with_org_rel(not(ModelJaar/IsFirst))
+		{
+			attribute<ModelJaar> ModelJaar_rel := org_rel;
+			attribute<string>    name          := ModelJaar/name[ModelJaar_rel];
+			attribute<string>    prevName      := ModelJaar/name[ModelJaar_rel-1b];
+		}
+		
+		unit<uint8> TXLClaims: NrOfRows = 2
+		{
+			attribute<string> name: ['banen', 'woningen'];
+			attribute<Classifications/TigrisXL/Table> TigrisXL_Table_rel := union_data(., Classifications/TigrisXL/Table/V/Labour, Classifications/TigrisXL/Table/V/LandUse);
+			attribute<string> TigrisXL_Table_ref := Classifications/TigrisXL/Table/name[TigrisXL_Table_rel];
+			attribute<string> TargetValUnitRef: ['NrJobs', 'NrWoningen'];
+			attribute<string> Attr_ref: ['TXLJobs7', 'TXLWK'];
+		}
+		
+		unit<uint8> TXLJobs7 := Classifications/Actor/TXLJobs7;
+		unit<uint8> HhK := Classifications/Actor/TXLhh13;
+		unit<uint8> TXLWK := Classifications/Vastgoed/TXLHouseType;
+		
+		unit<uint32> HhK_TXLWK := combine(HhK, TXLWK)
+		{
+			attribute<string> HhK_name := HhK/name[first_rel];
+			attribute<string> HhK_TXLTableRef := string(HhK/EK[first_rel]);
+			attribute<string> TXLWK_name := TXLWK/name[second_rel];
+			attribute<string> TXLWK_TXLTableRef := TXLWK/TXLTableRef[second_rel];
+			attribute<string> name := HhK_name +'/'+TXLWK_name;
+			attribute<string> Label := replace(name, '/', '_');
+		}
+		
+		unit<uint32> TXLWK_HhK := combine(TXLWK, HhK)
+		{
+			attribute<string> HhK_name := HhK/name[second_rel];
+			attribute<string> HhK_TXLTableRef := string(HhK/EK[second_rel]);
+			attribute<string> TXLWK_name := TXLWK/name[first_rel];
+			attribute<string> TXLWK_TXLTableRef := TXLWK/TXLTableRef[first_rel];
+			attribute<string> name := TXLWK_name+'/'+HhK_name;
+			attribute<string> Label := replace(name, '/', '_');
+		}
+		
+		unit<uint8> WP4 := Classifications/Vastgoed/WP4
+		{
+			attribute<string> name := Classifications/Vastgoed/WP4/name;
+
+			unit<uint8> eengezins  := select_with_org_rel(Classifications/Vastgoed/WP4/WP2_rel == Classifications/Vastgoed/WP2/V/Eengezins)
+			{
+				attribute<string> name := WP4/name[org_rel];
+			}
+			
+			unit<uint8> meergezins := select_with_org_rel(Classifications/Vastgoed/WP4/WP2_rel == Classifications/Vastgoed/WP2/V/Meergezins)
+			{
+				attribute<string> name := WP4/name[org_rel];
+			}
+		}
+		
+		unit<uint8> WP2 := Classifications/Vastgoed/WP2;
+		unit<uint32> Combi := combine(Classifications/TigrisXL/Table, Classifications/Time/TigrisJaar)
+		{
+			attribute<string> Table_name := Classifications/TigrisXL/Table/name[first_rel];
+			attribute<string> Tigrisjaar_name := Classifications/Time/TigrisJaar/name[second_rel]; //@MH: waarom krijg ik hier enkel nill waarden?
+			attribute<string> name := Table_name + '_' + Tigrisjaar_name;
+			attribute<string> label := replace(name, '_', '/');
+		}
+		
+		container Indices  := 
+			for_each_ne(
+				Combi/label
+				, 'TemplIndex('+string(id(combi))+'[combi])'
+			);
+	}
+	
+	unit<uint32> SrcRegio := = 'Geography/RegioIndelingen/'+SrcRegioRef;
+	// unit<uint32> AggRegio := = 'Geography/RegioIndelingen/'+AggRegioRef;
+	
+	#include<TXL.dms>
+	#include<VerdelingWoningen.dms>
+	
+	container ReadData := 
+		for_each_ne(
+			Claims/Model_Classifications/Scenarios/name
+			, 'PerScenarioT('+quote(Claims/Model_Classifications/Scenarios/name)+')'
+		);
+		
+	Template PerScenarioT
+	{
+		parameter<string> Scenario;
+		
+		container ReadData := 
+			for_each_ne(
+				Classifications/TigrisXL/Table/name
+				, 'dataset(Classifications/TigrisXL/Table/V/'+Classifications/TigrisXL/Table/name+','+quote(Scenario)+')'
+			);
+
+		Template Dataset 
+		{
+			parameter<Classifications/TigrisXL/Table> table_id;
+			parameter<string> Scenario;
+			
+			container zichtjaren := 
+				for_each_ne(
+					Classifications/time/tigrisjaar/name
+					, 'Templates/ReadFiles/Case(table_id, '+string(Classifications/time/tigrisjaar/jaar)+'s,'+quote(Scenario)+')'
+				);
+		}
+	}
+	
+	Template TemplIndex
+	{
+		//
+		parameter<Combi> id;
+		//
+		
+		parameter<string> Table_name := Combi/Table_name[id];
+		parameter<string> Tigrisjaar_name := Combi/Tigrisjaar_name[id];
+
+		unit<uint32> LMS := /stam/Geography/RegioIndelingen/LMSSubzone;
+		unit<uint32> SrcAttribute := = 'TigrisXL/MetaInfo/'+Table_name+'/SrcAttribute';
+		
+		container values :=
+			for_each_nedv(
+				SrcAttribute/name,
+				'float32(data/'+Table_name+'/Zichtjaren/'+tigrisjaar_name+'/Attributes/'+SrcAttribute/name+')'
+				'/'
+				'float32(data/'+Table_name+'/Zichtjaren/'+time/tigrisjaar/name[first(combi/second_rel[id])]+'/Attributes/'+SrcAttribute/name+')',
+				LMS, float32
+			);
+	}
+}

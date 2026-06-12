@@ -1,0 +1,296 @@
+container OVprijzen
+{
+	unit<uint8> TariefTypeK : nrofrows = 2
+	{
+		attribute<string> name   : ['PerRit', 'Kilometertarief'];
+		attribute<string> label  := name;
+	}
+	
+	unit<uint32> Agencies          := Classifications/Agencies;
+	unit<uint32> Modes             := Classifications/ModesList/List_selectie;
+	unit<uint32> Provincies        := SourceData/RegioIndelingen/Provincie;
+	unit<uint8>  Concessiegebieden := SourceData/RegioIndelingen/Concessiegebied;
+	
+	unit<uint8> PrijsTabel : NrOfRows = 116
+	{
+		unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+		{
+			attribute<String> Text:
+			[
+				//Mode    , Vervoerder           , Provincie      , Concessiegebied                         , Lijn                               , Ritpr, Kmprijs ,Opmerking
+				'Rail'    ,'NS'                  ,'Alle'          ,''                                       , ''                                 ,''    , ''      ,'Tariefeenheden in NS tabel',
+				'Bus'     ,'NS'                  ,'Alle'          ,''                                       , ''                                 ,''    , ''      ,'Tariefeenheden in NS tabel',
+				'Bus'     ,'Arriva'              ,'Flevoland'     ,'Busvervoer Almere'                      , ''                                 ,'1.68', '0'      ,'Binnen de ring',
+				'Bus'     ,'Arriva'              ,'Flevoland'     ,'Busvervoer Almere'                      , ''                                 ,'2.52', '0'      ,'Buiten de ring',
+				'Rail'    ,'Blauwnet'            ,'Drenthe'       ,'GD-concessie'                           , ''                                 ,'1.08', '0.208' ,'2e klas Arriva Blauwnet',
+				// 'Rail'    ,'Blauwnet_Arriva'     ,'Overijssel'    ,''                                    , ''                                 ,'1.08', '0.208' ,'2e klas Arriva Blauwnet', //Op de Blauwnet site staat dit bedrag niet. Dus ik gebruik de Blauwnet referentie.
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'Buurtbus NZW-Fryslan'              ,'1.08', '0.079' ,'buurtbussen Noordzuidwest-Fryslan',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'Buurtbus ZO-Fryslan'               ,'1.08', '0.187' ,'buurtbussen Zuidoost-Fryslan',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'Opstapper'                         ,'2.50', '0'      ,'',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'315'                               ,'1.08', '0.213' ,'Qliner',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'324'                               ,'1.08', '0.213' ,'Qliner',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'320'                               ,'1.08', '0.213' ,'Qliner',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'350'                               ,'1.08', '0.213' ,'Qliner Friese deel',
+				'Bus'     ,'Arriva'              ,'Noord_Holland' , 'Zuid-Holland Noord'                    ,'350'                               ,'1.08', '0.179' ,'Qliner Noord-Hollandse deel',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'355'                               ,'1.08', '0.213' ,'Qliner',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'356'                               ,'1.08', '0.213' ,'Qliner',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'Stad Leeuwarden'                   ,'1.08', '0.187' ,'',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , 'Openbaar busvervoer Fryslân'           ,'Streek'                            ,'1.08', '0.187' ,'',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Achterhoek Rivierenland'               ,'27'                                ,'1.08', '0.186' ,'',
+				'Bus'     ,'Breng'               ,'Gelderland'    , ''                                      ,'29'                                ,'1.08', '0.186' ,'',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Achterhoek Rivierenland'               ,'440'                               ,'2.60', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Achterhoek Rivierenland'               ,'450'                               ,'2.60', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Achterhoek Rivierenland'               ,'458'                               ,'2.60', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Twente'                                ,'53'                                ,'1.08', '0.223' ,'voor ritten in Twente',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Twente'                                ,'73'                                ,'1.08', '0.223' ,'voor ritten in Twente',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Twente'                                ,'74'                                ,'1.08', '0.223' ,'voor ritten in Twente',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Twente'                                ,'85'                                ,'1.08', '0.186' ,'voor ritten in Twente',
+				'Rail'    ,'Breng'               ,'Gelderland'    , ''                                      ,''                                  ,'1.08', '0.228' ,'kopie van Arriva rail gelderland',
+				'Rail'    ,'Arriva'              ,'Gelderland'    , 'Achterhoek Rivierenland'               ,''                                  ,'1.08', '0.228' ,'2e klas',
+				'Bus'     ,'Arriva'              ,'Gelderland'    , 'Achterhoek Rivierenland'               ,'Vlinder'                           ,'2.60', '0'     ,'',
+				'Rail'    ,'Arriva'              ,'Groningen'     , 'GD-concessie'                          ,''                                  ,'1.08', '0.228' ,'2e klas, kopie van Gelderland. Kan geen andere prijzen vinden',
+				'Bus'     ,'Arriva'              ,'Groningen'     , 'GD-concessie'                          ,'315'                               ,'1.08', '0.213' ,'Qliner',
+				'Bus'     ,'Arriva'              ,'Groningen'     , 'GD-concessie'                          ,'324'                               ,'1.08', '0.213' ,'Qliner',
+				'Bus'     ,'Arriva'              ,'Limburg'       , 'Limburg'                               ,'Avondvlinder'                      ,'1.75', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Limburg'       , 'Limburg'                               ,''                                  ,'1.08', '0.204' ,'',
+				'Bus'     ,'Arriva'              ,'Limburg'       , 'Limburg'                               ,'83'                                ,'1.08', '0.186' ,'vanaf halte Milsbeek Helweg',
+				'Rail'    ,'Arriva'              ,'Limburg'       , 'Limburg'                               ,''                                  ,'1.08', '0.220' ,'2e klas',
+				'Bus'     ,'Arriva'              ,'Noord_Brabant' , 'West-Brabant'                          ,'820'                               ,'3.50', '0'     ,'Bergen op Zoom kris kras',
+				'Bus'     ,'Arriva'              ,'Noord_Brabant' , 'West-Brabant'                          ,'820'                               ,'1.50', '0'     ,'Bergen op Zoom van-naar station',
+				'Bus'     ,'Arriva'              ,'Noord_Brabant' , 'Oost-Brabant'                          ,'99'                                ,'1.08', '0.187' ,'',
+				'Bus'     ,'Arriva'              ,'Noord_Brabant' , ''                                      ,'Nightliner'                        ,'5.58', '0'     ,'',
+				'Bus'     ,'Bravo_Arriva_'       ,'Noord_Brabant' , ''                                      ,''                                  ,'1.08', '0.188' ,'',
+				'Bus'     ,'Bravo_Arriva_'       ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.188' ,'kopie van NoordBrabant, want prov_rel bij omgekeerde reis?', 
+				'Bus'     ,'Arriva'              ,'Fryslân'       , ''                                      ,'Ameland 2 zones'                   ,'2.82', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , ''                                      ,'Terschelling 2 zones'              ,'2.82', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , ''                                      ,'Ameland 1 zone'                    ,'1.82', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , ''                                      ,'Terschelling 1 zone'               ,'1.82', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , ''                                      ,'Vlieland 1 zone'                   ,'1.82', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Fryslân'       , ''                                      ,'Schiermonnikoog'                   ,'2.27', '0'     ,'',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,'Buurtbus'                          ,'1.08', '0.121' ,'',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,'852'                               ,'8.60', '0'     ,'Keukenhof lijn',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,'854'                               ,'5.00', '0'     ,'Keukenhof lijn',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,'858'                               ,'5.60', '0'     ,'Keukenhof lijn',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,'295'                               ,'1.08', '0.156' ,'Rotterdam - Schoonhoven Lopikerplein vv',
+				'Bus'     ,'Keolis'              ,'Utrecht'       , ''                                      ,'295'                               ,'1.08', '0.187' ,'Utrecht - Schoonhoven Lopikerplein vv',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,'Qliner'                            ,'1.08', '0.200' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.200' ,'Uitgezonderd lijnen 430, 431, 432',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'430'                               ,'1.08', '0.156' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'431'                               ,'1.08', '0.156' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'432'                               ,'1.08', '0.156' ,'',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.156' ,'',
+				'Bus'     ,'Arriva'              ,'Zuid_Holland'  , ''                                      ,'Vlinder'                           ,'1.08', '0.156' ,'',
+				'Bus'     ,'Qbuzz'               ,'Groningen'     , ''                                      ,''                                  ,'1.08', '0.188' ,'',
+				'Bus'     ,'Qbuzz'               ,'Drenthe'       , ''                                      ,''                                  ,'1.08', '0.188' ,'',
+				'Rail'    ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'MerwedeLingeLijn'                  ,'1.08', '0.217' ,'',
+				'Bus'     ,'Qbuzz'               ,'Zuid_Holland'  , ''                                      ,'387'                               ,'1.08', '0.200' ,'',
+				'Bus'     ,'Qbuzz'               ,'Zuid_Holland'  , ''                                      ,'388'                               ,'1.08', '0.200' ,'',
+				'Bus'     ,'Qbuzz'               ,'Utrecht'       , ''                                      ,''                                  ,'1.08', '0.200' ,'kopie van Zuid_Holland, want prov_rel bij omgekeerde reis?',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'416'                               ,'1.08', '0.200' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'488'                               ,'1.08', '0.200' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'489'                               ,'1.08', '0.200' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'491'                               ,'1.08', '0.200' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , 'Drechtsteden_MolenlandenGorinchem'     ,'stadsBuzz'                         ,'1.08', '0.180' ,'',
+				'Bus'     ,'R_net'               ,'Zuid_Holland'  , ''                                      ,'streekBuzz buurtBuzz'              ,'1.08', '0.155' ,'',
+				'Tram'    ,'U_OV'                ,'Utrecht'       , ''                                      ,''                                  ,'1.08', '0.187' ,'',
+				'Bus'     ,'U_OV'                ,'Utrecht'       , ''                                      ,''                                  ,'1.08', '0.187' ,'',
+				'Bus'     ,'U_OV'                ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.187' ,'kopie van Utrecht, want prov_rel bij omgekeerde reis?',
+				'Tram'    ,'GVB'                 ,'Noord_Holland' , ''                                      ,''                                  ,'1.08', '0.196' ,'',
+				'Metro'   ,'GVB'                 ,'Noord_Holland' , ''                                      ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'GVB'                 ,'Noord_Holland' , ''                                      ,''                                  ,'1.08', '0.196' ,'',
+				'Ferry'   ,'GVB'                 ,'Noord_Holland' , ''                                      ,''                                  ,'0.00', '0.000' ,'',
+				'Bus'     ,'EBS'                 ,'Zuid_Holland'  , 'Haaglanden_Streek'                     ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'EBS'                 ,'Zuid_Holland'  , 'Voorne_Putten_en_Rozenburg'            ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'EBS'                 ,'Noord_Holland' , 'Zaandstreek_en_Waterland'              ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'EBS'                 ,'Flevoland'     , 'IJssel_Vecht'                          ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'EBS'                 ,'Gelderland'    , 'IJssel_Vecht'                          ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'EBS'                 ,'Overijssel'    , 'IJssel_Vecht'                          ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'Hermes'              ,'Noord_Brabant' , ''                                      ,''                                  ,'1.08', '0.188' ,'Kopie van Bravo_Hermes NoordBrabant voor concessies Utrecht/Veluwe/ArnhemNijmegen/etc eind 2023',
+				'Bus'     ,'Bravo_Hermes_'       ,'Noord_Brabant' , ''                                      ,''                                  ,'1.08', '0.188' ,'Merk van Connexxion',
+				'Bus'     ,'HTM'                 ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.187' ,'',
+				'Tram'    ,'HTM'                 ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.187' ,'',
+				'Rail'    ,'Blauwnet'            ,'Overijssel'    , ''                                      ,'Zuthpen-Oldenzaal'                 ,'1.08', '0.246' ,'Keolis, ook bekend als Twents',
+				'Rail'    ,'Blauwnet'            ,'Overijssel'    , ''                                      ,''                                  ,'1.08', '0.207' ,'Keolis, rest van de lijnen, ook bekend als Twents',
+				'Bus'     ,'Blauwnet'            ,'Overijssel'    ,'IJssel_Vecht'                           , ''                                 ,'1.08', '0.208' ,'Vervangend vervoer van rail',
+				'Bus'     ,'Twents_Keolis_'      ,'Overijssel'    , ''                                      ,''                                  ,'1.08', '0.223' ,'Twents, service van Syntus, wat nu Keolis is',
+				'Bus'     ,'Syntus_Utrecht'      ,'Utrecht'       , ''                                      ,''                                  ,'1.08', '0.187' ,'Syntus is nu Keolis',
+				'Bus'     ,'Syntus_Utrecht'      ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.187' ,'kopie van Utrecht, want prov_rel bij omgekeerde reis?',
+				'Bus'     ,'Syntus_Utrecht'      ,'Noord_Holland' , ''                                      ,''                                  ,'1.08', '0.187' ,'kopie van Utrecht, want prov_rel bij omgekeerde reis?',
+				'Bus'     ,'allGo_Keolis_'       ,'Flevoland'     , ''                                      ,''                                  ,'1.08', '0.161' ,'2022 prijs!, Almere',
+				'Rail'    ,'Valleilijn'          ,'Gelderland'    , ''                                      ,''                                  ,'1.08', '0.161' ,'door Connexxion',
+				'Bus'     ,'Connexxion'          ,'Noord_Holland' ,'Amstelland_Meerlanden'                  ,''                                  ,'1.08', '0.198' ,'',
+				'Bus'     ,'Connexxion'          ,'Noord_Holland' ,'Haarlem_IJmond'                         ,''                                  ,'1.08', '0.179' ,'',
+				'Bus'     ,'Connexxion'          ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.155' ,'',
+				'Bus'     ,'Connexxion'          ,'Noord_Holland' ,'Noord_Holland_Noord'                    ,''                                  ,'1.08', '0.179' ,'',
+				'Bus'     ,'Connexxion'          ,'Noord_Holland' ,'Zaanstreek_Waterland'                   ,''                                  ,'1.08', '0.196' ,'',
+				'Bus'     ,'Overal_Connexxion_'  ,'Alle'          , ''                                      ,''                                  ,'1.08', '0.239' ,'kopie van Zeeland, om overal te genereren',
+				'Bus'     ,'Connexxion'          ,'Zeeland'       , ''                                      ,''                                  ,'1.08', '0.239' ,'',
+				'Bus'     ,'Transdev'            ,'Noord_Holland' ,'Gooi_en_Vechtstreek'                    ,''                                  ,'1.08', '0.179' ,'',
+				'Bus'     ,'OV_Regio_IJsselmond' ,'Overijssel'    , ''                                      ,''                                  ,'1.08', '0.211' ,'',
+				'Bus'     ,'OV_Regio_IJsselmond' ,'Flevoland'     , ''                                      ,''                                  ,'1.08', '0.185' ,'',
+				'Bus'     ,'RET'                 ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.166' ,'',
+				'Tram'    ,'RET'                 ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.166' ,'',
+				'Metro'   ,'RET'                 ,'Zuid_Holland'  , ''                                      ,''                                  ,'1.08', '0.166' ,'',
+				'Bus'     ,'Texelhopper'         ,'Noord_Holland' , ''                                      ,''                                  ,'1.08', '0.215' ,'',
+				'Ferry'   ,'Blue_Amigo'          ,'Zuid_Holland'  , ''                                      ,''                                  ,'2.00', '0'     ,'Waterbus Drechtsteden - Rotterdam',
+				'Ferry'   ,'Watertaxi_Rotterdam' ,'Zuid_Holland'  , ''                                      ,''                                  ,'6.00', '0'     ,'',
+				'Ferry'   ,'Westerschelde_Ferry' ,'Zeeland'       , ''                                      ,''                                  ,'5.20', '0'     ,''
+				
+				//vervoerders die wel in GTFS zitten maar niet in deze lijst zijn niet opgenomen omdat ze in het buitenland opereren (De Lijn, DB, Eurobahn, NIAG, NMBS, VIAS)
+			];
+		}
+		
+		attribute<string>       Mode            := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
+		attribute<string>       Vervoerder      := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+		attribute<string>       Provincie       := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+		attribute<string>       Concessiegebied := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)];
+		attribute<string>       Lijn            := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)];
+		attribute<Euro>         VastePrijs      := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)][Euro];
+		attribute<Euro_km>      VariabelePrijs  := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)][Euro_km];
+		attribute<string>       Opmerking       := Elements/Text[value(UInt32(ID(.))* nrAttr + 7, Elements)];
+		
+		attribute<Modes>             Mode_rel               := rlookup(Mode, Modes/name);
+		attribute<Agencies>          Agency_rel             := rlookup(Vervoerder, Agencies/name);
+		attribute<Provincies>        Provincie_rel          := rlookup(Provincie, Provincies/name);
+		attribute<Concessiegebieden> Concessiegebieden_rel  := rlookup(Concessiegebied, Concessiegebieden/name);
+		
+		attribute<string>       Concessiegebied_str := Concessiegebied != '' ? '_'+Concessiegebied : '';
+		attribute<string>       Lijn_str            := Lijn != '' ? '_'+Lijn : '';
+		
+		attribute<string>       Mode_Agency_CG_Lijn_identifier := Mode +'_'+ Vervoerder +'_'+ Concessiegebied_str + Lijn_str;
+		attribute<string>       Mode_Agency_CG_identifier      := Mode +'_'+ Vervoerder +'_'+ Concessiegebied_str;
+		attribute<string>       Mode_Agency_identifier         := Mode +'_'+ Vervoerder;
+		attribute<string>       label                                 := Mode_Agency_CG_Lijn_identifier;
+
+		parameter<uint32> nrAttr := 8;
+	}
+
+
+	unit<uint32> TestOutputCSV
+	: StorageName = "%ProjDir%/Data/OD test output.csv"
+	, StorageType = "gdal.vect"
+	, StorageReadOnly = "true"
+	, SyncMode = "None"
+	{
+		attribute<string>                  FromPlace_name;
+		attribute<string>                  Label;
+		attribute<LinkTypes>               LinkType;
+		attribute<ModesList/List_selectie> Mode;
+		attribute<uint32>                  Trips_rel;
+		attribute<string>                  RouteName;
+		attribute<string>                  RouteName_short;
+		attribute<Agencies>                Agency_rel;
+		attribute<km>                      Length;
+	}
+
+	unit<uint32> TestBerekeing :  nrofrows = 4
+	{
+	}
+	
+
+	unit<uint32> Provincie := SourceData/RegioIndelingen/Provincie
+	{
+		// attribute<
+	}
+	
+	container Arriva
+	{
+		unit<uint32> Read
+		: StorageName = "%ProjDir%/Data/Arriva tarieven 2023.csv"
+		, StorageType = "gdal.vect"
+		, StorageReadOnly = "true"
+		{
+			attribute<TariefTypeK> TariefType_rel := rlookup(tarieftype, TariefTypeK/name);
+		}
+	}
+	
+	container NS
+	{
+		unit<uint32> NS_prijzen_per_tariefeenheid
+		: StorageName = "%ProjDir%/Data/NS tarieven 2023.csv"
+		, StorageType = "gdal.vect"
+		, StorageReadOnly = "true"
+		{
+			attribute<uint32>  TariefEenheden := uint32(Aantal_tarief_eenheden);
+			attribute<float32> Voltarief      := float32(Voltarief_incl_9_btw);
+			attribute<float32> Korting_20pr   := float32(_20_korting_incl_9_btw);
+			attribute<float32> Korting_40pr   := float32(_40_korting_incl_9_btw);
+		}
+		unit<uint32> NS_tariefeenheden_matrix
+		: StorageName = "%ProjDir%/Data/NS_tariefnet.csv"
+		, StorageType = "gdal.vect"
+		, StorageReadOnly = "true"
+		{
+			attribute<NS_stations> StartPoint_rel := rlookup(org, NS_stations/code);
+			attribute<NS_stations> EndPoint_rel   := rlookup(dest, NS_stations/code);
+			attribute<rdc>         StartPoint     := NS_stations/geometry[StartPoint_rel];
+			attribute<rdc>         EndPoint       := NS_stations/geometry[EndPoint_rel];
+			attribute<uint32>      tariefeenheid  := uint32(unit2);
+			attribute<rdc>         geometry (arc) := points2sequence(LinkPoints/Point, LinkPoints/Sequence_rel, LinkPoints/Ordinal);
+
+			unit<uint32> OrgDest := select_with_org_rel(IsDefined(rlookup(NS_stations/geometry, StartPoint)) || IsDefined(rlookup(NS_stations/geometry, EndPoint)))
+			{
+				attribute<rdc>    geometry := NS_stations/geometry[org_rel];
+				attribute<string> label    := NS_stations/label[org_rel];
+			}
+			
+			unit<uint32> LinkPoints := union_unit(., .)
+			{
+				attribute<rdc>                  Point        := union_data(., StartPoint, EndPoint);
+				attribute<..>                   Sequence_rel := union_data(., id(..), id(..));
+				attribute<uint32>               Ordinal      := union_data(., const(0,..,uint32), const(1,..,uint32));
+			}
+			
+			unit<uint32> ConnectedNetwork := select_with_attr_by_cond(., IsDefined(StartPoint) && IsDefined(EndPoint))
+			{
+				unit<uint32> NodeSet := unique(LinkPoints/Point)
+				{
+					attribute<rdc>    geometry := values;
+					attribute<string> label    := rjoin(geometry, NS_stations/geometry, NS_stations/label);
+					
+				}
+				
+				attribute<NodeSet>  F1                  := rlookup(StartPoint,NodeSet/geometry);
+				attribute<NodeSet>  F2                  := rlookup(EndPoint,NodeSet/geometry);
+			
+				attribute<NodeSet>  org_node (OrgDest)  := rlookup(OrgDest/geometry, NodeSet/geometry);
+				attribute<NodeSet>  dst_node (OrgDest)  := rlookup(OrgDest/geometry, NodeSet/geometry);
+			
+				unit<uint32> ODMatrix :=
+					impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);od:impedance,OrgZone_rel,DstZone_rel'
+						, tariefeenheid
+						, F1
+						, F2
+						
+						, org_node
+						, dst_node
+					)
+				{
+					attribute<float32> Prijs_voltarief := impedance >= 200 
+															? max(NS_prijzen_per_tariefeenheid/Voltarief) 
+															: impedance == 200 
+																? 0f
+																: rjoin(impedance, NS_prijzen_per_tariefeenheid/TariefEenheden, NS_prijzen_per_tariefeenheid/Voltarief);
+					
+					attribute<NS_stations> Org_NS_station_rel  := OrgDest/org_rel[OrgZone_rel];
+					attribute<NS_stations> Dest_NS_station_rel := OrgDest/org_rel[DstZone_rel];
+																
+					attribute<upoint>  OrgDest_identifier := point_xy(Org_NS_station_rel, Dest_NS_station_rel, upoint);
+				}
+			} 
+			
+		}
+
+		unit<uint32> NS_stations
+		: StorageName = "%ProjDir%/Data/NS_stations.csv"
+		, StorageType = "gdal.vect"
+		, StorageReadOnly = "true"
+		{
+			attribute<string> code  := trim(stations_code);
+			attribute<string> label := trim(stations_naam);
+			attribute<rdc>    geometry := rjoin(code, lowercase(Infrastructuur/Read_NS_Stations_SHP/code), Infrastructuur/Read_NS_Stations_SHP/geometry_rd);
+		}
+	}
+
+
+}

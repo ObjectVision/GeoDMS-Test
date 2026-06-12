@@ -1,0 +1,104 @@
+container Results : using = "VariantSpecifiek;Units"
+{   
+	container Src_wonen
+	{
+		container PerExtent := // cum over iters
+			for_each_nedv(
+				Extent/K/name_short
+				, 'Wonen/LastIter/PerExtent/'+Extent/K/name_short+'/Allocatie/OverIters'
+				, domain
+				, Woning
+			)
+		{
+			attribute<Woning> Totaal (domain) := = 'add('+AsItemList(Extent/K/name_short)+')';
+		}
+		
+		container PerIter := // cum over extents
+			for_each_nedv(
+				IterK/name
+				, 'Wonen/'+IterK/name+'/PerExtent/'+last(Extent/K/name_short)+'/Allocatie/OverExtents'
+				, domain
+				, Woning
+			)
+		{
+			attribute<Woning> Totaal (domain) := = 'add('+AsItemList(IterK/name)+')';
+		}
+		
+		attribute<bool> Check (domain) := PerExtent/Totaal == PerIter/Totaal;
+	}
+	
+	container Src_werken
+	{
+		container PerAllocSectorPerExtent := 
+			for_each_ne(
+				AllocSector/name
+				, 'GetResultsPerExtent('+quote(AllocSector/name)+')'
+			);
+		
+		template GetResultsPerExtent
+		{
+			parameter<string> AllocSectorType;
+			
+			container PerExtent := 
+				for_each_nedv(
+					Extent/K/name_short
+					, 'Werken/LastIter/PerExtent/'+Extent/K/name_short+'/OverIters/'+AllocSectorType
+					, domain
+					, Ha
+				)
+			{
+				attribute<Ha> Totaal (domain) := = 'add('+AsItemList(Extent/K/name_short)+')';
+			}
+		}
+		
+		container PerAllocSectorPerIter := 
+			for_each_ne(
+				AllocSector/name
+				, 'GetResultsPerIter('+quote(AllocSector/name)+')'
+			);
+		
+		template GetResultsPerIter
+		{  
+			parameter<string> AllocSectorType;
+			
+			container PerIter := 
+				for_each_nedv(
+					IterK/name
+					, 'Werken/'+IterK/name+'/PerExtent/'+last(Extent/K/name_short)+'/OverExtents/'+AllocSectorType
+					, domain
+					, Ha
+				)
+			{
+				attribute<Ha> Totaal (domain) := = 'add('+AsItemList(IterK/name)+')';
+			}
+		}
+		
+		attribute<bool> CheckWinkel    (domain) := PerAllocSectorPerExtent/Winkel/PerExtent/Totaal == PerAllocSectorPerIter/Winkel/PerIter/Totaal;
+		attribute<bool> CheckKantoor   (domain) := PerAllocSectorPerExtent/Kantoor/PerExtent/Totaal == PerAllocSectorPerIter/Kantoor/PerIter/Totaal;
+		attribute<bool> CheckIndustrie (domain) := PerAllocSectorPerExtent/Industrie/PerExtent/Totaal == PerAllocSectorPerIter/Industrie/PerIter/Totaal;
+	}
+	
+	container FinalWonen
+	{ 
+		container PerExtent   := for_each_ne(Extent/K/name_short, 'FinalResultsWonen_perTredeT('+quote('Results/Src_Wonen/PerExtent/'+Extent/K/name_short)+')');
+		container PerIter     := for_each_ne(IterK/name, 'FinalResultsWonen_perTredeT('+quote('Results/Src_Wonen/PerIter/'+IterK/name)+')');
+		container Final       := FinalResultsWonen_perTredeT('Results/Src_Wonen/PerIter/Totaal');
+		#include <FinalResultsWonen_perTredeT.dms>
+	}
+	
+	container FinalWerken := 
+		for_each_ne(
+			AllocSector/name
+			, 'ResultsWerkenT('+quote(AllocSector/name)+')'
+		);
+		
+	Template ResultsWerkenT
+	{	
+		parameter<string> AllocSectorType;
+		
+		container PerExtent   := for_each_ne(Extent/K/name_short, 'FinalResultsWerken_perTredeT('+quote('Results/Src_werken/PerAllocSectorPerExtent/'+AllocSectorType+'/PerExtent/'+Extent/K/name_short)+','+quote(AllocSectorType)+')');
+		container PerIter     := for_each_ne(IterK/name, 'FinalResultsWerken_perTredeT('+quote('Results/Src_werken/PerAllocSectorPerIter/'+AllocSectorType+'/PerIter/'+IterK/name)+','+quote(AllocSectorType)+')');
+		container Final       := ='FinalResultsWerken_perTredeT('+quote('Results/Src_werken/PerAllocSectorPerIter/'+AllocSectorType+'/PerIter/Totaal')+','+quote(AllocSectorType)+')';
+		#include <FinalResultsWerken_perTredeT.dms>
+	}
+}

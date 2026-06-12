@@ -1,0 +1,158 @@
+Template CreateNetwerk_Basic_T : Using = "units;classifications;geometries"
+{
+	// begin case parameters
+	unit<uint32>      orgDomain;
+	unit<uint32>      destDomain;
+	unit<uint32>      roadDomain;
+	// end case parameters
+	
+	unit<uint32> Locations := union_unit(orgDomain, destDomain)
+	{
+		attribute<rdc>  geometry := values;
+		attribute<rdc>  Values   := union_data(.,orgDomain/geometry, destDomain/geometry),Label = "Unieke Locations origins en destinations";
+	}
+	unit<uint32> UniqueLocation := unique(Locations/values);
+
+	unit<uint32> RoadsWithLocations := ='connect_eq(roadDomain/geometry, roadDomain/Connectable[uint32], UniqueLocation/values, const(1,UniqueLocation))'
+	{
+		attribute<rdc>              UnionData (arc);
+		attribute<rdc>              geometry  (arc) := UnionData;
+		attribute<classifications/OSM/wegtype> wegtype                  := ='MakeDefined(RoadDomain/wegtype[arc_rel], value(69,classifications/OSM/wegtype))';
+		
+		attribute<km_hr>                       MaxCar_speed             := MakeDefined(RoadDomain/speed_max_car[arc_rel], ModelParameters/Advanced/CarDefaultSpeed_low);
+		attribute<km_hr>                       MaxBike_speed            := roadDomain/speed_max_bike[arc_rel];
+		attribute<km_hr>                       ActualBike_speed         := roadDomain/speed_congested_bike[arc_rel];
+		
+		attribute<km_hr>                       MorningRush_speed        := roadDomain/speed_congested_morningrush[arc_rel];
+		attribute<km_hr>                       NoonRush_speed           := roadDomain/speed_congested_noonrush[arc_rel];
+		attribute<km_hr>                       LateEveningRush_speed    := roadDomain/speed_congested_lateeveningrush[arc_rel];
+		
+		attribute<float32>                     MorningRush_flow         := roadDomain/flow_congested_morningrush[arc_rel];
+		attribute<float32>                     NoonRush_flow            := roadDomain/flow_congested_noonrush[arc_rel];
+		attribute<float32>                     LateEveningRush_flow     := roadDomain/flow_congested_lateeveningrush[arc_rel];
+	}
+
+	unit <uint32> LinkSet := arc2segm(RoadsWithLocations/UnionData)
+	{
+		attribute<rdc>                          geometry (arc)               := segments;
+		attribute<classifications/OSM/wegtype>  wegtype                      := RoadsWithLocations/wegtype[Sequence_rel];
+		attribute<bool>                         IsHighway                    := wegtype == classifications/OSM/wegtype/V/motorway || wegtype == classifications/OSM/wegtype/V/motorway_link;
+		attribute<bool>                         Connectable                  := wegtype != Classifications/OSM/wegtype/V/motorway && wegtype != Classifications/OSM/wegtype/V/motorway_link;
+		
+		attribute<m>                            lengte                       := arc_length(segments, m) == 0[m] ? 0.01[m] : arc_length(segments, m);
+		attribute<km_hr>                        MaxCar_speed                 := RoadsWithLocations/MaxCar_speed[Sequence_rel];
+		attribute<km_hr>                        MaxCar_limit_speed           := MaxCar_speed > ModelParameters/Advanced/MaxCarSpeed_limit ? ModelParameters/Advanced/MaxCarSpeed_limit : MaxCar_speed;
+		attribute<km_hr>                        MaxBike_speed                := RoadsWithLocations/MaxBike_speed[Sequence_rel];
+
+		attribute<km_hr>                        speed_max_car                 := MaxCar_speed;
+		attribute<km_hr>                        speed_max_limit_car           := MaxCar_limit_speed;
+		attribute<km_hr>                        speed_max_bike                := MaxBike_speed;
+		attribute<km_hr>                        speed_congested_bike          := ActualBike_speed;
+		attribute<km_hr>                        speed_congested_morning_car   := MorningRush_speed;
+		attribute<km_hr>                        speed_congested_noon_car      := NoonRush_speed;
+		attribute<km_hr>                        speed_congested_late_car      := LateEveningRush_speed;
+		
+		attribute<km_hr>                        ActualBike_speed_org        := RoadsWithLocations/ActualBike_speed[Sequence_rel];
+		attribute<km_hr>                        ActualBike_speed            := ActualBike_speed_org == 0[km_hr] ? ModelParameters/Advanced/BikingSpeed_kmhr : ActualBike_speed_org;
+		attribute<km_hr>                        MorningRush_speed_org       := RoadsWithLocations/MorningRush_speed[Sequence_rel];
+		attribute<km_hr>                        MorningRush_speed           := MaxCar_speed < MorningRush_speed_org ? MaxCar_speed : MorningRush_speed_org;
+		attribute<float32>                      MorningRush_flow            := RoadsWithLocations/MorningRush_flow[Sequence_rel];
+		
+		attribute<km_hr>                        NoonRush_speed_org         := RoadsWithLocations/NoonRush_speed[Sequence_rel];
+		attribute<km_hr>                        NoonRush_speed             := MaxCar_speed < NoonRush_speed_org ? MaxCar_speed : NoonRush_speed_org;
+		attribute<float32>                      NoonRush_flow              := RoadsWithLocations/NoonRush_flow[Sequence_rel];
+		
+		attribute<km_hr>                        LateEveningRush_speed_org  := RoadsWithLocations/LateEveningRush_speed[Sequence_rel];
+		attribute<km_hr>                        LateEveningRush_speed      := MaxCar_speed < LateEveningRush_speed_org ? MaxCar_speed : LateEveningRush_speed_org;
+		attribute<float32>                      LateEveningRush_flow       := RoadsWithLocations/LateEveningRush_flow[Sequence_rel];
+	
+		attribute<s_f>                          impedance_max_Pedestrian   := lengte / (ModelParameters/Advanced/WalkingSpeed_kmhr / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                          impedance_max_Bike         := lengte / (ModelParameters/Advanced/BikingSpeed_kmhr / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                          impedance_max_Car          := lengte / (MaxCar_speed / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                          impedance_max_limit_Car    := lengte / (MaxCar_limit_speed / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                          impedance_MorningRush      := lengte / (MorningRush_speed[km_hr] / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                          impedance_NoonRush         := lengte / (NoonRush_speed  [km_hr] / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                          impedance_LateEveningRush  := lengte / (LateEveningRush_speed  [km_hr] / 3600[s_f / hr_f] * 1000[m / km]);
+		attribute<s_f>                          impedance_ActualBike       := lengte / (MakeDefined(ActualBike_speed[km_hr],ModelParameters/Advanced/BikingSpeed_kmhr) / 3600[s_f / hr_f] * 1000[m / km]);
+		
+		unit<uint32> pointset := Union_Unit(LinkSet, LinkSet)
+		{
+			attribute<geometries/rdc>   point   := Union_Data(pointset, LinkSet/point, LinkSet/nextpoint);
+			attribute<LinkSet>          ArcID   := value(ID(pointset) % nrofrows(LinkSet), LinkSet);
+			attribute<uint32>           VolgNr  := ID(pointset) / nrofrows(LinkSet);
+		}
+		attribute<geometries/rdc> segments(arc) := points2sequence(pointset/point, pointset/ArcID, pointset/VolgNr);
+			
+		attribute<NodeSet> F1(LinkSet):= rlookup(LinkSet/point,     NodeSet/Values);
+		attribute<NodeSet> F2(LinkSet):= rlookup(LinkSet/nextpoint, NodeSet/Values);	
+	}
+	
+	unit<uint32> NodeSet  := unique(linkset/pointset/point)
+	,	DialogData = "Values"
+	,	DialogType = "Map"
+	{
+		attribute<uint32>    NrConnectedLinksOrg := pcount(LinkSet/F1) + pcount(LinkSet/F2);
+		attribute<uint32>    NrConnectedLinks    := pcount(unique_Link/F1) + pcount(unique_Link/F2);
+		attribute<rdc_100m>  per_rdc_100m        := values[rdc_100m];
+	}
+	
+	unit<uint64> NodeSet2 := combine_unit_uint64(NodeSet, NodeSet);
+	attribute<NodeSet2> UniqueF (LinkSet):= combine_data(NodeSet2, min_elem(LinkSet/F1,LinkSet/F2), max_elem(LinkSet/F1,LinkSet/F2));
+
+	unit <uint32> unique_link := unique(UniqueF)
+	,	DialogData = "segments"
+	,	DialogType = "Map"
+	{
+		attribute<NodeSet> F1 := value(values / UInt64(#NodeSet), NodeSet);
+		attribute<NodeSet> F2 := value(values % UInt64(#NodeSet), NodeSet);
+	}
+
+	container ConnectingLinks 
+	// hiermee wordt voor ieder begin en eind node het aantal geconnecte links bepaald
+	// dit bepaalt of het een bocht (2 links), zijweg (3 links), kruising (4 links) of complexe kruising (meer dan 4 links) is
+	// afhankelijk van dit aantal wordt een aantal seconden opgeteld bij de totale impedance
+	{
+		// helft van de opgegeven waarden omdat er zowel bij begin als einde een factor wordt opgeteld
+		parameter<s>       Impedance2Links    := 0[s];
+		parameter<s>       Impedance3Links    := 2[s];
+		parameter<s>       Impedance4Links    := 5[s];
+		parameter<s>       Impedance_gt4Links := 6[s];
+
+		attribute<uint32>  Start(LinkSet)     := NodeSet/NrConnectedLinks[LinkSet/F1];
+		attribute<uint32>  End  (LinkSet)     := NodeSet/NrConnectedLinks[LinkSet/F2];
+	
+		attribute<s> impedance_Start (LinkSet):=
+			switch(
+				 case(Start <= 2, Impedance2Links)
+				,case(Start  = 3, Impedance3Links)
+				,case(Start  = 4, Impedance4Links)
+				,Impedance_gt4Links
+			);
+	
+		attribute<s> impedance_End (LinkSet):=
+			switch(
+				 case(End <= 2, Impedance2Links)
+				,case(End  = 3, Impedance3Links)
+				,case(End  = 4, Impedance4Links)
+				,Impedance_gt4Links
+			);
+	}
+	
+	attribute<s_f> impedance_max_Pedestrian   (LinkSet) := linkset/impedance_max_Pedestrian  + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	attribute<s_f> impedance_max_Bike         (LinkSet) := linkset/impedance_max_Bike        + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	attribute<s_f> impedance_max_Car          (LinkSet) := linkset/impedance_max_Car         + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	attribute<s_f> impedance_max_limit_Car    (LinkSet) := linkset/impedance_max_limit_Car   + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	attribute<s_f> impedance_MorningRush      (LinkSet) := linkset/impedance_MorningRush     + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	attribute<s_f> impedance_NoonRush         (LinkSet) := linkset/impedance_NoonRush        + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	attribute<s_f> impedance_LateEveningRush  (LinkSet) := linkset/impedance_LateEveningRush + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	attribute<s_f> impedance_ActualBike       (LinkSet) := linkset/impedance_ActualBike      + ConnectingLinks/impedance_Start[s_f] + ConnectingLinks/impedance_End[s_f];
+	
+	attribute<float32> MorningRush_flow       (LinkSet) := linkset/MorningRush_flow;
+	attribute<float32> NoonRush_flow          (LinkSet) := linkset/NoonRush_flow;
+	attribute<float32> LateEveningRush_flow   (LinkSet) := linkset/LateEveningRush_flow;
+	
+	attribute<m>   distance  (LinkSet)           := linkset/lengte;
+	
+	attribute<NodeSet> nr_orgNode  (orgDomain)   := rlookup(orgDomain/geometry, NodeSet/Values);
+	attribute<NodeSet> nr_destNode (destDomain)  := rlookup(destDomain/geometry, NodeSet/Values);
+}

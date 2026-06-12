@@ -1,0 +1,278 @@
+Template Determine_CongestedSpeeds_T
+{
+	parameter<string> regio_name;
+	parameter<string> InwonerOD_set; //  := 'Gemeente'; // Wijk_y2020
+	///
+	parameter<string> Org_domain_str := replace(rjoin(lowercase(InwonerOD_set), lowercase(ModelParameters/Advanced/org_domain_list/label), ModelParameters/Advanced/org_domain_list/path), '@REGIO@', regio_name);
+
+	unit<uint32> org  := =Org_domain_str;
+	unit<uint32> dest := org;
+		
+	container NetwerkSpec :=
+		Templates/CreateNetwerk_Basic_T(
+			  org
+			, dest
+			, SourceData/Infrastructuur/OSM/Network_Car/isVerbonden
+		);
+		
+	attribute<Float32> dest_mass  (dest) := dest/nr_inwoners[float32];
+	attribute<Float32> org_mass   (org)  := org/nr_inwoners[float32];
+	
+	unit<uint32> LinkSet := NetwerkSpec/LinkSet 
+	{
+		attribute<bool> isBidirectional := 
+			wegtype != classifications/OSM/wegtype/V/motorway  
+			&& wegtype != classifications/OSM/wegtype/V/motorway_link; // motor way en motor way link, snelwegen zijn niet bidirectional
+			
+		attribute<min_f> impedance_min_max_car         := NetwerkSpec/LinkSet/impedance_max_car  / 60[s_f / min_f];
+		attribute<min_f> impedance_min_max_limit_car   := NetwerkSpec/LinkSet/impedance_max_limit_car  / 60[s_f / min_f];
+		attribute<min_f> impedance_min_MorningRush     := NetwerkSpec/LinkSet/impedance_MorningRush / 60[s_f / min_f];
+		attribute<min_f> impedance_min_NoonRush        := NetwerkSpec/LinkSet/impedance_NoonRush   / 60[s_f / min_f];
+		attribute<min_f> impedance_min_LateEveningRush := NetwerkSpec/LinkSet/impedance_LateEveningRush   / 60[s_f / min_f];
+		
+		attribute<km>                           lengte                      := convert(arc_length(segments, m), km);
+		
+		attribute<km_hr>                        Speed_max                   :=  lengte / convert(impedance_min_max_car, hr_f);
+		attribute<km_hr>                        Speed_max_limit             :=  lengte / convert(impedance_min_max_limit_car, hr_f);
+		attribute<km_hr>                        Speed_congested_morning     :=  lengte / convert(impedance_min_MorningRush, hr_f);
+		attribute<km_hr>                        Speed_congested_noon        :=  lengte / convert(impedance_min_NoonRush, hr_f);
+		attribute<km_hr>                        Speed_congested_late        :=  lengte / convert(impedance_min_LateEveningRush, hr_f);
+		
+	}
+
+
+	container freeflow_linkusage      := freeflow_linkusage_T(LinkSet, Dest, LinkSet/impedance_min_max_car);
+	container CALC_OD_MorningRush     := linkflow_congested(LinkSet, LinkSet/impedance_min_MorningRush, 'MorningRush');
+	container CALC_OD_NoonRush        := linkflow_congested(LinkSet, LinkSet/impedance_min_NoonRush,'NoonRush');
+	container CALC_OD_LateEveningRush := linkflow_congested(LinkSet, LinkSet/impedance_min_LateEveningRush, 'LateEveningRush');
+	
+	
+	unit<uint32> Make_CongestionSpeeds_FSS := LinkSet //1:47h op 2023 07 24 op OVSRV6
+	, StorageName = "='%NetworkModel_dir%/Infrastructuur/CongestionRuns/CongestionSpeeds'+Settings/fileNameSuffix_MakeCongestionSpeeds+'.fss'"
+	{ 
+		attribute<geometries/rdc>               geometry (arc)                      := LinkSet/geometry;
+		attribute<classifications/OSM/wegtype>  wegtype                             := LinkSet/wegtype;
+		attribute<min_f>                        MorningRush_imp_simulated           := CALC_OD_MorningRush/Impedance_congested;
+		attribute<min_f>                        NoonRush_imp_simulated              := CALC_OD_NoonRush/Impedance_congested;
+		attribute<min_f>                        LateEveningRush_imp_simulated       := CALC_OD_LateEveningRush/Impedance_congested;
+		attribute<min_f>                        MaxSpeed_imp                        := LinkSet/impedance_min_max_car;
+		attribute<min_f>                        MaxSpeed_limit_imp                  := LinkSet/impedance_min_max_limit_Car;
+
+		attribute<min_f>                        MorningRush_imp_observed            := LinkSet/impedance_min_MorningRush;
+		attribute<min_f>                        NoonRush_imp_observed               := LinkSet/impedance_min_NoonRush;
+		attribute<min_f>                        LateEveningRush_imp_observed        := LinkSet/impedance_min_LateEveningRush;
+
+		attribute<float32>                      MorningRush_flow_simulated          := CALC_OD_MorningRush/Flow_congested;
+		attribute<float32>                      NoonRush_flow_simulated             := CALC_OD_NoonRush/Flow_congested;
+		attribute<float32>                      LateEveningRush_flow_simulated      := CALC_OD_LateEveningRush/Flow_congested;
+		
+		attribute<float32>                      MorningRush_flow_observed           := NetwerkSpec/LinkSet/MorningRush_flow;
+		attribute<float32>                      NoonRush_flow_observed              := NetwerkSpec/LinkSet/NoonRush_flow;
+		attribute<float32>                      LateEveningRush_flow_observed       := NetwerkSpec/LinkSet/LateEveningRush_flow;
+	}
+	
+	unit<uint32> Read_CongestionSpeeds_FSS
+	: StorageName = "='%NetworkModel_dir%/Infrastructuur/CongestionRuns/CongestionSpeeds'+Settings/fileNameSuffix_ReadCongestionSpeeds+'.fss'"
+	, StorageReadOnly = "true"
+	{
+		attribute<geometries/rdc>               geometry (arc);
+		attribute<classifications/OSM/wegtype>  wegtype;
+		attribute<bool>                         Connectable                      := wegtype != Classifications/OSM/wegtype/V/motorway && wegtype != Classifications/OSM/wegtype/V/motorway_link;
+		attribute<km>                           lengte                      := convert(arc_length(geometry, m), km);
+		
+		attribute<km_hr>                        Speed_max_car                   :=  lengte / convert(MaxSpeed_imp, hr_f);
+		attribute<km_hr>                        Speed_max_limit_car             :=  lengte / convert(MaxSpeed_limit_imp, hr_f);
+		attribute<km_hr>                        Speed_congested_morning_car     :=  lengte / convert(MorningRush_imp_simulated, hr_f);
+		attribute<km_hr>                        Speed_congested_noon_car        :=  lengte / convert(NoonRush_imp_simulated, hr_f);
+		attribute<km_hr>                        Speed_congested_late_car        :=  lengte / convert(LateEveningRush_imp_simulated, hr_f);
+		
+		attribute<float32>                      MorningRush_flow_observed;
+		attribute<float32>                      NoonRush_flow_observed;
+		attribute<float32>                      LateEveningRush_flow_observed;
+
+		attribute<min_f>                        MorningRush_imp_observed;
+		attribute<min_f>                        NoonRush_imp_observed;
+		attribute<min_f>                        LateEveningRush_imp_observed;
+		
+		attribute<float32>                      MorningRush_flow_simulated;
+		attribute<float32>                      NoonRush_flow_simulated;
+		attribute<float32>                      LateEveningRush_flow_simulated;
+		
+		attribute<min_f>                        MorningRush_imp_simulated;
+		attribute<min_f>                        NoonRush_imp_simulated;
+		attribute<min_f>                        LateEveningRush_imp_simulated;
+		attribute<min_f>                        MaxSpeed_imp;
+		attribute<min_f>                        MaxSpeed_limit_imp;
+		
+		parameter<min_f>                        gewogen_observed_imp_morning         := sum(MorningRush_imp_observed * MorningRush_flow_observed) / sum(MorningRush_flow_observed);
+		parameter<min_f>                        gewogen_observed_imp_noon            := sum(NoonRush_imp_observed * NoonRush_flow_observed) / sum(NoonRush_flow_observed);
+		parameter<min_f>                        gewogen_observed_imp_late            := sum(LateEveningRush_imp_observed * LateEveningRush_flow_observed) / sum(LateEveningRush_flow_observed);
+		
+		parameter<min_f>                        gewogen_sim_imp_morning              := sum(MorningRush_imp_simulated * MorningRush_flow_simulated) / sum(MorningRush_flow_simulated);
+		parameter<min_f>                        gewogen_sim_imp_noon                 := sum(NoonRush_imp_simulated * NoonRush_flow_simulated) / sum(NoonRush_flow_simulated);
+		parameter<min_f>                        gewogen_sim_imp_late                 := sum(LateEveningRush_imp_simulated * LateEveningRush_flow_simulated) / sum(LateEveningRush_flow_simulated);
+		
+		container Connectiveness
+		{
+			unit<uint32> src := ..;
+			attribute<geometries/rdc>               point (src)           := first_point(src/segments);
+			attribute<geometries/rdc>               nextpoint (src)       := last_point(src/segments);
+			
+			unit<uint32> pointset : = union_unit(src,src)
+			{
+				attribute<geometries/rdc>       point       := union_data(., ../point, ../nextpoint);
+				attribute<bool>                 isVerbonden := isNull(rlookup(point, NodesNotConnected/point));
+				attribute<src>                  ArcNr       := value(ID(.) % #(src), src);
+			}
+			
+			unit<uint32> NodeSet := unique(pointset/point)
+			,	DialogData = "Values"
+			,	DialogType = "Map"
+			{
+				attribute<geometries/rdc> values;
+			}
+
+			attribute<NodeSet> F1 (src) := rlookup(point,     NodeSet/Values);
+			attribute<NodeSet> F2 (src) := rlookup(nextpoint, NodeSet/Values);
+		
+			unit<uint32> networks:= connected_parts(F1, F2) // Verzameling van alle netwerken, inclusief de subnetwerken.
+			{
+				attribute<uint32>   nr_nodes   := sum(const(1, NodeSet, uint32), part_rel);
+				parameter<uint32>   MaxNrNodes := max(networks/nr_nodes);
+				parameter<networks> main       := rlookup(MaxNrNodes, nr_nodes); // uitgangspunt: het netwerk met de meeste nodes is het relevante netwerk
+			}
+
+			unit<uint32> NodesNotConnected := select_with_org_rel(networks/part_rel <> networks/main)
+			{
+				attribute<geometries/rdc> point := NodeSet/Values[org_rel];
+			}
+			attribute<bool> isVerbonden (src) := all(pointset/isVerbonden, pointset/ArcNr);
+		}
+	}
+	
+	Template freeflow_linkusage_T
+	{
+		unit<uint32> LinkSet;
+		unit<uint32> Dest;
+		attribute<min_f> impedance_min   (LinkSet);
+		///
+		
+		unit<uint32> balancing_iter := range(uint32, 0, settings/nr_balancing_iter) 
+		{
+			attribute<string> Name   := 'I'+string(ID(.));
+			attribute<string> products := // choose from D_i,M_ix,C_j,M_xj,Link_flow
+				(ID(.)==first(ID(.))?'D_i,':'') // only genereate D_i in first iteration for usage as fleeflow result.
+				+'C_j'
+				+(ID(.)==last(ID(.))?',Link_flow':''); // only genereate cumulate link_flow in last iteration to save space&time
+		}
+		
+		container balancing_iters:= 
+			for_each_nex(
+				balancing_iter/Name
+				,'impedance_matrix_od64('+
+					Quote(
+						'bidirectional(link_flag);startPoint(Node_rel);endPoint(Node_rel)'
+					+	(DoMakeAllPairs ? '' :';cut(OrgZone_max_imp)')
+					+	';interaction(v_i,w_j,dist_logit(alpha,beta,gamma)):'+balancing_iter/products
+					+	(DoMakeAllPairs ? ';od:impedance,OrgZone_rel,DstZone_rel':'')
+					)
+				+'	, impedance_min
+					, Determine_CongestedSpeeds/NetwerkSpec/LinkSet/F1
+					, Determine_CongestedSpeeds/NetwerkSpec/LinkSet/F2
+					, LinkSet/isBidirectional
+					, Determine_CongestedSpeeds/NetwerkSpec/nr_orgNode
+					, Determine_CongestedSpeeds/NetwerkSpec/nr_destNode'
+				+	(DoMakeAllPairs?'':', max_traveldistance_min')
+				+	', org_mass' // v_i
+					', dest_mass / Cjs/' + balancing_iter/Name + // w_j
+					', '+settings/logit_weights_expr+
+				')'
+				,uint64
+			);
+			
+		container Cjs := 
+			for_each_nedv(
+				balancing_iter/Name
+				,	MakeDefined('median(0.5f, ' + 'balancing_iters/'+balancing_iter/Name[ID(balancing_iter)-1] +'/C_j'+ ', 10.0f)', 'const(1.0f, dest)')
+				,	dest
+				, float32
+			);
+
+		container results
+		{
+			attribute<float32> Flow            (LinkSet) := = 'balancing_iters/'+last(balancing_iter/Name)+'/link_flow';
+			attribute<float32> Cj              (dest)    := = 'Cjs/'+last(balancing_iter/Name);
+			attribute<float32> NextUnboundedCj (dest)    := = 'balancing_iters/'+last(balancing_iter/Name)+'/C_j'; // added to cheaply analyze stability of found Cj's
+		}
+	}		
+
+	template linkflow_congested
+	{		
+		unit<uint32> LinkSet;
+		attribute<min_f> impedance_observed (LinkSet);
+		parameter<string> CongestionPeriod;
+		
+		attribute<min_f> impedance_min_max_car (LinkSet) := = CongestionPeriod == 'MorningRush' || CongestionPeriod == 'NoonRush' ? 'LinkSet/impedance_min_max_limit_car' : 'LinkSet/impedance_min_max_car';
+		
+		unit<uint32> impedance_iter := range(uint32, 0, settings/nr_imp_iter) 
+		{
+			attribute<string> Name   := 'I'+string(ID(.));
+			attribute<string> PrevName := Name[ID(impedance_iter)-1];
+		}
+		container impedance_factors := //margin is check window    //step is de aanpassing
+			for_each_nedv(
+				impedance_iter/Name
+				,MakeDefined(
+					// replace('(routings/@PI/link_flow > freeflow_linkusage/results/Flow * settings/imp_margin && LinkSet/isBidirectional ? settings/imp_step : 1.0f) * @PI', '@PI', impedance_iter/PrevName)  //Oude rekenregel
+					replace(
+						'((routings/@PI/link_flow > freeflow_linkusage/results/Flow * settings/imp_margin) && LinkSet/isBidirectional
+							? min_elem(routings/@PI/link_flow / (freeflow_linkusage/results/Flow * settings/imp_margin), settings/imp_step)
+							: 1.0f)
+							* @PI'
+						, '@PI', impedance_iter/PrevName
+					)
+					,'const(1.0f, LinkSet)'
+				)
+				,LinkSet
+				,float32
+			);
+		
+		container impedances := 
+			for_each_nedv(
+				impedance_iter/Name
+				, 'MakeDefined(impedance_observed, impedance_min_max_car * impedance_factors/'+impedance_iter/Name+')'
+				, LinkSet
+				, min_f
+			);
+			
+		container impedance_check := 
+			for_each_nedv(
+				impedance_iter/Name
+				, 'impedance_min_max_car <= impedances/'+impedance_iter/Name
+				, LinkSet
+				, bool
+			);
+		
+		container routings := 
+			for_each_nex(
+				impedance_iter/Name
+				,'impedance_matrix_od64('+Quote('bidirectional(link_flag);startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(v_i,w_j,dist_logit(alpha,beta,gamma)):Link_flow')+'
+					, impedances/'+impedance_iter/Name+'
+					, Determine_CongestedSpeeds/NetwerkSpec/LinkSet/F1
+					, Determine_CongestedSpeeds/NetwerkSpec/LinkSet/F2
+					, LinkSet/isBidirectional
+					, Determine_CongestedSpeeds/NetwerkSpec/nr_orgNode
+					, Determine_CongestedSpeeds/NetwerkSpec/nr_destNode
+					, settings/max_traveldistance_min
+					, org_mass
+					, dest_mass / freeflow_linkusage/results/Cj 
+					, '+settings/logit_weights_expr+'
+				)'
+				, uint64
+			);
+		attribute<float32>        Flow_congested      (LinkSet) := ='routings/'+last(impedance_iter/Name)+'/Link_flow'; 
+		attribute<min_f>          Impedance_congested (LinkSet) := ='impedances/'+last(impedance_iter/Name); 
+	}
+
+}
+

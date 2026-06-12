@@ -1,0 +1,103 @@
+container ModelParameters : using = "units"
+{
+	parameter<float32> PrijsIndex : [1.0];
+	
+	parameter<string> ToepassingsRef: ['KvDV_MRA'];                     //NLLater2, KvDV_MRA
+	parameter<string> BAG_datum := '20200617';
+	// parameter<string> AggRegioRef: ['MRA8']; //'MRA8'
+	parameter<string> StAreaRef := 'MRA'; //'NL'
+	parameter<string> Schattingen_StAreaRef := StAreaRef;
+	parameter<string> Landuse_aggregation_method := 'modus'; //'allocation'; //'modus'
+	parameter<string> Suitability_ref: ['Winst']; // 'Winst' 'ResidueleWaarde'
+	parameter<string> Scenario_ref : ['WLO_Hoog'];
+	parameter<string> Woningdichtheid_ref: ['MD'];                      // 'LD', 'HD', 'MD'
+	parameter<uint8>  NrOfIters: [3];
+	
+	parameter<bool>     DynamischItereren : [FALSE];
+	parameter<bool>     InputOntkoppeld: [true];
+	parameter<bool>     ResultatenOntkoppeld: [false];
+	parameter<units/ha> MinimalLandAvailability: [0.25]; // waarde tussen 0 en 1 kiezen
+	
+	container AllocSector_Densities
+	{
+		parameter<m2footprint_ha> Winkel    := 1000[m2footprint_ha];
+		parameter<m2footprint_ha> Kantoor   := 1000[m2footprint_ha];
+		parameter<m2footprint_ha> Industrie := 1000[m2footprint_ha];
+	}
+	
+	// container Allocatie_type
+	// {
+		// ga naar dit pad, en commentarieer daar aan of uit welke variant je wilt gebruiken.
+		// container Allocatie_pad := Analysis/KvDV/Results/AllocTest/PerTPK/Rest/Allocatie;
+	// }
+	
+	parameter<string> grondproductie_kosten_variant := 'Nominaal_high'; //'high', 'low'
+
+	container Verwervingskosten
+	{
+		parameter<Eur_m2> NietWoningen := 10000[Eur_m2]; // hack om bebouwing op werklocaties te voorkomen, waarvan de verwervingskosten nu nog niet duidelijk zijn.
+	}
+	
+	container Sloopkosten
+	{
+		parameter<Eur_m2> Rijtjeswoning     := 22[Eur_m2];
+		parameter<Eur_m2> Twee_onder_1_kap  := 40[Eur_m2];
+		parameter<Eur_m2> Vrijstaand        := 57[Eur_m2];
+		parameter<Eur_m2> Appartement       := 22[Eur_m2];
+		parameter<Eur_m2> Kantoor           := 25[Eur_m2];
+	}
+	
+	container Bouwkosten 
+	{
+		parameter<Eur_m2> Rijtjeswoning     :=  859[Eur_m2];
+		parameter<Eur_m2> Twee_onder_1_kap  := 1017[Eur_m2];
+		parameter<Eur_m2> Vrijstaand        :=  984[Eur_m2];
+		parameter<Eur_m2> Appartement       := 1126[Eur_m2];
+	}
+
+	container WP4_ontwikkelpakketen
+	{
+ 		container density :=
+			for_each_nedv(
+				classifications/groen/functie/name
+				, '0[woning_ha]'
+				, void
+				, woning_ha
+			)
+		{
+			parameter<woning_ha> geen_woonpand    := 0[woning_ha];
+			parameter<woning_ha> vrijstaand       := 5[woning_ha];
+			parameter<woning_ha> twee_onder_1_kap := 10[woning_ha];
+			parameter<woning_ha> rijtjeswoning    := 25[woning_ha];
+			parameter<woning_ha> appartement      := 60[woning_ha];
+		}
+		container size :=
+			for_each_nedv(
+				classifications/groen/functie/name
+				, '0[m2_Woning]'
+				, void
+				, m2_Woning
+			)
+		{
+			parameter<m2_Woning> geen_woonpand    := 0[m2_Woning];
+			parameter<m2_Woning> vrijstaand       := 260[m2_Woning];
+			parameter<m2_Woning> twee_onder_1_kap := 160[m2_Woning];
+			parameter<m2_Woning> rijtjeswoning    := 140[m2_Woning];
+			parameter<m2_Woning> appartement      := 100[m2_Woning];
+		}
+		container is_Hoogbouw :=
+			for_each_nedv(
+				classifications/groen/functie/name
+				, '0f'
+				, void
+				, float32
+			)
+		{
+			parameter<float32>   geen_woonpand    := 0f;
+			parameter<float32>   vrijstaand       := 0f;
+			parameter<float32>   twee_onder_1_kap := 0f;
+			parameter<float32>   rijtjeswoning    := 0f;
+			parameter<float32>   appartement      := 1f;
+		}
+	}
+}

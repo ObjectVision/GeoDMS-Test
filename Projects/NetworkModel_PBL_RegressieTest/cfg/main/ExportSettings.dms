@@ -1,0 +1,99 @@
+container ExportSettings
+{
+	container GitImpl
+	{
+		parameter<string> PD               := expand(., '%projDir%');
+		parameter<string> DOS_PD           := replace(PD, '/', '\\');
+
+		parameter<string> SwitchDriveCmd   := substr(DOS_PD, 0, 2);
+		parameter<string> CdCmd            := 'cd '+DOS_PD;
+		parameter<string> DescrCmd         := 'git describe --all > git.txt';
+		parameter<string> StatusCmd        := 'git status >> git.txt';
+		parameter<string> HashCmd          := 'git rev-parse HEAD >> git.txt';
+		parameter<string> TagCmd           := 'git ls-remote --tags >> git.txt';
+		parameter<string> RevisionInfoCmds := SwitchDriveCmd + ' && ' + CdCmd + ' && ' + DescrCmd + ' && ' + StatusCmd + ' && ' + HashCmd + ' && ' + TagCmd;
+		parameter<uint32> WriterCode       := exec_ec(Expand(., '%env:ComSpec%'), '/c ' + RevisionInfoCmds, PD);
+	}
+	
+	container MetaInfo 
+	{
+		parameter<string> FileName : ='%storageBaseName%.xml';
+		parameter<string> FileType : ='xml'; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
+		
+		container Contents
+		{
+			container Software
+			{
+				parameter<string> GeoDMSVersion := string(GeoDmsMajorVersionNumber()) + '.' +  string(GeoDmsMinorVersionNumber())  +'.'  +  string(GeoDmsPatchNumber());
+			}
+			container Config
+			{
+				parameter<string> FullName := '=PropValue(this, '+Quote('FullName')+')';
+				parameter<string> Expr     := '=PropValue(this, '+Quote('Expr'    )+')';
+			}
+			container Environment
+			{
+				parameter<string> Processor    := expand(., '%env:PROCESSOR_IDENTIFIER%');
+				parameter<string> User         := expand(., '%env:USERNAME%');
+				parameter<string> ComputerName := expand(., '%env:COMPUTERNAME%');
+			}
+			// container Git
+			// {
+				// parameter<string> RevisionInfo : Storagename = "=(GitImpl/WriterCode==0) ? '%projDir%/git.txt' : 'Error '+String(GitImpl/WriterCode)+' while producing %projDir%/git.txt'", StorageType = "str";
+			// }
+			container Parameters
+			{
+				parameter<string>  GTFS_file_date                          := string(ModelParameters/GTFS_file_date);
+				parameter<string>  OSM_file_date                           := string(ModelParameters/Advanced/OSM_file_date);
+				parameter<string>  BAG_jaar                                := string(ModelParameters/Advanced/BAG_jaar);
+				parameter<string>  LISA_jaar                               := string(ModelParameters/Advanced/LISA_jaar);
+				parameter<string>  RegioIndelingen_jaar                    := string(ModelParameters/Advanced/RegioIndelingen_jaar);
+				parameter<string>  CarCongestionSpeed_date                 := string(ModelParameters/Advanced/CarCongestionSpeed_date);
+				parameter<string>  Analysis_date                           := string(ModelParameters/Analysis_date);
+				parameter<string>  CongestionSpeed_DaySelection            := string(ModelParameters/Advanced/CongestionSpeed_DaySelection);
+				parameter<string>  Orgset                                  := string(ModelParameters/Orgset);
+				parameter<string>  Destset                                 := string(ModelParameters/Destset);
+				parameter<string>  Dests_geclusterd                        := string(ModelParameters/Advanced/Dests_geclusterd);
+				parameter<string>  Orgset_EnkeleBuurt_selectie             := string(ModelParameters/Orgset_EnkeleBuurt_selectie);
+				parameter<string>  Orgset_EnkeleProv_selectie              := string(ModelParameters/Orgset_EnkeleProv_selectie);
+				parameter<string>  Arrival_or_Departure_at_time            := string(ModelParameters/Advanced/Arrival_or_Departure_at_time);
+				parameter<string>  MaxTransferDistKm                       := string(ModelParameters/Advanced/MaxTransferDistKm);
+				parameter<string>  MaxODconn                               := string(ModelParameters/Advanced/MaxODconn);
+				parameter<string>  MaxWalkingTime_Org2Stop                 := string(ModelParameters/MaxPedestrianTime_Org2Stop);
+				parameter<string>  MaxWalkingTime_Stop2Dest                := string(ModelParameters/MaxPedestrianTime_Stop2Dest);
+				parameter<string>  MaxBikingTime_Org2Stop                  := string(ModelParameters/MaxBikeTime_Org2Stop);
+				parameter<string>  MaxBikingTime_Stop2Dest                 := string(ModelParameters/MaxBikeTime_Stop2Dest);
+				parameter<string>  MaxPedestrianTime_Org2Dest              := string(ModelParameters/MaxPedestrianTime_Org2Dest);
+				parameter<string>  MaxBikeTime_Org2Dest                    := string(ModelParameters/MaxBikeTime_Org2Dest);
+				parameter<string>  MaxOVTime                               := string(ModelParameters/MaxOVTime);
+				parameter<string>  MaxCarTime                              := string(ModelParameters/MaxCarTime);
+				parameter<string>  OngelijkvloersPenalty                   := string(ModelParameters/OngelijkvloersPenalty);
+				parameter<string>  UseActualBikeSpeeds                     := string(ModelParameters/UseActualBikeSpeeds);
+				parameter<string>  Fietstel_OSM_link_dist                  := string(ModelParameters/Advanced/Fietstel_OSM_link_dist);
+				parameter<string>  Dest_location_scale                     := string(ModelParameters/Advanced/Dest_location_scale);
+				parameter<string>  TransferEffectiveSpeed                  := string(ModelParameters/Advanced/TransferEffectiveSpeed);
+				parameter<string>  ConnectSearchDist                       := string(ModelParameters/Advanced/ConnectSearchDist);
+				parameter<string>  WegingWachttijdThuisVoortransport       := string(ModelParameters/Advanced/WegingWachttijdThuisVoortransport);
+				parameter<string>  NumberOfItersForNetworkCleanUp          := string(ModelParameters/Advanced/NumberOfItersForNetworkCleanUp);
+				parameter<string>  WalkingSpeed_kmhr                       := string(ModelParameters/Advanced/WalkingSpeed_kmhr);
+				parameter<string>  BikingSpeed_kmhr                        := string(ModelParameters/Advanced/BikingSpeed_kmhr);
+				parameter<string>  E_BikingSpeed_kmhr                      := string(ModelParameters/Advanced/E_BikingSpeed_kmhr);
+				parameter<string>  E_BikingSpeed_actualspeed_addition_kmhr := string(ModelParameters/Advanced/E_BikingSpeed_actualspeed_addition_kmhr);
+				parameter<string>  MaxCarSpeed                             := string(ModelParameters/Advanced/MaxCarSpeed);
+				parameter<string>  MaxCarSpeed_limit                       := string(ModelParameters/Advanced/MaxCarSpeed_limit);
+				parameter<string>  CarDefaultSpeed                         := string(ModelParameters/Advanced/CarDefaultSpeed);
+				parameter<string>  CarDefaultSpeed_low                     := string(ModelParameters/Advanced/CarDefaultSpeed_low);
+				parameter<string>  Ferry_Speed                             := string(ModelParameters/Advanced/Ferry_Speed);
+				parameter<string>  Distance_decay_car_a                    := string(ModelParameters/Advanced/Distance_decay/car_a);
+				parameter<string>  Distance_decay_car_b                    := string(ModelParameters/Advanced/Distance_decay/car_b);
+				parameter<string>  Distance_decay_car_c                    := string(ModelParameters/Advanced/Distance_decay/car_c);
+				parameter<string>  Distance_decay_bike_a                   := string(ModelParameters/Advanced/Distance_decay/bike_a);
+				parameter<string>  Distance_decay_bike_b                   := string(ModelParameters/Advanced/Distance_decay/bike_b);
+				parameter<string>  Distance_decay_bike_c                   := string(ModelParameters/Advanced/Distance_decay/bike_c);
+				parameter<string>  Distance_decay_ov_a                     := string(ModelParameters/Advanced/Distance_decay/ov_a);
+				parameter<string>  Distance_decay_ov_b                     := string(ModelParameters/Advanced/Distance_decay/ov_b);
+				parameter<string>  Distance_decay_ov_c                     := string(ModelParameters/Advanced/Distance_decay/ov_c);
+			}
+		}
+	}
+}

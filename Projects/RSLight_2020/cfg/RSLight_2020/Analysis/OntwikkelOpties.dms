@@ -1,0 +1,126 @@
+unit<uint8> OntwikkelPakketten := Classifications/Vastgoed/OntwikkelPakket
+//Let op: eerste vier elementen van Kenmerken (woningdichtheden) waren per ha. In DomainCharacteristics vermenigvuldig ik dit met aantal ha per cel in het domain_grid.
+// op deze manier worden Ontwikkeloptie-gerelateerde postren op de exploitatie (Opbrengsten, Bouwkosten en Exploitatiekosten) per domain_grid bepaald.
+//N.B., 20180910: waarschijnlijk zijn deze opbrengsten en kosten afhankeolijk van de schaal van woningbouw (i.e. de resolutie van het domain_grid). Needs work. Voorlopig domain_grid op rdc_100m zetten
+{
+	container HeeftWP4 :=
+		for_each_nedv(
+			Vastgoed/WP4/name
+			,replace(
+				'union_data(.., '+AsItemList('Ontwikkelpakketten/@W@/'+Ontwikkelpakketten/name+' > 0f')+')',
+				'@W@', Vastgoed/WP4/name
+			)
+			,OntwikkelPakketten
+			, bool
+		);
+	
+	attribute<bool> Heeft1WP4 := = 'add('+AsItemList('uint8(HeeftWP4/'+Vastgoed/WP4/name+')')+') == 1[uint8]';
+	attribute<Vastgoed/WP4> WP4_rel := = 'ArgMax('+AsItemList('HeeftWP4/'+Vastgoed/WP4/name)+')[Vastgoed/WP4]';
+	
+	unit<uint8> Kenmerken
+	:  StorageName = "%RSLDataDir%/Vastgoed/OntwikkelOptieSamenstellingen_nov2018.csv"
+	,  StorageType = "gdal.vect"
+	,  StorageReadOnly = "True"
+	{
+		attribute<string> characterics;
+		attribute<string> name := replace(characterics, '_rij', '_rijtjeswoning', '_2o1', '_twee_onder_1_kap', '_vrij', '_vrijstaand', '_app', '_appartement');
+		attribute<string> label := name, DialogType = "LabelText";
+		attribute<string> Pakket10 := union_data(.,
+			'12',
+			'0',
+			'12',
+			'0',
+			'0',
+			'0',
+			'170',
+			'0',
+			'0',
+			'0',
+			'0',
+			''
+		);
+		
+		attribute<string> Pakket11 := union_data(.,
+			'100',
+			'0',
+			'0',
+			'0',
+			'100',
+			'0',
+			'0',
+			'0',
+			'90',
+			'0',
+			'1',
+			''
+		);
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}
+	
+	container NrWoningen       := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/NrWoningen], Woning_ha)', void, Woning_ha);
+	container Vrijstaand       := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/Vrijstaand], Woning_ha)', void, Woning_ha);
+	container Twee_onder_1_kap := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/Twee_onder_1_kap], Woning_ha)', void, Woning_ha);
+	container Rijtjeswoning    := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/Rijtjeswoning], Woning_ha)', void, Woning_ha);
+	container Appartement      := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/Appartement], Woning_ha)', void, Woning_ha);
+	container densities        := for_each_nedv(name, 'value(rjoin(Vastgoed/WP4/name, Kenmerken/name, Kenmerken/'+EK+'), Woning_ha)', Vastgoed/WP4, Woning_ha);
+	container opp_Woning       := for_each_nedv(name, 'value(rjoin(''opp_''+Vastgoed/WP4/name, Kenmerken/name, KenMerken/'+EK+'), m2_woning)', Vastgoed/WP4, m2_woning);
+	container opp_Woning_log   := for_each_nedv(name, 'log(max_elem(opp_Woning/'+name+', 1f))', Vastgoed/WP4, float32);
+		
+	container is_Hoogbouw      := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/Hoogbouw], Float32)', void, Float32);
+	
+	container building_chars := for_each_nedv(name, + '''W''+string(ID(Vastgoed/WP4))+''_''+' + replace('string(opp_Woning/@N) + ''m2_'' + (is_Hoogbouw/@N >0f?''H'':''L'')', '@N', name), Vastgoed/WP4, string);
+	
+	unit<uint16> x_WP4 := combine_uint16(., Vastgoed/WP4) 
+	{
+		attribute<string> name := ../name[first_rel] + '/' + Vastgoed/Wp4/name[second_rel]; 
+		attribute<string> label := replace(name, '/', '_');
+		attribute<string> chars := ='union_data(x_WP4, '+AsItemList('building_chars/'+OntwikkelPakketten/name)+')';
+		
+		
+		container V := for_each_nedv(label, string(id(.))+'[..]', void, .);
+	}
+	
+	unit<uint16> unique_buildings := unique(x_WP4/chars);
+	unit<uint16> building_type := select_with_org_rel(!IsDefined(strpos(unique_buildings/values, '_0m2'))) 
+	{
+		attribute<string>    name := unique_buildings/values[org_rel];
+		attribute<Vastgoed/WP4>       WP4_rel := substr(name, 1, 1)[Vastgoed/WP4];
+		attribute<densities_per_bt_fromCSV> density_csv_rel := rlookup(id(.), id(densities_per_bt_fromCSV));
+		attribute<m2_woning> oppervlak   := substr(name, strpos(name, '_')+1)[m2_woning];
+		attribute<bool>      is_hoogbouw := right(name, 1) == 'H';
+		
+		attribute<string>    Label := name, DialogType = "LabelText";
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}	
+	unit<uint16> densities_per_bt_fromCSV
+	:  StorageName = "%RSLDataDir%/Vastgoed/OntwikkelOptieSamenstellingen_jan2019.csv"
+	,  StorageType = "gdal.vect"
+	,  StorageReadOnly = "True"
+	,  FreeData = "False"
+	{
+		attribute<building_type> BT_rel := rlookup(id(.), id(building_type));
+		attribute<string> Pakket10 := union_data(., '0', '0',  '12', '0', '0', '0', '0', '0', '0'); // hack: TO DO: afleiden uit /Analysis/OntwikkelPakketten/Kenmerken/Pakket10
+		attribute<string> Pakket11 := union_data(., '0', '0', '100', '0', '0', '0', '0', '0', '0'); // hack: TO DO: afleiden uit /Analysis/OntwikkelPakketten/Kenmerken/Pakket11
+	}
+	
+	container densities_per_bt := 
+		for_each_nedv(
+			OntwikkelPakketten/name
+			, replace('value(densities_per_bt_fromCSV/@P[building_type/density_csv_rel],uint16)', '@P', OntwikkelPakketten/EK)
+			, building_type
+			, uint16
+		);
+	
+	attribute<uint16> Pakket1 (building_type) := rjoin(id(building_type), id(densities_per_bt_fromCSV), densities_per_bt_fromCSV/pakket1[uint16]);
+		
+	unit<uint16> x_bt_all := combine_uint16(., building_type) 
+	{
+		attribute<woning_ha> density := ='convert(union_data(., '+AsItemList('densities_per_bt/'+name)+'), woning_ha)';
+	}
+	unit<uint16> x_bt := select_with_org_rel(x_bt_all/density > 0[Woning_ha]) {
+		attribute<..> OP_rel := x_bt_all/first_rel[org_rel];
+		attribute<building_type> BT_rel := x_bt_all/second_rel[org_rel];
+		attribute<woning_ha> density := x_bt_all/density[org_rel];
+	}
+}

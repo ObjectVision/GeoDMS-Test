@@ -1,0 +1,127 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+//            (C) Configuration Towards an Urban Preview - 2UP 2021                       //
+//         Netherlands Environmental Assessment Agency http://www.pbl.nl/en/contact       //
+//  This work is licensed under a Creative Commons Attribution 4.0 International License  //
+//              CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/              //
+////////////////////////////////////////////////////////////////////////////////////////////
+
+// Author:   Bas van Bemmel
+// Function: Calculate Mean Absolute Error (MAE), Root Mean Square Error (RMSE) and Relative Difference per Country/Continent/World
+
+container Population_Error_Indicators: url = "%projdir%/doc/A_pixel_level_evaluation_of_five_multitemporal_global_gridded_population_data_sets.pdf"
+{
+	unit<uint32> CD:= CompactedDomain
+	{
+		attribute<float32> Observed       := ='SourceData/Population/Past/PerYear/'+ModelParameters/StartYear+'/Population_LL[CompactedDomain/domain_rel]';
+		attribute<float32> Modelled       := Analysis/Scenarios_Past/SSPs/SSPPast/ProjectionDates/y2015/NewState/Pop;
+		attribute<float32> ObsMINUSMod    :=abs(Observed - Modelled);
+		attribute<float32> SqrObsMINUSMod :=Sqr(Observed - Modelled);
+	}
+
+	container MAE
+	{
+		unit<uint32> Country := SourceData/RegionalUnits/Countries 
+		{
+			attribute<string>  Name        := SourceData/RegionalUnits/Countries/label;
+			attribute<uint32>  nr          := count(Population_Error_Indicators/CD/Observed, CompactedDomain/Country_rel);
+			attribute<float32> ObsMINUSMod := sum(Population_Error_Indicators/CD/ObsMINUSMod,   CompactedDomain/Country_rel);
+			attribute<float32> Observed    := sum(Population_Error_Indicators/CD/Observed,      CompactedDomain/Country_rel);
+			attribute<float32> MAE         := ((1f/nr[float32]) * ObsMINUSMod) / (Observed / nr[float32]);
+		}
+
+		unit<uint8> Continent := SourceData/RegionalUnits/Continents
+		{
+			attribute<string>  Name               := SourceData/RegionalUnits/Continents/Label;
+			attribute<uint32>  nr                 := count(Population_Error_Indicators/CD/Observed, CompactedDomain/Continent_rel);
+			attribute<float32> ObsMINUSMod        := sum(Population_Error_Indicators/CD/ObsMINUSMod,   CompactedDomain/Continent_rel);
+			attribute<float32> Observed           := sum(Population_Error_Indicators/CD/Observed,      CompactedDomain/Continent_rel);
+			attribute<float32> MAE                := ((1f/nr[float32]) * ObsMINUSMod) / (Observed / nr[float32]);
+		}
+
+		unit<uint8> World := SourceData/RegionalUnits/World
+		{
+			attribute<string>  Name               := SourceData/RegionalUnits/World/Label;
+			attribute<uint32>  nr                 := count(Population_Error_Indicators/CD/Observed, CompactedDomain/World_Rel);
+			attribute<float32> ObsMINUSMod        := sum(Population_Error_Indicators/CD/ObsMINUSMod, CompactedDomain/World_Rel);
+			attribute<float32> Observed           := sum(Population_Error_Indicators/CD/Observed, CompactedDomain/World_Rel);
+			attribute<float32> MAE                := ((1f/nr[float32]) * ObsMINUSMod) / (Observed / nr[float32]);
+		}
+	}
+
+	container RMSE
+	{
+		unit<uint8> Country:= SourceData/RegionalUnits/Countries/Country 
+		{
+			attribute<string>  Name           := SourceData/RegionalUnits/Countries/Country/Name_cor;
+			attribute<uint32>  nr             := count(Population_Error_Indicators/CD/Observed, CompactedDomain/Country_rel);
+			attribute<float32> SqrObsMINUSMod := sum(Population_Error_Indicators/CD/SqrObsMINUSMod, CompactedDomain/Country_rel);
+			attribute<float32> RMSE           := Sqrt(((1f/nr[float32]) * SqrObsMINUSMod)) / (MAE/Country/Observed / nr[float32]);
+		}
+
+		unit<uint8> Continent := SourceData/RegionalUnits/Continent
+		{
+			attribute<string>  Name           := SourceData/RegionalUnits/Continent/Label;
+			attribute<uint32>  nr             := count(Population_Error_Indicators/CD/Observed, CompactedDomain/Continent_rel);
+			attribute<float32> SqrObsMINUSMod := sum(Population_Error_Indicators/CD/SqrObsMINUSMod, CompactedDomain/Continent_rel);
+			attribute<float32> RMSE           := Sqrt(((1f/nr[float32]) * SqrObsMINUSMod)) / (MAE/Continent/Observed / nr[float32]);
+		}
+
+		unit<uint8> World := SourceData/RegionalUnits/World
+		{
+			attribute<string>  Name           := SourceData/RegionalUnits/World/Label;
+			attribute<uint32>  nr             := count(Population_Error_Indicators/CD/Observed, CompactedDomain/World_Rel);
+			attribute<float32> SqrObsMINUSMod := sum(Population_Error_Indicators/CD/SqrObsMINUSMod, CompactedDomain/World_Rel);
+			attribute<float32> RMSE           := Sqrt(((1f/nr[float32]) * SqrObsMINUSMod)) / (MAE/World/Observed / nr[float32]);
+		}
+	}
+
+	container Relative_Difference
+	{
+		//als named Pearson's R 
+		attribute<float32> Relative_Difference          (CompactedDomain)         := Population_Error_Indicators/CD/ObsMINUSMod 
+																						/ (Population_Error_Indicators/CD/Observed + Population_Error_Indicators/CD/Modelled);   // 0/0 --> null!
+		attribute<float32> Relative_DifferenceCountry   (RegionalUnits/Countries) := mean(Relative_Difference,   CompactedDomain/Country_rel);
+		attribute<float32> Relative_DifferenceContinent (RegionalUnits/Continent) := mean(Relative_Difference,   CompactedDomain/Continent_rel);
+		attribute<float32> Relative_DifferenceWorld     (RegionalUnits/World)     := mean(Relative_Difference,   CompactedDomain/World_rel);
+	}
+	
+	container result
+	{
+		unit<uint32> Country := SourceData/RegionalUnits/Countries 
+		{
+			attribute<string>  Name                := SourceData/RegionalUnits/Countries/label;
+			attribute<string>  ISO3                := SourceData/RegionalUnits/Countries/ISO3;
+			attribute<float32> MAE                 := Population_Error_Indicators/MAE/Country/MAE;
+			attribute<float32> RMSE                := Population_Error_Indicators/RMSE/Country/RMSE;
+			attribute<float32> Relative_Difference := Population_Error_Indicators/Relative_Difference/Relative_DifferenceCountry;//has no real meaning
+		}
+		unit<uint32> variable_country_export := SubItem_PropValues(Country,'Name');
+		container export_country_csv := Templates/WriteTable32ToCSV(Country , AsList(variable_country_export/Name, ';'), '%LocalDataProjDir%/results/'+/Analysis/Scenarios_Past/GridName+'/validation_population/country.csv');
+
+		unit<uint8> Continent := SourceData/RegionalUnits/Continent
+		{
+			attribute<string>  Name                := SourceData/RegionalUnits/Continent/Label;
+			attribute<float32> MAE                 := Population_Error_Indicators/MAE/Continent/MAE;
+			attribute<float32> RMSE                := Population_Error_Indicators/RMSE/Continent/RMSE;
+			attribute<float32> Relative_Difference := Population_Error_Indicators/Relative_Difference/Relative_DifferenceContinent;//has no real meaning
+		}
+		unit<uint32> variable_continent_export := SubItem_PropValues(Continent,'Name');
+		container export_continent_csv := Templates/WriteTable8ToCSV(Continent , AsList(variable_continent_export/Name, ';'), '%LocalDataProjDir%/results/'+/Analysis/Scenarios_Past/GridName+'/validation_population/continent.csv');
+		
+		unit<uint8> World := SourceData/RegionalUnits/World
+		{
+			attribute<string>  Name                := SourceData/RegionalUnits/World/Label;
+			attribute<float32> MAE                 := Population_Error_Indicators/MAE/World/MAE;
+			attribute<float32> RMSE                := Population_Error_Indicators/RMSE/World/RMSE;
+			attribute<float32> Relative_Difference := Population_Error_Indicators/Relative_Difference/Relative_DifferenceWorld;//has no real meaning
+		}
+		unit<uint32> variable_world_export := SubItem_PropValues(World,'Name');
+		container export_world_csv := Templates/WriteTable8ToCSV(World , AsList(variable_world_export/Name, ';'), '%LocalDataProjDir%/results/'+/Analysis/Scenarios_Past/GridName+'/validation_population/world.csv');
+	}
+}
+
+
+
+
+
+

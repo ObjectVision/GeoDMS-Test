@@ -1,0 +1,293 @@
+container Ziekenhuizen
+
+{
+	unit<uint32> y2012_alg_ac_bp
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_bp_xy_2012_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_sep2012_alg_ac_bp_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2012_ID);
+			attribute<string>               label                := Locatie_naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}
+
+	unit<uint32> y2012_alg_ac
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_bp_xy_2012_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_sep2012_alg_ac_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2012_ID);
+			attribute<string>               label                := Locatie_naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Soort == 1i || Soort == 2i);
+		}
+	}
+	
+	unit<uint32> y2012_bp
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_bp_xy_2012_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_sep2012_bp_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2012_ID);
+			attribute<string>               label                := Locatie_naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Soort == 3i);
+		}
+	}
+
+	unit<uint32> y2022_alg_ac_bp
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_bp_xy_2022_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Ziekenhuizen_apr2022_alg_ac_bp_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2022_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub := select_with_attr_by_cond(., name == Modelparameters/Destset_Enkele_selectie);
+		}
+	}
+
+	unit<uint32> y2022_alg_ac
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_bp_xy_2022_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_apr2022_alg_ac_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2022_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Soort == 1i || Soort == 2i);
+		}
+	}
+
+	unit<uint32> y2022_bp
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_bp_xy_2022_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_apr2022_bp_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2022_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Soort == 3i);
+		}
+	}
+
+	unit<uint32> y1222_alg_ac_bp_overlap
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_bp_xy_2012_2022_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_1222_alg_ac_bp_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH1222_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}
+
+	unit<uint32> y1222_alg_ac_overlap
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_alg_ac_xy_2012_2022_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_1222_alg_ac_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH1222_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			// unit<uint32> sub:= select_with_attr_by_cond(.,Soort == 1i || Soort == 2i);
+		}
+	}
+	
+	unit<uint32> y1222_bp_overlap
+	:	StorageName     = "%SourceDataDir%/NetworkModel/Voorzieningen/Ziekenhuizen/Ziekenhuizen_bp_xy_2012_2022_def.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+			unit<uint32> Ziekenhuizen_1222_bp_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH1222_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			// unit<uint32> sub:= select_with_attr_by_cond(.,Soort == 1i || Soort == 2i);
+		}
+	}
+
+	unit<uint32> y2012
+	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Ziekenhuizen/Ziekenhuizen2012_xy.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Ziekenhuizen_sep2012_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2012_ID);
+			attribute<string>               label                := Locatie_naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Soort == 1i || Soort == 2i);
+		}
+	}
+	
+	unit<uint32> y2020
+	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Ziekenhuizen/Ziekenhuizen2020_xy.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Ziekenhuizen_dec2019_xy
+		{
+			attribute<geometries/rdc>        geometry;
+			attribute<geometries/rdc>        point               := geometry;
+			attribute<string>                Name                := string(Locnr);
+			attribute<uint32>                Nr_ziekenhuizen     := const(1,.);
+			attribute<uint32>                Nr_items_of_interest     := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>       buurt_rel           := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>                buurtcode           := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>                buurtnaam           := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Type_code == 1d || Type_code == 2d || Type_code == 4d);
+		}
+	}	
+
+	unit<uint32> y2021
+	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Ziekenhuizen/Ziekenhuizen2021_xy.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Ziekenhuizen_mrt2021_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2021_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub       := select_with_attr_by_cond(.,Type_code == 1i || Type_code == 2i || Type_code == 4i);
+			unit<uint32> sub_enkel := select_with_attr_by_cond(.,Name == '91');
+		}
+	}
+
+	unit<uint32> y2021_analyse_verdwenen
+	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Ziekenhuizen/Ziekenhuizen2021_xy_voorbeelden_verdwenen_afgeschaald.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Ziekenhuizen_mrt2021_xy_analyse_verdwenen
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2021_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Type_code == 1i || Type_code == 2i || Type_code == 4i);
+		}
+	}
+	
+	unit<uint32> y2022
+	:	StorageName     = "%NetworkModel_dir%/Voorzieningen/Ziekenhuizen/Ziekenhuizen2022_xy.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Ziekenhuizen_apr2022_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                := geometry;
+			attribute<string>               Name                 := string(ZH2022_ID);
+			attribute<string>               label                := Naam;
+			attribute<uint32>               Nr_ziekenhuizen      := const(1,.);
+			attribute<uint32>               Nr_items_of_interest := Nr_ziekenhuizen;
+			attribute<RegioUnit_Buurt>      buurt_rel            := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode            := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam            := RegioUnit_Buurt/statnaam[buurt_rel];
+			
+			unit<uint32> sub:= select_with_attr_by_cond(.,Type_code == 1w || Type_code == 2w || Type_code == 4w); //4 = kinderziekenhuis, 3= poli?, 2=regulier ziekenhuis, 1=academisch ziekenhuis
+		}
+	}
+}

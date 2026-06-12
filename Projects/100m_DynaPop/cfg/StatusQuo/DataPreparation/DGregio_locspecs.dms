@@ -1,0 +1,64 @@
+container DGRegio_locspecs: Using = "Geography;"
+{
+	// road upgrades are implemented by loading the flowsnetwork.shp in the accessibility container
+	// all other investment effects are modelled here.
+		
+	container rules
+	{
+		parameter<uint32> FirstYear: expr = "2007";
+		parameter<uint32> LastYear:  expr = "2020";	
+		parameter<float32>multimodal_effect: 			expr = "float32(0.05)"; // maximum effect of multimodal funding (+1 * suitability)
+		parameter<float32>urban_regeneration_effect: 	expr = "float32(0.05)"; // maximum effect of multimodal funding (+1 * suitability)
+		parameter<float32>ports_effect:					expr = "float32(0.10)"; // maximum effect of port funding (+1 * suitability)
+		parameter<float32>airports_effect:				expr = "float32(0.10)"; // maximum effect of port funding (+1 * suitability)
+		parameter<float32>railways_effect:				expr = "float32(0.05)"; // maximum effect of railways funding (+1 * suitability)
+		parameter<float32>UrbFor_effect:				expr = "float32(0.01)"; // maximum effect of afforestation nearby cities (+1 * suitability)
+	}
+	
+	container import
+	{
+		unit<uint32> UrbanClusters: StorageType = "gdal.vect",	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/UrbanClusterBased/urban_cluster_final.shp",	StorageReadOnly = "True", DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<LambertEA> Geometry (poly);
+			attribute<float32> tg03_2013; //thematic group 3: 	multimodal transport 2007-2013
+			attribute<float32> tg03_2020; //thematic group 3: 	multimodal transport 2013-2020
+			attribute<float32> tg11_2013; //thematic group 11: 	culture, urban and rural regeneration 2007-2013
+			attribute<float32> tg11_2020; //thematic group 11: 	culture, urban and rural regeneration 2013-2020
+			attribute<float32> Pop06;
+			attribute<uint32>  City_code;
+			attribute<uint32>  RAILWAY; //cluster is linked to transtools railways network
+			
+			attribute<UniqueClusters> UniqueClusterId: 	expr = "rlookup(City_code, UniqueClusters/Values)";
+			attribute<InvestmentZones>InvestmentZoneId: expr = "point_in_polygon(centroid_or_mid(Geometry), InvestmentZones/Geometry)";
+			
+			attribute<float32> RailwayInvestments: expr = "ScaleSum(Pop06 * float32(!IsNull(InvestmentZoneId)), InvestmentZoneId, InvestmentZones/RailwayInvestments)";
+			attribute<float32> RailwayInvestments_perTrueCluster: expr = "UniqueClusters/Cluster_railway_investments[UniqueClusterId]";
+		}
+		unit<uint32> Investmentzones: StorageType = "gdal.vect",	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/Nuts2_investments.shp",	StorageReadOnly = "True", DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<LambertEA> Geometry (poly);
+			attribute<float32> RailwayInvestments: expr = "float32(I16_RAILWA + I17_TEN_RA)";
+		}
+		unit<uint32> UrbanZones: StorageType = "gdal.vect",	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/URAU_2011_RG_Lambert.shp",	StorageReadOnly = "True", DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<LambertEA> Geometry (poly);																 	 
+		}		
+
+	}
+	unit<uint32> UniqueClusters: expr = "unique(import/UrbanClusters/City_code)"
+	{
+		attribute<bool> 	Railway_inCluster: 	expr = "bool(max(import/UrbanClusters/Railway, import/UrbanClusters/UniqueClusterId))";
+		attribute<float32>	Cluster_railway_investments:expr = "sum(import/UrbanClusters/RailwayInvestments, import/UrbanClusters/UniqueClusterId)";
+	}
+	//unit<uint32> 
+	
+	
+	// classes below only affect population allocation.
+	attribute<float32> multimodal_transport_scaled 	(import/UrbanClusters): expr = "(import/UrbanClusters/tg03_2013 +  import/UrbanClusters/tg03_2020) / max(import/UrbanClusters/tg03_2013 +  import/UrbanClusters/tg03_2020)";
+	attribute<float32> urban_regeneration_scaled	(import/UrbanClusters): expr = "(import/UrbanClusters/tg11_2013 +  import/UrbanClusters/tg11_2020) / max(import/UrbanClusters/tg11_2013 +  import/UrbanClusters/tg11_2020)";
+	attribute<float32> railway_investment_scaled	(import/UrbanClusters): expr = "import/UrbanClusters/RailwayInvestments_perTrueCluster / max(import/UrbanClusters/RailwayInvestments_perTrueCluster)";
+	
+	
+
+
+}

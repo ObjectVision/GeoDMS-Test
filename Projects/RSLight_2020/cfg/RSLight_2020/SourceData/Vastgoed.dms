@@ -1,0 +1,236 @@
+container Vastgoed: Using  = "Units;Geography;Classifications"
+{
+	#include <BAG.dms>
+	container BAG := ./BAG_T (domain_grid);
+	
+	container WOZ
+	{
+		unit<uint8> CBSKlasse := LandUsePreparation/CBSKlasse
+		{
+			attribute<WOZBbg> WOZBbg_rel := id(.) == V/woongebied ? 0[uint8] : id(.) == V/detailhandel_en_horeca || id(.) == V/openbare_voorzieningen || id(.) == V/sociaal_culturele_voorzieningen ? 1[uint8] : id(.) == V/bedrijfsterreinen ? 2[uint8] : 3[uint8];
+		}
+		
+		unit<uint8> WOZBbg: NrOfRows = 4
+		{
+			attribute<string> name: ['woongebied', 'voorzieningen', 'bedrijfsterreinen', 'overigen'];
+			attribute<uint8> EK_rel := id(.) + 1[.];
+		}
+		
+		container Y2017 // peildatum 1 jan 2016 (bestand is 1 jan 2017)
+		{
+			container Gemeente := T('Gem'  , 'GM', RegioIndelingen/Gemeente/Gemeente2019);
+			container Wijk     := T('Wijk' , 'WK', RegioIndelingen/wijk/src_2019);
+			container Buurt    := T('Buurt', 'BU', RegioIndelingen/buurt/src_2019);
+			
+			container per_WOZBb :=
+				for_each_nedv(
+					WOZBbg/name,
+					'MakeDefined(MakeDefined(Buurt/domain/Nul2Undefined/'+WOZBbg/name+', Wijk/domain/Nul2Undefined/'+WOZBbg/name+'), Gemeente/domain/Nul2Undefined/'+WOZBbg/name+')',
+					/domain_grid, Eur_m2
+				)
+			{
+				attribute<Eur_m2> max_elem (/domain_grid) := = 'max_elem('+AsItemList(WOZBbg/name)+')';
+			}
+			
+			attribute<Eur_m2> Gegeven_BBG (/domain_grid) := =
+				'merge('
+					'value(CBSKlasse/WOZbbg_rel[SourceData/Grondgebruik/BBG/dominant/per_domain_grid/j2015], uint16),'
+					'Eur_m2,'+
+					AsItemList('per_WOZBb/'+WOZBbg/name)+
+				')';
+			
+			
+			attribute<Eur> Make_Per_vob (BAG/VBOs/src) := Gegeven_BBG[BAG/VBOs/src/NL_grid_domain_rel] * (BAG/VBOs/src/oppervlakte_trunc * 1[Woning]), StorageName = '%RSLDataDir%/Vastgoed/WOZ/WOZ2017.fss';
+			
+			attribute<Eur> Per_vob (BAG/VBOs/src) : StorageName = '%RSLDataDir%/Vastgoed/WOZ/WOZ2017.fss';
+			
+			// attribute<Eur> Sum_domain_grid  (/domain_grid) := sum(Per_vob, BAG/VBOs/src/NL_grid_domain_rel);
+			attribute<Eur> Mean_domain_grid (/domain_grid) := mean(Per_vob, BAG/VBOs/src/NL_grid_domain_rel);
+			attribute<Classifications/Vastgoed/WOZ> PerWOZKlasse (domain_grid) := classify(Mean_domain_grid, Classifications/Vastgoed/WOZ/ClassBreaks);
+			
+			container Niet_woningen
+			{
+				attribute<Eur> Per_vob (BAG/VBOs/GebruiksdoelSets/niet_woon) := Gegeven_BBG[BAG/VBOs/GebruiksdoelSets/niet_woon/NL_grid_domain_rel] * (BAG/VBOs/GebruiksdoelSets/niet_woon/oppervlakte_trunc * 1[verblijfsobject]);
+				attribute<Eur> Sum_domain_grid (/domain_grid) := sum(Per_vob, BAG/VBOs/GebruiksdoelSets/niet_woon/NL_grid_domain_rel);
+			}
+			
+			Template T
+			{
+				//
+				parameter<string> SrcRef;
+				parameter<string> CodeRef;
+				unit<uint32> RegionK;
+				//
+				
+				unit<uint32> Domain
+				:  StorageName = "= '%RSLDataDir%/Vastgoed/WOZ/190215_'+ SrcRef +'_woz.csv'"
+				,  StorageType = "gdal.vect"
+				,  StorageReadOnly = "True"
+				{
+					attribute<string> r2017;
+					attribute<string> bg2015_groep;
+					attribute<string> wozm2_mean;
+					attribute<string> wozm2_sd;
+					attribute<string> aantalobjecten;
+					
+					attribute<string> R_CODE := CodeRef+r2017;
+					
+					attribute<RegionK> Region_rel := = 'rjoin(R_CODE, RegionK/'+CodeRef+'_CODE, id(RegionK))';
+					attribute<WOZBbg> WOZbbg_rel := rjoin(uint8(bg2015_groep), WOZBbg/EK_rel, id(WOZBbg));
+					
+					attribute<Eur_m2> mean := wozm2_mean[Eur_m2];
+					attribute<Eur_m2> sd := wozm2_sd[Eur_m2];
+					attribute<int32> n := aantalobjecten[int32];
+					
+					container per_WOZBb :=
+						for_each_nedv(
+							WOZBbg/name,
+							'sum('
+								'(Domain/mean + Domain/sd) * float32(Domain/WOZBbg_rel == '+string(id(WOZBbg))+'[WOZBbg]),'
+								'Domain/Region_rel'
+							')[RegionK/per_'+/domain_grid_ref+']',
+							/domain_grid, Eur_m2
+						)
+					{
+						attribute<Eur_m2> max_elem (/domain_grid) := = 'max_elem('+AsItemList(WOZBbg/name)+')';
+					}
+					
+					container Nul2Undefined :=
+						for_each_nedv(
+							WOZBbg/name,
+							'per_WOZBb/'+WOZBbg/name+' == 0[Eur_m2] ? (0/0)[Eur_m2] : per_WOZBb/'+WOZBbg/name,
+							/domain_grid, Eur_m2
+						);
+				}
+			}
+		}
+		
+		container Y2015
+		{
+			unit<uint32> Buurten
+			:  StorageName = "%RSLDataDir%/Vastgoed/WOZ/WOZ_per_m2_2015_Buurten.csv"
+			,  StorageType = "gdal.vect"
+			,  StorageReadOnly = "True"
+			,  DialogData = "geometry"
+			,  DialogType = "map"
+			{
+				attribute<string> Buurt_code;
+				attribute<string> Gemeente;
+				attribute<string> Wijk;
+				attribute<string> Buurt;
+				attribute<string> _2012_TOT;
+				attribute<string> _2012_WON;
+				attribute<string> _2012_WON_corr := replace(_2012_WON, " ", "");
+				attribute<string> _2012_NIETWON;
+				attribute<string> _2015_TOT;
+				attribute<string> _2015_WON;
+				attribute<string> _2015_WON_corr := replace(_2015_WON, " ", "");
+				attribute<string> _2015_NIETWON;
+				attribute<string> _2015_NIETWON_corr := replace(_2015_NIETWON, " ", "");
+				
+				attribute<rdc_meter> geometry (geography/RegioIndelingen/buurt/src_2015, polygon)  := geography/RegioIndelingen/buurt/src_2015/Geometry;
+				attribute<uint32>    WON_2012 (geography/RegioIndelingen/buurt/src_2015)           := rjoin(geography/RegioIndelingen/buurt/src_2015/BU_CODE, Buurt_code, _2012_WON_corr[uint32]);
+				attribute<uint32>    WON_2015 (geography/RegioIndelingen/buurt/src_2015)           := rjoin(geography/RegioIndelingen/buurt/src_2015/BU_CODE, Buurt_code, _2015_WON_corr[uint32]);
+				
+				attribute<uint32>       NIET_WON_2015 (geography/RegioIndelingen/buurt/src_2015)      := rjoin(geography/RegioIndelingen/buurt/src_2015/BU_CODE, Buurt_code, _2015_NIETWON_corr[uint32]);
+			}
+			
+			unit<uint32> Wijken
+			:  StorageName = "%RSLDataDir%/Vastgoed/WOZ/WOZ_per_m2_2015_Wijken.csv"
+			,  StorageType = "gdal.vect"
+			,  StorageReadOnly = "True"
+			,  DialogData = "geometry"
+			,  DialogType = "map"
+			{
+				attribute<string> Wijkcode;
+				attribute<string> Wijkcode_corr  := Wijkcode == "#N/A" ? CBS_Wijkcode : Wijkcode;
+				attribute<string> Gemeente;
+				attribute<string> Wijk;
+				attribute<string> Gemeente_wijk := Gemeente + "_" + Wijk;
+				attribute<string> _2012_TOT;
+				attribute<string> _2012_WON;
+				attribute<string> _2012_WON_corr := replace(_2012_WON, " ", "");
+				attribute<string> _2012_NIETWON;
+				attribute<string> _2015_TOT;
+				attribute<string> _2015_WON;
+				attribute<string> _2015_WON_corr := replace(_2015_WON, " ", "");
+				attribute<string> _2015_NIETWON;
+				attribute<string> _2015_NIETWON_corr := replace(_2015_NIETWON, " ", "");
+				
+				attribute<rdc_meter>    geometry (geography/RegioIndelingen/wijk/src_2015, polygon)  := geography/RegioIndelingen/wijk/src_2015/Geometry;
+				attribute<uint32>       WON_2012 (geography/RegioIndelingen/wijk/src_2015)           := rjoin(geography/RegioIndelingen/wijk/src_2015/WK_CODE, Wijkcode, _2012_WON_corr[uint32]);
+				attribute<uint32>       WON_2015 (geography/RegioIndelingen/wijk/src_2015)           := rjoin(geography/RegioIndelingen/wijk/src_2015/WK_CODE, Wijkcode, _2015_WON_corr[uint32]);
+				attribute<uint32>       NIET_WON_2015 (geography/RegioIndelingen/wijk/src_2015)      := rjoin(geography/RegioIndelingen/wijk/src_2015/WK_CODE, Wijkcode, _2015_NIETWON_corr[uint32]);
+				
+				attribute<string>       CBS_Wijkcode := rjoin(Gemeente_wijk, geography/RegioIndelingen/wijk/src_2015/Gemeente_wijk, geography/RegioIndelingen/wijk/src_2015/WK_CODE);
+			}
+		}
+
+	}
+
+	attribute<float32> Percelen_fractie_bebouwd0 (rdc_100m) //@Jip, 20180907: Wat is de bron hiervan? Heb je dit ook in hogere resolutie?
+	:	StorageName     = "%RSLDataDir%/Vastgoed/Percelen_fractie_bebouwd_totaal_KassenAirports_Nov2018.tif"
+	,	StorageType     = "gdal.grid"
+	,	StorageReadOnly = "True"
+	,	Descr = "NLDB-config: Brondata/BRK/Perceel/totaal_fractie_bebouwd";
+	
+	attribute<float32> Percelen_fractie_bebouwd (domain_grid) := = 'Percelen_fractie_bebouwd0['+Domain_grid_ref+'/rdc_100m_rel]';
+	
+	attribute<float32> AfstandLocatus_src   (domain_grid) : StorageName = "%RSLDataDir%/Vastgoed/Locatus/dist_locatus_centrum_2016.tif";
+	
+	
+	#include <nvm.dms>
+	
+	container Energielabels //BR@BvB, 190118: zijn er geen recentere labels?
+	{
+		//export uit Vesta versie 3.2 (ook SD) Github
+		//https://github.com/RuudvandenWijngaart/VestaDV versie:7c3f911a1601f527336babb42dd08bd1d5287dcc (17 september 2018)
+		// lokale aanpassing in VestaRunDataComponent.dms (CalculationSchemes), zie: Y:\Project\M500075_beheerLUMOS\Data\1_LUSProjects_nog_uitzoeken\Transformatiepotentie2\Werkdocumenten Bas\BAG_VESTA_Ruimtescanner_synchronisatie\171018
+		//GeoDMS 7.182
+		//exports van (activeren van item fss op achtergrond aangemaakt)
+		// RunContext/J2010/VestaRunData/Woning/Export_Wonen/BebouwingsObjectELExport
+		// RunContext/J2010/VestaRunData/Utiliteit/Export_Utiliteit/BebouwingsObjectELExport
+		
+		unit<uint32> Woningen
+		:	StorageName     = "%RSLDataDir%/vastgoed/energielabel/el_2010_wonen.fss"
+		,	StorageReadOnly = "True"
+		,	DialogType      = "Map"
+		,	DialogData      = "locatie"
+		,	FreeData        = "True"
+		{
+			attribute<string>       id;
+			attribute<rdc_meter_64> locatie;
+			attribute<Classifications/Vastgoed/ELabelK> CurrValue;
+			attribute<string>       pand_id;
+			attribute<domain_grid>  domain_grid_rel := locatie[domain_grid];
+		}
+
+		unit<uint32> Utiliteit
+		:	StorageName     = "%RSLDataDir%/vastgoed/energielabel/el_2010_utiliteit.fss"
+		,	StorageReadOnly = "True"
+		,	DialogType      = "Map"
+		,	DialogData      = "locatie"
+		,	FreeData        = "True"
+		{
+			attribute<string>       id;
+			attribute<rdc_meter_64> locatie;
+			attribute<Classifications/Vastgoed/ELabelK> CurrValue;
+			attribute<string>       pand_id;
+		}
+		
+		unit<uint32> Panden := union_unit(Woningen, Utiliteit)
+		,	DialogType      = "Map"
+		,	DialogData      = "locatie"
+		{
+			attribute<string>       id := union_data(., Woningen/id, Utiliteit/id);
+			attribute<rdc_meter_64> locatie := union_data(., Woningen/locatie, Utiliteit/locatie);
+			attribute<Classifications/Vastgoed/ELabelK> CurrValue := union_data(., Woningen/CurrValue, Utiliteit/CurrValue);
+			attribute<string>       pand_id := union_data(., Woningen/pand_id, Utiliteit/pand_id);
+			attribute<domain_grid>  domain_grid_rel := locatie[domain_grid];
+			attribute<SrcDomain_grid>  SrcDomain_grid_rel := locatie[SrcDomain_grid];
+			attribute<Classifications/Vastgoed/ELabelK> WriteModus (SrcDomain_grid) := modus(CurrValue, locatie[SrcDomain_grid]), StorageName = "%ProjDir%/Data/UnlinkedData/Vastgoed/Energielabels.tif";
+			attribute<Classifications/Vastgoed/ELabelK> ReadModus  (SrcDomain_grid): StorageName = "%ProjDir%/Data/UnlinkedData/Vastgoed/Energielabels.tif";
+			attribute<Classifications/Vastgoed/ELabelK> Modus      (SrcDomain_grid):= = ModelParameters/InputOntkoppeld ? 'ReadModus' : 'WriteModus';
+		}
+	}
+}

@@ -1,0 +1,47 @@
+container Buurtpunten
+{
+	unit<uint32> Buurtpunten_2012_gew_wnadr_geodms
+	:	StorageName     = "%NetworkModel_Dir%/RegioIndelingen/buurtcentr_2012_gew_wnadr_geodms.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		attribute<geometries/rdc>       geometry; 
+		attribute<geometries/rdc>       point                   := geometry;
+		attribute<string>               Name                    := string(buurt_nm);
+		attribute<uint32>               nr_buurten              := const(1,.);
+		attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+		attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+		attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+//		unit<uint32> sub:= select_with_attr_by_cond(.,prov_nr == 20i);
+	}
+
+	unit<uint32> Buurtpunten_2022_gew_wnadr_geodms
+	:	StorageName     = "%NetworkModel_Dir%/RegioIndelingen/buurtcentr_2022_gew_wnadr_geodms.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		attribute<geometries/rdc>       geometry; 
+		attribute<geometries/rdc>       point                   := geometry;
+		attribute<string>               Name                    := string(buurt_nm);
+		attribute<uint32>               nr_buurten              := const(1,.);
+		attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+		attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+		attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+//		unit<uint32> sub:= select_with_attr_by_cond(.,prov_nr == 20i);
+	}
+	unit<uint32> Buurtpunten_2023_gew_wnadr_geodms
+	:	StorageName     = "%NetworkModel_Dir%/RegioIndelingen/buurtcentr_2023_gew_wnadr_geodms.shp"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		attribute<geometries/rdc>       geometry; 
+		attribute<geometries/rdc>       point                   := geometry;
+		attribute<string>               Name                    := string(buurt_nm);
+		attribute<uint32>               nr_buurten              := const(1,.);
+//		attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+//		attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+//		attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+//		unit<uint32> sub:= select_with_attr_by_cond(.,prov_nr == 20i);
+	}
+
+}

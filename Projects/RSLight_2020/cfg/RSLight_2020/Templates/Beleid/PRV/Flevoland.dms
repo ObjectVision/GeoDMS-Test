@@ -1,0 +1,43 @@
+container Flevoland := PRVT('Flevoland')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> GN_NNN (domain_grid) := Src/Provincie_Flevoland_geo_services_WFS_GN_NNN/GN_NNN/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					GN_NNN
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

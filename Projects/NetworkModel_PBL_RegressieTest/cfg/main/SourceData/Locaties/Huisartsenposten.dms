@@ -1,0 +1,31 @@
+unit<uint32> Huisartsenposten 
+:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Huisartsenposten/huisartsenposten_nov2020.shp"
+,	StorageType     = "gdal.vect"
+,	StorageReadOnly = "True"
+{
+	attribute<rdc>                   geometry;
+	attribute<rdc>                   point               := geometry;
+	attribute<string>                name                := string(OBJECTID);
+	attribute<uint32>                nr_huisartsenposten := const(1,.);
+	attribute<RegioUnit_Buurt>       buurt_rel           := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+	attribute<string>                buurtcode           := RegioUnit_Buurt/statcode[buurt_rel];
+	attribute<string>                buurtnaam           := RegioUnit_Buurt/statnaam[buurt_rel];
+	
+	unit<spoint> domain := ='rdc_'+Gridsize;
+	
+	attribute<domain>                domain_rel                      := geometry[domain];
+	attribute<uint32>                Count_per_domain       (domain) := count(objectid[uint32], domain_rel);
+	attribute<uint32>                Count_IsPositive       (domain) := Count_per_domain > 0 ? Count_per_domain : (0/0);
+	
+	parameter<string>                Gridsize                        := ModelParameters/Advanced/Dest_location_scale;
+	
+	unit<uint32> HeeftHuisartsenposten := select_with_attr_by_org_rel(.,Count_IsPositive > 0)
+	{
+		attribute<rdc>    geometry            := domain/point[org_rel];
+		attribute<uint32> identificatie       := id(.);
+		attribute<string> id_name             := 'dest' + string(identificatie);
+		attribute<string> label               := id_name;
+		attribute<string> name                := id_name;
+		attribute<uint32> nr_huisartsenposten := Count_per_domain;
+	} 
+}	

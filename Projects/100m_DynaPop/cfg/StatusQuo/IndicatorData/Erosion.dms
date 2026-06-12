@@ -1,0 +1,118 @@
+container Erosion: url = "=Erosion/FactSheetName"
+{
+	parameter<String> ErosionDataDirName: Expr = "IndiDataDirName+'/Erosion'";
+	parameter<String> FactSheetName: Expr = "IndiDataDirName+'/Soil erosion.pdf'";
+
+	container AdditionalData
+	{			
+		container Image
+		{
+			attribute<Float32> Pre_12_2000(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_12_2000.asc'";
+			attribute<Float32> Pre_12_2010(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_12_2010.asc'";
+			attribute<Float32> Pre_12_2020(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_12_2020.asc'";
+			attribute<Float32> Pre_12_2030(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_12_2030.asc'";
+			attribute<Float32> Pre_sq_2000(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_sq_2000.asc'";
+			attribute<Float32> Pre_sq_2010(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_sq_2010.asc'";
+			attribute<Float32> Pre_sq_2020(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_sq_2020.asc'";
+			attribute<Float32> Pre_sq_2030(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/pre_sq_2030.asc'";
+		}
+		attribute<UInt8>   Zones(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/zones.asc'";
+		attribute<Units/Ratio> stone_prot(Albers1kmGrid): StorageName = "=ErosionDataDirName+'/Stone_Prot.asc'";
+		attribute<Float32> KLS       (Albers1kmGrid): StorageName = "=ErosionDataDirName+'/KLS.asc'";
+		container reclass: Source = "%scriptdir%\reclass_*.asc"
+		{
+			// ISSUE: reclass defines values for 0..16 but not for class 17 and Clue 18 has 18 classes.
+			attribute<Int32> med(Classifications/LU/Ruralis18): [0, 320, 100, 100, 0, 0, 320, 200, 250, 320, 5, 250, 0, 0, 0, 5, 100, 250];
+			attribute<Int32> tem(Classifications/LU/Ruralis18): [0, 240,  30,  30, 0, 0, 240, 150, 150, 240, 1, 150, 0, 0, 0, 1,  30, 150];
+			attribute<Int32> bor(Classifications/LU/Ruralis18): [0, 320,  50,  30, 0, 0, 320, 200, 150, 320, 1, 150, 0, 0, 0, 1,  50, 150];
+		}				
+		// Freimund
+		//	F%i% = %scriptdir%\F_2000 + ((%imagedir%\pre_sq_%i% / %imagedir%\pre_12_%i%) - (%imagedir%\pre_sq_2000 / %imagedir%\pre_12_2000))
+		attribute<Float32> F2000  (Albers1kmGrid): StorageName = "=ErosionDataDirName+'/f_2000.asc'";
+		attribute<Float32> F2010  (Albers1kmGrid): Expr = "F2000 + Image/Pre_sq_2010 / Image/pre_12_2010 - Image/Pre_sq_2000 / Image/pre_12_2000";
+		attribute<Float32> F2020  (Albers1kmGrid): Expr = "F2000 + Image/Pre_sq_2020 / Image/pre_12_2020 - Image/Pre_sq_2000 / Image/pre_12_2000";
+		attribute<Float32> F2030  (Albers1kmGrid): Expr = "F2000 + Image/Pre_sq_2030 / Image/pre_12_2030 - Image/Pre_sq_2000 / Image/pre_12_2000";
+
+		// Renard
+		/* R2000 = con(F_2000 < 55, 0.739 * POW(F_2000 , 1.847),  (95.77 - 6.081 * F_2000 + 0.477 * POW (F_2000,2)) ) */
+		// ISSUE Weight for F^1.847: documentation: 0.739 implementation 0.7397
+		attribute<Float32> R2000  (Albers1kmGrid): StorageName = "=ErosionDataDirName+'/r2000.asc'";
+		attribute<Float32> R2010  (Albers1kmGrid): 
+			Expr = "F2010 < Float32(55)"
+				"? Float32(0.7397) * POW(F2010 , Float32(1.847))"
+				": Float32(95.77) - Float32(6.081) * F2010 + Float32(0.477) * F2010 * F2010";
+		attribute<Float32> R2020  (Albers1kmGrid): 
+			Expr = "F2020 < Float32(55)"
+				"? Float32(0.7397) * POW(F2020 , Float32(1.847))"
+				": Float32(95.77) - Float32(6.081) * F2020 + Float32(0.477) * F2020 * F2020";
+		attribute<Float32> R2030  (Albers1kmGrid): 
+			Expr = "F2030 < Float32(55)"
+				"? Float32(0.7397) * POW(F2030 , Float32(1.847))"
+				": Float32(95.77) - Float32(6.081) * F2030 + Float32(0.477) * F2030 * F2030";
+	}
+	container YearTempl: IsTemplate = "true", isHidden = "True"
+	{
+		attribute<Classifications/LU/Ruralis18> cov_all(Albers1kmGrid);
+		attribute<Float32> R(Albers1kmGrid);
+		container CaseData: IsHidden = "true"
+		{
+			// LU_med%i% = con(%scriptdir%\zones == 3, %cov_all%)
+			// LU_tem%i% = con(%scriptdir%\zones == 2, %cov_all%)
+			// LU_bor%i% = con(%scriptdir%\zones == 1, %cov_all%)
+			attribute<Classifications/LU/Ruralis18> LU_med(Albers1kmGrid): Expr = "AdditionalData/Zones == UInt8(1) ? cov_all : UInt8(255)";
+			attribute<Classifications/LU/Ruralis18> LU_tem(Albers1kmGrid): Expr = "AdditionalData/Zones == UInt8(2) ? cov_all : UInt8(255)";
+			attribute<Classifications/LU/Ruralis18> LU_bor(Albers1kmGrid): Expr = "AdditionalData/Zones == UInt8(3) ? cov_all : UInt8(255)";
+			
+			// C_med%i% = reclass(LU_med%i%, %scriptdir%\reclass_med.asc)
+			// C_tem%i% = reclass(LU_tem%i%, %scriptdir%\reclass_tem.asc)
+			// C_bor%i% = reclass(LU_bor%i%, %scriptdir%\reclass_bor.asc)
+			attribute<Int32> C_med(Albers1kmGrid): Expr = "lookup(LU_med, AdditionalData/reclass/med)";
+			attribute<Int32> C_tem(Albers1kmGrid): Expr = "lookup(LU_tem, AdditionalData/reclass/tem)";
+			attribute<Int32> C_bor(Albers1kmGrid): Expr = "lookup(LU_bor, AdditionalData/reclass/bor)";
+			
+			// C_merge%i% = merge(C_med%i%, C_tem%i%, C_bor%i%)
+			// C%i% = C_merge%i% * %scriptdir%\stone_prot / 1000
+			attribute<units/ratio> C_merge(Albers1kmGrid): Expr = "Float32(MakeDefined(c_med, C_tem, C_bor)) / Float32(1000)";
+			attribute<units/ratio> C(Albers1kmGrid): Expr = "Float32(C_merge) * AdditionalData/stone_prot";
+		}		
+		// Erosion%i% = int(%scriptdir%\KLS * R%i% * C%i%)
+		attribute<tonneE_ha> ErosionRisk    (Albers1kmGrid): Expr = "value(AdditionalData/KLS * R * CaseData/C, tonneE_ha)";
+		attribute<tonneE_ha> NearErosionRisk(Albers1kmGrid): Expr = "Potential(ErosionRisk, km10FocalPointMatr/RelWeight)";
+	}
+
+	container AggrTempl: IsTemplate = "True"
+	{
+		parameter<String> RegionName;
+		unit<UInt32> Regions;
+		attribute<Regions> RegionGrid(Albers1kmGrid);
+		
+		container MedianErosionRisk: StorageName = "=IndicatorDirName + '/ErosionRisk/Median_'+RegionName+'.dbf'"
+		{
+			attribute<tonneE_ha> E2000(Regions): Expr = "rth_element(Local/P2000/ErosionRisk, const(Float32(0.5), Regions), RegionGrid)";
+			attribute<tonneE_ha> E2010(Regions): Expr = "rth_element(Local/P2010/ErosionRisk, const(Float32(0.5), Regions), RegionGrid)";
+			attribute<tonneE_ha> E2020(Regions): Expr = "rth_element(Local/P2020/ErosionRisk, const(Float32(0.5), Regions), RegionGrid)";
+			attribute<tonneE_ha> E2030(Regions): Expr = "rth_element(Local/P2030/ErosionRisk, const(Float32(0.5), Regions), RegionGrid)";
+		}
+		// ISSUE: distribution of erosion is skewed; (zonal)medium ignores the high elements; on physical grounds I'd prefer taking the mean.
+		container MeanErosionRisk: StorageName = "=IndicatorDirName + '/ErosionRisk/Mean_'+RegionName+'.dbf'"
+		{
+			attribute<tonneE_ha> E2000(Regions): Expr = "mean(Local/P2000/ErosionRisk, RegionGrid)";
+			attribute<tonneE_ha> E2010(Regions): Expr = "mean(Local/P2010/ErosionRisk, RegionGrid)";
+			attribute<tonneE_ha> E2020(Regions): Expr = "mean(Local/P2020/ErosionRisk, RegionGrid)";
+			attribute<tonneE_ha> E2030(Regions): Expr = "mean(Local/P2030/ErosionRisk, RegionGrid)";
+		}
+	}
+	container Templ: IsTemplate = "True"
+	{
+		container Local
+		{
+			container P2000: Expr = "YearTempl(LanduseData/LU18_2000   , AdditionalData/R2000)";
+			container P2010: Expr = "YearTempl(..../CaseData/LU18/P2010, AdditionalData/R2010)";
+			container P2020: Expr = "YearTempl(..../CaseData/LU18/P2020, AdditionalData/R2020)";
+			container P2030: Expr = "YearTempl(..../CaseData/LU18/P2030, AdditionalData/R2030)";
+		}
+		container Regional: Expr = "for_each_ne('Per'+Geography/IndicatorRegions/Name, "
+				"'AggrTempl('+Quote(Geography/IndicatorRegions/Name)+', Geography/RegionShapes/'+Geography/IndicatorRegions/Name+', Geography/RegionGrids/AggrRel/'+Geography/IndicatorRegions/Name+')'"
+			")";
+	}
+}

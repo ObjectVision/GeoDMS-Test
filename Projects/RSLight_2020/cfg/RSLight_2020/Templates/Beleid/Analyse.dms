@@ -1,0 +1,25 @@
+container Analyse
+{
+	container woongebied
+	{
+		attribute<float32> woongebied_hard_BASIS_2015 (rdc_100m)
+		:	StorageName     = "%SourceDataDir%/LUMOS/Beleid/Ruimte/woongebied_hard.tif"
+		,	StorageType     = "gdal.grid"
+		,	StorageReadOnly = "True";
+		
+		attribute<bool> woongebied_hard_BASIS_2015_bool (rdc_100m):= (woongebied_hard_BASIS_2015 > 0f) ? 1[bool] : 0[bool];
+		
+		attribute<float32> hard (rdc_100m)
+		:	StorageName     = "%SourceDataDir%/LUMOS/Beleid/Ruimte/hard.tif"
+		,	StorageType     = "gdal.grid"
+		,	StorageReadOnly = "True";
+		
+		attribute<bool> hard_bool (rdc_100m):= (hard > 0f) ? 1[bool] : 0[bool];
+	}
+
+	unit<uint8> OverlayRegios: nrofrows = 2
+	{
+	   attribute<string> namen: ['woongebied_hard_BASIS_2015_bool', 'hard_bool'];
+	}
+	unit<uint16> Combine := overlay(OverlayRegios/namen, rdc_100m, woongebied);
+}

@@ -1,0 +1,107 @@
+unit<UInt16> CLCTranslate: NrOfRows = 83
+{
+	parameter<uint32> nrAttr: Expr = "2";
+	unit<UInt32> Elements: Expr = "Range(uint32, 0, nrAttr*#.)"
+	{
+		attribute<String> Text: [
+			//CLCCode,CapriCode
+			 'BG31','BG01'
+			,'BG32','BG02'
+			,'BG33','BG03'
+			,'BG34','BG06'
+			,'BG41','BG04'
+			,'BG42','BG05'
+			,'BE10', null
+			,'BE21','BL21'
+			,'BE22','BL22'
+			,'BE23','BL23'
+			,'BE24','BL24'
+			,'BE25','BL25'
+			,'BE31','BL31'
+			,'BE32','BL32'
+			,'BE33','BL33'
+			,'BE34','BL34'
+			,'BE35','BL35' //17
+			,'LU00','BL40'
+			,'DE41',null
+			,'DE42',null
+			,'DED1',null
+			,'DED2',null
+			,'DED3',null //23
+			,'DK01',null
+			,'DK02',null
+			,'DK03',null
+			,'DK04',null
+			,'DK05',null //28
+			,'GR11','EL11'
+			,'GR12','EL12'
+			,'GR13','EL13'
+			,'GR14','EL14'
+			,'GR21','EL21'
+			,'GR22','EL22'
+			,'GR23','EL23'
+			,'GR24','EL24'
+			,'GR25','EL25'
+			,'GR30','EL30'
+			,'GR41','EL41'
+			,'GR42','EL42'
+			,'GR43','EL43' //41
+			,'IE01','IR01'
+			,'IE02','IR02'
+			,'ITC1','IT11'
+			,'ITC2','IT12'
+			,'ITC3','IT13'
+			,'ITC4','IT20'
+			,'ITD3','IT32'
+			,'ITD4','IT33'
+			,'ITD5','IT40'
+			,'ITE1','IT51'
+			,'ITE2','IT52'
+			,'ITE3','IT53'
+			,'ITE4','IT60'
+			,'ITF1','IT71'
+			,'ITF2','IT72'
+			,'ITF3','IT80'
+			,'ITF4','IT91'
+			,'ITF5','IT92'
+			,'ITF6','IT93'
+			,'ITG1','ITA0'
+			,'ITG2','ITB0'//62
+			,'ITD1',null
+			,'ITD2',null
+			,'RO11','RO06'
+			,'RO12','RO07'
+			,'RO21','RO01'
+			,'RO22','RO02'
+			,'RO31','RO03'
+			,'RO32','RO08'
+			,'RO41','RO04'
+			,'RO42','RO05' //72
+			,'SE11','SE01'
+			,'SE12','SE02'
+			,'SE21','SE09'
+			,'SE22','SE04'
+			,'SE23','SE0A'
+			,'SE31','SE06'
+			,'SE32','SE07'
+			,'SE33','SE08'//80
+			,'SI01',null
+			,'SI02',null
+			,'UKI0',null
+		];
+	}
+	attribute<String> CLCCode: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)]";
+	attribute<String> CapriCode: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)]";
+	
+	unit<uint32> CapriAggCodes: NrOfRows = 18
+	{
+		attribute<uint32> OrgNum: [11, 12, 13, 20, 40, 31, 32, 33, 51, 52, 53, 60, 71, 72, 80, 91, 92, 93];
+		attribute<string> OldCode: expr = "'IT'+string(OrgNum)";
+		attribute<string> NewCode: expr = "'IT'+switch(case(OrgNum < 51, '_North'), case(OrgNum > 71, '_South'), '_Centre')";
+	}
+	
+}
+
+
+
+

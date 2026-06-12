@@ -1,0 +1,230 @@
+container Overigen //@BAs, 2018/06/07:al het gearceerde wordt niet aangeroepen als restrictie voor wonen, werken, glas. Klopt dat?
+{
+	container Schiphol: url = "%RSLDataDir%/Omgeving/Geluid/schiphol/005k_msh06.jpg"//http://intranet.pbl.nl/indibase/indicatordetails/104417
+	{
+// //Gronden no.1, vormen de veiligheidsloopzone waarbinnen een verbod geldt op alle (bestaande en nieuwe) woningen behoudens bestaand gebruik van gebouwen met een
+// //kantoorfunctie of van bedrijven. Afhankelijk van het exacte luchthavengebruik kan de kans op het neerstorten van een vliegtuig hier groter zijn dan eens in de
+// //honderdduizend jaar (PR>10-5/j). Het oppervlak van dit gebied bedraagt bijna 2,5 vierkante kilometer (km2).
+		// attribute<bool> EV_sloopzone (domain_grid)
+		// :	Label       = "EV_sloopzone"
+		// ,	Source      = "PBL: Indibase indicatorcode 005k_msh06. Ligging van de luchthaven Schiphol en gebieden waarvoor in het Luchthavenindelingbesluit (LIB)"
+						  // "regels zijn opgenomen voor het ruimtegebruik en de bebouwing en waarvoor aanvullende afspraken gelden die (nog) niet in het LIB zijn opgenomen."
+							// //Y:\data\indibase\msh05\b_nl_1\2_productie\kaart\003k_msh05\data\2004-bijlage3ab-gronden-1_4.shp
+		// ,	url         = "http:\//www.pbl.nl/sites/default/files/cms/publicaties/500133002.pdf"//bladzijde 15
+		// ,	StorageName = "%RSLDataDir%/omgeving/geluid/schiphol/2004-bijlage3ab-gronden-10-5.tif";
+
+		
+// //Gronden no. 2, vormen de geluidsloopzone waarbinnen een verbod geldt op alle (bestaande en nieuwe) gebouwen behoudens bestaand gebruik van gebouwen met een
+// // kantoorfunctie of van bedrijven. Binnen dit gebied kan de jaarlijkse geluidsbelasting groter zijn dan 71 dB(A) Lden. Het oppervlak van dit gebied bedraagt 3,7 km2.
+
+		// attribute<bool> Geluidsloopzone (domain_grid)
+		// :	Label       = "Geluidsloopzone"
+		// ,	Source      = "PBL: Indibase indicatorcode 005k_msh06. Ligging van de luchthaven Schiphol en gebieden waarvoor in het Luchthavenindelingbesluit (LIB) "
+						  // "regels zijn opgenomen voor het ruimtegebruik en de bebouwing en waarvoor aanvullende afspraken gelden die (nog) niet in het LIB zijn opgenomen."
+							// //Y:\data\indibase\msh05\b_nl_1\2_productie\kaart\003k_msh05\data\2004-bijlage3ab-gronden-1_4.shp
+		// ,	url         = "http:\//www.pbl.nl/sites/default/files/cms/publicaties/500133002.pdf"//bladzijde 15
+		// ,	StorageName = "%RSLDataDir%/omgeving/geluid/schiphol/2004-bijlage3ab-gronden-sloop geluid+EV.tif";
+
+// Gronden no. 3, ook wel de 10-6 risicocontour, waarbinnen geen nieuwbouw is toegestaan, anders dan bedrijvigheid met een zeer gering aantal aanwezige personen.
+// Binnen dit gebied kan de kans op het neerstorten van een vliegtuig groter zijn dan eens in de miljoen jaar (PR>10-6/j). Het oppervlak van dit gebied bedraagt bijna 10,9  km2.
+
+		attribute<bool> beperkingengebied_voor_bedrijven_en_kantoren (domain_grid)
+		:	Label       = "beperkingengebied_voor_bedrijven_en_kantoren"
+		,	Source      = "PBL: Indibase indicatorcode 005k_msh06. Ligging van de luchthaven Schiphol en gebieden waarvoor in het Luchthavenindelingbesluit (LIB) "
+						  "regels zijn opgenomen voor het ruimtegebruik en de bebouwing en waarvoor aanvullende afspraken gelden die (nog) niet in het LIB zijn opgenomen."
+							//Y:\data\indibase\msh05\b_nl_1\2_productie\kaart\003k_msh05\data\2004-bijlage3ab-gronden-1_4.shp
+		,	url         = "http:\//www.pbl.nl/sites/default/files/cms/publicaties/500133002.pdf"//bladzijde 15
+		,	StorageName = "%RSLDataDir%/omgeving/geluid/schiphol/2004-bijlage3ab-gronden-10-6.tif";
+
+// // Gronden no. 4, ook wel de voormalige vrijwaringszone waarbinnen geen nieuwbouw van woningen en gebouwen met een onderwijs- of zorgfunctie is toegestaan. Dit
+// // gebied is vastgesteld op basis van de ‘oude’ geluidmaat, de Kosteneenheid (Ke). Op de rand van dit gebied komt een brede range voor van geluidwaarden in decibel
+// //(Lden), de huidige geluidmaat (grofweg van 51 tot 59 dB(A) Lden). Op de rand van dit gebied is de kans op ernstige geluidhinder 20 à 40 procent. Het oppervlak van dit
+// // gebied bedraagt 187,0 km2
+
+		// attribute<bool> beperkingengebied_voor_woningen (domain_grid)
+		// :	Label       = "beperkingengebied_voor_woningen"
+		// ,	Source      = "PBL: Indibase indicatorcode 005k_msh06. Ligging van de luchthaven Schiphol en gebieden waarvoor in het Luchthavenindelingbesluit (LIB) "
+						  // "regels zijn opgenomen voor het ruimtegebruik en de bebouwing en waarvoor aanvullende afspraken gelden die (nog) niet in het LIB zijn opgenomen."
+							// //Y:\data\indibase\msh05\b_nl_1\2_productie\kaart\003k_msh05\data\2004-bijlage3ab-gronden-1_4.shp
+		// ,	url         = "http:\//www.pbl.nl/sites/default/files/cms/publicaties/500133002.pdf"//bladzijde 15
+		// ,	StorageName = "%RSLDataDir%/omgeving/geluid/schiphol/2004-bijlage3ab-gronden-beperking geluid.tif";
+
+//Bron Frank van Rijn 8 december 2014: "de milieuwetgeving van een Inrichting (lees: bedrijfsterrein Schiphol) en daarvoor gelden andere geluid en EV normen en regels"
+		attribute<bool> Schiphol (domain_grid)
+		:	Label       = "schiphol"
+		,	Source      = "PBL: Indibase indicatorcode 003k_msh05."
+						  "regels zijn opgenomen voor het ruimtegebruik en de bebouwing en waarvoor aanvullende afspraken gelden die (nog) niet in het LIB zijn opgenomen."
+							//Y:\data\indibase\msh05\b_nl_1\2_productie\kaart\003k_msh05\data\definitief-alt-200210.shp
+		,	url         = "http:\//www.pbl.nl/sites/default/files/cms/publicaties/500133002.pdf"
+		,	StorageName = "%RSLDataDir%/omgeving/geluid/schiphol/definitief-alt-200210.tif";
+
+		// attribute<bool> banen_schiphol (domain_grid)
+		// :	Label       = "banen_schiphol"
+		// ,	Source      = "PBL: Indibase indicatorcode 003k_msh05."
+							// //Y:\data\indibase\msh05\b_nl_1\2_productie\kaart\003k_msh05\data\banen-incl-shoulder.shp
+		// ,	url         = "http:\//www.pbl.nl/sites/default/files/cms/publicaties/500133002.pdf"
+		// ,	StorageName = "%RSLDataDir%/omgeving/geluid/schiphol/banen-incl-shoulder.tif";
+
+// //mondelinge communicatie Frank van Rijn: geen grootschalige uitbreiding tenzij inbreiding
+// //In het LIB zijn de afspraken die minister Pronk in 2001 heeft gemaakt met de regio over het beperken van de aanleg van kantoren binnen de PR 10-7/j contour niet opgenomen. Dit
+// // geldt ook voor de beperking voor grootschalige woningbouwlocaties binnen de 20 Kecontour uit de Nota Ruimte. Figuur 2.1.1 toont de ligging van de luchthaven, de gebieden
+// // uit het Luchthavenindelingbesluit en de contour van het plaatsgebonden risico van 10-7/j en de 20 Ke contour uit de Nota Ruimte.
+
+		// attribute<bool> schiphol_20ke_contour_nota_ruimte (domain_grid)
+		// :	Label       = "schiphol_20ke_contour_nota_ruimte"
+		// ,	Source      = "PBL: Indibase indicatorcode 005k_msh06. Ligging van de luchthaven Schiphol en gebieden waarvoor in het Luchthavenindelingbesluit (LIB) "
+						  // "regels zijn opgenomen voor het ruimtegebruik en de bebouwing en waarvoor aanvullende afspraken gelden die (nog) niet in het LIB zijn opgenomen."
+							// //Y:\data\IndiBase\msh05\B_NL_1\2_productie\kaart\021k_msh05\data\p_2005
+		// ,	url         = "http:\//www.pbl.nl/sites/default/files/cms/publicaties/500133002.pdf"//bladzijde 15
+		// ,	StorageName = "%RSLDataDir%/omgeving/geluid/schiphol/20ke_contour_nota_ruimte_schiphol.tif";
+	}
+
+	container Regionale_luchthavens: Source = "Y:\data\Leefomgeving\Data\Luchtvaart\01_Beleidscontouren en woningbestanden\Regionale luchthavens\Geluidcontouren",
+									 url = "%RSLDataDir%/Beleid/Overigen/Regionale_luchthavens/metadata_regionale_luchthavens.txt"
+	
+	{
+		container Maastricht_Aachen_Airport: url = "http://wetten.overheid.nl/BWBR0026525/2017-10-21"
+		{
+		parameter<string> BestandslocBK: = '%RSLDataDir%/Beleid/Overigen/Regionale_luchthavens/EHBK_omzetting_Lden.shp';
+
+			container lden_48_56 : = VergriddingT
+			(
+				'=BestandslocBK'
+				,'SELECT * FROM EHBK_omzetting_Lden WHERE CVALUE =''48'''
+			);
+
+			container lden_56_70 : = VergriddingT
+			(
+				'=BestandslocBK'
+				,'SELECT * FROM EHBK_omzetting_Lden WHERE CVALUE =''56'''
+			);
+
+			container lden_70_hoger : = VergriddingT
+			(
+				'=BestandslocBK'
+				,'SELECT * FROM EHBK_omzetting_Lden WHERE CVALUE =''70'''
+			);
+		}
+
+		container Eindhoven_Airport : url = "http://wetten.overheid.nl/BWBR0025302/2017-01-01#Hoofdstuk2_Paragraaf2.3_Sub-paragraaf2.3.1_Artikel5"
+		{
+		parameter<string> BestandslocEH: = '%RSLDataDir%/Beleid/Overigen/Regionale_luchthavens/EHEH_LHB_Civiel_Bernr1072103_20130227113358_35_40_45_65Ke.shp';
+
+			container ke_35_40 : = VergriddingT
+			(
+				'=BestandslocEH'
+				,'SELECT * FROM EHEH_LHB_Civiel_Bernr1072103_20130227113358_35_40_45_65Ke WHERE VALUE =''35'''
+			);
+
+			container ke_40_45 : = VergriddingT
+			(
+				'=BestandslocEH'
+				,'SELECT * FROM EHEH_LHB_Civiel_Bernr1072103_20130227113358_35_40_45_65Ke WHERE VALUE =''40'''
+			);
+
+			container ke_45_65 : = VergriddingT
+			(
+				'=BestandslocEH'
+				,'SELECT * FROM EHEH_LHB_Civiel_Bernr1072103_20130227113358_35_40_45_65Ke WHERE VALUE =''45'''
+			);
+
+			container ke_65_hoger : = VergriddingT
+			(
+				'=BestandslocEH'
+				,'SELECT * FROM EHEH_LHB_Civiel_Bernr1072103_20130227113358_35_40_45_65Ke WHERE VALUE =''65'''
+			);
+		}
+
+		container Groningen_Airport_Eelde : url = "http://wetten.overheid.nl/BWBR0026525/2017-10-21"
+		{
+
+		parameter<string> BestandslocGG: = '%RSLDataDir%/Beleid/Overigen/Regionale_luchthavens/EHGG_omzetting_Lden.shp';
+
+			container lden_48_56 : = VergriddingT
+			(
+				'=BestandslocGG'
+				,'SELECT * FROM EHGG_omzetting_Lden WHERE CVALUE =''48'''
+			);
+
+			container lden_56_70 : = VergriddingT
+			(
+				'=BestandslocGG'
+				,'SELECT * FROM EHGG_omzetting_Lden WHERE CVALUE =''56'''
+			);
+
+			container lden_70_hoger : = VergriddingT
+			(
+				'=BestandslocGG'
+				,'SELECT * FROM EHGG_omzetting_Lden WHERE CVALUE =''70'''
+			);
+		}
+
+		container Lelystad_Airport : url = "http://wetten.overheid.nl/BWBR0026525/2017-10-21"
+		{
+		parameter<string> BestandslocLE: = '%RSLDataDir%/Beleid/Overigen/Regionale_luchthavens/EHLE_LHB_Bernr__1327401_140208_1151.shp';
+
+			container lden_48_56 : = VergriddingT
+			(
+				'=BestandslocLE'
+				,'SELECT * FROM EHLE_LHB_Bernr__1327401_140208_1151 WHERE CVALUE >=''48'' AND CVALUE <''56'''
+			);
+
+			container lden_56_70 : = VergriddingT
+			(
+				'=BestandslocLE'
+				,'SELECT * FROM EHLE_LHB_Bernr__1327401_140208_1151 WHERE CVALUE >=''56'' AND CVALUE <''70'''
+			);
+
+			container lden_70_hoger : = VergriddingT
+			(
+				'=BestandslocLE'
+				,'SELECT * FROM EHLE_LHB_Bernr__1327401_140208_1151 WHERE CVALUE >=''70'''
+			);
+		}
+
+		container Rotterdam_The_Hague_Airport : url = "http://wetten.overheid.nl/BWBR0026525/2017-10-21"
+		{
+		parameter<string> BestandslocRD: = '%RSLDataDir%/Beleid/Overigen/Regionale_luchthavens/EHRD_omzetting_Lden.shp';
+
+			container lden_48_56 : = VergriddingT
+			(
+				'=BestandslocRD'
+				,'SELECT * FROM EHRD_omzetting_Lden WHERE CVALUE =''48'''
+			);
+
+			container lden_56_70 : = VergriddingT
+			(
+				'=BestandslocRD'
+				,'SELECT * FROM EHRD_omzetting_Lden WHERE CVALUE =''56'''
+			);
+
+			container lden_70_hoger : = VergriddingT
+			(
+				'=BestandslocRD'
+				,'SELECT * FROM EHRD_omzetting_Lden WHERE CVALUE =''70'''
+			);
+		}
+
+	attribute<bool> Totaal_lden_48_56 (domain_grid) := or(
+		Maastricht_Aachen_Airport/lden_48_56/Bestand/Multi/result, 
+		Groningen_Airport_Eelde/lden_48_56/Bestand/Multi/result,
+		Lelystad_Airport/lden_48_56/Bestand/Multi/result,
+		Rotterdam_The_Hague_Airport/lden_48_56/Bestand/Multi/result
+		);
+
+	attribute<bool> Totaal_lden_56_70 (domain_grid) := or(
+		Maastricht_Aachen_Airport/lden_56_70/Bestand/Multi/result, 
+		Groningen_Airport_Eelde/lden_56_70/Bestand/Multi/result,
+		Lelystad_Airport/lden_56_70/Bestand/Multi/result,
+		Rotterdam_The_Hague_Airport/lden_56_70/Bestand/Multi/result
+		);
+		
+	attribute<bool> Totaal_lden_70_hoger (domain_grid) := or(
+		Maastricht_Aachen_Airport/lden_70_hoger/Bestand/Multi/result, 
+		Groningen_Airport_Eelde/lden_70_hoger/Bestand/Multi/result,
+		Lelystad_Airport/lden_70_hoger/Bestand/Multi/result,
+		Rotterdam_The_Hague_Airport/lden_70_hoger/Bestand/Multi/result
+		);
+	}
+	#include<Monumenten.dms>
+}

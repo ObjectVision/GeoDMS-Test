@@ -1,0 +1,98 @@
+Container MetaData: Using = "Classifications" 
+{
+//	unit<uint32> SpatialDataToLoad: NrOfRows = 19
+	unit<uint32> SpatialDataToLoad: NrOfRows = 14
+	
+	{
+		unit<uint32> inTable := range(uint32, 0, #SpatialDataToLoad * NrAttributes)
+		{
+			attribute<string> Elements: 
+			//Name, SourceType, SourcePath, Additional
+			[
+			'GHS_Pop_20',           'float64tiff',  '%CUSA2_DataDir%/population/GHS_POP_P2030_GLOBE_R2022A_54009_1000_V1_0_Africa_AEA'      ,'tif',
+			'Corridors',            'polyshp',      '%CUSA2_DataDir%/CorridorBoundaries_2023_01_27'                 ,'shp',
+			'floodsCorridorId1',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodsCorridorId1'             ,'shp',
+			'floodsCorridorId2',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId2'             ,'shp',
+			'floodsCorridorId3',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId3'             ,'shp',
+			'floodsCorridorId4',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId4'             ,'shp',
+			'floodsCorridorId5',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId5'             ,'shp',
+			'floodsCorridorId6',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId6'             ,'shp',
+			'floodsCorridorId7',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId7'             ,'shp',
+			'floodsCorridorId8',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId8'             ,'shp',
+			'floodsCorridorId9',    'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId9'             ,'shp',
+			'floodsCorridorId10',   'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId10'            ,'shp',
+			'floodsCorridorId11',   'polyshp',      '%CUSA2_DataDir%/CorridorsFloods/floodscorridorId11'            ,'shp',
+			'Africa_countries_AEA', 'polyshp',      '%CUSA2_DataDir%/boundaries/GADM_Africa_countries_AEA'      ,'shp'
+			];
+		}
+		
+		attribute<string> Name := inTable/Elements[((id(.)*NrAttributes)+0)[inTable]];
+		attribute<string> Type := inTable/Elements[((id(.)*NrAttributes)+1)[inTable]];
+		attribute<string> Path := inTable/Elements[((id(.)*NrAttributes)+2)[inTable]];
+		attribute<string> Ext  := inTable/Elements[((id(.)*NrAttributes)+3)[inTable]];
+		
+		parameter<uint32> NrAttributes := 4;
+	}
+	
+	// unit<uint32> VariantsToLoad
+	// : StorageName = "%ProjDir%/data/Variants.csv"
+	// , StorageType = "gdal.vect"
+	// , storagereadonly = "true"
+	// , SyncMode = "none"
+	// {
+		// attribute<string> VariantName;
+		// attribute<string> CorridorID;
+		// attribute<string> PopVersion;
+		// attribute<uint32> UseCustomSpeeds;
+		// attribute<uint32> UsePOIdestmass;
+		
+		// attribute<string> Short_VName  := VariantName == 'Reference' ? 'Ref' : left(VariantName,1) + right(VariantName,1);
+		// attribute<string> name         := Short_VName +'_'+ MakeDefined(CorridorName, 'Ref');
+		
+		// attribute<string> CorridorName := rjoin(uint32(CorridorID), id(Geometries/Corridors), Geometries/Corridors/name);
+		
+		
+		// unit<uint32> woRef := select_with_org_rel(VariantName != 'Reference')
+		// {
+			// attribute<string> VariantName  := ../VariantName[org_rel];
+			// attribute<string> Short_VName  := left(VariantName,1) + right(VariantName,1);
+			// attribute<string> CorridorName := ../CorridorName[org_rel];
+			
+			// attribute<bool>   UseCustomSpeeds := bool(../UseCustomSpeeds[org_rel]);
+			// attribute<bool>   UsePOIdestmass := bool(../UsePOIdestmass[org_rel]);
+			// attribute<string>   PopVersion      := ../PopVersion[org_rel];
+			
+			// attribute<string> name         := Short_VName +'_'+ CorridorName;
+		// }
+		// unit<uint32> Ref := Geometries/Corridors
+		// {
+			// attribute<string> VariantName     := const('Reference',.);
+			// attribute<string> Short_VName     := left(VariantName,3);
+			// attribute<string> CorridorName    := Geometries/Corridors/name;
+			
+			// attribute<string> PopVersion      := rjoin(VariantName, VariantsToLoad/VariantName, VariantsToLoad/PopVersion);
+			// attribute<bool>   UseCustomSpeeds := const(FALSE,.);
+			// attribute<bool>   UsePOIdestmass  := const(FALSE,.);
+			// attribute<string> name            := Short_VName +'_'+ CorridorName;
+		// }
+		
+		// unit<uint32> AllVariants := union_unit(Ref,woRef)
+		// {
+			// attribute<string> name            := union_data(.,Ref/name, woRef/name);
+			// attribute<string> Short_VName     := union_data(.,Ref/Short_VName, woRef/Short_VName);
+			// attribute<string> CorridorName    := union_data(.,Ref/CorridorName, woRef/CorridorName);
+			// attribute<bool>   UseCustomSpeeds := union_data(.,Ref/UseCustomSpeeds, woRef/UseCustomSpeeds);
+			// attribute<bool>   UsePOIdestmass  := union_data(.,Ref/UsePOIdestmass, woRef/UsePOIdestmass);
+			// attribute<string> PopVersion      := union_data(.,Ref/PopVersion, woRef/PopVersion);
+		// }
+	// }
+
+	Container Wij
+	{
+		unit<SPoint> AccessInterpolation := range(spoint, point_yx(-11s, -11s), point_yx(12s, 12s)) 
+		{
+			attribute<UInt32>  Dist2 := Dist2(point_yx(0s, 0s, .), uint32);
+			attribute<float32> Attr  := Dist2 > 0 && Dist2 < 12*12 ? float32(Dist2)^-1f : 0f;
+		}
+	}
+}

@@ -1,0 +1,22 @@
+container EU
+{
+	container Natura2000:
+		StorageName     = "%RSLdataDir%/Beleid/EU/Natura2000_20170907.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	, 	DialogType      = "Map"
+	,	Source          = "Nationaal georegister download shp-formaat op 131117, conversie in ArcGIS naar gdb-formaat ivm grootte"
+	,	url             = "%dataDir%/Beleid/EU/NationaalGeoregister_Natura2000_raadpleging131117_download_zipdata.xml"
+	, SyncMode          = "Attr"
+	{	
+		unit<uint32> Gebied
+			//skip gebieden ver de Noordzee op op basis van Kadaster-filter
+			:	SqlString  = "SELECT * FROM Natura2000_20170907 WHERE KADASTER <> 'niet van toepassing'"
+			,	url             = "%RSLdataDir%/Beleid/EU/NationaalGeoregister_Natura2000_raadpleging131117_download_zipdata.jpg"
+		{
+			attribute<rdc_meter> Geometry (poly);
+			attribute<uint32>    Result_geom (domain_grid) := poly2grid(Geometry, domain_grid);
+			attribute<bool>      Result (domain_grid)      := Result_geom >= 0;
+		}
+	}
+}

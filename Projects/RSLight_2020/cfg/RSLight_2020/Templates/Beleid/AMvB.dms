@@ -1,0 +1,79 @@
+container AMVB
+{
+	container Src := .../Src/AMvB;
+	
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> openbaar_toegankelijk_natuur_en_recreatiegebied_Midden_IJsselmonde          (domain_grid):= Src/NL_IMRO_0000_IMamGCBarro_5021/Kaart2/openbaar_toegankelijk_natuur_en_recreatiegebied_Midden_IJsselmonde/Bestand/Multi/Result;
+			attribute<bool> openbaar_toegankelijk_natuur_en_recreatiegebied_Schiebroekse_en_Zuidpolder  (domain_grid):= Src/NL_IMRO_0000_IMamGCBarro_5021/Kaart2/openbaar_toegankelijk_natuur_en_recreatiegebied_Schiebroekse_en_Zuidpolder/Bestand/Multi/Result;
+			attribute<bool> openbaar_toegankelijk_natuur_en_recreatiegebied_Schiezone                   (domain_grid):= Src/NL_IMRO_0000_IMamGCBarro_5021/Kaart2/openbaar_toegankelijk_natuur_en_recreatiegebied_Schiezone/Bestand/Multi/Result;
+			attribute<bool> kustfundament                                                               (domain_grid):= Src/NL_IMRO_0000_IMamGCBarro_5021/Kaart3/kustfundament/Bestand/Multi/Result;
+			attribute<bool> stroomvoerend_deel_rivierbed                                                (domain_grid):= Src/NL_IMRO_0000_IMamGCBarro_5021/Kaart4/stroomvoerend_deel_rivierbed/Bestand/Multi/Result;
+			attribute<bool> Waddenzee                                                                   (domain_grid):= Src/NL_IMRO_0000_IMamGCBarro_5021/Kaart5/Waddenzee/Bestand/Multi/Result;
+			attribute<bool> Reservering_parallelle_Kaagbaan                                             (domain_grid):= Src/NL_IMRO_0000_IMamGCBarro_5021/Kaart16/Reservering_parallelle_Kaagbaan/Bestand/Multi/Result;
+			attribute<bool> militair_terrein                                                            (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart1/militair_terrein/Bestand/Multi/Result;
+			attribute<bool> militair_luchtvaartterrein                                                  (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart1/militair_luchtvaartterrein/Bestand/Multi/Result;
+			attribute<bool> A_zone_munitieopslagplaats                                                  (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart8/A_zone_munitieopslagplaats/Bestand/Multi/Result;
+			attribute<bool> B_zone_munitieopslagplaats                                                  (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart8/B_zone_munitieopslagplaats/Bestand/Multi/Result;
+			attribute<bool> A_zone_civiele_inrichting_voor_activiteiten_met_explosieven                 (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart9/A_zone_civiele_inrichting_voor_activiteiten_met_explosieven/Bestand/Multi/Result;
+			attribute<bool> B_zone_civiele_inrichting_voor_activiteiten_met_explosieven                 (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart9/B_zone_civiele_inrichting_voor_activiteiten_met_explosieven/Bestand/Multi/Result;
+			attribute<bool> voorkeurstraces_buisleidingen                                               (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart13/voorkeurstraces_buisleidingen/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem(
+				  openbaar_toegankelijk_natuur_en_recreatiegebied_Midden_IJsselmonde
+				, openbaar_toegankelijk_natuur_en_recreatiegebied_Schiebroekse_en_Zuidpolder
+				, openbaar_toegankelijk_natuur_en_recreatiegebied_Schiezone
+				, kustfundament
+				, stroomvoerend_deel_rivierbed
+				, Waddenzee
+				, Reservering_parallelle_Kaagbaan
+				, militair_terrein
+				, militair_luchtvaartterrein
+				, A_zone_munitieopslagplaats
+				, B_zone_munitieopslagplaats
+				, A_zone_civiele_inrichting_voor_activiteiten_met_explosieven
+				, B_zone_civiele_inrichting_voor_activiteiten_met_explosieven
+				, voorkeurstraces_buisleidingen
+			);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute <bool> C_zone_munitieopslagplaats                                  (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart8/C_zone_munitieopslagplaats/Bestand/Multi/Result;
+			attribute <bool> C_zone_civiele_inrichting_voor_activiteiten_met_explosieven (domain_grid):= Src/NL_IMRO_0000_IMmrGCRarro_5030/Kaart9/C_zone_civiele_inrichting_voor_activiteiten_met_explosieven/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem(
+				  C_zone_munitieopslagplaats
+				, C_zone_civiele_inrichting_voor_activiteiten_met_explosieven
+			);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container Woongebied := Woongebied_en_werk_bedrijventerrein;
+	container Bedrijventerrein := Woongebied_en_werk_bedrijventerrein;
+}

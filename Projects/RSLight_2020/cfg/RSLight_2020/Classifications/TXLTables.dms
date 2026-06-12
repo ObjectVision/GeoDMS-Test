@@ -1,0 +1,15 @@
+container TigrisXL
+{
+	unit<uint8> Table: NrOfRows = 3
+	{
+		attribute<string> name:     ['InitFinal', 'Labour', 'LandUse'];
+		attribute<string> ModuleNm: ['MIGRAT'   , 'Labour', 'LandUse'];
+		
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
+	}
+	container MetaInfo :=
+		for_each_ne(
+			Table/name,
+			'Templates/ReadFiles/MetaInfo('+quote(SourceData/Claims/ClaimSrcRef+'/MetaInfo/'+Table/name+'.csv')+')'
+		);
+}

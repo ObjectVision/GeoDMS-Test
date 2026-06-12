@@ -1,0 +1,56 @@
+container Stimuli
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			// Flevoland ontbreekt: heeft geen stimuli/restictie op glastuinbouwbedrijven (in PRV althans)
+
+			attribute<bool> glastuinbouwlocaties_Noordwest_Fryslan (domain_grid)	:= Src/PRV/Friesland/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart4/glastuinbouwlocaties_Noordwest_Fryslan/Bestand/Multi/Result;
+			//attribute<bool> Buitengebied (domain_grid)							:= !Src/PRV/Groningen/NL_IMRO_9920_POVgeconsolideerd_GV01/Kaart1/Buitengebied/Bestand/Multi/Result;
+			attribute<bool> Glastuinbouw (domain_grid)								:= Src/PRV/Drenthe/NL_IMRO_9922_povDrenthe1610_VA01/KaartD11b/Glastuinbouw/Bestand/Multi/Result;
+			//attribute<bool> Glastuinbouw_niet_toegestaan (domain_grid)			:= !Src/PRV/Overijssel/NL_IMRO_9923_VerordeningOv01_va01/Glastuinbouwlocaties/Glastuinbouw_niet_toegestaan/Bestand/Multi/Result;
+
+			attribute<bool> Glastuinbouwontwikkelingsgebied (domain_grid)			:= Src/PRV/Gelderland/NL_IMRO_9925_PVOmgverordeningGC_gc04/Glastuinbouw/Glastuinbouwontwikkelingsgebied/Bestand/Multi/Result;
+			attribute<bool> Reserve_glastuinbouwontwikkelingsgebied (domain_grid)	:= Src/PRV/Gelderland/NL_IMRO_9925_PVOmgverordeningGC_gc04/Glastuinbouw/Reserve_glastuinbouwontwikkelingsgebied/Bestand/Multi/Result;
+			attribute<bool> Glastuinbouw_regionaal_cluster (domain_grid)	:= Src/PRV/Gelderland/NL_IMRO_9925_PVOmgverordeningGC_gc04/Glastuinbouw/Glastuinbouw_regionaal_cluster/Bestand/Multi/Result;
+
+			attribute<bool> Glastuinbouwconcentratiegebied (domain_grid)			:= Src/PRV/Noord_Holland/NL_IMRO_9927_PRVPNHCONSOLID_0103/Landbouwclusters/Glastuinbouwconcentratiegebied/Bestand/Multi/Result;
+			attribute<bool> glastuinbouwgebied (domain_grid)						:= Src/PRV/Zuid_Holland/NL_IMRO_9928_Vr2014_GC03/Teeltgebieden/glastuinbouwgebied/Bestand/Multi/Result;
+			attribute<bool> Glastuinbouwconcentratiegebied_Utr (domain_grid)		:= Src/PRV/Utrecht/NL_IMRO_9926_PV1612PRV_VA01/Kaart10/Glastuinbouwconcentratiegebied/Bestand/Multi/Result;
+
+			attribute<bool> Vestigingsgebied_glastuinbouw (domain_grid)				:= Src/PRV/Noord_Brabant/NL_IMRO_9930_VrNBrgecons_0717/agrarische_ontwikkeling_en_windturbines/Vestigingsgebied_glastuinbouw/Bestand/Multi/Result;
+			attribute<bool> Doorgroeigebied_glastuinbouw (domain_grid)				:= Src/PRV/Noord_Brabant/NL_IMRO_9930_VrNBrgecons_0717/agrarische_ontwikkeling_en_windturbines/Doorgroeigebied_glastuinbouw/Bestand/Multi/Result;
+			attribute<bool> Maatwerk_glastuinbouw (domain_grid)						:= Src/PRV/Noord_Brabant/NL_IMRO_9930_VrNBrgecons_0717/agrarische_ontwikkeling_en_windturbines/Maatwerk_glastuinbouw/Bestand/Multi/Result;
+
+			attribute<bool> Glastuinbouw_Ze (domain_grid)							:= Src/PRV/Zeeland/NL_IMRO_9929_vrpz2012_0001/Glastuinbouw/Glastuinbouw/Bestand/Multi/Result;
+
+			attribute<bool> Ontwikkelingsgebied_glastuinbouw (domain_grid)			:= Src/PRV/Limburg/NL_IMRO_9928_Vr2014_GC03/Intensieve_veehouderijen_en_glastuinbouwbedrijven/Ontwikkelingsgebied_glastuinbouw/Bestand/Multi/Result;
+
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  glastuinbouwlocaties_Noordwest_Fryslan
+					, Glastuinbouw
+					, Glastuinbouwontwikkelingsgebied
+					, Reserve_glastuinbouwontwikkelingsgebied
+					, Glastuinbouw_regionaal_cluster
+					, Glastuinbouwconcentratiegebied
+					, glastuinbouwgebied
+					, Glastuinbouwconcentratiegebied_Utr
+					, Vestigingsgebied_glastuinbouw
+					, Doorgroeigebied_glastuinbouw
+					, Maatwerk_glastuinbouw
+					, Glastuinbouw_Ze
+					, Ontwikkelingsgebied_glastuinbouw
+				);
+		}
+	}
+}

@@ -1,0 +1,301 @@
+container AMvB : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=vrom&striVersion=STRI2008"
+{
+	container NL_IMRO_0000_IMamGCBarro_5021 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.0000.IMamGCBarro-5021"
+	{
+		//Besluit algemene regels ruimtelijke ordening (geconsolideerde versie)
+		//planstatus: geconsolideerd 2017-01-01
+		//identificatie: NL.IMRO.0000.IMamGCBarro-5021
+		//type plan: amvb
+		//naam overheid: Ministerie van Infrastructuur en Milieu
+		//ondergrond: basisregistratie topografie (BRT) (2014-01-09)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (16)
+		//Besluit algemene regeling ruimtelijke ordening
+		//Project Mainportontwikkeling Rotterdam	x
+		//Kustfundament	x
+		//Grote rivieren	x
+		//Waddenzee en waddengebied	x
+		//Defensie
+		//Erfgoederen van uitzonderlijke universele waarde
+		//Rijksvaarwegen
+		//Hoofdwegen en landelijke spoorwegen
+		//Natuurnetwerk Nederland
+		//Primaire waterkeringen buiten het kustfundament
+		//IJsselmeergebied
+		//Electriciteitsvoorziening
+		//Algemene en overige bepalingen
+		//Buisleidingen van nationaal belang voor het vervoer van gevaarlijke stoffen	x
+		//Ruimtereservering parallelle Kaagbaan x
+		
+		//Alle records selecteren in Query doe:
+		//,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A'
+
+		parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A.shp';
+		parameter<string> OGRQuery: = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\ruimtelijkeplannen\Amvb_2017\NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitsubvlak_A.gml -where ""besluitgebied=""NL.IMRO.0000.IMamGCBarro-5021"" -skipfailures -overwrite';
+
+		container Kaart2 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMamGCBarro-5021_Besluit algemene regels ruimtelijke ordening Besluit algemene regels ruimtelijke ordening.mht"
+		{
+			//Project Mainportontwikkeling Rotterdam.Lagen:
+			//gebied voor compensatie van de effecten van de landaanwinning op open droog duin
+			//gebied voor compensatie van het verlies aan zeenatuur als gevolg van de landaanwinning
+			//landaanwinningsgebied
+			//openbaar toegankelijk natuur- en recreatiegebied Midden IJsselmonde
+			//openbaar toegankelijk natuur- en recreatiegebied Schiebroekse- en Zuidpolder
+			//openbaar toegankelijk natuur- en recreatiegebied Schiezone
+
+			container openbaar_toegankelijk_natuur_en_recreatiegebied_Midden_IJsselmonde : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''openbaar toegankelijk natuur- en recreatiegebied Midden IJsselmonde'''
+				,''
+				'=OGRQuery'
+			);
+
+			container openbaar_toegankelijk_natuur_en_recreatiegebied_Schiebroekse_en_Zuidpolder : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''openbaar toegankelijk natuur- en recreatiegebied Schiebroekse- en Zuidpolder'''
+				,''
+				'=OGRQuery'
+			);
+
+			container openbaar_toegankelijk_natuur_en_recreatiegebied_Schiezone : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''openbaar toegankelijk natuur- en recreatiegebied Schiezone'''
+				,''
+				'=OGRQuery'
+			);
+		}
+
+		container Kaart3 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMamGCBarro-5021_Besluit algemene regels ruimtelijke ordening Besluit algemene regels ruimtelijke ordening.mht"
+		{
+			// Lagen:kustfundament
+			// kustfundament
+
+			container kustfundament : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''kustfundament'''
+				,''
+				'=OGRQuery'
+			);
+		}
+
+		container Kaart4 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMamGCBarro-5021_Besluit algemene regels ruimtelijke ordening Besluit algemene regels ruimtelijke ordening.mht"
+		{
+			//Grote rivieren. Lagen
+			//gebiedsreservering voor de lange termijn Maas
+			//gebiedsreservering voor de lange termijn Rijntakken
+			//rivierbed
+			//stroomvoerend deel rivierbed
+
+			container stroomvoerend_deel_rivierbed : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''stroomvoerend deel rivierbed'''
+				,''
+				'=OGRQuery'
+			);
+		}
+
+		container Kaart5 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMamGCBarro-5021_Besluit algemene regels ruimtelijke ordening Besluit algemene regels ruimtelijke ordening.mht"
+		{
+			//Waddenzee en waddengebied. Lagen
+			//Waddenzee
+			//waddengebied
+
+			container Waddenzee : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''Waddenzee'''
+				,''
+				'=OGRQuery'
+			);
+		}
+		
+		container Kaart6 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMamGCBarro-5021_Besluit algemene regels ruimtelijke ordening Besluit algemene regels ruimtelijke ordening.mht"
+		{
+			//Lagen Erfgoederen van uitzonderlijke universele waarde:
+			// x Nieuwe Hollandse Waterlinie
+			//   Romeinse Limes
+			//   werelderfgoed "De Beemster"
+			//   werelderfgoed "De Stelling van Amsterdam"
+
+			container Nieuwe_Hollandse_Waterlinie : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''Nieuwe Hollandse Waterlinie'''
+				,''
+				'=OGRQuery'
+			);
+		}
+
+		container Kaart15 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMamGCBarro-5021_Besluit algemene regels ruimtelijke ordening Besluit algemene regels ruimtelijke ordening.mht"
+		{
+			//Buisleidingen van nationaal belang voor het vervoer van gevaarlijke stoffen. Lagen
+			//Buisleidingen van nationaal belang voor het vervoer van gevaarlijke stoffen
+
+			container Buisleidingen_van_nationaal_belang_voor_het_vervoer_van_gevaarlijke_stoffen : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''Buisleidingen van nationaal belang voor het vervoer van gevaarlijke stoffen'''
+				,''
+				'=OGRQuery'
+			);
+		}
+
+		container Kaart16 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMamGCBarro-5021_Besluit algemene regels ruimtelijke ordening Besluit algemene regels ruimtelijke ordening.mht"
+		{
+			//Ruimtereservering parallelle Kaagbaan. Lagen
+			//Reservering parallelle Kaagbaan 
+
+			container Reservering_parallelle_Kaagbaan : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMamGCBarro_50211_Besluitsubvlak_A WHERE naam =''Reservering parallelle Kaagbaan'''
+				,''
+				'=OGRQuery'
+			);
+		}
+	}
+
+	container  NL_IMRO_0000_IMmrGCRarro_5030 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.0000.IMmrGCRarro-5030"
+	{
+		//Regeling algemene regels ruimtelijke ordening (ministeriele regeling) (geconsolideerde versie)
+		//planstatus: geconsolideerd 2016-07-01
+		//identificatie: NL.IMRO.0000.IMmrGCRarro-5030
+		//type plan: regeling
+		//naam overheid: Ministerie van Infrastructuur en Milieu
+		//ondergrond: basisregistratie topografie (BRT) (2014-01-09)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (13)
+		//algemeen 
+		//militaire terreinen 
+		//onveilige gebieden buiten militair terrein 
+		//militaire luchtvaartterreinen 
+		//zend- en ontvangstinstallaties buiten militair luchtvaartterrein 
+		//radarstations 
+		//laagvliegroutes voor jacht- en transportvliegtuigen 
+		//munitieopslagplaatsen 
+		//civiele inrichtingen voor activiteiten met explosieven 
+		//reserveringsgebieden weg 
+		//nieuwe reserveringsgebieden weg en spoor 
+		//militaire terreinen geen EHS 
+		//voorkeurstracés buisleidingen
+
+		parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A.shp';
+		parameter<string> OGRQuery: = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\ruimtelijkeplannen\Amvb_2017\NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitsubvlak_A.gml -where  "OGR_GEOMETRY=''Point'' && besluitgebied=""NL.IMRO.0000.IMmrGCRarro-5030"" -skipfailures -overwrite';
+
+		container Kaart1 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMmrGCRarro-5030_Regeling algemene regels ruimtelijke ordening Besluit.mht"
+		{
+			container militair_terrein : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,16) =''militair terrein'''
+				,''
+				'=OGRQuery'
+			);
+
+			container militair_luchtvaartterrein : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,26) =''militair luchtvaartterrein'''
+				,''
+				'=OGRQuery'
+			);
+		}
+	
+		container Kaart8 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMmrGCRarro-5030_Regeling algemene regels ruimtelijke ordening Besluit.mht"
+		{
+
+			container A_zone_munitieopslagplaats : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,8) =''A-zone m'''
+				,''
+				'=OGRQuery'
+			);
+
+			container B_zone_munitieopslagplaats : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,8) =''B-zone m'''
+				,''
+				'=OGRQuery'
+			);
+
+			container C_zone_munitieopslagplaats : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,8) =''C-zone m'''
+				,''
+				'=OGRQuery'
+			);
+		}
+
+		container Kaart9 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMmrGCRarro-5030_Regeling algemene regels ruimtelijke ordening Besluit.mht"
+		{
+			//civiele inrichtingen voor activiteiten met explosieven. Lagen
+			//civiele inrichting voor activiteiten met explosieven complex TNO Rijswijk
+			//civiele inrichting voor activiteiten met explosieven complex TNO Ypenburg
+			//civiele inrichting voor activiteiten met explosieven complex Ulicoten
+
+			container A_zone_civiele_inrichting_voor_activiteiten_met_explosieven  : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,8) =''A-zone c'''
+				,''
+				'=OGRQuery'
+			);
+
+			container B_zone_civiele_inrichting_voor_activiteiten_met_explosieven : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,8) =''B-zone c'''
+				,''
+				'=OGRQuery'
+			);
+
+			container C_zone_civiele_inrichting_voor_activiteiten_met_explosieven : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,8) =''C-zone c'''
+				,''
+				'=OGRQuery'
+			);
+		}
+
+		container Kaart13 : url="%RSLDataDir%/Beleid/Ruimte/ruimtelijkeplannen/Amvb_2017/IMmrGCRarro-5030_Regeling algemene regels ruimtelijke ordening Besluit.mht"
+		{
+			//voorkeurstracés buisleidingen
+			//Hoofdverbindingen Noord-Nederland
+			//Hoofdverbindingen Rijnmond - Zeeland/België
+			//tracé door Gelderland en Zuid-Holland
+			//tracé door Hoekse Waard en Noord-Brabant
+			//tracé door Noord-Brabant en Limburg
+			//tracé door Noord-Holland en Zuid-Holland
+			//tracé door Voorne-Putten
+			//tracé door oostelijk Nederland
+			//tracés door Limburg
+			//zoekgebied buisleidingen
+
+			//&&&&&Bart: vergridding van smalle langwerpige polygonen lijkt in dit geval tot onwenselijke resultaten (Zie Hoofdverbindingen Noord-Nederland) - (vergridden buiten GeoDMS). Er lijkt geen GeoDMS tegenhanger te zijn
+			//van vergridden in ArcGIS mbv lijnelement (inbranden)
+			
+			container voorkeurstraces_buisleidingen : = VergriddingT
+			(			
+				'=Bestandsloc'
+				//https://www.infomil.nl/onderwerpen/veiligheid/buisleidingen/
+				//In het Barro is aangegeven dat aan weerszijden van de voorkeurstracés een zoekgebied geldt van 250 meter. Daarbinnen kan de gemeente de exacte ligging van het buisleidingen tracé bepalen. 
+				//Mits het tracé aansluit op het voorkeurstracé bij de naastliggende gemeenten en het tracé dezelfde breedte heeft als de breedte van het grootste deel van het tracé.
+				//,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,10) =''tracé door'' OR naam= ''Hoofdverbindingen Noord-Nederland'' OR naam= ''Hoofdverbindingen Rijnmond - Zeeland/België'' OR naam= ''zoekgebied buisleidingen'''
+				,'SELECT * FROM NL_IMRO_0000_IMmrGCRarro_5030_Besluitsubvlak_A WHERE SUBSTR(naam,1,10) =''tracé door'' OR naam= ''Hoofdverbindingen Noord-Nederland'' OR naam= ''Hoofdverbindingen Rijnmond - Zeeland/België'''
+				,''
+				'=OGRQuery'
+			);
+		}
+	}
+}

@@ -1,0 +1,282 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//                               (C) NEDERLAND LATER  2007                              //
+//                                                                                      //
+//                               Milieu- en Natuurplanbureau                            //
+//                               JULI 2007                                              //
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+//     * In het geval van externe publicatie van onderzoeksresultaten waarbij gebruik   //               
+//       is gemaakt van de verstrekte gegevens dient de gebruiker deze resultaten aan   //
+//       het MNP mede te delen middels de toezending van 2 exemplaren van de betref-    //
+//       fende publicatie aan het hoofd van het team RIM van het MNP.                   //
+//                                                                                      //
+//     * In elke publicatie waarin de gegevens van het MNP in enige vorm zijn opgenomen,//
+//       zal de gebruiker de vermelding opnemen: "Bron: Milieu- en Natuurplanbureau".   //
+//       Indien het een bewerking van de gegevens betreft, dient te worden opgenomen:   //
+//       "Gebaseerd op Milieu- en Natuurplanbureau gegevens".                           //
+//                                                                                      //
+//     * Het MNP is onder geen enkele voorwaarde aansprakelijk tegenover gebruiker voor //
+//       enige schade, mede begrepen winstderving, verlies van gegevens, schade         // 
+//       tengevolge van fouten of onjuistheden in gegevens, schade tengevolge van fouten// 
+//       of onvolkomenheden in de documentatie of andere incidentele of gevolgschade    // 
+//       welke voortvloeit uit of in verband staat met gebruik of het niet kunnen ge-   //
+//       bruiken van gegevens.                                                          //
+//                                                                                      //
+//     * Het MNP staat niet in voor de juistheid van de resultaten die worden verkregen //
+//       door combinatie van diverse, op zichzelf staande MNP-gegevens onderling,       //
+//       of met die uit andere bronnen.                                                 //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Deze DMS-file wordt aangeroepen door RS_discrAlloc.dms                               //
+// Deze configuratiefile bevat diverse indicatoren om simulatieresultaten te beoordelen //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Evaluatie: Descr ="Deze container bevat een eerste poging tot evaluatie van de eindresultaten"
+{
+	container Aanvang
+	{
+		attribute<ModelType>   ggModelLU (domain_grid): Expr = "bronnen/LandUse/Dominanties/Dominant_ggModel";
+		attribute<ggSectorK> ggSectorLU(domain_grid): Expr = "bronnen/LandUse/Dominanties/Dominant_ggSector";
+		attribute<gg9K>      gg9LU     (domain_grid): Expr = "bronnen/LandUse/Dominanties/Dominant_gg9";
+	}
+	container Bij
+	{
+		attribute<ModelType>   ggModelLU (domain_grid): Expr = "(Aanvang/ggModelLU == landuse/Dominant_ggModel ) ? value(255, ModelType  ) : landuse/Dominant_ggModel";
+		attribute<ggSectorK> ggSectorLU(domain_grid): Expr = "(Aanvang/ggSectorLU== landuse/Dominant_ggSector) ? value(255, ggSectorK) : landuse/Dominant_ggSector";
+		attribute<gg9K>      gg9LU     (domain_grid): Expr = "(Aanvang/gg9LU     == landuse/Dominant_gg9     ) ? value(255, gg9K     ) : landuse/Dominant_gg9";
+	}
+	container Af
+	{
+		attribute<ModelType>   ggModelLU (domain_grid): Expr = "(Aanvang/ggModelLU == landuse/Dominant_ggModel ) ? value(255, ModelType  ) : Aanvang/ggModelLU";
+		attribute<ggSectorK> ggSectorLU(domain_grid): Expr = "(Aanvang/ggSectorLU== landuse/Dominant_ggSector) ? value(255, ggSectorK) : Aanvang/ggSectorLU";
+		attribute<gg9K>      gg9LU     (domain_grid): Expr = "(Aanvang/gg9LU     == landuse/Dominant_gg9     ) ? value(255, gg9K     ) : Aanvang/gg9LU";
+	}
+	container prices
+	{
+		attribute<EUR_M2>       highest_price (domain_grid): Expr = "lookup(CaseData/Land/FreeLandCells/BasisGrid, value(d_alloc/bid_price,EUR_HA) / CaseData/SuitScaleFactor)";
+		attribute<ggEndogenous> highest_bidder(domain_grid): Expr = "d_alloc/landuse_grid";
+		
+		container shadow_prices:
+			Expr      = "for_each_nednv(ggEndogenous/Name,"
+				        "              'value(d_alloc/shadow_prices/'+ggEndogenous/Name+',EUR_HA) /  CaseData/SuitScaleFactor'"
+				        "    , Geography/Regions"
+				        "    , CaseData/RegionRefs +'/VAT', EUR_M2)";
+		
+		container bid_prices:
+			Expr      = "for_each_nedv(ggEndogenous/Name,"
+				        "              'CaseData/Suitabilities/'+ggEndogenous/Name+'+shadow_prices/'+ggEndogenous/Name+'[bronnen/RegioGrids/'+CaseData/RegionRefs +']'"
+				        "    , domain_grid, EUR_M2)";
+				        
+		attribute<EUR_M2> next_price(domain_grid)
+			:	Expr = "='max_elem('+asItemList('iif(highest_bidder==value('+String(ID(ggEndogenous))+', ggEndogenous),value(-100, EUR_M2),bid_prices/'+ggEndogenous/Name+')')+')'";
+		attribute<ggEndogenous> next_bidder(domain_grid)
+			:	Expr = "='convert(argmax('+asItemList('iif(highest_bidder==value('+String(ID(ggEndogenous))+', ggEndogenous),value(-100, EUR_M2),bid_prices/'+ggEndogenous/Name+')')+'), ggEndogenous)'";
+			
+		attribute<EUR_M2> price_diff(domain_grid): Expr = "highest_price - next_price";
+	}
+	
+//	XXX TotSuit per Randstad
+//	XXX Output per window
+//  XXX Zoek Kijkrichting RobuusteNatuur	
+//	XXX Transitiekosten
+//	ModelType +2 + anmduse Astrid
+	
+	container Totaal
+	{
+		container HuidigGG: Descr = "Totaal huidig LandUse",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              'sum(CaseData/OrgLanduse/'+ggEndogenous/Name+') * bronnen/nrHaPerCell',"
+				   "              void,"
+				   "              claimHa)";
+
+		container AllocatieGG: Descr = "Totaal LandUse na allocatie",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              'sum(float32(results/landuse/Endogenous/'+ggEndogenous/Name+')) * bronnen/nrHaPerCell',"
+				   "              void,"
+				   "              claimHa)";
+
+		container WeigtedMeanSuitability: Descr = "Gemiddelde geschiktheid, gewogen naar allocatieresultaat",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              'sum(CaseData/Suitabilities/'+ggEndogenous/Name+' * "
+				   "              float32(results/landuse/Endogenous/'+ggEndogenous/Name+') * bronnen/nrHaPerCell)"
+				   "              / AllocatieGG/'+ggEndogenous/Name,"
+				   "              void,"
+				   "              Eur_M2)";
+
+		container WeigtedStdDevSuitability: Descr = "Standaard deviatie (=Wortel van variantie) van geschiktheid, gewogen naar allocatieresultaat",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              'sqrt(sum(sqr(CaseData/Suitabilities/'+ggEndogenous/Name+'- WeigtedMeanSuitability/'+ggEndogenous/Name+') "
+				   "              * float32(results/landuse/Endogenous/'+ggEndogenous/Name+') * bronnen/nrHaPerCell) "
+				   "              / AllocatieGG/'+ggEndogenous/Name+')',"
+				   "              void,"
+				   "              Eur_M2)";
+
+		container MinClaims : Descr = "Totale claims",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              'sum(float32(CaseData/TotalMinClaims/'+ggEndogenous/Name+')) * bronnen/nrHaPerCell',"
+				   "              void,"
+				   "              claimHa)";
+
+		container MaxClaims : Descr = "Totale claims",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              'sum(float32(CaseData/TotalMaxClaims/'+ggEndogenous/Name+')) * bronnen/nrHaPerCell',"
+				   "              void,"
+				   "              claimHa)";
+
+		container MinClaimrealisatie: Descr = "Totaal LandUse na allocatie vergeleken met Totale minimum claims",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              '(AllocatieGG/'+ggEndogenous/Name+' / MinClaims/'+ggEndogenous/Name+') * value(100, Percent)',"
+				   "              void,"
+				   "              Percent)";
+
+		container MaxClaimrealisatie: Descr = "Totaal LandUse na allocatie vergeleken met Totale minimum claims",
+			Expr = "for_each_nedv(ggEndogenous/Name,"
+				   "              '(AllocatieGG/'+ggEndogenous/Name+' / MaxClaims/'+ggEndogenous/Name+') * value(100, Percent)',"
+				   "              void,"
+				   "              Percent)";
+	}
+	container Regionaal
+	{
+		container HuidigGG: Descr = "Totaal huidig LandUse",
+			Expr = "for_each_nednv(ggEndogenous/Name,"
+				   "               'sum(CaseData/OrgLanduse/'+ggEndogenous/Name+', "
+				   "               SubItem(bronnen/RegioGrids, additionalClaims/'+ggEndogenous/Name+'/RegioUnit/RegioRef))"
+				   "               * bronnen/nrHaPerCell',"
+				   "               additionalClaims, ggEndogenous/Name+'/RegioUnit',"
+				   "               claimHa)";
+
+		container AllocatieGG: Descr = "Totaal LandUse na allocatie",
+			Expr = "for_each_nednv(ggEndogenous/Name,"
+				   "               'sum(float32(results/landuse/Endogenous/'+ggEndogenous/Name+') * bronnen/nrHaPerCell, "
+				   "               SubItem(bronnen/RegioGrids, additionalClaims/'+ggEndogenous/Name+'/RegioUnit/RegioRef))',"
+				   "               additionalClaims, ggEndogenous/Name+'/RegioUnit',"
+				   "               claimHa)";
+
+		container MinClaims : Descr = "Regionale minimum claims",
+			Expr = "for_each_nednv(ggEndogenous/Name,"
+				   "               '(float32(CaseData/TotalMinClaims/'+ggEndogenous/Name+') * bronnen/nrHaPerCell)',"
+				   "               additionalClaims, ggEndogenous/Name+'/RegioUnit',"
+				   "               claimHa)";
+
+		container MaxClaims : Descr = "Regionale minimum claims",
+			Expr = "for_each_nednv(ggEndogenous/Name,"
+				   "               '(float32(CaseData/TotalMaxClaims/'+ggEndogenous/Name+') * bronnen/nrHaPerCell)',"
+				   "               additionalClaims, ggEndogenous/Name+'/RegioUnit',"
+				   "               claimHa)";
+
+// Tijdelijke oplossing, attribuut = percentage maar via deze weg de snelste uitkomsten, values unit is dus incorrect
+// Moet nog worden opgelost, even overleg met Maarten...
+
+		container MinClaimrealisatie: Descr = "Totaal LandUse na allocatie vergeleken met Totale claims",
+			Expr = "for_each_nednv(ggEndogenous/Name,"
+				   "              'value((AllocatieGG/'+ggEndogenous/Name+' / MinClaims/'+ggEndogenous/Name+') * value(100, Percent), float32)',"
+				   "               additionalClaims, ggEndogenous/Name+'/RegioUnit', "
+				   "               Float32)";
+		container MaxClaimrealisatie: Descr = "Totaal LandUse na allocatie vergeleken met Totale claims",
+			Expr = "for_each_nednv(ggEndogenous/Name,"
+				   "              'value((AllocatieGG/'+ggEndogenous/Name+' / MaxClaims/'+ggEndogenous/Name+') * value(100, Percent), float32)',"
+				   "               additionalClaims, ggEndogenous/Name+'/RegioUnit', "
+				   "               Float32)";
+	}
+
+
+	container Lokaal
+	{
+		container Verschilkaarten_ggModel: Descr = "Verschil allocatie - huidig LandUse",
+			Expr = "for_each_nedv(ModelType/Name,"
+				   "              'value(landuse/Dominant_ggModel == value('+String(ModelType/ID)+', ModelType), LuHaDiff) - value(Aanvang/ggModelLU == value('+String(ModelType/ID)+', ModelType), LuHaDiff)',"
+				   "              domain_grid, "
+				   "              LuHaDiff)";
+
+		container Verschilkaarten_ggExogenous: Descr = "Verschil allocatie - huidig LandUse",
+			Expr = "for_each_nedv(ggExogenous/Name,"
+				   "              '(value(results/landuse/Exogenous/'+ggExogenous/Name+', Ratio) - CaseData/OrgLanduse/'+ggExogenous/Name+') * bronnen/nrHaPerCell',"
+				   "              domain_grid, "
+				   "              LuHaDiff)";
+
+		container Verschilkaarten_gg9k: Descr = "Verschil allocatie - huidig LandUse",
+			Expr = "for_each_nedv(gg9k/Name,"
+				   "              '(value(results/landuse/gg9/'+gg9k/Name+', Ratio) - "
+				   "              bronnen/LandUse/gg9/ggRatio/'+gg9k/Name+') * bronnen/nrHaPerCell',"
+				   "              domain_grid, "
+				   "              LuHaDiff)";
+
+		container Verschilkaarten_Urbaan: Descr = "Verschil allocatie - huidig LandUse (urbaan)"
+		{
+			attribute <LuHaDiff> Verschilkaarten_Bebouwd_Oppervlak (domain_grid):
+				Expr = "Urbanisatie/Bebouwd_Oppervlak - Urbanisatie/Bebouwd_Oppervlak_huidig";
+ 			attribute <Boolean> Nieuw_Bebouwd_Gebied (domain_grid):
+ 				Expr = "Urbanisatie/Bebouwd_Gebied && ! Urbanisatie/Bebouwd_Gebied_huidig";
+			attribute <Ls_Kwaldruk2k> Druk_nieuwe_bebouwing (domain_grid):
+				Expr = "iif(Verschilkaarten_Bebouwd_Oppervlak > float32(0.2) * bronnen/nrHaPerCell, value(1, Ls_Kwaldruk2k), value (0, Ls_Kwaldruk2k))";
+		}
+
+		container Urbanisatie: Descr = "Bebouwd oppervlak (wonen, werken, glastuinbouw en intensieve veehouderij) per gridcel"
+		{
+			attribute <luHa>     Bebouwd_Oppervlak (domain_grid):
+				Expr = "='add_list('+ asItemList(iif(ModelType/ggUrbaan/IsExogenous, 'value(landuse/Exogenous/', 'value(landuse/Endogenous/') + ModelType/ggUrbaan/Name +', Ratio)')+"
+					   "') * bronnen/nrHaPerCell'";
+			attribute <Boolean> Bebouwd_Gebied    (domain_grid): Expr = "Bebouwd_Oppervlak > float32(0.6) * bronnen/nrHaPerCell";
+
+			attribute <luHa>     Bebouwd_Oppervlak_huidig (domain_grid): 
+				Expr = "='add_list('+ asItemList('CaseData/OrgLanduse/' + ModelType/ggUrbaan/Name)+')* bronnen/nrHaPerCell'";
+			attribute <Boolean> Bebouwd_Gebied_huidig    (domain_grid): Expr = "Bebouwd_Oppervlak_huidig > float32(0.6) * bronnen/nrHaPerCell";
+
+			entity AaneenGebieden: Expr = "district(uint8(Bebouwd_Gebied))"
+			{ 
+				attribute <AaneenGebieden> Districts (domain_grid); 
+				attribute <luHa>           Grootte   (AaneenGebieden): Expr = "Float32(pcount(Districts)) * bronnen/nrHaPerCell";
+				attribute <Boolean>      IsBebouwd (AaneenGebieden): Expr = "modus(value(Urbanisatie/Bebouwd_Gebied, Boolean), Districts)";
+			}
+			entity BebouwdeGebieden: Expr = "select_with_org_rel(AaneenGebieden/IsBebouwd = value(1.0, Boolean))"
+			{
+				attribute <luHa> Grootte(BebouwdeGebieden): Expr = "lookup(org_rel, AaneenGebieden/Grootte)";
+			}
+			parameter <luHa> GemGrootteBebouwdeGebieden:  Expr = "mean(BebouwdeGebieden/Grootte)";
+			attribute <luHa> AaneenGebiedenGroottePerCel  (domain_grid): Expr = "lookup (AaneenGebieden/Districts, AaneenGebieden/Grootte)",         cdf = "Classifications/Districts4K/Classes",   Label = "Grootte Aaneengesloten Gebied";
+			attribute <luHa> BebouwdeGebiedenGroottePerCel(domain_grid): Expr = "iif(Bebouwd_Gebied, AaneenGebiedenGroottePerCel, value (0, luHa))", cdf = "Classifications/Districts4K/Classes",   Label = "Bebouwd Gebied Grootte";
+		}
+	
+		container Openheid_Landschap: Descr = "Aantasting open ruimte", using = LandUse
+		{
+			attribute <luHa>          Open_Oppervlak (domain_grid):
+				Expr = "='add_list('+ asItemList(iif(ModelType/ggOpenLandschap/IsExogenous, 'value(landuse/Exogenous/', 'value(landuse/Endogenous/') + ModelType/ggOpenLandschap/Name +', Ratio)')+"
+					   "') * bronnen/nrHaPerCell'";
+
+			attribute <Boolean> Open_Gebied    (domain_grid): Expr = "Open_Oppervlak > float32(0.6) * bronnen/nrHaPerCell";
+
+			attribute <luHa>      Open_Oppervlak_huidig (domain_grid):
+				Expr = "='add_list('+ asItemList('CaseData/OrgLanduse/' + ModelType/ggOpenLandschap/Name)+')* bronnen/nrHaPerCell'";
+			attribute <Boolean> Open_Gebied_huidig    (domain_grid): Expr = "Open_Oppervlak_huidig > float32(0.6) * bronnen/nrHaPerCell";
+
+			entity OpenGebieden: Expr = "district(uint8(Open_Gebied_huidig))"
+ 			{ 
+ 				attribute <OpenGebieden> Districts (domain_grid);
+ 			}
+ 			attribute <luHa> DistrictsGrootte(domain_grid):
+ 				Expr  = "  Float32 (lookup (OpenGebieden/Districts, pcount (OpenGebieden/Districts))) "
+ 					    "* bronnen/nrHaPerCell",
+ 				cdf   = "Classifications/Districts5K/Classes",
+ 				Label = "Grootte aaneengesloten gebieden";
+ 	 		attribute <luHa> OpenGebGrootte  (domain_grid):
+ 	 			Expr  = "iif(Open_Gebied_huidig, DistrictsGrootte, value (0, luHa))",
+ 	 			cdf   = "Classifications/Districts5K/Classes",
+ 	 			Label = "Grootte Open Gebied";
+		}
+		container Bebouwingsdruk_landschapskwaliteit: Descr = "Evaluatiemaat druk op kwaliteit van het landschap"
+		{
+			attribute <Ls_Kwaldruk3k> UrbDruk_op_LsKwal (domain_grid):
+				Expr = "iif(   Verschilkaarten_Urbaan/Druk_nieuwe_bebouwing > value(0, Ls_Kwaldruk2k) "
+				       "    && bronnen/Omgeving/Natuurlandschap/Landschap_kwaliteit2k > value(0, Ls_Kwaldruk2k), "
+				       "       value( 2, Ls_Kwaldruk3k),"
+				       "       value( 0, Ls_Kwaldruk3k))"
+				       "+ iif(   Verschilkaarten_Urbaan/Druk_nieuwe_bebouwing < value(1, Ls_Kwaldruk2k) "
+				       "      && bronnen/Omgeving/Natuurlandschap/Landschap_kwaliteit2k > value(0, Ls_Kwaldruk2k), "
+				       "            value( 1, Ls_Kwaldruk3k),"
+				       "            value( 0, Ls_Kwaldruk3k))";
+		}
+	}
+}

@@ -1,0 +1,87 @@
+container Bevi
+{
+	container Src := .../Src/Bevi;
+	
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			container rrgs_risico_10_6
+			{
+				attribute<bool> Installatie (domain_grid) := Src/Externe_Veiligheid/rrgs_risico_10_6/Installatie/Bestand/Multi/Result;
+				attribute<bool> Inrichting  (domain_grid) := Src/Externe_Veiligheid/rrgs_risico_10_6/Inrichting/Bestand/Multi/Result;
+			}
+			
+			attribute<bool> Totaal (domain_grid) := Max_elem(
+				rrgs_risico_10_6/Installatie,
+				rrgs_risico_10_6/Inrichting
+			);
+		}
+
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container woongebied
+	{
+		container Hard
+		{
+			attribute<bool> Totaal (domain_grid) := Max_elem(
+				woongebied_en_werk_bedrijventerrein/hard/totaal
+			);
+		}
+
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+
+	container Bedrijventerrein
+	{
+		container hard
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

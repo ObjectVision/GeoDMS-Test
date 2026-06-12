@@ -1,0 +1,118 @@
+Container DataPreperation
+{
+	container PerCorridor := 
+		for_each_ne(
+			Geometries/Corridors/name
+			, 'PerCorridor_T('+string(id(Geometries/Corridors))+'[Geometries/Corridors])'
+		);
+
+	Template PerCorridor_T : Using = "classifications;geometries" 
+	{
+		parameter<Geometries/Corridors> Corridor_rel;
+		parameter<string>               name := Geometries/Corridors/name[Corridor_rel];
+		
+		// container Services 
+		// {
+			// parameter<bool>   AreFilesExisting      := =AsList(replace('ExistingFile('''',''%ProjDir%/Data/PerCorridor/'+name+'/src/@S@_'+name+'_epsg_102022_bb_200km.shp'') != '''' ', '@S@',Classifications/Services/name),' && ');
+			
+			// container Read_src := 
+				// for_each_nxat(
+					// Classifications/Services/name
+					// , uint32
+					// , '%ProjDir%/Data/PerCorridor/'+name+'/src/'+Classifications/Services/name+'_'+name+'_epsg_102022_bb_200km.shp'
+					// , "gdal.vect"
+				// );
+			
+			// container Make_GPKG
+			// : StorageName = "='%LocalDataProjDir%/PerCorridor/'+name+'/Services.gpkg'"
+			// , StorageType = "gdalwrite.vect"
+			// {
+				// unit<uint32> Education := Read_src/Edu
+				// {
+					// attribute<BaseProjection> geometry := Read_src/Edu/geometry;
+				// }
+				// unit<uint32> Healthcenters := Read_src/Health
+				// {
+					// attribute<BaseProjection> geometry := Read_src/Health/geometry;
+				// }
+			// }
+			
+			// container Read_GPKG
+			// : StorageName = "='%LocalDataProjDir%/PerCorridor/'+name+'/Services.gpkg'"
+			// , StorageType = "gdal.vect"
+			// , StorageReadOnly = "true"
+			// , SyncMode        = "allTables"
+			// , DialogData = "BaseProjection";
+		// }
+		
+		container Roads
+		{
+			parameter<bool>   AreFilesExisting      := =AsList('ExistingFile('''',''%ProjDir%/Data/PerCorridor/'+name+'/src/Roads_'+name+'_epsg_102022.shp'') != '''' ',' && ');
+			parameter<string> corridor_name         := ../name;
+			
+			unit<uint32> Read_src := /SourceData/Roads/Road
+			{
+				attribute<bool>                       frompoint_in_CorrExt := ='!IsNull(point_in_polygon(first_point(Geometry), Geometries/Corridor_BoundingBoxes/'+corridor_name+'/Corridor/BoundingBox_Extended))';
+				attribute<bool>                       topoint_in_CorrExt   := ='!IsNull(point_in_polygon(last_point(Geometry), Geometries/Corridor_BoundingBoxes/'+corridor_name+'/Corridor/BoundingBox_Extended))';
+				attribute<bool>                       select_CorrExt       := frompoint_in_CorrExt || topoint_in_CorrExt;
+			}
+
+			unit<uint32> Roads_InCorridor         := select_with_org_rel(Read_src/select_CorrExt);
+			unit<uint32> Roads_InCorridor_Untiled := TiledUnit(#Roads_InCorridor[Roads_InCorridor])
+			{
+				attribute<BaseProjection>      geometry (arc) := union_data(., Read_src/Geometry[Roads_InCorridor/org_rel]);
+				attribute<km_hr>               speed          := union_data(., Read_src/speed[Roads_InCorridor/org_rel]);
+				// attribute<RoadClasses>         Speed_cat      := union_data(., Read_src/Speed_cat[Roads_InCorridor/org_rel]);
+				// attribute<km_hr>               MaxSpeed       := union_data(., Read_src/MaxSpeed[Roads_InCorridor/org_rel]);
+				
+				// attribute<string>              fclass         := union_data(., Read_src/fclass[Roads_InCorridor/org_rel]);
+				// attribute<bool>                bridge         := union_data(., Read_src/bridge[Roads_InCorridor/org_rel]);
+				// attribute<m>                   Meters         := union_data(., Read_src/Meters[Roads_InCorridor/org_rel]);
+				// attribute<min_f>               Minutes        := union_data(., Read_src/Minutes[Roads_InCorridor/org_rel]);
+			}
+			
+		
+			container Make_GPKG_Untiled
+			: StorageName = "='%LocalDataDir%/geodms_africa_cusa2/PerCorridor/'+name+'/Roads_Untiled.gpkg'"
+			, StorageType = "gdalwrite.vect"
+			{
+				unit<uint32> Roads := Roads_InCorridor_Untiled
+				{
+					attribute<BaseProjection> geometry (arc)  := Roads_InCorridor_Untiled/geometry;
+					attribute<km_hr>          Speed           := Roads_InCorridor_Untiled/Speed;
+					// attribute<RoadClasses>    Speed_cat       := Roads_InCorridor_Untiled/Speed_cat;
+					// attribute<km_hr>          MaxSpeed        := Roads_InCorridor_Untiled/MaxSpeed;
+					
+					// attribute<string>         fclass          := Roads_InCorridor_Untiled/fclass;
+					// attribute<bool>           bridge          := Roads_InCorridor_Untiled/bridge;
+					// attribute<m>              Meters          := Roads_InCorridor_Untiled/Meters;
+					// attribute<min_f>          Minutes         := Roads_InCorridor_Untiled/Minutes;
+				}
+			}
+			
+			container Calc
+			{
+				unit<uint32> Roads := Roads_InCorridor_Untiled;
+			}
+			
+			container Read_GPKG
+			: StorageName = "='%LocalDataDir%/geodms_africa_cusa2/PerCorridor/'+name+'/Roads_Untiled.gpkg'"
+			, StorageType = "gdal.vect"
+			, StorageReadOnly = "true"
+			, SyncMode        = "allTables"
+			, DialogData = "BaseProjection"
+			{
+				unit<uint32> Roads
+				{
+					attribute<km_hr>          Speed;
+					// attribute<RoadClasses>    Speed_cat;
+					// attribute<km_hr>          MaxSpeed;
+					// attribute<m>              Meters;
+					// attribute<min_f>          Minutes;
+				}
+			}
+			
+			container Read := =ModelParameters/UseOntkoppeldeRoads ? 'Read_GPKG' : 'Calc';
+		}
+	}
+}

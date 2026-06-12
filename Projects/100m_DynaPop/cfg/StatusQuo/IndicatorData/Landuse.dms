@@ -1,0 +1,201 @@
+container Landuse
+{
+	container AdditionalData
+	{			
+		unit<SPoint> HotspotKernel: Expr = "Range(SPoint, point_xy(Int16(-5), Int16(-5)), point_xy(Int16(6), Int16(6)))"
+		{
+			attribute<Float32> Weights: [
+				0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0,
+				0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
+				0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+				0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+				0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+				0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+				0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
+				0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0
+			];
+		}
+	}
+	container AggrTempl: IsTemplate = "True"
+	{
+		parameter<String> RegionName;
+		unit<UInt16> Regions;
+		unit<WPoint> Domain_Grid;
+		attribute<Regions> RegionGrid(Domain_Grid);
+		unit<UInt16> FathomYears;
+		
+		attribute<Regions> Partition(Domain_Grid): Expr = "Qualifications/IsLand ? value(RegionGrid, Regions) : value(0 / 0, Regions)", IsHidden = "True";
+		attribute<Float32> LandArea (Regions):     Expr = "Float32(sum(UInt32(Qualifications/IsLand), Partition))";
+
+		container Agricultural: url = "%sourcedataprojdir%/Indicators/Shares of agriculture.pdf"
+		{
+			container State
+			{		
+				attribute<Percent> TotalAgriculturalArea (Regions): Expr = "Float32(sum(UInt32(Qualifications/IsAgriculturalArea), Partition)) / LandArea * value(100, Percent)", cdf = "Legends/AgriculturalAreaClasses";
+				attribute<Percent> ArableArea            (Regions): Expr = "Float32(sum(UInt32(Qualifications/IsArableArea      ), Partition)) / LandArea * value(100, Percent)";
+				attribute<Percent> Pasture      (Regions): Expr = "Float32(sum(UInt32(Qualifications/IsPasture                  ), Partition)) / LandArea * value(100, Percent)", cdf = "Legends/PermanentPastureClasses";
+				attribute<Percent> PermanentCrops        (Regions): Expr = "Float32(sum(UInt32(Qualifications/IsPermanentCrops  ), Partition)) / LandArea * value(100, Percent)";
+			}
+			container Change
+			{		
+				container StartState: Expr = "=FathomYears/Name[value(0, FathomYears)]+'/Per'+RegionName+'/Agricultural/State'", IsHidden = "true";
+				attribute<Percent> TotalAgriculturalArea (Regions): Expr = "State/TotalAgriculturalArea  - StartState/TotalAgriculturalArea" , cdf = "Classifications/PercentChange_11K/Classes";
+				attribute<Percent> ArableArea            (Regions): Expr = "State/ArableArea             - StartState/ArableArea"            , cdf = "Classifications/PercentChange_11K/Classes";
+				attribute<Percent> Pasture               (Regions): Expr = "State/Pasture                - StartState/Pasture"               , cdf = "Classifications/PercentChange_11K/Classes";
+				attribute<Percent> PermanentCrops        (Regions): Expr = "State/PermanentCrops         - StartState/PermanentCrops"        , cdf = "Classifications/PercentChange_11K/Classes";
+			}
+		}
+		container Natural: url = "%sourcedataprojdir%/Indicators/Shares of nature.pdf"
+		{
+			container State
+			{		
+				attribute<Percent> TotalNaturalArea (Regions): Expr = "Float32(sum(UInt32(Qualifications/IsNaturalVegetation), Partition)) / LandArea * value(100, Percent)", cdf = "Legends/AgriculturalAreaClasses";
+				attribute<Percent> Forest           (Regions): Expr = "Float32(sum(UInt32(Qualifications/IsForest           ), Partition)) / LandArea * value(100, Percent)", cdf = "Legends/AgriculturalAreaClasses";
+				attribute<Percent> NaturalVegetation(Regions): Expr = "Float32(sum(UInt32(Qualifications/IsNaturalVegetation), Partition)) / LandArea * value(100, Percent)", cdf = "Legends/AgriculturalAreaClasses";
+				attribute<Percent> OtherNature      (Regions): Expr = "Float32(sum(UInt32(Qualifications/IsOtherNature      ), Partition)) / LandArea * value(100, Percent)", cdf = "Legends/AgriculturalAreaClasses";
+				attribute<Percent> RecentlyAbandonedFarmland(Regions): Expr = "Float32(sum(UInt32(Qualifications/IsRecentlyAbandoned), Partition)) / LandArea * value(100, Percent)", cdf = "Legends/AgriculturalAreaClasses";
+			}
+			container Change
+			{		
+				container StartState: Expr = "=FathomYears/Name[value(0, FathomYears)]+'/Per'+RegionName+'/Natural/State'", IsHidden = "true";
+				attribute<Percent> TotalNaturalArea (Regions): Expr = "State/TotalNaturalArea  - StartState/TotalNaturalArea" , cdf = "Classifications/PercentChange_11K/Classes";
+				attribute<Percent> Forest           (Regions): Expr = "State/Forest            - StartState/Forest"           , cdf = "Classifications/PercentChange_11K/Classes";
+				attribute<Percent> NaturalVegetation(Regions): Expr = "State/NaturalVegetation - StartState/NaturalVegetation", cdf = "Classifications/PercentChange_11K/Classes";
+				attribute<Percent> OtherNature      (Regions): Expr = "State/OtherNature       - StartState/OtherNature"      , cdf = "Classifications/PercentChange_11K/Classes";
+				attribute<Percent> RecentlyAbandonedFarmland(Regions): Expr = "State/RecentlyAbandonedFarmland - StartState/RecentlyAbandonedFarmland", cdf = "Classifications/PercentChange_11K/Classes";
+			}
+		}
+	}
+	
+	container Templ: IsTemplate = "True"
+	{
+		unit<WPoint> Domain_Grid;
+		attribute<Albers1kmGrid> AlbersGridRel(Domain_Grid);
+		container JrcFactorData;
+		attribute<Classifications/LU/Corine>    LU_org(Domain_Grid);
+		attribute<Classifications/LU/ModelType> LU_arg(Domain_Grid);
+		unit<UInt16> FathomYears;
+
+		attribute<Classifications/LU/ViewType> ViewType(Domain_Grid): Expr = "MakeDefined(Classifications/LU/ModelType/VT[LU_arg], Classifications/LU/Corine/VT[LU_org])"
+		{
+			attribute<Classifications/LU/ViewType> VT_org(Domain_Grid): Expr = "Classifications/LU/Corine/VT2[LU_Org]", IsHidden = "True";
+			
+			attribute<Classifications/LU/ViewType> changed_to (Domain_Grid): Expr = "(ViewType == VT_org) ? value(255, Classifications/LU/ViewType  ) : ViewType";
+			attribute<Classifications/LU/ViewType> changed_to2(Domain_Grid):
+				Expr = "MakeDefined(changed_to, "
+					"changed_to[ID(Domain_Grid)+point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_to[ID(Domain_Grid)-point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_to[ID(Domain_Grid)+point(UInt16(1),UInt16(0),Domain_Grid)], "
+					"changed_to[ID(Domain_Grid)-point(UInt16(1),UInt16(0),Domain_Grid)]"
+				")";
+			attribute<Classifications/LU/ViewType> changed_to3(Domain_Grid):
+				Expr = "MakeDefined(changed_to2, "
+					"changed_to2[ID(Domain_Grid)+point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_to2[ID(Domain_Grid)-point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_to2[ID(Domain_Grid)+point(UInt16(1),UInt16(0),Domain_Grid)], "
+					"changed_to2[ID(Domain_Grid)-point(UInt16(1),UInt16(0),Domain_Grid)]"
+				")";
+			attribute<Classifications/LU/ViewType> changed_from (Domain_Grid): Expr = "(ViewType == VT_org) ? value(255, Classifications/LU/ViewType  ) : VT_org";
+			attribute<Classifications/LU/ViewType> changed_from2(Domain_Grid):
+				Expr = "MakeDefined(changed_from, "
+					"changed_from[ID(Domain_Grid)+point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_from[ID(Domain_Grid)-point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_from[ID(Domain_Grid)+point(UInt16(1),UInt16(0),Domain_Grid)], "
+					"changed_from[ID(Domain_Grid)-point(UInt16(1),UInt16(0),Domain_Grid)]"
+				")";
+			attribute<Classifications/LU/ViewType> changed_from3(Domain_Grid):
+				Expr = "MakeDefined(changed_from2, "
+					"changed_from2[ID(Domain_Grid)+point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_from2[ID(Domain_Grid)-point(UInt16(0),UInt16(1),Domain_Grid)], "
+					"changed_from2[ID(Domain_Grid)+point(UInt16(1),UInt16(0),Domain_Grid)], "
+					"changed_from2[ID(Domain_Grid)-point(UInt16(1),UInt16(0),Domain_Grid)]"
+				")";
+		}
+		container Qualifications: IsHidden = "True"
+		{
+			attribute<Classifications/LU/IndicatorType> IndicatorType(Domain_Grid): Expr = "Classifications/LU/ModelType/IT[ LU_arg ]";
+			attribute<bool> IsLand                  (Domain_Grid): Expr = "ViewType <> Classifications/LU/ViewType/WaterBodies";
+			
+			attribute<bool> IsAgriculturalArea      (Domain_Grid): Expr = "Classifications/LU/IndicatorType/IsAgriculture[IndicatorType]";
+			attribute<bool> WasAgriculturalArea     (Domain_Grid): Expr = "Classifications/LU/IndicatorType/IsAgriculture[Classifications/LU/ViewType/IT][ViewType/VT_Org]";
+			attribute<bool> IsPasture               (Domain_Grid): Expr = "LU_arg == Classifications/LU/ModelType/Pastures";
+//			attribute<bool> IsPermanentPasture      (Domain_Grid): Expr = "LU_arg == Classifications/LU/IndicatorType/Pastures";
+			attribute<bool> IsArableArea            (Domain_Grid): Expr = "IndicatorType == Classifications/LU/IndicatorType/ArableLand";
+//			attribute<bool> IsNonIrrigatedArableArea(Domain_Grid): Expr = "LU_arg == value( 1, Classifications/LU/Ruralis18)";
+//			attribute<bool> IsIrrigatedArableArea   (Domain_Grid): Expr = "LU_arg == value( 6, Classifications/LU/Ruralis18)";
+			attribute<bool> IsPermanentCrops        (Domain_Grid): Expr = "LU_arg == Classifications/LU/ModelType/PermanentCrops";
+//			attribute<bool> IsBiofuelCrops          (Domain_Grid): Expr = "LU_arg == value(17, Classifications/LU/Ruralis18)";
+//			attribute<bool> IsBiofuelArableArea     (Domain_Grid): Expr = "LU_arg == value( 9, Classifications/LU/Ruralis18)";
+//			attribute<bool> IsBiofuel               (Domain_Grid): Expr = "or(IsBiofuelCrops,IsBiofuelArableArea)";
+			
+			attribute<bool> IsNaturalArea           (Domain_Grid): Expr = "Classifications/LU/ViewType/IsNatural[ViewType]";
+			attribute<bool> IsForest                (Domain_Grid): Expr = "IndicatorType == Classifications/LU/IndicatorType/Forest";
+			attribute<bool> IsNaturalVegetation     (Domain_Grid): Expr = "IndicatorType == Classifications/LU/IndicatorType/SemiNatural";
+			attribute<bool> IsOtherNature           (Domain_Grid): Expr = "IsNaturalArea && !(IsForest||IsNaturalVegetation)";
+			attribute<bool> IsRecentlyAbandoned     (Domain_Grid): Expr = "Classifications/LU/ModelType/IsAbandoned[LU_arg]";
+			
+			attribute<bool> IsBuiltupArea           (Domain_Grid): Expr = "Classifications/LU/ModelType/IsBuiltupArea[LU_arg]";
+			attribute<bool> WasBuiltupArea          (Domain_Grid): Expr = "Classifications/LU/ViewType/IsBuiltupArea [ViewType/VT_Org]";
+			
+			attribute<bool> AgriculturalAbandonment (Domain_Grid): Expr = "WasAgriculturalArea && not( IsAgriculturalArea)";
+			attribute<bool> AgriculturalExpansion   (Domain_Grid): Expr = " IsAgriculturalArea && not(WasAgriculturalArea)";
+			attribute<bool> UrbanDevelopment        (Domain_Grid): Expr = "IsBuiltupArea && ! WasBuiltupArea";
+		}
+		container km10maps
+		{
+			attribute<Float32> NearLand                   (Domain_Grid): Expr = "potential(Float32(Qualifications/IsLand),                   km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearAgriculturalArea       (Domain_Grid): Expr = "potential(Float32(Qualifications/IsAgriculturalArea),       km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearPasture                (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPasture),                km10FocalPointMatr/RelWeight)";
+//			attribute<Float32> NearPermanentPasture       (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPermanentPasture),       km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearArableArea             (Domain_Grid): Expr = "potential(Float32(Qualifications/IsArableArea),             km10FocalPointMatr/RelWeight)";
+//			attribute<Float32> NearNonIrrigatedArableArea (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNonIrrigatedArableArea), km10FocalPointMatr/RelWeight)";
+//			attribute<Float32> NearIrrigatedArableArea    (Domain_Grid): Expr = "potential(Float32(Qualifications/IsIrrigatedArableArea),    km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearPermanentCrops         (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPermanentCrops),         km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearNaturalArea            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNaturalArea),            km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearForest                 (Domain_Grid): Expr = "potential(Float32(Qualifications/IsForest),                 km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearNaturalVegetation      (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNaturalVegetation),      km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearOtherNature            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsOtherNature),            km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearRecentlyAbandoned      (Domain_Grid): Expr = "potential(Float32(Qualifications/IsRecentlyAbandoned),      km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearBuiltupArea            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsBuiltupArea),            km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearAgriculturalAbandonment(Domain_Grid): Expr = "potential(Float32(Qualifications/AgriculturalAbandonment),  km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearAgriculturalExpansion  (Domain_Grid): Expr = "potential(Float32(Qualifications/AgriculturalExpansion),    km10FocalPointMatr/RelWeight)";
+			attribute<Float32> NearUrbanDevelopment       (Domain_Grid): Expr = "potential(Float32(Qualifications/UrbanDevelopment),         km10FocalPointMatr/RelWeight)";
+		}
+		
+		container ChangeHotspots: url = "%sourcedataprojdir%/Indicators/change hotspots.pdf"
+		{
+			attribute<Legends/HotspotClass> AgriculturalAbandonment(Domain_Grid):
+				Expr =
+					"Not(IsDefined(ViewType)) ? value(255, Legends/HotspotClass) : "
+						"Qualifications/AgriculturalAbandonment"
+						"? potential(Float32(Qualifications/AgriculturalAbandonment), AdditionalData/HotspotKernel/Weights) > Float32(31.5)"
+							"? value(3, Legends/HotspotClass)"
+							": value(2, Legends/HotspotClass)"
+						": value(Qualifications/IsAgriculturalArea, Legends/HotspotClass)";						
+			attribute<Legends/HotspotClass> AgriculturalExpansion  (Domain_Grid):
+				Expr = 
+					"Not(IsDefined(ViewType)) ? value(255, Legends/HotspotClass) : "
+						"Qualifications/AgriculturalExpansion"
+						"? potential(Float32(Qualifications/AgriculturalExpansion), AdditionalData/HotspotKernel/Weights) > Float32(31.5)"
+							"? value(3, Legends/HotspotClass)"
+							": value(2, Legends/HotspotClass)"
+						": value(Qualifications/IsNaturalArea, Legends/HotspotClass)";
+			attribute<Legends/HotspotClass> UrbanDevelopment       (Domain_Grid): 
+				Expr = 
+					"Not(IsDefined(ViewType)) ? value(255, Legends/HotspotClass) : "
+						"Qualifications/UrbanDevelopment"
+						"? potential(Float32(Qualifications/UrbanDevelopment),        AdditionalData/HotspotKernel/Weights) > Float32(31.5)"
+							"? value(3, Legends/HotspotClass)"
+							": value(2, Legends/HotspotClass)"
+						": value(Qualifications/IsBuiltupArea, Legends/HotspotClass)";
+		}
+		
+		container PerNuts0: Expr = "AggrTempl('Nuts0', Geography/Regions/Nuts0, domain_grid, JrcFactorData/Nuts0, FathomYears)";
+		container PerNuts1: Expr = "AggrTempl('Nuts1', Geography/Regions/Nuts1, domain_grid, JrcFactorData/Nuts1, FathomYears)";
+		container PerNuts2: Expr = "AggrTempl('Nuts2', Geography/Regions/Nuts2, domain_grid, JrcFactorData/Nuts2, FathomYears)";
+		container PerNuts3: Expr = "AggrTempl('Nuts3', Geography/RegionShapes/Nuts3, domain_grid, JrcFactorData/Nuts3, FathomYears)";
+	}
+}

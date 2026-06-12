@@ -1,0 +1,50 @@
+Container AgriculturalAbandonment
+{
+		
+		unit<uint32> Zones: expr = "Geography/Regions/Nuts3_LUISA_old";
+		
+		container TableChopper 
+		{
+			// see http://www.objectvision.nl/geodms/configuration-examples/tablechopper
+			parameter<String> AgriAbandonFile: StorageName = "=Parameters/ParamSets/ActiveSet/ParamPath+'/AgriAbandon/Economic_Variables_NormMS.csv'", StorageType = "str"; 
+			parameter<String> HeaderLine: Expr = "ReadLines(AgriAbandonFile, void, 0)";
+			 parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine, '[^,]++(,[^,]++)*+')";
+			unit<uint32>  Field: Expr = "range(uint32, 0, strcount(HeaderLine, ','))", IntegrityCheck = "HeaderOK"
+			{
+				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, string, strpos(HeaderLine, ',')+1)";
+	//			attribute<UInt16> Year: Expr = "uppercase(substr(Name,0,3)) = 'POP' ? UInt16(substr(Name, strlen(Name)-4, 4)) : Uint16(0 / 0)";
+			}
+			unit<UInt32> BodyDomain: Expr = "Range(UInt32, 0, strcount(AgriAbandonFile, '\n')-1)"
+			{
+				attribute<string> Line: Expr = "ReadLines(AgriAbandonFile, BodyDomain, HeaderLine/ReadPos)";
+				attribute<Bool> LinesAreNuts3CodeAndIntegers(BodyDomain): expr = "regex_match(Line, '[A-Z][A-Z]([A-Z]|[0-9])?+([A-Z]|[0-9])?+(,([0-9]++))*+')";
+				
+				attribute<String> Nuts3Code: Expr = "ReadElems(Line, string, const(0, BodyDomain))";//, IntegrityCheck = "LinesAreNuts3CodeAndIntegers";
+				attribute<Zones> Nuts3: Expr = "rlookup(Nuts3Code, Zones/ZoneId)";
+				container Data: Expr = 
+					"for_each_nedv("
+						" Field/Name"
+						",'ReadElems("
+							" Line"
+							",Float32"
+							",'+MakeDefined("
+							" Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos'"
+							",'Nuts3Code/ReadPos'"
+							")+'"
+						")'"
+						",BodyDomain"
+						",Float32"
+					")";
+			}
+		}
+	
+		container Nuts3Data: Expr = 
+			"for_each_nedv("
+				"TableChopper/Field/Name,"
+				"'max_elem(rjoin(Zones/ZoneId, TableChopper/BodyDomain/Nuts3Code, TableChopper/BodyDomain/Data/'+TableChopper/Field/Name+'), 0[float32])',"
+				"Zones,float32"
+			")";
+			
+		attribute <Float32> SumStaticFactors (Zones): Expr = "add(Nuts3Data/FA, Nuts3Data/FQ ,Nuts3Data/FS,Nuts3Data/RP,Nuts3Data/R_UAA, Nuts3Data/AFI, Nuts3Data/LFI, Nuts3Data/TS)";
+				
+}

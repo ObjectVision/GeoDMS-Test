@@ -1,0 +1,664 @@
+container JrcClueWrap:
+	Descr =
+		"This CalculationSchema allocates according to the description in the article:\n"
+		"Hilferink, M.Th.A. & P. Rietveld, The Land Use Scanner;\n"
+		"An integrated model for long term projections of land use in urban and rural areas,\n"
+		"Journal of Geographic Systems, p. 155-177, 1999.\n"
+		"The symbols used in the description are explained in this article and\n"
+		"the description of the calculation rules refers to the formula numbers there.",
+	IsTemplate = "True",
+	ViewAction = "Map View.Thematic:results/landuse/Dominant_gg9"
+{
+	container RunParameters;
+	unit<wpoint> domain_grid;
+	
+	// ===================== End of Required Case Parameters
+	
+	unit<uint32> domain: Expr = "CaseData/Land/FreeLandCells";
+	
+	container ParamSet: Expr = "RunParameters/ParamSet";
+	
+ 	container SuitabilityGenerator: Expr = "='ModelTraits/'+RunParameters/SuitabilityTraits";
+ 	
+	unit<uint16> Periods:    Expr = "Parameters/PeriodSet/result";
+	
+	//container Neighbourhood: Expr = "Rules/Neighbourhood";
+	container DemandSet:     Expr = "RunParameters/DemandSet";
+	
+	// ===================== End of optional Case Parameters
+
+	// ===================== start of domain relations
+
+//	attribute<Geography/Albers1kmGrid> AlbersGridRel(domain_grid): 		Expr = "CaseData/JrcFactorData/AlbersGridRel";
+//	attribute<Geography/Albers1kmGrid> AlbersRel(domain): 				Expr = "AlbersGridRel[domain/grid_rel]"; 
+	attribute<Geography/Lambert100mGrid> Lambert100m_rel (domain_grid): Expr = "id(domain_grid)[Geography/Lambert100mGrid]";
+	
+	unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
+	
+	unit<UInt32> 	StaticFactors: 	Expr = "MetaData/StaticFactors";
+	unit<UInt32> 	DynamicFactors: 	Expr = "MetaData/DynamicFactors";
+	unit<uint8> 	DC:				Expr = "MetaData/DemandCharacteristics";  // demand characteristics
+	container Rules: Expr = "RunParameters/AllocSet/Rules";	
+	
+	parameter<Geography/Regions/Runs> JrcRegionId: expr = "rlookup(RunParameters/Name, Geography/Regions/Runs/Name)";
+		
+	#include<inRunRegions.dms>	
+	
+	container CaseData
+	{
+		// ============ factor data
+		container JrcFactorData: Expr = "JrcFactorDataTempl(domain_grid, RunRegions, Periods/BaseYearCorineDataFileName)";
+		container FactorData: using = "JrcFactorData",
+ 			Expr =
+ 				"for_each_nedv(StaticFactors/UniqueName, 'convert(JrcFactorData/'+ StaticFactors/Name + '[domain/grid_rel], float32)', domain, float32)";
+ 		/*container FactorData: using = "JrcFactorData",
+ 			Expr =
+ 				"for_each_nedvndcu("
+ 					"StaticFactors/UniqueName, "
+					"(lowercase(StaticFactors/ValuesUnit2) = 'boolean' ?"
+					"'value(JrcFactorData/' + StaticFactors/UniqueName +'[domain/grid_rel], units/'+StaticFactors/ValuesUnit2+')' :"
+					"'MakeDefined('+ StaticFactors/FactorExprs +', value(0, units/'+ StaticFactors/ValuesUnit2 +'))'), "
+					//"'/FactorData/'+Factors/Name+'[AlbersRel]'), " // all data over 100m res removed, 19 jan 2017 CJ
+ 					"domain, units, StaticFactors/ValuesUnit2,"
+ 					"MetaData/StaticFactors/Descr, "
+ 					"MetaData/StaticFactors/Cdf2,"
+ 					"MetaData/StaticFactors/url2"
+ 				")";
+ 		*/
+		//container Eur_FactorData: expr = "for_each_nedv(StaticFactors/UniqueName, 'convert(FactorData/'+ StaticFactors/UniqueName +', Units/Eur_m2)', domain, Eur_m2)";
+		
+		
+		// ============ org land
+		attribute<ModelType> 				 OrgLanduse(domain_grid): 		Expr = "JrcFactorData/TiffData/CorineGrid/ModelLandUse";
+		attribute<Classifications/LU/Corine> CorineLandUse (domain_grid): 	Expr = "JrcFactorData/TiffData/CorineGrid/CorineLandUse";
+		
+		// ============ allocatable land
+		container Land: Descr = "These attributes are used to describe the freeLand for allocation"
+		{
+			attribute<Bool> IsInRunRegion(domain_grid): Expr = 
+				//"Geography/Regions/Runs/RegionGridSet!RunParameters/Name"; 
+				"!IsNull(RunRegions/RasterSets/RunAreas)";
+				
+			attribute<bool> IsInDestClaimRegions(domain_grid): Expr = "= 'and('+ AsItemList('!IsNull(RunRegions/RasterSets/'+UniqueDestRegionRefs/Values+')') +')'";
+			
+			attribute<bool> Allocatable  (domain_grid): Expr = "IsInRunRegion && IsDefined(OrgLandUse) && IsInDestClaimRegions";
+			
+			unit<UInt32> FreeLandCells: Expr = "select_with_org_rel(Allocatable)", DialogType = "Map", DialogData = "BasisGrid"
+			{
+				attribute<FreeLandCells> permutation: Expr = "rnd_permutation(0, FreeLandCells)";
+				attribute<domain_grid>   grid_rel (FreeLandCells): Expr = "lookup(permutation, org_rel)";
+				attribute<FreeLandCells> BasisGrid  (domain_grid): Expr = "invert(grid_rel)";
+				parameter<uint32> 		 p99_value:				Expr = "uint32(float32(#.) * float32(0.99))";
+			}
+		}
+		
+		// ============ Regions meta
+		attribute<String> RegionRefs	(ModelType): Expr = "DemandSet/RegionRefs[ModelType/DemandCharacteristicsRel]";
+		attribute<String> DestRegionRefs(ModelType): Expr = "DemandSet/DestRegionRefs[ModelType/DemandCharacteristicsRel]";
+		unit<UInt8> UniqueRegionRefs:     Expr = "DemandSet/RunRegion_Specific_RegionRefs";
+		unit<Uint8> UniqueDestRegionRefs: Expr = "DemandSet/UniqueDestRegionRefs";
+		unit<Uint8> AllRegionRefs:        Expr = "DemandSet/AllRegionRefs";
+	
+		unit<uint16> y2012_PopClaimRegion:	Expr = "RunRegions/UnitSets/NUTS3_v8";
+		unit<uint16> OrgPopClaimRegion: 	Expr = "= 'RunRegions/UnitSets/'+ MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Population]";
+		unit<uint16> DestPopClaimRegion: 	Expr = "= 'RunRegions/UnitSets/'+ MetaData/DemandCharacteristics/ModelRegion[MetaData/DemandCharacteristics/Population]";
+		attribute<y2012_PopClaimRegion> y2012_PopRasterLink (domain_grid):  Expr = "RunRegions/RasterSets/NUTS3_v8";
+		attribute<OrgPopClaimRegion>  OrgPopRasterLink	(domain_grid):		Expr = "= 'RunRegions/RasterSets/'+ MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Population]";
+		attribute<DestPopClaimRegion> DestPopRasterLink (domain_grid):		Expr = "= 'RunRegions/RasterSets/'+ MetaData/DemandCharacteristics/ModelRegion[MetaData/DemandCharacteristics/Population]";
+		
+		container DemandZoneConversions: using = "MetaData/DemandCharacteristics"
+		{
+			container inClaimTables: Expr = "DemandSet/ClaimTables";
+			
+			attribute<bool> OrgRegionIsDestinationRegion (ModelType): expr = "IsNull(RegionRefs) || RegionRefs = DestRegionRefs";
+			
+			container Conversions: expr = "for_each_ne(Name, OrgRegion = ModelRegion ? "
+				"'SameZones(' + quote(OrgRegion) + ')' : "
+				"'reaggregateWeights('+ quote(OrgRegion) +', '+ quote(ModelRegion) + (strlen(ReaggregateVar) > 0 ? ', ' + quote(ReaggregateVar) : '') + ')')", FreeData = "True"
+			{
+				Container OrgPopToOrgUrban: expr = "= OrgRegion[DC/Urban] = OrgRegion[DC/Population] ? "
+				"'SameZones(' + quote(OrgRegion[DC/Population]) + ')' : "
+				"'reaggregateWeights('+ quote(OrgRegion[DC/Population]) +', '+ quote(OrgRegion[DC/Urban]) + "
+					"(strlen(ReaggregateVar[DC/Population]) > 0 ? ', ' + quote(ReaggregateVar[DC/Population]) : '') + ')'";
+				
+				Container OrgTouristicToModelUrban: expr = "= OrgRegion[DC/Touristic] = ModelRegion[DC/Urban] ? "
+				"'SameZones(' + quote(OrgRegion[DC/Touristic]) + ')' : "
+				"'reaggregateWeights('+ quote(OrgRegion[DC/Touristic]) +', '+ quote(ModelRegion[DC/Urban]) + "
+					"(strlen(ReaggregateVar[DC/Touristic]) > 0 ? ', ' + quote(ReaggregateVar[DC/Touristic]) : '') + ')'";
+					
+				Container OrgTouristicToOrgUrban: expr = "= OrgRegion[DC/Touristic] = OrgRegion[DC/Urban] ? "
+				"'SameZones(' + quote(OrgRegion[DC/Touristic]) + ')' : "
+				"'reaggregateWeights('+ quote(OrgRegion[DC/Touristic]) +', '+ quote(OrgRegion[DC/Urban]) + "
+					"(strlen(ReaggregateVar[DC/Touristic]) > 0 ? ', ' + quote(ReaggregateVar[DC/Touristic]) : '') + ')'";
+					
+				Container ModelUrbanToOrgUrban: expr = "= ModelRegion[DC/Urban] = OrgRegion[DC/Urban] ? "
+				"'SameZones(' + quote(ModelRegion[DC/Urban]) + ')' : "
+				"'reaggregateWeights('+ quote(ModelRegion[DC/Urban]) +', '+ quote(OrgRegion[DC/Urban]) + "
+					"(strlen(ReaggregateVar[DC/Urban]) > 0 ? ', ' + quote(ReaggregateVar[DC/Urban]) : '') + ')'";
+			}
+			
+			container SameZones: IsTemplate = "True", Using = "RunRegions/UnitSets;"
+			{
+				parameter<string> OrgClaimZoneSetName;
+				
+				unit<uint16> crossTab: expr = "= 'RunRegions/UnitSets/' + OrgClaimZoneSetName"
+				{
+					attribute<crossTab> first_rel: 			expr = "id(.)";
+					attribute<crossTab> second_rel: 			expr = "id(.)";
+					attribute<float32> orgzone_weight: 	expr = "const(float32(1), ., float32)";
+				}
+			}
+			
+			container ReaggregateWeights: IsTemplate = "True", Using = "RunRegions/UnitSets;"
+			{
+				parameter<string> OrgClaimZoneSetName;
+				parameter<string> DestClaimZoneSetName;
+				parameter<string> agg_weight_def: 				expr = "'const(float32(1), domain, float32)'"; // expr = "'base_zones/area'";
+				
+				unit<uint16> OrgClaimZone: 					expr = "= 'RunRegions/UnitSets/' + OrgClaimZoneSetName";
+				unit<uint16> DestClaimZone: 				expr = "= 'RunRegions/UnitSets/' + DestClaimZoneSetName";
+				unit<uint32> crossTab: expr = "combine(OrgClaimZone, DestClaimZone)" 
+				{
+					attribute<wpoint> 	ct_id: 			expr = "point_xy(first_rel, second_rel, wpoint)"; 
+					attribute<float32>	orgzone_weight:	expr = "sum(weight, ct_ids) / sum(weight, first_rel[ct_ids])[first_rel]";
+				}
+				attribute<float32> 		weight		 (domain): expr = "= agg_weight_def";
+				attribute<wpoint> 		ct_id_points (domain): expr = "= 'point_xy(RunRegions/RasterSets/'+ OrgClaimZoneSetName +'[domain/grid_rel], RunRegions/RasterSets/'+ DestClaimZoneSetName +'[domain/grid_rel], wpoint)'";
+				attribute<crossTab>		ct_ids		 (domain): expr = "rlookup(ct_id_points, crossTab/ct_id)";
+				
+				// 32 version would use upoint not wpoint!
+			}
+			
+		}
+		
+		/*unit<uint32> PrepareRegionalFactors: expr = "range(uint32, 0, #AllRegionRefs * #MetaData/RegionalDynamicFactorsList)"
+		{
+			attribute<MetaData/RegionalDynamicFactorsList> 		first_rel: 		expr = "(id(.) / uint32(#AllRegionRefs))[MetaData/RegionalDynamicFactorsList]";
+			attribute<AllRegionRefs>							second_rel: 		expr = "mod(id(.), uint32(#AllRegionRefs))[AllRegionRefs]";
+			attribute<string>									zonename: 	expr = "AllRegionRefs/Values[second_rel]";
+			attribute<string>									varname:	expr = "MetaData/RegionalDynamicFactorsList/Name[first_rel]";
+			attribute<string>									name:		expr = "varname + '_by_' + zonename";
+			attribute<string>									RegExpr: 	expr = "MetaData/RegionalDynamicFactorsList/ToAggregate[first_rel] ? "
+				"MetaData/RegionalDynamicFactorsList/AggregationFunction[first_rel] + '(' + MetaData/RegionalDynamicFactorsList/RegExpr[first_rel] + '[domain/BasisGrid], RunRegions/RasterSets/'+ zonename + ')' :"
+				"MetaData/RegionalDynamicFactorsList/RegExpr[first_rel]";
+		}*/
+		
+		// ============ Regions
+
+		// ============ claims
+		container ClaimTables: Expr = "DemandSet/ClaimTables";
+		attribute<String> ClaimTableName		(ModelType): Expr = "MakeDefined(DC/OrgRegion[ModelType/DemandCharacteristicsRel], 'ForestDemandRegions')";
+		attribute<String> DestClaimTableName	(ModelType): Expr = "MakeDefined(DC/ModelRegion[ModelType/DemandCharacteristicsRel], ClaimTableName)";
+		
+		container RegionGrids: Expr = "for_each_nedvn(AllRegionRefs/Values, 'RunRegions/RasterSets/'+AllRegionRefs/Values+'[domain/grid_rel]', domain, RunRegions/UnitSets, AllRegionRefs/Values)";
+
+		container RegionNumbersSpecTempl: Istemplate = "True"
+		{
+			unit<uint16> RegionsOrg;
+			parameter<string> RegionsSetName;
+		
+			attribute<RegionsOrg> RegionMapOrg (domain): expr = "= 'RegionGrids/'+RegionsSetName";
+			
+			unit<UInt16> LocalRegions16: Expr = "RegionsOrg", DialogType = "Map", DialogData = "LocalRegionGrid"
+			{
+				attribute<.> LocalRegionGrid (domain_grid): expr = "RegionMapOrg[domain/BasisGrid]";
+				attribute<string> Label: expr = "RegionsOrg/Label";
+				attribute<RegionsOrg> Values: expr = "id(.)";
+			}
+			unit<UInt32> LocalRegions32: Expr = "Range(LocalRegions16, UInt32(0), UInt32(#LocalRegions16))", DialogType = "Map", DialogData = "LocalRegionGrid"
+			{
+				attribute<.> LocalRegionGrid (domain_grid): Expr = "LocalRegions16/LocalRegionGrid[.]";
+				attribute<String>     Label:  Expr = "LocalRegions16/Label [value(ID(.),LocalRegions16)]", DialogType = "LabelText";
+				attribute<RegionsOrg> Values: Expr = "rlookup(id(.), UInt32(id(RegionsOrg)))";
+			}
+		}		
+		unit<UInt16> RegionNumbersTempl: Istemplate = "True";
+		
+		container RegionNumbersSpec: 	Expr = "for_each_ne(AllRegionRefs/Values, 'RegionNumbersSpecTempl(RunRegions/UnitSets/'+AllRegionRefs/Values+', '+quote(AllRegionRefs/Values)+')')";
+		container RegionNumbers: 		Expr = "for_each_net(AllRegionRefs/Values, 'RegionNumbersSpec/'+AllRegionRefs/Values+'/LocalRegions16', RegionNumbersTempl)";
+		container RegionSizes:			Expr = "for_each_nednv(AllRegionRefs/Values, 'pcount(RegionGrids/'+AllRegionRefs/Values+')', RunRegions/UnitSets, AllRegionRefs/Values, uint32)";
+		
+		// ============ Renumbered Regions
+		container RegionData: Expr = "for_each_nedvn(AllRegionRefs/Values, 'invert(RegionNumbers/'+AllRegionRefs/Values+'/Values)[RegionGrids/'+AllRegionRefs/Values+']', domain, RegionNumbers, AllRegionRefs/Values)";
+		container OrgLandUseCount: Expr = "reg_count(StartingState/LandUse[domain/BasisGrid], ModelType/Name, RunRegions/RasterSets, DestClaimTableName)"; //MakeDefined(AllRegionRefs, 'NUTS2_LUISA_old'))"; //[domain/grid_rel]
+		
+		container ClaimTableSelections: Expr = "for_each_ne(UniqueRegionRefs/Values, 'ClaimTableSelectionTemplate(ClaimTables/'+UniqueRegionRefs/Values+', float32('+string(UniqueRegionRefs/StartYearDefined)+'))')";
+		container ClaimTableSelections_End: Expr = "for_each_ne(UniqueRegionRefs/Values, 'ClaimTableSelectionTemplate(ClaimTables/'+UniqueRegionRefs/Values+', Parameters/PeriodSet/EndYear)')";
+		
+		container adapt_claim: expr = "for_each_nednv(!ModelType/DynamicDemand ? ModelType/Name : '', "
+					"'MakeDefined('+"
+//							"IsDefined(invert(CaseData/AtomicRegions/'+ClaimTableName+')) ?"
+							"'rjoin('+"
+								"'RunRegions/UnitSets/'+ClaimTableName+'/ZoneId, '+"
+								"'CaseData/ClaimTables/'+ClaimTableName+'/Data/RegionUp[ClaimTableSelections/'+ClaimTableName+'/sel/org_rel], '+"
+								"'float32(CaseData/ClaimTables/'+ClaimTableName+'/Data/'+MakeDefined(ModelType/MinClaimColumn, 'ZeroClaim')+'[ClaimTableSelections/'+ClaimTableName+'/sel/org_rel])'+"
+							"')'+"
+						"', float32(0))'"
+						", RegionNumbers, ClaimTableName, float32)", FreeData = "True";
+		container last_claim: expr = "for_each_nednv(!ModelType/DynamicDemand ? ModelType/Name : '', "
+					"'MakeDefined('+"
+//							"IsDefined(invert(CaseData/AtomicRegions/'+ClaimTableName+')) ?"
+							"'rjoin('+"
+								"'RunRegions/UnitSets/'+ClaimTableName+'/ZoneId, '+"
+								"'CaseData/ClaimTables/'+ClaimTableName+'/Data/RegionUp[ClaimTableSelections_End/'+ClaimTableName+'/sel/org_rel], '+"
+								"'float32(CaseData/ClaimTables/'+ClaimTableName+'/Data/'+MakeDefined(ModelType/MinClaimColumn, 'ZeroClaim')+'[ClaimTableSelections_End/'+ClaimTableName+'/sel/org_rel])'+"
+							"')'+"
+						"', float32(0))'"
+						", RegionNumbers, ClaimTableName, float32)", FreeData = "True";
+		
+		unit<uint16> AtomicRegions := overlay(UniqueDestRegionRefs/Values, domain, RegionData)
+		{
+			attribute<AtomicRegions> geometry(domain) := UnionData;
+			attribute<uint32> 		 Recs: expr = "Pcount(geometry)";
+			attribute<AtomicRegions> ID: Expr = "ID(AtomicRegions)";
+			attribute<bool>			 error (domain): expr = "IsNull(geometry)";
+		}
+		
+		// redundant with modeltraits. May need to be shifted to global templateset.
+		container ClaimTableSelectionTemplate : IsTemplate = "True"
+		{
+			container ClaimTable;
+			parameter<YearRange> FutureYear;
+			parameter<YearRange> SelYear: 	expr = "FutureYear < 2000f ? float32(0 / 0) : FutureYear";
+			unit<uint32> sel: expr = "select_with_org_rel(Float32(ClaimTable/Data/Year) == MakeDefined(SelYear, min(float32(ClaimTable/Data/Year))))"
+			{
+				attribute<String> Label: Expr = "ClaimTable/Domain/Label[org_rel]", DialogType = "LabelText";
+				
+			}
+		}
+		
+		//attribute<bool> Nuts2MShape_inRun(Geography/Regions/Nuts2_Merged_LUISA_old): expr = "!IsNull(rlookup(id(Geography/Regions/Nuts2_Merged), RegionNumbersSpec/Nuts2_Merged/LocalRegions16/Values))";
+		//attribute<bool> Nuts2Shape_inRun (Geography/Regions/Nuts2_LUISA_old):		 expr = "!IsNull(rlookup(id(Geography/Regions/Nuts2), RegionNumbersSpec/Nuts2/LocalRegions16/Values))";
+		//attribute<bool> Nuts3Shape_inRun (Geography/Regions/Nuts3_LUISA_old): 		 expr = "Nuts2Shape_inRun[Geography/Regions/Nuts3/Nuts2_rel]";
+		//attribute<bool> LAUShape_inRun 	 (Geography/RegionShapes/composite_LAU): expr = "Nuts2Shape_inRun[Geography/RegionShapes/composite_LAU/Nuts2Id]";
+
+		// ============ Regions
+		//container StartingLuPerClaimRegion: Expr = "for_each_nednv(IsDefined(RegionRefs) ? ModelType/Name : '', 'sum(UInt32(OrgLandUse[domain/grid_rel]==Value('+String(ID(ModelType))+', ModelType)), RegionData/'+RegionRefs+')', Geography/Regions, RegionRefs, UInt32)";
+		
+		// ============ Suitabilites
+
+		unit<UInt32> CurrFactorWeights: Expr = "Rules/CurrFactorWeights";
+		//container WeightedSuitabilityFactorData: expr = "for_each_nedv(CurrFactorWeights/Name, Rules/SuitTermExpr, domain, Float32)";
+		//attribute<Float32> SuitFactorWeights(CurrFactorWeights): expr = "='union_data(CurrFactorWeights,'+asItemList('sd(WeightedSuitabilityFactorData/'+CurrFactorWeights/Name+')')+')'";
+		//container SuitabilityData:  Expr = "for_each_nedv(ModelType/Name, Rules/SuitTermsExpr, domain, Float32)";
+		//container SuitabilityLogit: Expr = "for_each_nedv(ModelType/Name, Rules/SuitabilityLogitExpr, domain, Float32)";
+		//attribute<Float32> TotalExpSuitability(domain): Expr = "=Rules/SuitabilitySumExpExpr";
+		//container SuitabilityMNL:   Expr = "for_each_nedv(ModelType/Name, Rules/SuitabilityMNLExpr, domain, Float32)";
+		
+		
+		// ============ locspecs
+		container LocSpec:
+			Expr = 
+				"for_each_nedv(ModelType/Name, "
+					"'float32(1) + MakeDefined(Float32(JrcFactorData/'+ParamSet/LocSpecContainerName+'/' + ModelType/Name + '[domain/grid_rel] ) / Float32(100), float32(0))',"
+					"domain, Float32"
+				")";
+		// ============ Fixed Parameters
+		parameter<Float32> SuitScaleFactor: Expr = "value(1, Meter2 / luHa)";
+		unit<int32> EUR_Ha_int32: Expr = "int32(EUR_HA)";
+		
+		
+		// ============ Necessary for dynamic accessibility calculations
+		container NetworkAnalysis //: Using = "DataPreparation/Accessibility" // run-specific domain of sources combining NUTS2 outside of Run-region and NUTS3 within Run-region
+		{
+			//attribute<float32> Accessibility_gve 	(domain_grid): expr = "(WeightMap > float32(0) ? (potential(DistToNuts/od_aggr/PerDstPnt_gve[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr/PerDstPnt_gve[Rel_map]) / float32(100 * 1000)";	
+			attribute<float32> Accessibility_grav 	(domain_grid): expr = "DA150";	
+			//attribute<float32> DA100				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(DistToNuts/od_aggr/PerDstPnt_grav100[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr/PerDstPnt_grav100[Rel_map]) / float32(100)";	
+			//attribute<float32> DA125 				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(DistToNuts/od_aggr/PerDstPnt_grav125[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr/PerDstPnt_grav125[Rel_map]) / float32(100)";	
+			attribute<float32> DA150 				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(DistToNuts/od_aggr/PerDstPnt_grav150[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr/PerDstPnt_grav150[Rel_map])";	
+			attribute<float32> DistTown 			(domain_grid): expr = "value((IsNull(Rel_map) ? (potential(DistTown_n_i06, getNeighbours150/neighbourrange/relWeight) / Weightmap): DistTown_n_i06), float32)";	
+			attribute<float32> DistTown_n_i06		(domain_grid): expr = "MakeDefined(min_elem(DistToTown/ImpedanceToNearestSource_06, float32(600))[Rel_map], float32(0))";
+			attribute<float32> DistTown_n_i30		(domain_grid): expr = "MakeDefined(min_elem(DistToTown/ImpedanceToNearestSource_30, float32(600))[Rel_map], float32(0))";
+			attribute<float32> Dist_ToRemotePoints_i06 (domain_grid): expr = "MakeDefined(min_elem(DistToRemotePoints/ImpedanceToNearestSource_06, float32(600))[Rel_map], float32(0))";
+			attribute<float32> Dist_ToRemotePoints_i30 (domain_grid): expr = "MakeDefined(min_elem(DistToRemotePoints/ImpedanceToNearestSource_30, float32(600))[Rel_map], float32(0))";
+			attribute<float32> RefinedTownAccess		(domain_grid): expr = "value((IsNull(Rel_map) ? (potential(Dist_ToRemotePoints_i06, getNeighbours150/neighbourrange/relWeight) / Weightmap): Dist_ToRemotePoints_i06), float32)";
+			
+			//attribute<float32> DA200 				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(DistToNuts/od_aggr/PerDstPnt_grav200[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr/PerDstPnt_grav200[Rel_map]) / float32(100)";	
+			
+			attribute<float32> dom_a				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(DistToNuts/od_aggr/dom_grav150[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr/dom_grav150[Rel_map])";	
+			attribute<float32> for_a				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(DistToNuts/od_aggr/for_grav150[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr/for_grav150[Rel_map])";	
+			
+			//attribute<float32> Pop2006		 (domain_grid): expr = "float32(CaseData/JrcFactorData/Population/Qi_2006)";
+			//attribute<float32> Pop2006Mass	 (domain_grid): expr = "Pop2006 + potential(Pop2006, getNeighbours150/neighbourrange/relWeight)";
+			attribute<float32> Pop2011		 (domain_grid): expr = "float32(CaseData/JrcFactorData/Population/Qi_2011)";
+			attribute<float32> Pop2011Mass	 (domain_grid): expr = "Pop2011 + potential(Pop2011, getNeighbours150/neighbourrange/relWeight)";
+			attribute<bool>    max_mass		 (domain_grid): expr = "Pop2011Mass = ZonesInside/max_pop_mass[InsideZoneGrid[ZonesInside]]";
+			
+			unit<uint32> max_mass_points: expr = "select_with_org_rel(max_mass)" {attribute<domain_grid> orgId: expr = "org_rel"; attribute<LambertEA> point: expr = "orgId[LambertEA]"; attribute<ZonesInside> InsideZone: expr = "InsideZoneGrid[org_rel][ZonesInside]";}
+			
+			attribute<float32>	TownAccess_2006 		(domain_grid): expr = "DistTown";
+			attribute<float32>  TownAccess_2030			(domain_grid): expr = "value((IsNull(Rel_map) ? (potential(DistTown_n_i30, getNeighbours150/neighbourrange/relWeight) / Weightmap): DistTown_n_i30), float32)";
+			attribute<float32>  RefinedTownAccess_2006	(domain_grid): expr = "RefinedTownAccess";
+			attribute<float32>  RefinedTownAccess_2030	(domain_grid): expr = "value((IsNull(Rel_map) ? (potential(Dist_ToRemotePoints_i30, getNeighbours150/neighbourrange/relWeight) / Weightmap): Dist_ToRemotePoints_i30), float32)";
+			
+			
+			parameter<uint32> FirstYear: 	expr = "DataPreparation/Accessibility/FirstYear";
+			parameter<uint32> LastYear: 	expr = "DataPreparation/Accessibility/LastYear";
+			
+			unit<dpoint> LambertEA: 		expr = "Geography/LambertEA";
+			unit<float32>ImpedanceUnit:		expr = "DataPreparation/Accessibility/ImpedanceUnit";
+			
+			//attribute<JrcFactorData/domain_grid> JrcFactorDatarel (domain_grid): expr = "rlookup(id(domain_grid), id(CaseData/JrcFactorData/domain_grid))";
+			
+			unit<wpoint> pop1990: expr = "CaseData/JrcFactorData/TiffData/ghspop90" {
+				attribute<RunZones> rzid: expr = "poly2grid(RunZones/poly, .)";
+				attribute<float32> dom_a				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(HistoricalAccess/od_aggr/dom_grav150[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): HistoricalAccess/od_aggr/dom_grav150[Rel_map])";	
+				attribute<float32> for_a				(domain_grid): expr = "(WeightMap > float32(0) ? (potential(HistoricalAccess/od_aggr/for_grav150[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): HistoricalAccess/od_aggr/for_grav150[Rel_map])";	
+			}
+			
+			// ============= RunZones are hybrid (Nuts3 within run region, Nuts2 outside run region)
+			unit<uint32> RunZones: expr = "union_unit(ZonesInside, ZonesOutside)", DialogData = "poly", DialogType = "map"
+			{ 
+				attribute<LambertEA>				poly (poly):expr = "union_data(RunZones, ZonesInside/poly, ZonesOutside/poly)";
+				attribute<LambertEA>				Geometry:	expr = "union_data(RunZones, ZonesInside/Centroid, centroid_or_mid(ZonesOutside/poly))"; 
+				attribute<bool> 					Inside: 	expr = "union_data(RunZones, const(True[bool], ZonesInside), const(False[bool], ZonesOutside))";
+				attribute<RunZones>					Zone_Rel:	expr = "id(RunZones)";
+				attribute<Geography/Regions/Nuts3_v8> Region_rel: expr = "union_data(., ZonesInside/Region_rel, ZonesOutside/Region_rel)";
+				attribute<UrbanClaimZones>			UrbanClaimZoneId: expr = "point_in_polygon(Geometry, UrbanClaimZones/Geometry)";
+				attribute<float32> 					intdist: 	expr = "float32(0.5) * sqrt(float32(area(poly, float64)) / float32(pi())) / float32(1000)";
+				attribute<ImpedanceUnit>			SrcImp:	 	expr = "max_elem((intdist / (float32(10.66) + (float32(13.04) * log(intdist))) * float32(60))[ImpedanceUnit], float32(5)[ImpedanceUnit])"; // based on speed computations in Jacobs and Koomen
+				attribute<float32> 					Attraction: expr = "union_data(., ZonesInside/Attraction, ZonesOutside/Attraction)";
+				attribute<float32>					P1990:		expr = "sum(pop1990/GridData, pop1990/rzid)";
+				attribute<uint32>					ZoneRef:	expr = "union_data(., id(ZonesInside), id(ZonesOutside))";
+			}
+			
+			unit<uint32> ZonesInside: 	expr = "RunRegions/UnitSets32/base_zones", DialogData = "poly", DialogType = "map" 
+			{ 	
+				attribute<LambertEA> poly (poly): 	expr = "Geometry"; 
+				attribute<Geography/Regions/Nuts3_v8> Region_rel: expr = "RunRegions/UnitSets32/Nuts3_v8/org_rel[RunRegions/base_rels32/Nuts3_v8]";
+				attribute<float32>	max_pop_mass:	expr = "max(Pop2011Mass, InsideZoneGrid[ZonesInside])";	
+				attribute<LambertEA>Centroid:		expr = "MakeDefined(first(max_mass_points/point, max_mass_points/InsideZone), centroid_or_mid(poly))";
+				attribute<float32>	Attraction:		expr = " sum(float32(Pop2011), InsideZoneGrid)";
+			}
+			unit<uint32> SaveZones: 	expr = "ZonesInside", StorageName = "=simulation_results/MetaData/DirName+'/LAU2_mass.dbf'"
+			{
+				attribute<string>	 Code:	expr = "Geography/RegionShapes/composite_LAU/NUTS_CODE[org_rel]";
+				attribute<uint16>	 ObjId: expr = "Geography/RegionShapes/composite_LAU/org_rel[org_rel]";
+				attribute<LambertEA> point: expr = "Centroid", StorageName = "=simulation_results/MetaData/DirName+'/LAU2_mass.shp'";
+			}
+			parameter<string> PopProjRegionsName: expr = "MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Population]";
+			unit<uint32> ZonesOutside: 	expr = "= 'select_with_org_rel(Geography/AdministrativeBoundaries/relational/'+PopProjRegionsName+' <> JrcRegionId)'", DialogData = "poly", DialogType = "map" 
+			{	
+				//attribute<Geography/Regions/Nuts2_Merged> 	rel: 			expr = "proto_ZonesOutside/org_rel[id(.)[proto_ZonesOutside]]"; 
+				attribute<LambertEA> 					poly (poly): 	expr = "= 'Geography/Regions/'+PopProjRegionsName+'/Geometry[org_rel]'"; 
+				attribute<Geography/Regions/Nuts3_v8> 	Region_rel: 	expr = "org_rel";
+				attribute<float32> 						Attraction:	expr = "= 'float32(DemandSet/Global/Population/InColumns/y2019[org_rel])' ";
+			}
+			unit<uint32> DestPoints: 	expr = "select_with_org_rel(!IsNull(point_in_polygon(DataPreparation/Accessibility/SourceData/Destinationpoints/Geometry, RunRegions/UnitSets/RunAreas/Geometry)))", DialogData = "Geometry", DialogType = "map"
+			{ 
+				attribute<LambertEA> 		Geometry:	  	expr = "DataPreparation/Accessibility/SourceData/Destinationpoints/Geometry[org_rel]"; attribute<domain_grid> grid_id: expr = "Geometry[domain_grid]";
+				attribute<UrbanClaimZones>	UrbanClaimId: 	expr = "point_in_polygon(Geometry, UrbanClaimZones/Geometry)";
+			}
+			unit<uint32> RemotePointsInside: expr = "select_with_org_rel(!isNull(point_in_polygon(DataPreparation/Accessibility/SourceData/remoteness_points/Geometry, ZonesInside/poly)))", DialogData = "Geometry", DialogType = "map"
+			{
+				attribute<LambertEA>     Geometry  := DataPreparation/Accessibility/SourceData/remoteness_points/Geometry  [org_rel]; 
+				attribute<float32>       Attraction:= DataPreparation/Accessibility/SourceData/remoteness_points/Attraction[org_rel]; 
+				attribute<bool>          Foreign   := DataPreparation/Accessibility/SourceData/remoteness_points/Foreign   [org_rel];
+				attribute<ImpedanceUnit> SrcImp    := DataPreparation/Accessibility/SourceData/remoteness_points/SrcImp    [org_rel];
+			}
+			unit<uint32> townsInside: 	expr = "select_with_org_rel(!isNull(point_in_polygon(DataPreparation/Accessibility/SourceData/townPoint/Geometry, ZonesInside/poly)))", DialogData = "Geometry", DialogType = "map"
+			{
+				attribute<LambertEA>     Geometry  := DataPreparation/Accessibility/SourceData/townPoint/Geometry  [org_rel]; 
+				attribute<float32>       Attraction:= DataPreparation/Accessibility/SourceData/townPoint/Attraction[org_rel]; 
+				attribute<bool>          Foreign   := DataPreparation/Accessibility/SourceData/townPoint/Foreign   [org_rel];
+				attribute<ImpedanceUnit> SrcImp    := DataPreparation/Accessibility/SourceData/townPoint/SrcImp    [org_rel];
+			}
+			unit<uint32> UrbanClaimZones: expr = "= 'RunRegions/UnitSets32/' + CaseData/DestRegionRefs[ModelType/Urban]";
+			
+			unit<uint32> odmatrix_06: expr = "DistToNuts/od_pairs_2006";
+			unit<uint32> odmatrix_30: expr = "DistToNuts/od_pairs_2030";
+			
+			unit<uint32> urbanclaimzones_x_urbanclaimzones: expr = "combine(UrbanClaimZones, UrbanClaimZones)"
+			{
+				attribute<upoint> 	point_od_06 (odmatrix_06): expr = "point_xy(RunZones/UrbanClaimZoneId[odmatrix_06/OrgZone_rel], DestPoints/UrbanClaimId[odmatrix_06/DstZone_rel], upoint)";
+				attribute<.>		mat_rel_06	(odmatrix_06): expr = "rlookup(point_od_06, point_xy(first_rel, second_rel, upoint))";
+				attribute<upoint> 	point_od_30 (odmatrix_30): expr = "point_xy(RunZones/UrbanClaimZoneId[odmatrix_30/OrgZone_rel], DestPoints/UrbanClaimId[odmatrix_30/DstZone_rel], upoint)";
+				attribute<.>		mat_rel_30	(odmatrix_30): expr = "rlookup(point_od_30, point_xy(first_rel, second_rel, upoint))";
+				attribute<float32> 	tt_06:					   expr = "mean(odmatrix_06/impedance, mat_rel_06)";
+				attribute<float32> 	tt_30:					   expr = "mean(odmatrix_30/impedance, mat_rel_30)";
+			}
+			
+			attribute<DestPoints> 	Rel_map       (domain_grid): expr = "rlookup(id(domain_grid), DestPoints/grid_id)";
+			attribute<float32>    	Weightmap     (domain_grid): expr = "potential(float32(!IsNull(Rel_map)), getNeighbours150/neighbourrange/relWeight)";						
+			attribute<ZonesInside>  InsideZoneGrid(domain_grid): expr = "rlookup(uint32(RunRegions/base_raster), id(ZonesInside))";
+			
+			Container getNeighbours150: expr = "DataPreparation/Accessibility/sourcedata/neighbourrange(int16(150))";
+			
+			Container DistToRemotePoints:	Expr = "DataPreparation/Accessibility/DistToTempl(DestPoints, RemotePointsInside, 'Attraction', 'Inside')";
+			Container DistToNuts : 			Expr = "DataPreparation/Accessibility/DistToTempl(DestPoints, RunZones, 'Attraction', 'Inside')";
+			Container HistoricalAccess:		Expr = "DataPreparation/Accessibility/DistToTempl(DestPoints, RunZones, 'P1990', 'Inside')";
+			Container DistToTown : 			Expr = "DataPreparation/Accessibility/DistToTempl(DestPoints, townsInside, 'Attraction', 'Foreign')";
+			
+			Container AnalyzeAccessibility
+			{
+				attribute<float32> A_2006 	(domain_grid): expr = "MakeDefined((WeightMap > float32(0) ? (potential(DistToNuts/od_aggr_2006/PerDstPnt_grav150[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr_2006/PerDstPnt_grav150[Rel_map]) / float32(100), float32(0))", StorageName = "=simulation_results/MetaData/DirName+'A_N06P06.tif'";	
+				attribute<float32> A_2030 	(domain_grid): expr = "MakeDefined((WeightMap > float32(0) ? (potential(DistToNuts/od_aggr_2030/PerDstPnt_grav150[Rel_map], getNeighbours150/neighbourrange/relWeight) / Weightmap): DistToNuts/od_aggr_2030/PerDstPnt_grav150[Rel_map]) / float32(100), float32(0))", StorageName = "=simulation_results/MetaData/DirName+'A_N30P06.tif'";
+				attribute<float32> DA_06_30	(domain_grid): expr = "MakeDefined(A_2030 / A_2006, float32(0))", StorageName = "=simulation_results/MetaData/DirName+'DA_30_06.tif'";
+				attribute<float32> Dtown	(domain_grid): expr = "MakeDefined(DistTown, float32(0))", StorageName = "=simulation_results/MetaData/DirName+'DA_30_06.tif'";
+			}	
+		}
+		
+		Container EconomicBase
+		{
+			unit<uint16> Zones: expr = "= 'RunRegions/UnitSets/' + MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Urban]";
+			attribute<float32> Employment_2012 (Zones): 	expr = "DemandSet/Global/Employment/inColumns/y2012[Zones/org_rel]";
+			attribute<float32> GDP_per_Capita_2012 (Zones): expr = "DemandSet/Global/GDP_per_Capita/inColumns/y2012[Zones/org_rel]";
+		}
+		
+		#include<getOptimalk_NUTS2.dms>
+		#include<CAP.dms>
+			
+	}
+	
+	
+	container input_results
+	{
+		// ============ factor data export tool for 
+		unit<uint32> pop_exp_domain: 		expr = "select_with_org_rel(CaseData/FactorData/ghspop90 > 0f || CaseData/FactorData/ghspop15 > 0f)", Using = "genvalues;";
+		container genvalues: expr = "for_each_nedv(StaticFactors/UniqueName, 'float32(CaseData/FactorData/'+StaticFactors/UniqueName+'[pop_exp_domain/org_rel])', pop_exp_domain, float32)" {attribute<Classifications/LU/ModelType> landuse (pop_exp_domain): expr = "(CaseData/OrgLandUse[domain/grid_rel])[pop_exp_domain/org_rel]";}
+		parameter<string> pop_exp_path:		expr = "'%LocalDataProjDir%/calib_files/'+RunParameters/Name+'_pop.csv'";
+		parameter<string> pop_exp_fields:	expr = "AsList(lowercase(StaticFactors/UniqueName),';')";
+		
+		container ExportSamples:    Expr = "Templates/TableComposer_uint32(pop_exp_domain, pop_exp_path, pop_exp_fields, 'genvalues')";
+	}
+	container testingAllocSums                                                               //
+	{                                                                                          //
+		container AllocSums:    Expr = "ModelTraits/TestSumsAlloc/Templ(domain, domain_grid)";  //
+	}  
+	
+	container StartingState
+	{
+		attribute<ModelType> LandUse_Grid(domain_grid): Expr = "CaseData/OrgLandUse";
+		attribute<ModelType> LandUse     (domain):      Expr = "!BurntForest ? LandUse_Grid[domain/grid_rel] : ModelType/TransWoodlandShrub";
+		attribute<bool>		 BurntForest (domain): 		Expr = "(LandUse_Grid[domain/grid_rel] = ModelType/ForestsMature || LandUse_Grid[domain/grid_rel] = ModelType/ForestsYoung) && float32(CaseData/JrcFactorData/BurntAreas/BurntInYear[domain/grid_rel]) < Parameters/PeriodSet/StartYear";
+		attribute<bool>		 CorineBurnt (domain): 		Expr = "Classifications/LU/Corine/Burnt[CaseData/CorineLandUse[domain/grid_rel]]";
+		parameter<float32>   ComingPeriodLength:		Expr = "Periods/PeriodLength[uint16(0)]";
+		parameter<YearRange> CurrYear:					Expr = "Periods/CurrYear[uint16(0)]";
+		parameter<bool> cumulStatusFlag: Expr = "true";
+		attribute<YearDiffRange> Age    (domain): Expr = "switch("
+			"case(CorineBurnt, value(3, YearDiffRange)), "
+			"case(BurntForest, Parameters/PeriodSet/StartYear - float32(CaseData/JrcFactorData/BurntAreas/BurntInYear[domain/grid_rel]) - float32(1)), "
+			//"value(CaseData/JrcFactorData/age0[domain/grid_rel], YearDiffRange))";
+			"value(CaseData/JrcFactorData/TiffData/AgeFromCLC/AgeCLC [domain/grid_rel], YearDiffRange))";
+			
+		attribute<float32> Qi11	(domain): Expr = "CaseData/JrcFactorData/Population/Qi_2011[domain/grid_rel]";
+		attribute<float32> Qi	(domain): Expr = "float32(CaseData/getOptimalk/modelledQi)";
+	    attribute<float32> PopDensity_km2 (domain): Expr = "MakeDefined(potential(Qi[domain/BasisGrid], Parameters/FuncKernels/Area1km2/AbsWeight)[domain/grid_rel] , 0[NrResidents])";	
+		attribute<float32> Si (domain): 	Expr = "Qi";
+		attribute<Year>	   	S_Agei (domain): Expr = "Qi > 0[float32] ? rnd_uniform(0, domain, range(Year, 0[Year], 10[Year])): 100[Year]"; // 0 years if supply has changed in a year
+		attribute<float32> Qj	(CaseData/DestPopClaimRegion): Expr = "sum(Qi[domain/basisgrid], CaseData/DestPopRasterLink)";
+		//attribute<float32>	   claimdif (CaseData/DestPopClaimRegion): expr = "Qj - Parameters/PopSets/RegionalPopulation/Demands/Qj/s2011[CaseData/DestPopClaimRegion/org_rel]";
+		attribute<float32>	   NeighboursWeight (domain): Expr = "potential(const(float32(1), domain, float32)[domain/basisgrid], Parameters/FuncKernels/QueensNeighbours/Matr)[domain/grid_rel]";
+		attribute<float32> PotQi 	(domain): Expr = "MakeDefined(potential(float32(CaseData/getOptimalk/modelledQi)[domain/BasisGrid], Parameters/FuncKernels/RooksNeighbours/Matr)[domain/grid_rel] / NeighboursWeight, 0[NrResidents])";
+		attribute<Classifications/LU/ForestType> ForestType(domain_grid): Expr = "Classifications/LU/ForestType/Back_rel[CaseData/JrcFactorData/TiffData/CorineGrid/CorineLandUse]";
+		
+		container dFactors: expr = "for_each_nedv(DynamicFactors/Name, DynamicFactors/StartExpr, domain, float32)";
+		
+		container regionalFactors: expr = "for_each_ne(CaseData/AllRegionRefs/Values, 'rules/Templates/getRegionalVariables('+ quote(CaseData/AllRegionRefs/Values) +')')"
+		{
+			attribute<float32> ClaimPop (CaseData/OrgPopClaimRegion): expr = "Sum(Qi, CaseData/OrgPopRasterLink[domain/grid_rel])";
+			attribute<float32> AllocPop	(CaseData/OrgPopClaimRegion): expr = "ClaimPop";
+		
+			container conversions: expr = "CaseData/DemandZoneConversions/Conversions";
+			unit<uint32> UrbanClaimZoneMatrix: expr = "CaseData/NetworkAnalysis/urbanclaimzones_x_urbanclaimzones" 
+			{
+				parameter<float32> 	 RelWeightStartingYear: 	Expr = "CurrYear[uint32] >= CaseData/NetworkAnalysis/LastYear ? float32(0): float32(1) - float32((CurrYear[uint32] - CaseData/NetworkAnalysis/FirstYear)/ (CaseData/NetworkAnalysis/LastYear - CaseData/NetworkAnalysis/FirstYear))";
+				attribute<float32> tij: expr = "(RelWeightStartingYear * tt_06) + ((float32(1) - RelWeightStartingYear) * tt_30)";
+			}
+			unit<uint32> ms_rel: expr = "MetaData/RegionalFactorDefinitions/ModelSpecificFactorsList";	
+			unit<uint16> UrbanZones: expr = "= 'RunRegions/UnitSets/' + MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Urban]";
+//			attribute<float32> touristic_lu (UrbanZones): expr = "sum((CaseData/JrcFactorData/Tourism/beds / CaseData/JrcFactorData/Tourism/beds_per_ha)[Conversions/OrgTouristicToOrgUrban/crossTab/first_rel] * Conversions/OrgTouristicToOrgUrban/crossTab/orgzone_weight, Conversions/OrgTouristicToOrgUrban/crossTab/second_rel)";
+			container ModelSpecificFactors: expr = "for_each_nednv(ms_rel/Name, ms_rel/RegExpr + (ms_rel/select_with_org_rel ? '[RunRegions/UnitSets/'+ ms_rel/TargetZones +'/org_rel]' : ''), RunRegions/UnitSets, ms_rel/TargetZones, float32)";
+		}
+		container AgriculturalAbandonment
+		{
+				parameter<float32> PopDensityThreshold : expr = "float32(50)";
+				attribute<float32> LowPopDensityAreas	(domain): expr = "PopDensity_km2 < PopDensityThreshold ? PopDensity_km2 : PopDensityThreshold";
+				attribute<float32> LowPopDensity_factor (domain): expr = "Rescale(LowPopDensityAreas, float32(1), float32(0)) ";	
+										
+				parameter<float32> TravelTimeThreshold : expr = "float32(60)";
+				attribute<float32> RemoteAreas				(domain): expr = "dFactors/TownAccess > TravelTimeThreshold ? dFactors/TownAccess : Float32(0.0)";
+				attribute<float32> RemoteAreas_factor 	(domain): expr = "Rescale(RemoteAreas, float32(0), float32(1))";
+		}
+		//container regionalFactors: expr = "for_each_nednv(CaseData/PrepareRegionalFactors/Name, CaseData/PrepareRegionalFactors/RegExpr, RunRegions/UnitSets, CaseData/PrepareRegionalFactors/ZoneName, float32)";
+		
+		parameter<string> GeneratedFiles := OutputGeneration/OutputDirName+';',	
+			ExplicitSuppliers = "OutputGeneration/ClippedLandUseVT;OutputGeneration/Clipped_Qi;";
+		
+		container OutputGeneration
+		{
+			parameter<String> OutputDirName: Expr = "simulation_results/metadata/DirName + '/'+string(Periods/CurrYear[uint16(0)])";
+			
+			container Indicators {
+				container NetAgriAbandonment: Expr = "IndicatorData/AgriAbandonmentStartingState(domain)";
+			}
+			
+			parameter<String> ClippedLandUseVT_FileName: Expr = "OutputDirName + '.tif'";
+			parameter<String> Qi_FileName:				 Expr = "OutputDirName + '_Qi.tif'";
+			
+			attribute<Classifications/LU/ViewType> LandUseVT(domain_grid)
+				:	Expr = "MakeDefined( Classifications/LU/ModelType/VT[ LandUse_Grid ], Classifications/LU/Corine/VT[ CaseData/JrcFactorData/TiffData/CorineGrid/CorineLandUse ])";
+				
+			attribute<Classifications/LU/ViewType> ClippedLandUseVT(domain_grid)
+				:	Expr = "CaseData/Land/IsInRunRegion ? LandUseVT : value(0, Classifications/LU/ViewType)"
+				,	StorageName = "=ClippedLandUseVT_FileName"
+				, 	StorageType = "tif"
+			{
+				attribute<UInt32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
+			}
+			
+			attribute<int32> Qi_Grid 	(domain_grid): expr = "CaseData/getOptimalk/modelledQi[domain/BasisGrid]";
+			
+			attribute<int32> Clipped_Qi (domain_grid)
+				:   Expr = "CaseData/Land/IsInRunRegion ? Qi_Grid : 0[int32]"
+				,   StorageName = "=Qi_FileName"
+				, 	StorageType = "tif";
+		}
+		
+		container StateVariables
+		{
+			attribute<ModelType> LandUse     (domain) 						 := StartingState/LandUse;
+			attribute<float32> Qi	(domain)							     := StartingState/Qi;
+			attribute<Classifications/LU/ForestType> ForestType(domain_grid) := StartingState/ForestType;
+			attribute<YearDiffRange> Age    (domain) 						 := StartingState/Age;
+			container dFactors    											 := StartingState/dFactors; 	   // Needs landuse to remove
+			container regionalFactors									     := StartingState/regionalFactors; // Needs landuse to remove
+			attribute<float32> Si (domain)									 := StartingState/Si;			   // Needs differencing start and dyn
+			attribute<Year>	S_Agei (domain)								     := StartingState/S_Agei;		   // Needs differencing start and dyn
+			
+			parameter<bool> cumulStatusFlag 		  						 := StartingState/cumulStatusFlag;
+			
+			
+			
+
+
+
+			//attribute<float32> Qj	(CaseData/DestPopClaimRegion)			 := StartingState/Qj; // removed from state
+			//attribute<float32> PopDensity_km2 (domain)					 := StartingState/PopDensity_km2; // remove
+			
+			container OutputGeneration										 := StartingState/OutputGeneration;
+			parameter<string> GeneratedFiles								 := StartingState/GeneratedFiles;
+		}
+	}
+
+	container TimeSteps: Expr = 
+			"for_each_ne("
+				"Periods/Name,"
+				"'DynaClueTimeStep100(value('+Periods/YearStr+', YearRange),'+Periods/IdStr+','+Periods/ClaimFractionStr+',ModelType, domain_grid, domain,CaseData/OrgPopClaimRegion,CaseData/DestPopClaimRegion,'+Periods/PrevRef+'/StateVariables)'"
+			")";
+				
+			
+			
+			
+			
+	
+ 	container endstate := ='TimeSteps/'+Periods/Name[max(ID(Periods))]+'/ResultingState'
+ 	{
+// 		parameter<YearRange> RefTime:          Expr = "PLast/ResultingState/RefTime";
+//		parameter<bool>      cumulStatusFlag:  Expr = "PLast/ResultingState/cumulStatusFlag";
+	
+	 	attribute<ModelType> discr_result(domain): Expr  = "LandUse";
+	 	attribute<ModelType> changed_to  (domain): Expr = "(discr_result != StartingState/LandUse) ? discr_result          : value(0 / 0, ModelType)";
+	 	attribute<ModelType> changed_from(domain): Expr = "(discr_result != StartingState/LandUse) ? StartingState/LandUse : value(0 / 0, ModelType)";
+	}
+	
+	container simulation_results
+		:	Descr = "Allocated landuse resulting from the balancing iteration + ground-price indication"
+	{
+		container metadata
+		{
+			parameter<String> DirName: Expr = "RunParameters/OutputDir";
+			
+			attribute<string> AllocStatusPerPeriod(Periods): Expr = "='union_data(Periods, '+asItemList('TimeSteps/'+Periods/Name+'/d_alloc/status')+')'";
+			parameter<string> AllocStatus: Expr = "asItemList(AllocStatusPerPeriod)";
+		}
+		container landuse: Descr = "The resulting landuse is the combination of (iterator/allocated_landuse) and (exogeousLanduse)"
+		{
+//			attribute<ModelType> GridData(domain_grid): StorageName = "=metadata/DirName+'.tif'", Expr = "endState/LandUse_Grid"
+			attribute<Classifications/LU/ViewType> GridData(domain_grid): StorageName = "=metadata/DirName+'_VT.tif'", Expr = "=Last('TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/ClippedLandUseVT')"
+			{
+				attribute<UInt32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
+			}
+			container PerYear:     Expr = "for_each_nedvl(Periods/Name, 'TimeSteps/'+Periods/Name+'/ResultingState/LandUse', domain, ModelType, 'Land use '+Periods/YearStr)";
+			container GridPerYear: Expr = "for_each_nedvl(Periods/Name, 'TimeSteps/'+Periods/Name+'/ResultingState/LandUse_Grid', domain_grid, ModelType, 'Land use '+Periods/YearStr)";
+			container ClippedGridPerYearVT_Calculated: Expr = "for_each_nedv(Periods/Name, 'TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/ClippedLandUseVT', domain_grid, Classifications/LU/ViewType)";
+			
+			// decoupled simulation for mozaiking
+			container ClippedGridPerYearVT_ReadAlways: Expr = "for_each_ndva(Periods/Name, domain_grid, Classifications/LU/ViewType, '=TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/ClippedLandUseVT_FileName')" {
+				attribute<Classifications/LU/ViewType> P2012 (domain_grid): StorageName = "= StartingState/OutputGeneration/ClippedLandUseVT_FileName", StorageReadOnly = "True";
+			}
+			container ClippedGridPerYearVT_ReadOnly: Expr = 
+				"for_each_nedv(Periods/Name, "
+					"'=ExistingFile(''C:/@'',TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/ClippedLandUseVT_FileName) != ''C:/@'' ? ''ClippedGridPerYearVT_ReadAlways/'+Periods/Name+''': ''const(0[Classifications/LU/ViewType],domain_grid)''',"
+					"domain_grid, Classifications/LU/ViewType"
+					")" 
+				{
+						attribute<Classifications/LU/ViewType> P2012 (domain_grid): expr = "= ExistingFile('C:/@', StartingState/OutputGeneration/ClippedLandUseVT_FileName) != 'C:/@' ? 'ClippedGridPerYearVT_ReadAlways/P2012': 'const(0[Classifications/LU/ViewType],domain_grid)'";
+				}
+			container ClippedQiPerYearVT_ReadOnly: Expr = "for_each_ndva(Periods/Name, domain_grid, int32, '=TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/Qi_FileName')" {
+				attribute<int32> P2012 (domain_grid): StorageName = "= StartingState/OutputGeneration/Qi_FileName", StorageReadOnly = "True";
+			}
+		}
+		container Indicators: Expr = 
+			"IndicatorData/EvaluationTemplate100("
+				"ModelType, Periods, "
+				"domain_grid, domain,"
+				"landuse/GridPerYear, landuse/PerYear, "
+				"CaseData/JrcFactorData, "
+				"simulation_results/metadata/DirName + '/Indicators',"
+				"Parameters/DemandSets/Global/Population/Data"
+			//	"CaseData/RegionNumbers/Nuts2, "
+			//	"CaseData/RegionNumbers/Nuts2/LocalRegionGrid,"
+			//	"CaseData/RegionNumbers/Nuts2/Values "
+//				"CaseData/RegionData/Nuts2"
+			")";
+
+		parameter<string>  GeneratedFiles := endstate/GeneratedFiles, ExplicitSuppliers="endstate/GeneratedFiles"; //DEBUG @@@;landuse/GridData";
+		
+		
+		//parameter<string>  GeneratedFiles := Runs/Slovenia/TimeSteps/P2020/ResultingState/GeneratedFiles, ExplicitSuppliers="Runs/Slovenia/TimeSteps/P2020/ResultingState/GeneratedFiles"; //DEBUG @@@;landuse/GridData";
+		
+		//parameter<> GenerateAll 
+	
+	}
+}

@@ -1,0 +1,221 @@
+container getOptimalk
+{
+	Container 		StartingState
+	{
+		attribute<Classifications/LU/ModelType> LandUse	(domain): expr = "OrgLandUse[domain/grid_rel]";
+		attribute<ModelType> LandUse_Grid(domain_grid): Expr = "CaseData/OrgLandUse";
+		attribute<float32>	   NeighboursWeight (domain): Expr = "potential(const(float32(1), domain, float32)[domain/basisgrid], Parameters/FuncKernels/RooksNeighbours/Matr)[domain/grid_rel]";
+		attribute<float32>	Qi							(domain): expr = "float32(CaseData/JrcFactorData/Population/Qi_2018[domain/grid_rel])";
+		attribute<float32>	PotQi 						(domain): expr = "potential(CaseData/JrcFactorData/Population/Qi_2018, Parameters/FuncKernels/QueensNeighbours/Matr)[domain/grid_rel]";
+		//attribute<float32>  Qj							(Region): expr = "sum(Qi, RegionRel)";
+		attribute<float32>  Qj							(Region): expr = "sum(Qi, Regionrel)";
+		//attribute<float32>  Domestic_access				(domain): expr = "StartingState/dFactors/Domestic_access";
+		//attribute<float32>  Foreign_access				(domain): expr = "StartingState/dFactors/Foreign_access";
+		//attribute<float32>  Accessibility				(domain): expr = "StartingState/dFactors/Accessibility";
+		//attribute<float32>  TownAccess					(domain): expr = "StartingState/TownAccess";
+		
+		container dFactors: expr = "for_each_nedv(DynamicFactors/Name, DynamicFactors/StartExpr, domain, float32)";
+	}
+	
+	Container PrevState: expr = "StartingState";
+	Container ResultingState: expr = "StartingState";
+	
+	attribute<float32> Qj	 	  (Region): expr = "sum(CaseData/JrcFactorData/Population/Qi_2018, DestPopRasterLink)";
+	attribute<float32> difQj	  (Region): expr = "Qj - Sum(StartingState/Qi, RegionRel)";
+	unit<uint16> 	Region:		Expr = "DestPopClaimRegion";
+	unit<uint8>		LUT:		Expr = "Classifications/LU/ModelType";
+	
+	attribute<float32>  	randomfield (domain): expr = "rnd_uniform(1, domain, range(float32, float32(0), float32(1)))";
+	//attribute<float32> 	 	PopCapi		(domain): expr = "PrevState/LandUse <> 0[Classifications/LU/ModelType] ? Rules/UrbanizationThreshold: sum(Qj)";
+	// This container iteratively finds the best fitting scaling parameter k as a power of population potential Pi. It does so by minimizing the RMSE of modelled Qi
+	
+	//attribute<float32> set_k	(Region): 	expr = "const(Rules/k, Region, float32)";
+	
+	//attribute<float32> org_k	(Region): 	expr = "const(1, Region, float32)"; 
+	//attribute<float32> org_s	(Region): 	expr = "const(1, Region, float32)";	
+	parameter<uint16>  HowManySteps: 		expr = "uint16(15)";
+	
+	attribute<bool>	   large_popdecline (Region):   Expr = "Kj < 0f";
+	attribute<Float32> u 				(Region):	Expr = "const(rules/RelocationPerYear, Region, float32)";
+	attribute<Float32> r 				(Region):	Expr = "Float32(1.0) - u";
+	
+	attribute<float32> 		Kj			 		(Region) : Expr = "Qj - r*Qj";
+	
+	attribute<Region>   Regionrel (domain): 	expr = "DestPopRasterLink[domain/grid_rel]";
+	attribute<float32> observedQi (domain): 	expr = "StartingState/Qi";
+	//attribute<float32> ZoneMoransI(Region): 	expr = "corr(observedQi, potential(observedQi, Parameters/FuncKernels/RooksNeighbours/Matr), Regionrel)";
+	//attribute<float32> 		proto_Pressure 	 (domain): Expr = "= Rules/Population_Pressure";
+	//attribute<float32> 		Population_Pressure		 (domain): Expr = "max_elem(proto_Pressure, float32(0))";
+	//attribute<float32>		Pressure_dif  (domain): Expr = "Population_Pressure - PrevState/Qi";
+
+	//attribute<float32> 		proto_Distribution 		(domain): expr = "= Rules/Population_Distribution";
+	//attribute<float32>		proto_Distribution2		(domain): expr = "large_popdecline[RegionRel] ? MakeDefined(1f / proto_Distribution, 0f) : proto_Distribution";
+	attribute<float32>		Redistribution	   		(domain): expr = "observedQi";
+	//attribute<float32> 		proto_Population_Distribution	(domain): Expr = "(PrevState/Qi * r[Regionrel]) + MakeDefined(scaleSum(Redistribution, Regionrel, Kj), float32(0))";
+	//attribute<float32>		def_Redistribution		(domain): Expr = "!ModelType/IsUrban[PrevState/LandUse] && PrevState/Qi < 2[float32] ? float32(0) : Redistribution";
+	attribute<float32> 		Population_Distribution	(domain): Expr = "(PrevState/Qi * r[Regionrel]) + MakeDefined(scaleSum(Redistribution, Regionrel, Kj), float32(0))";
+	attribute<float32>		Distribution_dif  		(domain): Expr = "Population_Distribution - PrevState/Qi";
+	
+	container test_distribution_function: expr = "loop(IterateDistribution, uint16(10))";
+	
+	attribute<float32> test_dif (domain): expr = "test_distribution_function/LastIter/NextValue/Qi - StartingState/Qi";
+//	attribute<float32> org_modelQi(domain):		expr = "scalesum(FactorsPi, Regionrel, Qj)";
+	
+	
+//	attribute<float32> TAE_fit  	(Region):		expr = "sum(abs(org_modelQi - observedQi), Regionrel)"; // (TAE)
+//	attribute<float32> RMSE_fit	  	(Region):		expr = "sqrt(mean(sqr(org_modelQi - observedQi), Regionrel))"; // (RMSE)
+	
+	//container loopOptimalk: expr = "loop(optimizeTempl, HowManySteps)";
+	
+	container modelQi
+	{
+	
+		container fix_ghost_cells {
+			attribute<int32>	rnd_Qi			 (domain): Expr = "roundDown(Population_Distribution)";
+			attribute<float32>  Qi 				 (domain): expr = "float32(rnd_Qi)";
+			attribute<float32> 	Qj_hat			 (Region): expr = "sum(Qi, RegionRel)";
+			attribute<float32>  dif_Qj			 (Region): expr = "Qj - Qj_hat";
+			attribute<float32>	ghost_cell		 (domain): expr = "float32(PrevState/LandUse = ModelType/Urban && PrevState/Qi > 0f && rnd_Qi = 0i)";
+//					attribute<bool>  	ghost_adapt		 (Region): expr = "dif_Qj >= sum(ghost_cell, RegionRel)";
+			attribute<float32>  upd_rnd_Qi		 (domain): expr = "Qi + ghost_cell";
+		}
+		attribute<int32>  rnd_Qi 				(domain): expr = "max_elem(roundDown(fix_ghost_cells/upd_rnd_Qi), int32(0))";
+		
+		container discretelyAllocQi: expr = "loop(discrete_people_allocator, uint16(5))";
+	}
+	
+	container IterateDistribution: IsTemplate = "True"
+	{
+		parameter<uint16> NrIter;
+		
+		container currValue
+		{
+			attribute<float32> Qi (domain): expr = "getOptimalk/Population_Distribution";
+		}
+		Container Process
+		{
+			container DynamicComponent
+			{
+				container DynamicAccessibility
+				{
+					attribute<float32> domestic_access 		(domain): expr = "CaseData/NetworkAnalysis/dom_a[domain/grid_rel]";
+					attribute<float32> foreign_access	 	(domain): expr = "CaseData/NetworkAnalysis/for_a[domain/grid_rel]";
+					attribute<float32> Accessibility_grav	(domain): expr = "domestic_access + foreign_access";
+					attribute<float32> TownAccess			(domain): expr = "CaseData/NetworkAnalysis/DistTown[domain/grid_rel]";
+				}
+			
+			}
+			container ResultingState: expr = "PrevState";
+			container PrevState
+			{
+				attribute<Classifications/LU/ModelType> LandUse	(domain): expr = "OrgLandUse[domain/grid_rel]";
+				attribute<ModelType> LandUse_Grid(domain_grid): Expr = "CaseData/OrgLandUse";
+				attribute<float32>	   NeighboursWeight (domain): Expr = "potential(const(float32(1), domain, float32)[domain/basisgrid], Parameters/FuncKernels/RooksNeighbours/Matr)[domain/grid_rel]";
+				attribute<float32> Qi 		(domain): expr = "currValue/Qi ";
+				attribute<float32> PotQi	(domain): expr = "potential(Qi[domain/basisgrid], Parameters/FuncKernels/QueensNeighbours/Matr)[domain/grid_rel]";
+			
+				container dFactors: expr = "for_each_nedv(DynamicFactors/Name, DynamicFactors/DynExpr, domain, float32)";
+			}
+			attribute<float32> 		proto_Pressure 	 (domain): Expr = "= Rules/Population_Pressure";
+			attribute<float32> 		PopulationPressure		 (domain): Expr = "max_elem(proto_Pressure, float32(0))";
+			attribute<float32>		Pressure_dif  (domain): Expr = "Pressure - PrevState/Qi";
+				
+			attribute<float32> 		proto_Distribution 		(domain): expr = "= Rules/Population_Distribution";
+			attribute<float32>		Redistribution	   		(domain): expr = "proto_Distribution - min(proto_Distribution) + (StartingState/Qi - PrevState/Qi)";
+			attribute<float32> 		proto_Population_Distribution	(domain): Expr = "(PrevState/Qi * r[Regionrel]) + MakeDefined(scaleSum(Redistribution, Regionrel, Kj), float32(0))";
+			attribute<float32>		def_Redistribution		(domain): Expr = "!ModelType/IsUrban[PrevState/LandUse] && PrevState/Qi < 2[float32] ? float32(0) : Redistribution";
+			attribute<float32> 		Population_Distribution	(domain): Expr = "(PrevState/Qi * r[Regionrel]) + MakeDefined(scaleSum(def_Redistribution, Regionrel, Kj), float32(0))";
+			attribute<float32>		Distribution_dif  		(domain): Expr = "Population_Distribution - PrevState/Qi";
+		}
+		Container nextValue
+		{
+			attribute<float32> Qi (domain): expr = "Process/Population_Distribution";
+		}
+	}
+	
+	container optimizeTempl: IsTemplate = "true"
+	{
+		parameter<uint16> NrIter;	
+
+		container currValue 
+		{
+			attribute<float32> best_fit	(Region): 	expr = "getOptimalk/org_fit";
+			attribute<float32> best_k	(Region): 	expr = "getOptimalk/org_k";
+			attribute<float32> curr_s	(Region): 	expr = "getOptimalk/org_s";
+		}
+		container nextValue
+		{
+			attribute<float32> best_fit	(Region):	expr = "min_elem(Currvalue/best_fit, Process/down_fit, Process/up_fit)";
+			attribute<float32> best_k	(Region):	expr = "switch("
+				"case(best_fit = Currvalue/best_fit, 	Currvalue/best_k), "
+				"case(best_fit = Process/down_fit, 		Currvalue/best_k - Currvalue/curr_s), "
+				"case(best_fit = Process/up_fit, 		Currvalue/best_k + Currvalue/curr_s), Currvalue/best_k)";
+			attribute<float32> curr_s	(Region):	expr = "CurrValue/curr_s > float32(0.01) ? (best_k = Currvalue/best_k ? Currvalue/curr_s / float32(2): Currvalue/curr_s): float32(0)";
+		}
+		container Process
+		{
+			attribute<float32> down_Pi				(domain): expr = "MakeDefined(orgPi ^ (Currvalue/best_k[Regionrel] - Currvalue/curr_s[Regionrel]), 0[float32])";
+			attribute<float32> up_Pi				(domain): expr = "MakeDefined(orgPi ^ (Currvalue/best_k[Regionrel] + Currvalue/curr_s[Regionrel]), 0[float32])";
+			
+			attribute<float32>  down_Qi 		(domain): expr = "scaleSum(down_Pi, Regionrel, Qj)";
+			attribute<float32>	up_Qi			(domain): expr = "scaleSum(up_Pi, Regionrel, Qj)";
+			
+			container down_alloc:	expr = "discrete_people_allocator(down_Pi)";
+			container up_alloc:		expr = "discrete_people_allocator(up_Pi)";
+			
+			// TAE variants
+			attribute<float32> TAE_down_fit	(Region):  expr = "sum(Abs(float32(down_Qi) 	 - 		observedQi), Regionrel)";
+			attribute<float32> TAE_up_fit	(Region):  expr = "sum(Abs(float32(up_Qi) 	 - 		observedQi), Regionrel)";
+			
+			// RMSE variants
+			attribute<float32> RMSE_down_fit	(Region):  expr = "sqrt(mean(sqr(float32(down_Qi) 	 - 		observedQi), Regionrel))";
+			attribute<float32> RMSE_up_fit		(Region):  expr = "sqrt(mean(sqr(float32(up_Qi) 	 - 		observedQi), Regionrel))";
+			
+			attribute<float32> down_fit		(Region): expr = "Rules/RMSE ? RMSE_down_fit: TAE_down_fit";
+			attribute<float32> up_fit		(Region): expr = "Rules/RMSE ? RMSE_up_fit: TAE_up_fit";
+		}
+	}
+
+	// discrete allocation of people is based on rounding down continuous people, which leads to a residual than adding one person to the 
+	container discrete_people_allocator: IsTemplate = "True"
+	{
+		parameter<uint16> NrIter;
+		
+		container currValue
+		{
+			attribute<float32>  Qi 				(domain): expr = "float32(rnd_Qi)";
+			attribute<float32> 	Qj_hat			(Region): expr = "sum(Qi, RegionRel)";
+			attribute<float32>  dif_Qj			(Region): expr = "Qj - Qj_hat";
+			parameter<uint32> 	regionalCountErrors: 	expr = "sum(uint32(Abs(Qj_hat - Qj) > float32(5)))";
+			parameter<uint32> 	negativePeopleErrors:	expr = "sum(uint32(Qi < float32(0)))";
+			parameter<uint32>	numErrs:				expr = "regionalCountErrors + negativePeopleErrors";
+		}
+		container nextValue
+		{
+			attribute<float32>	Qi (domain): 			expr = "CurrValue/numErrs = 0 ? CurrValue/Qi: float32(Process/Qi)";
+			attribute<float32> 	Qj_hat			(Region): expr = "sum(Qi, RegionRel)";
+			attribute<float32>  dif_Qj			(Region): expr = "Qj - Qj_hat";
+			parameter<uint32> 	regionalCountErrors: 	expr = "sum(uint32(Abs(Qj_hat - Qj) > float32(5)))";
+			parameter<uint32> 	negativePeopleErrors:	expr = "sum(uint32(Qi < float32(0)))";
+			parameter<uint32>	numErrs:				expr = "regionalCountErrors + negativePeopleErrors";
+		}
+		container Process
+		{
+			attribute<int32>	rnd_Qi			(domain): Expr = "roundDown(CurrValue/Qi)"; // 
+			attribute<float32>  Scale			(domain): Expr = "rnd_Qi >= int32(1) ? (Redistribution + randomfield)^float32(-1): float32(1) + randomfield"; // + randomfield to prevent that scalethreshold = 1.
+			attribute<int32>	proto_Qj		(Region):  Expr = "sum(rnd_Qi, Regionrel)";
+			attribute<int32> 	Qj_residual		(Region):  Expr = "round(Qj) - sum(rnd_Qi, Regionrel)";
+			//attribute<int32>	Qj_step			(Region):  Expr = "Qj_residual < int32(0) ? int32(-1) * : int32(1)";
+			attribute<int32>	Qj_step			(Region):  Expr = "MakeDefined(Qj_residual / sum(int32(Selected), RegionRel), int32(0))";
+			attribute<float32> 	ScaleThreshold	(Region):  Expr = "min_elem(nth_element(Scale, uint32(Abs(Qj_residual)), Regionrel), float32(1))";
+			attribute<int32> 	Qi				(domain): Expr = "Scale < ScaleThreshold[Regionrel] ? max_elem(rnd_Qi + Qj_step[Regionrel], int32(0)): rnd_Qi";
+			attribute<bool>		Selected		(domain): Expr = "Scale < ScaleThreshold[Regionrel]";
+		}
+	}
+//	attribute<float32> 	proto_k 	(Region): 	expr = "set_k < float32(0) ? loopOptimalk/lastIter/nextValue/best_k: set_k";	
+//	attribute<float32>  def_k		(Region): 	expr = "proto_k * Rules/k_adj_factor";
+	parameter<bool>		allocation_OK:			expr = "modelQi/discretelyAllocQi/lastIter/nextValue/numErrs == 0";
+	attribute<int32> 	modelledQi	(domain): 	expr = "int32(modelQi/discretelyAllocQi/lastIter/nextValue/Qi)", IntegrityCheck = "allocation_OK";
+	//parameter<int32>	pct_99_Qi:				expr = "nth_element(modelledQi, uint32(float32(0.99) * float32(#domain)))";
+	//attribute<bool>		ProbableTouristFacility (domain): expr = "PrevState/LandUse = 0[Classifications/LU/ModelType] && float32(modelledQi) <= rules/UrbanizationThreshold"; //&& JrcFactorData/CloseToSea_1km[domain/grid_rel]";
+}

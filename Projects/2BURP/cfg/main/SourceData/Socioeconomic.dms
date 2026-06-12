@@ -1,0 +1,44 @@
+container Socioeconomic
+{
+	unit<ipoint> TravelTime :
+	StorageName     = "%ToBURPDataDir%/Socioeconomic/TravelTime/TravelTime_minutes_int.tif",
+	StorageType     = "gdal.grid",
+	Source          = "PBL Database: 	Y:\Kennisbasis\Leefomgeving\data_Leefomgeving\Data\Project\Temp M500337AA\Simcity\Modellenwerk2\Basisdata\TravelTime.gdb"
+					  "Raster: 	tt_pop50k_30sec"
+					  "Result of analyses at road-network (GRIP) and POI-file (tt_pop50k_30secCenterpoint --> 8407 records world)"
+					  "Database:	Y:\data\PBLbase\Data\GRIP_global_roads_vs2.gdb"
+					  "Feature Class:	grip_global_vs2_2009_new",
+	StorageReadOnly = "True",
+	DialogData      = "Geography/LatLong"
+	{
+		attribute<uint8>   GridData   (Geography/domain);
+		attribute<float32> ReadData32 (Geography/domain) :=  value(GridData,float32);
+		attribute<uint8>   TravelTime (Geography/domain) :=  MakeDefined(GridData,60b);
+	}
+	
+	container access_to_settlements 
+	{
+		container readgrids:= for_each_ne(gridslist/label, 'load_access_grids('+quote(gridslist/path)+')');
+
+		unit<uint32> gridslist: nrofrows = 3 
+		{ 
+			// swap to 12 when towns_td is added
+			attribute<string> path: ['cities_td_uint8','towns_td_uint8','villages_td_uint8'];
+			attribute<string> label: ['cities', 'towns','villages'];
+			attribute<bool>	  dist:= const(True,.,bool);
+		}
+		
+		template load_access_grids
+		{
+			parameter<string> inpath;
+			
+			unit<wpoint> infile: Storagename = "= '%ToBURPDataDir%/Socioeconomic/Access_To_Settlements/v2023_P2020/'+inpath+'.tif'", StorageType     = "gdal.grid", StorageReadOnly = "True", DialogData      = "Geography/WorldMollweide" {
+				attribute<uint8>   GridData;
+				attribute<uint8>   ReadData (Geography/Mollweide_grid);
+				attribute<uint32>   ReadData_LL (Geography/domain):= uint32(ReadData[Geography/domain/mollweide_rel]);
+			}
+		}
+	}
+	
+	#include <infrastructure.dms>
+}

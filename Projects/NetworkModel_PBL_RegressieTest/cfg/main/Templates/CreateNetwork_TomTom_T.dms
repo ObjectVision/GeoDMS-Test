@@ -1,0 +1,213 @@
+Template CreateNetwork_TomTom_T 
+{
+	// begin case parameters
+	unit<uint32> OrgDomain;
+	unit<uint32> DestDomain;
+	unit<uint32> RoadDomain;
+	unit<uint32> Junctions;
+	// end case parameters
+	container root := .;
+
+	unit<uint32> Locations := union_unit(orgDomain, destDomain)
+	{
+		attribute<rdc>                             geometry                       := union_data(.,orgDomain/geometry, destDomain/geometry);
+		attribute<bool>                            IsOrg                          := union_data(.,const(TRUE , OrgDomain), const(FALSE,DestDomain));
+		attribute<bool>                            IsDest                         := union_data(.,const(FALSE, OrgDomain), const(TRUE ,DestDomain));
+	}
+	
+	unit<uint32> UniqueLocations    := unique(Locations/geometry) 
+	{ 
+		attribute<rdc>                          geometry         := values;
+		attribute<Locations>                    Locations_rel    := rlookup(geometry, Locations/geometry);
+		attribute<OrgDomain>                    OrgDomain_rel    := rlookup(geometry, orgDomain/geometry);
+		attribute<bool>                         IsOrg            := rjoin(geometry, Locations/geometry, Locations/IsOrg);
+		
+		attribute<uint64>                       F_JNCTID         := max(Junctions/JNCTID) + 1000000u64 + uint64(id(.));
+		attribute<uint64>                       T_JNCTID         := Closest_JNCTID;
+		
+		//for OD connection lines:
+		unit<uint32> uqGeoJunctions := CreateInitialWorkingNetwork/Road_linestrings/uqGeoJunctions;
+		attribute<uqGeoJunctions>               Closest_Junction := capacitated_connect(uqGeoJunctions/geometry, float64(uqGeoJunctions/Connectable), geometry, const(1d,.));
+		attribute<uint64>                       Closest_JNCTID   := uqGeoJunctions/JNCTID[Closest_Junction];
+		attribute<rdc>                          OD_line (arc)    := points2sequence(GenConnLines/Points, GenConnLines/Seq, GenConnLines/Ord);
+		attribute<m>                            length           := arc_length(OD_line, m);
+		attribute<float32>                      DestWeight       := const(1f,.);
+		attribute<rdc>                          Clostest_JNCT_geometry := uqGeoJunctions/geometry[Closest_Junction];
+		
+		unit<uint32> GenConnLines := union_unit(.,.)
+		{
+			attribute<rdc>             Points := union_data(., geometry, uqGeoJunctions/geometry[Closest_Junction]);
+			attribute<..>              Seq    := union_data(., id(..), id(..));
+			attribute<uint32>          Ord    := union_data(., const(0,..,uint32), const(1,..,uint32));
+		}  
+	}
+	
+	container CreateInitialWorkingNetwork
+	{
+		unit<uint32> Roads_with_unconnected_subnetworks_w_CarRoads := RoadDomain
+		{
+			attribute<bool>                   IsCarRoad              := Direction != /Classifications/Directions/V/nocars;
+		
+			container Speed_per_ImpedanceType :=
+				for_each_nedv(
+					ModelParameters/Advanced/CongestionTimes/name
+					,'CalcTimes/'+ModelParameters/Advanced/CongestionTimes/name+'/PerMoment/'+ModelParameters/Advanced/CongestionSpeed_DaySelection+'/KPH'
+					, .
+					, km_hr
+				)
+			{
+				attribute<km_hr> Freeflow (..) := ='CalcTimes/'+ModelParameters/Advanced/CongestionTimes/name+'/PerMoment/freeflow/KPH';
+			}
+		}
+		
+		unit<uint32> Roads_with_unconnected_subnetworks_wo_CarRoads := select(Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad)
+		{
+			attribute<rdc>                geometry (arc)       := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/geometry);
+			attribute<bool>               IsOneDirection       := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/IsOneDirection);
+			attribute<m>                  Meters               := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/Meters);
+			attribute<Bool >              Connectable          := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/Connectable);
+			
+			attribute<uint64>             F_JNCTID             := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/F_JNCTID_directed);
+			attribute<uint64>             T_JNCTID             := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/T_JNCTID_directed);
+			attribute<Junctions>          F_JNCT_rel           := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/F_JNCT_rel);
+			attribute<Junctions>          T_JNCT_rel           := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/T_JNCT_rel);
+			
+			container Speed_per_ImpedanceType :=
+				for_each_nedv(
+					ModelParameters/Advanced/CongestionTimes/name
+					,'collect_by_cond(Roads_with_unconnected_subnetworks_wo_CarRoads,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/Speed_per_ImpedanceType/'+ModelParameters/Advanced/CongestionTimes/name+')'
+					, .
+					, km_hr
+				)
+			{
+				attribute<km_hr> Freeflow (..) := collect_by_cond(Roads_with_unconnected_subnetworks_wo_CarRoads,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/Speed_per_ImpedanceType/Freeflow);
+			}
+
+			container Connectiveness := Templates/Check_Connectiveness_T(.,Junctions, F_JNCT_rel, T_JNCT_rel);
+		}
+		
+		attribute<bool> Roads_isConnected (Roads_with_unconnected_subnetworks_wo_CarRoads) := Roads_with_unconnected_subnetworks_wo_CarRoads/Connectiveness/IsVerbonden;
+
+		unit<uint32> Road_linestrings := select(Roads_isConnected)
+		{
+			attribute<rdc>                geometry (arc) := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/geometry);
+			attribute<bool>               IsOneDirection := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/IsOneDirection);
+			attribute<Bool>               Connectable    := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/Connectable);
+			attribute<m>                  Meters         := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/Meters);
+			attribute<Junctions>          F_JNCT_rel     := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/F_JNCT_rel);
+			attribute<Junctions>          T_JNCT_rel     := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/T_JNCT_rel);
+			
+			attribute<uint64>          F_JNCTID     := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/F_JNCTID);
+			attribute<uint64>          T_JNCTID     := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/T_JNCTID);
+			
+			container Speed_per_ImpedanceType :=
+				for_each_nedv(
+					ModelParameters/Advanced/CongestionTimes/name
+					, 'Collect_by_cond(..,Roads_isConnected,Roads_with_unconnected_subnetworks_wo_CarRoads/Speed_per_ImpedanceType/'+ModelParameters/Advanced/CongestionTimes/name+')'
+					, .
+					, km_hr
+				)
+			{
+				attribute<km_hr> Freeflow (..) := Collect_by_cond(..,Roads_isConnected,Roads_with_unconnected_subnetworks_wo_CarRoads/Speed_per_ImpedanceType/Freeflow);
+			}
+			
+			//needed for OD-connection lines
+			unit<uint32> UseableJunctions := union_unit(.,.)
+			{
+				attribute<rdc>             geometry         := union_data(., Junctions/geometry[F_JNCT_rel], Junctions/geometry[T_JNCT_rel]);
+				attribute<uint64>          JNCTID           := union_data(., F_JNCTID, T_JNCTID);
+				attribute<uqGeoJunctions>  UqGeoJunctionsID := rlookup(geometry, uqGeoJunctions/geometry);
+				attribute<bool>            Connectable      := rjoin(JNCTID, Road_linestrings/F_JNCTID, Road_linestrings/Connectable) || rjoin(JNCTID, Road_linestrings/T_JNCTID, Road_linestrings/Connectable);
+			}  
+			//needed for OD-connection lines
+			unit<uint32> uqGeoJunctions := unique(UseableJunctions/geometry)
+			{
+				attribute<rdc>              geometry           := values;
+				attribute<uint64>           JNCTID             := first(UseableJunctions/JNCTID, UseableJunctions/UqGeoJunctionsID);
+				attribute<UseableJunctions> Junctions_rel      := first(id(UseableJunctions), UseableJunctions/UqGeoJunctionsID);
+				attribute<float64>          Connectable        := float64(any(UseableJunctions/Connectable, UseableJunctions/UqGeoJunctionsID));
+			}
+		}
+
+		unit<uint32> LinkSet := union_unit(Road_linestrings, UniqueLocations)
+		{
+			attribute<rdc>        geometry(arc)    := union_data(., Road_linestrings/geometry, UniqueLocations/OD_line);
+			attribute<bool>       IsOneDirection   := union_data(., Road_linestrings/IsOneDirection, const(FALSE,UniqueLocations));
+			attribute<m>          Meters           := union_data(., Road_linestrings/Meters, UniqueLocations/Length);
+			attribute<uint64>     F_JNCTID         := union_data(., Road_linestrings/F_JNCTID, UniqueLocations/F_JNCTID);
+			attribute<uint64>     T_JNCTID         := union_data(., Road_linestrings/T_JNCTID, UniqueLocations/T_JNCTID);
+			
+			attribute<rdc>        FromPoint        := union_data(., rjoin(Road_linestrings/F_JNCTID, Junctions/JNCTID, Junctions/geometry), UniqueLocations/geometry);
+			attribute<rdc>        ToPoint          := union_data(., rjoin(Road_linestrings/T_JNCTID, Junctions/JNCTID, Junctions/geometry), UniqueLocations/Clostest_JNCT_geometry);
+			
+			attribute<NodeSet>    F1               := rlookup(F_JNCTID, NodeSet/JNCTID);
+			attribute<NodeSet>    F2               := rlookup(T_JNCTID, NodeSet/JNCTID);
+			
+			container Speed_per_ImpedanceType :=
+				for_each_nedv(
+					ModelParameters/Advanced/CongestionTimes/name
+					, 'union_data(.., MakeDefined(Road_linestrings/Speed_per_ImpedanceType/'+ModelParameters/Advanced/CongestionTimes/name+', ModelParameters/Advanced/CarDefaultSpeed_low), const(ModelParameters/Advanced/CarDefaultSpeed_low, UniqueLocations))'
+					, .
+					, km_hr
+				)
+			{
+				attribute<km_hr> Freeflow (LinkSet) := union_data(.., MakeDefined(Road_linestrings/Speed_per_ImpedanceType/Freeflow, ModelParameters/Advanced/CarDefaultSpeed_low), const(ModelParameters/Advanced/CarDefaultSpeed_low, UniqueLocations));
+			}
+			
+			attribute<km>      LengthKm       := convert(meters, km);
+			
+			container Impedance_per_ImpedanceType :=
+				for_each_nedv(
+					ModelParameters/Advanced/CongestionTimes/name
+					, 'convert(MakeDefined(convert((LengthKm / Speed_per_ImpedanceType/'+ModelParameters/Advanced/CongestionTimes/name+'), min_f), 0.0001[min_f]), s_f) + Float32(CorrectImpedanceForCrossroads/impedance_Start + CorrectImpedanceForCrossroads/impedance_End)'
+					, .
+					, s_f
+				)
+			{
+				attribute<s_f> Freeflow (LinkSet) := convert(MakeDefined(convert((LengthKm / Speed_per_ImpedanceType/freeflow), min_f), 0.0001[min_f]), s_f) + Float32(CorrectImpedanceForCrossroads/impedance_Start + CorrectImpedanceForCrossroads/impedance_End);
+			}
+		}
+
+		unit<uint32> NodeSet := union_unit(Junctions, UniqueLocations)
+		{
+			attribute<uint64> JNCTID           := union_data(., Junctions/JNCTID,   UniqueLocations/F_JNCTID);
+			attribute<rdc>    geometry         := union_data(., Junctions/geometry, UniqueLocations/geometry);
+			
+			attribute<uint32> NrConnectedLinks := pcount(LinkSet/F1) + pcount(LinkSet/F2);
+			
+			attribute<.>   OrgNode_rel  (OrgDomain)  := rlookup(OrgDomain/geometry,  geometry);
+			attribute<.>   DestNode_rel (DestDomain) := rlookup(DestDomain/geometry, geometry);	
+		}
+					
+		container CorrectImpedanceForCrossroads
+		// hiermee wordt voor ieder begin en eind node het aantal geconnecte links bepaald
+		// dit bepaalt of het een bocht (2 links), zijweg (3 links), kruising (4 links) of complexe kruising (meer dan 4 links) is
+		// afhankelijk van dit aantal wordt een aantal seconden opgeteld bij de totale impedance
+		{
+			// helft van de opgegeven waarden omdat er zowel bij begin als einde een factor wordt opgeteld
+			parameter<s>       Impedance2Links    := 0[s];
+			parameter<s>       Impedance3Links    := 2[s];
+			parameter<s>       Impedance4Links    := 5[s];
+			parameter<s>       Impedance_gt4Links := 6[s];
+
+			attribute<uint32>  Start (LinkSet)     := NodeSet/NrConnectedLinks[LinkSet/F1];
+			attribute<uint32>  End   (LinkSet)     := NodeSet/NrConnectedLinks[LinkSet/F2];
+		
+			attribute<s> impedance_Start (LinkSet):=
+				switch(
+					 case(Start <= 2, Impedance2Links)
+					,case(Start  = 3, Impedance3Links)
+					,case(Start  = 4, Impedance4Links)
+					,Impedance_gt4Links
+				);
+		
+			attribute<s> impedance_End (LinkSet):=
+				switch(
+					 case(End <= 2, Impedance2Links)
+					,case(End  = 3, Impedance3Links)
+					,case(End  = 4, Impedance4Links)
+					,Impedance_gt4Links
+				);
+		}
+	}
+}

@@ -1,0 +1,262 @@
+container Analysis: using = "Classifications;units;Geography;Classifications/LandUsePreparation;Classifications/Vastgoed"
+{ 
+	container StArea := ='BaseData/StArea'+/ModelParameters/StAreaRef;
+
+	unit<uint32> Vbo_ := SourceData/Vastgoed/BAG/VBOs/src;
+	unit<uint32> Vbo  := SourceData/Vastgoed/BAG/vbos/GebruiksdoelSets/woon/GebruiksdoelSet; //BR@Jip, 190118, NEEDS WORK: moet Vow zijn. Graag veranderen.
+	unit<uint32> Pand := SourceData/Vastgoed/BAG/Panden/pand;
+	// unit<uint8>  WP   := Vastgoed/WP;
+	unit<uint8>  WP4  := Vastgoed/WP4;
+	// unit<uint8>  GroenFunctie  := Classifications/Groen/Functie;
+	unit<uint8>  WP_groen  := Vastgoed/WP_groen;
+	unit<uint8>  WP2  := Vastgoed/WP2;
+	
+	container BaseData
+	{
+		container StAreaMRA
+		{
+			attribute<bool> Per_domain_grid    (domain_grid)    := = 'IsDefined(Geography/RegioIndelingen/MRA8/per_'+/domain_grid_ref+')';
+			attribute<bool> Per_SrcDomain_grid (SrcDomain_grid) := = 'IsDefined(Geography/RegioIndelingen/MRA8/per_'+/SrcDomain_grid_ref+')';
+		
+			attribute<bool> Per_MRA1           (Regioindelingen/MRA1)                  := RegioIndelingen/MRA1/MRA1_rel == 0[Regioindelingen/MRA1];
+			attribute<bool> Per_MRA            (Regioindelingen/MRA8)                  := RegioIndelingen/MRA8/MRA1_rel == 0[Regioindelingen/MRA1];
+			attribute<bool> Per_NVM            (Regioindelingen/NVM)                   := RegioIndelingen/NVM/MRA1_rel == 0[Regioindelingen/MRA1];
+			attribute<bool> Per_Gemeente       (Regioindelingen/Gemeente/Gemeente2018) := IsDefined(Regioindelingen/Gemeente/Gemeente2018/MRA_rel);
+			attribute<bool> Per_LMSSubzone     (Regioindelingen/LMSSubzone)            := Per_Gemeente[RegioIndelingen/LMSSubzone/relaties/Gemeente2018];
+		}
+		
+		container StAreaNL
+		{
+			attribute<bool> Per_Gemeente       (Regioindelingen/Gemeente/Gemeente2019) : = const(true, Regioindelingen/Gemeente/Gemeente2019);
+			attribute<bool> Per_LMSSubzone     (Regioindelingen/LMSSubzone) := Per_Gemeente[RegioIndelingen/LMSSubzone/relaties/Gemeente2019];
+			attribute<bool> Per_domain_grid    (domain_grid) : = = 'Per_Gemeente[RegioIndelingen/Gemeente/Gemeente2019/per_'+/domain_grid_ref+']';
+			attribute<bool> Per_SrcDomain_grid (SrcDomain_grid) := = 'Per_Gemeente[RegioIndelingen/Gemeente/Gemeente2019/per_'+/SrcDomain_grid_ref+']';
+		}
+		
+		unit<uint32> SrcRegio := /SourceData/Claims/SrcRegio
+		{
+			attribute<.> id := id(.);
+			attribute<.> per_domain_grid (domain_grid) := SourceData/Claims/SrcRegio/per_rdc_100m;
+		}
+		
+		attribute<Classifications/Vastgoed/WOZ> PerWOZKlasse (domain_grid) := SourceData/Vastgoed/WOZ/Y2017/PerWOZKlasse;
+	
+		#include <UAI.dms> // urban attractivity index
+		#include <PrijsIndex.dms>
+		#include <RegionalAvgCharacteristics.dms>
+		#include <Verwervingskosten.dms>
+		#include <Sloopkosten.dms>
+		#include <Grondproductiekosten.dms>
+		#include <Bouwkosten.dms>
+		#include <Warmtelasten.dms>
+		#include <Opbrengsten.dms>
+		
+		container ResidueleWaarde
+		{
+			container Wonen := 
+				for_each_ind(
+					'nedvc',
+					OntwikkelPakket/name,
+					'('
+						'  Opbrengsten/Wonen/'+OntwikkelPakket/name+
+						'- Grondproductiekosten/Results/Totaal/'+/ModelParameters/grondproductie_kosten_variant+
+						'- Bouwkosten/'+OntwikkelPakket/name+
+					')[Eur_ha]',
+					domain_grid, Eur_ha,
+					'Classified_per_OP/'+OntwikkelPakket/name+'/Target_9K/ClassBreaks'
+				), FreeData = "False"
+			{
+				container Positief := 
+					for_each_ind(
+						'nedvc',
+						OntwikkelPakket/name,
+						'ResidueleWaarde/'+OntwikkelPakket/name+' >= 0[Eur_ha] ?
+							ResidueleWaarde/'+OntwikkelPakket/name+' :
+							(0/0)[Eur_ha]',
+						domain_grid, Eur_ha,
+						'Classified_per_OP/'+OntwikkelPakket/name+'/Target_9K/ClassBreaks'
+					), FreeData = "False"
+				{
+					attribute<Eur_ha> max_elem (domain_grid) := = 'max_elem('+AsItemList(OntwikkelPakket/name)+')', cdf = "Classified_per_OP/App_HD_hoog/Target_9K/ClassBreaks";
+					
+					attribute<OntwikkelPakket> ArgMax (domain_grid) :=
+						= 'IsDefined(max_elem) ?
+							ArgMax('+AsItemList(OntwikkelPakket/name)+')[OntwikkelPakket] :
+							(0/0)[OntwikkelPakket]';
+				}
+				
+				container Classified_per_OP := 
+					for_each_ne(
+						OntwikkelPakket/name
+						, 'Templates/Classify_9K_EurHa(ResidueleWaarde/Positief/'+OntwikkelPakket/name+', domain_grid)'
+					);
+			}
+			container Werken := 
+				for_each_ind(
+					// 'nedvc',
+					'nedv'
+					, Actor/AllocSector/name
+					, '('
+						'  Opbrengsten/Werken/'+Actor/AllocSector/name+
+						'- Grondproductiekosten/Results/Totaal/'+/ModelParameters/grondproductie_kosten_variant+
+						'- Bouwkosten/'+Actor/AllocSector/name+
+					')'
+					, domain_grid
+					, Eur_ha
+					// ,'Classified_per_OP/'+Actor/AllocSector/name+'/Target_9K/ClassBreaks'
+				), FreeData = "False"
+			{
+				container Positief := 
+					for_each_ind(
+						'nedvc',
+						Actor/AllocSector/name,
+						'ResidueleWaarde/'+Actor/AllocSector/name+' >= 0[Eur_ha] ?
+							ResidueleWaarde/'+Actor/AllocSector/name+' :
+							(0/0)[Eur_ha]',
+						domain_grid, Eur_ha,
+						'Classified_per_OP/'+Actor/AllocSector/name+'/Target_9K/ClassBreaks'
+					), FreeData = "False"
+				{
+					attribute<Eur_ha> max_elem (domain_grid) := = 'max_elem('+AsItemList(Actor/AllocSector/name)+')', cdf = "Classified_per_OP/App_HD_hoog/Target_9K/ClassBreaks";
+					
+					attribute<Actor/AllocSector> ArgMax (domain_grid) :=
+						= 'IsDefined(max_elem) ?
+							ArgMax('+AsItemList(Actor/AllocSector/name)+')[Actor/AllocSector] :
+							(0/0)[Actor/AllocSector]';
+				}
+				
+				container Classified_per_OP := 
+					for_each_ne(
+						Actor/AllocSector/name
+						, 'Templates/Classify_9K_EurHa(ResidueleWaarde/Positief/'+Actor/AllocSector/name+', domain_grid)'
+					);
+			}
+		}
+		container ExploitatieSaldo := 
+			for_each_ind(
+				'nedvc'
+				, OntwikkelPakket/name
+				, '(ResidueleWaarde/Wonen/'+OntwikkelPakket/name+'- Verwervingskosten/Totaal)'
+				, domain_grid
+				, Eur_ha
+				, 'Classified_per_OP/'+OntwikkelPakket/name+'/Target_9K/ClassBreaks'
+			), FreeData = "False"
+		{
+			attribute<EUR_ha> Winkel    (domain_grid) := ResidueleWaarde/Werken/Winkel - Verwervingskosten/Totaal ;
+			attribute<EUR_ha> Kantoor   (domain_grid) := ResidueleWaarde/Werken/Kantoor - Verwervingskosten/Totaal ;
+			attribute<EUR_ha> Industrie (domain_grid) := ResidueleWaarde/Werken/Industrie - Verwervingskosten/Totaal ;
+			
+			container Positief := 
+				for_each_ind(
+					'nedvc',
+					OntwikkelPakket/name,
+					'ExploitatieSaldo/'+OntwikkelPakket/name+' >= 0[Eur_ha] ?
+						ExploitatieSaldo/'+OntwikkelPakket/name+' :
+						(0/0)[Eur_ha]',
+					domain_grid, Eur_ha,
+					'Classified_per_OP/'+OntwikkelPakket/name+'/Target_9K/ClassBreaks'
+				), FreeData = "False"
+			{
+				attribute<Eur_ha> max_elem (domain_grid) := = 'max_elem('+AsItemList(OntwikkelPakket/name)+')', cdf = "Classified_per_OP/App_HD_hoog/Target_9K/ClassBreaks";
+				
+				attribute<OntwikkelPakket> ArgMax (domain_grid) :=
+					= 'IsDefined(max_elem) ?
+						ArgMax('+AsItemList(OntwikkelPakket/name)+')[OntwikkelPakket] :
+						(0/0)[OntwikkelPakket]';
+			}
+			
+			container Classified_per_OP := 
+				for_each_ne(
+					OntwikkelPakket/name
+					, 'Templates/Classify_9K_EurHa(ExploitatieSaldo/Positief/'+OntwikkelPakket/name+', domain_grid)'
+				);
+		}
+		
+		#include <Groen.dms>
+		#include <Duurzaamheid.dms>
+		#include <OntwikkelOpties.dms>
+		#include <Banen_ruimtebeslag.dms> 
+
+		
+		container Eigendom
+		{
+			container Src := /SourceData/Actoren/Grondposities;
+			
+			attribute<EigendomK> Per_SrcDomain_grid (SrcDomain_grid) := Src/Per_SrcDomain_grid_EigendomK_rel;
+			attribute<bool> VanNatuurOrganisatie    (SrcDomain_grid) := Per_SrcDomain_grid == EigendomK/V/NatuurOrganisatie;
+			attribute<bool> VanWaterschap           (SrcDomain_grid) := Per_SrcDomain_grid == EigendomK/V/Waterschap;
+			
+			attribute<EigendomK> Per_domain_grid (domain_grid) := Src/Per_Domain_grid_EigendomK_rel;
+		}
+		
+		attribute<bool> AndersBouwen         (domain_grid) := /SourceData/Bodem/DraagkrachtKwel/AndersBouwen;
+		attribute<bool> BouwenMetMaatregelen (domain_grid) := /SourceData/Bodem/DraagkrachtKwel/BouwenMetMaatregelen;
+		
+		attribute<Verblijfsobject> VBOsBasisjaar (domain_grid) := VBO_/count_vbo_alle[Verblijfsobject]
+		{
+			attribute<m2_woning> Oppervlakte (domain_grid) := sum(VBO_/oppervlakte_trunc, VBO_/domain_grid_rel);
+		}
+		
+		container Grondgebruik
+		{
+			container Src := /SourceData/Grondgebruik/BBG/dominant;
+			
+			container Per_domain_grid
+			{
+				attribute<bool> HeeftGrootschaligeInfra (domain_grid) := (
+					Src/per_domaingrid_perKlasse/J2015/semiverhard_overig_terrein ||
+					Src/per_domaingrid_perKlasse/J2015/spoorwegen ||
+					Src/per_domaingrid_perKlasse/J2015/hoofdweg ||
+					Src/per_domaingrid_perKlasse/J2015/vliegveld ||
+					Src/per_domaingrid_perKlasse/J2015/afgesloten_zeearm ||
+					Src/per_domaingrid_perKlasse/J2015/Rijn_en_Maas ||
+					Src/per_domaingrid_perKlasse/J2015/Randmeer
+					);
+					
+				attribute<CBSKlasse> Basisjaar (domain_grid) := Src/per_domain_grid/j2015;
+				
+				attribute<bool> IsWerklocatie (domain_grid) :=
+					Basisjaar == CBSKlasse/V/detailhandel_en_horeca          ||
+					Basisjaar == CBSKlasse/V/openbare_voorzieningen          ||
+					Basisjaar == CBSKlasse/V/sociaal_culturele_voorzieningen ||
+					Basisjaar == CBSKlasse/V/bedrijfsterreinen;
+				
+				attribute<bool> IsWoonlocatie (domain_grid) := Basisjaar == CBSKlasse/V/Woongebied;
+			}
+			
+			container Per_SrcDomain_grid
+			{
+				attribute<CBSKlasse> Basisjaar (SrcDomain_grid) := Src/per_srcdomain_grid/j2015;
+				
+				attribute<bool> IsWerklocatie (SrcDomain_grid) :=
+					Basisjaar == CBSKlasse/V/detailhandel_en_horeca          ||
+					Basisjaar == CBSKlasse/V/openbare_voorzieningen          ||
+					Basisjaar == CBSKlasse/V/sociaal_culturele_voorzieningen ||
+					Basisjaar == CBSKlasse/V/bedrijfsterreinen;
+				
+				attribute<bool> IsWoonlocatie (SrcDomain_grid) := Basisjaar == CBSKlasse/V/Woongebied;
+			}
+		}
+		
+		unit<uint8> Woonmilieus := = 'select_with_org_rel(BaseData/OntwikkelPakketten/Heeft1WP4 && OntwikkelPakket/Is'+ModelParameters/Woningdichtheid_ref+'EnOfRelevant)'
+		{
+			attribute<string>        name        := BaseData/OntwikkelPakketten/name[org_rel];
+			attribute<uint32>        BrushColor  := BaseData/OntwikkelPakketten/BrushColor[org_rel], DialogType = "BrushColor";
+			attribute<string>        label       := BaseData/OntwikkelPakketten/Label[org_rel], DialogType = "labelText";
+			attribute<string>        ref         := const('Woonmilieus', ., string);
+			attribute<Vastgoed/WP4>  WP4_rel     := BaseData/OntwikkelPakketten/WP4_rel[org_rel];
+			attribute<string>        WP4_ref     := Vastgoed/WP4/name[WP4_rel];
+			attribute<Woning_ha>     NrWoningen  := = 'union_data(., '+AsItemList('BaseData/OntwikkelPakketten/NrWoningen/'+name)+')';
+			attribute<bool>          Is_Hoogbouw := = 'union_data(., '+AsItemList('BaseData/OntwikkelPakketten/Is_Hoogbouw/'+name+'[bool]')+')';
+			
+			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		}
+	}
+	
+	container perVariant := 
+		for_each_ne(
+			AllocRegioKxVariantKxDensityK/relevant/label
+			, 'Templates/ResultsT('+string(id(AllocRegioKxVariantKxDensityK/relevant))+'[AllocRegioKxVariantKxDensityK/relevant])'
+		);
+
+}

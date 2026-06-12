@@ -1,0 +1,437 @@
+container Grondgebruik: Using  = "Units;Geography;Classifications"
+{ 
+	container IBIS 
+	{
+		unit<uint32> Y2016
+		:  StorageName = "%RSLDataDir%/Grondgebruik/IBIS/IBIS_NL_2016.shp"
+		,  StorageType = "gdal.vect"
+		,  StorageReadOnly = "True"
+		,  DialogType = "Map"
+		,  DialogData = "geometry"
+		,  FreeData = "False"
+		,  SyncMode = "None"
+		{
+			attribute<rdc_meter>             geometry (poly);
+			attribute<string>                WLOC_TYPE;
+			attribute<Classifications/IBIS>  type_rel                        := rlookup(WLOC_TYPE, Classifications/IBIS/code);
+			attribute<Classifications/IBIS>  type_per_grid (SrcDomain_grid)  := type_rel[poly2grid(geometry, SrcDomain_grid)];
+		}
+		unit<uint32> Y2017
+		:  StorageName = "%RSLDataDir%/Grondgebruik/IBIS/IBIS_NL_2017.shp"
+		,  StorageType = "gdal.vect"
+		,  StorageReadOnly = "True"
+		,  DialogType = "Map"
+		,  DialogData = "geometry"
+		,  FreeData = "False"
+		,  SyncMode = "None"
+		{
+			attribute<rdc_meter>             geometry (poly);
+			attribute<string>                WLOC_TYPE;
+			unit<uint32> uq := unique(WLOC_TYPE);
+			attribute<Classifications/IBIS>  type_rel                        := rlookup(WLOC_TYPE, Classifications/IBIS/code);
+			attribute<Classifications/IBIS>  type_per_grid (SrcDomain_grid)  := type_rel[poly2grid(geometry, SrcDomain_grid)];
+		}
+		unit<uint32> Y2018
+		:  StorageName = "%RSLDataDir%/Grondgebruik/IBIS/IBIS_NL_2018.shp"
+		,  StorageType = "gdal.vect"
+		,  StorageReadOnly = "True"
+		,  DialogType = "Map"
+		,  DialogData = "geometry"
+		,  FreeData = "False"
+		,  SyncMode = "None"
+		{
+			attribute<rdc_meter>             geometry (poly);
+			attribute<string>                WLOC_TYPE;
+			unit<uint32> uq := unique(WLOC_TYPE);
+			attribute<Classifications/IBIS>  type_rel                        := rlookup(WLOC_TYPE, Classifications/IBIS/code);
+			attribute<Classifications/IBIS>  type_per_grid (SrcDomain_grid)  := type_rel[poly2grid(geometry, SrcDomain_grid)];
+		}
+		
+		attribute<Classifications/IBIS> Y2018_edit (SrcDomain_grid) := Y2018/type_per_grid == classifications/IBIS/V/onbekend 
+																		? Y2017/type_per_grid == classifications/IBIS/V/onbekend 
+																			? Y2016/type_per_grid
+																			: Y2017/type_per_grid
+																		: Y2018/type_per_grid;
+																		
+		attribute<bool> IsZeehaven_25m (SrcDomain_grid) := Y2018_edit == classifications/IBIS/V/Zeehaventerrein;
+		attribute<bool> IsZeehaven_points (/Geography/rdc_25m/sg_points) := IsZeehaven_25m[/Geography/rdc_25m/sg_points/rdc_25m_rel];
+		
+		unit<uint32> Zeehaven_selectie := select_with_org_rel(IsZeehaven_points)
+		{
+			attribute<rdc_meter>         geometry         := Geography/rdc_25m/sg_points/geometry[org_rel];
+			attribute<SrcDomain_grid>    grid_rel         := geometry[SrcDomain_grid];
+			attribute<meter>                 DistTo (SrcDomain_grid) := GridDist(resistance_grid, grid_rel, const(0, ., meter));
+			
+			attribute<meter>                 resistance_grid (SrcDomain_grid) := const(10, SrcDomain_grid, meter);
+		}
+		attribute<bool> IsZeehaven (domain_grid) := (Y2018_edit == classifications/IBIS/V/Zeehaventerrein)[invert(SrcDomain_grid/rdc_100m_rel)];
+	}
+	
+	container BBG 
+	{
+		container BBG_Reeks_1996_2015_src
+		:	StorageName     = "%RSLDataDir%/Grondgebruik/MutatiebestandBBG1996-2015_GEM2018.gdb"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		,	Source          = "Y:\ontwdata\PBLbase\DL\0_Nieuw_binnen\2019\BBGmutatiebestand_1996-2015\Mutatiebestand1996_2015\MutatiebestandBBG1996-2015.gdb toevoegen ligging in gemeente 2018 tbv debugging"
+							  "containeritem /Geography/RegioIndelingen/Gemeente2018 --> Gemeentegrenzen_2018_A1_PBL_RES.gdb"
+		,	url             = "https://www.cbs.nl/nl-nl/achtergrond/2012/44/mutatiereeks-bodemgebruik-1996-2012"
+		{
+			unit<uint32> polygons
+			{
+				attribute<rdc_meter> Geometry (poly): FreeData = "false";
+
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_1996 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt1996, LandUsePreparation/CBS2010KlasseEK)];
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_2000 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt2000, LandUsePreparation/CBS2010KlasseEK)];
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_2003 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt2003, LandUsePreparation/CBS2010KlasseEK)];
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_2006 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt2006, LandUsePreparation/CBS2010KlasseEK)];
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_2008 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt2008, LandUsePreparation/CBS2010KlasseEK)];
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_2010 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt2010, LandUsePreparation/CBS2010KlasseEK)];
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_2012 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt2012, LandUsePreparation/CBS2010KlasseEK)];
+				attribute<LandUsePreparation/CBSKlasse> CBSKlasse_rel_2015 := LandUsePreparation/CBS2010KlasseEK/CBSKlasseNr[value(wordt2015, LandUsePreparation/CBS2010KlasseEK)];
+			}
+		}
+		
+		container Dominant
+		{
+			parameter<string> Aggregation_method := ModelParameters/landuse_aggregation_method;
+			
+			container Make_per_10m
+			{
+				attribute<BBG_Reeks_1996_2015_src/polygons>                        CBS1996_2015_10mtr (rdc_10m) := poly2grid(BBG_Reeks_1996_2015_src/polygons/Geometry, rdc_10m),FreeData = "False";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_1996 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_1996[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg1996_10m.fss";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_2000 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_2000[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg2000_10m.fss";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_2003 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_2003[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg2003_10m.fss";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_2006 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_2006[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg2006_10m.fss";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_2008 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_2008[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg2008_10m.fss";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_2010 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_2010[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg2010_10m.fss";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_2012 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_2012[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg2012_10m.fss";
+				attribute<LandUsePreparation/CBSKlasse>                            CBSKlasse_rel_2015 (rdc_10m) := BBG_Reeks_1996_2015_src/polygons/CBSKlasse_rel_2015[CBS1996_2015_10mtr], StorageName = "%ProjDir%/Data/UnlinkedData/BBG/bbg2015_10m.fss";
+			}
+			
+			attribute<bool> IsWaterBuitenland_2015_100m (rdc_100m)    := ='Classifications/LandUsePreparation/CBSKlasse/IsWaterOfBuitenland[per_100m_'+Aggregation_method+'/J2015]';
+			
+			container per_10m := 
+				for_each_ndva(
+					  LandUsePreparation/ReeksJaren/naam
+					, rdc_10m
+					, LandUsePreparation/CBSKlasse
+					, '%ProjDir%/Data/UnlinkedData/BBG/bbg'+LandUsePreparation/ReeksJaren/jaar+'_10m.fss'
+				);
+			
+			container per_srcdomain_grid := 
+				for_each_nedv(
+					  LandUsePreparation/ReeksJaren/naam
+					, Aggregation_method == 'allocation'
+						? 'per_'+srcdomain_grid_ref_short+'_allocation/'+LandUsePreparation/ReeksJaren/naam
+						: 'per_'+srcdomain_grid_ref_short+'_modus/'+LandUsePreparation/ReeksJaren/naam
+					, SrcDomain_grid
+					, LandUsePreparation/CBSKlasse
+				), FreeData = "False";
+				
+			container per_domain_grid := 
+				for_each_nedv(
+					  LandUsePreparation/ReeksJaren/naam
+					, Aggregation_method == 'allocation'
+						? 'per_'+domain_grid_ref_short+'_allocation/'+LandUsePreparation/ReeksJaren/naam
+						: 'per_'+domain_grid_ref_short+'_modus/'+LandUsePreparation/ReeksJaren/naam
+					, Domain_grid
+					, LandUsePreparation/CBSKlasse
+				), FreeData = "False";
+				
+			container per_100m_modus := 
+				for_each_ndva(
+					  LandUsePreparation/ReeksJaren/naam
+					, rdc_100m
+					, LandUsePreparation/CBSKlasse
+					, '%ProjDir%/Data/UnlinkedData/BBG/bbg'+LandUsePreparation/ReeksJaren/jaar+'_100m_modus.fss'
+				);
+				
+			container per_25m_modus := 
+				for_each_ndva(
+					  LandUsePreparation/ReeksJaren/naam
+					, rdc_25m
+					, LandUsePreparation/CBSKlasse
+					, '%ProjDir%/Data/UnlinkedData/BBG/bbg'+LandUsePreparation/ReeksJaren/jaar+'_25m_modus.fss'
+				);
+				
+			container per_100m_allocation := 
+				for_each_ndva(
+					  LandUsePreparation/ReeksJaren/naam
+					, rdc_100m
+					, LandUsePreparation/CBSKlasse
+					, '%ProjDir%/Data/UnlinkedData/BBG/bbg'+LandUsePreparation/ReeksJaren/jaar+'_100m_allocation.fss'
+				);
+				
+			container per_25m_allocation := 
+				for_each_ndva(
+					  LandUsePreparation/ReeksJaren/naam
+					, rdc_25m
+					, LandUsePreparation/CBSKlasse
+					, '%ProjDir%/Data/UnlinkedData/BBG/bbg'+LandUsePreparation/ReeksJaren/jaar+'_25m_allocation.fss'
+				);
+				
+			container per_domaingrid_perKlasse
+			{
+				container J2015 := 
+					for_each_ndva(
+						LandUsePreparation/CBSKlasse/name
+						, domain_grid
+						, bool
+						, '%ProjDir%/Data/UnlinkedData/BBG/bbg2015_'+LandUsePreparation/CBSKlasse/name+'_'+domain_grid_ref_short+'_'+Aggregation_method+'.fss'
+				);
+			}
+			
+			
+			container MakePerFunctie := 
+				for_each_ne(
+					LandUsePreparation/CBSKlasse/name
+					, 'MakePerFunctieT('+quote(LandUsePreparation/CBSKlasse/name)+')'
+				)
+			{
+				parameter<String> Generate := 'Ready',
+					ExplicitSuppliers = "=AsList('SourceData/Grondgebruik/BBG/Dominant/MakePerFunctie/'+LandUsePreparation/CBSKlasse/name+'/PerJaar/J2015',';')";
+			}
+
+			container Make100mgrids_allocation := 
+				for_each_ne(
+					LandUsePreparation/ReeksJaren/naam
+					,'DiscreteAllocation100mT('+string(LandUsePreparation/ReeksJaren/jaar)+')'
+				);
+				
+			container Make25mgrids_allocation := 
+				for_each_ne(
+					LandUsePreparation/ReeksJaren/naam
+					,'DiscreteAllocation25mT('+string(LandUsePreparation/ReeksJaren/jaar)+')'
+				);
+				
+			container Make100mgrids_modus := 
+				for_each_ne(
+					LandUsePreparation/ReeksJaren/naam
+					,'Modus100mT('+string(LandUsePreparation/ReeksJaren/jaar)+')'
+				);
+				
+			container Make25mgrids_modus := 
+				for_each_ne(
+					LandUsePreparation/ReeksJaren/naam
+					,'Modus25mT('+string(LandUsePreparation/ReeksJaren/jaar)+')'
+				);
+			
+			Template Modus100mT
+			{
+				//
+				parameter<uint32> year;
+				//
+				attribute<LandUsePreparation/CBSKlasse>   DominantCBSKlasse_100m  (rdc_100m)    := ='MakeDefined(modus(Dominant/CBSKlasse_rel_'+string(year)+',  rdc_10m/rdc_100m_rel), 0[LandUsePreparation/CBSKlasse])', StorageName = "='%ProjDir%/Data/UnlinkedData/BBG/bbg'+string(year)+'_100m_modus.fss'";
+			}
+			
+			Template Modus25mT
+			{
+				//
+				parameter<uint32> year;
+				//
+				attribute<LandUsePreparation/CBSKlasse>   DominantCBSKlasse_25m  (rdc_25m)    := ='MakeDefined(modus(Dominant/CBSKlasse_rel_'+string(year)+',  rdc_10m/rdc_25m_rel), 0[LandUsePreparation/CBSKlasse])', StorageName = "='%ProjDir%/Data/UnlinkedData/BBG/bbg'+string(year)+'_25m_modus.fss'";
+			}
+			
+			Template DiscreteAllocation100mT
+			{
+				//
+				parameter<uint32> year;
+				//
+				
+				attribute <LandUsePreparation/CBSKlasse> Result_discrete (rdc_100m) := Allocation/LandUse_rel[invert(Input/Compacted/ADomain/org_rel)], StorageName = "='%ProjDir%/Data/UnlinkedData/BBG/bbg'+string(year)+'_100m_allocation.fss'";
+				
+				container Input
+				{
+					unit<uint32> AggRegio := Geography/RegioIndelingen/Corop;
+					
+					container Compacted
+					{
+						unit<uint32> ADomain := select_with_org_rel(IsDefined(AggRegio/per_rdc_100m))
+						, DialogType = "Map"
+						, DialogData = "BaseGrid";
+						attribute<ADomain> BaseGrid (rdc_100m) := invert(ADomain/org_rel);
+						
+						container Suitability :=
+							for_each_nedv(
+								LandUsePreparation/CBSKlasse/name
+								, 'value(sum(per_10m/j'+string(year)+' == LandUsePreparation/CBSKlasse/V/'+LandUsePreparation/CBSKlasse/name+' ? 1 : 0, rdc_10m/rdc_100m_rel), int32)[ADomain/org_rel]'
+								, ADomain
+								, int32
+							);
+							
+						attribute<AggRegio> AtomicRegionMap (ADomain) := AggRegio/per_rdc_100m[ADomain/org_rel]
+						{
+							attribute<AggRegio> id (AggRegio) := id(AggRegio);
+						}
+						
+						container RegionSets :=
+							for_each_nedv(
+								LandUsePreparation/CBSKlasse/name
+								, 'AggRegio/per_rdc_100m'
+								, rdc_100m
+								, AggRegio
+							);
+					}
+
+					container Claims
+					{
+						container maxclaims := 
+							for_each_nedv(
+								  LandUsePreparation/CBSKlasse/name
+								, 'sum(uint32(per_10m/j'+string(year)+' == LandUsePreparation/CBSKlasse/V/'+LandUsePreparation/CBSKlasse/name+'), AggRegio/per_rdc_10m)'
+								, AggRegio
+								, uint32
+							)
+						{
+							attribute<uint32> Totaal (AggRegio) := = 'add('+AsItemList(LandUsePreparation/CBSKlasse/name)+')';
+						}
+						
+						container minclaims := 
+							for_each_nedv(
+								  LandUsePreparation/CBSKlasse/name
+								, 'const(0, AggRegio)'
+								, AggRegio
+								, uint32
+							);
+					}
+				}
+
+				container Allocation
+				{
+					unit<uint8> Partitioning: nrofrows = 1
+					{ 
+					   attribute<string> name   : ['id'];
+					}
+					parameter<int32> threshold := int32(0);
+					container FeasibleSolution;
+
+					container Disc_alloc := 
+						discrete_alloc(
+							  LandUsePreparation/CBSKlasse/name						// 1 string 	attribute
+							, Input/Compacted/ADomain								// 2 uint32		unit
+							, Input/Compacted/Suitability							// 3 int32		container
+							, const(0[Partitioning], LandUsePreparation/CBSKlasse)	// 4 uint8		attribute
+							, Partitioning/name										// 5 string		attribute
+							, Input/AggRegio										// 6 uint16		unit
+							, Input/Compacted/AtomicRegionMap						// 7 uint16		attribute
+							, Input/Claims/minclaims								// 8 uint32		container
+							, Input/Claims/maxclaims								// 9 uint32		container
+							, threshold												// 10 int32		parameter
+							, FeasibleSolution										// 11 (empty)	container
+						);
+
+					attribute<LandUsePreparation/CBSKlasse> LandUse_rel(Input/Compacted/ADomain) := Disc_alloc/landuse;
+				}
+			}
+				
+			Template DiscreteAllocation25mT
+			{
+				//
+				parameter<uint32> year;
+				//
+				
+				attribute <LandUsePreparation/CBSKlasse> Result_discrete (rdc_25m) := Allocation/LandUse_rel[invert(Input/Compacted/ADomain/org_rel)], StorageName = "='%ProjDir%/Data/UnlinkedData/BBG/bbg'+string(year)+'_25m_allocation.fss'";
+				
+				container Input
+				{
+					unit<uint8> AggRegio := Geography/RegioIndelingen/Corop/Corop40;
+					
+					container Compacted
+					{
+						unit<uint32> ADomain := select_with_org_rel(IsDefined(AggRegio/per_rdc_25m))
+						, DialogType = "Map"
+						, DialogData = "BaseGrid";
+						attribute<ADomain> BaseGrid (rdc_25m) := invert(ADomain/org_rel);
+						
+						container Suitability :=
+							for_each_nedv(
+								LandUsePreparation/CBSKlasse/name
+								, 'value(sum(per_10m/j'+string(year)+' == LandUsePreparation/CBSKlasse/V/'+LandUsePreparation/CBSKlasse/name+' ? 1 : 0, rdc_10m/rdc_25m_rel), int32)[ADomain/org_rel]'
+								, ADomain
+								, int32
+							);
+							
+						attribute<AggRegio> AtomicRegionMap (ADomain) := AggRegio/per_rdc_25m[ADomain/org_rel]
+						{
+							attribute<AggRegio> id (AggRegio) := id(AggRegio);
+						}
+						
+						container RegionSets :=
+							for_each_nedv(
+								LandUsePreparation/CBSKlasse/name
+								, 'AggRegio/per_rdc_25m'
+								, rdc_25m
+								, AggRegio
+							);
+					}
+
+					container Claims
+					{
+						container maxclaims := 
+							for_each_nedv(
+								  LandUsePreparation/CBSKlasse/name
+								, 'sum(uint32(per_10m/j'+string(year)+' == LandUsePreparation/CBSKlasse/V/'+LandUsePreparation/CBSKlasse/name+'), AggRegio/per_rdc_10m)'
+								, AggRegio
+								, uint32
+							)
+						{
+							attribute<uint32> Totaal (AggRegio) := = 'add('+AsItemList(LandUsePreparation/CBSKlasse/name)+')';
+						}
+						
+						container minclaims := 
+							for_each_nedv(
+								  LandUsePreparation/CBSKlasse/name
+								, 'const(0, AggRegio)'
+								, AggRegio
+								, uint32
+							);
+					}
+				}
+
+				container Allocation
+				{
+					unit<uint8> Partitioning: nrofrows = 1
+					{ 
+					   attribute<string> name   : ['id'];
+					}
+					parameter<int32> threshold := int32(0);
+					container FeasibleSolution;
+
+					container Disc_alloc := 
+						discrete_alloc(
+							  LandUsePreparation/CBSKlasse/name						// 1 string 	attribute
+							, Input/Compacted/ADomain								// 2 uint32		unit
+							, Input/Compacted/Suitability							// 3 int32		container
+							, const(0[Partitioning], LandUsePreparation/CBSKlasse)	// 4 uint8		attribute
+							, Partitioning/name										// 5 string		attribute
+							, Input/AggRegio										// 6 uint16		unit
+							, Input/Compacted/AtomicRegionMap						// 7 uint16		attribute
+							, Input/Claims/minclaims								// 8 uint32		container
+							, Input/Claims/maxclaims								// 9 uint32		container
+							, threshold												// 10 int32		parameter
+							, FeasibleSolution										// 11 (empty)	container
+						);
+
+					attribute<LandUsePreparation/CBSKlasse> LandUse_rel(Input/Compacted/ADomain) := Disc_alloc/landuse;
+				}
+			}
+
+			template MakePerFunctieT
+			{
+				// template parameters
+				parameter<string> Name;
+				// end template parameters
+
+				container PerJaar :=
+					for_each_nedva(
+						LandUsePreparation/ReeksJaren/naam
+						,'per_domain_grid/'+LandUsePreparation/ReeksJaren/naam+' == LandUsePreparation/CBSKlasse/V/'+Name+' ? IsDefined(per_domain_grid/'+LandUsePreparation/ReeksJaren/naam+') : FALSE'
+						, domain_grid
+						, bool
+						, '%ProjDir%/Data/UnlinkedData/BBG/bbg'+LandUsePreparation/ReeksJaren/jaar+'_'+Name+'_'+domain_grid_ref_short+'_'+Aggregation_method+'.fss'
+					);
+			}
+		}
+	}
+}

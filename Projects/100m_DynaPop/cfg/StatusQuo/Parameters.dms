@@ -1,0 +1,1948 @@
+container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", Using = "Units"
+{
+	unit<Float32> YearRange: Expr = "Units/YearRange";
+	unit<Float32> YearDiffRange: Expr = "Units/YearDiffRange";
+	container PeriodSet
+	{
+	
+		parameter<YearRange> StartYear: [2018]
+		,	ParamType = "Numeric"
+		,	ParamData = "YearRange";
+			
+		parameter<YearRange> SpoofStartYear: [2015] // to ensure that result has necessary number of rows
+		,	ParamType = "Numeric"
+		,	ParamData = "YearRange";
+		
+		
+		parameter<YearRange> EndYear:  [2050]
+		,	ParamType = "Numeric"
+		,	ParamData = "YearRange";
+	
+		parameter<YearDiffRange> TimeStep: [ 5.0 ] // can also be [0.25] // [ 0.5] // [ 0.1 ] 
+		,	ParamType = "Numeric"
+		,	ParamData = "YearDiffRange"
+		,	Descr     = "Periodelengte (in jaren)";
+		
+		unit<UInt16> result: Expr = "Range(UInt16, UInt16(0), UInt16( (EndYear - SpoofStartYear) / TimeStep))"
+		{
+			attribute<YearDiffRange> PeriodLength: 	Expr = "id(result) > uint16(0) ? 5.0[YearDiffRange] : 2.0[YearDiffRange]";
+			attribute<YearDiffRange> YearsPast:		Expr = "cumulate(PeriodLength)";
+			attribute<YearRange> CurrYear: 			Expr = "id(.) > uint16(0) ? StartYear + YearsPast[sub_or_null(Id(.), uint16(1))]: StartYear";
+			attribute<YearRange> ProjectedYear:		Expr = "CurrYear + PeriodLength";
+			attribute<String>  YearStr: Expr = "String(ProjectedYear)";
+			attribute<String>  IdStr: Expr = "'UInt16('+String(ID(.))+')'";
+			attribute<String>  Name:  Expr = "'P'+Replace(YearStr,'.','_')";
+			
+			attribute<Float32> ClaimFraction: Expr = "Float32(CurrYear - StartYear)/Float32(EndYear - StartYear)"; // "Float32(PeriodLength)*Float32(CurrYear - StartYear)/Float32(EndYear - StartYear)";
+			attribute<String>  ClaimFractionStr: Expr = "'value('+String(ClaimFraction)+',Float32)'";
+			attribute<String>  PrevRef: Expr = "MakeDefined(Name[sub_or_null(ID(.), UInt16(1))]+'/ResultingState', 'StartingState')";
+			unit<UInt16> Decennium: Expr = "../Decennium";
+			unit<UInt16> Lustrum: Expr = "../Lustrum";
+			parameter<String> BaseYearCorineDataFileName: Expr = "'%SourceDataProjDir%/EUCS_100m/landuse/LUISA_basemap_2018_020321_100m.tif'"; // was, in chronological order, "'%SourceDataProjDir%/EUCS_100m/landuse/elc100_00_laea_lzw.tif'"; "'%SourceDataProjDir%/EUCS_100m/landuse/clc06.tif'"
+		}
+		unit<UInt16> Decennium: NrOfRows = 4
+		{
+			attribute<result> Year:     [ /*'2006',*/ 2020, 2030, 2040, 2050 ];
+			attribute<result> PrevYear: [             2018, 2020, 2030, 2040 ];
+			
+			attribute<String> YearStr: Expr = "String(Year)";
+			attribute<String> Label: Expr = "YearStr";
+			attribute<String> Name: Expr = "'P'+YearStr";
+			attribute<String> YearName: Expr = "'Yr'+YearStr";
+			
+			attribute<result> RefPeriod: Expr = "max_elem(UInt16(ID(.))*UInt16(10), UInt16(1))";
+			attribute<String> DynamicExt: Expr = "String(RefPeriod)";
+			
+			attribute<.>      StartingYear: Expr = "MakeDefined(ID(.)-1[.], 0[.])";
+			attribute<.>      EndingYear:   Expr = "replace_value(ID(.), 0[.], last(ID(.)))";
+			attribute<String> PeriodName:   Expr = "'P'+YearStr[StartingYear]+'_P'+YearStr[EndingYear]";
+		}
+		unit<UInt16> Lustrum: NrOfRows = 7
+		{
+			attribute<result> Year:     [ 2020, 2025, 2030, 2035, 2040, 2045, 2050 ];
+			attribute<result> PrevYear: [ 2018, 2020, 2025, 2030, 2035, 2040, 2045 ];
+			
+			attribute<String> YearStr: Expr = "String(Year)";
+			attribute<String> Label: Expr = "YearStr";
+			attribute<String> Name: Expr = "'P'+YearStr";
+			attribute<String> YearName: Expr = "'Yr'+YearStr";
+			
+			// Lustrum Periods with first period ranging over all periods.
+			attribute<.> StartingYear: Expr = "MakeDefined(ID(.)-1[.], 0[.])";
+			attribute<.> EndingYear:   Expr = "replace_value(ID(.), 0[.], last(ID(.)))";
+			attribute<String>  PeriodName:   Expr = "'P'+YearStr[StartingYear]+'_P'+YearStr[EndingYear]";
+		}
+	}
+	container FuncKernels
+	{
+		unit<SPoint> ReciprocalRevolution10km: Expr = "range(spoint, point_yx(int16(-100), int16(-100)), point_yx(int16(101), int16(101)))", Descr = "revolution around origin of of z=1/r up to 10 km "
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (100*100)) ? (1.0 / Sqrt(Dist2)) : 0.0"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		
+		unit<SPoint> Cylinder500m: Expr = "range(spoint, point_xy(int16(-5), int16(-5)), point_xy(int16(6), int16(6)))", Descr = "cylinder of 500m radius, excluding self interaction"
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "Float64(Dist2 > 0  && Dist2 <= (5*5))"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		unit<SPoint> Cylinder5km: Expr = "range(spoint, point_xy(int16(-50), int16(-50)), point_xy(int16(51), int16(51)))", Descr = "cylinder of 5km radius, excluding self interaction"
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "Float64(Dist2 > 0  && Dist2 <= (50*50))"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		unit<SPoint> LinearDecay1km: Expr = "range(spoint, point_xy(int16(-10), int16(-10)), point_xy(int16(11), int16(11)))", Descr = "linear distance decay until 2 km"
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (10*10)) ? 10.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		unit<SPoint> LinearDecay2km: Expr = "range(spoint, point_xy(int16(-20), int16(-20)), point_xy(int16(21), int16(21)))", Descr = "linear distance decay until 2 km"
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (20*20)) ? 20.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		unit<Spoint> LinearDecay5km: Expr = "range(spoint, point_xy(int16(-50), int16(-50)), point_xy(int16(51), int16(51)))", Descr = "linear distance decay until 2 km"
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (50*50)) ? 50.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		unit<SPoint> km10_neighbours: Expr = "range(spoint, point_xy(int16(-100), int16(-100)), point_xy(int16(101), int16(101)))", Descr = "10km neighbours"
+		{	
+			attribute<Float32>  Dist2: Expr = "float32(sqrt(Dist2(point_xy(Int16(0), Int16(0), .), uint32)))"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float32> Matr : Expr = "float32(1) / (Dist2)"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		unit<Spoint> LinearDecay10km: Expr = "range(spoint, point_xy(int16(-100), int16(-100)), point_xy(int16(101), int16(101)))", Descr = "linear distance decay until 2 km"
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (100*100)) ? 100.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+				
+		unit<SPoint> ExponentialDecay7km: Expr = "range(spoint, point_xy(int16(-70), int16(-70)), point_xy(int16(71), int16(71)))", Descr = "linear distance decay until 7 km"
+		{
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (70*70)) ? Exp(-Sqrt(Dist2) / 35.0 ) : 0.0"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+		unit<SPoint> RooksNeighbours: Expr = "range(spoint, point_xy(int16(-1), int16(-1)), point_xy(int16(2), int16(2)))", Descr = "Rooks case contiguous neighbours (only direct)"
+		{	
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "float64(Dist2 > 0  && Dist2 <= (1))"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+ 		unit<SPoint> QueensNeighbours: Expr = "range(spoint, point_xy(int16(-1), int16(-1)), point_xy(int16(2), int16(2)))", Descr = "Queens case contiguous neighbours (only direct)"
+		{	
+			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<Float64> Attr : Expr = "float64(Dist2 > 0  && Dist2 <= (2))"; //
+			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+		}
+
+	    unit<spoint>  Area1km2: expr =    "range(spoint,point_xy(-int16(5), -int16(5)), point_xy(int16(6), int16(6)))", Descr = "kernel with an area of approximately 1 km2"
+  		 {
+   		   attribute<uint32> distMatr:  expr = "dist2(point_xy(int16(0), int16(0), .), uint32)";
+      	   attribute<Float32> AbsWeight: expr =  "distMatr <=uint32(36) ? Float32(1.0) : Float32(0.0)";
+   		 } 
+   		 			
+		unit<UInt8> Set: Expr = "range(UInt8, UInt8(0), UInt8(4))" // @USERINPUT
+		{
+			attribute<String> Name:    [ 'ReciprocalRevolution10km', 'Cylinder5km', 'LinearDecay2km', 'ExponentialDecay7km'] ;
+			attribute<String> MatrRef: Expr = "'FuncKernels/'+Name";
+		}
+		
+	}
+	container Templ
+	{
+		container ManageDemandModelParams: IsTemplate = "True", Using = "MetaData"
+		{
+			parameter<DemandModelsList> ModelId;
+			
+			container ZoneSets: expr = "Templ/getDemandModelParams(Meta/Run, ModelId)";
+			
+			container TableChopper: expr = "ZoneSets/TableChopper";
+			
+			unit<uint32> FactorReferences: expr = "TableChopper/Field";
+			
+			container ParameterSet: expr = "for_each_nedv(FactorReferences/FactorName, 'value(TableChopper/Data/'+ TableChopper/Field/FactorName +', float32)[TableChopper/ZoneId]',Meta/Run,float32)"
+			{	
+				attribute<float32> 			Constant (Meta/Run): expr = "TableChopper/Constant"; 
+				attribute<float32>			Rho		 (Meta/Run): expr = "TableChopper/Rho"; 
+				attribute<Meta/Run>			ZoneId	 (Meta/Run): expr = "id(Meta/Run)";
+			}
+			Container genExpressions: expr = "for_each_ne(Meta/Run/Name, 'Templ/arrange'+ DemandModelsList/arranging_template[ModelId] +'(' + string(id(Meta/Run)) + ', MetaData/DemandModelFactors, ParameterSet)' )";
+		}
+		
+		Container GetRegionalVariables: IsTemplate = "True", Using = "MetaData/RegionalFactorDefinitions/RegionalDynamicFactorsList"
+		{
+			parameter<string> TargetZoneSetName;
+			
+			unit<uint16> TargetZoneSet: expr = "= 'RunRegions/UnitSets/' + TargetZoneSetName";
+			unit<uint32> W_Matrix:expr = "= 'RunRegions/contiguity_matrices/' + TargetZoneSetName + '/matrix'";
+			
+			container RegionalVariables: expr = "for_each_nedv(Name, ToAggregate ?  "
+				"AggregationFunction + '(' + RegExpr + '[domain/BasisGrid], RunRegions/RasterSets/'+ TargetZoneSetName + ')' :"
+				"RegExpr, TargetZoneSet, float32)";
+				
+			container RegionalNeighbourhoodVariables: expr = "for_each_nedv(Name, 'sum(RegionalVariables/'+Name+'[W_Matrix/second_rel] * W_Matrix/Weight, W_Matrix/first_rel)', TargetZoneSet, float32)";
+		}
+		
+		Container getExogenousParams: IsTemplate = "True"
+		{
+			
+			unit<uint32> 								UnitRef; // :		expr = "Meta/Alloc1Set/UniqueFiles";
+			parameter<Classifications/LU/ModelType> 	LandUseNr; //: 	expr = "'Urban'";
+			unit<uint16>								RunsRef:	expr = "Meta/Run";
+			
+			unit<uint32> Factors: 					expr = "MetaData/FactorID";
+			
+			//attribute<string> DefExpression (UnitRef): expr = "TableChopper/Constant + ' + ' + TableChopper/Params";
+			
+			container TableChopper
+			{
+			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/ExogenousParams/' + Classifications/LU/ModelType/Name[LandUseNr] +'_weights.csv'";
+			   unit<uint32>      Domain:  			expr = "range(uint32, 0, #UnitRef)";
+			   //unit<uint32>      Domain; //  			expr = "range(uint16, uint16(0), uint16(#Geography/Regions/Nuts0_v10))";
+			   
+			   parameter<String> FieldSeparator: 	expr = "';'";
+			
+			   parameter<String> FileData
+			   :  StorageType = "str"
+			   ,  StorageName = "=FileName";
+			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			        
+			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   { 
+			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<bool>	  		Factor:		Expr = "id(.) > 1[Field]";
+					attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(UpperCase(Name), UpperCase(Factors/Name)))";
+			   		//attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(Name, Factors/Name))";
+					attribute<string> 		FactorName:	Expr = "Factors/Name[FactorRef]";
+			   }
+			   
+			   unit<uint32> FactorList: expr = "select_with_org_rel(Field/Factor)" {attribute<string> Name: expr = "Field/Name[org_rel]"; attribute<Factors> FactorRef: expr = "Field/FactorRef[org_rel]";}
+			   
+			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			        
+			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
+			   {
+			   		attribute<Domain> 							id (Domain): expr = "id(Domain)";
+			   		attribute<Classifications/LU/ModelType> 	LandUseType	(Domain): expr = "const(LandUseNr, Domain, Classifications/LU/ModelType)";
+			   }
+			   
+			   parameter<string> multiple_unit_ref: expr = "repeat('Domain,', #FactorList)";
+			   parameter<string> multiple_zone_ref: expr = "repeat('Data/ZoneName,', #FactorList)";
+			   
+			   unit<uint32> UnitsFactors: expr = "= 'union_unit('+ substr(multiple_unit_ref, 0, strlen(multiple_unit_ref)-1) +')'"
+			   {
+			   		attribute<RunsRef>		UnitId:						expr = "rlookup(ZoneName, RunsRef/ICC)";
+			   		attribute<FactorList> 	FactorId:					expr = "(id(.) / #UnitRef)[FactorList]";
+			   		attribute<Classifications/LU/ModelType> LandUseType:expr = "const(LandUseNr, ., Classifications/LU/ModelType)";
+			   		attribute<string> 		ZoneName: 					expr = "= 'union_data(UnitsFactors,'+ substr(multiple_zone_ref, 0, strlen(multiple_zone_ref)-1) +')'";
+			   		attribute<string> 		Weight: 					expr = "= 'union_data(UnitsFactors,'+ AsItemList('Data/' + FactorList/Name) +')'";
+			   		attribute<Factors> 		FactorRef:					expr = "FactorList/FactorRef[FactorId]";
+			   }
+			   attribute<Domain> ZoneId 		(RunsRef): expr = "MakeDefined(rlookup(RunsRef/ICC, Data/ZoneName), rlookup(RunsRef/Name, Data/ZoneName))";
+			   attribute<float32> Constant 		(RunsRef): expr = "value(Data/Constant, float32)[ZoneId]"; 
+			   attribute<Classifications/LU/ModelType> LandUseType (Meta/Run): expr = "const(LandUseNr,Meta/Run,Classifications/LU/ModelType)";
+			}
+		}
+		Container getPopulationParams: IsTemplate = "True"
+		{
+			
+			unit<uint16> 				UnitRef; // :		expr = "Meta/Alloc1Set/UniqueFiles";
+			parameter<PopModel> 		ModelSel; //: 	expr = "'Urban'";
+			
+			unit<uint8> PopModel: NrOfRows = 5
+			{attribute<string> type: ['Population_pressure','Population_def_nurb','Population_def_urb_central', 'Population_def_urb_remote', 'residential_density_change']; attribute<string> Label: expr = "type";}
+			
+			unit<uint32> Factors: 					expr = "MetaData/FactorID";
+			
+			//attribute<string> DefExpression (UnitRef): expr = "TableChopper/Constant + ' + ' + TableChopper/Params";
+			
+			container TableChopper
+			{
+			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/Population/' + PopModel/type[ModelSel] +'.csv'";
+			   unit<uint16>      Domain:  			expr = "range(uint16, uint16(0), uint16(#Geography/Regions/Nuts0_v10))"; //UnitRef";
+			   parameter<String> FieldSeparator: 	expr = "';'";
+			
+			   parameter<String> FileData
+			   :  StorageType = "str"
+			   ,  StorageName = "=FileName";
+			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			        
+			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   { 
+			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<bool>	  		Factor:		Expr = "id(.) > 1[Field]";
+			   		attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(Name, Factors/Name))";
+					attribute<string> 		FactorName:	Expr = "Factors/Name[FactorRef]";
+			   }
+			   
+			   unit<uint32> FactorList: expr = "select_with_org_rel(Field/Factor)" {attribute<string> Name: expr = "Field/Name[org_rel]"; attribute<Factors> FactorRef: expr = "Field/FactorRef[org_rel]";}
+			   
+			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			        
+			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
+			   {
+			   		attribute<Domain> 							id (Domain): expr = "id(Domain)";
+				}
+			   
+			   parameter<string> multiple_unit_ref: expr = "repeat('UnitRef,', #FactorList)";
+			   parameter<string> multiple_zone_ref: expr = "repeat('Data/ZoneName,', #FactorList)";
+			   
+			   unit<uint32> UnitsFactors: expr = "= 'union_unit('+ substr(multiple_unit_ref, 0, strlen(multiple_unit_ref)-1) +')'"
+			   {
+			   		attribute<UnitRef>		UnitId:						expr = "rlookup(ZoneName, UnitRef/Code)";
+			   		attribute<FactorList> 	FactorId:					expr = "(id(.) / #UnitRef)[FactorList]";
+			   		attribute<Classifications/LU/ModelType> LandUseType:expr = "const(LandUseNr, ., Classifications/LU/ModelType)";
+			   		attribute<string> 		ZoneName: 					expr = "= 'union_data(UnitsFactors,'+ substr(multiple_zone_ref, 0, strlen(multiple_zone_ref)-1) +')'";
+			   		attribute<string> 		Weight: 					expr = "= 'union_data(UnitsFactors,'+ AsItemList('Data/' + FactorList/Name) +')'";
+			   		attribute<Factors> 		FactorRef:					expr = "FactorList/FactorRef[FactorId]";
+			   }
+			   attribute<Domain> ZoneId 		(UnitRef): expr = "rlookup(UpperCase(UnitRef/ICC), UpperCase(Data/ZoneName))";
+			   attribute<float32> Constant 		(UnitRef): expr = "value(Data/Constant, float32)[ZoneId]"; 
+			}
+		}
+		Container getDemandModelParams: IsTemplate = "True"
+		{
+			
+			unit<uint16> 				UnitRef; // :		expr = "Meta/Alloc1Set/UniqueFiles";
+			parameter<uint8>			modelnumber;
+			unit<uint32> Factors: 		expr = "MetaData/DemandModelFactors";
+			
+			//attribute<string> DefExpression (UnitRef): expr = "TableChopper/Constant + ' + ' + TableChopper/Params";
+			
+			container TableChopper
+			{
+			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/DemandModels/' + DemandModelsList/Name[modelnumber] +'.csv'";
+			   unit<uint16>      Domain:  			expr = "range(uint16, uint16(0), uint16(#Geography/Regions/Nuts0_v10))"; //UnitRef";
+			   parameter<String> FieldSeparator: 	expr = "';'";
+			
+			   parameter<String> FileData
+			   :  StorageType = "str"
+			   ,  StorageName = "=FileName";
+			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			        
+			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   { 
+			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<bool>	  		Factor:		Expr = "id(.) > (DemandModelsList/firstFactor[modelnumber])[Field]";
+			   		attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(Name, Factors/UniName))";
+					attribute<string> 		FactorName:	Expr = "Factors/UniName[FactorRef]";
+			   }
+			   
+			   unit<uint32> FactorList: expr = "select_with_org_rel(Field/Factor)" {attribute<string> Name: expr = "Field/Name[org_rel]"; attribute<Factors> FactorRef: expr = "Field/FactorRef[org_rel]";}
+			   
+			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			        
+			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
+			   {
+			   		//attribute<Domain> 							id 			(Domain): expr = "id(Domain)";
+					//attribute<float32>							Constant	(Domain): expr = "const(float32(0),Domain,float32)"; //placeholder in case of empty field
+					//attribute<float32>							Rho			(Domain): expr = "const(float32(0),Domain,float32)"; //placeholder in case of empty field
+					
+				}
+			   
+			   parameter<string> multiple_unit_ref: expr = "repeat('UnitRef,', #FactorList)";
+			   parameter<string> multiple_zone_ref: expr = "repeat('Data/ZoneName,', #FactorList)";
+			   
+			   unit<uint32> UnitsFactors: expr = "= 'union_unit('+ substr(multiple_unit_ref, 0, strlen(multiple_unit_ref)-1) +')'"
+			   {
+			   		attribute<UnitRef>		UnitId:						expr = "rlookup(ZoneName, UnitRef/Code)";
+			   		attribute<FactorList> 	FactorId:					expr = "(id(.) / #UnitRef)[FactorList]";
+			   		attribute<Classifications/LU/ModelType> LandUseType:expr = "const(LandUseNr, ., Classifications/LU/ModelType)";
+			   		attribute<string> 		ZoneName: 					expr = "= 'union_data(UnitsFactors,'+ substr(multiple_zone_ref, 0, strlen(multiple_zone_ref)-1) +')'";
+			   		attribute<string> 		Weight: 					expr = "= 'union_data(UnitsFactors,'+ AsItemList('Data/' + FactorList/Name) +')'";
+			   		attribute<Factors> 		FactorRef:					expr = "FactorList/FactorRef[FactorId]";
+			   }
+			   attribute<Domain> ZoneId 		(UnitRef): expr = "rlookup(UpperCase(UnitRef/ICC), UpperCase(Data/ZoneName))";
+			   attribute<float32> Constant 		(UnitRef): expr = "value(Data/Constant, float32)[ZoneId]"; 
+			   attribute<float32> Rho			(UnitRef): expr = "value(Data/Rho, float32)[ZoneId]";
+			}
+		}
+		Container getNeighbourhoodParams: IsTemplate = "True"
+		{
+			
+			unit<uint16> 								UnitRef; 
+			parameter<Classifications/LU/ModelType> 	LandUseNr;
+			
+			unit<uint8> LandUses: 						expr = "Classifications/LU/ModelType";
+			
+			parameter<uint8> DefaultFuncKernel:			expr = "uint8(0)";
+			
+			container TableChopper
+			{
+			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/NeighbourhoodParams/' + Classifications/LU/ModelType/Name[LandUseNr] +'_weights.csv'";
+			   unit<uint16>      Domain:  			expr = "UnitRef";
+			   parameter<String> FieldSeparator: 	expr = "';'";
+			
+			   parameter<String> FileData
+			   :  StorageType = "str"
+			   ,  StorageName = "=FileName";
+			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			        
+			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   { 
+			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<bool>	  		Factor:		Expr = "id(.) > 1[Field]";
+			   		attribute<LandUses> 	FactorRef:	Expr = "rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint8) : 255[uint8], id(LandUses))";
+			   }
+			   
+			   unit<uint32> FactorList: expr = "select_with_org_rel(Field/Factor)" 
+			   {
+			   		attribute<string> 	Name: expr = "Field/Name[org_rel]"; 
+			   		attribute<LandUses> FactorRef: expr = "Field/FactorRef[org_rel]";
+			   }
+			   
+			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			        
+			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
+			   {
+			   		attribute<Domain> 						id 			(Domain): expr = "id(Domain)";
+			   		attribute<LandUses> 					LandUseType	(Domain): expr = "const(LandUseNr, Domain, LandUses)";
+			   }
+			   
+			   parameter<string> multiple_unit_ref: expr = "repeat('UnitRef,', #FactorList)";
+			   parameter<string> multiple_zone_ref: expr = "repeat('Data/ZoneName,', #FactorList)";
+			   
+			   unit<uint32> UnitsFactors: expr = "= 'union_unit('+ substr(multiple_unit_ref, 0, strlen(multiple_unit_ref)-1) +')'"
+			   {
+			   		attribute<UnitRef>		UnitId:			expr = "rlookup(ZoneName, UnitRef/Code)";
+			   		attribute<LandUses> 	SrcLUT:			expr = "FactorList/FactorRef[rlookup(uint32((id(.) / #UnitRef)), id(FactorList))]";
+			   		attribute<string> 		ZoneName: 		expr = "= 'union_data(UnitsFactors,'+ substr(multiple_zone_ref, 0, strlen(multiple_zone_ref)-1) +')'";
+			   		attribute<string> 		Weight: 		expr = "= 'union_data(UnitsFactors,'+ AsItemList('Data/' + FactorList/Name) +')'";
+			   		attribute<LandUses>		LandUseType:	expr = "const(LandUseNr, UnitsFactors, LandUses)";
+			   		attribute<uint8>		Func:			expr = "const(DefaultFuncKernel, UnitsFactors, uint8)";
+			   }
+				attribute<float32> Constant 		(UnitRef): expr = "value(Data/Constant, float32)[rlookup(UnitRef/ICC, Data/ZoneName)]";
+			}
+		}
+		Container Alloc1_Weight_Aggregation_Templ: IsTemplate = "True"
+		{
+			
+			unit<uint16> UnitRef;
+			parameter<string> LandUseClass;
+			
+			unit<uint32> Factors: expr = "= 'union_unit('+ AsItemList('Alloc1Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors') +')'"
+			{
+				attribute<UnitRef>  ZoneId:		expr = "rlookup(ZoneName, UnitRef/Name)";
+				attribute<string>	ZoneName:	expr = "= 'union_data(., '+ AsItemList('const('+ quote(UnitRef/name) + ', Alloc1Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors, string)')+')'";
+				attribute<float32> 	Weight:		expr = "= 'union_data(., '+ AsItemList('Alloc1Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors/Weight') +')'";
+				attribute<uint16> 	FactorNr: 	expr = "= 'union_data(., '+ AsItemList('Alloc1Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors/FactorNr') +')'";
+				attribute<UniFctr>	FactorId:	expr = "rlookup(FactorNr, UniFctr/Values)";
+			}
+			unit<uint32> UniFctr: expr = "unique(Factors/FactorNr)";
+			
+			container Weights: expr = "for_each_nedv('w' + string(UniFctr/Values), 'sum(float32(Factors/FactorNr = uint16(' + string(UniFctr/Values) + ')) * Factors/Weight, Factors/ZoneId)', UnitRef, float32)"
+			{ 
+				attribute<string> ZoneName 	(UnitRef): expr = "UnitRef/Name";
+				attribute<float32>Constant	(UnitRef): expr = "= 'union_data(UnitRef, '+ AsItemList('Alloc1Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/ConstWeight') + ')'";
+				
+				container TableComposer
+				{
+					   unit<uint16> context: expr = "UnitRef";
+					   // ExportDomain is a domain unit 
+					   parameter<String> Fieldlist:      expr = "= quote('ZoneName;Constant;' + asList('w'+ string(UniFctr/Values), ';'))";
+					   parameter<String> FieldSeperator: expr = "';'";
+					   parameter<String> FileName:       expr = "ParamSets/ActiveSet/ParamPath + '/ExogenousParams/' + LandUseClass +'_weights.csv'";
+					
+					   unit<uint32> Field: expr = "range(uint32,0,strcount(Fieldlist,';')+1)"
+					   {
+					      attribute<string> Name: expr = "ReadArray(FieldList,.,string,0)";
+					   }
+					   parameter<string> NewLine: expr = "'\n'";
+					   parameter<String> Header:  expr = "FieldList";
+					   attribute<String> Body (context): expr =
+					      "=AsList("
+					         "+'String('+Field/Name+')',' + '+Quote(FieldSeperator)+' +'"
+					      ")";
+					  
+					   parameter<String> Result
+					   :  expr        = "Header + NewLine + AsList(Body, NewLine)"
+					   ,  StorageName = "=FileName"
+					   ,  StorageType = "str";
+				}	
+			}
+		}
+		
+		Container Alloc2_Weight_Aggregation_Templ: IsTemplate = "True"
+		{
+			
+			unit<uint16> UnitRef;
+			parameter<string> LandUseClass;
+			
+			unit<uint32> Factors: expr = "= 'union_unit('+ AsItemList('Alloc2Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors') +')'"
+			{
+				attribute<UnitRef>  ZoneId:		expr = "rlookup(ZoneName, UnitRef/Name)";
+				attribute<string>	ZoneName:	expr = "= 'union_data(., '+ AsItemList('const('+ quote(UnitRef/name) + ', Alloc2Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors, string)')+')'";
+				attribute<float32> 	Weight:		expr = "= 'union_data(., '+ AsItemList('Alloc2Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors/Weight') +')'";
+				attribute<uint8> 	SrcLUT: 	expr = "= 'union_data(., '+ AsItemList('Alloc2Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/Factors/SrcLUT') +')'";
+				attribute<UniLUT>	SrcLUTId:	expr = "rlookup(SrcLUT, UniLUT/Values)";
+			}
+			unit<uint32> UniLUT: expr = "unique(Factors/SrcLUT)";
+			
+			container Weights: expr = "for_each_nedv('l' + string(UniLUT/Values), 'sum(float32(Factors/SrcLUT = uint8(' + string(UniLUT/Values) + ')) * Factors/Weight, Factors/ZoneId)', UnitRef, float32)"
+			{ 
+				attribute<string> ZoneName 	(UnitRef): expr = "UnitRef/Name";
+				attribute<float32>Constant	(UnitRef): expr = "= 'union_data(UnitRef, '+ AsItemList('Alloc2Sets/' + UnitRef/name + '/RegrData/Data/'+ LandUseClass +'/ConstWeight') + ')'";
+				
+				container TableComposer
+				{
+					   unit<uint16> context: expr = "UnitRef";
+					   // ExportDomain is a domain unit 
+					   parameter<String> Fieldlist:      expr = "= quote('ZoneName;Constant;' + asList('l'+ string(UniLUT/Values), ';'))";
+					   parameter<String> FieldSeperator: expr = "';'";
+					   parameter<String> FileName:       expr = "ParamSets/ActiveSet/ParamPath + '/NeighbourhoodParams/' + LandUseClass +'_weights.csv'";
+					
+					   unit<uint32> Field: expr = "range(uint32,0,strcount(Fieldlist,';')+1)"
+					   {
+					      attribute<string> Name: expr = "ReadArray(FieldList,.,string,0)";
+					   }
+					   parameter<string> NewLine: expr = "'\n'";
+					   parameter<String> Header:  expr = "FieldList";
+					   attribute<String> Body (context): expr =
+					      "=AsList("
+					         "+'String('+Field/Name+')',' + '+Quote(FieldSeperator)+' +'"
+					      ")";
+					  
+					   parameter<String> Result
+					   :  expr        = "Header + NewLine + AsList(Body, NewLine)"
+					   ,  StorageName = "=FileName"
+					   ,  StorageType = "str";
+				}	
+			}
+		}
+		
+		container AllowedTempl: IsTemplate = "True"
+		{
+			parameter<string> AllowFile;
+			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			{
+				attribute<int16> TransitionCode: Expr = "ReadArray(AllowFile, ModelMatr, int16, 0)";
+			}
+			container xTab: Expr = "for_each_nedv(ModelType/Name, 'ModelMatr/TransitionCode[value(UInt32(ID(ModelType))*#ModelType+'+String(ID(ModelType))+', ModelMatr)]', ModelType, int16)";
+		}
+		
+		container TransitionCostsTempl: IsTemplate = "True"
+		{
+			//parameter<string> TransitionCostsFilePath;
+			parameter<String> TransitionCostsFile; //:  StorageName = "=TransitionCostsFilePath", StorageType = "str", KeepData = "False";
+			
+			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			{
+				attribute<Float64> TransitionCosts: Expr = "ReadArray(TransitionCostsFile, ModelMatr, Float64, 0)";
+			}
+			container xTab: Expr = "for_each_nedv(ModelType/Name, 'ModelMatr/TransitionCosts[value(UInt32(ID(ModelType))*#ModelType+'+String(ID(ModelType))+', ModelMatr)]', ModelType, Float64)";
+		}
+		
+		// maximumvalue of 1.5 hardcoded in this script now.
+		container TransitionCostsTempl2: IsTemplate = "True"
+		{
+			parameter<string> TransitionCostsFilePath;
+			parameter<String> TransitionCostsFile:  StorageName = "=TransitionCostsFilePath", StorageType = "str", KeepData = "False";
+			
+			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			{
+				attribute<Float64> TransitionCosts: Expr = "ReadArray(TransitionCostsFile, ModelMatr, Float64, 0)";
+			}
+			container xTab: Expr = "for_each_nedv(ModelType/Name, 'ModelMatr/TransitionCosts[value(UInt32(ID(ModelType))*#ModelType+'+String(ID(ModelType))+', ModelMatr)]', ModelType, Float64)";
+			container pTab: Expr = "for_each_nedv(ModelType/Name, 'xTab/'+ ModelType/Name +'', ModelType, Float64)";
+		}
+		
+		container GrossRevenuesTempl: IsTemplate = "True"
+		{
+			parameter<string> GrossRevenuesFilePath;
+			parameter<String> GrossRevenuesFile:  StorageName = "=GrossRevenuesFilePath", StorageType = "str", KeepData = "False";
+			
+			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			{
+				attribute<Float64> GrossRevenues: Expr = "ReadArray(GrossRevenuesFile, ModelMatr, Float64, 0)";
+			}
+			container xTab: Expr = "for_each_nedv(ModelType/Name, 'ModelMatr/GrossRevenues[value(UInt32(ID(ModelType))*#ModelType+'+String(ID(ModelType))+', ModelMatr)]', ModelType, Float64)";
+			container pTab: Expr = "for_each_nedv(ModelType/Name, 'xTab/'+ ModelType/Name +'', ModelType, Float64)";
+		}
+		
+		
+		
+		container TransitionFactorsTempl: IsTemplate = "True"
+		{
+			parameter<string> TransitionFactorsFile;
+			parameter<string> TransitionFactorsFilePost2030;
+			
+			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			{
+				attribute<MetaData/FactorID> 			TransitionFactorIDs: 		 Expr = "ReadArray(TransitionFactorsFile, ModelMatr, MetaData/FactorID, 0)";
+				attribute<MetaData/FactorID>		 	TransitionFactorIDsPost2030: Expr = "ReadArray(TransitionFactorsFilePost2030, ModelMatr, MetaData/FactorID, 0)";
+				
+				attribute<MetaData/StaticFactors>  			TransitionFactors: 			Expr = "rlookup(TransitionFactorIDs, MetaData/StaticFactors/id)";
+				attribute<MetaData/StaticFactors>			  	TransitionFactorsPost2030:  Expr = "rlookup(TransitionFactorIDsPost2030, MetaData/StaticFactors/id)";
+				
+				//attribute<String> TransitionExpr: Expr = "(TransitionFactors == 0[MetaData/Factors]) ? ('') : ('+iif(PrevState/LandUse == value('+String(ID(.)/#ModelType)+', ModelType), Float32(CaseData/FactorData/'+MetaData/Factors/Name[TransitionFactors]+'),Float32(0))')";
+				attribute<String> TransitionExpr: Expr = 
+														"((TransitionFactors == 0[MetaData/StaticFactors]) && (TransitionFactorsPost2030 == 0[MetaData/StaticFactors])) ? ('') : "
+														"'+ switch(' + "
+															"'case(PrevState/LandUse == value(' + String(ID(.)/#ModelType) + ', ModelType) && CurrYear < 2030[float32], Float32(CaseData/FactorData/' + MetaData/StaticFactors/UniqueName[TransitionFactors] + ')), ' + "
+															"'case(PrevState/LandUse == value(' + String(ID(.)/#ModelType) + ', ModelType) && CurrYear >= 2030[float32], Float32(CaseData/FactorData/' + MetaData/StaticFactors/UniqueName[TransitionFactorsPost2030] + ')), ' + "
+															"'Float32(0)'"
+														" + ' )'";
+			}
+			attribute<string> xExpr(ModelType): Expr = "AsList(ModelMatr/TransitionExpr, '', (ID(ModelMatr) % #ModelType)[ModelType])";
+		}
+		
+		container MatrTempl: IsTemplate = "True"
+		{
+			parameter<string> NeighbFile;
+			parameter<UInt32> StartReadPos;
+			parameter<Int16> NrCells: Expr = "ReadValue(NeighbFile, Int16, StartReadPos)";
+			unit<SPoint> Data: Expr = "range(spoint, point_xy(-NrCells, -NrCells), point_xy(NrCells + int16(1), NrCells + int16(1)))"
+			{
+				attribute<Float32> Matr: Expr = "ReadArray(NeighbFile, Data, Float32, NrCells/readPos)";
+			}
+		}
+				
+		container NeighbTempl: IsTemplate = "True"
+		{
+			parameter<string> InNeighbFile;
+			
+			parameter<String> NeighbFile: StorageName = "=InNeighbFile", StorageType = "str", KeepData = "False";
+			
+			unit<UInt8> LUT: Expr = "Classifications/LU/ModelType";
+			
+			attribute<Float32> NeWeights(LUT): Expr = "ReadArray(NeighbFile, LUT, Float32, 0)";
+			
+			parameter<UInt8> NrNeighbFileKernels: Expr = "ReadValue(NeighbFile, UInt8, NeWeights/readPos)";
+			
+			unit<UInt8> NeighbFileKernelSet: Expr = "range(UInt8, 0[UInt8], NrNeighbFileKernels)"
+			{
+				attribute<String> Name: Expr = "'K'+String(ID(.))";
+				attribute<String> MatrRef: Expr = "'Matr/'+Name+'/Data'";
+			}
+			container Matr: Expr = 
+				"for_each_ne("
+					"NeighbFileKernelSet/Name, "
+					"'MatrTempl(NeighbFile,'+MakeDefined(NeighbFileKernelSet/Name[ID(NeighbFileKernelSet)-1[NeighbFileKernelSet] ]+'/Data/Matr/readPos', 'NrNeighbFileKernels/readPos')+')')";
+					
+			container FuncKernels: Expr = "/Parameters/FuncKernels";
+			
+			unit<UInt8> KernelSet: Expr = "Range(UInt8, uint8(0), uint8(#NeighbFileKernelSet + #FuncKernels/Set))";
+
+			attribute<String> MatrRef(KernelSet): Expr = 
+				"MakeDefined("
+					"NeighbFileKernelSet/MatrRef[value(ID(KernelSet), NeighbFileKernelSet)], "
+					"FuncKernels/Set/MatrRef[value(ID(KernelSet)-UInt8(#NeighbFileKernelSet), FuncKernels/Set)]"
+				")";
+		}
+		
+		container UniqueAllocSet: IsTemplate = "True"
+		{
+			parameter<String> AddPath;
+			parameter<String> FileExt;
+			
+			unit<uint16> Runs: Expr = "GeoGraphy/Regions/Runs";
+			
+			attribute<String> ParamPath  (Runs): Expr = "ParamSets/ActiveSet/ParamPath + '/' + AddPath + Runs/AllocDirName";
+			attribute<String> ParamPathN0(Runs): Expr = "ParamSets/ActiveSet/ParamPath + '/' + AddPath + Runs/AllocDirNameN0";
+			attribute<string> FileName   (Runs): Expr = "FullPathName(., ParamPath + FileExt)";
+			attribute<string> FileNameN0 (Runs): Expr = "FullPathName(., ParamPathN0 + FileExt)";
+			attribute<String> ActualFileNames(Runs): Expr = "='union_data(Runs, '+AsItemList('ExistingFile('+Quote(FileNameN0)+','+Quote(FileName)+')')+')'";
+			unit<UInt16> UniqueFiles: Expr = "Unique(ActualFileNames)"
+			{
+				attribute<Runs> RunRegion:   Expr = "rlookup(Values, FileName  )";
+				attribute<Runs> RunRegionN0: Expr = "rlookup(Values, FileNameN0)";
+				attribute<String> Name: Expr = "MakeDefined(Runs/AllocDirName[RunRegion], Runs/AllocDirNameN0[RunRegionN0])";
+			}
+			attribute<String> Name(Runs): Expr = "rjoin(ActualFileNames, UniqueFiles/Values, UniqueFiles/Name)";
+		}
+		container Alloc1Factor: IsTemplate = "True", isHidden = "True"
+		{
+			parameter<UInt32> readPos;
+			
+			parameter<Float32> Weight  : Expr = "ReadValue(AllocData, Float32, readPos)";
+			parameter<UInt16>  FactorNr: Expr = "ReadValue(AllocData, UInt16,  Weight/readPos)";
+			
+			parameter<UInt32> NextValue: Expr = "FactorNr/readPos";
+		}
+		container Alloc2Factor: IsTemplate = "True", isHidden = "True"
+		{
+			parameter<UInt32> readPos;
+			
+			parameter<Float32> Weight: Expr = "ReadValue(AllocData, Float32, readPos)";
+			parameter<UInt8>   SrcLUT: Expr = "ReadValue(AllocData, UInt8,   Weight/readPos)";
+			parameter<UInt8>   Func  : Expr = "ReadValue(AllocData, UInt8,   SrcLUT/readPos)";
+			
+			parameter<UInt32> NextValue: Expr = "Func/readPos";
+		}
+		container Alloc1LUT: IsTemplate = "True", isHidden = "True"
+		{
+			parameter<UInt32> readPos;
+			
+			parameter<UInt8>   LUT        : Expr = "ReadValue(AllocData, UInt8,   readPos)";
+			parameter<Float32> ConstWeight: Expr = "ReadValue(AllocData, Float32, LUT/readPos)";
+			parameter<UInt32>  NrFactors  : Expr = "ReadValue(AllocData, UInt32,  ConstWeight/readPos)";
+			unit<UInt32> Factors: Expr = "Range(UInt32, 0, MakeDefined(NrFactors, 0) )"
+			{
+				attribute<String> Name: Expr = "'F'+String(ID(Factors))";
+				attribute<UInt8>  LandUseType:   Expr = "const(LUT, .)";
+				attribute<UInt16>  FactorNr:Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/FactorNr')+')'     : 'const(UInt16(0), .)'";
+				attribute<Float32> Weight:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/Weight')+')' : 'const(Float32(0), .)'";
+			}
+			container FactorData: Expr = "='iterate(Factors/Name, Alloc1Factor, ''NrFactors/readPos'')'"
+			{
+				parameter<UInt32> lastValue;
+			}
+			parameter<UInt32> NextValue: Expr = "FactorData/lastValue";
+		}
+		container Alloc1Templ: IsTemplate = "True"
+		{
+			parameter<String> AllocData;
+			
+			container Data: Expr = "iterate(Classifications/LU/ModelType/Name, Alloc1LUT, '0')"
+			{
+				parameter<UInt32> lastValue;
+			}
+		}
+		container Alloc2LUT: IsTemplate = "True", isHidden = "True"
+		{
+			parameter<UInt32> readPos;
+			
+			parameter<UInt8>   LUT        : Expr = "ReadValue(AllocData, UInt8,   readPos)";
+			parameter<Float32> ConstWeight: Expr = "ReadValue(AllocData, Float32, LUT/readPos)";
+			parameter<UInt32>  NrFactors  : Expr = "ReadValue(AllocData, UInt32,  ConstWeight/readPos)";
+			unit<UInt32> Factors: Expr = "Range(UInt32, 0, MakeDefined(NrFactors, 0) )"
+			{
+				attribute<String> Name: Expr = "'F'+String(ID(Factors))";
+				attribute<UInt8>  LandUseType:   Expr = "const(LUT, .)";
+				attribute<UInt8>   SrcLUT:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/SrcLUT')+')'     : 'const(UInt8(0), .)'";
+				attribute<Float32> Weight:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/Weight')+')' : 'const(Float32(0), .)'";
+				attribute<UInt8>   Func:    Expr = "=(NrFactors > 0) ? 'union_data(., '+asItemList('FactorData/'+Name+'/Func')+')'   : 'const(UInt8(0), .)'";
+			}
+			container FactorData: Expr = "='iterate(Factors/Name, Alloc2Factor, ''NrFactors/readPos'')'"
+			{
+				parameter<UInt32> lastValue;
+			}
+			parameter<UInt32> NextValue: Expr = "FactorData/lastValue";
+		}
+		container Alloc2Templ: IsTemplate = "True"
+		{
+			parameter<String> AllocData;
+			
+			container Data: Expr = "iterate(Classifications/LU/ModelType/Name, Alloc2LUT, '0')"
+			{
+				parameter<UInt32> lastValue;
+			}
+		}
+		container Alloc1ReorderTempl: IsTemplate = "True"
+		{
+			container AllocData;
+			
+			unit<UInt16> FactorID:   Expr = "MetaData/FactorID";
+			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			
+			unit<UInt32> FactorWeightsOrg: Expr = "='union_unit('+asItemList('AllocData/'+ModelType/Name+'/Factors')+')'"
+			{
+				attribute<ModelType> LandUseType:
+					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/LandUseType')+'), ModelType)'";
+				attribute<FactorID> FactorNr:
+					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/FactorNr')+'), FactorID)'";
+				attribute<Float32> Weight:
+					Expr = "='union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/Weight')+')'";
+			}
+			container Results: StoreData = "True"
+			{
+				attribute<Float32> ConstWeight(ModelType): Expr = "='union_data(ModelType, '+asItemList('AllocData/'+ModelType/Name+'/ConstWeight')+')'";
+				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				{
+					attribute<String>    Name:        Expr = "'SF_'+String(LandUseType)+'_'+String(FactorNr)"; // assume this uniquely identifies a factor weight.
+					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
+					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<FactorID>  FactorNr:    Expr = "FactorWeightsOrg/FactorNr   [org_rel]";
+				}
+			}
+		}
+		// New setting of allocation params based on new filestructure (tables per landuse) March 2014 Chris Jacobs-Crisioni
+		container New_Alloc1ReorderTempl: IsTemplate = "True"
+		{
+			container AllocData;
+			
+			unit<Uint32> FactorID:   Expr = "MetaData/FactorID";
+			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			
+			unit<Uint32> ConstWeightsOrg:  Expr = "select_with_org_rel(AllocData/Constants/RegionId = inRegionId)"
+			{	
+				attribute<ModelType> 	LandUseType: expr = "AllocData/Constants/LandUseType[org_rel]";
+				attribute<float32>		Weight:		 expr = "AllocData/Constants/Weight[org_rel]";
+			}
+			unit<UInt32> FactorWeightsOrg: Expr = "select_with_org_rel(AllocData/RegionId = inRegionId)"
+			{
+				attribute<ModelType> LandUseType: 	expr = "AllocData/LandUseType[org_rel]";
+				attribute<FactorID> FactorNr:	  	expr = "AllocData/FactorID[org_rel]";
+				attribute<Float32> Weight:			expr = "AllocData/Weight[org_rel]";
+			}
+			container Results: StoreData = "True"
+			{
+				attribute<Float32> ConstWeight(ModelType): Expr = "rjoin(id(ModelType), ConstWeightsOrg/LandUseType, ConstWeightsOrg/Weight)";
+				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				{
+					attribute<String>    Name:        Expr = "'SF_'+String(LandUseType)+'_'+String(FactorNr)"; // assume this uniquely identifies a factor weight.
+					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
+					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<FactorID>  FactorNr:    Expr = "FactorWeightsOrg/FactorNr   [org_rel]";
+					attribute<string>	 VariableRef: Expr = "FactorId/VariableRef[FactorNr]";
+				}
+			}
+		}
+		container Alloc2ReorderTempl: IsTemplate = "True"
+		{
+			container AllocData;
+			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<UInt8> Funcs: Expr = "NeighbourhoodLink/KernelSet";
+			
+			unit<UInt32> FactorWeightsOrg: Expr = "='union_unit('+asItemList('AllocData/'+ModelType/Name+'/Factors')+')'"
+			{
+				attribute<ModelType> LandUseType: 
+					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/LandUseType')+'), ModelType)'";
+				attribute<ModelType> SrcLUT:
+					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/SrcLUT')+'), ModelType)'";
+				attribute<Float32> Weight:
+					Expr = "='union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/Weight')+')'";
+				attribute<Funcs> Func:
+					Expr = "='union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/Func')+')'";
+			}
+			container Results: StoreData = "True"
+			{
+				attribute<Float32> ConstWeight(ModelType): Expr = "='union_data(ModelType, '+asItemList('AllocData/'+ModelType/Name+'/ConstWeight')+')'";
+				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				{
+					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
+					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<ModelType> SrcLUT:      Expr = "FactorWeightsOrg/SrcLUT     [org_rel]";
+					attribute<Funcs>     Func:        Expr = "FactorWeightsOrg/Func       [org_rel]";
+					attribute<UInt32>    UFF_key:     Expr = "UInt32(SrcLUT) + UInt32(Func) * #ModelType";
+					attribute<UniqueFactorFuncs> UFF_rel: Expr = "rlookup(UFF_key, UniqueFactorFuncs/Values)";
+				}
+				unit<UInt32> UniqueFactorFuncs: Expr = "Unique(FactorWeights/UFF_key)"
+				{
+					attribute<UINt32>    Values;
+					attribute<ModelType> SrcLUT:      Expr = "value(Values % #ModelType, ModelType)";
+					attribute<Funcs>     Func:        Expr = "value(Values / #ModelType, Funcs)";
+					
+					attribute<string> ggModelIdExpr(ModelType): Expr = "'value('+String(ID(ModelType))+', ModelType)'";
+					
+					// moved here from Rules since this is independent of the actual run-region, weight or LUT for which this is a factor
+					attribute<String> Name:           Expr = "'NE_'+ModelType/Name[SrcLUT]+'_'+String(Func)";
+					attribute<string> PotentialExpr:  Expr = "'potential(Float32(PrevState/Landuse_grid=='+ggModelIdExpr[SrcLUT]+'), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
+					attribute<string> AreaExpr:       Expr = "'potential(Float32(CaseData/Land/IsInRunRegion), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
+					attribute<string> NeighbourExpr:  Expr = "'PotentialData/'+Name +' / '+'AreaData/'+Name";
+					attribute<string> MeanEnrichExpr: Expr = "'replace_value(sum(Float32(PrevState/Landuse_grid=='+ggModelIdExpr[SrcLUT]+')) / sum(Float32(CaseData/Land/IsInRunRegion)), Float32(0.0), Float32(9.0))'";
+					attribute<string> EnrichmentExpr: Expr = "'MakeDefined(NeighbourData/'+Name +' / MeanEnrichData/'+Name+', Float32(0))'";
+				}
+			}
+		}
+		
+		// slightly changed to accommodate changes to neighbourhood files March 2014 Chris Jacobs-Crisioni
+		container New_Alloc2ReorderTempl: IsTemplate = "True"
+		{
+			container AllocData;
+			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<UInt8> Funcs: Expr = "NeighbourhoodLink/KernelSet";
+			
+			unit<Uint32> ConstWeightsOrg:  Expr = "select_with_org_rel(AllocData/Constants/RegionId = inRegionId)"
+			{	
+				attribute<ModelType> 	LandUseType: expr = "AllocData/Constants/LandUseType[org_rel]";
+				attribute<float32>		Weight:		 expr = "AllocData/Constants/Weight[org_rel]";
+			}
+			
+			unit<UInt32> FactorWeightsOrg: Expr = "select_with_org_rel(AllocData/RegionId = inRegionId)"
+			{
+				attribute<ModelType> LandUseType: 	Expr = "AllocData/LandUseType[org_rel]";
+				attribute<ModelType> SrcLUT:		Expr = "AllocData/SrcLUT[org_rel]";
+				attribute<Float32> Weight:			Expr = "AllocData/Weight[org_rel]";
+				attribute<Funcs> Func:				Expr = "(AllocData/Func[org_rel])[Funcs]";
+			}
+			container Results: StoreData = "True"
+			{
+				attribute<Float32> ConstWeight(ModelType): Expr = "rjoin(id(ModelType), ConstWeightsOrg/LandUseType, ConstWeightsOrg/Weight)";
+				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				{
+					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
+					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<ModelType> SrcLUT:      Expr = "FactorWeightsOrg/SrcLUT     [org_rel]";
+					attribute<Funcs>     Func:        Expr = "FactorWeightsOrg/Func       [org_rel]";
+					attribute<UInt32>    UFF_key:     Expr = "UInt32(SrcLUT) + UInt32(Func) * #ModelType";
+					attribute<UniqueFactorFuncs> UFF_rel: Expr = "rlookup(UFF_key, UniqueFactorFuncs/Values)";
+				}
+				unit<UInt32> UniqueFactorFuncs: Expr = "Unique(FactorWeights/UFF_key)"
+				{
+					attribute<UINt32>    Values;
+					attribute<ModelType> SrcLUT:      Expr = "value(Values % #ModelType, ModelType)";
+					attribute<Funcs>     Func:        Expr = "value(Values / #ModelType, Funcs)";
+					
+					attribute<string> ggModelIdExpr(ModelType): Expr = "'value('+String(ID(ModelType))+', ModelType)'";
+					
+					// moved here from Rules since this is independent of the actual run-region, weight or LUT for which this is a factor
+					attribute<String> Name:           Expr = "'NE_'+ModelType/Name[SrcLUT]+'_'+String(Func)";
+					attribute<string> PotentialExpr:  Expr = "'potential(Float32(PrevState/Landuse_grid=='+ggModelIdExpr[SrcLUT]+'), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
+					attribute<string> AreaExpr:       Expr = "'potential(Float32(CaseData/Land/IsInRunRegion), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
+					attribute<string> NeighbourExpr:  Expr = "'PotentialData/'+Name +' / '+'AreaData/'+Name";
+					attribute<string> MeanEnrichExpr: Expr = "'replace_value(sum(Float32(PrevState/Landuse_grid=='+ggModelIdExpr[SrcLUT]+')) / sum(Float32(CaseData/Land/IsInRunRegion)), Float32(0.0), Float32(9.0))'";
+					attribute<string> EnrichmentExpr: Expr = "'MakeDefined(NeighbourData/'+Name +' / MeanEnrichData/'+Name+', Float32(0))'";
+				}
+			}
+		}
+		
+		container arrangePopulationParams: IsTemplate = "True"
+		{
+			parameter<uint32> ZoneNum;
+
+			container ParameterSet;
+			
+			unit<uint16> ZoneUnit: 		expr = "select_with_org_rel(ParameterSet/ZoneId = ZoneNum[uint16])";
+			
+			container ZoneValues: expr = "for_each_nedv(FactorReferences/FactorName, 'mean(ParameterSet/'+ FactorReferences/FactorName + '[ZoneUnit/org_rel])', void, float32)"
+			{parameter<float32> Constant: expr = "(mean(ParameterSet/Constant[ZoneUnit/org_rel]))";}
+			
+			unit<uint32> FactorValues: expr = "FactorReferences"
+			{
+				attribute<float32> 	Value: 		expr = "= 'union_data(.,'+ AsItemlist(!IsNull(FactorName) ? 'ZoneValues/'+ FactorName : 'float32(0)') + ')'";
+				attribute<string> 	DataRef:	expr = "!IsNull(FactorRef) ? MetaData/FactorId/VariableRef[FactorRef] : ''";
+			}
+			
+			parameter<string> EvalSuitExpr: expr = "'float32('+ string(ZoneValues/Constant) +') + Add('+AsItemList(!IsNull(FactorValues/FactorRef) ? 'float32('+string(FactorValues/Value)+') * float32('+FactorValues/DataRef+')': '')+')'";
+		}
+		container arrangeLinearParams: IsTemplate = "True"
+		{
+			parameter<uint32> ZoneNum;
+			container FactorListRef;
+			container ParameterSet;
+			
+			unit<uint16> ZoneUnit: 		expr = "select_with_org_rel(ParameterSet/ZoneId = ZoneNum[uint16])";
+			
+			container ZoneValues: expr = "for_each_nedv(FactorReferences/FactorName, 'mean(ParameterSet/'+ FactorReferences/FactorName + '[ZoneUnit/org_rel])', void, float32)"
+			{
+				parameter<float32> Constant: 	expr = "(mean(ParameterSet/Constant[ZoneUnit/org_rel]))";
+			}
+			
+			unit<uint32> FactorValues: expr = "FactorReferences"
+			{
+				attribute<float32> 	Value: 		expr = "= 'union_data(.,'+ AsItemlist(!IsNull(FactorName) ? 'ZoneValues/'+ FactorName : 'float32(0)') + ')'";
+				attribute<string> 	DataRef:	expr = "!IsNull(FactorRef) ? FactorListRef/VariableRef[FactorRef] : ''";
+			}
+			//parameter<string> SimpleExpr: 	expr = "'float32(exp(float32('+ string(ZoneValues/Constant) +') + Add('+AsItemList(!IsNull(FactorValues/FactorRef) ? 'float32('+string(FactorValues/Value)+') * float32('+FactorValues/DataRef+')': '')+')))'";
+			//parameter<string> proto_EvalExpr: 	expr = "'float32(exp(float32('+ string(ZoneValues/Constant) +') + Add('+AsItemList(!IsNull(FactorValues/FactorRef) ? 'float32('+string(FactorValues/Value / (float32(1) - ZoneValues/Rho))+') * float32('+FactorValues/DataRef+')': '')+')))'";
+			parameter<string> EvalExpr: expr = "'float32('+ string(ZoneValues/Constant) +') + Add('+AsItemList(!IsNull(FactorValues/FactorRef) ? 'float32('+string(FactorValues/Value)+') * float32('+FactorValues/DataRef+')': '')+')'";
+		}
+		container arrangeSARParams: IsTemplate = "True"
+		{
+			parameter<uint32> ZoneNum;
+			container FactorListRef;
+			container ParameterSet;
+			
+			unit<uint16> ZoneUnit: 		expr = "select_with_org_rel(ParameterSet/ZoneId = ZoneNum[uint16])";
+			
+			container ZoneValues: expr = "for_each_nedv(FactorReferences/FactorName, 'mean(ParameterSet/'+ FactorReferences/FactorName + '[ZoneUnit/org_rel])', void, float32)"
+			{
+				parameter<float32> Constant: 	expr = "(mean(ParameterSet/Constant[ZoneUnit/org_rel]))";
+				parameter<float32> Rho: 		expr = "(mean(ParameterSet/Rho[ZoneUnit/org_rel]))";
+			}
+			
+			unit<uint32> FactorValues: expr = "FactorReferences"
+			{
+				attribute<float32> 	Value: 		expr = "= 'union_data(.,'+ AsItemlist(!IsNull(FactorName) ? 'ZoneValues/'+ FactorName : 'float32(0)') + ')'";
+				attribute<string> 	DataRef:	expr = "!IsNull(FactorRef) ? FactorListRef/VariableRef[FactorRef] : ''";
+			}
+			//parameter<string> SimpleExpr: 	expr = "'float32(exp(float32('+ string(ZoneValues/Constant) +') + Add('+AsItemList(!IsNull(FactorValues/FactorRef) ? 'float32('+string(FactorValues/Value)+') * float32('+FactorValues/DataRef+')': '')+')))'";
+			parameter<string> proto_EvalExpr: 	expr = "'float32(exp(float32('+ string(ZoneValues/Constant) +') + Add('+AsItemList(!IsNull(FactorValues/FactorRef) ? 'float32('+string(FactorValues/Value / (float32(1) - ZoneValues/Rho))+') * float32('+FactorValues/DataRef+')': '')+')))'";
+			parameter<string> EvalExpr:			expr = "'MakeDefined(float32(1) + (((' + proto_EvalExpr + ' - float32(1)) / float32(10)) * Parameters/PeriodSet/result/PeriodLength[PeriodId]) ,float32(1))'";
+		}
+		
+		container ReadAlloc1: IsTemplate = "True"
+		{
+			parameter<String> FileName;
+			
+			parameter<String> FileData: StorageName = "=FileName", StorageType = "str", KeepData = "False";
+				
+			container RegrData: Expr = "Alloc1Templ(FileData)";
+			container Reordered: Expr = "Alloc1ReorderTempl(RegrData/Data)";
+		}
+		container ReadAlloc2: IsTemplate = "True"
+		{
+			parameter<String> FileName;
+			container NeighbourhoodLink;
+			
+			parameter<String> FileData: StorageName = "=FileName", StorageType = "str", KeepData = "False";
+				
+			container RegrData: Expr = "Alloc2Templ(FileData)";
+			container Reordered: Expr = "Alloc2ReorderTempl(RegrData/Data)";
+		}
+		
+		container getAlloc1: IsTemplate = "True"
+		{
+			parameter<Meta/Run> inRegionId;
+			
+			container Reordered: Expr = "New_Alloc1ReorderTempl(ExogenousEffectsMatrix)";
+		}
+		
+		container getAlloc2: IsTemplate = "True"
+		{
+			parameter<Meta/Run> inRegionId;
+			container NeighbourhoodLink;
+			
+			container Reordered: Expr = "New_Alloc2ReorderTempl(NeighbourhoodEffectsMatrix)";
+		}
+		
+	container AllocSet: IsTemplate = "True"
+		{
+			parameter<String> ParamPath;
+			container Alloc1Reg; //: Expr = "Alloc1Reordered/Results";
+			//container Alloc2Reg; //: Expr = "Alloc2Reordered/Results";
+			container TransitionCostLink;
+			container GrossRevenuesLink;
+			//container NeigbourhoodLink;
+			container PopSet;
+			parameter<string> RunZoneName;
+			
+			//container DemandModelSets;
+			
+			// ==== End of Template parameters
+			
+			container ParamSet:  Expr = "ParamSets/ActiveSet";
+			
+			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<Uint32> Factors:		  	Expr = "MetaData/FactorID";
+			unit<Uint32> StaticFactors:   	Expr = "MetaData/StaticFactors";
+			unit<Uint32> DynamicFactors:   	Expr = "MetaData/DynamicFactors";
+
+			container Allowed: Expr = "ParamSet/Allowed";
+			
+			container Rules
+			{
+				container Templates: Expr = "Templ";
+			
+				attribute<string> ggModelIdExpr(ModelType): 			Expr = "String(ID(ModelType))+'[ModelType]'";
+				parameter<string> Population_Pressure: 					Expr = "PopSet/Population_Pressure_expr";
+				parameter<string> Population_Distribution:  			Expr = "PopSet/Population_Def_expr";
+				parameter<string> Population_Def_NotUrban_expr: 		Expr = "PopSet/Population_Def_NotUrban_expr";
+				parameter<string> Population_Def_IsUrban_central_expr: 	Expr = "PopSet/Population_Def_IsUrban_central_expr";
+				parameter<string> Population_Def_IsUrban_remote_expr: 	Expr = "PopSet/Population_Def_IsUrban_remote_expr";					
+				parameter<bool>   PopulationSpillovers:					Expr = "MetaData/DemandCharacteristics/PopulationSpillovers";
+				parameter<string> Qj_definition:						Expr = "PopulationSpillovers ? 'Claims/DynamicDemandModels/relocate_population/Def_Population' : 'Claims/Population'";
+				
+				//parameter<string> residential_density_change: 	Expr = "DemandModelSets/EvalExpr";
+				//parameter<string> PopulationZones:			Expr = "PopSet/";
+				//parameter<string> PopulationPatch:			Expr = "PopSet/PatchExpr";
+				//parameter<uint8>  ModelSpec:				Expr = "PopSet/ModelSpec";
+				//parameter<string> SpatParam:				Expr = "PopSet/EvalSpatParam";
+				//parameter<string> eval_Pi: 					Expr = "switch("
+				//	"case(Rules/ModelSpec = uint8(1), ' ('+ Rules/SpatParam + ' * PrevState/PotQi) + factors_Pi'), "
+				//	"case(Rules/ModelSpec = uint8(2), '(('+ Rules/SpatParam + ' * PrevState/PotQi) + factors_Pi) - (' + Rules/SpatParam + ' * pot_factors)'), "
+				//	"'factors_Pi')";
+				//parameter<float32>AbandonmentThreshold: 	Expr = "PopSet/AbandonmentThreshold";
+				//parameter<float32>UrbanizationThreshold: 	Expr = "PopSet/UrbanizationThreshold";
+				parameter<string> PopModel:					Expr = "ParamSet/PopulationModel";
+				parameter<float32>share_touristic_lu: 		expr = "PopSets/share_touristic_lu";
+				parameter<Year>	  SupplyChange:				Expr = "PopSets/SupplyChange";
+				parameter<float32>RelocationPerYear:		Expr = "PopSets/RelocationPerYear";
+				//parameter<bool>	  k_perNuts2:				Expr = "PopSet/k_perNuts2";
+				//parameter<float32>k_adj_factor:				Expr = "PopSet/k_adj_factor";
+				//parameter<bool>	  RMSE:						Expr = "PopSet/RMSE";
+				//parameter<float32>k:						Expr = "PopSet/k";
+				
+				container DemandModels: expr = "for_each_nedv(MetaData/DemandModelsList/Name, 'DemandSets/DemandModels/'+ MetaData/DemandModelsList/Name +'/genExpressions/'+RunZoneName+'/EvalExpr', void, string)";
+				
+				unit<UInt32> CurrFactorWeights: Expr = "Alloc1Reg/FactorWeights";
+				attribute<string> SuitTermExpr (CurrFactorWeights):
+					Expr = "'Rules/CurrFactorWeights/Weight['+String(ID(CurrFactorWeights))+'] * convert('+ CurrFactorWeights/VariableRef +', float32)'";
+				attribute<string> SuitTermsExpr (ModelType):
+					Expr = 
+						"'add(const('+MakeDefined(String(Alloc1Reg/ConstWeight), ' -9999.1')+', domain, Float32)'"
+						"+asList(', '+SuitTermExpr, '', CurrFactorWeights/LandUseType)+')'";
+								
+////			attribute<string> SuitabilityExpExpr   (ModelType): Expr = "'exp(min_elem(MakeDefined(SuitabilityModifiers/'+ModelType/Name+', Float32(-1000000)), float32(80)))'";
+				attribute<string> SuitabilityExpExpr   (ModelType): Expr = "'exp(min_elem(MakeDefined(EmpiricallyObtainedSuitability/'+ModelType/Name+', Float32(-1000000)), float32(80)))'";
+				attribute<string> SuitabilityLogitExpr 		(ModelType): Expr = "SuitabilityExpExpr+'/(Float32(1)+'+SuitabilityExpExpr+')'";
+				attribute<string> SuitabilityRescaleExpr	(ModelType): Expr = "!ModelType/IsAbandonedUrban[ModelType] ? "
+					"'min_elem(MakeDefined(protoSuitabilityLogit/'+ ModelType/Name + ' / nth_element(protoSuitabilityLogit/'+ ModelType/Name +', domain/p99_value), float32(0)), float32(1))' : "
+					"'MakeDefined(protoSuitabilityLogit/'+ ModelType/Name + ', float32(0))'"; 
+				
+///				attribute<string> MaxSuitabilityLogitExpr (ModelType): Expr = "'max(SuitabilityLogit/'+ModelType/Name+')'";
+////     		attribute<string> SuitabilityLogitRescaledExpr (ModelType): Expr = "'Rescale(SuitabilityLogit/'+ModelType/Name+', float32(0), float32(1))'";
+///				attribute<string> SuitabilityLogitRescaledExpr (ModelType): Expr = "'MakeDefined((SuitabilityLogit/'+ModelType/Name+') / (MaxSuitabilityLogit/'+ModelType/Name+'), float32(0))'";
+				parameter<string> SuitabilitySumExpExpr: Expr = "'add('+AsItemList(SuitabilityExpExpr)+')'";
+				attribute<string> SuitabilityMnlExpr   (ModelType): Expr = "SuitabilityExpExpr+' / TotalExpSuitability'";
+				
+				attribute<string> LocSpecExprPrefix(ModelType):
+		 		
+		 			Expr = 
+						"'DGRegio/LocSpecList/' + ModelType/Name + "
+		 				"((ParamSet/LocationSpecificPreferenceAddition <> Float32(0.0))"
+		 					"? ' * CaseData/LocSpec/'+ModelType/Name+'* ParamSet/LocationSpecificPreferenceAddition['+ggModelIdExpr+']'"
+		 					": '')";
+				
+				attribute<string> LocSpecsModifierExpr (ModelType): expr = "CombinedSuitExpr + ' * ' + LocSpecExprPrefix";
+					//"'('+ LocSpecExprPrefix +' < float32(1)) ? '+ " 
+					//"CombinedSuitExpr +' - ('+ CombinedSuitExpr +' * '+ LocSpecExprPrefix +') : ' + " 	// decrease in suitability: take from absolute suitability levels
+					//"CombinedSuitExpr +' + ('+ CombinedSuitExpr +' * '+ LocSpecExprPrefix +')'"; 		// increase in suitability: add to absolute suitability levels
+
+				//attribute<string> LocSpecsModifierExpr (ModelType): expr = "'max_elem(' + LocSpecExprPrefix + CombinedSuitExpr + ', '+ CombinedSuitExpr +')'"; // old definition
+				
+////			attribute<string> SuitTermsRescaledExpr(ModelType): expr = "'EmpiricallyObtainedSuitability/'+ModelType/Name";
+				
+
+////			attribute<string> CombinedSuitExpr(ModelType): expr = "'EmpiricallyObtainedSuitability/'+ModelType/Name";
+				
+				attribute<string> CombinedSuitExpr(ModelType): expr = "'SuitabilityLogit/'+ModelType/Name";
+
+				attribute<string> TransitionCostsExpr(ModelType): Expr = "'value(Rules/TransitionCosts/pTab/'+ModelType/Name+', Float32)[PrevState/Landuse]'"; //+ParamSet/TransitionFactors/xExpr"; // this cuts out the transitionfactors expressions, which have become obsolete with Baseline 2017
+
+				attribute<string> GrossRevenuesExpr(ModelType): Expr = "'value(Rules/GrossRevenues/pTab/'+ModelType/Name+', Float32)[PrevState/Landuse]'";  	
+											
+				attribute<string> TransitionCostExpression(ModelType): Expr = "'SuitabilityModifiers/'+ ModelType/Name +' * (' + GrossRevenuesExpr + ') - (' + TransitionCostsExpr + ')'";
+				
+				
+				/*attribute<string> CombinedSuitExpr(ModelType): // static + enrichment
+					Expr = 
+						"Neighbourhood/NeWeights <> Float32(0)"
+							"? '(Float32(1)-'+NeighbourhoodWeightExpr+') * Suitability/'+ModelType/Name+"
+								"'+'+NeighbourhoodWeightExpr+'*DynamicNeighbour/'+ModelType/Name"
+							": 'Suitability/'+ModelType/Name";
+				*/
+				
+				
+				
+				
+				
+				
+				
+				//unit<UInt32> Factor2Weights:    Expr = "Alloc2Reg/FactorWeights";
+				//unit<UInt32> UniqueFactor2Func: Expr = "Alloc2Reg/UniqueFactorFuncs";
+				//				attribute<string> DynamicNeigbourPotentialExpr0(ModelType): //new for restoring original neighbourhood values (excluding enrichment)
+				//	Expr = 
+				//		"asItemList('Value('+String(Factor2Weights/Weight)+', EUR_M2)"
+				//		"*PotentialData/'+UniqueFactor2Func/Name[Factor2Weights/UFF_rel], Factor2Weights/LandUseType)";
+				/*attribute<string> DynamicNeigbourEnrichmentExpr0(ModelType): 
+					Expr = 
+						"asItemList('Value('+String(Factor2Weights/Weight)+', EUR_M2)"
+						"*EnrichmentData/'+UniqueFactor2Func/Name[Factor2Weights/UFF_rel], Factor2Weights/LandUseType)";
+				attribute<bool>   HasDynamicNeighbourInfluence(ModelType): Expr = "pcount(Factor2Weights/LandUseType)>0";
+				attribute<string> DynamicNeighbourPotentialExpr (ModelType): Expr =  "HasDynamicNeighbourInfluence ? 'add('+DynamicNeigbourPotentialExpr0  +')' : 'const(0,domain,EUR_M2)'"; // was DynamicNeigbourExpr1
+				attribute<string> DynamicNeighbourEnrichmentExpr(ModelType): Expr =  "HasDynamicNeighbourInfluence ? 'add('+DynamicNeigbourEnrichmentExpr0 +')' : 'const(0,domain,EUR_M2)'";
+						
+				attribute<string> DynamicNeighbourExpExpr   (ModelType): Expr = "'exp(min_elem(value('+String(Alloc2Reg/ConstWeight)+', EUR_M2)'+(HasDynamicNeighbourInfluence ? '+DynamicNeighbourData/'+ModelType/Name : '')+', float32(80)))'";
+				attribute<string> DynamicNeighbourLogitExpr0(ModelType): Expr = "DynamicNeighbourExpExpr+'/(Float32(1)+'+DynamicNeighbourExpExpr+')'";
+				attribute<string> DynamicNeighbourLogitExpr (ModelType): Expr = "HasDynamicNeighbourInfluence ? DynamicNeighbourLogitExpr0 : 'const('+DynamicNeighbourLogitExpr0+',domain)'";
+				
+				parameter<string> DynamicNeighbourSumExpExpr  : Expr = "'add('+AsItemList(DynamicNeighbourExpExpr)+')'";
+				attribute<string> DynamicNeighbourMnlExpr  (ModelType): Expr = "DynamicNeighbourExpExpr+' / TotalExpNeighbour'";
+				*/
+				Container TransitionCosts: expr = "TransitionCostLink";
+				Container GrossRevenues: expr = "GrossRevenuesLink";
+				//Container Neighbourhood: expr = "NeigbourhoodLink";
+				
+				unit<uint32> ModelMatr: Expr = "Allowed/ModelMatr"
+				{
+					unit<uint32> Indirects: Expr = "select_with_org_rel(TransitionCode>int16(1) && TransitionCode <=int16(100))"
+					{
+						attribute<uint32> TransCode_uint32: expr = "value(TransitionCode[org_rel], uint32)";
+						attribute<String> OrgValue: Expr = "'PrevState/dFactors/'+rjoin(TransCode_uint32, DynamicFactors/ID, DynamicFactors/Name)";
+						attribute<String> Value:    Expr = "'int16('+OrgValue+')'";
+						//attribute<bool> IsBool: 
+						//	Expr = 
+						//		"rjoin(value(TransitionCode[org_rel], MetaData/FactorID), DynamicFactors/id, DynamicFactors/ValuesUnit2) == 'Boolean'";
+						attribute<String> AllowedExprBool: Expr = "'float32('+OrgValue+') > float32(0)'";
+						attribute<String> AllowedExprInt16:  // value = <null> => false; all non-null values in X8..X13 are above 1000.
+							Expr =  "'int16(PrevState/Age) >= ('+Value+'-int16(1000))'";
+						attribute<String> AllowedExpr: expr = "AllowedExprBool";
+		
+						//attribute<bool>   HasBottomUpCond: Expr = "cTrue";
+						attribute<String> BottomUpCond: 
+							Expr = "AllowedExpr";
+					}
+					attribute<String> AllowRuleValue: 
+						Expr = 
+							"switch("
+								"case(Allowed/ModelMatr/TransitionCode==int16(   0), 'false'),"
+								"case(Allowed/ModelMatr/TransitionCode==int16(   1), 'const(true, domain)')," // disappears
+								"case(Allowed/ModelMatr/TransitionCode>=int16(1000), 'PrevState/Age >= value('+String(Allowed/ModelMatr/TransitionCode-int16(1000))+', YearDiffRange)'),"
+								"Indirects/AllowedExpr[invert(Indirects/org_rel)]"
+							")";
+					attribute<ModelType> RuleFrom:  	Expr = "value(ID(.) / #ModelType, ModelType)";
+					attribute<ModelType> RuleDest:  	Expr = "value(ID(.) % #ModelType, ModelType)";
+					attribute<String> AllowRuleCases:  	Expr = "(AllowRuleValue != AllowRuleElse) ? 'case(PrevState/LandUse == '+ggModelIdExpr[RuleFrom]+', '+AllowRuleValue+'),' : ''";
+
+					attribute<String> BottomUpCond: 
+						Expr = 
+							"switch("
+								"case(Allowed/ModelMatr/TransitionCode==int16(   0), ''),"
+								"case(Allowed/ModelMatr/TransitionCode==int16(   1), ''),"
+								// "case(Allowed/ModelMatr/TransitionCode>=int16(1000), 'PrevState/Age >= value('+String(Allowed/ModelMatr/TransitionCode-int16(1000))+', YearDiffRange)')," // commented out because this sort of post-processing is unwanted (claims!).
+								"MakeDefined(Indirects/BottomUpCond[invert(Indirects/org_rel)], '')"
+							")";
+					attribute<String> BottomUpCases: 
+						Expr = "BottomUpCond == '' ? '' : 'case(AllocLandUse=='+ggModelIdExpr[RuleFrom]+' && '+BottomUpCond + ', '+ggModelIdExpr[RuleDest]+'), '";
+				}
+				parameter<String> AllowRuleElse:  Expr = "'const(True, domain)'"; // CurrYear > 2010[float32] && PrevState/LandUse <> ModelType/ForestsMature ? False : True'";
+				attribute<String> AllowRules(ModelType): Expr = 
+					"'switch(' + "
+					" switch(	case(id(ModelType) = ModelType/ForestsMature, 				'case(BurntForest/NewlyBurnt || (CurrYear > 2010[float32] && PrevState/Landuse <> ModelType/ForestsMature), false),'), "
+					"			case(id(ModelType) = ModelType/ForestsYoung, 				'case(BurntForest/NewlyBurnt, false),'), "
+					"			case(id(ModelType) = ModelType/TransWoodlandShrub, 			'case(BurntForest/NewlyBurnt, true),'), '') + "
+					"asList(ModelMatr/AllowRuleCases, '', ModelMatr/RuleDest)+AllowRuleElse+')'";
+				
+				parameter<String> PostProcStep: Expr = 
+						"'PrevState/landuse == AllocLandUse ? switch('+asList(ModelMatr/BottomUpCases, '')+'AllocLandUse) : AllocLandUse'";
+		
+				//	INCOMPLETE ANALYSIS OF REQUIRED PROHIBITIVE CONVERSION ELASTICY AND BLOCKING MINIMUM
+				//	Phohibitive ConversionElasticity  C ( C=1.0 in main.1 ) should be such that 
+				//
+				//		C + min(Pthis) >= max(Pother) :to prevent vacancy when COV(this) increases
+				//	or      min(Pthis) <= max(Pother) :to prevent settlement when COV(this) decreases
+				//
+				//		where P is:
+				//			any of the calculated probabilities with range [0..1.2] (assuming nonnegative LocSpecs and related weights)
+				//		+	any conversionElasticity with range [0..1.0)
+				//		+	S, the claim-shadowprice
+				//	
+				//	furthermore, to ensure that this rule is weaker than the absolute disallowances of level MIN (-3.0 in CLUE-s):
+				//
+				//		min(P) > MIN
+				// 
+				
+		// TODO
+		 		
+
+// [
+// 	'',
+// 	'',
+// 	'CaseData/LocSpec/OtherArable* ParamSet/LocationSpecificPreferenceAddition[value(2, ModelType)]+',
+// 	'CaseData/LocSpec/PermanentCrops* ParamSet/LocationSpecificPreferenceAddition[value(3, ModelType)]+',
+// 	'CaseData/LocSpec/Pastures* ParamSet/LocationSpecificPreferenceAddition[value(4, ModelType)]+',
+// 	'',
+// 	'',
+// 	'CaseData/LocSpec/Cereals* ParamSet/LocationSpecificPreferenceAddition[value(7, ModelType)]+,'
+// 	'CaseData/LocSpec/Maize* ParamSet/LocationSpecificPreferenceAddition[value(8, ModelType)]+',
+// 	'CaseData/LocSpec/RootCrops* ParamSet/LocationSpecificPreferenceAddition[value(9, ModelType)]+',
+// 	'CaseData/LocSpec/AbandonedArable* ParamSet/LocationSpecificPreferenceAddition[value(10, ModelType)]+',
+// 	'CaseData/LocSpec/AbandonedPermanentCrops* ParamSet/LocationSpecificPreferenceAddition[value(11, ModelType)]+',
+// 	'CaseData/LocSpec/AbandonedPastures* ParamSet/LocationSpecificPreferenceAddition[value(12, ModelType)]+'
+// ];
+		 					
+		 					
+		 					
+		 					
+		 												
+				//attribute<string> NeighbourhoodWeightExpr(ModelType): Expr = "'Neighbourhood/NeWeights['+ggModelIdExpr+']'";
+				
+				
+		
+		// ====== Begin LINEAR Support
+		
+//				attribute<string> AddedSuitExpr(ModelType): // static + enrichment
+	//				Expr = 
+		//				"(ParamSet/Neighbourhood/NeWeights <> Float32(0)"
+			//				"? '(Float32(1)-'+NeighbourhoodWeightExpr+')*MakeDefined(SuitabilityData/'+ModelType/Name+',value(-1000.0, EUR_M2))+'+NeighbourhoodWeightExpr+'*DynamicNeighbourData/'+ModelType/Name"
+				//			": 'SuitabilityData/'+ModelType/Name"
+				//		")";
+				attribute<string> AddedSuitExpExpr  (ModelType): Expr = "'exp(min_elem(AddedSuitabilityData/'+ModelType/Name+', float32(80)))'";
+				attribute<string> AddedSuitLogitExpr(ModelType): Expr = "AddedSuitExpExpr+'/add('+AsItemList(AddedSuitExpExpr)+')'";
+				attribute<string> TotalLinearSuitabilityExpr(ModelType): Expr = "AddedSuitLogitExpr + '-' + TransitionCostsExpr";
+					
+		// ====== End LINEAR Support
+					
+				attribute<String> TransPotExpr   (ModelType): 
+					Expr = 
+					"'Allowed/'+ModelType/Name+' "
+						"? convert(Suitability_x_TransitionCosts/'+ModelType/Name+', EUR_M2)"
+						": value(-100000.0, EUR_M2)'";
+			}
+		}
+		container EU_Wide_TableChopper: IsTemplate = "True"
+		{
+			parameter<string> name;
+			unit<uint32> Zones;
+			
+			//parameter<string> ScenarioName: expr = "ParamSets/ActiveSet/ParamName";
+			
+			parameter<String> File: StorageName = "= ParamSets/ActiveSet/DemandPath +'/'+ name +'.csv'", StorageType = "str"; 
+			parameter<String> HeaderLine: Expr = "ReadLines(File, void, 0)";
+			 parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine, '[^,]++(,[^,]++)*+')";
+			unit<uint32>  PopField: Expr = "range(uint32, 0, strcount(HeaderLine, ','))", IntegrityCheck = "HeaderOK"
+			{
+				attribute<String> 	Name: 					Expr = "ReadArray(HeaderLine, PopField, string, strpos(HeaderLine, ',')+1)";
+				attribute<bool>		IsYear: 				Expr = "uppercase(substr(Name,0,1)) = 'Y'";
+				attribute<UInt16> 	Year: 					Expr = "uppercase(substr(Name,0,1)) = 'Y' ? UInt16(substr(Name, strlen(Name)-4, 4)) : Uint16(0 / 0)";
+				attribute<PeriodSet/result> ModelYearRel: 	Expr = "rlookup(float32(Year), PeriodSet/result/ProjectedYear)";
+			}
+			unit<UInt32> BodyDomain: Expr = "Range(UInt32, 0, strcount(File, '\n')-1)"
+			{
+				attribute<string> Line: Expr = "ReadLines(File, BodyDomain, HeaderLine/ReadPos)";
+				attribute<Bool> LinesAreNuts2CodeAndIntegers(BodyDomain): expr = "regex_match(Line, '[A-Z][A-Z]([A-Z]|[0-9])?+([A-Z]|[0-9])?+(,([0-9]++))*+')";
+				
+				attribute<String> ZoneId: Expr = "ReadElems(Line, string, const(0, BodyDomain))";//, IntegrityCheck = "LinesAreNuts2CodeAndIntegers";
+				attribute<Zones> ZoneRel: Expr = "rlookup(ZoneId,Zones/ZoneId)";
+				container Data: Expr = 
+					"for_each_nedv("
+						" PopField/Name"
+						",'ReadElems("
+							" Line"
+							",float32"
+							",'+MakeDefined("
+							" PopField/Name[sub_or_null(ID(PopField),1)]+'/ReadPos'"
+							",'ZoneId/ReadPos'"
+							")+'"
+						")'"
+						",BodyDomain"
+						",float32"
+					")";
+			}
+			container InColumns: expr = "for_each_nedv(PopField/Name, 'sum(BodyDomain/Data/'+ PopField/Name +', BodyDomain/ZoneRel)', Zones, float32)";
+			
+			unit<uint32> Years: expr = "select_with_org_rel(PopField/IsYear)" 
+			{
+				attribute<string> Name: expr = "PopField/Name[org_rel]"; 
+				attribute<YearRange> ForYear: expr = "float32(PopField/Year[org_rel])[YearRange]";
+				attribute<PeriodSet/result> ModelYearRel: expr = "PopField/ModelYearRel[org_rel]"; 
+				attribute<string> ref: expr = "const('Zones',.,string)";
+			}
+			
+			unit<uint32> Data: expr = "= 'union_unit('+ AsItemList(Years/ref)  +')'"
+			{
+				attribute<float32> 		Pop: 		expr = "= 'union_data(.,'+ AsItemList('InColumns/'+ Years/Name) +')'";
+				attribute<YearRange> 	ForYear:	expr = "= 'union_data(.,'+ AsItemList('const(float32('+string(Years/ForYear)+'),Zones,YearRange)') +')'";
+				attribute<Zones>		ZoneRel:	expr = "= 'union_data(.,'+ AsItemList('id('+ Years/Ref + ')') +')'";
+				attribute<YearRange> 	Year:		expr = "PeriodSet/result/ProjectedYear[rlookup(float32(ForYear), PeriodSet/result/ProjectedYear)]";
+			}
+			
+			unit<uint32> Domain: expr = "Data" {attribute<string> Label: expr = "Zones/Label[ZoneRel]";}
+			
+		}
+		
+		container ClaimTableTemplateTableChopper: IsTemplate = "True"
+		{
+			// begin case parameter
+			unit<Uint32>      RegionDomain;
+			parameter<string> RegionDomainName;
+			parameter<string> ScenarioName;
+			parameter<string> RegionName;
+			// end case parameter
+
+			parameter<String> FileName:       expr = "ParamSets/ActiveSet/DemandPath + '/' + RegionDomainName + '/' + RegionName + '.csv'";
+			parameter<String> FieldSeparator: expr = "','";
+		
+			parameter<String> FileData
+			:	StorageType = "str"
+			,	StorageName = "=FileName";
+			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+// 			parameter<Bool>   HeaderOK:   expr = 
+// 				"regex_match("
+// 					" HeaderLine"
+// 					",'\"[^\"]*+\"(,\"[^\"]*+\")*+'"
+// 				")";
+
+			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			{
+				attribute<String> Name: Expr = 
+				"ReadArray(HeaderLine, Field, String, 0)";
+			}
+			unit<uint32> Domain: expr = "Range(UInt32, 0, strcount(FileData, '\n')-1)"
+			{
+//				attribute<.> id: expr = "id(.)";
+				attribute<String> Label: expr = "Data/Region", DialogType = "LabelText";
+			}
+			
+			attribute<String> BodyLines(Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
+// 			,	IntegrityCheck = "HeaderOK";
+// 			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+// 				"regex_match("
+// 					" BodyLines"
+// 					",'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+'"
+// 				")";
+			
+			container Data: Expr = 
+				"for_each_nedv("
+					" Field/Name"
+					",'ReadElems("
+						" BodyLines"
+						",string"
+						",'+MakeDefined("
+							" Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos'"
+							",'const(0,Domain)'"
+						")+'"
+					")'"
+					",Domain"
+					",string"
+				")"
+			{
+				attribute<String> RegionUp_Raw (Domain): Expr = "UpperCase(Region)",               StoreData = "False", FreeData = "True";
+				attribute<String> RegionUp     (Domain): Expr = "RegionUp_Raw",                    IntegrityCheck = "all(region_allowed)";
+				attribute<UInt32> ZeroClaim    (Domain): Expr = "const(0,Domain)",           StoreData = "False", FreeData = "True";
+				attribute<UInt32> HighClaim    (Domain): Expr = "const(2000000000,Domain)",  StoreData = "False", FreeData = "True";
+				
+				// extra code for integrity check on Region Codes:
+				// they should all be known as codes in the corresponding Domain (which refers to a specific column in CAPRI_NUTS2_correspondences.xls)
+				// except for a limitative list of explicitly defined exceptions (now this list only contains 1 entry).
+				// one region_exception is necessary as the demand files contain also aggregated demands per country
+				// The region exception checks on the pattern: rc00 (rc = a known region code prefix)
+				
+				attribute<RegionDomain> region_nr  (Domain):  Expr = "rlookup(RegionUp_Raw, RegionDomain/ZoneId)";
+				attribute<bool> region_prefixKnown (Domain):  Expr = "IsDefined(rlookup(substr(RegionUp_Raw, 0, 2),substr(RegionDomain/ZoneId, 0, 2))) ";
+				attribute<bool> region_exception1  (Domain):  Expr = "(strlen(RegionUp_Raw) == 4) && region_prefixKnown && (substr(RegionUp_Raw, 2, 2) == '00')";
+				attribute<bool> region_allowed     (Domain):  Expr = "isDefined(region_nr) || (region_exception1)";
+				
+				attribute<Domain> rel_curr_years		(PeriodSet/result): expr = "rlookup(PeriodSet/result/CurrYear, value(year, float32))";
+				attribute<bool> check_rel			(PeriodSet/result): expr = "IsDefined(rel_curr_years)";
+				
+			}
+		}
+		
+		container DemandSet: IsTemplate = "True"
+		{
+			parameter<String> DemandDirname;
+			
+			container ParamSet:  Expr = "ParamSets/ActiveSet";
+			
+			container Global: expr = "../Global";
+			
+			unit<uint8> ModelType: expr = "Classifications/LU/ModelType";
+			
+			
+			unit<UInt8> DC: Expr = "MetaData/DemandCharacteristics";
+			attribute<String> RegionRefs		(DC): Expr = "DC/OrgRegion";
+			
+			unit<uint8> RunRegionDemands: expr = "select_with_org_rel(!DC/EU)" {attribute<string> Regions:	expr = "RegionRefs[org_rel]"; attribute<float32> StartYearDefined: expr = "DC/StartYearDefined[org_rel]"; attribute<RunRegion_Specific_RegionRefs> rrsr_id: expr = "rlookup(Regions, RunRegion_Specific_RegionRefs/Values)";}
+			
+			attribute<String> DestRegionRefs	(DC): Expr = "DC/ModelRegion";
+			
+			unit<UInt8> UniqueRegionRefs: Expr = "unique(RegionRefs)";
+			unit<UInt8> UniqueDestRegionRefs: Expr = "unique(DestRegionRefs)";
+			unit<UInt8> RunRegion_Specific_RegionRefs: expr = "unique(RunRegionDemands/Regions)" {attribute<float32> StartYearDefined: expr = "mean(RunRegionDemands/StartYearDefined, RunRegionDemands/rrsr_id)";}
+			unit<UInt8>	UnionedRegionRefs := union_unit_uint8(UniqueRegionRefs, UniqueDestRegionRefs)
+			{
+				attribute<string> Values :=  union_data(., UniqueRegionRefs/Values, UniqueDestRegionRefs/Values);
+			}
+			unit<uint8> AllRegionRefs:			Expr = "unique(UnionedRegionRefs/Values)" {attribute<string> Values;}
+			
+			container ClaimTablesOrg: FreeData = "True", StoreData = "True", Using = "Parameters/DemandSets/Global", Expr = 
+				"for_each_ne("
+					" RunRegion_Specific_RegionRefs/Values"
+					",'ClaimTableTemplateTableChopper("
+						" Geography/Regions/'+RunRegion_Specific_RegionRefs/Values +'
+						, '+ quote(RunRegion_Specific_RegionRefs/Values) + '
+						, ParamSet/ParamName
+						, DemandDirName"
+					")'"
+				")";
+			
+			parameter<Bool> ClaimTablesOK: Expr = "='and('+asItemList('all(ClaimTablesOrg/'+RunRegion_Specific_RegionRefs/Values+'/Data/region_allowed), all(ClaimTablesOrg/'+RunRegion_Specific_RegionRefs/Values+'/Data/check_rel)')+')'";
+						
+			container ClaimTables: Expr = "ClaimTablesOrg", IntegrityCheck = "ClaimTablesOK";
+		}
+		
+		container Run : IsTemplate = "True"
+		{
+			parameter<String> Name;
+			container AllocSet;
+			container DemandSet;
+			parameter<String> SuitabilityTraits;
+			// ==== End of Template parameters
+			
+			parameter<String> DemandDirName: Expr = "DemandSet/DemandDirName";
+			
+			container ParamSet:  Expr = "AllocSet/ParamSet";
+			
+			unit<UInt8> ModelType: Expr = "AllocSet/ModelType";
+			unit<UInt8> Factors:     Expr = "AllocSet/Factors";
+			//container Neighbourhood: Expr = "Rules/Neighbourhood"; // not necessary 17 jun 2013 because neighmatrices are now country-specific CJC
+			
+			unit<UInt16> Periods:   Expr = "PeriodSet/result";
+// 			unit<UInt16> Decennium: Expr = "PeriodSet/Decennium";
+// 			unit<UInt16> Lustrum:   Expr = "PeriodSet/Lustrum";
+			
+			parameter<String> OutputDir: Expr = "'%LocalDataProjDir%/'+ParamSets/ActiveSet/ParamName+'/'+Name";
+		}
+	}
+
+	container ParamSets 
+	{
+		container Reference17 {
+			parameter<String> ParamName:   Expr = "'Reference17'";  	// @USERINPUT
+			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/EUCS_100m/ParamSets/'+ ParamName";
+			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			
+			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			[
+				null, 1,      		// urb, ind
+				1, 1, 1,  			// arabl, mixedcrop, livestock
+				1, 1,           	// forestmat, transwoodland
+				1, 1, 1, 			// vineyards, fruit, olives
+				null, null, null,  	// aban arable, aban permacrops, abanpastures
+				null, null,			//abandonedUrban and abandoned Industrial
+				5					//NewEnergyCrops, SHVA, ForestsYoung, NatGrass, RiceProd
+			];
+			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			
+			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
+			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
+			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
+			container TransitionFactors: Expr = "Templ/TransitionFactorsTempl(TransitionFactorsFile, TransitionFactorsFilePost2030)";
+			container Neighbourhood: Expr = "Templ/NeighbTempl(NeighbFile)";
+			
+			parameter<Year> 		SupplyChange: 		expr = "10[Year]"; 
+			parameter<float32> 		RelocationPerYear:	expr = "0.036f"; //percent of people relocating each year. 
+			
+			unit<uint8> DemandCharacteristics: NrOfRows = 8
+			{	
+				attribute<string> Name: 			['population', 			'touristic', 			'urban', 											'industrial', 			'agrimarket', 		'forest', 					'abandoned_agri', 		'abandoned_urban'];
+				attribute<string> OrgRegion: 		['NUTS3_v10', 			'NUTS2_LUISA_old', 		'NUTS3_v8', 										'NUTS2_v10',			'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ModelRegion:		['NUTS3_v10', 			'NUTS3_v10',			'NUTS3_v10',										'NUTS2_merged_v10', 	'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ReaggregateVar:	['StartingState/Qi',	'StartingState/Qi', 	'float32(ModelType/isUrban[StartingState/landuse])','StartingState/Qi', 	'',''];
+				attribute<bool>   EU:				[true, 					true, 					true, 												false, 					false, 				false,  					true,  					true];
+				attribute<bool>	  Dynamic:			[false, 				false,					true,												false,					false,				false, 						true,  					true];
+				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
+			}
+			parameter<bool>	PopulationSpillovers: expr = "False";
+			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+		}
+		container Reference19_ewrc {
+			parameter<String> ParamName:   Expr = "'Reference19_ewrc'";  	// @USERINPUT
+			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/EUCS_100m/ParamSets/'+ ParamName";
+			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			
+			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			[
+				null, 	1,      		// urb, ind
+				1, 		1, 		1,  	// arabl, mixedcrop, livestock
+				1, 		1,           	// forestmat, transwoodland
+				1, 		1, 		1, 		// vineyards, fruit, olives
+				null, 	null, 	null,  	// aban arable, aban permacrops, abanpastures
+				null, 	null,			//abandonedUrban and abandoned Industrial
+				5, 		null,			//NewEnergyCrops, SHVA, 
+				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
+			];
+			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			
+			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
+			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
+			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
+			container TransitionFactors: Expr = "Templ/TransitionFactorsTempl(TransitionFactorsFile, TransitionFactorsFilePost2030)";
+			container Neighbourhood: Expr = "Templ/NeighbTempl(NeighbFile)";
+			
+			parameter<Year> 		SupplyChange: 		expr = "10[Year]"; 
+			parameter<float32> 		RelocationPerYear:	expr = "0.036f"; //percent of people relocating each year. 
+			unit<uint8> DemandCharacteristics: NrOfRows = 8
+			{	
+				attribute<string> Name: 			['population', 			'touristic', 			'urban', 											'industrial', 			'agrimarket', 		'forest', 					'abandoned_agri', 		'abandoned_urban'];
+				attribute<string> OrgRegion: 		['NUTS3_v10', 			'NUTS2_LUISA_old', 		'NUTS3_v8', 										'NUTS2_v10',			'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ModelRegion:		['NUTS3_v10', 			'NUTS3_v10',			'NUTS3_v10',										'NUTS2_merged_v10', 	'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ReaggregateVar:	['StartingState/Qi',	'StartingState/Qi', 	'float32(ModelType/isUrban[StartingState/landuse])','StartingState/Qi', 	'',''];
+				attribute<bool>   EU:				[true, 					true, 					true, 												false, 					false, 				false,  					true,  					true];
+				attribute<bool>	  Dynamic:			[false, 				false,					true,												false,					false,				false, 						true,  					true];
+				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
+			}
+			parameter<bool>	PopulationSpillovers: expr = "False";
+			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+		}
+		container NoCAP {
+			parameter<String> ParamName:   Expr = "'NoCAP'";  	// @USERINPUT
+			
+			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/EUCS_100m/ParamSets/'+ ParamName";
+			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			[
+				null, 1,      		// urb, ind
+				null, null, null,	// arabl, mixedcrop, livestock
+				null, null,        	// forestmat, transwoodland
+				null, null, null, 	// vineyards, fruit, olives
+				null, null, null,  	// aban arable, aban permacrops, abanpastures
+				null, null,			//abandonedUrban and abandoned Industrial
+				null, null, null,  	//NewEnergyCrops, SHVA, ForestsYoung, 
+				null, null			//NatGrass, RiceProd		
+			];
+			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			
+			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
+			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
+			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
+			container TransitionFactors: Expr = "Templ/TransitionFactorsTempl(TransitionFactorsFile, TransitionFactorsFilePost2030)";
+			container Neighbourhood: Expr = "Templ/NeighbTempl(NeighbFile)";
+			
+			parameter<Year> 		SupplyChange: 		expr = "10[Year]"; 
+			parameter<float32> 		RelocationPerYear:	expr = "0.036f"; //percent of people relocating each year. 
+			
+			unit<uint8> DemandCharacteristics: NrOfRows = 8
+			{	
+				attribute<string> Name: 			['population', 			'touristic', 			'urban', 											'industrial', 			'agrimarket', 		'forest', 					'abandoned_agri', 		'abandoned_urban'];
+				attribute<string> OrgRegion: 		['NUTS3_v10', 			'NUTS2_LUISA_old', 		'NUTS3_v8', 										'NUTS2_v10',			'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ModelRegion:		['NUTS3_v10', 			'NUTS3_v10',			'NUTS3_v10',										'NUTS2_merged_v10', 	'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ReaggregateVar:	['StartingState/Qi',	'StartingState/Qi', 	'float32(ModelType/isUrban[StartingState/landuse])','StartingState/Qi', 	'',''];
+				attribute<bool>   EU:				[true, 					true, 					true, 												false, 					false, 				false,  					true,  					true];
+				attribute<bool>	  Dynamic:			[false, 				false,					true,												false,					false,				false, 						true,  					true];
+				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
+			}
+			parameter<bool>	PopulationSpillovers: expr = "False";
+			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+			
+		}
+		container No_int_migration_sup_change {
+			parameter<String> ParamName:   Expr = "'No_int_migration_sup_change'";  	// @USERINPUT
+			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/EUCS_100m/ParamSets/'+ ParamName";
+			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			
+			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			[
+				null, 	1,      		// urb, ind
+				1, 		1, 		1,  	// arabl, mixedcrop, livestock
+				1, 		1,           	// forestmat, transwoodland
+				1, 		1, 		1, 		// vineyards, fruit, olives
+				null, 	null, 	null,  	// aban arable, aban permacrops, abanpastures
+				null, 	null,			//abandonedUrban and abandoned Industrial
+				5, 		null,			//NewEnergyCrops, SHVA, 
+				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
+			];
+			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			
+			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
+			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
+			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
+			container TransitionFactors: Expr = "Templ/TransitionFactorsTempl(TransitionFactorsFile, TransitionFactorsFilePost2030)";
+			container Neighbourhood: Expr = "Templ/NeighbTempl(NeighbFile)";
+			
+			parameter<Year> 		SupplyChange: 		expr = "0[Year]"; 
+			parameter<float32> 		RelocationPerYear:	expr = "0.0f"; //percent of people relocating each year. 
+			unit<uint8> DemandCharacteristics: NrOfRows = 8
+			{	
+				attribute<string> Name: 			['population', 			'touristic', 			'urban', 											'industrial', 			'agrimarket', 		'forest', 					'abandoned_agri', 		'abandoned_urban'];
+				attribute<string> OrgRegion: 		['NUTS3_v10', 			'NUTS2_LUISA_old', 		'NUTS3_v8', 										'NUTS2_v10',			'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ModelRegion:		['NUTS3_v10', 			'NUTS3_v10',			'NUTS3_v10',										'NUTS2_merged_v10', 	'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ReaggregateVar:	['StartingState/Qi',	'StartingState/Qi', 	'float32(ModelType/isUrban[StartingState/landuse])','StartingState/Qi', 	'',''];
+				attribute<bool>   EU:				[true, 					true, 					true, 												false, 					false, 				false,  					true,  					true];
+				attribute<bool>	  Dynamic:			[false, 				false,					true,												false,					false,				false, 						true,  					true];
+				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
+			}
+			parameter<bool>	PopulationSpillovers: expr = "False";
+			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+		}
+		container Ageing {
+			parameter<String> ParamName:   Expr = "'Ageing'";  	// @USERINPUT
+			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/EUCS_100m/ParamSets/'+ ParamName";
+			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			
+			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			[
+				null, 	1,      		// urb, ind
+				1, 		1, 		1,  	// arabl, mixedcrop, livestock
+				1, 		1,           	// forestmat, transwoodland
+				1, 		1, 		1, 		// vineyards, fruit, olives
+				null, 	null, 	null,  	// aban arable, aban permacrops, abanpastures
+				null, 	null,			//abandonedUrban and abandoned Industrial
+				5, 		null,			//NewEnergyCrops, SHVA, 
+				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
+			];
+			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			
+			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
+			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
+			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
+			container TransitionFactors: Expr = "Templ/TransitionFactorsTempl(TransitionFactorsFile, TransitionFactorsFilePost2030)";
+			container Neighbourhood: Expr = "Templ/NeighbTempl(NeighbFile)";
+			
+			parameter<Year> 		SupplyChange: 		expr = "0[Year]"; 
+			parameter<float32> 		RelocationPerYear:	expr = "0.0f"; //percent of people relocating each year. 
+			unit<uint8> DemandCharacteristics: NrOfRows = 8
+			{	
+				attribute<string> Name: 			['population', 			'touristic', 			'urban', 											'industrial', 			'agrimarket', 		'forest', 					'abandoned_agri', 		'abandoned_urban'];
+				attribute<string> OrgRegion: 		['NUTS3_v8', 			'NUTS2_LUISA_old', 		'NUTS3_v8', 										'NUTS2_LUISA_old',		'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ModelRegion:		['NUTS3_v10', 			'NUTS3_v10',			'NUTS3_v8',											'NUTS2_merged_v10', 	'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ReaggregateVar:	['StartingState/Qi',	'StartingState/Qi', 	'float32(ModelType/isUrban[StartingState/landuse])','StartingState/Qi', 	'',''];
+				attribute<bool>   EU:				[true, 					true, 					true, 												false, 					false, 				false,  					true,  					true];
+				attribute<bool>	  Dynamic:			[false, 				false,					true,												false,					false,				false, 						true,  					true];
+				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
+			}
+			parameter<bool>	PopulationSpillovers: expr = "False";
+			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+		}
+		container Reference21 {
+			parameter<String> ParamName:   Expr = "'Reference21'";  	// @USERINPUT
+			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/EUCS_100m/ParamSets/'+ ParamName";
+			parameter<string> DemandPath:  Expr = "'%SourceDataProjDir%/EUCS_100m/data/Demand/'+ ParamName";
+			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			
+			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			[
+				null, 	1,      		// urb, ind
+				1, 		1, 		1,  	// arabl, mixedcrop, livestock
+				1, 		1,           	// forestmat, transwoodland
+				1, 		1, 		1, 		// vineyards, fruit, olives
+				null, 	null, 	null,  	// aban arable, aban permacrops, abanpastures
+				null, 	null,			//abandonedUrban and abandoned Industrial
+				5, 		null,			//NewEnergyCrops, SHVA, 
+				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
+			];
+			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			
+			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
+			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
+			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
+			container TransitionFactors: Expr = "Templ/TransitionFactorsTempl(TransitionFactorsFile, TransitionFactorsFilePost2030)";
+			container Neighbourhood: Expr = "Templ/NeighbTempl(NeighbFile)";
+			
+			parameter<Year> 		SupplyChange: 		expr = "0[Year]"; 
+			parameter<float32> 		RelocationPerYear:	expr = "0.0f"; //percent of people relocating each year. 
+			unit<uint8> DemandCharacteristics: NrOfRows = 8
+			{	
+				attribute<string> Name: 			['population', 			'touristic', 			'urban', 											'industrial', 			'agrimarket', 		'forest', 					'abandoned_agri', 		'abandoned_urban'];
+				attribute<string> OrgRegion: 		['NUTS3_v16', 			'NUTS2_LUISA_old', 		'NUTS3_v8', 										'NUTS2_v10',			'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+				attribute<string> ModelRegion:		['NUTS3_v16', 			'NUTS3_v16',			'NUTS3_v16',										'NUTS2_v10',	 		'Capri',			'ForestDemandRegions',		'ForestDemandRegions',	'NUTS3_v10'];
+//				attribute<string> ReaggregateVar:	['StartingState/Qi',	'StartingState/Qi', 	'float32(ModelType/isUrban[StartingState/landuse])','StartingState/Qi', 	'',''];
+				attribute<string> ReaggregateVar:	['StartingState/Qi',	'StartingState/Qi', 	'float32(ModelType/isUrban[StartingState/landuse])','StartingState/Qi', 	'','' ,'',''];
+				
+				attribute<bool>   EU:				[true, 					true, 					true, 												false, 					false, 				false,  					true,  					true];
+				attribute<bool>	  Dynamic:			[false, 				false,					true,												false,					false,				false, 						true,  					true];
+				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
+				attribute<float32>StartYearDefined:	[-1,					-1,						-1,													-1,						2018,				2018,						-1,						-1];
+			}
+			parameter<bool>	PopulationSpillovers: expr = "False";
+			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+		}
+		container Reference21_210930: expr = "Reference21" {
+			parameter<String> ParamName:   Expr = "'Reference21_210930'";  	// @USERINPUT
+			parameter<String> PopulationModel: 	Expr = "'PopulationModel_Popweighted'";
+		}
+		container Reference21_211001: expr = "Reference21" {
+			parameter<String> 	ParamName:   Expr = "'Reference21_211001'";  	// @USERINPUT
+			parameter<String> 	PopulationModel: 	Expr = "'PopulationModel_Popweighted'";
+			parameter<float32> 	RelocationPerYear:	expr = "0.01f"; //percent of people relocating each year. 
+
+		}
+		container ActiveSet: Expr = "Reference21_211001";   // @USERINPUT, use these lines to switch between scenarios
+	}
+	
+	// ==== Copied from EuClueScanner100m.dms
+	container Meta
+	{
+		unit<uint16> Run := Geography/Regions/Runs
+		{
+			attribute<String> Region100Name:    	Expr = "RegionDomainSetName+'/'+Name";
+			attribute<String> PopParamsRegionName: 	Expr = "Name";			
+			attribute<String> Code:					Expr = "ICC";
+		}
+		
+		//container Alloc1Set: 			Expr = "Templ/UniqueAllocSet('Alloc/', 'alloc1.reg')";	
+		//container Alloc2Set: 			Expr = "Templ/UniqueAllocSet('Alloc/', 'alloc2.reg')";
+		container TransitionCostSet:	Expr = "Templ/UniqueAllocSet('TransitionCosts/', '_TransitionCosts.txt')";
+		container GrossRevenuesSet:	Expr = "Templ/UniqueAllocSet('GrossRevenues/', '_GrossRevenues.txt')";		
+		//container NeighbourhoodSet:		Expr = "Templ/UniqueAllocSet('Neighmats/', '_neighmat.txt')";
+		
+		unit<UInt16> DemandSet: Expr = "Unique(Run/DemandDirName)"
+		{
+			attribute<String> Name:          Expr = "Values";
+			attribute<String> DemandDirName: Expr = "Values";
+		}
+	}
+	
+	container ExogenousParams: 		expr = "for_each_ne(Classifications/LU/ModelType/Name, 'Templ/getExogenousParams(Geography/Regions/Nuts0_v10,'+ string(id(Classifications/LU/ModelType)) + '[Classifications/LU/ModelType])')"
+	{
+		unit<uint32> ExogenousEffectsMatrix: expr = "= 'union_unit('+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors') +')'"
+		{ 
+			attribute<Meta/Run>						Regionid:	expr = "= 'union_data(., '		+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/UnitId') +')'";
+			attribute<Classifications/LU/ModelType> LandUseType:expr = "= 'union_data(., '		+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/LandUseType') +')'";
+			attribute<MetaData/FactorID>			FactorId:	expr = "= 'union_data(., '		+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/FactorRef') +')'";
+			attribute<float32>						Weight:		expr = "= 'value(union_data(., '+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/Weight') +'), float32)'";
+			
+			unit<uint32> Constants: expr = "= 'union_unit('+ AsItemList(Classifications/LU/ModelType/Name + '/RunsRef') +')'"
+			{
+				attribute<float32> 						Weight: 	expr = "= 'union_data(.,'+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/Constant') +')'";
+				attribute<Meta/Run>						RegionId: 	expr = "= 'union_data(.,'+ AsItemList('id(' + Classifications/LU/ModelType/Name + '/RunsRef)') +')'";
+				attribute<Classifications/LU/ModelType>	LandUseType:expr = "= 'union_data(.,'+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/LandUseType') +')'";
+			}
+		}
+		container ExogenousEffectsSets: Expr = "for_each_ne(Meta/Run/Name, 'Templ/getAlloc1(uint16('+string(id(Meta/Run))+'))')";
+	}
+	/*container NeighbourhoodParams: 	expr = "for_each_ne(Classifications/LU/ModelType/Name, 'Templ/getNeighbourhoodParams(Meta/Run,'+ string(id(Classifications/LU/ModelType)) + '[Classifications/LU/ModelType])')"
+	{
+		unit<uint32> NeighbourhoodEffectsMatrix: expr = "= 'union_unit('+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors') +')'"
+		{
+			attribute<Meta/Run>						Regionid:	 expr = "= 'union_data(., '+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/UnitId') +')'";
+			attribute<Classifications/LU/ModelType> LandUseType: expr = "= 'union_data(., '+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/LandUseType') +')'";
+			attribute<Classifications/LU/ModelType> SrcLUT:		 expr = "= 'union_data(., '+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/SrcLUT') +')'";
+			attribute<float32>						Weight:		 expr = "= 'value(union_data(., '+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/Weight') +'), float32)'";
+			attribute<uint8>						Func:		 expr = "= 'union_data(., '+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/UnitsFactors/Func') +')'";
+			
+			unit<uint32> Constants: expr = "= 'union_unit('+ AsItemList(Classifications/LU/ModelType/Name + '/UnitRef') +')'"
+			{ 
+				attribute<float32> 						Weight: 	expr = "= 'union_data(.,'+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/Constant') +')'";
+				attribute<Meta/Run>						RegionId: 	expr = "= 'union_data(.,'+ AsItemList('id(' + Classifications/LU/ModelType/Name + '/UnitRef)') +')'";
+				attribute<Classifications/LU/ModelType>	LandUseType:expr = "= 'union_data(.,'+ AsItemList(Classifications/LU/ModelType/Name + '/TableChopper/Data/LandUseType') +')'";
+			}
+			
+		}
+		container NeighbourhoodEffectsSets: Expr = "for_each_ne(Meta/Run/Name, 'Templ/getAlloc2(uint16('+string(id(Meta/Run))+'), NeighbourhoodSets/' + Meta/Run/ICC + ' )')";
+	}
+	*/
+	
+	/* Code below used to derive table-structured calibration files from original calibration result files
+	// Written by Chris Jacobs-Crisioni March 2014
+	Container Alloc1Aggr: expr = "for_each_ne(Classifications/LU/ModelType/Name, 'Templ/Alloc1_Weight_Aggregation_Templ(Meta/Run,'+ quote(Classifications/LU/ModelType/Name) + ')')"
+	{attribute<string> alloc1_writecheck (Classifications/LU/ModelType): expr = "= 'union_data(Classifications/LU/ModelType, '+ AsItemList(Classifications/LU/ModelType/Name + '/Weights/TableComposer/result') +')'";}
+	
+	Container Alloc2Aggr: expr = "for_each_ne(Classifications/LU/ModelType/Name, 'Templ/Alloc2_Weight_Aggregation_Templ(Meta/Run,'+ quote(Classifications/LU/ModelType/Name) + ')')"
+	{attribute<string> alloc2_writecheck (Classifications/LU/ModelType): expr = "= 'union_data(Classifications/LU/ModelType, '+ AsItemList(Classifications/LU/ModelType/Name + '/Weights/TableComposer/result') +')'";}	
+	*/
+	
+	
+	
+	
+	
+						
+			
+	container PopSets
+	{
+		//#include<RegionalPopulation.dms>
+		parameter<float32> 		share_touristic_lu: expr = "float32(0.0347)";
+		parameter<Year> 		SupplyChange: 		expr = "ParamSets/ActiveSet/SupplyChange";
+		parameter<float32> 		RelocationPerYear:	expr = "ParamSets/ActiveSet/RelocationPerYear"; //percent of people relocating each year. 
+		// value from EUROSTAT: http://ec.europa.eu/eurostat/statistics-explained/index.php/People_in_the_EU_%E2%80%93_statistics_on_geographic_mobility 3.6% of Europeans moved within the same Nuts3 in the year prior to the census.
+		
+		#include<PopulationParameters.dms>
+	}
+	
+	container TransitionCostSets:
+		Expr = "for_each_ne("
+				"Meta/TransitionCostSet/UniqueFiles/name, "
+				"'Templ/TransitionCostsTempl2('+Quote(Meta/TransitionCostSet/UniqueFiles/Values)+')'"
+			")";
+			
+	container GrossRevenuesSets:
+		Expr = "for_each_ne("
+				"Meta/GrossRevenuesSet/UniqueFiles/name, "
+				"'Templ/GrossRevenuesTempl('+Quote(Meta/GrossRevenuesSet/UniqueFiles/Values)+')'"
+			")";		
+	
+/*	container NeighbourhoodSets:
+		Expr = "for_each_ne("
+				"Meta/NeighbourhoodSet/UniqueFiles/name, "
+				"'Templ/NeighbTempl('+Quote(Meta/NeighbourhoodSet/UniqueFiles/Values)+')'"
+			")";
+*/			
+	attribute<String> AllocSetComposer(Meta/Run): Expr = 
+				"'Templ/AllocSet('"
+					"+Quote(ParamSets/ActiveSet/ParamPath)+','"
+					"+'ExogenousParams/ExogenousEffectsSets/'+Meta/Run/name+'/Reordered/Results,'"
+//					"+'NeighbourhoodParams/NeighbourhoodEffectsSets/'+Meta/Run/name+'/Reordered/Results,'"
+					"+'TransitionCostSets/'+Meta/TransitionCostSet/name+','"
+					"+'GrossRevenuesSets/'+Meta/GrossRevenuesSet/name+','"					
+//					"+'NeighbourhoodSets/'+Meta/NeighbourhoodSet/name+','"
+					"+'PopSets/PopulationParameters/ExpressionSets/'+Meta/Run/PopParamsRegionName + ','"
+					"+quote(Meta/Run/Name)+"
+					//"+'DemandSets/DemandModels/residential_density_change/genExpressions/' + Meta/Run/name+"
+				"')'";
+	container AllocSets: // OPTIMIZE FOR UNIQUE (Alloc1, Alloc2) pairs
+		Expr = 
+			"for_each_ne("
+				"Meta/Run/Name, "
+				"AllocSetComposer"
+			")";
+
+	container DemandSets:
+		Expr = 
+			"for_each_ne("
+				"Meta/DemandSet/Name, "
+				"'Templ/DemandSet('"
+					"+Quote(Meta/DemandSet/DemandDirName)+"
+				"')'"
+			")", Using = "MetaData;"
+	{
+		parameter<Bool> AllClaimTablesOK: Expr = "='and('+asItemList('DemandSets/'+Meta/DemandSet/Name+'/ClaimTablesOK')+')'";
+
+		
+		container Global: FreeData = "True", StoreData = "True", Expr = 
+				"for_each_ne(MetaData/DemandCharacteristics/EU && ! MetaData/DemandCharacteristics/Dynamic ? MetaData/DemandCharacteristics/Name : '', 'Templ/EU_Wide_TableChopper('+ quote(MetaData/DemandCharacteristics/Name)+', Geography/Regions/'+ MetaData/DemandCharacteristics/OrgRegion +')')"
+		{
+			container Pop2012: expr = "Templ/EU_Wide_TableChopper('Pop2012', Geography/Regions/Nuts3_v10)";
+			container Employment: expr = "Templ/EU_Wide_TableChopper('Employment', Geography/Regions/Nuts3_v8)";
+			container GDP_Per_Capita: expr = "Templ/EU_Wide_TableChopper('GDP_Per_Capita', Geography/Regions/Nuts3_v8)";
+		}
+		Container DemandModels: expr = "for_each_ne(DemandModelsList/Name, 'Templ/ManageDemandModelParams(uint8('+ String(id(DemandModelsList)) +'))')";
+		
+	}
+	container Runs:
+		Expr = 
+			"for_each_ne("
+				"Meta/Run/Name, "
+				"'Templ/Run('"
+					"+Quote(Meta/Run/Name)+','"
+					"+'AllocSets/' +Meta/Run/Name+','+" // OPTIMIZE FOR UNIQUE  (Alloc1, Alloc2) pairs
+					"+'DemandSets/'+Meta/Run/DemandDirName+','+"
+					"+Quote(Meta/Run/SuitabilityTraits)+"
+				"')'"
+			")";
+}

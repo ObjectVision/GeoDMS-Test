@@ -1,0 +1,62 @@
+container Gemeenten
+{
+	unit<uint32> Leiden
+	:	StorageName     = "%PrivdataDir%/Plancapaciteit/Gemeente_Leiden/LeidenNBM_tbvPBL.gdb"
+	,	StorageReadOnly = "True"
+	,	Source          = "Gemeente Leiden, Deborah Lucassen, 23 oktober 2018 "
+	,	DialogData      = "Polygons"
+	,	DialogType      = "Map"
+	,	StorageType     = "gdal.vect"
+	{
+			attribute<geography/rdc_meter> Polygons (poly);
+
+			attribute<units/Ha> NrHa := area(Polygons, units/meter2)[units/ha];
+
+			attribute<int32> Woningen := KOOP + HUUR + SOCIAAL + MARKT + STUDENTEN + ONBEKEND;
+			attribute<woning_ha> Woningen_ha := float32(Woningen)[woning] / NrHa;
+
+			// allemaal zachte plannen: FASE: 'Initiatief'	22, 'Ontwerp'	17, 'Pre-Verkenning'	6, 'Verkenning'	34
+	}
+
+	unit<uint32> Tilburg
+	:	StorageName     = "%PrivdataDir%/Plancapaciteit/Gemeente_Tilburg/Woningbouwprogramma.gdb"
+	,	StorageReadOnly = "True"
+	//,	SqlString       = "SELECT * FROM Woningbouwprogramma WHERE StatBestPl='onherroepelijk/ hard (ONH)' OR StatBestPl='vastgesteld/ hard (VST)'"
+	,	Source          = "Gemeente Tilburg, Hedwig Harks, 13 november 2018 "
+	,	DialogData      = "Polygons"
+	,	DialogType      = "Map"
+	,	StorageType     = "gdal.vect"
+	{
+		attribute<geography/rdc_meter> Polygons (poly);
+
+		attribute<units/Ha> NrHa := area(Polygons, units/meter2)[units/ha];
+		attribute<woning_ha> Woningen_ha := float32(Aantal_won)[woning] / NrHa;
+			
+		attribute<bool> IsOnherroepelijk := StatBestPl == 'onherroepelijk/ hard (ONH)';
+		attribute<bool> IsVastgesteld := StatBestPl == 'vastgesteld/ hard (VST)';
+
+		attribute<bool> IsHard  := IsOnherroepelijk || IsVastgesteld;
+		attribute<bool> IsZacht := !IsHard;
+	}
+	
+	unit<uint32> Utrecht
+	:	StorageName     = "%PrivdataDir%/Plancapaciteit/Gemeente_Utrecht/MPSO_Woningbouw.gdb"
+	,	StorageReadOnly = "True"
+	,	Source          = "Gemeente Utrecht, Casper Roelofs, 13 november 2018 "
+	,	DialogData      = "Polygons"
+	,	DialogType      = "Map"
+	,	StorageType     = "gdal.vect"
+	{
+			attribute<geography/rdc_meter> Polygons (poly);
+
+			attribute<units/Ha> NrHa := area(Polygons, units/meter2)[units/ha];
+			attribute<woning_ha> Woningen_ha := float32(Aantal_nie)[woning] / NrHa;
+			
+		attribute<bool> IsVoorbereiding := Actuele_Fa == 'Voorbereiding';
+		attribute<bool> IsUitvoering := Actuele_Fa == 'Uitvoering';
+
+		attribute<bool> IsHard  := IsVoorbereiding || IsUitvoering;
+		attribute<bool> IsZacht := !IsHard;
+
+	}
+}

@@ -1,0 +1,55 @@
+Template Merge_Regions_PedestrianBike_T
+{
+	parameter<string> Dest_str;
+	parameter<string> netwerk_type_OSM;
+	//
+	parameter<string> MaxTravelTime := ='string(ModelParameters/Max'+netwerk_type_OSM+'Time_Org2Dest)';
+	
+	unit<uint32> Merged := ='union_unit('+AsItemList('Read/'+Advanced/Regio/name+'/domain')+')'
+	{
+		// attribute<string> Label               := OrgName +'_'+DestName, DialogType = "LabelText";
+		attribute<string> OrgName             := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/data/Org')+')';
+		attribute<string> DestName            := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/data/Dst')+')';
+		attribute<string> Freeflow            := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/data/Freeflow')+')';
+		attribute<string> Freeflow_ebike      := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/data/Freeflow_ebike')+')';
+		attribute<string> ActualBike          := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/data/ActualBike')+')';
+		attribute<string> ActualE_Bike_Adj    := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/data/ActualE_Bike_Adj')+')';
+	}
+	
+	
+	attribute<string> BodyLines_ActualBike (Merged) :=
+		Merged/OrgName + ';' + 
+		Merged/DestName + ';' +
+		Merged/Freeflow + ';' +
+		Merged/Freeflow_ebike + ';' +
+		Merged/ActualBike + ';' +
+		Merged/ActualE_Bike_Adj;
+	parameter<string> File_ActualBike := 'Org;Dst;Freeflow;Freeflow_ebike;ActualBike;ActualE_Bike_Adj\n'++AsList(BodyLines_ActualBike, '\n')
+		, StorageName = "=fileNamePrefix+'Traveltimes'+fileNameSuffix+'.csv'", StorageType = "str";
+	
+	attribute<string> BodyLines_Bike (Merged) :=
+		Merged/OrgName + ';' + 
+		Merged/DestName + ';' +
+		Merged/Freeflow + ';' + 
+		Merged/Freeflow_ebike;
+	parameter<string> File_Bike := 'Org;Dst;Freeflow;Freeflow_ebike\n'++AsList(BodyLines_Bike, '\n')
+		, StorageName = "=fileNamePrefix+'Traveltimes'+fileNameSuffix+'.csv'", StorageType = "str";
+		
+	attribute<string> BodyLines_Pedestrian (Merged) :=
+		Merged/OrgName + ';' + 
+		Merged/DestName + ';' +
+		Merged/Freeflow;
+	parameter<string> File_Pedestrian := 'Org;Dst;Freeflow\n'++AsList(BodyLines_Pedestrian, '\n')
+		, StorageName = "=fileNamePrefix+'Traveltimes'+fileNameSuffix+'.csv'", StorageType = "str";
+	
+	parameter<string> File := =netwerk_type_OSM == 'Bike' 
+								? ModelParameters/UseActualBikeSpeeds ? 'File_ActualBike' : 'File_Bike'
+								: 'File_Pedestrian';
+		
+	parameter<string> fileNamePrefix :=  '%LocalDataProjDir%/Output/';  //Locatie waar output files moeten worden opgeslagen.
+	parameter<string> fileNameSuffix :=  
+		'_ORG-' + Orgset + 
+		'_DEST-'   + Dest_str +
+		'_NETWERK-'+ netwerk_type_OSM + 
+		'_MaxTime-' + MaxTravelTime+'min';
+}

@@ -1,0 +1,22 @@
+Template Check_Connectiveness_T
+{
+	unit<uint32> LinkSet_domain;
+	unit<uint32> NodeSet_domain;
+	attribute<NodeSet_domain> F1(LinkSet_domain);
+	attribute<NodeSet_domain> F2(LinkSet_domain);
+	///
+	
+	unit<uint32> Networks:= connected_parts(F1, F2) // Verzameling van alle netwerken, inclusief de subnetwerken.
+	{
+		attribute<uint32>   Nr_Nodes   := pcount(part_rel);
+		parameter<Networks> Main       := max_index(Nr_Nodes); // uitgangspunt: het netwerk met de meeste nodes is het relevante netwerk
+		attribute<bool>     IsConnected (NodeSet_domain) := part_rel == Main;
+	}
+	
+	attribute<bool> IsVerbonden (LinkSet_domain) := Networks/IsConnected[F1] && Networks/IsConnected[F2];
+
+	unit<uint32> NodesNotConnected := select_with_org_rel(!Networks/IsConnected)
+	{
+		attribute<rdc>        geometry := org_rel -> geometry;
+	}
+}

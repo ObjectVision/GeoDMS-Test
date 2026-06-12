@@ -1,0 +1,19 @@
+container Groen
+{
+	unit<uint32> bbg2017
+	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Groen/Groen_obv_bbg2017v1_network20211221.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Groen_bbg2017_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(GROEN_pnt_ID);
+			attribute<uint32>               Nr_groen                := const(1,.);
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}
+}

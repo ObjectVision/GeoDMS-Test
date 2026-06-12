@@ -1,0 +1,20 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Deze DMS-file wordt aangeroepen door Classifications.dms.                            //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Grondproductie
+{
+	unit<uint32> GrondproductieModelVarianten : nrofrows = 3
+	{
+		attribute<string> name :
+		[
+			'BouwWoonrijp',
+			'Bovenwijks',
+			'PlanProces'
+		];
+		attribute<string> label := name;
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+}

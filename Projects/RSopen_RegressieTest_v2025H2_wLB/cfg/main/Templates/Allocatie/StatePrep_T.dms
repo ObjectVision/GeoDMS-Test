@@ -1,0 +1,17 @@
+Template StatePrep_T
+{
+	//
+	parameter<Sector/xSubsector> id;
+	container ThisIter;
+	//
+	
+	parameter<String> Expr := = 'lowercase(ThisIter/Context/ThisSectorAllocRegio/Sector_name) == '+Quote(lowercase(Sector/xSubsector/Sector_name)[id])+' && lowercase(ThisIter/Context/ThisSectorAllocRegio/Sector_name) == lowercase(''Landbouw'')
+									? /Allocatie/Impl/Update_Expr_DiscrAlloc
+									: lowercase(ThisIter/Context/ThisSectorAllocRegio/Sector_name) == '+lowercase(Quote(Sector/xSubsector/Sector_name[id]))+'
+										? /Allocatie/Impl/Update_Expr 
+										: /Allocatie/Impl/Verdring_Expr';
+	
+	unit<Float32> ValuesUnit := = Sector/xSubsector/ValUnit_ref[id];
+	
+	attribute<ValuesUnit> Result (CompactedAdminDomain) := = replace(Expr, '@S@', Sector/xSubsector/Sector_name[id], '@SS@', Sector/xSubsector/Subsector_name[id]);
+}

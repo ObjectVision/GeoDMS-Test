@@ -1,0 +1,224 @@
+container Plancapaciteit
+{
+	#include<NieuweNieuweKaart.dms>
+	
+	container Werken
+	{
+		unit<uint32> MRA
+		:	Label       = ""
+		,	StorageName = "%RSLDataDir%/Beleid/Plancapaciteit/Noord_Holland/WerklocatiesPlabeka2019NK.dbf"
+		,	Source      = "Plancapaciteit.nl, via Nils Klopper (prov. Noord Holland)"
+		,	DialogData  = "Polygons"
+		,	DialogType  = "Map"
+		,	url         = ""
+		,	StorageReadOnly = "true"
+		//Toelichting bij de velden qua planvoorraad:
+		// H-Z: hard resp zacht
+		// B-K: bedrijventerrein resp. kantoor
+		// tr: transformatie
+		// alles tav bedrijventerreinen is in ha, tav kantoren in m2
+		// Kleegtot: Kantoren en Bedrijventerreinen: leegstand kantoorruimte in m2
+		// Kleegcou: Kantoren en Bedrijventerreinen: courante leegstand kantoorruimte in m2
+		// Kleegincou: Kantoren en Bedrijventerreinen: incourante leegstand kantoorruimte in m2
+		// 30: jaar 2030
+		{
+			attribute<geography/rdc_meter> Polygons (poly): StorageName = "%RSLDataDir%/Beleid/Plancapaciteit/Noord_Holland/WerklocatiesPlabeka2019NK.shp";
+			attribute<.> Per_Domain_grid (/domain_grid) := poly2grid(Polygons, /domain_grid);
+			attribute<float64> Totaal_bedrijventerrein := BHtm30 + BZtm30 + BZna30; //exl herstructurering. NB hard na30 bestaat niet
+			attribute<float64> Totaal_kantoor := KHtm30 + KZtm30 + KZna30; //exl herstructurering. NB hard na30 bestaat niet
+			
+			attribute<bool> HeeftBedrijventerreinEnKantoor := Totaal_bedrijventerrein > 0[float64] && Totaal_kantoor > 0[float64];
+			attribute<bool> HeeftHardEnZacht := BHtm30 + KHtm30 > 0[float64] && BZtm30 + BZna30 + KZtm30 + KZna30 > 0[float64];
+			
+			attribute<bool> IsHardTm30 := BHtm30 > 0[float64] || KHtm30 > 0[float64];
+			attribute<bool> IsHard := IsHardTm30; //hard na30 bestaat niet
+			attribute<bool> IsZacht := !IsHard;
+
+			attribute<float64> ShareNa30Bedrijventerrein := BZna30 / Totaal_bedrijventerrein; // Hard na30 bestaat niet
+			attribute<float64> ShareNa30Kantoor := KZna30 / Totaal_kantoor; // Hard na30 bestaat niet
+			attribute<float64> ShareNa30BedrijventerreinOfKantoor := MakeDefined(ShareNa30Bedrijventerrein, 0[float64]) + MakeDefined(ShareNa30Kantoor, 0[float64]) // kan opgeteld want HeeftBedrijventerreinEnKantoor == const(false).
+			{
+				attribute<ha> ruimte_per_domain_grid (/domain_grid) := float32(.[Per_Domain_grid]) * /domain_grid/NrHaPerCell;
+			}
+			
+			attribute<float64> ShareNa30BedrijventerreinOfKantoorOfZacht := max_elem(ShareNa30BedrijventerreinOfKantoor, MakeDefined(float64(IsZacht), 0[float64])) // kan opgeteld want HeeftBedrijventerreinEnKantoor == const(false).
+			{
+				attribute<ha> ruimte_per_domain_grid (/domain_grid) := float32(.[Per_Domain_grid]) * /domain_grid/NrHaPerCell;
+			}
+			
+			attribute<bool> IsHardOfZacht := IsHard || IsZacht;
+			attribute<bool> IsHardNochZacht := !IsHardOfZacht;
+			
+			attribute<bool> IsTransformatie := Btrtm30 > 0[float64] || Btrna30 > 0[float64] || Ktrtm30 > 0[float64] || Ktrna30 > 0[float64];
+			
+			unit<uint32> Berijventerreinen_NZKG
+			:	DialogData      = "Polygons"
+			,	DialogType      = "Map"
+			,	SyncMode        = "none"
+			,	StorageName     = "%ProjDir%/data/Niet_transformeren_NZKG.dbf"
+			,	Descr           = "De shapefile niet transformeren NZKG bevat de bedrijventerreinen die in de visie NZKG bedrijventerrein blijven of worden geïntensiveerd. Bron: Nils Klopper, prov NH, januari 2020."
+			,	StorageReadOnly = "True"
+			{
+				attribute<rdc_meter> Polygons (poly): StorageName = "%ProjDir%/data/Niet_transformeren_NZKG.shp";
+			}
+		}
+		
+		unit<uint32> NL := union_unit(
+				MRA
+	//			Provincies/Utrecht,
+	//			Provincies/Overijssel,
+				// Provincies/Zuid_Holland,
+				// Provincies/Limburg,
+				// Gemeenten/Leiden,
+				// Gemeenten/Tilburg,
+				// Gemeenten/Utrecht
+			)
+		{
+			attribute<geography/rdc_meter> Polygons(poly) := union_data(.,MRA/Polygons
+	//																	  Provincies/Utrecht/Polygons,
+	//																	  Provincies/Overijssel/Polygons,
+																		  // Provincies/Zuid_Holland/Polygons,
+																		  // Provincies/Limburg/Polygons,
+																		  // Gemeenten/Leiden/Polygons,
+																		  // Gemeenten/Tilburg/Polygons,
+																		  // Gemeenten/Utrecht/Polygons
+																		 );
+			
+			attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+			attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+			
+			attribute<bool> IsHard := union_data(.,MRA/IsHard
+	//											   Provincies/Utrecht/IsHard,
+	//											   Provincies/Overijssel/IsHard,
+												   // const(0[bool], Provincies/Zuid_Holland),
+												   // Provincies/Limburg/IsHard,
+												   // const(0[bool], Gemeenten/Leiden),
+												   // Gemeenten/Tilburg/IsHard,
+												   // Gemeenten/Utrecht/IsHard
+												);
+			
+			attribute<bool> IsZacht := union_data(.,MRA/IsZacht
+	//												Provincies/Utrecht/IsZacht,
+	//												const(0[bool], Provincies/Overijssel),
+													// const(0[bool], Provincies/Zuid_Holland),
+													// const(0[bool], Provincies/Limburg),
+													// const(1[bool], Gemeenten/Leiden),
+													// Gemeenten/Tilburg/IsZacht,
+													// Gemeenten/Utrecht/IsZacht
+												);
+			
+			unit<uint32> Hard := select_with_org_rel(NL/IsHard)
+			{
+				attribute<geography/rdc_meter> Polygons(poly) := NL/Polygons[org_rel];
+				attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+				attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+			}
+			
+			unit<uint32> Zacht := select_with_org_rel(NL/IsZacht)
+			{
+				attribute<geography/rdc_meter> Polygons(poly) := NL/Polygons[org_rel];
+				attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+				attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+			}
+			
+			unit<uint32> HardOfZacht := select_with_org_rel(NL/IsHard || NL/IsZacht)
+			{
+				attribute<geography/rdc_meter> Polygons(poly) := NL/Polygons[org_rel];
+				attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+				attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+			}
+			
+			unit<uint32> Geen: NrOfRows = 1
+			{
+				attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := const(0/0[.], /SrcDomain_grid);
+				attribute<.> Per_Domain_grid    (/Domain_grid) := const(0/0[.], /domain_grid);
+			}
+		}
+	}
+	
+	container Wonen
+	{
+		#include <provincies.dms>
+		#include <gemeenten.dms>
+		
+		container NL_KvDV_MRA := for_each_ne(/Classifications/VariantK/name, 'T('+quote('Provincies/Noord_Holland_bouwprogramma/PerVariant/'+/Classifications/VariantK/name+'/select_with_org_rel')+')');
+		container NL_NLLater2 := T('/SourceData/Beleid/Plancapaciteit/NieuweNieuweKaart/Fijn');
+		container NL := = 'NL_'+Modelparameters/ToepassingsRef;
+		
+		Template T
+		{
+			parameter<string> SrcRef;
+			
+			unit<uint32> Src := = SrcRef;
+			
+			unit<uint32> Result : DialogData = "Polygons", DialogType = "Map",
+			= union_unit(
+					Src
+					// Provincies/Utrecht,
+					// Provincies/Zuid_Holland,
+					// Provincies/Limburg
+					// Gemeenten/Leiden,
+					// Gemeenten/Tilburg,
+					// Gemeenten/Utrecht
+				)
+			{
+				attribute<geography/rdc_meter> Polygons(poly) := union_data(.,Src/Polygons
+																			  // Provincies/Utrecht/Polygons,
+																			  // Provincies/Zuid_Holland/Polygons,
+																			  // Provincies/Limburg/Polygons
+																			  // Gemeenten/Leiden/Polygons,
+																			  // Gemeenten/Tilburg/Polygons,
+																			  // Gemeenten/Utrecht/Polygons
+																			 );
+				
+				attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+				attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+				
+				attribute<bool> IsHard := union_data(.,Src/IsHard
+													   // Provincies/Utrecht/IsHard,
+													   // Provincies/Zuid_Holland/IsHard,
+													   // Provincies/Limburg/IsHard
+													   // Gemeenten/Leiden/IsHard,
+													   // Gemeenten/Tilburg/IsHard,
+													   // Gemeenten/Utrecht/IsHard
+													);
+				
+				attribute<bool> IsZacht := union_data(.,Src/IsZacht
+													   // Provincies/Utrecht/IsZacht,
+													   // Provincies/Zuid_Holland/IsZacht,
+													   // Provincies/Limburg/IsZacht,
+													   // Gemeenten/Leiden/IsZacht,
+													   // Gemeenten/Tilburg/IsZacht,
+													   // Gemeenten/Utrecht/IsZacht
+													);
+				
+				unit<uint32> Hard := select_with_org_rel(Result/IsHard)
+				{
+					attribute<geography/rdc_meter> Polygons(poly) := Result/Polygons[org_rel];
+					attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+					attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+				}
+				
+				unit<uint32> Zacht := select_with_org_rel(Result/IsZacht)
+				{
+					attribute<geography/rdc_meter> Polygons(poly) := Result/Polygons[org_rel];
+					attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+					attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+				}
+				
+				unit<uint32> HardOfZacht := select_with_org_rel(Result/IsHard || Result/IsZacht)
+				{
+					attribute<geography/rdc_meter> Polygons(poly) := Result/Polygons[org_rel];
+					attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+					attribute<.> Per_Domain_grid       (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+				}
+				
+				unit<uint32> Geen: NrOfRows = 1
+				{
+					attribute<.> Per_SrcDomain_grid (/SrcDomain_grid) := const(0/0[.], /SrcDomain_grid);
+					attribute<.> Per_Domain_grid    (/Domain_grid) := const(0/0[.], /domain_grid);
+				}
+			}
+		}
+	}
+}

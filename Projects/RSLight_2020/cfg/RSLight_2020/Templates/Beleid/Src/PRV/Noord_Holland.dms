@@ -1,0 +1,215 @@
+container Noord_Holland : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=noordholland&striVersion=STRI2008"
+{
+	container NL_IMRO_9927_PRVPNHCONSOLID_0103 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9927.PRVPNHCONSOLID-0103"
+	//http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.8002.PRVPNHCONSOLID-0423
+	
+	
+	
+	{
+		//Provinciale Ruimtelijke Verordening (geconsolideerde versie)
+		//planstatus: geconsolideerd 2017-03-01
+		//identificatie: NL.IMRO.9927.PRVPNHCONSOLID-0103
+		//type plan: provinciale verordening
+		//naam overheid: provincie Noord-Holland
+		//ondergrond: basisregistratie grootschalige topografie (BGT) (2015-01-01)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (10)
+		//Grondgebied
+		//Ecologie
+		//UNESCO
+		//Bufferzones
+		//Landbouwgebieden
+		//Landbouwclusters
+		//Blauwe ruimte
+		//Duurzame energie
+		//Aardkundige waarden
+		//20 Ke-contouren Schiphol
+
+		parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P.shp';
+		parameter<string> OGRQuery:    = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\nh\NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitvlak_P.gml -where ""besluitgebied=""NL.IMRO.9927.PRVPNHCONSOLID-0103"" -skipfailures -overwrite';
+
+		container  Grondgebied : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/Provinciale Ruimtelijke Verordening (geconsolideerde versie; treed in werking vanaf 1-maart-2017 ).mht"
+		{
+			//	  Grondgebied
+			//	x Grondgebied Provincie Noord-Holland
+
+			//TODOBAS: gebruiken voor inverse van glastuinbouw
+
+			// niet gelijk aan vorige versie: 409185 (was 409171)    ///Geography/RegioGrids/Provincie   /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NH/Kaart1_grondgebied/kaart1_grondgebied_PRV_NH_grondgebied (409352)
+			container Grondgebied_Provincie_Noord_Holland : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Grondgebied Provincie Noord-Holland'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.s022d0890-2104-4310-bbeb-d44fedfc25fc'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Ecologie : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/Provinciale Ruimtelijke Verordening (geconsolideerde versie; treed in werking vanaf 1-maart-2017 ).mht"
+		{
+			//	  Ecologie
+			//	  EHS grote wateren
+			//	x Ecologische Hoofdstructuur (EHS)
+			//	  Ecologische verbindingszone
+			//	x Weidevogelleefgebied
+
+			// niet gelijk aan vorige versie: 56420 (was 55839)    //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NH/Kaart4_ecologie/kaart4_ecologie_PRV_NH_ecologische_hoofdstructuur_ehs
+			container Ecologische_Hoofdstructuur : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Ecologische Hoofdstructuur (EHS)'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.s9622454c-620b-437d-818c-f10a400c4978'
+				,'=OGRQuery'
+			);
+
+			// niet gelijk aan vorige versie: 57191 (was 57474)    //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NH/Kaart4_ecologie/kaart4_ecologie_PRV_NH_weidevogelleefgebied
+			container Weidevogelleefgebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Weidevogelleefgebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.sc3579b7d-a416-4b47-a50c-c39e9920906d'
+				,'=OGRQuery'
+			);
+		}
+
+		container  UNESCO : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/Provinciale Ruimtelijke Verordening (geconsolideerde versie; treed in werking vanaf 1-maart-2017 ).mht"
+		{
+			//	  UNESCO
+			//	x Beemster
+			//	x Grachtengordel Amsterdam
+			//	x Nieuwe Hollandse Waterlinie (toekomstig)
+			//	x Stelling van Amsterdam
+
+			// niet gelijk aan vorige versie: 28948 (was 29378)    ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NH/Kaart5a_unesco
+			container Beemster_Grachtengordel_Amsterdam_Stelling_van_Amsterdam_NHW : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Beemster'' OR naam =''Grachtengordel Amsterdam'' OR naam =''Stelling van Amsterdam'' OR naam =''Nieuwe Hollandse Waterlinie (toekomstig)'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.sf5308a32-1a31-4025-93c8-8c3ef83daa5f'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Bufferzones : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/Provinciale Ruimtelijke Verordening (geconsolideerde versie; treed in werking vanaf 1-maart-2017 ).mht"
+		{
+			//	  Bufferzones
+			//	x Bufferzone
+
+			// niet gelijk aan vorige versie: 35286 (was 81103)    //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NH/Kaart5b_bufferzones/Kaart5b_bufferzones
+			container Bufferzone : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Bufferzone'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.s860932af-f0fb-4e18-b23c-73fb18f88b77'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Landbouwclusters : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/Provinciale Ruimtelijke Verordening (geconsolideerde versie; treed in werking vanaf 1-maart-2017 ).mht"
+		{
+			//	  Landbouwclusters
+			//	  Bollenconcentratiegebied
+			//	x Glastuinbouwconcentratiegebied
+			//	  Tuinbouwconcentratiegebied (combinatie glas en volle grond)
+			//	  Zaadveredelingsbedrijf
+			//	  Zaadveredelingsconcentratiegebied
+			
+			//TODOBAS: tuinbouwconcentratiegebied alleen bestaand uitbreiden maar wordt dit wel gemodelleerd?
+
+			// net niet gelijk aan vorige versie: 3447 (was 3446)    //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NH/Kaart7_landbouwclusters/kaart7_landbouwclusters_PRV_NH_glastuinbouwconcentratiegebied
+			container Glastuinbouwconcentratiegebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Glastuinbouwconcentratiegebied'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.scd510f64-f502-4cf0-a79e-0a7e834aca71'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/PRVPNHCONSOLID-0423_26c_glastuinbouw.jpg'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Blauwe_ruimte : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/Provinciale Ruimtelijke Verordening (geconsolideerde versie; treed in werking vanaf 1-maart-2017 ).mht"
+		{
+			//Blauwe ruimte
+			//	  Aansluiting op hogegrond
+			//	  Kustzone (geen jaarrond strandbebouwing toegestaan)
+			//	x Regionale waterkering
+			//	  Strandzonering (met mogelijkheden voor jaarrond strandpaviljoens, jaarrond sportpaviljoens en jaarrond reddingsbrigades)
+
+			// vergelijking met vorige versie niet echt mogelijk
+			container Regionale_waterkering : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Regionale waterkering'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.s3cffc2a2-e1cc-48da-9c28-94b86715b461'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Aardkundige_waarden : url="%RSLDataDir%/Beleid/Ruimte/pmv_2017/nh/Provinciale Milieuverordening tranche 10  (2).pdf"
+		{
+				//Aardkundige waarden. Lagen:
+				//	x Aardkundig monument (beschermd via Provinciale Milieuverordening)
+				//	  Aardkundig waardevol gebied 
+
+				//De aardkundige monumenten (17 stuks in Noord-Holland) worden beschermd door de Provinciale Milieuverordening. De voorkomende bijzondere aardkundige waarden echter 
+				//genieten deze bescherming niet. Dit is de reden dat wij gemeenten vragen in de bestemmingsplannen die geheel of gedeeltelijk betrekking hebben op de op de kaart aangegeven 63 
+				//aardkundig waardevolle gebieden om de daar voorkomende bijzondere aardkundige waarden ingeval van nieuwe ontwikkelingen zo goed mogelijk te beschermen. 
+				
+//Rienk Kuiper, december 2017: AARDKUNDIGE MONUMENTEN: WEET NIET; HANGT AF VAN TEKST MILIEUVERORDENING --> https://www.noord-holland.nl/Onderwerpen/Duurzaamheid_Milieu/Provinciale_Milieuverordening
+// te moeilijk interpreteerbaar restrictief maken.
+//&&&&&Bart: Blijft wel een issue bij Noord-Holland wel maar niet bij Utrecth en Drenthe bijvoorbeeld.
+			container Aardkundig_monument : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''Aardkundig monument (beschermd via Provinciale Milieuverordening)'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.s1422e72a-b617-4a9e-9198-e3beae640aae'
+				,'=OGRQuery'
+			);
+//Rienk Kuiper, december 2017: AARDKUNDIGE WAARDEN NIET RESTRICTIEF
+		}
+
+		container Schiphol_contouren_20ke : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nh/Provinciale Ruimtelijke Verordening (geconsolideerde versie; treed in werking vanaf 1-maart-2017 ).mht"
+		{
+			//20ke Schiphol contouren 
+			//	x 20ke Schiphol contouren 
+
+			//TODOBAS
+			// Artikel 5e Woningen binnen de 20 Ke-contour     
+			// 1. Voor de gronden binnen de 20 Ke-contour, zoals aangegeven op kaart 11 en de digitale verbeelding ervan, kan een bestemmingsplan voorzien in nieuwe woningen, uitsluitend binnen het bestaand stedelijk gebied.
+			//  2. In afwijking van het eerste lid kan een bestemmingsplan buiten bestaand stedelijk gebied voorzien in nieuwe woningen op de gronden binnen de 20 Ke-contour, zoals aangegeven op kaart 11 en de digitale verbeelding ervan:
+			//  a. die tot stand komen door toepassing van artikel 13a, artikel 16 of artikel 17, of;
+			//  b. waarvoor vóór 1 maart 2017 een verklaring van geen bezwaar als bedoeld in artikel 8.9 van de Wet Luchtvaart is verleend.
+			//  3. Voor zover een bestemmingsplan nieuwe woningen toestaat op de gronden binnen de 20 Ke-contour, wordt in de toelichting van dat plan rekenschap gegeven van het feit dat op de betreffende locatie sprake is van geluid vanwege het luchtverkeer en worden de redenen vermeld die er toe hebben geleid om op de betreffende locatie nieuwe woningen te bestemmen, alsmede de uitkomsten van het onderzoek naar de maatschappelijke haalbaarheid hieromtrent. 
+
+			// niet aanwezig in vorige versie
+			container Schiphol_contouren_20ke : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9927_PRVPNHCONSOLID_0103_Besluitvlak_P WHERE naam =''20ke Schiphol contouren'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.sd28b3138-c5c6-4f76-afb9-6450f6edc253'
+				,'=OGRQuery'
+			);
+		}
+
+		//aardkundige_waarden en aardkundige monumenten laten afvallen?: TODOBAS
+
+		//restictiviteit windenergie? Weet waar ze komen
+// 			http://www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9927.PRVPNHCONSOLID-0103/pt_NL.IMRO.9927.PRVPNHCONSOLID-0103.xml#NL.IMRO.PT.s70a67395-e9dd-4b69-81e3-7edfd03716ca
+// 			http://wetten.overheid.nl/BWBR0022762/2017-06-01#Hoofdstuk3
+// 			Artikel 3.14a 
+// 			1 Een windturbine of een combinatie van windturbines voldoet ten behoeve van het voorkomen of beperken van geluidhinder aan de norm van ten hoogste 47 dB 
+// 			Lden en aan de norm van ten hoogste 41 dB Lnight op de gevel van gevoelige gebouwen, tenzij deze zijn gelegen op een gezoneerd industrieterrein, en bij 
+// 			gevoelige terreinen op de grens van het terrein.
+// 			
+// 			
+// 			2 Onverminderd het eerste lid kan het bevoegd gezag bij maatwerkvoorschrift teneinde rekening te houden met cumulatie van geluid als gevolg van een 
+// 			andere windturbine of een andere combinatie van windturbines, normen met een lagere waarde vaststellen ten aanzien een van de windturbines of een 
+// 			combinatie van windturbines.
+// 			
+// 			
+// 			3 In afwijking van het eerste lid kan het bevoegd gezag bij maatwerkvoorschrift in verband met bijzondere lokale omstandigheden normen met een andere waarde vaststellen.
+
+
+	}
+}

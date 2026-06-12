@@ -1,0 +1,174 @@
+container Gelderland : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=gelderland&striVersion=STRI2008"
+{
+	container NL_IMRO_9925_PVOmgverordeningGC_gc04 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9925.PVOmgverordeningGC-gc04"
+	//http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9925.PVOmgverordeningGC-gc05
+	{
+		//Omgevingsverordening Gelderland (juni 2017)
+		//planstatus: geconsolideerd 2017-07-10
+		//identificatie: NL.IMRO.9925.PVOmgverordeningGC-gc04
+		//type plan: provinciale verordening
+		//naam overheid: provincie Gelderland
+		//ondergrond: basisregistratie topografie (BRT) (2017-07-10)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (9)
+		//Regels Windenergie
+		//Regels Landbouw
+		//Regels Glastuinbouw
+		//Regels Natuur
+		//Regels Landschap
+		//Regels Water en Milieu
+		//Regels Erfgoed
+		//Regels Luchtvaart
+		//Regels Veilige Leefomgeving
+
+		parameter<string> Bestandsloc : = '%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P.shp';
+		parameter<string> OGRQuery    :    = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\ge\NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitsubvlak_P.gml -where ""besluitgebied=""NL.IMRO.9925.PVOmgverordeningGC-gc04"" -skipfailures -overwrite';
+
+		container  Glastuinbouw : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/Omgevingsverordening Gelderland (juni 2017).mht"
+		{
+			//Regels Glastuinbouw
+			//	  Glastuinbouw extensiveringsgebied
+			//	  Glastuinbouw in overige gebieden
+			//	  Glastuinbouw regionaal cluster
+			//	  Glastuinbouw zoekzone regionaal cluster
+			//	x Glastuinbouwontwikkelingsgebied
+			//	x Reserve glastuinbouwontwikkelingsgebied
+			//	  Tijdelijk verbod hervestiging glastuinbouw
+			//	  Tijdelijk verbod nieuwvestiging glastuinbouw
+			//	  Tijdelijk verbod uitbreiding bestaande glastuinbouw
+			
+			//&&&&&Bart:Er zijn nog meer lagen die we zouden kunnen aanroepen (Glastuinbouw in overige gebieden), aansluitng wettekst en bestand niet helemaal duidelijk dan
+
+			container Glastuinbouwontwikkelingsgebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Glastuinbouwontwikkelingsgebied'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.sb3d1a202-c2e1-476f-bb7b-f3bc8dc0a852'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/PVOmgverordeningGC-gc05_24_glastuinbouw.jpg'
+				,'=OGRQuery'
+			);
+
+			container Reserve_glastuinbouwontwikkelingsgebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Reserve glastuinbouwontwikkelingsgebied'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.sb3d1a202-c2e1-476f-bb7b-f3bc8dc0a852'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/PVOmgverordeningGC-gc05_24_glastuinbouw.jpg'
+				,'=OGRQuery'
+			);
+
+			container Glastuinbouw_regionaal_cluster : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Glastuinbouw regionaal cluster'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.sb3d1a202-c2e1-476f-bb7b-f3bc8dc0a852'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/PVOmgverordeningGC-gc05_24_glastuinbouw.jpg'
+				,'=OGRQuery'
+			);
+		}
+
+		container  Natuur : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/Omgevingsverordening Gelderland (juni 2017).mht"
+		{
+			//Regels Natuur
+			//	  Beschermingszone natte landnatuur
+			//	  GNN natuurbegraven en kleinschalige recreatie onder bijzondere voorwaarden mogelijk
+			//	  GNN natuurbegraven en kleinschalige recreatie onder voorwaarden mogelijk
+			//	  GNN windturbines onder voorwaarden mogelijk
+			//	x Gelders natuurnetwerk
+			//	  Groene ontwikkelingszone
+
+			//let op grote wijziging!
+			// niet gelijk aan vorige versie: 142050 (was 214881)    ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_GE/ehs/ehs_PRV_GE_ehs
+			container Gelders_natuurnetwerk : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Gelders natuurnetwerk'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.s650c9327-2c18-4d45-901c-01149ccde045'
+				,'=OGRQuery'
+			);
+
+			//Lijkt erop dat deze laag in ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_GE/ehs/ehs_PRV_GE_ehs zat verklaart het grote verschil
+// 			container Groene_ontwikkelingszone : = VergriddingT
+// 			(
+// 				'=Bestandsloc'
+// 				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Groene ontwikkelingszone'''
+// 				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.s53751600-2d84-41ee-89c1-56f68aa10afb'
+// 				,'=OGRQuery'
+// 			);
+		}
+		
+		//Rienk Kuiper december 2017: WAARDEVOL OPEN GEBIED RESTRICTIEF VOOR WONEN EN WERKEN
+		container  Landschap : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/Omgevingsverordening Gelderland (juni 2017).mht"
+		{
+			//Lagen:
+			//   Nationaal landschap buiten GNN, GO en NHW
+			// x Nieuwe Hollandse Waterlinie
+			//   Romeinse Limes
+			//   Waardevol open gebied
+
+			container Nieuwe_Hollandse_Waterlinie : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Nieuwe Hollandse Waterlinie'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.sa9b7feac-62d9-4923-b434-0bab1f8986bf'
+				,'=OGRQuery'
+			);
+			
+			container Waardevol_open_gebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Waardevol open gebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.sa9b7feac-62d9-4923-b434-0bab1f8986bf'
+				,'=OGRQuery'
+			);
+		}
+		//TODOBAS: Waardevol open gebied http://www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.s60f9fab3-281e-49fa-af5b-65add00319f8
+
+		container  Water_en_Milieu : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/Omgevingsverordening Gelderland (juni 2017).mht"
+		{
+			//Regels Water en Milieu
+			//	  Boringsvrije zone
+			//	  Functies van Water
+			//	x Grondwaterbescherming
+			//	  Intrekgebieden
+			//	  KWO-vrije zone
+			//	x Waterwingebied
+
+			// niet gelijk aan vorige versie: 12824 (was 16381)    ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_GE/water/water_PRV_GE_grondwaterbeschermingsgebied
+			container Grondwaterbescherming : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Grondwaterbescherming'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.sa9b7feac-62d9-4923-b434-0bab1f8986bf'
+				,'=OGRQuery'
+			);
+
+			// niet gelijk aan vorige versie: 1405 (was 1355)    ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_GE/water/water_PRV_GE_waterwingebied
+			container Waterwingebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Waterwingebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.s7c6304f5-0b17-4f5e-81f7-a39d86e4c1a8'
+				,'=OGRQuery'
+			);
+		}
+
+		container   Veilige_Leefomgeving : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/ge/Omgevingsverordening Gelderland (juni 2017).mht"
+		{
+			//Regels Veilige Leefomgeving
+			//	  Natura 2000-gebieden (toelichtend)
+			//	x Stiltegebieden
+			//	  Verbod op ontgassen
+			
+			//niet aanwezig in vorige versie werd terugevallen op landelijk bestand
+			container Stiltegebieden : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9925_PVOmgverordeningGC_gc04_Besluitsubvlak_P WHERE naam =''Stiltegebieden'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9925.PVOmgverordeningGC-gc04/pt_NL.IMRO.9925.PVOmgverordeningGC-gc04.xml#NL.IMRO.PT.s18e072ee-eba1-40da-a5a9-152e95155970'
+				,'=OGRQuery'
+			);
+		}
+	}
+}

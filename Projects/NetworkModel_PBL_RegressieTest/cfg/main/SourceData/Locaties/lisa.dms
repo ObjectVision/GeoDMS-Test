@@ -1,0 +1,118 @@
+container LISA : using = "geometries" 
+{ 
+	unit<uint32> jaren : nrofrows = 23
+	{
+		attribute<uint32> value : [1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018];
+		attribute<string> name  := 'y' + string(value);
+	}
+	
+	container GenerateFSS_allyears
+	{
+		parameter<String> Generate := 'Ready', ExplicitSuppliers = "=AsList('LISA/MakeFSS/'+jaren/name+'/PerYear', ';')";
+	}
+	
+	// unit<uint32> READ_LISA_1996_2009
+	// : StorageName     = "%SourceDataDir%/LISA/LISA_tm2018_1.gdb"
+	// , StorageReadOnly = "True"
+	// , StorageType     = "gdal.vect"
+	// {
+		// unit<uint32> LISA1996nw_pnt 
+		// {
+			// attribute<rdc> geometry; 
+		// }
+		// unit<uint32> LISA1997nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA1998nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA1999nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2000nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2001nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2002nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2003nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2004nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2005nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2006nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2007nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2008nw_pnt {attribute<rdc> geometry;}
+		// unit<uint32> LISA2009nw_pnt {attribute<rdc> geometry;}
+	// }
+	
+	// unit<uint32> READ_LISA_2010_2018
+	// : StorageName     = "%SourceDataDir%/LISA/LISA_tm2018_2.gdb"
+	// , StorageReadOnly = "True"
+	// , StorageType     = "gdal.vect"
+	// {
+		// unit<uint32> LISA2010nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2011nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2012nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2013nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2014nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2015nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2016nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2017nw_pnt {attribute<rdc> geometry;} 
+		// unit<uint32> LISA2018nw_pnt {attribute<rdc> geometry;} 
+	// }
+	
+	container MakeFSS := 
+		for_each_ne(
+			Jaren/name
+			,'MakeFSS_T('+string(Jaren/value)+')'
+		);
+		
+	container ReadFSS := 
+		for_each_ne(
+			Jaren/name
+			,'ReadFSS_T('+string(Jaren/value)+')'
+		);
+	
+	Template MakeFSS_T
+	{	
+		parameter<uint32> year;
+		parameter<string> path := year <= 2009
+									? 'READ_LISA_1996_2009' 
+									: 'READ_LISA_2010_2018';
+		unit<uint32> domain := =path;
+		
+		unit<uint32> PerYear := ='domain/LISA'+string(year)+'nw_pnt'
+		, StorageName = "='%LocalDataProjDir%/Banen/LISA'+string(year)+'.fss'"
+		{
+			attribute<rdc>                            geometry    := ='domain/LISA'+string(year)+'nw_pnt/geometry'; 
+			attribute<float64>                        banen       := ='domain/LISA'+string(year)+'nw_pnt/BANEN';
+			attribute<string>                         LISAnr      := ='domain/LISA'+string(year)+'nw_pnt/LISANR';
+			attribute<string>                         naam        := ='domain/LISA'+string(year)+'nw_pnt/NAAM';
+		}
+	}
+	
+	Template ReadFSS_T
+	{	
+		parameter<uint32> year;
+		
+		unit<uint32> PerYear
+		// : StorageName = "='%LocalDataProjDir%/Banen/LISA'+string(year)+'.fss'"
+		: StorageName = "='%SourceDataDir%/LISA/LISA'+string(year)+'.fss'"
+		, StorageReadOnly = "true"
+		{
+			attribute<rdc>                                  geometry;
+			attribute<int32>                              banen;
+			attribute<string>                               LISAnr;
+			attribute<string>                               naam;
+			
+			unit<spoint> domain := ='rdc_'+Gridsize;
+			
+			attribute<domain>                domain_rel                      := geometry[domain];
+			attribute<uint32>                sum_banen_per_grid     (domain) := sum(banen[uint32], domain_rel);
+			attribute<uint32>                Sum_IsPositive         (domain) := sum_banen_per_grid > 0 ? sum_banen_per_grid : (0/0);
+			
+			parameter<string>                Gridsize                        := ModelParameters/Advanced/Dest_location_scale;
+			
+			unit<uint32> HeeftBanen := select_with_attr_by_cond(.,Sum_IsPositive > 0)
+			{
+				attribute<rdc>    geometry            := select_data(., ../Sum_IsPositive > 0, domain/geometry);
+				attribute<uint32> identificatie       := id(.);
+				attribute<string> id_name             := 'dest' + string(identificatie);
+				attribute<string> label               := id_name, DialogType = "LabelText";
+				attribute<string> name := label;
+				
+				attribute<uint32> nr_banen            := sum_banen_per_grid;
+			} 
+		}
+	}
+}

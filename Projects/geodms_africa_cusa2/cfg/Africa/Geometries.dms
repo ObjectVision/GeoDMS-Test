@@ -1,0 +1,187 @@
+Container Geometries : using = "units"
+{
+	// unit<dpoint> WGS84          : SpatialReference = "EPSG:4326";
+	unit<dpoint> WGS84          : SpatialReference = "GEOGCS[""GCS_WGS_1984"",DATUM[""D_WGS_1984"",SPHEROID[""WGS_1984"",6378137,298.257223563]],PRIMEM[""Greenwich"",0],UNIT[""Degree"",0.017453292519943295]]";
+	unit<dpoint> AfricanACEA    : SpatialReference = "PROJCS[""Africa_Albers_Equal_Area_Conic"",GEOGCS[""GCS_WGS_1984"",DATUM[""D_WGS_1984"",SPHEROID[""WGS_1984"",6378137.0,298.257223563]],PRIMEM[""Greenwich"",0.0],UNIT[""Degree"",0.0174532925199433]],PROJECTION[""Albers""],PARAMETER[""False_Easting"",0.0],PARAMETER[""False_Northing"",0.0],PARAMETER[""Central_Meridian"",25.0],PARAMETER[""Standard_Parallel_1"",20.0],PARAMETER[""Standard_Parallel_2"",-23.0],PARAMETER[""Latitude_Of_Origin"",0.0],UNIT[""Meter"",1.0],AUTHORITY[""Esri"",102022]]", Descr = "African Albers Conic Equal Area", DialogData = "SourceData/ReadSpatialData/Africa_countries_AEA/inFile/ISO";
+	// unit<dpoint> AfricanACEA    : SpatialReference = "ESRI:102022", Descr = "African Albers Conic Equal Area", DialogData = "SourceData/ReadSpatialData/Africa_countries_AEA/inFile/ISO";
+	unit<dpoint> BaseProjection := AfricanACEA;
+
+	// first, let's define an arbitrary regular tiling
+	unit<dpoint> proto_base_grid_1k  := gridset(BaseProjection, GetProjectionFactor(Base_grid_100m) * point_yx(10d, 10d, BaseProjection), GetProjectionOffSet(Base_grid_100m), BaseProjection);
+	unit<dpoint> proto_base_grid_5k  := gridset(BaseProjection, GetProjectionFactor(Base_grid_100m) * point_yx(50d, 50d, BaseProjection), GetProjectionOffSet(Base_grid_100m), BaseProjection);
+	unit<dpoint> proto_base_grid_10k := gridset(BaseProjection, GetProjectionFactor(Base_grid_100m) * point_yx(100d, 100d, BaseProjection), GetProjectionOffSet(Base_grid_100m), BaseProjection);
+	unit<ipoint> Base_grid_100m := SourceData/Landuse, DialogData = "BaseProjection"; // this domain has cardinality 82178 x 89023 = 7.315.732.094 = 6.8 GB.
+	unit<ipoint> Base_grid_1km  := range(proto_base_grid_1k, point_yx(0i,0i,ipoint), upperbound(Base_grid_100m) / point_yx(10i,10i,ipoint) ), DialogData = "BaseProjection"
+	{
+		attribute<int32> rownr  := pointRow(id(.));
+		attribute<bool>  uneven := mod(rownr, 2i) > 0i;
+	}
+	unit<ipoint> Base_grid_5km  := range(proto_base_grid_5k, point_yx(0i,0i,ipoint), upperbound(Base_grid_100m) / point_yx(50i,50i,ipoint) ), DialogData = "BaseProjection"
+	{
+		attribute<int32> rownr  := pointRow(id(.));
+		attribute<bool>  uneven := mod(rownr, 2i) > 0i;
+	}
+	unit<ipoint> Base_grid_10km  := range(proto_base_grid_10k, point_yx(0i,0i,ipoint), upperbound(Base_grid_100m) / point_yx(100i,100i,ipoint) ), DialogData = "BaseProjection"
+	{
+		attribute<int32> rownr  := pointRow(id(.));
+		attribute<bool>  uneven := mod(rownr, 2i) > 0i;
+	}
+	parameter<Base_grid_100m> TileSize   := point_yx(4096i, 4096i, Base_grid_100m);
+	parameter<Base_grid_100m> TileOffset := point_yx(   0i,    0i, Base_grid_100m);
+	
+	unit<ipoint> RegularTiledRaster := TiledUnit(TileSize); // this defines a regular tiling of 21x22 
+	
+	unit<spoint>  Tile := gridset(Base_grid_100m, TileSize, TileOffset, spoint), FreeData = "False"
+	{
+		attribute<Base_grid_100m> LB           := min(SourceData/Landuse/RT_StudyAreaSelection/org_rel, SourceData/Landuse/RT_StudyAreaSelection/org_rel[.]);
+		attribute<Base_grid_100m> UB           := max(SourceData/Landuse/RT_StudyAreaSelection/org_rel, SourceData/Landuse/RT_StudyAreaSelection/org_rel[.])+point_yx(1i, 1i);
+		attribute<bool>            HasStudyArea := any(SourceData/Landuse/RT_IsStudyArea, mapping(RegularTiledRaster, .));
+	}
+
+	unit<uint32> StudyAreaTile_Select := select_with_org_rel(Tile/HasStudyArea) // this selects 219 of the (21 x 22) (409.6 km)^2 tiles, which is 47%
+	{
+		// as some regular tiles are cut on local boundedness of the study area, only 2,879,156,535 / 7,315,732,094 = 39.36% of the original extent is selected.
+		attribute<Base_grid_100m> LB := Tile/LB[org_rel];
+		attribute<Base_grid_100m> UB := Tile/UB[org_rel];
+	}
+	unit<uint32> StudyAreaTile_Create := StudyAreaTile_Select, StorageName = "%projdir%/data/StudyAreaTiles_new.dbf" // decouple by renaming this file when produced
+	{
+		attribute<int32>         LB_X := pointcol(LB);
+		attribute<int32>         LB_y := pointrow(LB);
+		attribute<int32>         UB_X := pointcol(UB);
+		attribute<int32>         UB_y := pointrow(UB);
+	} 
+
+	// from here on, we only use the decoupled study area tiles and no longer have to process the full extent of the study area.
+	unit<uint32> StudyAreaTile: StorageName = "%projdir%/data/StudyAreaTiles.dbf", StorageReadOnly = "true", FreeData = "False"
+	{
+		attribute<int32>            LB_X;
+		attribute<int32>            LB_y;
+		attribute<Base_grid_100m>  LB    := point_yx(LB_y, LB_x, Base_grid_100m);
+		attribute<Base_grid_1km>   LB1k  := LB[Base_grid_1km];
+		attribute<Base_grid_5km>   LB5k	 := LB[Base_grid_5km];
+		attribute<Base_grid_10km>  LB10k := LB[Base_grid_10km];
+		attribute<int32>            UB_X;
+		attribute<int32>            UB_y;
+		attribute<Base_grid_100m>  UB    := point_yx(UB_y, UB_x, Base_grid_100m);
+		attribute<Base_grid_1km>   UB1k  := UB[Base_grid_1km];
+		attribute<Base_grid_5km>   UB5k  := UB[Base_grid_5km];
+		attribute<Base_grid_10km>  UB10k := UB[Base_grid_10km];
+	} 		
+	
+	unit<ipoint> SelectedTiledRaster    := TiledUnit(StudyAreaTile/LB, StudyAreaTile/UB), DialogData = "BaseProjection"; // only selected full tiles in domain.
+	unit<ipoint> SelectedTiledRaster1k  := TiledUnit(StudyAreaTile/LB1k, StudyAreaTile/UB1k), DialogData = "BaseProjection" 
+	{ // only selected full tiles in domain.
+		attribute<int32> pcol5k:= pointcol(id(.)) / int32(5);
+		attribute<int32> prow5k:= pointrow(id(.)) / int32(5);
+		attribute<int32> pcol10k:= pointcol(id(.)) / int32(10);
+		attribute<int32> prow10k:= pointrow(id(.)) / int32(10);
+		attribute<SelectedTiledRaster1k>   m1k_rel: = id(.); 
+		attribute<SelectedTiledRaster5k>   m5k_rel: = point_yx(prow5k, pcol5k, SelectedTiledRaster5k); 
+		attribute<SelectedTiledRaster10k>  m10k_rel: = point_yx(prow10k, pcol10k, SelectedTiledRaster10k); 
+	}
+	unit<ipoint> SelectedTiledRaster5k  := TiledUnit(StudyAreaTile/LB5k, StudyAreaTile/UB5k), DialogData = "BaseProjection"; // only selected full tiles in domain.
+	unit<ipoint> SelectedTiledRaster10k := TiledUnit(StudyAreaTile/LB10k, StudyAreaTile/UB10k), DialogData = "BaseProjection"; // only selected full tiles in domain.
+	
+	unit<uint32> CorridorNameCSV
+	: StorageName = "%projdir%/data/ListOfCorridorsCusaII.csv"
+	, StorageType = "gdal.vect"
+	, StorageReadOnly = "true"
+	{
+		attribute<int32> CorridorID := int32(corridorFootprintId);
+		attribute<string> Label := replace(corridorName, '-','_',' ','_', '\''','');
+	}
+	
+	unit<uint32> Corridors0  := SourceData/ReadSpatialData/Corridors/inFile
+	{
+		attribute<string>         name             := rjoin(CorridorID, CorridorNameCSV/CorridorID, CorridorNameCSV/Label);
+		attribute<string>         corridorIntpaId  := rjoin(CorridorID, CorridorNameCSV/CorridorID, CorridorNameCSV/corridorIntpaId);
+		attribute<string>         Label            := name, DialogType = "LabelText";
+		
+		attribute<BaseProjection> Geometry (poly)  := SourceData/ReadSpatialData/Corridors/inFile/geometry;
+		
+		attribute<BaseProjection>        BP_LB   := lower_bound(geometry);
+		attribute<BaseProjection>        BP_UB   := upper_bound(geometry);
+		attribute<SelectedTiledRaster>   ST_LB   := BP_LB[SelectedTiledRaster];
+		attribute<SelectedTiledRaster>   ST_UB   := BP_UB[SelectedTiledRaster] + point_yx(1i, 1i);
+		attribute<SelectedTiledRaster1k> ST_LB1k := BP_LB[SelectedTiledRaster1k];
+		attribute<SelectedTiledRaster1k> ST_UB1k := BP_UB[SelectedTiledRaster1k] + point_yx(1i, 1i);
+		attribute<SelectedTiledRaster5k> ST_LB5k := BP_LB[SelectedTiledRaster5k];
+		attribute<SelectedTiledRaster5k> ST_UB5k := BP_UB[SelectedTiledRaster5k] + point_yx(1i, 1i);
+		attribute<SelectedTiledRaster10k>ST_LB10k:= BP_LB[SelectedTiledRaster10k];
+		attribute<SelectedTiledRaster10k>ST_UB10k:= BP_UB[SelectedTiledRaster10k] + point_yx(1i, 1i);
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> Corridors := select_with_attr_by_org_rel(Corridors0, Corridors0/name == 'Abidjan_Ouagadougou' )
+	{
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+	
+	container Corridor_BoundingBoxes := 
+		for_each_ne(
+			Corridors/name
+			, 'Corridor_BoundingBoxes_T('+quote(Corridors/name)+')'
+		);
+	
+	Template Corridor_BoundingBoxes_T 
+	{
+		parameter<string> Corridor_Name;
+		///
+		
+		unit<uint32> Corridor : nrofrows = 1
+		{
+			attribute<BaseProjection> geometry (poly) := ='union_data(.,Corridors/geometry[Corridors/v/'+Corridor_Name+'[Corridors]])';
+			attribute<BaseProjection> LB   := lower_bound(geometry);
+			attribute<BaseProjection> UB   := upper_bound(geometry);
+			
+			attribute<BaseProjection> UpperRight  := UB;
+			attribute<BaseProjection> UpperLeft   := point_yx(PointRow(UB),PointCol(LB),BaseProjection);
+			attribute<BaseProjection> LowerRight  := point_yx(PointRow(LB),PointCol(UB),BaseProjection);
+			attribute<BaseProjection> LowerLeft   := LB;
+			
+			attribute<BaseProjection> UpperRight_ext  := point_yx(PointRow(UB)+BoundingBoxBufferSize,PointCol(UB)+BoundingBoxBufferSize,BaseProjection);
+			attribute<BaseProjection> UpperLeft_ext   := point_yx(PointRow(UB)+BoundingBoxBufferSize,PointCol(LB)-BoundingBoxBufferSize,BaseProjection);
+			attribute<BaseProjection> LowerRight_ext  := point_yx(PointRow(LB)-BoundingBoxBufferSize,PointCol(UB)+BoundingBoxBufferSize,BaseProjection);
+			attribute<BaseProjection> LowerLeft_ext   := point_yx(PointRow(LB)-BoundingBoxBufferSize,PointCol(LB)-BoundingBoxBufferSize,BaseProjection);
+			
+			parameter<m> BoundingBoxBufferSize := convert(ModelParameters/BoundingBoxBufferSize, m);
+			
+			unit<uint32>              point_set    : nrofrows = 5
+			{
+				attribute<BaseProjection>      point        := union_data(., UpperLeft, UpperRight, LowerRight, LowerLeft, UpperLeft);
+				attribute<..>                  Sequence_rel := const(0, .);
+				attribute<.>                   ordinal      := id(.);
+			}
+			unit<uint32>              point_set_ext    : nrofrows = 5
+			{
+				attribute<BaseProjection>      point        := union_data(., UpperLeft_ext, UpperRight_ext, LowerRight_ext, LowerLeft_ext, UpperLeft_ext);
+				attribute<..>                  Sequence_rel := const(0, .);
+				attribute<.>                   ordinal      := id(.);
+			}
+			
+			attribute<BaseProjection> BoundingBox          (poly)      := points2sequence(point_set/point, point_set/Sequence_rel, point_set/ordinal);
+			attribute<BaseProjection> BoundingBox_Extended (poly)      := points2sequence(point_set_ext/point, point_set_ext/Sequence_rel, point_set_ext/ordinal);
+		}
+	}
+	
+	container CorridorDomains1k := 
+		for_each_nex(
+			Corridors/name
+			,replace('range(SelectedTiledRaster1k, Corridors/ST_LB1k[@], Corridors/ST_UB1k[@])', '@', string(id(Corridors))+'[Corridors]')
+			,ipoint
+		);
+	container CorridorDomains5k := 
+		for_each_nex(
+			Corridors/name
+			,replace('range(SelectedTiledRaster5k, Corridors/ST_LB5k[@], Corridors/ST_UB5k[@])', '@', string(id(Corridors))+'[Corridors]')
+			,ipoint
+		);
+	container CorridorDomains10k := 
+		for_each_nex(
+			Corridors/name
+			,replace('range(SelectedTiledRaster10k, Corridors/ST_LB10k[@], Corridors/ST_UB10k[@])', '@', string(id(Corridors))+'[Corridors]')
+			,ipoint
+		);
+}

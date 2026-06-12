@@ -1,0 +1,265 @@
+container AdministrativeBoundaries
+{
+	
+	parameter<uint32> NrBoundarySets: 	expr = "29";
+	parameter<uint32> NrAttributes:		expr = "6";
+	
+	unit<uint32> BoundarySets: expr = "range(uint32, 0, NrBoundarySets)"
+	{
+		unit<uint32> inElements: expr = "range(uint32, 0, NrBoundarySets * NrAttributes)"
+		{
+			attribute<string> elements: [
+				// name						//shape location	//shape name		//ZoneId field	//label field	//add layers
+				
+				//'Balkans_n0',				'Balkans',				'balkans_n0',		'First_N2_3',	'First_N2_3', 	'',
+				'Balkans_n1',				'Balkans',				'balkans_n1',		'NUTS_CODE',	'NUTS_LABEL', 	'',
+				'Balkans_n2',				'Balkans',				'balkans_n2',		'ID',			'NAME',		 	'',
+				'Balkans_n3',				'Balkans',				'balkans_n3',		'NUTS_CODE',	'NUTS_LABEL', 	'',
+				'NUTS0_LUISA_old',			'NUTS/LUISA_old',		'n0_jul16',			'First_N2_3',	'First_N2_3', 	'',
+				'NUTS1_LUISA_old',			'NUTS/LUISA_old',		'n1_jul16',			'NUTS_CODE',	'NUTS_LABEL',	'',
+				'NUTS2_merged_LUISA_old',	'NUTS/LUISA_old',		'n2_merged_jul16',	'merge',		'merge',		'',
+				'NUTS2_LUISA_old',			'NUTS/LUISA_old',		'n2_jul16',			'NUTS_CODE',	'NUTS_LABEL',	'',
+				'NUTS3_LUISA_old',			'NUTS/LUISA_old',		'n3_mar17',			'NUTS_CODE',	'NUTS_LABEL',	'',
+				'NUTS0_v8',					'NUTS/v8',				'nuts0',			'NUTS_ID',		'NAME_ASCI',	'',	
+				'NUTS1_v8',					'NUTS/v8',				'NUTS1_detailed',	'NUTS_CODE',	'NUTS_LABEL',	'Balkans_n1',
+				'NUTS2_v8',					'NUTS/v8',				'NUTS2_detailed',	'NUTS_CODE',	'NUTS_LABEL',	'Balkans_n2',
+				'NUTS3_v8',					'NUTS/v8',				'NUTS3_detailed',	'NUTS_CODE',	'NUTS_LABEL',	'Balkans_n3',
+				'NUTS0_v9',					'NUTS/v9',				'nuts0',			'NUTS_ID',		'NAME_ASCI',	'',	
+				'NUTS1_v9',					'NUTS/v9',				'nuts1',			'NUTS_ID',		'NAME_ASCI',	'Balkans_n1',
+				'NUTS2_v9',					'NUTS/v9',				'nuts2',			'NUTS_ID',		'NAME_ASCI',	'Balkans_n2',
+				'NUTS3_v9',					'NUTS/v9',				'nuts3',			'NUTS_ID',		'NAME_ASCI',	'Balkans_n3',
+				'NUTS0_v10',				'NUTS/v10',				'nuts0',			'ICC',			'NAMN',			'',
+				'NUTS1_v10',				'NUTS/v10',				'nuts1',			'NUTS_CODE',	'NUTS_LABEL',	'',
+				'NUTS2_v10',				'NUTS/v10',				'nuts2',			'NUTS_CODE',	'NUTS_LABEL',	'',
+				'NUTS2_merged_v10',			'NUTS/v10',				'nuts2_merged',		'NUTS_mrg',		'FIRST_NU_1',	'',
+				'NUTS3_v10',				'NUTS/v10',				'nuts3',			'NUTS_CODE2',	'NUTS_LABEL',	'',
+				'NUTS0_v16',				'NUTS/v16',				'nuts0',			'NUTS_ID',		'NUTS_NAME',	'',
+				'NUTS1_v16',				'NUTS/v16',				'nuts1',			'NUTS_ID',		'NUTS_NAME',	'',
+				'NUTS2_v16',				'NUTS/v16',				'nuts2',			'NUTS_ID',		'NUTS_NAME',	'',
+				'NUTS3_v16',				'NUTS/v16',				'nuts3',			'NUTS_ID',		'NUTS_NAME',	'',
+				'Sel_NUTS1_v10',			'NUTS/JrcRegion',		'Sel_NUTS1_v10',	'NUTS_CODE',	'NUTS_LABEL',	'CY_govt_part',
+				'CY_govt_part',				'NUTS/JrcRegion',		'CY_govt_part',		'ICC',			'ICC',			'',
+				'LAU2',						'LAU',					'LAU2_dec16',		'ICC_LAU_CO',	'LAU_LABEL',	'LAU_spain_patch',
+				'LAU_spain_patch',			'LAU', 					'LAU_spain_patch',	'LAU_CODE',		'LAU_CODE',		''];
+		}
+		attribute<string> Name: 		expr = "inElements/elements[((id(.)*NrAttributes)+0)[inElements]]";
+		attribute<string> Dir: 			expr = "inElements/elements[((id(.)*NrAttributes)+1)[inElements]]";
+		attribute<string> File: 		expr = "inElements/elements[((id(.)*NrAttributes)+2)[inElements]]";
+		attribute<string> IDfield: 		expr = "inElements/elements[((id(.)*NrAttributes)+3)[inElements]]";
+		attribute<string> Labelfield: 	expr = "inElements/elements[((id(.)*NrAttributes)+4)[inElements]]";
+		attribute<string> AddLayer: 	expr = "inElements/elements[((id(.)*NrAttributes)+5)[inElements]]";
+		attribute<string> Path:			expr = "Dir + '/' + File";
+		attribute<string> uniName:		expr = "Name";
+		
+	}
+		
+	container src: expr = "for_each_ne(BoundarySets/uniName, 'doLoadFiles('+ quote(BoundarySets/Path) +','+ quote(BoundarySets/IDfield) +','+ quote(BoundarySets/Labelfield) +')')";
+	container sets:expr = "for_each_ne(BoundarySets/uniName, 'doAggregateSets(src/'+ BoundarySets/uniName +', '+ quote(BoundarySets/AddLayer)+ ')')";
+	
+	container BoundaryDomains: expr = "for_each_ind('nex', BoundarySets/uniName, 'sets/'+ BoundarySets/uniName +'/UniqueZones',uint32)"
+	{
+		unit<uint32> RunAreas: expr = "LUISA_zones/RunAreas";
+		unit<uint32> ForestDemandRegions: expr = "LUISA_zones/ForestDemandRegions";
+	}
+	
+	container relational: expr = "for_each_nednv(BoundarySets/uniName, "
+		"'point_in_polygon(centroid_or_mid(sets/'+ BoundarySets/uniName +'/UniqueZones/Geometry), Regions/Runs/Geometry)[Regions/Runs]', BoundaryDomains, BoundarySets/uniName, Regions/Runs)"
+	{
+		attribute<Regions/Runs> base_zones			(Regions/base_zones):				expr = "point_in_polygon(Regions/base_zones/centroid,	Regions/Runs/Geometry)[Regions/Runs]";
+		attribute<Regions/Runs> ForestDemandRegions (LUISA_zones/ForestDemandRegions):  expr = "point_in_polygon(centroid_or_mid(LUISA_zones/ForestDemandRegions/Polygons),	Regions/Runs/Geometry)[Regions/Runs]";
+		attribute<Regions/Runs> Capri				(Regions/Capri):					expr = "point_in_polygon(centroid_or_mid(Regions/Capri/Geometry),			Regions/Runs/Geometry)[Regions/Runs]";
+		attribute<Regions/Runs> CapriAggr			(Regions/CapriAggr):				expr = "point_in_polygon(centroid_or_mid(Regions/CapriAggr/Geometry),		Regions/Runs/Geometry)[Regions/Runs]";
+		attribute<Regions/Runs> RunAreas 			(LUISA_zones/RunAreas): 			expr = "point_in_polygon(centroid_or_mid(LUISA_zones/RunAreas/Polygons),	Regions/Runs/Geometry)[Regions/Runs]";
+		attribute<Regions/Runs> Nuts0 				(LUISA_zones/Nuts0): 				expr = "point_in_polygon(centroid_or_mid(LUISA_zones/Nuts0/Polygons),		Regions/Runs/Geometry)";
+		attribute<Regions/Runs> outsideRun 			(LUISA_zones/outsideRun): 			expr = "point_in_polygon(centroid_or_mid(LUISA_zones/outsideRun/Polygons),	Regions/Runs/Geometry)";
+	}
+	
+	container RegionGrids: expr = "for_each_nedvn(BoundarySets/uniName, 'relational/'+ BoundarySets/uniName +'[base_raster]', Lambert100mGrid, BoundaryDomains, BoundarySets/uniName)"
+	{
+		attribute<uint32> base_raster (Lambert100mGrid): StorageName = "%SourceDataProjDir%/EUCS_100m/zones/LAU2_raster.tif", StorageType = "gdal.grid", StorageReadOnly = "True";
+		
+		
+	
+	}
+	
+	container LUISA_zones: Using = "src;"
+	{
+		unit<uint32> Nuts1 := sets/Sel_NUTS1_v10/UniqueZones
+		{
+			attribute<CountryTable> CT_id           := rlookup(Itl_Code, CountryTable/N0Code);
+			attribute<LambertEA> 	Polygons (polygon): expr = "Geometry";
+			attribute<string> 		Itl_Code:	expr = "substr(replace(ZoneId, 'EL', 'GR'), 0, 2)";
+			attribute<string>		LUISA_Code: expr = "CountryTable/LUISACode[CT_id]";
+			attribute<string> 		Label:		expr = "CountryTable/ItlName[CT_id]";
+			attribute<string>		LUISAName:	expr = "CountryTable/LUISAName[CT_id]";
+			attribute<bool>			Exclude:	expr = "ZoneId = 'PT2' || ZoneId = 'PT3' || ZoneId = 'ES7' || ZoneId = 'FRA'"; // exclude atlantic islands of PT and ES
+			attribute<bool>			Sel:		expr = "CountryTable/LUISAsel[CT_id] && !Exclude";
+		}
+		unit<uint32> RunN1s := select_with_org_rel(Nuts1/Sel), DialogData = "Polygons", DialogType = "map"
+		{
+			attribute<LambertEA> 	Polygons (polygon): expr = "Nuts1/Geometry[org_rel]";
+			attribute<string> 		Code:				expr = "Nuts1/LUISA_Code[org_rel]";
+			attribute<string> 		Label:				expr = "Nuts1/Label[org_rel]";
+			attribute<string> 		Name:				expr = "Nuts1/LUISAName[org_rel]";
+			attribute<RunAreas>		RunAreaId:			expr = "rlookup(Name, RunAreas/Values)";
+			attribute<string> 		ForestDemandCode:	expr = "Code = 'BELUX' ? Code : Nuts1/Itl_Code[org_rel]";
+			attribute<string> 		ForestDemandName:	expr = "Code = 'BELUX' ? Name : Label";
+			attribute<ForestDemandRegions> ForestDemandId: expr = "rlookup(ForestDemandName, ForestDemandRegions/Values)";
+		}
+		unit<uint32> outsideRun: expr = "select_with_org_rel(!Nuts1/Sel)", DialogData = "Polygons", DialogType = "map"
+		{
+			attribute<LambertEA> 	Polygons (polygon): expr = "Nuts1/Geometry[org_rel]";
+			attribute<string> 		Code:				expr = "Nuts1/LUISA_Code[org_rel]";
+			attribute<string> 		Label:				expr = "Nuts1/Label[org_rel]";
+			attribute<string> 		Name:				expr = "Nuts1/LUISAName[org_rel]";
+		}
+		unit<uint32> RunAreas:
+			DialogData = "Polygons",
+			DialogType = "map",
+			expr 	   = "Unique(RunN1s/Name)"
+		{
+			attribute<LambertEA> Polygons (poly): 	expr = "bp_union_polygon(value(RunN1s/Polygons, ipoint), RunN1s/RunAreaId)[LambertEA]";
+			attribute<LambertEA> Geometry (poly): 	expr = "Polygons";
+			attribute<string> 	 Name:				expr = "Values";
+			attribute<string>	 ZoneId:			expr = "ICC";
+			attribute<string>	 Nuts_code:			expr = "ICC";
+			attribute<String>    N0CD:           	expr = "ICC";
+			attribute<string> 	 ICC:				expr = "first(RunN1s/Code, RunN1s/RunAreaId)";
+		}
+		unit<uint32> ForestDemandRegions:
+			DialogData = "Polygons",
+			DialogType = "map",
+			expr 	   = "Unique(RunN1s/ForestDemandName)"
+		{
+			attribute<LambertEA> Polygons (poly): 	expr = "bp_union_polygon(value(RunN1s/Polygons, ipoint), RunN1s/ForestDemandId)[LambertEA]";
+			attribute<LambertEA> Geometry (poly): 	expr = "Polygons";
+			attribute<string> 	 Name:				expr = "Values";
+			attribute<string>	 ZoneId:			expr = "ICC";
+			attribute<string>	 Nuts_code:			expr = "ICC";
+			attribute<String>    N0CD:           	expr = "ICC";
+			attribute<string> 	 ICC:				expr = "first(RunN1s/ForestDemandCode, RunN1s/ForestDemandId)";
+		}
+		
+	}
+	parameter<uint32> NrN0Zones: expr = "56";
+	parameter<uint32> NrN0Attributes: expr = "5";
+	
+	unit<uint32> CountryTable: expr = "range(uint32, 0, NrN0Zones)"
+	{
+		
+		attribute<string> N0Code: 		expr = "inElements/elements[((id(.)*NrN0Attributes)+0)[inElements]]";
+		attribute<string> LUISACode:	expr = "inElements/elements[((id(.)*NrN0Attributes)+1)[inElements]]";
+		attribute<string> ItlName: 		expr = "inElements/elements[((id(.)*NrN0Attributes)+2)[inElements]]";
+		attribute<string> LUISAName:	expr = "inElements/elements[((id(.)*NrN0Attributes)+3)[inElements]]";
+		attribute<bool> LUISAsel: 		expr = "bool(uint32(inElements/elements[((id(.)*NrN0Attributes)+4)[inElements]]))";
+		
+		unit<uint32> inElements: expr = "range(uint32, 0, NrN0Zones * NrN0Attributes)"
+		{
+		
+			attribute<string> elements: [
+				'UK',	'UK', 	'United Kingdom',	'United_Kingdom',	'1',
+				'NO',	'NO',	'Norway',	'Norway',	'0',
+				'GG',	'UK',	'Guernsey',	'',	'0',
+				'ES',	'ES',	'Spain',	'Spain',	'1',
+				'MT',	'MT',	'Malta',	'Malta',	'1',
+				'GE',	'GE',	'Georgia',	'',	'0',
+				'TR',	'TR',	'Turkey',	'',	'0',
+				'ND',	'UK',	'United Kingdom',	'United_Kingdom',	'1',
+				'AT',	'AT',	'Austria',	'Austria',	'1',
+				'VA',	'VA',	'Vatican city',	'',	'0',
+				'HU',	'HU',	'Hungary',	'Hungary',	'1',
+				'RO',	'RO',	'Romania',	'Romania',	'1',
+				'SE',	'SE',	'Sweden',	'Sweden',	'1',
+				'LU',	'BELUX',	'Luxembourg',	'BelgLux',	'1',
+				'LI',	'LI',	'Liechtenstein',	'',	'0',
+				'BY',	'BY',	'Belarus',	'',	'0',
+				'MD',	'MD',	'Moldovia',	'',	'0',
+				'FO',	'DK',	'Faroe Islands',	'',	'0',
+				'DK',	'DK',	'Denmark',	'Denmark',	'1',
+				'GI',	'UK',	'Gibraltar',	'',	'0',
+				'BE',	'BELUX',	'Belgium',	'BelgLux',	'1',
+				'GR',	'GR',	'Greece',	'Greece',	'1',
+				'SK',	'SK',	'Slovakia',	'Slovakia',	'1',
+				'RU',	'RU',	'Russia',	'',	'0',
+				'CY',	'CY',	'Cyprus',	'Cyprus',	'1',
+				'JE',	'UK',	'Jersey',	'',	'0',
+				'CZ',	'CZ',	'Czech Republic',	'Czechia',	'1',
+				'IM',	'UK',	'Isle of Man',	'',	'0',
+				'UA',	'UA',	'Ukraine',	'',	'0',
+				'GB',	'UK',	'United Kingdom',	'United_Kingdom',	'1',
+				'EE',	'EE',	'Estonia',	'Estonia',	'1',
+				'PT',	'PT',	'Portugal',	'Portugal',	'1',
+				'AD',	'AD',	'Andorra',	'',	'0',
+				'LV',	'LV',	'Latvia',	'Latvia',	'1',
+				'SM',	'SM',	'San Marino',	'',	'0',
+				'BG',	'BG',	'Bulgaria',	'Bulgaria',	'1',
+				'LT',	'LT',	'Lithuania',	'Lithuania',	'1',
+				'IE',	'IE',	'Ireland',	'Ireland',	'1',
+				'CH',	'CH',	'Swiss',	'',	'0',
+				'GL',	'DK',	'Greenland',	'',	'0',
+				'FI',	'FI',	'Finland',	'Finland',	'1',
+				'PL',	'PL',	'Poland',	'Poland',	'1',
+				'IS',	'IS',	'Iceland',	'',	'0',
+				'MC',	'MC',	'Monaco',	'',	'0',
+				'AL',	'AL',	'Albania',	'',	'0',
+				'BA',	'BA',	'Bosnia and Herzegovina',	'Balkans',	'0', //was 1
+				'ME',	'ME',	'Montenegro',	'Balkans',	'0',  //was 1
+				'NL',	'NL',	'Netherlands',	'Netherlands',	'1',
+				'HR',	'HR',	'Croatia',	'Croatia',	'1',
+				'FR',	'FR',	'France',	'France',	'1',
+				'DE',	'DE',	'Germany',	'Germany',	'1',
+				'MK',	'MK',	'Macedonia',	'',	'0',
+				'IT',	'IT',	'Italy',	'Italy',	'1',
+				'SI',	'SI',	'Slovenia',	'Slovenia',	'1',
+				'KS',	'KS',	'Kosovo',	'',	'0',
+				'RS',	'RS',	'Serbia',	'Balkans',	'0']; //was 1
+		}
+	}
+	
+	
+	
+	container doLoadFiles: IsTemplate = "True"
+	{
+		parameter<string> path;
+		parameter<string> IDfield;
+		parameter<string> Labelfield;
+		
+		parameter<string> IDfield2 := strlen(IDfield) = 0 ? 'autoID' : IDfield;
+		
+		unit<uint32> inFile: StorageName = "= '%SourceDataProjDir%/EUCS_100m/zones/' + path + '.shp'", StorageType = "gdal.vect", StorageReadOnly = "True", DialogData = "Geometry", DialogType  ="map"
+		{
+			attribute<LambertEA> Geometry (polygon);
+			attribute<string> 	 autoID:	expr = "'z_' + string(id(.))";
+			attribute<string> 	 ZoneID:	expr = "= IDfield2";	
+			attribute<string> 	 Label:	expr = "= strlen(Labelfield) = 0 ? 'ZoneId' : Labelfield";
+		}
+	}
+	container doAggregateSets: IsTemplate = "True"
+	{
+		container inSet;
+		parameter<string> addLink: expr = "''";
+		
+		unit<uint32> singleUnit: expr = "inSet/inFile"; 
+		
+		unit<uint32> mergeUnit:	expr = "= 'union_unit(singleUnit, src/'+ addLink +'/inFile)'"
+		{
+			attribute<LambertEA> Geometry (polygon): expr = "= 'union_data(., singleUnit/Geometry, src/'+ addLink +'/inFile/Geometry)'";
+			attribute<string> 	 ZoneId:			 expr = "= 'union_data(., singleUnit/ZoneId, src/'+ addLink +'/inFile/ZoneId)'";
+			attribute<string>  	 Label:				 expr = "= 'union_data(., singleUnit/Label, src/'+ addLink +'/inFile/Label)'";
+		}
+		
+		unit<uint32> inUnit: expr = "= strlen(addLink) > 0 ? 'mergeUnit' : 'singleUnit'" {attribute<UniqueZones> uz_id: expr = "rlookup(ZoneId, UniqueZones/Values)";}
+		
+		
+		unit<uint32> UniqueZones: expr = "unique(inUnit/ZoneID)", DialogData = "Geometry", DialogType  ="map"
+		{
+			attribute<LambertEA> 	Geometry (polygon): expr = "bp_union_polygon(value(inUnit/Geometry, ipoint), inUnit/uz_id)[LambertEA]";
+			attribute<string> 		ZoneID:				expr = "Values";
+			attribute<string> 		Code:				expr = "Values";
+			attribute<string> 		Label:				expr = "first(inUnit/Label, inUnit/uz_id)";
+			attribute<LambertEA> centroid: expr = "centroid_or_mid(Geometry)";
+		}
+	}	
+	
+	
+}

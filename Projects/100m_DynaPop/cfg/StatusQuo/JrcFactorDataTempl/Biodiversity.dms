@@ -1,0 +1,105 @@
+container Biodiversity: IntegrityCheck = "GeoDmsVersion() >= 7.021"
+{	
+
+	unit<uint16> RegionDomain: Expr = "RunRegions/UnitSets/RunAreas";
+	attribute<RegionDomain> RegionGrid(domain_grid):  expr = "RunRegions/RasterSets/RunAreas";
+	
+	container sourceData : IsHidden = "True" 
+	{
+		attribute<bool> Natura2000		    	(domain_grid): 	    Expr = "JrcFactorData/TiffData/Natura2000/Natura2000", DisableStorage = "True";
+	    attribute<bool> Natura2000Priority		(domain_grid): 	    Expr = "JrcFactorData/TiffData/Natura2000Priority/Natura2000Priority == uint2(1)", DisableStorage = "True";//"bool(JrcFactorData/TiffData/Natura2000Priority/Natura2000Priority)", DisableStorage = "True";
+	    //attribute<bool> ndaV_VI					(domain_grid): 	    Expr = "JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(0)", DisableStorage = "True";
+	    //attribute<bool> ndaI_IV		    		(domain_grid): 	    Expr = "JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(1)", DisableStorage = "True";
+	    attribute<uint8> nda_Cat				(domain_grid): 	    Expr = "JrcFactorData/TiffData/NDA_Cat/NDA_Cat", DisableStorage = "True";
+	    attribute<bool> ndaI_IV		    		(domain_grid): 	    Expr = "JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(1) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(4) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(5) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(6) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(7) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(8) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(9)"    
+	    																				, DisableStorage = "True";
+	   	attribute<bool> ndaV_VI		    		(domain_grid): 	    Expr = "JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(2) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(3) || "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(10)|| "
+	    																				" JrcFactorData/TiffData/NDA_Cat/NDA_Cat == uint8(11)"    
+	    																				, DisableStorage = "True";
+
+																						
+/*		attribute<bool> IsForest  	 			(domain_grid): 		Expr = "TiffData/CorineGrid/CorineLandUse = classifications/LU/ForestType/BroadLeaved || " 
+																						"TiffData/CorineGrid/CorineLandUse = classifications/LU/ForestType/Coniferous || "
+																						"TiffData/CorineGrid/CorineLandUse = classifications/LU/ForestType/Mixed"
+																					 	, DisableStorage = "True"; 
+*/
+
+		attribute<bool> IsForest  	 			(domain_grid): 		Expr = "TiffData/CorineGrid/CorineLandUse = uint8(23) || " 
+																						"TiffData/CorineGrid/CorineLandUse = uint8(24) || "
+																						"TiffData/CorineGrid/CorineLandUse = uint8(25)"
+																					 	, DisableStorage = "True";
+		attribute<bool> IsSNV					(domain_grid): 		Expr = "TiffData/CorineGrid/CorineLandUse = classifications/LU/SNV/NatGrass || "
+																					   "TiffData/CorineGrid/CorineLandUse = classifications/LU/SNV/TransWoodShrub"
+		                                                                    			, DisableStorage = "True";
+	}
+	
+	container ExTemplate
+	{	
+		//For natural areas in protected areas
+		attribute<bool>    Natura2000_countries (RegionDomain): Expr= "CaseData/Nuts0_Natura2kNat[RegionDomain/org_rel]";
+		attribute<bool>    nda_countries		(RegionDomain): Expr= "CaseData/Nuts0_ndaNat[RegionDomain/org_rel]";
+
+		attribute<bool>    natura2kPriority_isok 	(domain_grid):  Expr = "sourceData/Natura2000Priority && Natura2000_countries[RegionGrid]";
+		attribute<bool>    natura2k_isok  			(domain_grid):  Expr = "sourceData/Natura2000 && Natura2000_countries[RegionGrid]";
+		attribute<bool>    ndaI_IV_isok   	  		(domain_grid):  Expr = "sourceData/ndaI_IV && nda_countries[RegionGrid]";
+		attribute<bool>    ndaV_VI_isok   	  		(domain_grid):  Expr = "sourceData/ndaV_VI && nda_countries[RegionGrid]";
+		
+		attribute<int8> Protection_nat (domain_grid): Expr = 
+			"switch("
+				"case(ndaI_IV_isok, int8(35)), "
+				"case(ndaV_VI_isok && natura2kPriority_isok, int8(28)), "
+				"case(ndaV_VI_isok && natura2k_isok, int8(21)), "
+				"case(natura2kPriority_isok, int8(20)), "
+				"case(ndaV_VI_isok, int8(20)), "
+				"int8(0)"
+			")";
+			
+		attribute<int8> Protection_ind (domain_grid): Expr = 
+			"switch("
+				"case(ndaI_IV_isok, int8(-50)), "
+				"case(ndaV_VI_isok, int8(-50)), "
+				"case(natura2kPriority_isok, int8(-35)), "
+				"case(natura2k_isok, int8(-20)), "
+				"int8(0)"
+			")";	
+		
+		//attribute<int8> Protected_SNV 	(domain_grid): Expr = "SourceData/IsSNV && IsDefined(Protection_nat) ? int8(Protection_nat) : int8(0)";
+		//attribute<int8> Protected_For 	(domain_grid): Expr = "SourceData/IsForest && IsDefined(Protection_nat) ? int8(Protection_nat) : int8(0)";
+		attribute<int8> LocSpecsInd  		(domain_grid): Expr = "IsDefined(Protection_ind) ? int8(Protection_ind) : int8(0)";
+		attribute<int8> LocSpecsSNV  		(domain_grid): Expr = "SourceData/IsSNV && IsDefined(Protection_nat) ? int8(Protection_nat) : int8(0)";
+		attribute<int8> LocSpecsFor  		(domain_grid): Expr = "SourceData/IsForest && IsDefined(Protection_nat) ? int8(Protection_nat) : int8(0)";
+		
+		attribute<bool>    MediumProtection	(domain_grid):  Expr = "ndaV_VI_isok || natura2k_isok", KeepData = "False";
+		attribute<bool>    HighProtection	(domain_grid):  Expr = "ndaI_IV_isok || natura2kPriority_isok", KeepData = "False";
+
+	}
+
+	container CaseData: IsHidden="True"
+	{
+		attribute<bool> Nuts0_Natura2kNat (Geography/Regions/RunAreas):
+		[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]; //boolean
+//       FI,SE,UK,FR,EE,DK,IE,LT,DE,NL,PT,LV,PL,BE,CZ,SK,ES,AT,HU,RO,IT,SI,GR,BG,MT,CY
+		attribute<bool> Nuts0_ndaNat (Geography/Regions/RunAreas):
+		[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]; //boolean
+	}
+
+	container LOCSPECS
+	{
+		attribute<int8> LocSpecsSNV 		(domain_grid): Expr = "ExTemplate/LocSpecsSNV";
+		//attribute<int8> written_LocSpecsSNV (domain_grid): Expr= "LocSpecsSNV",	StorageName = "%LocalDataDir%/100m/LocSpecsSNV.tif";
+
+		attribute<int8> LocSpecsFor 		(domain_grid): Expr = "ExTemplate/LocSpecsFor";
+		// attribute<int8> written_LocSpecsFor (domain_grid): Expr= "LocSpecsFor",	StorageName = "%LocalDataDir%/100m/LocSpecsFor.tif";
+			
+		attribute<int8> LocSpecsInd 		(domain_grid): Expr = "ExTemplate/LocSpecsInd";
+		// attribute<int8> written_LocSpecsInd (domain_grid): Expr= "LocSpecsInd",	StorageName = "%LocalDataDir%/100m/LocSpecsInd.tif";
+	}
+}

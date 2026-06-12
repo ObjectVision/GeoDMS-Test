@@ -1,0 +1,369 @@
+container Export : using = "Classifications/Actor"
+{
+	parameter<String> ExportZichtjaar := 'Y2060';
+	container Impl
+	{
+		attribute<Ha>   Basisjaar_Areaal_perLUMT       (LU_ModelType) := pcount(Indicatoren/Basisjaar/Landgebruikskaart/Result_SA)[float32] * rdc_25m/NrHaPerCell; 
+		attribute<Ha>   Zichtjaar_Areaal_perLUMT       (LU_ModelType) := ='pcount(Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA)[float32] * rdc_25m/NrHaPerCell'; 
+		
+		parameter<Ha>   Basisjaar_Areaal_Landbouw                     := sum(LU_ModelType/IsLandbouw ? Basisjaar_Areaal_perLUMT : 0[Ha]);
+		parameter<Ha>   Zichtjaar_Areaal_Landbouw                     := sum(LU_ModelType/IsLandbouw ? Zichtjaar_Areaal_perLUMT : 0[Ha]);
+		
+		container Basisjaar_NettoOpbrengsten_perLUMT :=
+			for_each_nedv(
+				LU_ModelType/Label
+				, LU_ModelType/IsLandbouw 
+						? 'Indicatoren/Basisjaar/Landgebruikskaart/Result_SA == LU_ModelType/v/'+LU_ModelType/Label+'
+							? VariantData/Suitability/'+ExportZichtjaar+'/Landbouw/per_ModelType/'+LU_ModelType/Subsector_name+'/NetRevenue * 1[jaar]
+							: 0[Eur_m2]'
+						: 'const(0[Eur_m2], rdc_25m)'
+				, rdc_25m
+				, Eur_m2
+			)
+		{
+			attribute<Eur_m2> Totaal_Landbouw (rdc_25m) := ='add('+asItemList(LU_ModelType/Label)+')';
+			parameter<Eur_ha> Gemiddeld_perHa           := sum(Totaal_Landbouw) / sum(LU_ModelType/IsLandbouw[Indicatoren/Basisjaar/Landgebruikskaart/Result_SA][float32]) / rdc_25m/NrHaPerCell * 1[meter2];
+			parameter<Eur>    Totaal_Studiegebied       := sum(value(LU_ModelType/IsLandbouw[Indicatoren/Basisjaar/Landgebruikskaart/Result_SA],Ha)[meter2] * Totaal_Landbouw);
+		}
+		
+		container Zichtjaar_NettoOpbrengsten_perLUMT :=
+			for_each_nedv(
+				LU_ModelType/Label
+				, LU_ModelType/IsLandbouw 
+						? 'Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA == LU_ModelType/v/'+LU_ModelType/Label+'
+							? VariantData/Suitability/'+ExportZichtjaar+'/Landbouw/per_ModelType/'+LU_ModelType/Subsector_name+'/NetRevenue * 1[jaar]
+							: 0[Eur_m2]'
+						: 'const(0[Eur_m2], rdc_25m)'
+				, rdc_25m
+				, Eur_m2
+			)
+		{
+			attribute<Eur_m2> Totaal_Landbouw (rdc_25m) := ='add('+asItemList(LU_ModelType/Label)+')';
+			parameter<Eur_ha> Gemiddeld_perHa           := ='sum(Totaal_Landbouw) / sum(LU_ModelType/IsLandbouw[Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA][float32]) / rdc_25m/NrHaPerCell * 1[meter2]';
+			parameter<Eur>    Totaal_Studiegebied       := ='sum(value(LU_ModelType/IsLandbouw[Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA],Ha)[meter2] * Totaal_Landbouw)';
+		}
+		
+		//transitie matrix
+		unit<UInt32> LU_ModelType_Transities := combine(Actor/LU_ModelType, Actor/LU_ModelType)
+		{
+			attribute<UInt32> from_TransCode := uint32(first_rel) + 1;
+			attribute<String> from_name      := Actor/LU_ModelType/nameshort[first_rel];
+			attribute<UInt32> to_TransCode   := (uint32(second_rel) + 1) * 100;
+			attribute<String> to_name        := Actor/LU_ModelType/nameshort[second_rel];
+			attribute<UInt32> TransCode      := from_TransCode + to_TransCode;
+			attribute<String> Label          := from_name + '_' + to_name;
+			
+			attribute<UInt32> count          := pcount(LU_Mutatie)[uint32];
+		}
+		
+
+		// unit<UInt32> Transitie_Matrix_Array := Actor/LU_ModelType
+		// {
+			// attribute<String> from_name           := Actor/LU_ModelType/nameshort;
+			// attribute<String> count_list          := asList(string(LU_ModelType_Transities/count), ';', LU_ModelType_Transities/first_rel);
+		// }
+
+		// unit<UInt32> Transitie_Header : NrOfRows = 1
+		// {
+			// attribute<String> to_name          := asList(Actor/LU_ModelType/nameshort, ';', const(0[.],Actor/LU_ModelType));
+		// }
+
+		// unit<UInt32> Transitie_Matrix_met_header := union_unit(Transitie_Header, Transitie_Matrix_Array) 
+		// {
+			// attribute<String> from_name          := union_data(., const('',Transitie_Header), Transitie_Matrix_Array/from_name);
+			// attribute<String> values             := union_data(., Transitie_Header/to_name, Transitie_Matrix_Array/count_list);
+		// }
+		
+		
+		attribute<UInt32> LU_Basisjaar (rdc_25m) := uint32(Indicatoren/basisjaar/Landgebruikskaart/Result_SA) + 1;
+		attribute<UInt32> LU_Zichtjaar (rdc_25m) := ='(uint32(Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA) + 1)  * 100';
+		attribute<LU_ModelType_Transities> LU_Mutatie   (rdc_25m) := rlookup(LU_Basisjaar + LU_Zichtjaar, LU_ModelType_Transities/TransCode);
+		
+		container Basisjaar_NPV_perLUMT :=
+			for_each_nedv(
+				LU_ModelType/Label
+				, LU_ModelType/IsLandbouw 
+						? 'Indicatoren/Basisjaar/Landgebruikskaart/Result_SA == LU_ModelType/v/'+LU_ModelType/Label+'
+							? VariantData/Suitability/'+ExportZichtjaar+'/Landbouw/per_ModelType/'+LU_ModelType/Subsector_name+'/NPV 
+							: 0[Eur_m2]'
+						: 'const(0[Eur_m2], rdc_25m)'
+				, rdc_25m
+				, Eur_m2
+			);
+		
+		container Zichtjaren := for_each_ne(/Classifications/Time/Zichtjaar/name, 'ZichtjaarT('+string(id(/Classifications/Time/Zichtjaar))+'[/Classifications/Time/Zichtjaar])');
+		
+		Template ZichtjaarT
+		{
+			//
+			parameter</Classifications/Time/Zichtjaar> id;
+			//
+			
+			parameter<String> Zichtjaar_name := /Classifications/Time/Zichtjaar/name[id];
+			
+			container NPV_perLUMT :=
+				for_each_nedv(
+					LU_ModelType/Label
+					, LU_ModelType/IsLandbouw 
+							? 'Indicatoren/'+Zichtjaar_name+'/Landgebruikskaart/Result_SA == LU_ModelType/v/'+LU_ModelType/Label+'
+								? VariantData/Suitability/'+Zichtjaar_name+'/Landbouw/per_ModelType/'+LU_ModelType/Subsector_name+'/NPV 
+								: 0[Eur_m2]'
+							: 'const(0[Eur_m2], rdc_25m)'
+					, rdc_25m
+					, Eur_m2
+				);
+			
+			container Zichtjaar_NPV_Augmented_perLUMT :=
+				for_each_nedv(
+					LU_ModelType/Label
+					, LU_ModelType/IsLandbouw && /VariantParameters/SectorAllocRegio/Uq_Sectors/HasLandbouwSector
+							? 'Indicatoren/'+Zichtjaar_name+'/Landgebruikskaart/Result_SA == LU_ModelType/v/'+LU_ModelType/Label+'
+								? VariantData/Suitability/'+Zichtjaar_name+'/Landbouw/per_ModelType/'+LU_ModelType/Subsector_name+'/NPV 
+									+ float32(Allocatie/Zichtjaren/'+Zichtjaar_name+'/Sequences/Seq_0/SectorAllocRegios/Landbouw_Provincie/Iters_Landbouw/Iter_0/Allocatie/shadow_Prices/'+LU_ModelType/Subsector_name+'[/SourceData/RegioIndelingen/CBS/Last/Provincie/StudyArea/V/Friesland])
+								: 0[Eur_m2]'
+							: 'const(0[Eur_m2], rdc_25m)'
+					, rdc_25m
+					, Eur_m2
+				);
+		}
+		
+		container Zichtjaar_NPV_perLUMT :=
+			for_each_nedv(
+				LU_ModelType/Label
+				, LU_ModelType/IsLandbouw && /VariantParameters/SectorAllocRegio/Uq_Sectors/HasLandbouwSector
+						? 'Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA == LU_ModelType/v/'+LU_ModelType/Label+'
+							? VariantData/Suitability/'+ExportZichtjaar+'/Landbouw/per_ModelType/'+LU_ModelType/Subsector_name+'/NPV 
+							: 0[Eur_m2]'
+						: 'const(0[Eur_m2], rdc_25m)'
+				, rdc_25m
+				, Eur_m2
+			);
+			
+		container Zichtjaar_NPV_Augmented_perLUMT :=
+			for_each_nedv(
+				LU_ModelType/Label
+				, LU_ModelType/IsLandbouw && /VariantParameters/SectorAllocRegio/Uq_Sectors/HasLandbouwSector
+						? 'Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA == LU_ModelType/v/'+LU_ModelType/Label+'
+							? VariantData/Suitability/'+ExportZichtjaar+'/Landbouw/per_ModelType/'+LU_ModelType/Subsector_name+'/NPV 
+								+ float32(Allocatie/Zichtjaren/'+ExportZichtjaar+'/Sequences/Seq_0/SectorAllocRegios/Landbouw_Provincie/Iters_Landbouw/Iter_0/Allocatie/shadow_Prices/'+LU_ModelType/Subsector_name+'[/SourceData/RegioIndelingen/CBS/Last/Provincie/StudyArea/V/Friesland])
+							: 0[Eur_m2]'
+						: 'const(0[Eur_m2], rdc_25m)'
+				, rdc_25m
+				, Eur_m2
+			);
+	}
+	
+	// Veranderingen Totaal Areaal alle klassen (LUmodelTypes)
+	attribute<Ha>     Verandering_Areaal_perLUMT      (LU_ModelType) := Impl/Zichtjaar_Areaal_perLUMT - Impl/Basisjaar_Areaal_perLUMT;
+	
+	// Veranderingen Totaal Areaal sector Landbouw 
+	parameter<Ha>     Verandering_Areaal_Landbouw                    := Impl/Zichtjaar_Areaal_Landbouw - Impl/Basisjaar_Areaal_Landbouw;
+	
+	// Verandering netto opbrengsten in euro’s (bedrijfwinst) tussen basisjaar en zichtjaar
+	parameter<Eur_ha> Verandering_NettoOpbrengst_gemid_perHa         := Impl/Zichtjaar_NettoOpbrengsten_perLUMT/Gemiddeld_perHa - Impl/Basisjaar_NettoOpbrengsten_perLUMT/Gemiddeld_perHa;
+	parameter<Eur>    Verandering_NettoOpbrengst_Totaal_Studiegebied := Impl/Zichtjaar_NettoOpbrengsten_perLUMT/Totaal_Studiegebied - Impl/Basisjaar_NettoOpbrengsten_perLUMT/Totaal_Studiegebied;
+	
+	// CO2 emissies, mton en eur, via prijs
+	parameter<ton_jaarlijks>    Basisjaar_CO2_Uitstoot     := ='sum(/Indicatoren/'+ExportZichtjaar+'/SOMERS_CO2_laagveen/Mediaan_Uitstoot) * 1[ha]';
+	parameter<ton>              Cumulatief_CO2_Uitstoot    := ='sum(/Indicatoren/'+ExportZichtjaar+'/SOMERS_CO2_laagveen/Cumulatief_Mediaan_sindsStartYear) * 1[ha]';
+	parameter<Eur>              Cumulatief_CO2_kosten_laag := Cumulatief_CO2_Uitstoot * /ModelParameters/Landbouw/CO2_prijs_min; 
+	parameter<Eur>              Cumulatief_CO2_kosten_hoog := Cumulatief_CO2_Uitstoot * /ModelParameters/Landbouw/CO2_prijs_max;
+	
+	container Transitie_Matrix := 
+		for_each_nedv(
+			Actor/LU_ModelType/nameshort
+			, 'Impl/LU_ModelType_Transities/count[value(id(Actor/LU_ModelType)*#Actor/LU_ModelType+'+string(id(Actor/LU_ModelType))+', Impl/LU_ModelType_Transities)]'
+			, Actor/LU_ModelType
+			, uint32
+		)
+	{
+		attribute<String> from  (Actor/LU_ModelType) := Actor/LU_ModelType/nameshort;
+	}
+	
+	container mean_NPV_obv_LUbasisjaar_perLBK :=
+		for_each_nedv(
+			LandbouwKlasses/name
+			, 'mean(Impl/Basisjaar_NPV_perLUMT/Landbouw_'+LandbouwKlasses/name+')'
+			, void
+			, Eur_m2
+		);
+		
+	container mean_NPV_obv_LU_Zichtjaar_perLBK_zonderAugm :=
+		for_each_nedv(
+			LandbouwKlasses/name
+			, 'mean(Impl/Zichtjaar_NPV_perLUMT/Landbouw_'+LandbouwKlasses/name+')'
+			, void
+			, Eur_m2
+		);
+	
+	container mean_NPV_obv_LU_Zichtjaar_perLBK_Augmented :=
+		for_each_nedv(
+			LandbouwKlasses/name
+			, 'mean(Impl/Zichtjaar_NPV_Augmented_perLUMT/Landbouw_'+LandbouwKlasses/name+')'
+			, void
+			, Eur_m2
+		);
+	
+	container Bereikbaarheid_GroenBlauw 
+	{
+		parameter<String> Param_Afstand := 'Tot500m'; //opties: Tot500m Tot1000m
+		parameter<String> Param_Type    := 'Aanwezig'; //opties: Aanwezig Beschikbaar Bereikbaar
+		
+		unit<UInt8> GroenBlauwK := Indicatoren/Basisjaar/BereikbaarheidGroen/GroenBlauwK;
+		
+		container Basisjaar := 
+			for_each_nedv(
+				GroenBlauwK/name
+				, 'Indicatoren/Basisjaar/BereikbaarheidGroen/Afstanden/'+Param_Afstand+'/AggrGroenKlassen/'+GroenBlauwK/name+'/Indicatoren/'+Param_Type+'/Groen/Aggregated/PerWoning'
+				, void
+				, m2_Woning
+			);
+		container Zichtjaar := 
+			for_each_nedv(
+				GroenBlauwK/name
+				, 'Indicatoren/'+ExportZichtjaar+'/BereikbaarheidGroen/Afstanden/'+Param_Afstand+'/AggrGroenKlassen/'+GroenBlauwK/name+'/Indicatoren/'+Param_Type+'/Groen/Aggregated/PerWoning'
+				, void
+				, m2_Woning
+			);
+	}  
+
+
+
+	// unit<UInt32> Time: NrOfRows = 2
+	// {
+		// attribute<String> name: ['Basisjaar', 'Y2050'];
+	// }
+	
+	// unit<UInt32> Totaal: NrOfRows = 1
+	// {
+		// attribute<String> name: ['Totaal'];
+	// }
+	
+	// unit<UInt32> Provincie := SourceData/RegioIndelingen/Provincie
+	// {
+		// attribute<.> Per_AdminDomain (AdminDomain) := poly2grid(geometry, AdminDomain);
+	// }
+	
+	// unit<UInt32> ProvincieTotaal := union_unit(Provincie, Totaal)
+	// {
+		// attribute<String> name  := union_data(., Provincie/name, Totaal/name);
+		// attribute<String> Label := name, DialogType = "LabelText";
+	// }
+	
+	// container Grondgebruiksverandering
+	// {
+		// container Per_Provincie := 
+		// for_each_nedv(
+			// /Indicatoren/Y2050/Grondgebruik/Verandering/VeranderingK/name,
+			// '/Indicatoren/Y2050/Grondgebruik/Verandering/Per_Regio/'+/Indicatoren/Y2050/Grondgebruik/Verandering/VeranderingK/name,
+			// Provincie, ha
+		// );
+		
+		// container Result :=
+			// for_each_nedv(
+				// /Indicatoren/Y2050/Grondgebruik/Verandering/VeranderingK/name,
+				// replace(
+					// 'union_data(
+						// ProvincieTotaal, '+
+						// asItemList('Per_Provincie/@V@[Provincie/V/'+Provincie/name+']')+',
+						// /Indicatoren/Y2050/Grondgebruik/Verandering/Per_NL0/@V@
+					// )',
+					// '@V@', /Indicatoren/Y2050/Grondgebruik/Verandering/VeranderingK/name
+				// ),
+				// ProvincieTotaal, ha
+			// )
+		// {
+			// attribute<String> Regio_name (ProvincieTotaal):= ProvincieTotaal/name;
+		// }
+	// }
+	
+	// container BereikbaarheidGroen
+	// {
+		// parameter<String> Afstand: ['Tot500m'];
+		// parameter<String> Indicator: ['Bereikbaar'];
+		
+		// unit<UInt32> GroenK: NrOfRows = 2
+		// {
+			// attribute<String> name: ['Totaal', 'TotaalExAgrarisch'];
+		// }
+		
+		// unit<UInt32> GroenXTime := combine(GroenK, Time)
+		// {
+			// attribute<String> Groen_name := GroenK/name[first_rel];
+			// attribute<String> Time_name := Time/name[second_rel];
+			// attribute<String> name := Groen_name+'_'+Time_name;
+		// }
+		
+		// container Result :=
+			// for_each_nedv(
+				// GroenXTime/name,
+				// 'union_data(
+					// ProvincieTotaal,'+
+					// replace(
+						// asItemList('@T@/BereikbaarheidGroen/Regios/'+ProvincieTotaal/name+'/Afstanden/@A@/AggrGroenKlassen/@G@/Indicatoren/@I@/Groen/Aggregated/PerWoning'),
+						// '@T@', GroenXTime/Time_name, '@A@', Afstand, '@G@', GroenXTime/Groen_name, '@I@', Indicator
+					// )+
+				// ')[ha_Woning]',
+				// ProvincieTotaal, ha_Woning
+			// )
+		// {
+			// attribute<String> Regio_name (ProvincieTotaal):= ProvincieTotaal/name;
+		// }
+	// }
+	
+	// container Verharding
+	// {
+		// container Provincies := for_each_nedv(
+			// Provincie/name,
+			// '/Indicatoren/Y2050/Verharding/Per_Regio/fractie[/Indicatoren/Y2050/Verharding/Regio/V/'+Provincie/name+']',
+			// void, float32
+		// );
+		
+		// attribute<Float32> Result (ProvincieTotaal) := = 'union_data(ProvincieTotaal, '+asItemList('Provincies/'+Provincie/name)+', /Indicatoren/Y2050/Verharding/Per_NL/fractie)';
+	// }
+	
+	// container Dichtheid
+	// {
+		// container Wonen
+		// {
+			// container Provincies := for_each_nedv(
+				// Provincie/name,
+				// '/Indicatoren/Y2050/Dichtheid/Wonen/Per_Regio[/Indicatoren/Y2050/Dichtheid/Regio/V/'+Provincie/name+']',
+				// void, Woning_ha
+			// );
+			
+			// attribute<Woning_ha> Result (ProvincieTotaal) := = 'union_data(ProvincieTotaal, '+asItemList('Provincies/'+Provincie/name)+', /Indicatoren/Y2050/Dichtheid/Wonen/Per_NL)';
+		// }
+		
+		// container Werken
+		// {
+			// container Provincies := for_each_nedv(
+				// Provincie/name,
+				// '/Indicatoren/Y2050/Dichtheid/Werken/Banen_ha/Per_Regio[/Indicatoren/Y2050/Dichtheid/Regio/V/'+Provincie/name+']',
+				// void, Job_ha
+			// );
+			
+			// attribute<Job_ha> Result (ProvincieTotaal) := = 'union_data(ProvincieTotaal, '+asItemList('Provincies/'+Provincie/name)+', /Indicatoren/Y2050/Dichtheid/Werken/Banen_ha/Per_NL)';
+		// }
+	// }
+	
+	// container Woningvoorraad
+	// {
+		// attribute<String> name      (Provincie) := Provincie/name;
+		// attribute<Woning> Basisjaar (Provincie) := sum(/Indicatoren/Basisjaar/Stand/Aantal_Woningen_Totaal, Provincie/Per_AdminDomain);
+		// attribute<Woning> Zichtjaar (Provincie) := sum(/Indicatoren/Y2050/Stand/Aantal_Woningen_Totaal,     Provincie/Per_AdminDomain);
+	// }
+	
+	// container Bereikbaarheid := 
+		// for_each_nedv(
+			// Y2050/Bereikbaarheid/TTxJobs6/itemname
+			// , 'Y2050/Bereikbaarheid/Output_PerBuurtPerSector/'+Y2050/Bereikbaarheid/TTxJobs6/itemname
+			// , Y2050/Bereikbaarheid/Buurt 
+			// , Job
+		// ), StorageName = "='%LocalDataProjDir%/Indicatoren/Bereikbaarheid/PerBuurt_PerSector_'+Casus_name+'_Y2050.csv'", StorageType = "gdalwrite.vect"
+	// {
+		// attribute<String> BU_CODE (Y2050/Bereikbaarheid/Buurt) := Y2050/Bereikbaarheid/Buurt/BU_CODE;
+	// }
+	
+	// parameter<String> Generate := 'Ready', ExplicitSuppliers = "='Bereikbaarheid/BU_CODE;'+asList('Bereikbaarheid/'+Y2050/Bereikbaarheid/TTxJobs6/itemname,';')";
+}

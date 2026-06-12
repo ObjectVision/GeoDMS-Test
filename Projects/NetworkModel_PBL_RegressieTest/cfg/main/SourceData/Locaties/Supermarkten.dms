@@ -1,0 +1,102 @@
+container Supermarkten 
+{
+	unit<uint32> apr2012
+	:	StorageName     = "%SourceDataDir%/LOCATUS/Supermarkten/2012_April/Supermarkten_apr2012.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Supermarkten_apr2012_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(UnitID);
+			attribute<uint32>               Nr_supermarkten         := const(1,.);
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}	
+
+	unit<uint32> okt2018
+	:	StorageName     = "%SourceDataDir%/LOCATUS/Supermarkten/2018_Oktober/Data.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Supermarkten_okt2018_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(UnitID);
+			attribute<uint32>               Nr_supermarkten         := const(1,.);
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}	
+
+	unit<uint32> y2021
+	:	StorageName     = "%SourceDataDir%/LOCATUS/Supermarkten/2021/Data.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Supermarkten_2021_xy
+		{
+			attribute<geometries/rdc>       geometry;
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(UnitID);
+			attribute<uint32>               Nr_supermarkten         := const(1,.);
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}	
+	
+	unit<uint32> y2022
+	:	StorageName     = "%SourceDataDir%/LOCATUS/Supermarkten/2022_Oktober/Supermarkten_okt2022.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Supermarkten_okt2022_xy
+		{
+			attribute<geometries/rdc>       geometry; 
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(UnitID);
+			attribute<uint32>               Nr_supermarkten         := const(1,.);
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}	
+	
+	unit<uint32> y1222
+	:	StorageName     = "%SourceDataDir%/LOCATUS/Supermarkten/1222_Overlap/Supermarkten_1222_overlap/Supermarkten_1222_overlap.gdb"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	{
+		unit<uint32> Supermarkten_1222_overlap_xy
+		{
+			attribute<geometries/rdc>       geometry; 
+			attribute<geometries/rdc>       point                   := geometry;
+			attribute<string>               Name                    := string(UnitID);
+			attribute<uint32>               Nr_supermarkten         := const(1,.);
+			attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+			attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+			attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+		}
+	}	
+	
+//	unit<uint32> y2023
+//	:	StorageName     = "%NetworkModel_Dir%/Voorzieningen/Supermarkten/Supermarkt_2023.shp"
+//	,	StorageType     = "gdal.vect"
+//	,	StorageReadOnly = "True"
+//	{
+//		attribute<geometries/rdc>       geometry; 
+//		attribute<geometries/rdc>       point                   := geometry;
+//		attribute<string>               Name                    := postcode +'_'+ AsItemName(naam);
+//		attribute<uint32>               Nr_supermarkten         := const(1,.);
+//		attribute<RegioUnit_Buurt>      buurt_rel               := point_in_polygon(geometry, RegioUnit_Buurt/Geometry);
+//		attribute<string>               buurtcode               := RegioUnit_Buurt/statcode[buurt_rel];
+//		attribute<string>               buurtnaam               := RegioUnit_Buurt/statnaam[buurt_rel];
+//	}	
+	
+}

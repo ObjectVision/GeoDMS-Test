@@ -1,0 +1,54 @@
+Template ResultsT
+{
+	//
+	parameter<string> SrcRef;
+	parameter<string> Referentie_versie;
+	//
+	
+	container SrcSrc := = SrcRef;
+	
+	unit<UInt32> GenericSrc_tabel: StorageName = "= '%SourceDataDir%/Vesta2RS/'+Referentie_versie+'_fss/'+first(Modeljaar/label)+'/'+SrcRef+'.fss'"
+	, StorageReadOnly = "True"
+	, DialogType      = "map"
+	, DialogData      = "geometry"
+	{
+		attribute<rdc_meter_64>  geometry;
+		attribute<string>        id;
+		attribute<Vastgoed/WP4>  woningtype := rjoin(id, Analysis/BaseData/Warmtelasten/vbo/identificatie, Analysis/BaseData/Warmtelasten/vbo/wp4_rel);
+		
+		container PerWoningtype := for_each_ne(WoningtypeK/name, 'WoningtypeT('+string(id(WoningtypeK))+'[Vastgoed/WP4])');
+	
+		Template WoningtypeT
+		{
+			parameter<Vastgoed/WP4> Woningtype_rel;
+			
+			unit<uint32> Sub := select_with_org_rel(GenericSrc_tabel/Woningtype == Woningtype_rel), DialogData = "geometry"
+			{
+				attribute<string>       id       := GenericSrc_tabel/id[org_rel];
+				attribute<rdc_meter_64> geometry := GenericSrc_tabel/geometry[org_rel];
+			}
+		}
+	}
+	
+	container PerUniekJaar :=
+		for_each_ne(
+			UniekJaar/name
+			,'UniekJaarT('+string(id(UniekJaar))+'[UniekJaar],SrcRef,Referentie_versie)'
+		);
+	
+	container CW_PerWoningtype := 
+		for_each_ne(
+			WoningtypeK/name
+			, 'ContanteWaardeInBasisJaarT('+quote(WoningtypeK/name)+')'
+		);
+		
+	Template ContanteWaardeInBasisJaarT 
+	{
+		parameter<string> WoningType_name;
+		
+		parameter<string> domain_str := 'GenericSrc_tabel/PerWoningtype/'+WoningType_name+'/sub';
+		unit<uint32> domain := =domain_str;
+		
+		attribute<Eur> Total (domain) := ='add('+AsItemList('union_data(domain, PerUniekJaar/'+UniekJaar/name+'/Perwoningtype/'+WoningType_name+'/DomainUnit/TotaalStYrPrijzen)')+')';
+	}
+}

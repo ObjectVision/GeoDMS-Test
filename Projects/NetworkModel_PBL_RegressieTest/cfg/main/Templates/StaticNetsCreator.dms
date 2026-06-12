@@ -1,0 +1,323 @@
+Template StaticNetsCreator : using = "geometries;sourcedata/regioindelingen"
+{
+	unit<uint32> inStops;
+	unit<uint32> inLinks;
+	
+	unit<uint32> Routes := /SourceData/Infrastructuur/GTFS/LoadFeeds/Routes;
+	unit<uint32> Stops := inStops
+	{
+		attribute<Time>       FirstEvent            :  = min(ScheduledSpaceTimeEvents/TimeRef, ScheduledSpaceTimeEvents/Stop_rel);
+		attribute<Time>       LastEvent             :  = max(ScheduledSpaceTimeEvents/TimeRef, ScheduledSpaceTimeEvents/Stop_rel);
+		attribute<uint32>     TotalScheduledEvents  :  = pcount(ScheduledSpaceTimeEvents/Stop_rel);
+		attribute<AllPlaces>  PlaceRef              :  = rlookup(geometry, AllPlaces/Values);
+	}
+		
+	unit<uint32> AllPlaces       := allLinks/Places;
+	unit<uint32> AllTimes        := allLinks/UniqueTimeEvents;
+	
+	unit<uint32> ScheduledLinks  := inLinks 
+	{
+		attribute<ScheduledSpaceTimeEvents> from_sst   := rlookup(point_xy(depTime, fromStop, upoint), ScheduledSpaceTimeEvents/Values);
+		attribute<ScheduledSpaceTimeEvents> to_sst     := rlookup(point_xy(arrTime, toStop, upoint), ScheduledSpaceTimeEvents/Values);
+		attribute<s_f>                      Duration   := depTime <= arrTime 
+															? float32(sub_or_null(arrTime,depTime))[s_f]
+															: float32(sub_or_null(arrTime + #Time, depTime))[s_f];
+		attribute<string>                   Label  := 'Scheduled: ' + Time/Label[depTime] + ' @ ' + Stops/Name[fromStop] + ' to ' + Time/Label[arrTime] + ' @ ' + Stops/Name[toStop];
+		
+		unit<uint32> findUniqueSpaceTimeEvents := union_unit(ScheduledLinks, ScheduledLinks)
+		{
+			attribute<upoint> timesOfStop  := union_data(., point_xy(ScheduledLinks/depTime, ScheduledLinks/fromStop), point_xy(ScheduledLinks/arrTime, ScheduledLinks/toStop));
+			attribute<Time>   TimeRef      := pointCol(timesOfStop);
+		}
+		attribute<rdc>                     fromPoint       := first_point(geometry);
+		attribute<rdc>                     toPoint         := last_point(geometry);
+		attribute<AllPlaces>               FromPlace       := rlookup(fromPoint, AllPlaces/Values);
+		attribute<AllPlaces>               ToPlace         := rlookup(toPoint, AllPlaces/Values);
+		attribute<Stops>                   FromStop_rel                   := AllPlaces/Stop_rel[FromPlace];
+		attribute<Stops>                   ToStop_rel                     := AllPlaces/Stop_rel[ToPlace];
+		
+		attribute<Concessiegebied>         Start_Concessiegebied_rel      := point_in_polygon(Stops/geometry[FromStop_rel], Concessiegebied/geometry);
+		attribute<string>                  Mode_Agency_CG_Lijn_identifier := ModesList/List_selectie/name[Mode_rel] +'_'+ Agencies/name[Agency_rel] +'_'+ Concessiegebied/name[Start_Concessiegebied_rel] + '_' + RouteName_short;
+		attribute<string>                  Mode_Agency_CG_identifier      := ModesList/List_selectie/name[Mode_rel] +'_'+ Agencies/name[Agency_rel] +'_'+ Concessiegebied/name[Start_Concessiegebied_rel];
+		attribute<string>                  Mode_Agency_identifier         := ModesList/List_selectie/name[Mode_rel] +'_'+ Agencies/name[Agency_rel];
+		
+		attribute<bool>                    IsForeign  := Agencies/IsForeign[Agency_rel];
+		attribute<bool>                    IsDomestic := NOT(IsForeign);
+		
+		attribute<PrijsTabel>    PrijsTabel_rel_initial        := rlookup(Mode_Agency_CG_Lijn_identifier, PrijsTabel/Mode_Agency_CG_Lijn_identifier);
+		attribute<PrijsTabel>    PrijsTabel_rel_augmented1     := rlookup(Mode_Agency_CG_identifier, PrijsTabel/Mode_Agency_CG_Lijn_identifier);
+		attribute<PrijsTabel>    PrijsTabel_rel_augmented2     := rlookup(Mode_Agency_identifier, PrijsTabel/Mode_Agency_CG_Lijn_identifier);
+		attribute<PrijsTabel>    PrijsTabel_rel_augmentation   := MakeDefined(PrijsTabel_rel_augmented1, PrijsTabel_rel_augmented2);
+		attribute<PrijsTabel>    PrijsTabel_rel_augmented_rev1 := rlookup(Mode_Agency_CG_identifier, PrijsTabel/Mode_Agency_CG_identifier);
+		attribute<PrijsTabel>    PrijsTabel_rel_augmented_rev2 := rlookup(Mode_Agency_identifier, PrijsTabel/Mode_Agency_identifier);
+		attribute<PrijsTabel>    PrijsTabel_rel_augmented_rev  := MakeDefined(PrijsTabel_rel_augmented_rev1, PrijsTabel_rel_augmented_rev2);
+		attribute<PrijsTabel>    PrijsTabel_rel_augmented      := MakeDefined(PrijsTabel_rel_augmentation, PrijsTabel_rel_augmented_rev);
+		attribute<PrijsTabel>    PrijsTabel_rel                := MakeDefined(PrijsTabel_rel_initial, PrijsTabel_rel_augmented);
+		
+		attribute<bool>          HasPriceRelation              := IsForeign || IsDefined(PrijsTabel_rel) && IsDomestic;
+		
+		unit<uint8> PrijsTabel := /SourceData/Infrastructuur/OVprijzen/PrijsTabel;
+		
+		unit<uint32> HasNoPriceRelation := select_with_org_rel_with_attr_by_cond(.,NOT(HasPriceRelation))
+		{
+			attribute<rdc>                       geometry (arc)         := ../geometry[org_rel];
+			attribute<Agencies>                  Agency_rel             := ../Agency_rel[org_rel];
+			attribute<ModesList/List_selectie>   Mode_rel               := ../Mode_rel[org_rel];
+		}
+	}
+	
+	unit<uint32> ScheduledTimeEvents      := unique(ScheduledLinks/findUniqueSpaceTimeEvents/TimeRef);
+	
+	unit<uint32> ScheduledSpaceTimeEvents := unique(ScheduledLinks/findUniqueSpaceTimeEvents/TimesOfStop) 
+	{
+		attribute<Stops>    Stop_rel         := pointRow(Values)[Stops];
+		attribute<Time>     TimeRef         := pointCol(Values)[Time];
+		attribute<string>   Label           := Stops/Name[Stop_rel] + ' @ ' + Time/Label[TimeRef];
+		attribute<.>        FirstMoment     := min_index(TimeRef, Stop_rel)[Stop_rel];
+		attribute<.>        NextMoment      := Stop_rel[id(.)+1] = Stop_rel ? id(.) + 1 : FirstMoment;
+		attribute<bool>     points_unsorted := Values != sort(Values); // check to verify Values are orderd ascendingly (documented as such in online documentation)
+		attribute<uint32>   cumu_events_Stop:= cumulate(const(1,.,uint32), Stop_rel) - 1;
+		attribute<upoint>   unique_id       := point_xy(cumu_events_Stop, Stop_rel, upoint);
+		
+		attribute<uint32>   aantal_tijden_per_stop := pcount(Stop_rel)[Stop_rel];
+	}
+	
+	container CreateTransfersSet 
+	{
+		unit<uint32> TransferFromStops := select_with_attr_by_org_rel(inStops, inStops/nTransfers > 0)
+		{
+			attribute<rdc>       geometry       := inStops/geometry[org_rel];
+			attribute<uint32>    nTransfers     := inStops/nTransfers[org_rel];
+			attribute<string>    Label          := inStops/Label[org_rel];
+			attribute<StopsGrid> GridId         := inStops/GridId[org_rel];
+			attribute<uint32>    Grid1D         := inStops/Grid1D[org_rel];
+			attribute<uint32>    cumu_in_grid   := inStops/cumu_in_grid[org_rel];
+			attribute<upoint>    unique_id      := inStops/unique_id[org_rel];
+			attribute<uint32>    first_transfer := cumulate(nTransfers) - nTransfers;
+			attribute<uint32>    nEvents        := pcount(ScheduledSpaceTimeEvents/Stop_rel)[org_rel];
+			attribute<ModesList/List_selectie> Mode_rel      := inStops/Mode_rel[org_rel];
+		}
+		
+		unit<spoint> StopsGrid := inStops/StopsGrid;
+		
+		unit<uint32> Directions: NrOfRows = 5 
+		{
+			attribute<string> Label    : ['Top', 'Right', 'Bottom', 'Left', 'Centre'];
+			attribute<int16>  row      : [0,1,0,-1,0];
+			attribute<int16>  col      : [1,0,-1,0,0];
+			attribute<spoint> geometry := point_xy(row,col, spoint);
+		}
+		
+		unit<uint32> TransferPaths := range(uint32, 0, sum(TransferFromStops/nTransfers))
+		{
+			attribute<TransferFromStops>       first_from_stop    := rlookup(id(.), TransferFromStops/first_transfer);
+			attribute<TransferFromStops>       from_trans_Stop_rel := cumulate(uint32(IsDefined(first_from_stop))) - 1;
+			attribute<inStops>                 from_Stop_rel       := TransferFromStops/org_rel[from_trans_Stop_rel];
+			attribute<ModesList/List_selectie> from_Mode          := TransferFromStops/Mode_rel[from_trans_Stop_rel];
+			attribute<ModesList/List_selectie> to_Mode            := inStops/Mode_rel[to_Stop_rel];
+			
+			attribute<bool>               NeedsTranferTimePenalty := ModesList/List_selectie/IsGelijkvloers[from_Mode] == 1b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 1b //van: bus, tram, walk    to bus, tram, walk  --> niks
+																		? False
+																		: ModesList/List_selectie/IsGelijkvloers[from_Mode] == 1b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 0b //van: bus, tram, walk to metro, rail, ferry --> penalty
+																			? TRUE
+																			: ModesList/List_selectie/IsGelijkvloers[from_Mode] == 0b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 0b //van: metro, rail, ferry to metro, rail, ferry --> penalty
+																				? TRUE
+																				: ModesList/List_selectie/IsGelijkvloers[from_Mode] == 0b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 1b //van: metro, rail, ferry to bus, tram, walk --> penalty
+																					? TRUE
+																					: (0/0)[bool];
+
+			attribute<uint32>             nEvents            := pcount(ScheduledSpaceTimeEvents/Stop_rel)[from_Stop_rel];
+			attribute<uint32>             first_trans_event  := cumulate(nEvents) - nEvents;
+			attribute<upoint>             from_unique_id     := inStops/unique_id[from_Stop_rel];
+			attribute<StopsGrid>          from_GridId        := inStops/GridId[from_Stop_rel];
+			attribute<uint32>             nTop               := StopsGrid/nTop[from_GridId];
+			attribute<uint32>             nRight             := StopsGrid/nRight[from_GridId];
+			attribute<uint32>             nBottom            := StopsGrid/nBottom[from_GridId];
+			attribute<uint32>             nLeft              := StopsGrid/nLeft[from_GridId];
+			attribute<uint32>             first_trans        := TransferFromStops/first_transfer[from_trans_Stop_rel];
+																
+			attribute<Directions>         quad               := switch( //top, right, bottom, left, middle
+																	 case(nTop > 0   	&& nTop    > (sub_or_null(id(.),first_trans)), uint32(0)) 
+																	,case(nRight > 0 	&& nRight  > (sub_or_null(id(.),(first_trans + nTop))), uint32(1))
+																	,case(nBottom > 0 	&& nBottom > (sub_or_null(id(.),(first_trans + nRight + nTop))), uint32(2))
+																	,case(nLeft > 0 	&& nLeft   > (sub_or_null(id(.),(first_trans + nBottom + nRight + nTop))), uint32(3)) 
+																	,4
+																)[Directions];
+																
+																
+			attribute<StopsGrid>          to_GridId          := (spoint(from_GridId)+Directions/geometry[quad])[StopsGrid];
+			attribute<uint32>             to_Grid1d          := StopsGrid/uniId[to_GridId];
+			attribute<upoint>             to_unique_id       := point_xy(seq2, to_Grid1d, upoint);
+			attribute<inStops>            to_Stop_rel         := rlookup(to_unique_id, inStops/unique_id);
+				
+			attribute<uint32>             seq1               := id(.) 
+																	- switch(
+																		case(quad = 0, first_trans)
+																		, case(quad = 1, first_trans + nTop)
+																		, case(quad = 2, first_trans + nTop + nRight)
+																		, case(quad = 3, first_trans + nTop + nRight + nBottom)
+																		, first_trans + nTop + nRight + nBottom + nLeft
+																	);
+			attribute<uint32>             seq2               := quad = 4 && seq1 >= inStops/cumu_in_grid[from_Stop_rel] ? seq1 + 1 : seq1;
+			
+			attribute<string>             Label              := 'Transfer from ' + inStops/Label[from_Stop_rel] + ' to ' + inStops/Label[to_Stop_rel];
+			attribute<rdc>                geometry (arc)     := points2sequence(GenLines/Points,GenLines/Seq,GenLines/Ord);
+			attribute<m>                  Distance           := arc_length(geometry, m);
+			attribute<s_f>                minTransferTime    := Distance / ModelParameters/Advanced/TransferEffectiveSpeed;
+			
+			unit<uint32> GenLines:= union_unit(TransferPaths, TransferPaths)
+			{
+				attribute<rdc>              Points := union_data(., inStops/geometry[from_Stop_rel], inStops/geometry[to_Stop_rel]);
+				attribute<TransferPaths>    Seq    := union_data(., id(TransferPaths), id(TransferPaths));
+				attribute<uint32>           Ord    := union_data(., const(0,TransferPaths,uint32), const(1,TransferPaths,uint32));
+			}
+		}
+		unit<uint32> TransfersByStart := range(uint32, 0, sum(TransferPaths/nEvents))
+		{
+			attribute<TransferPaths>            first_trans_path        := rlookup(id(.), TransferPaths/first_trans_event);
+			attribute<TransferPaths>            PathRef                 := cumulate(uint32(IsDefined(first_trans_path))) - 1;
+			attribute<rdc>                      geometry (arc)          := TransferPaths/geometry[PathRef];
+			attribute<Stops>                    fromStop                := TransferPaths/from_Stop_rel[PathRef];
+			attribute<Stops>                    toStop                  := TransferPaths/to_Stop_rel[PathRef];
+			attribute<bool>                     NeedsTranferTimePenalty := TransferPaths/NeedsTranferTimePenalty[PathRef];
+			attribute<uint32>                   cumu_events             := cumulate(const(1,.,uint32), PathRef) - 1;
+			attribute<ScheduledSpaceTimeEvents> SSTE_Ref                := rlookup(point_xy(cumu_events, fromStop, upoint), ScheduledSpaceTimeEvents/unique_id);
+			attribute<Time>                     fromTime                := ScheduledSpaceTimeEvents/TimeRef[SSTE_Ref];
+			attribute<s_f>                      Duration                := NeedsTranferTimePenalty ? TransferPaths/minTransferTime[PathRef] + convert(ModelParameters/OngelijkvloersPenalty, s_f) : TransferPaths/minTransferTime[PathRef];
+			attribute<Time>                     toTime                  := fromTime + Duration[Time] < #Time 
+																				? fromTime + Duration[Time] 
+																				: sub_or_null(fromTime + Duration[Time],#Time);
+			attribute<string>                   Label                   := 'Transfer: ' + Time/Label[fromTime] + ' @ ' + Stops/Name[fromStop] + ' to ' + Time/Label[toTime] + ' @ ' + Stops/Name[toStop], DialogType = "LabelText";
+		}
+	}
+	
+	unit<uint32> allLinks := union_unit(ScheduledLinks, CreateTransfersSet/TransfersByStart)
+	{
+		attribute<rdc>                     geometry (arc)  := union_data(., ScheduledLinks/geometry, CreateTransfersSet/TransfersByStart/geometry); 
+		attribute<Time>                    fromTime        := union_data(., ScheduledLinks/depTime, CreateTransfersSet/TransfersByStart/fromTime); 
+		attribute<Time>                    toTime          := union_data(., ScheduledLinks/arrTime, CreateTransfersSet/TransfersByStart/toTime); 
+		attribute<s_f>                     Duration        := union_data(., ScheduledLinks/Duration, CreateTransfersSet/TransfersByStart/Duration); 
+		attribute<string>                  Label           := union_data(., ScheduledLinks/Label, CreateTransfersSet/TransfersByStart/Label), DialogType = "LabelText";
+		attribute<uint32>                  Trips_rel       := union_data(., ScheduledLinks/Trips_rel, const(0/0,CreateTransfersSet/TransfersByStart));
+		attribute<Routes>                  Route_rel       := union_data(., ScheduledLinks/Route_rel, const((0/0)[Routes],CreateTransfersSet/TransfersByStart));
+		attribute<string>                  RouteName       := union_data(., ScheduledLinks/RouteName, const('Walking',CreateTransfersSet/TransfersByStart));
+		attribute<string>                  RouteName_short := union_data(., ScheduledLinks/RouteName_short, const('Walking',CreateTransfersSet/TransfersByStart));
+		attribute<Agencies>                Agency_rel      := union_data(., ScheduledLinks/Agency_rel, const(0/0,CreateTransfersSet/TransfersByStart));
+		attribute<ModesList/List_selectie> Mode_rel        := union_data(., ScheduledLinks/Mode_rel, const(ModesList/List_selectie/V/Walking, CreateTransfersSet/TransfersByStart, ModesList/List_selectie));
+		attribute<LinkTypes>               LinkType        := union_data(., const(LinkTypes/V/Scheduled,ScheduledLinks,LinkTypes), const(LinkTypes/V/Transfer,CreateTransfersSet/TransfersByStart,LinkTypes));
+		attribute<rdc>                     fromPoint       := first_point(geometry);
+		attribute<rdc>                     toPoint         := last_point(geometry);
+		attribute<Places>                  FromPlace       := rlookup(fromPoint, Places/Values);
+		attribute<string>                  FromPlace_name  := Places/Stop_name[FromPlace];
+		attribute<Places>                  ToPlace         := rlookup(toPoint, Places/Values);
+		attribute<string>                  ToPlace_name    := Places/Stop_name[ToPlace];
+		
+		unit<uint32> doubledLinks := union_unit(allLinks, allLinks)
+		{
+			attribute<Time>     Moment         := union_data(., fromTime, toTime);
+			attribute<rdc>      Coords         := union_data(., fromPoint, toPoint);
+			attribute<Stops>    Stop_rel        := rlookup(Coords, Stops/geometry);
+			attribute<Places>   Place          := rlookup(Coords, Places/Values);
+			attribute<upoint>   MomentxPlace   := point_xy(Moment, Place, upoint);
+			attribute<upoint>   MomentxStop    := point_xy(Moment, Stop_rel, upoint);
+		}
+		
+		unit<uint32> Places := unique(doubledLinks/Coords)
+		{
+			attribute<Stops>   Stop_rel     := rlookup(Values, Stops/geometry);
+			attribute<string>  Stop_name   := Stops/Name[Stop_rel];
+			attribute<rdc>     geometry    := values;
+		}
+		
+		unit<uint32> UniqueTimeEvents   := unique(doubledLinks/Moment);
+		unit<uint32> UniqueMomentXStop  := unique(doubledLinks/MomentxStop)
+		{
+			attribute<Stops>    Stop_rel            := pointRow(Values)[Stops];
+			attribute<Time>     TimeRef            := pointCol(Values)[Time];
+			attribute<string>   Label              := Stops/Name[Stop_rel] + ' @ ' + Time/Label[TimeRef];
+			attribute<.>        FirstMoment        := min_index(TimeRef, Stop_rel)[Stop_rel];
+			attribute<.>        NextMoment         := Stop_rel[id(.)+1] = Stop_rel ? id(.) + 1 : FirstMoment;
+			attribute<bool>     points_unsorted    := Values != sort(Values); // check to verify Values are orderd ascendingly (documented as such in online documentation)
+			
+			unit<uint32>  MakeWaitingLines := union_unit(UniqueMomentXStop, UniqueMomentXStop)
+			{
+				attribute<rdc>                      geometry := union_data(., Stops/geometry[Stop_rel], Stops/geometry[Stop_rel]);
+				attribute<UniqueMomentXStop>        Seq      := union_data(., id(UniqueMomentXStop), id(UniqueMomentXStop));
+				attribute<uint32>                   Ord      := union_data(., const(0,UniqueMomentXStop,uint32), const(1,UniqueMomentXStop,uint32));
+			}
+		}
+		unit<uint32> WaitingAtStop := UniqueMomentXStop 
+		{
+			attribute<rdc>          geometry (arc) := points2sequence(UniqueMomentXStop/MakeWaitingLines/geometry, UniqueMomentXStop/MakeWaitingLines/Seq, UniqueMomentXStop/MakeWaitingLines/Ord);
+			attribute<Stops>        FromStop       := Stop_rel;
+			attribute<Stops>        ToStop         := Stop_rel[NextMoment];
+			attribute<AllPlaces>    FromPlace      := Stops/PlaceRef[FromStop];
+			attribute<string>       FromPlace_name := Stops/name[FromStop];
+			attribute<string>       ToPlace_name   := Stops/name[ToStop];
+			attribute<AllPlaces>    ToPlace        := Stops/PlaceRef[ToStop];
+			attribute<rdc>          FromPoint      := Stops/geometry[FromStop];
+			attribute<rdc>          ToPoint        := Stops/geometry[ToStop];
+			attribute<Time>         FromTime       := TimeRef;
+			attribute<Time>         ToTime         := TimeRef[NextMoment];
+			attribute<s_f>          Duration       := FromTime <= ToTime 
+														? float32(sub_or_null(ToTime,FromTime))[s_f] 
+														: float32(sub_or_null(ToTime + #Time,FromTime))[s_f]; // duration in seconds
+			attribute<string>       Label          := 'Waiting at stop: ' + Stops/Name[FromStop] + ' from ' + Time/Label[FromTime] + ' to ' + Time/Label[ToTime];
+		}
+		unit<uint32> NodeSet:= unique(doubledLinks/MomentXPlace), DialogData = "Place", DialogType = "map"
+		{
+			attribute<AllPlaces> PlaceRef  := pointRow(Values);
+			attribute<Time>      TimeRef   := pointCol(Values);
+			attribute<rdc>       Place     := AllPlaces/Values[PlaceRef];
+		}
+	}
+
+	unit<uint32> Static_Net := union_unit(allLinks, allLinks/WaitingAtStop)
+	{
+		attribute<rdc>                     geometry (arc)                 := union_data(., allLinks/geometry, allLinks/WaitingAtStop/geometry);
+		attribute<AllPlaces>               FromPlace                      := union_data(., allLinks/FromPlace, allLinks/WaitingAtStop/FromPlace);
+		attribute<string>                  FromPlace_name                 := union_data(., allLinks/FromPlace_name, allLinks/WaitingAtStop/FromPlace_name);
+		attribute<string>                  ToPlace_name                   := union_data(., allLinks/ToPlace_name, allLinks/WaitingAtStop/ToPlace_name);
+		attribute<AllPlaces>               ToPlace                        := union_data(., allLinks/ToPlace, allLinks/WaitingAtStop/ToPlace);
+		attribute<rdc>                     FromPoint                      := union_data(., allLinks/FromPoint, allLinks/WaitingAtStop/FromPoint);
+		attribute<rdc>                     ToPoint                        := union_data(., allLinks/ToPoint, allLinks/WaitingAtStop/ToPoint);
+		attribute<Stops>                   FromStop_rel                   := AllPlaces/Stop_rel[FromPlace];
+		attribute<Stops>                   ToStop_rel                     := AllPlaces/Stop_rel[ToPlace];
+		
+		attribute<string>                  Label                          := union_data(., allLinks/Label, allLinks/WaitingAtStop/Label);
+		attribute<Time>                    FromTime                       := union_data(., allLinks/fromTime, allLinks/WaitingAtStop/fromTime);
+		attribute<Time>                    ToTime                         := union_data(., allLinks/toTime, allLinks/WaitingAtStop/toTime);
+		attribute<s_f>                     Duration                       := union_data(., allLinks/Duration, allLinks/WaitingAtStop/Duration), IntegrityCheck = "ModelParameters/Add_OV_PriceInformation ? all(StaticNets/ScheduledLinks/HasPriceRelation) : TRUE";
+		attribute<LinkTypes>               LinkType                       := union_data(., allLinks/LinkType, const(LinkTypes/V/Waiting_at_Stop,allLinks/WaitingAtStop,LinkTypes));
+		attribute<NodeSet>                 F1                             := rlookup(point_xy(FromTime, FromPlace), NodeSet/Values);
+		attribute<NodeSet>                 F2                             := rlookup(point_xy(ToTime, ToPlace), NodeSet/Values);
+		attribute<km>                      Length                         := arc_length(geometry, m)[km];
+		attribute<ModesList/List_selectie> Mode_rel                       := union_data(., allLinks/Mode_rel, const(ModesList/List_selectie/V/Waiting, allLinks/WaitingAtStop, ModesList/List_selectie));
+		attribute<uint32>                  Trips_rel                      := union_data(., allLinks/Trips_rel, const(0/0, allLinks/WaitingAtStop));
+		attribute<Agencies>                Agency_rel                     := union_data(., allLinks/Agency_rel, const(0/0, allLinks/WaitingAtStop));
+		attribute<Routes>                  Route_rel                      := union_data(., allLinks/Route_rel, const((0/0)[Routes], allLinks/WaitingAtStop));
+		attribute<string>                  RouteName                      := union_data(., allLinks/RouteName, const('Waiting', allLinks/WaitingAtStop));
+		attribute<string>                  RouteName_short                := union_data(., allLinks/RouteName_short, const('Waiting', allLinks/WaitingAtStop));
+
+		attribute<uint32>                  LinkTypeSum (LinkTypes)        := pcount(LinkType);
+		unit<uint32>                       NodeSet                        := allLinks/NodeSet;
+		unit<uint32>                       NetCheck                       := connected_parts(F1, F2);
+		// attribute<Concessiegebied>         Start_Concessiegebied_rel      := point_in_polygon(Stops/geometry[FromStop_rel], Concessiegebied/geometry);
+		
+		// attribute<string>                  Mode_Agency_CG_Lijn_identifier := ModesList/List_selectie/name[Mode_rel] +'_'+ Agencies/name[Agency_rel] +'_'+ Concessiegebied/name[Start_Concessiegebied_rel] + '_' + RouteName_short;
+		// attribute<string>                  Mode_Agency_CG_identifier      := ModesList/List_selectie/name[Mode_rel] +'_'+ Agencies/name[Agency_rel] +'_'+ Concessiegebied/name[Start_Concessiegebied_rel];
+		// attribute<string>                  Mode_Agency_identifier         := ModesList/List_selectie/name[Mode_rel] +'_'+ Agencies/name[Agency_rel];
+		
+		// attribute<PrijsTabel>    PrijsTabel_rel_initial        := rlookup(Mode_Agency_CG_Lijn_identifier, PrijsTabel/Mode_Agency_CG_Lijn_identifier);
+		// attribute<PrijsTabel>    PrijsTabel_rel_augmented1     := rlookup(Mode_Agency_CG_identifier, PrijsTabel/Mode_Agency_CG_Lijn_identifier);
+		// attribute<PrijsTabel>    PrijsTabel_rel_augmented2     := rlookup(Mode_Agency_identifier, PrijsTabel/Mode_Agency_CG_Lijn_identifier);
+		// attribute<PrijsTabel>    PrijsTabel_rel_augmentation   := MakeDefined(PrijsTabel_rel_augmented1, PrijsTabel_rel_augmented2);
+		// attribute<PrijsTabel>    PrijsTabel_rel_augmented_rev1 := rlookup(Mode_Agency_CG_identifier, PrijsTabel/Mode_Agency_CG_identifier);
+		// attribute<PrijsTabel>    PrijsTabel_rel_augmented_rev2 := rlookup(Mode_Agency_identifier, PrijsTabel/Mode_Agency_identifier);
+		// attribute<PrijsTabel>    PrijsTabel_rel_augmented_rev  := MakeDefined(PrijsTabel_rel_augmented_rev1, PrijsTabel_rel_augmented_rev2);
+		// attribute<PrijsTabel>    PrijsTabel_rel_augmented      := MakeDefined(PrijsTabel_rel_augmentation, PrijsTabel_rel_augmented_rev);
+		// attribute<PrijsTabel>    PrijsTabel_rel                := MakeDefined(PrijsTabel_rel_initial, PrijsTabel_rel_augmented);
+		
+		// unit<uint8> PrijsTabel := /SourceData/Infrastructuur/OVprijzen/PrijsTabel;
+	}
+}

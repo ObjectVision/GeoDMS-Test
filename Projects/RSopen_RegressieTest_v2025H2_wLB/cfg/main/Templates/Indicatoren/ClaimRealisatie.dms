@@ -1,0 +1,147 @@
+container ClaimRealisatie : using = "Impl"
+{
+	// container Per_SectorAllocRegio :=
+		// for_each_ne(
+			// VariantParameters/SectorAllocRegio/name
+			// , 'Per_AllocRegio/'+VariantParameters/SectorAllocRegio/AllocRegio_name+'/Claim_Realisatie/'+VariantParameters/SectorAllocRegio/Sector_name
+		// );
+		
+	container Per_AllocRegio := 
+		for_each_ne(
+			VariantParameters/SectorAllocRegio/Uq_AllocRegios/AllocRegio_name
+			, 'ClaimRealisatie_T('+quote(VariantParameters/SectorAllocRegio/Uq_AllocRegios/AllocRegio_name)+','+quote(VariantParameters/SectorAllocRegio/Uq_AllocRegios/AllocRegio_path)+')'
+		)
+	{
+		container Nederland := ClaimRealisatie_T('NL', 'RegioIndelingen/NL') 
+		{
+			
+		}
+	}
+	
+	Template ClaimRealisatie_T
+	{
+		//
+		parameter<String> ClaimRegio_name;
+		parameter<String> ClaimRegio_path;
+		//
+		unit<UInt32> ClaimRegio := =ClaimRegio_path;
+		
+		container Impl := ThisYear/Impl
+		{
+			
+			container Claims := // Voor het gemak pakken we hier voor elke sector de nationale claim, om te checken of deze uiteindelijk ergens wordt gealloceerd (de vraag tav claimrealisatie in in evt kleinere AllocRegio'sblijft dus over)
+				for_each_nedvn(
+					StandVar/Claims_sub/name,
+					'ThisYear/Impl/Claims/AllocRegios/'+ClaimRegio_name+'/'+StandVar/Claims_sub/path
+					, ClaimRegio
+					, StandVar/Claims_sub
+					, StandVar/Claims_sub/unit_name
+				)
+			{
+				attribute<verblijfsobject> Verblijfsrecreatie_NL (RegioIndelingen/NL) := sum(ThisYear/Impl/Claims/AllocRegios/NL/Verblijfsrecreatie/Totaal, RegioIndelingen/CBS/Last/Provincie/NL_rel);
+			}
+		
+			container MinClaims :=  // /VariantData/Claims/Y2050/AllocRegios/Provincie/Landbouw_min
+				for_each_nedvn(
+					StandVar/Claims_sub/name
+					, StandVar/Claims_sub/IsLandbouw 
+						? 'ThisYear/Impl/Claims/AllocRegios/'+ClaimRegio_name+'/Landbouw/MinClaims/'+StandVar/Claims_sub/Subsector_name 
+						: 'min_elem(Claims/'+StandVar/Claims_sub/name+', sum(PrevStand/'+StandVar/Claims_sub/name+', ClaimRegio/Per_AdminDomain))'
+					, ClaimRegio
+					, StandVar/Claims_sub
+					, StandVar/Claims_sub/unit_name
+				);
+			
+			container MaxClaims := 
+				for_each_nedvn(
+					StandVar/Claims_sub/name
+					, StandVar/Claims_sub/IsLandbouw 
+						? 'ThisYear/Impl/Claims/AllocRegios/'+ClaimRegio_name+'/Landbouw/MaxClaims/'+StandVar/Claims_sub/Subsector_name 
+						: '	max_elem(Claims/'+StandVar/Claims_sub/name+', sum(PrevStand/'+StandVar/Claims_sub/name+', ClaimRegio/Per_AdminDomain))'
+					, ClaimRegio
+					, StandVar/Claims_sub
+					, StandVar/Claims_sub/unit_name
+				);
+			
+			container Stand_PerAllocRegio := 
+				for_each_nedvn(
+					StandVar/Alloc_sub/name
+					, 'sum(Stand/'+StandVar/Alloc_sub/name+', ClaimRegio/Per_AdminDomain)'
+					, ClaimRegio
+					, StandVar/Alloc_sub
+					, StandVar/Alloc_sub/unit_name
+				);
+			
+			// container Claims_oke := 
+				// for_each_nedv(
+					// StandVar/Claims_sub/name
+					// , 'Stand_PerAllocRegio/'+StandVar/Claims_sub/name+' >= MinClaims/'+StandVar/Claims_sub/name+' && Stand_PerAllocRegio/'+StandVar/Claims_sub/name+' <= MaxClaims/'+StandVar/Claims_sub/name
+					// , ClaimRegio
+					// , bool
+				// );
+		} 
+		
+		container MinClaim_realisatie := 
+			for_each_nedv(
+				StandVar/Claims_sub/name
+				, 'Impl/Stand_PerAllocRegio/'+StandVar/Claims_sub/name+' / Impl/MinClaims/'+StandVar/Claims_sub/name
+				, ClaimRegio
+				, float32
+			);
+		container MaxClaim_realisatie := 
+			for_each_nedv(
+				StandVar/Claims_sub/name
+				, 'Impl/Stand_PerAllocRegio/'+StandVar/Claims_sub/name+' / Impl/MaxClaims/'+StandVar/Claims_sub/name
+				, ClaimRegio
+				, float32
+			);
+		
+		container Claim_realisatie
+		: Descr = "claim realisatie voor klassen die niet naar min/max claims kijken."
+		{
+			container Wonen	:= 
+				for_each_nedv(
+					Classifications/Vastgoed/WP2xVSSH/name
+					, 'Impl/Stand_PerAllocRegio/Aantal_Woningen_'+/Classifications/Vastgoed/WP2xVSSH/name+' / Impl/Claims/Aantal_Woningen_'+/Classifications/Vastgoed/WP2xVSSH/name
+					, ClaimRegio
+					, float32
+				);
+			
+			container Werken := 
+				for_each_nedv(
+					Classifications/Actor/Jobs6/name
+					, 'Impl/Stand_PerAllocRegio/Banen_'+Classifications/Actor/Jobs6/name+' / Impl/Claims/Banen_'+Classifications/Actor/Jobs6/name
+					, ClaimRegio
+					, float32
+				);
+			
+			container Verblijfsrecreatie := 
+				for_each_nedv(
+					Classifications/Actor/VerblijfsrecreatieK/Sector_name
+					, lowercase(ClaimRegio_name) == lowercase('NL')
+						? 'Impl/Stand_PerAllocRegio/Objecten_'+Classifications/Actor/VerblijfsrecreatieK/Sector_name+' / Impl/Claims/Verblijfsrecreatie_NL'
+						: 'Impl/Stand_PerAllocRegio/Objecten_'+Classifications/Actor/VerblijfsrecreatieK/Sector_name+' / Impl/Claims/Objecten_'+Classifications/Actor/VerblijfsrecreatieK/Sector_name
+					, ClaimRegio
+					, float32
+				);
+				
+			parameter<String> All     := 'Ready', ExplicitSuppliers = "=asList('Wonen/'+Classifications/Vastgoed/WP2xVSSH/name, ';')+';'+asList('Werken/'+Classifications/Actor/Jobs6/name, ';')+';'+asList('Verblijfsrecreatie/'+Classifications/Actor/VerblijfsrecreatieK/Sector_name, ';')";
+			
+			// container Wind := 
+				// for_each_nedv(
+					// Classifications/Actor/WindK/Sector_name
+					// , 'Stand_PerAllocRegio/Vermogen_'+Classifications/Actor/WindK/Sector_name+' / Claims/Vermogen_'+Classifications/Actor/WindK/Sector_name
+					// , ClaimRegio
+					// , float32
+				// );
+			
+			// container Zon := 
+				// for_each_nedv(
+					// Classifications/Actor/ZonK/Sector_name
+					// , 'Stand_PerAllocRegio/Vermogen_'+Classifications/Actor/ZonK/Sector_name+' / Claims/Vermogen_'+Classifications/Actor/ZonK/Sector_name
+					// , ClaimRegio
+					// , float32
+				// );
+		}
+	}
+}

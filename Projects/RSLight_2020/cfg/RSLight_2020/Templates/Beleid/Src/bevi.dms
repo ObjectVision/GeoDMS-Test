@@ -1,0 +1,14 @@
+//Bevi: Besluit externe veiligheid inrichtingen
+container Bevi : url="%RSLdataDir%/omgeving/externe_veiligheid/2017/wetten_nl - Regeling - Besluit externe veiligheid inrichtingen - BWBR0016767.mht"//http://wetten.overheid.nl/BWBR0016767/2016-01-01
+{
+	container Externe_Veiligheid: Source = "risicokaart raadpleging 12 februari 2018 dowwnload van risicokaart aanvraag per email voor Risicocontour 10-6/jr"
+	{
+		parameter<string> Src := '%RSLdataDir%/omgeving/externe_veiligheid/2017/';
+
+		container  rrgs_risico_10_6 : url="https://nederland.risicokaart.nl/risicokaart.html"
+		{
+			container Installatie := VergriddingT(Src + 'rgs_isb_ctr_pub.shp','SELECT * FROM rgs_isb_ctr_pub','','');
+			container Inrichting := VergriddingT(Src + 'rgs_irg_ctr_pub.shp','SELECT * FROM rgs_irg_ctr_pub','','');
+		}
+	}
+}

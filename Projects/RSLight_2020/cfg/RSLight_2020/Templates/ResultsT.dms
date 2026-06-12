@@ -1,0 +1,405 @@
+Template ResultsT : using = "classifications;Classifications/LandUsePreparation;units"
+{        
+	//
+	parameter<AllocRegioKxVariantKxDensityK/relevant> AllocRegioKxVariantKxDensityK_id;
+	//
+	
+	container VariantSpecifiek : using = "Analysis/BaseData"
+	{
+		container VariantSrc := = AllocRegioKxVariantKxDensityK/relevant/label[AllocRegioKxVariantKxDensityK_id];
+		
+		container Parameters
+		{
+			parameter<string>              AllocRegioKxVariantKxDensityK_name := AllocRegioKxVariantKxDensityK/relevant/name[AllocRegioKxVariantKxDensityK_id];
+			parameter<string>              AllocRegio_ref                     := AllocRegioKxVariantKxDensityK/relevant/AllocRegio_ref[AllocRegioKxVariantKxDensityK_id];
+			parameter<bool>                MoetGeschaald                      := FALSE;
+			parameter<VariantK>            Variant_id                         := AllocRegioKxVariantKxDensityK/second_rel[AllocRegioKxVariantKxDensityK/relevant/org_rel[AllocRegioKxVariantKxDensityK_id]];
+			parameter<string>              PlannenRef                         := VariantK/PlannenRef[Variant_id];
+			parameter<string>              VariantRef                         := VariantK/name[Variant_id];
+			parameter<vbo_ha>              MaximumVBODichtheid                := VariantK/MaximumVBODichtheid[variant_id];
+			parameter<Eur_ha>              MinimumExploitatieSaldo            := VariantK/MinimumExploitatieSaldo[variant_id];
+			parameter<string>              MaxBouwjaar                        := VariantK/MaxBouwjaar[variant_id];
+			parameter<Vastgoed/ELabelK>    MaxELabel                          := VariantK/MaxELabel[variant_id];
+			parameter<bool>                BouwenInNatuurorganisaties         := VariantK/BouwenInNatuurorganisaties[variant_id];
+			parameter<bool>                BouwenInWaterschappen              := VariantK/BouwenInWaterschappen[variant_id];
+			parameter<bool>                BouwenOpZeerSlappeGrond            := VariantK/BouwenOpZeerSlappeGrond[variant_id];
+			parameter<bool>                BouwenOpSlappeGrond                := VariantK/BouwenOpSlappeGrond[variant_id];
+			parameter<string>              VariantSrc_string                  := string(AllocRegioKxVariantKxDensityK/relevant/label[AllocRegioKxVariantKxDensityK_id]);
+			parameter<string>              ClaimSrc_wonen                     := 'Claims/Woningen/Totaal/Delta_2050[AllocRegio/org_rel]';
+			parameter<string>              ClaimSrc_werken_winkels            := 'Analysis/BaseData/Banen_Ruimtebeslag/Ruimtevraag_Delta2050_perTXL7/detailhandel[AllocRegio/org_rel]';
+			parameter<string>              ClaimSrc_werken_kantoren           := 'Analysis/BaseData/Banen_Ruimtebeslag/Ruimtevraag_Delta2050_perTXL7/zak_dienstverlening[AllocRegio/org_rel]';
+			parameter<string>              ClaimSrc_werken_industrie          := 'Analysis/BaseData/Banen_Ruimtebeslag/Ruimtevraag_Delta2050_perTXL7/nijverheid[AllocRegio/org_rel]';
+			
+			parameter<float32>             DensityFactor                      := AllocRegioK/DensityFactor[AllocRegioKxVariantKxDensityK/first_rel[AllocRegioKxVariantKxDensityK/relevant/org_rel[AllocRegioKxVariantKxDensityK_id]]];
+			parameter<float32>             MaxStijgingWoningdichtheid_meergez := AllocRegioKxVariantKxDensityK/relevant/MaxStijgingWoningdichtheid_meergez[AllocRegioKxVariantKxDensityK_id];
+			parameter<float32>             MaxStijgingWoningdichtheid_eengez  := AllocRegioKxVariantKxDensityK/relevant/MaxStijgingWoningdichtheid_eengez[AllocRegioKxVariantKxDensityK_id];
+			parameter<float32>             Meergezins_Percentiel              := VariantK/Meergezins_Percentiel[Variant_id];
+			parameter<float32>             Eengezins_Percentiel               := VariantK/Eengezins_Percentiel[Variant_id];
+			parameter<Woning_ha>           GenericMeergezins_bovengrens       := VariantK/Meergezins_bovengrens[Variant_id];
+			parameter<Woning_ha>           GenericMeergezins_ondergrens       := VariantK/Meergezins_ondergrens[Variant_id];
+			parameter<Woning_ha>           GenericEengezins_bovengrens        := VariantK/Eengezins_bovengrens[Variant_id];
+			parameter<Woning_ha>           GenericEengezins_ondergrens        := VariantK/Eengezins_ondergrens[Variant_id];
+		}
+		
+		#include<Extent.dms>
+		
+		container Regios
+		{
+			unit<uint32> OVRegio := RegioIndelingen/NVM;
+			
+			unit<uint32> SrcRegio := /SourceData/Claims/SrcRegio
+			{
+				attribute<.>          id := id(.);
+				attribute<.>          per_domain_grid (domain_grid) := SourceData/Claims/SrcRegio/per_rdc_100m;
+				attribute<AllocRegio> AllocRegio_rel := point_in_polygon(centroid_or_mid(polygons), AllocRegio/Polygons);
+			}
+			
+			unit<uint32> AllocRegio0 := = '/Geography/RegioIndelingen/'+Parameters/AllocRegio_ref;
+			unit<uint32> AllocRegio  := = 'select_with_org_rel(StArea/Per_'+Parameters/AllocRegio_ref+')'
+			, DialogData = "Polygons"
+			, DialogType = "Map"
+			{
+				attribute<string>    name                          := AllocRegio0/name[org_rel];
+				attribute<string>    Label                         := name, DialogType = "LabelText";
+				attribute<rdc_meter> Polygons (poly)               := AllocRegio0/geometry[org_rel];
+				attribute<.>         per_rdc_100m (rdc_100m)       := poly2grid(Polygons, /geography/rdc_100m);
+				attribute<.>         per_domain (domain)           := per_rdc_100m[domain/org_rel];
+				attribute<.>         per_domain_grid (domain_grid) := poly2grid(Polygons, domain_grid);
+			}
+			
+			unit<uint32> MRA8 := RegioIndelingen/MRA8
+			{
+				attribute<.> per_domain (domain) := per_rdc_100m[domain/org_rel];
+			}
+		}
+		
+		container ZeefInput
+		{
+			attribute<bool>       OntwikkelendePartijen                        (domain) := EigendomK/IsOntwikkelendePartij[Eigendom/per_domain_grid[domain/org_rel]];
+			attribute<bool>       NietOntwikkelendePartijen                    (domain) := !OntwikkelendePartijen;
+			attribute<bool>       BBG                                          (domain) := IsDefined(RegioIndelingen/Bevolkingskern_2011/per_domain_grid)[domain/org_rel];
+			attribute<bool>       Geen_BBG                                     (domain) := !BBG;
+			attribute<bool>       BinnenPlancapaciteitWonen                    (domain) := modus(uint8(Plannen/Plancapaciteit/Wonen)     , SrcDomain_grid/domain_grid_rel)[bool][domain/org_rel], FreeData = "false";
+			attribute<bool>       BinnenHardePlancapaciteitWonen               (domain) := modus(uint8(Plannen/Plancapaciteit/Wonen_hard), SrcDomain_grid/domain_grid_rel)[bool][domain/org_rel], FreeData = "false";
+			attribute<bool>       BinnenZachtePlancapaciteitWonen              (domain) := BinnenPlancapaciteitWonen && !BinnenHardePlancapaciteitWonen;
+			attribute<bool>       BuitenPlancapaciteitWonen                    (domain) := !BinnenPlancapaciteitWonen;
+			attribute<bool>       BuitenHardePlancapaciteitWonen               (domain) := !BinnenHardePlancapaciteitWonen;
+			attribute<CBSKlasse>  GrondgebruikBasisjaar                        (domain) := Grondgebruik/per_domain_grid/Basisjaar[domain/org_rel];
+			attribute<bool>       Laagwaardig                                  (domain) := GrondgebruikBasisjaar == CBSKlasse/V/bouwterrein;
+			attribute<bool>       Woongebied                                   (domain) := GrondgebruikBasisjaar == CBSKlasse/V/Woongebied;
+			attribute<bool>       ExtensiefGroen                               (domain) := CBSKlasse/IsGroen_extensief[GrondgebruikBasisjaar];
+			attribute<bool>       IntensiefGroen                               (domain) := CBSKlasse/IsGroen_intensief[GrondgebruikBasisjaar];
+			attribute<bool>       ZeerIntensiefGroen                           (domain) := CBSKlasse/IsGroen_ZeerIntensief[GrondgebruikBasisjaar];
+			attribute<bool>       LaagwaardigOfExtensiefGroen                  (domain) := Laagwaardig || ExtensiefGroen;
+			attribute<bool>       IntensiefGroenBuitenHardePlancapaciteitWonen (domain) := IntensiefGroen && BuitenHardePlancapaciteitWonen;
+			attribute<bool>       IntensiefGroenBuitenPlancapaciteitWonen      (domain) := IntensiefGroen && BuitenPlancapaciteitWonen;
+			attribute<bool>       ZeerIntensiefGroenBuitenPlancapaciteitWonen  (domain) := ZeerIntensiefGroen && BuitenPlancapaciteitWonen;
+			attribute<ha>         HaAvailableInStArea                     (domain_grid) := float32(StArea/per_domain_grid) * Zeef/Residu/SharePerDomain_grid * domain_grid/NrHaPerCell;
+			
+			unit<uint32> domain_untiled := select_with_org_rel(HaAvailableInStArea >= ModelParameters/MinimalLandAvailability);
+			
+			attribute<ha> Capaciteit (domain) := domain/NrHaPerCell
+			{
+				attribute<ha> Per_AllocRegio (Regios/AllocRegio) := sum(., Regios/AllocRegio/per_rdc_100m[domain/org_rel]);
+			}
+			
+			attribute<bool> GeeftCapaciteit (domain) := Capaciteit > 0[ha];
+		}
+	
+		container WoningSpecifiek
+		{
+			container Woningbouwprogrammas := //per plan (domein), invulling per gridcel binnen plan gebeurt hieronder
+				for_each_nedv(
+					WP2/name
+					, 'Woningbouwprogramma/PerVariant/'+VariantK/name[Parameters/Variant_id]+'/PerTXLHouseType/Totaal_'+WP2/name
+					, Woningbouwprogramma
+					, Woning
+				)
+			{
+				attribute<Woning>  Totaal (Woningbouwprogramma) := add(Eengezins, Meergezins);
+				attribute<float32> ShareMeergezins0 (domain)    := (((Meergezins / Totaal)[float32])[Classifications/Woningbouwprogramma/Per_Domain_grid])[domain/org_rel];
+				attribute<float32> ShareMeergezins  (domain)    :=
+					MakeDefined(
+						MakeDefined(
+							ShareMeergezins0,
+							WoningenBasisjaar/ShareMeergezinsInLMSSubzone[/Geography/RegioIndelingen/LMSSubzone/per_domain_grid[domain/org_rel]]
+						),
+						WoningenBasisjaar/ShareMeergezinsInGemeente[/Geography/RegioIndelingen/Gemeente/Gemeente2018/per_domain_grid[domain/org_rel]]
+					);
+			}
+	
+			container WoningenBasisjaar
+			{
+				parameter<string> SrcStr:  ['VBO/count_WP2/@'];
+				parameter<string> CalcStr := SrcStr+'[Woning_ha] * domain_grid/NrHaPerCell';
+				
+				attribute<Woning> Eengezins  (domain_grid) := = replace(CalcStr, '@', 'Eengezins');
+				attribute<Woning> Meergezins (domain_grid) := = replace(CalcStr, '@', 'Meergezins');
+				attribute<Woning> Totaal     (domain_grid) := = replace(CalcStr, '@', 'Totaal');
+				
+				attribute<Woning> Per_LMSSubzone (/Geography/RegioIndelingen/LMSSubzone) := sum(float32(Totaal), /Geography/RegioIndelingen/LMSSubzone/per_domain_grid);
+				attribute<Woning> Per_AllocRegio (Regios/AllocRegio)                            := sum(float32(Totaal), Regios/AllocRegio/per_domain_grid);
+				
+				attribute<float32> ShareMeergezinsInLMSSubzone (/Geography/RegioIndelingen/LMSSubzone) :=
+					sum(Meergezins, /Geography/RegioIndelingen/LMSSubzone/per_domain_grid)[float32] /
+					Per_LMSSubzone[float32];
+					
+				attribute<float32> ShareMeergezinsInGemeente (/Geography/RegioIndelingen/Gemeente/Gemeente2018) :=
+					sum(Meergezins, /Geography/RegioIndelingen/Gemeente/Gemeente2018/per_domain_grid)[float32] /
+					sum(Totaal, /Geography/RegioIndelingen/Gemeente/Gemeente2018/per_domain_grid)[float32];
+			}
+		
+			container WoningDichtheid
+			{
+				container PlannenEnVoorraad
+				{
+					parameter<string> CalcStr0 := '(
+						(rth_element(
+							WoningenBasisjaar/@W@ / float32(Grondgebruik/per_domain_grid/IsWoonlocatie),
+							Parameters/@W@_Percentiel,
+							/Geography/RegioIndelingen/@R@/per_domain_grid
+						)[/Geography/RegioIndelingen/@R@/per_domain_grid])
+					)';
+					
+					parameter<string> CalcStr :=
+						'min_elem(
+							max_elem('+
+								replace(CalcStr0, '@R@', 'Gemeente/Gemeente2018')+','+
+								replace(CalcStr0, '@R@', 'LMSSubzone')+', '
+								'Parameters/Generic@W@_Ondergrens * domain_grid/NrHaPerCell
+							),
+							Parameters/Generic@W@_Bovengrens * domain_grid/NrHaPerCell
+						)[domain/org_rel]';
+					
+					attribute<Woning> Eengezins  (domain) := = replace(CalcStr, '@W@', 'Eengezins');
+					attribute<Woning> Meergezins (domain) := = replace(CalcStr, '@W@', 'Meergezins');
+					attribute<Woning> Gewogen    (domain) := (Woningbouwprogrammas/ShareMeergezins * Meergezins + (1f - Woningbouwprogrammas/ShareMeergezins) * Eengezins)[Woning];
+					attribute<Woning> Result     (domain) := max_elem(Gewogen, WoningenBasisjaar/Totaal[domain/org_rel]);
+				}
+				
+				container Max
+				{
+					attribute<Woning> Meergezins (domain) := min_elem(Parameters/GenericMeergezins_bovengrens * domain/NrHaPerCell, PlannenEnVoorraad/Meergezins * Parameters/MaxStijgingWoningdichtheid_meergez * Parameters/DensityFactor);
+					attribute<Woning> Eengezins  (domain) := min_elem(Parameters/GenericEengezins_bovengrens * domain/NrHaPerCell, PlannenEnVoorraad/Eengezins * Parameters/MaxStijgingWoningdichtheid_Eengez * Parameters/DensityFactor);
+					
+					attribute<Woning> Gewogen (domain) := (Woningbouwprogrammas/ShareMeergezins * Meergezins + (1f - Woningbouwprogrammas/ShareMeergezins) * Eengezins)[Woning];
+					attribute<Woning> Result  (domain) := max_elem(Gewogen, WoningenBasisjaar/Totaal[domain/org_rel]);
+				}
+			}
+			attribute<Verblijfsobject> VBOsBasisjaar (domain) := BaseData/VBOsBasisjaar[domain/org_rel];
+		}
+		
+		container OVBereikbaarheid := for_each_ne(Regios/OVRegio/name, 'OVBereikbaarheidT('+string(id(Regios/OVRegio))+'[Regios/OVRegio])')
+		{
+			// hack
+			attribute<Job_min> SrcSrcIjburg (domain) :=
+				rth_element(
+					/SourceData/Omgeving/Banen_minuut[domain/org_rel],
+					0.2f,
+					Regios/MRA8/Per_domain
+				)[Regios/MRA8/Per_domain] *
+				float32(/Geography/RegioIndelingen/LMSSubzone/IsIjburg)[/Geography/RegioIndelingen/LMSSubzone/per_domain_grid[domain/org_rel]];
+			
+			attribute<Job_min> SrcSrc (domain) := max_elem(/SourceData/Omgeving/Banen_minuut[domain/org_rel], SrcSrcIjburg);
+			// attribute<Job_min> SrcSrc (domain) := /SourceData/Omgeving/Banen_minuut[domain/org_rel];
+			
+			attribute<Extent/OVBereikbaarheidK0> Totaal00 (domain) := = 'MakeDefined('+AsItemList(Regios/OVRegio/name+'/Per_K[Extent/OVBereikbaarheidK0]')+')', FreeData = "false";
+			attribute<Extent/OVBereikbaarheidK0> Totaal0  (domain) := max(Totaal00) - Totaal00;
+			attribute<Extent/OVBereikbaarheidK>  Totaal   (domain) := Extent/OVBereikbaarheidK0/OVBereikbaarheidK_rel[Totaal0];
+			
+			container PerOVBereikbaarheidK0 := for_each_nedv(Extent/OVBereikbaarheidK0/name, 'Totaal0 == '+string(id(Extent/OVBereikbaarheidK0))+'[Extent/OVBereikbaarheidK0]', domain, bool);
+			container PerOVBereikbaarheidK  := for_each_nedv(Extent/OVBereikbaarheidK/name, 'Totaal == '+string(id(Extent/OVBereikbaarheidK))+'[Extent/OVBereikbaarheidK]', domain, bool);
+		}
+		
+		#include<OVBereikbaarheidT.dms>
+	
+		container Plannen
+		{
+			container Plancapaciteit
+			{
+				parameter<string> SrcRef := 'SourceData/Beleid/Plancapaciteit/@A@/NL'+iif(/ModelParameters/ToepassingsRef == 'NLLater2', '', '/'+'@B@');
+				
+				attribute<bool> Wonen_HardOfZacht (SrcDomain_grid) := = 'IsDefined('+replace(SrcRef, '@A@', 'Wonen', '@B@', Parameters/VariantRef)+'/Result/HardOfZacht/per_SrcDomain_grid)';
+				attribute<bool> Wonen_Hard        (SrcDomain_grid) := = 'IsDefined('+replace(SrcRef, '@A@', 'Wonen', '@B@', Parameters/VariantRef)+'/Result/Hard/per_SrcDomain_grid)';
+				attribute<bool> Wonen_Zacht       (SrcDomain_grid) := = 'IsDefined('+replace(SrcRef, '@A@', 'Wonen', '@B@', Parameters/VariantRef)+'/Result/Zacht/per_SrcDomain_grid)';
+				attribute<bool> Wonen             (SrcDomain_grid) := = 'Wonen_'+Parameters/PlannenRef;
+				attribute<bool> Werken            (SrcDomain_grid) := = 'IsDefined('+replace(SrcRef, '@A@', 'Werken', '@B@', Parameters/PlannenRef)+'/per_SrcDomain_grid)';
+				attribute<bool> WonenEnWerken     (SrcDomain_grid) := Wonen && Werken;
+				attribute<bool> WonenNietWerken   (SrcDomain_grid) := Wonen && !Werken;
+			}
+		}
+		
+		container Kosten
+		{
+			container Warmtelasten :=
+				for_each_nedv(
+					Analysis/BaseData/Woonmilieus/name
+					,VariantK/IsDuurzaam[Parameters/variant_id]
+						? 'MakeDefined(Analysis/BaseData/Warmtelasten/Results/GroterDanNul[domain/org_rel] * domain/NrHaPerCell, 0[Eur_ha])'
+						: 'const(0[Eur_ha], domain)'
+					, domain
+					, Eur_ha
+				)
+			{
+				attribute<EUR_ha> Winkel    (domain) := = VariantK/IsDuurzaam[Parameters/variant_id] 
+															? 'MakeDefined(Analysis/BaseData/Warmtelasten/Results/GroterDanNul[domain/org_rel] * domain/NrHaPerCell, 0[Eur_ha])' 
+															: 'const(0[Eur_ha], domain)';
+				attribute<EUR_ha> Kantoor   (domain) := = VariantK/IsDuurzaam[Parameters/variant_id] 
+															? 'MakeDefined(Analysis/BaseData/Warmtelasten/Results/GroterDanNul[domain/org_rel] * domain/NrHaPerCell, 0[Eur_ha])' 
+															: 'const(0[Eur_ha], domain)';
+				attribute<EUR_ha> Industrie (domain) := = VariantK/IsDuurzaam[Parameters/variant_id] 
+															? 'MakeDefined(Analysis/BaseData/Warmtelasten/Results/GroterDanNul[domain/org_rel] * domain/NrHaPerCell, 0[Eur_ha])' 
+															: 'const(0[Eur_ha], domain)';
+			}
+			
+			attribute<Eur> SuitabilityIjburg (domain) :=
+				rth_element(Suitability0,0.90f,Regios/MRA8/Per_domain)[Regios/MRA8/Per_domain]
+				* float32(/Geography/RegioIndelingen/LMSSubzone/IsIjburg)[/Geography/RegioIndelingen/LMSSubzone/per_domain_grid[domain/org_rel]]
+				* rnd_uniform(0, domain, range(float32, 0f, 1f));
+			
+			attribute<Eur>  Suitability  (domain) := max_elem(Suitability0, SuitabilityIjburg); // de relatieve gechiktheid voor woningbouw van gridcellen binnen zones en binnen extents, obv hun residuele waarde (potentiele opbremgsten vd woningen minus bouwkosten minus grondkosten)
+			attribute<Eur>  Suitability0 (domain) := ResidueleWaarde/Rij_HD * domain/NrHaPerCell;
+	
+			container ResidueleWaarde := 
+				for_each_nedv(
+					Analysis/BaseData/Woonmilieus/name
+					,'Analysis/BaseData/Opbrengsten/Wonen/'+Analysis/BaseData/Woonmilieus/name+'[domain/org_rel] - Analysis/BaseData/Bouwkosten/'+Analysis/BaseData/Woonmilieus/name+'[domain/org_rel] - Analysis/BaseData/Grondproductiekosten/Grondproductiekosten_perWoonmilieu/'+Analysis/BaseData/Woonmilieus/name+'[domain/org_rel] + VariantSpecifiek/Kosten/Warmtelasten/'+Analysis/BaseData/Woonmilieus/name                        
+					, domain
+					, Eur_ha
+				)
+			{
+				attribute<Analysis/BaseData/Woonmilieus> ArgMax                                    (domain) := = 'ArgMax('+AsItemList(Analysis/BaseData/Woonmilieus/name)+')[Analysis/BaseData/Woonmilieus]';
+				attribute<Eur_ha>                        Verschil                                  (domain) := = 'Max_elem('+AsItemList(Analysis/BaseData/Woonmilieus/name)+') - Min_elem('+AsItemList(Analysis/BaseData/Woonmilieus/name)+')';
+				attribute<float32>                       Relatief                                  (domain) := = 'Verschil / Min_elem('+AsItemList(Analysis/BaseData/Woonmilieus/name)+')';
+				attribute<bool>                          FactorHoogsteTovLaagsteGroterDan10Procent (domain) :=  Relatief > 0.1f;
+				attribute<Analysis/BaseData/Woonmilieus> ArgMax2                                   (domain) := (ArgMax / uint8(FactorHoogsteTovLaagsteGroterDan10Procent))[Analysis/BaseData/Woonmilieus];
+				
+				attribute<Eur_ha> Winkel    (domain) := Analysis/BaseData/Opbrengsten/Werken/Winkel[domain/org_rel] - Analysis/BaseData/Bouwkosten/Winkel[domain/org_rel] - Analysis/BaseData/Grondproductiekosten/Grondproductiekosten_perWoonmilieu/Winkel[domain/org_rel] + VariantSpecifiek/Kosten/Warmtelasten/Winkel;
+				attribute<Eur_ha> Kantoor   (domain) := Analysis/BaseData/Opbrengsten/Werken/Kantoor[domain/org_rel] - Analysis/BaseData/Bouwkosten/Kantoor[domain/org_rel] - Analysis/BaseData/Grondproductiekosten/Grondproductiekosten_perWoonmilieu/Kantoor[domain/org_rel] + VariantSpecifiek/Kosten/Warmtelasten/Kantoor;
+				attribute<Eur_ha> Industrie (domain) := Analysis/BaseData/Opbrengsten/Werken/Industrie[domain/org_rel] - Analysis/BaseData/Bouwkosten/Industrie[domain/org_rel] - Analysis/BaseData/Grondproductiekosten/Grondproductiekosten_perWoonmilieu/Industrie[domain/org_rel] + VariantSpecifiek/Kosten/Warmtelasten/Industrie;
+			}
+		}
+		
+		container Claims
+		{
+			container Woningen
+			{
+				container Totaal     := WoningenT('');
+				container Eengezins  := WoningenT('_Eengezins');
+				container Meergezins := WoningenT('_Meergezins');
+			}
+			
+			Template WoningenT
+			{
+				//
+				parameter<string> Woningtype_ref;
+				//
+				
+				container Src := = '/SourceData/Claims2/Woningen/Per_Variant/'+VariantSpecifiek/Parameters/VariantRef+'/Totaal'+Woningtype_ref;
+				
+				unit<uint32> SrcRegio := /Geography/RegioIndelingen/LMSSubzone
+				{
+					attribute<Regios/AllocRegio> AllocRegio_rel := = 'Relaties/'+VariantSpecifiek/Parameters/AllocRegio_ref;
+					attribute<Woning>     InBasisjaar    := Src/InBasisjaar;
+					attribute<Woning>     Y2050          := Src/Y2050;
+				}
+				
+				unit<uint32> AllocRegio := = '/Geography/RegioIndelingen/'+VariantSpecifiek/Parameters/AllocRegio_ref
+				{
+					attribute<Woning> InBasisjaar := sum(SrcRegio/InBasisjaar, SrcRegio/AllocRegio_rel);
+					attribute<Woning> Y2050       := sum(SrcRegio/Y2050, SrcRegio/AllocRegio_rel);
+					
+					container Geschaald
+					{
+						attribute<float64> Src   (SrcRegio) := = '/SourceData/Claims/ReadData/'+Scenarios/name[VariantK/Scenario_rel]+'/ReadData/Landuse/zichtjaren/Y2050/Attributes/Totaal';
+						attribute<float32> Fractie     (..) := float32(sum(Src, SrcRegio/AllocRegio_rel) / sum(Src, SrcRegio/AllocRegio_rel)[SrcRegio/AllocRegio_rel]);
+						attribute<Woning>  InBasisjaar (..) :=  sum(SrcRegio/InBasisjaar, SrcRegio/AllocRegio_rel);
+						attribute<Woning>  Y2050       (..) := (sum(SrcRegio/Y2050, SrcRegio/AllocRegio_rel)[SrcRegio/AllocRegio_rel] * Fractie)[Woning];
+						attribute<Woning>  Delta_2050  (..) := Y2050 - InBasisjaar;
+					}
+					
+					container Ongeschaald
+					{
+						attribute<Woning> InBasisjaar (..) := union_data(.., AllocRegio/InBasisjaar);
+						attribute<Woning> Y2050       (..) := union_data(.., AllocRegio/Y2050);
+						attribute<Woning> Delta_2050  (..) := Y2050 - InBasisjaar;
+					}
+					container Resultaat := = iif(VariantSpecifiek/Parameters/MoetGeschaald, 'Geschaald', 'Ongeschaald');
+				}
+				attribute<Woning> Delta_2050 (AllocRegio) := AllocRegio/Resultaat/Delta_2050;
+			}
+		}
+		
+	}
+	
+	container Zeef
+	{
+		attribute<bool> EvidentBenut                 (SrcDomain_grid) := = 'LandUsePreparation/CBSKlasse/Benutting/'+VariantK/BenuttingRef[VariantSpecifiek/Parameters/Variant_id]+'[BaseData/Grondgebruik/Per_SrcDomain_grid/Basisjaar]';
+		attribute<bool> VBOBouwjaarTeHoog            (Srcdomain_grid) := = 'mean(VBO_/bouwjaar, VBO_/SrcDomain_grid_rel) > '+VariantSpecifiek/Parameters/MaxBouwjaar+'[int16]';
+		attribute<bool> EnergieLabelTeHoog           (SrcDomain_grid) := /SourceData/Vastgoed/Energielabels/Panden/modus < VariantSpecifiek/Parameters/MaxELabel;
+		attribute<bool> EigendomVanNatuurOrganisatie (SrcDomain_grid) := BaseData/Eigendom/VanNatuurOrganisatie && !VariantSpecifiek/Parameters/BouwenInNatuurorganisaties;
+		attribute<bool> EigendomVanWaterschap        (SrcDomain_grid) := BaseData/Eigendom/VanWaterschap        && !VariantSpecifiek/Parameters/BouwenInWaterschappen;
+		attribute<bool> ExploitatieSaldoTeLaag       (SrcDomain_grid) := = VariantSpecifiek/Parameters/Variant_id == VariantK/V/UrbaanBulldozer ? 'const(false, SrcDomain_grid)' : '(Analysis/BaseData/ExploitatieSaldo/Rij_HD < VariantSpecifiek/Parameters/MinimumExploitatieSaldo)[SrcDomain_grid/domain_grid_rel]';
+		attribute<bool> ZeerSlappeGrond              (SrcDomain_grid) := BaseData/AndersBouwen[SrcDomain_grid/domain_grid_rel]         && !VariantSpecifiek/Parameters/BouwenOpZeerSlappeGrond;
+		attribute<bool> SlappeGrond                  (SrcDomain_grid) := BaseData/BouwenMetMaatregelen[SrcDomain_grid/domain_grid_rel] && !VariantSpecifiek/Parameters/BouwenOpSlappeGrond;
+		attribute<bool> Restricties                  (SrcDomain_grid) := = '/SourceData/Beleid/OmgRecht/Restricties/totaal/Cum/Woongebied/'+VariantK/Restricties_ref[VariantSpecifiek/Parameters/Variant_id];
+		attribute<bool> VBODichtheidBasisjaarTeHoog  (SrcDomain_grid) := (BaseData/VBOsBasisjaar > VariantSpecifiek/Parameters/MaximumVBODichtheid)[SrcDomain_grid/domain_grid_rel];
+		// Specifiek voor Urbaan toevoegen (waar groen niet evident benut): GroenTeHoogwaardig (obv waarde van groen in termen van nabijheid etc; zie analysis/groen)
+		// Toevoegen: plek te geisoleerd tov bestaande voorzieningen (zit niet afdoende in exploitatiesaldo!)
+		
+		container Totaal
+		{
+			attribute<bool> BehoudensPlancapaciteitWonen (SrcDomain_grid) :=
+				= 'min_elem(
+					EvidentBenut ||
+					VariantSpecifiek/Plannen/Plancapaciteit/Werken ||
+					EigendomVanNatuurOrganisatie ||
+					EigendomVanWaterschap ||
+					ExploitatieSaldoTeLaag ||
+					ZeerSlappeGrond ||
+					SlappeGrond ||
+					Restricties
+					, !VariantSpecifiek/Plannen/Plancapaciteit/Wonen
+				)';
+				
+			//Ook in plannen voor wonen
+			attribute<bool> OokInPlancapaciteitWonen (SrcDomain_grid) :=
+				EnergieLabelTeHoog ||
+				VBOBouwjaarTeHoog ||
+				BaseData/Grondgebruik/Per_domain_grid/HeeftGrootschaligeInfra[SrcDomain_grid/domain_grid_rel] ||
+				VBODichtheidBasisjaarTeHoog;
+		}
+		
+		attribute<bool> Resultaat (SrcDomain_grid) := Totaal/BehoudensPlancapaciteitWonen || Totaal/OokInPlancapaciteitWonen;
+		
+		attribute<bool> Residu (SrcDomain_grid) := !Resultaat
+		{
+			attribute<float32> SharePerDomain_grid (domain_grid) :=
+				= replace(
+					'sum(Residu[float32], SrcDomain_grid/@DG@_rel) / value(pcount(SrcDomain_grid/@DG@_rel), float32)',
+					'@DG@', domain_grid_ref
+				);
+		}
+	}
+	
+	
+	unit<uint32> domain := tiledunit(50000[VariantSpecifiek/ZeefInput/domain_untiled])
+	, DialogType = "Map"
+	, DialogData = "BaseMap"
+	, FreeData = "False" 
+	{
+		attribute<domain_grid>                         org_rel           := union_data(., VariantSpecifiek/ZeefInput/domain_untiled/org_rel);
+		attribute<.>                                   BaseMap (domain_grid)  := invert(org_rel);
+		attribute<VariantSpecifiek/Regios/AllocRegio>  AllocRegio_rel         := VariantSpecifiek/Regios/AllocRegio/per_domain_grid[org_rel];
+		
+		attribute</SourceData/Claims/SrcRegio>         ClaimsSrcRegio_rel     := /SourceData/Claims/SrcRegio/per_rdc_100m[org_rel];
+		attribute<.>                                   Per_vbo (Analysis/vbo) := BaseMap[Analysis/vbo/NL_grid_domain_rel];
+		
+		parameter<ha>                                  MaxHaPerCell           := domain_grid/NrHaPerCell;
+		attribute<ha>                                  NrHaPerCell            := VariantSpecifiek/ZeefInput/HaAvailableInStArea[org_rel];
+		attribute<RegioIndelingen/NL>                  NL_rel                 := Geography/RegioIndelingen/NL/per_domain_grid[org_rel];
+	}
+	
+	
+	#include <Allocatie.dms>
+}

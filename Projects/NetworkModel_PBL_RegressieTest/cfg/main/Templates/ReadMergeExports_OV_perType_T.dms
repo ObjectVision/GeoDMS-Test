@@ -1,0 +1,21 @@
+Template ReadMergeExports_OV_perType_T
+{
+	parameter<string> Export_CombinationTypes;
+	parameter<string> Dest;
+	//
+	
+	container Read := 
+		for_each_ne(
+			Advanced/Regio/name
+			, 'Templates/ReadExport_OV_perTime_T('+quote(Export_CombinationTypes)+','+quote(Advanced/Regio/name)+','+quote(Dest)+')'
+		);
+		
+	container Merge :=
+		for_each_ne(
+			 Advanced/MeasureMoments/name
+			, 'Templates/Merge_Regions_OV_T('+quote(Export_CombinationTypes)+','+quote( Advanced/MeasureMoments/name)+','+quote(Dest)+')'
+		)
+	{
+		// parameter<string>   OUTPUT_Merge_Regions  := =AsList(Advanced/MeasureMoments/Name+'/LongFormat/File_fullOD',' + ');
+	}
+}

@@ -1,0 +1,31 @@
+container PRV
+{
+	container Src := .../Src/PRV;
+	
+	#include <Friesland.dms>
+	#include <Groningen.dms>
+	#include <Drenthe.dms>
+	#include <Overijssel.dms>
+	#include <Gelderland.dms>
+	#include <Flevoland.dms>
+	#include <Noord_Holland.dms>
+	#include <Zuid_Holland.dms>
+	#include <Utrecht.dms>
+	#include <Noord_Brabant.dms>
+	#include <Zeeland.dms>
+	#include <Limburg.dms>
+	
+	Template PRVT
+	{
+		//
+		parameter<string> Prov;
+		//
+		
+		attribute<bool> Provincie (domain_grid) := = 'ProvincieK/per_domain_grid == ProvincieK/V/'+Prov;
+	
+		container Src := = '../Src/'+Prov;
+		
+		container Woongebied := Woongebied_en_werk_bedrijventerrein;
+		container Bedrijventerrein := Woongebied_en_werk_bedrijventerrein;
+	}
+}

@@ -1,0 +1,147 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Deze DMS-file wordt aangeroepen door Classifications.dms.                            //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Groen
+{
+	unit<uint8> Grondgebruik := /Classifications/LandUsePreparation/CBSKlasse;
+	
+	unit<uint8> Functie := select_with_org_rel(Grondgebruik/IsGroen)
+	{
+		attribute<string> name := Grondgebruik/name[org_rel];
+		
+		attribute<string> label := Grondgebruik/Label[org_rel], DialogType = "LabelText";
+		attribute<uint32> BrushColor := Grondgebruik/BrushColor[org_rel], DialogType = "BrushColor";
+		
+		attribute<string> ref := const('G', ., string);
+		
+		attribute<string> Extent_ref := 
+			// id(.) == V/overige_agrarisch_gebruik ||
+			id(.) == V/bos
+			// id(.) == V/droog_natuurlijk_terrein ||
+			// id(.) == V/nat_natuurlijk_terrein
+				? 'IsTotaal'
+				: 'IsInBBG'; //20191007 @Bart: vgm had jij deze verkeerd om staan.
+		
+		attribute<Afstand> Afstand_rel := union_data // bepaalt op welke afstand de functie vooral waardevol is
+		(.,
+			Afstand/V/Plus100,  // parken_en_plantsoenen
+			Afstand/V/Plus1000, // sportterreinen
+			Afstand/V/Plus1000, // volkstuinen
+			Afstand/V/Plus2500, // dagrecreatieve_terreinen
+			Afstand/V/Plus5000, // verblijfsrecreatie
+			// Afstand/V/Plus2500, // overige_agrarisch_gebruik
+			Afstand/V/Plus2500 // bos
+			// Afstand/V/Plus2500, // droog_natuurlijk_terrein
+			// Afstand/V/Plus2500  // nat_natuurlijk_terrein
+		);
+		
+// het gaat hier om het relatieve belang van groen, per functie, voor de verschillende doelgrioepen qua WOZ-klasse.
+// Het abolute belang wordt uitgedrukt in de regionale ruimteclaims voor deze functies
+		container Doelgroep 
+		{
+			attribute<float32> Plus_4600 (..):
+			[
+				0.25, // parken_en_plantsoenen
+				0.30, // sportterreinen
+				0.40, // volkstuinen
+				0.30, // dagrecreatieve_terreinen
+				0.25, // verblijfsrecreatie
+				// 0.25, // overige_agrarisch_gebruik
+				0.25 // bos
+				// 0.25, // droog_natuurlijk_terrein
+				// 0.25  // nat_natuurlijk_terrein
+			];
+			
+			attribute<float32> Plus_246432 (..):
+			[
+				0.25, // parken_en_plantsoenen
+				0.30, // sportterreinen
+				0.30, // volkstuinen
+				0.30, // dagrecreatieve_terreinen
+				0.25, // verblijfsrecreatie
+				// 0.25, // overige_agrarisch_gebruik
+				0.25 // bos
+				// 0.25, // droog_natuurlijk_terrein
+				// 0.25  // nat_natuurlijk_terrein
+			];
+			
+			attribute<float32> Plus_377384 (..):
+			[
+				0.25, // parken_en_plantsoenen
+				0.20, // sportterreinen
+				0.20, // volkstuinen
+				0.20, // dagrecreatieve_terreinen
+				0.25, // verblijfsrecreatie
+				// 0.25, // overige_agrarisch_gebruik
+				0.25 // bos
+				// 0.25, // droog_natuurlijk_terrein
+				// 0.25  // nat_natuurlijk_terrein
+			];
+			
+			attribute<float32> Plus_601749 (..):
+			[
+				0.25, // parken_en_plantsoenen
+				0.20, // sportterreinen
+				0.10, // volkstuinen
+				0.20, // dagrecreatieve_terreinen
+				0.25, // verblijfsrecreatie
+				// 0.25, // overige_agrarisch_gebruik
+				0.25 // bos
+				// 0.25, // droog_natuurlijk_terrein
+				// 0.25  // nat_natuurlijk_terrein
+			];
+			
+			attribute<float32> Totaal (..) := = 'add('+AsItemList(WOZ/name)+')';
+		}
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> Afstand: NrOfRows = 6
+	{
+		attribute<string> name := 'Plus'+string(ClassBreaks);
+		attribute<string> Label := name, DialogType = "LabelText";
+		
+		attribute<Meter> ClassBreaks: DialogType = "CLASS_BREAKS",
+		[
+			0,     // Brongebied
+			100,   // Loopafstand (kort)
+			500,   // Loopafstand (lang)
+			1000,  // Fietsafstand (kort)
+			2500,  // Fietsafstand (lang)
+			5000   // Verder weg
+		];
+		
+		attribute<ha> MinimumOppervlakte: [0, 0, 2, 5, 10, 100];
+		
+		attribute<Meter> Bovengrens := MakeDefined(ClassBreaks[id(.)+1[.]], 10000[Meter]);
+		
+		attribute<string> RegioRef: // Bestuurlijke schaal van waaruit op bescherming van schaarste wordt gestuurd
+		[
+			'Gemeente2019',
+			'Gemeente2019',
+			'Gemeente2019',
+			'Gemeente2019',
+			'Provincie',
+			'Provincie'
+		];
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}
+	
+	unit<uint8> WOZ: NrOfRows = 4
+	{
+		attribute<string> name := 'Plus_'+string(ClassBreaks);
+		attribute<string> Label := name, DialogType = "LabelText";
+		attribute<Eur> ClassBreaks := ClassifyEqualCount(SourceData/Vastgoed/WOZ/Y2017/Mean_domain_grid, .), DialogType = "CLASS_BREAKS";
+		attribute<uint32> BrushColor: DialogType = "BrushColor",
+		[
+			rgb(0,64,0), rgb(0,128,0), rgb(128,255,128), rgb(255,255,128)
+		];
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}
+}

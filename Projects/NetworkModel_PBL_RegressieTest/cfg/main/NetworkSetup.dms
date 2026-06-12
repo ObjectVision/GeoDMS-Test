@@ -1,0 +1,370 @@
+container NetworkSetup : using = "units;geometries;SourceData;Classifications;ModelParameters"
+{     
+	container ConfigurationPerRegio := 
+		for_each_ne(
+			Advanced/Regio/name
+			, 'ConfigurationPerRegio_T('+quote(Advanced/Regio/name)+')'
+		)
+	{
+		container Generate_Output
+		{
+			// parameter<string> OUTPUT_Generate_PublicTransport_decay_CSVFiles        := =AsList(Advanced/Regio/name+'/PublicTransport/Generate_Output/OUTPUT_Generate_decay_CSVFiles',' + ');
+			parameter<string> OUTPUT_Generate_PublicTransport_fullOD_long_CSVFiles_zonderFence  := =AsList(Advanced/Regio/name+'/PublicTransport/Generate_Output_zonderFence/OUTPUT_Generate_fullOD_long_CSVFiles',' + ');
+			parameter<string> OUTPUT_Generate_PublicTransport_fullOD_long_CSVFiles_metFence     := =AsList(Advanced/Regio/name+'/PublicTransport/Generate_Output_metFence/OUTPUT_Generate_fullOD_long_CSVFiles',' + ');
+			parameter<string> OUTPUT_Generate_PublicTransport_fullOD_long_CSVFiles              := /UseFence ? 'OUTPUT_Generate_PublicTransport_fullOD_long_CSVFiles_metFence' : 'OUTPUT_Generate_PublicTransport_fullOD_long_CSVFiles_zonderFence';
+			// parameter<string> OUTPUT_Generate_PublicTransport_fullOD_wide_CSVFiles  := =AsList(Advanced/Regio/name+'/PublicTransport/Generate_Output/OUTPUT_Generate_fullOD_wide_CSVFiles',' + ');
+			// parameter<string> OUTPUT_Generate_Car_decay_CSVFiles                    := =AsList(Advanced/Regio/name+'/PrivateTransport/Export_Car_Decayed',' + ');
+			// parameter<string> OUTPUT_Generate_Car_traveltimes_CSVFiles              := =AsList(Advanced/Regio/name+'/PrivateTransport/Export_Car_Traveltimes',' + ');
+			// parameter<string> OUTPUT_Generate_Bike_decay_CSVFiles                   := =AsList(Advanced/Regio/name+'/PrivateTransport/Export_Bike_Decayed',' + '); 
+			// parameter<string> OUTPUT_Generate_Bike_traveltimes_CSVFiles             := =AsList(Advanced/Regio/name+'/PrivateTransport/Export_Bike_Traveltimes',' + '); 
+			// parameter<string> OUTPUT_Generate_Pedestrian_decay_CSVFiles             := =AsList(Advanced/Regio/name+'/PrivateTransport/Export_Pedestrian_Decayed',' + '); 
+			// parameter<string> OUTPUT_Generate_Pedestrian_traveltimes_CSVFiles       := =AsList(Advanced/Regio/name+'/PrivateTransport/Export_Pedestrian_Traveltimes',' + '); 
+		}
+		
+ 		container Merge_Output
+		{
+			parameter<string> OUTPUT_Merge_PublicTransport_Regions_fullOD_long_CSVFiles   := ReadMergeExports_PublicTransport/OUTPUT_Merge_Types;
+			// parameter<string> OUTPUT_Merge_Car_Regions_traveltimes_CSVFiles               := ReadMergeExports_PrivateTransport/Car/Merge/OUTPUT_Merge_Regions;
+			// parameter<string> OUTPUT_Merge_Bike_Regions_traveltimes_CSVFiles              := ReadMergeExports_PrivateTransport/Bike/Merge/OUTPUT_Merge_Regions;
+			// parameter<string> OUTPUT_Merge_Pedestrian_Regions_traveltimes_CSVFiles        := ReadMergeExports_PrivateTransport/Pedestrian/Merge/OUTPUT_Merge_Regions;
+			
+			container ReadMergeExports_PublicTransport := 
+				for_each_ne(
+					Advanced/Export_CombinationTypes/name
+					, 'Templates/ReadMergeExports_OV_perType_T('+quote(Advanced/Export_CombinationTypes/name)+','+quote(DestSet)+')'
+				)
+			{
+				parameter<string> OUTPUT_Merge_Types       := =AsList(Advanced/Export_CombinationTypes/name+'/merge/OUTPUT_Merge_Regions',' + '); 
+			}
+			
+			container ReadMergeExports_PrivateTransport
+			{
+				container Car
+				{
+					container Read := 
+						for_each_ne(
+							Advanced/Regio/name
+							, 'Templates/ReadExport_Car_T('+quote(Advanced/Regio/name)+','+quote(DestSet)+')'
+						);
+						
+					container Merge := Templates/Merge_Regions_Car_T(DestSet)
+					{
+						parameter<string>   OUTPUT_Merge_Regions  := LongFormat/File_full;
+					}
+				}
+				container Bike
+				{
+					container Read := 
+						for_each_ne(
+							Advanced/Regio/name
+							, 'Templates/ReadExport_PedestrianBike_T('+quote(Advanced/Regio/name)+','+quote(DestSet)+',''Bike'')'
+						);
+						
+					container Merge := Templates/Merge_Regions_PedestrianBike_T(DestSet,'Bike')
+					{
+						parameter<string>   OUTPUT_Merge_Regions  := File;
+					}
+				}
+				container Pedestrian
+				{
+					container Read := 
+						for_each_ne(
+							Advanced/Regio/name
+							, 'Templates/ReadExport_PedestrianBike_T('+quote(Advanced/Regio/name)+','+quote(DestSet)+',''Pedestrian'')'
+						);
+						
+					container Merge := Templates/Merge_Regions_PedestrianBike_T(DestSet,'Pedestrian')
+					{
+						parameter<string>   OUTPUT_Merge_Regions  := File;
+					}
+				}
+			}
+		}
+	}
+
+	Template ConfigurationPerRegio_T 
+	{
+		parameter<string> regio_name;
+		parameter<string> regio_name_if_enkel_sub := switch(
+														 case(strcount(ModelParameters/Orgset, 'Buurt_enkele_Corop') > 0, ModelParameters/Orgset_EnkeleCorop_selectie)
+														,case(strcount(ModelParameters/Orgset, 'Buurt_enkele_Prov') > 0, ModelParameters/Orgset_EnkeleProv_selectie)
+														, regio_name
+													);
+
+		unit<uint32> org := =impl/Org_domain
+		{
+			attribute<rdc>                   geometry       := =impl/Org_domain+'/geometry';
+			attribute<string>                name           := =impl/Org_domain+'/name';
+			attribute<float32>               nr_inwoners    := =impl/Org_domain+'/nr_inwoners[float32]';
+		}
+		
+		unit<uint32> dest := =Advanced/Create_Symmetric_fullOD ? 'org' : 'impl/dest_src'
+		{
+			attribute<rdc>                   geometry       := =Advanced/Create_Symmetric_fullOD ? 'org/geometry' : 'impl/dest_src/geometry';
+		}
+		
+		container impl
+		{
+			container src := .;
+			parameter<string> Org_domain        := replace(rjoin(Advanced/Orgset_str, lowercase(Advanced/org_domain_list/label), Advanced/org_domain_list/path), '@REGIO@', regio_name);
+			parameter<string> Dest_domain       := rjoin(lowercase(ModelParameters/DestSet), lowercase(Advanced/dest_domain_list/label), Advanced/dest_domain_list/path);
+			
+			unit<uint32> dest_src := =Dest_domain
+			{
+				attribute<uint32>                nr_items_of_interest := =Dest_domain+'/'+Advanced/items_of_interest;
+				attribute<rdc>                   geometry             := =Dest_domain+'/geometry';
+				attribute<string>                name                 := =Dest_domain+'/name';
+				attribute<string>                label                := name;
+			}
+		}
+		
+		container PublicTransport := 
+			for_each_ne(
+				Advanced/MeasureMoments/Name
+				, 'PublicTransport_T('+string(Advanced/MeasureMoments/Moment)+', '+quote(Advanced/MeasureMoments/name)+')'
+			)
+		{
+			container Generate_Output_zonderFence
+			{
+				parameter<string>   OUTPUT_Generate_decay_CSVFiles        := =AsList(Advanced/MeasureMoments/Name+'/OUTPUT_Generate_decay_CSVFiles',' + ');
+				parameter<string>   OUTPUT_Generate_fullOD_long_CSVFiles  := =AsList(Advanced/MeasureMoments/Name+'/OUTPUT_Generate_fullOD_long_CSVFiles',' + ');
+				// parameter<string>   OUTPUT_Generate_fullOD_wide_CSVFiles  := =AsList(Advanced/MeasureMoments/Name+'/OUTPUT_Generate_fullOD_wide_CSVFiles',' + ');
+			}
+			container Generate_Output_metFence := PhaseContainer(Generate_Output_zonderFence, 'Generated output for '+regio_name);
+			
+			container ODConnections
+			{
+				unit<uint32> Stops                       := SourceData/Infrastructuur/GTFS/StudyAreaFeeds/Stops;
+				unit<uint32> Stops_ICstations            := SourceData/Infrastructuur/GTFS/StudyAreaFeeds/Stops_ICstation;
+				unit<uint32> Stops_Trainstations         := SourceData/Infrastructuur/GTFS/StudyAreaFeeds/Stops_Trainstation;
+				unit<uint32> Stops_TrainMetrostation     := SourceData/Infrastructuur/GTFS/StudyAreaFeeds/Stops_TrainMetrostation;
+				unit<uint32> Stops_TrainMetroTramstation := SourceData/Infrastructuur/GTFS/StudyAreaFeeds/Stops_TrainMetroTramstation;
+				
+				container RoadNets_Org2Stop_W    := templates/CreateNetwork_Pedestrian_Bike_T(Org   ,Stops                       ,SourceData/Infrastructuur/OSM/Network_Pedestrian, 'Pedestrian', 'Org2Stop');
+				container RoadNets_Org2Stop_B    := templates/CreateNetwork_Pedestrian_Bike_T(Org   ,Stops                       ,SourceData/Infrastructuur/OSM/Network_Bike      , 'Bike' , 'Org2Stop');
+				container RoadNets_Org2StopIC_B  := templates/CreateNetwork_Pedestrian_Bike_T(Org   ,Stops_ICstations            ,SourceData/Infrastructuur/OSM/Network_Bike      , 'Bike' , 'Org2Stop');
+				container RoadNets_Org2StopT_B   := templates/CreateNetwork_Pedestrian_Bike_T(Org   ,Stops_Trainstations         ,SourceData/Infrastructuur/OSM/Network_Bike      , 'Bike' , 'Org2Stop');
+				container RoadNets_Org2StopTM_B  := templates/CreateNetwork_Pedestrian_Bike_T(Org   ,Stops_TrainMetrostation     ,SourceData/Infrastructuur/OSM/Network_Bike      , 'Bike' , 'Org2Stop');
+				container RoadNets_Org2StopTMT_B := templates/CreateNetwork_Pedestrian_Bike_T(Org   ,Stops_TrainMetroTramstation ,SourceData/Infrastructuur/OSM/Network_Bike      , 'Bike' , 'Org2Stop');
+				
+				container RoadNets_Stop2Dest_W   := templates/CreateNetwork_Pedestrian_Bike_T(Stops ,Dest                        ,SourceData/Infrastructuur/OSM/Network_Pedestrian, 'Pedestrian', 'Stop2Dest');
+				container RoadNets_Stop2Dest_B   := templates/CreateNetwork_Pedestrian_Bike_T(Stops ,Dest                        ,SourceData/Infrastructuur/OSM/Network_Bike      , 'Bike' , 'Stop2Dest');
+				
+				container CreateODconnections : using = "/SourceData/Infrastructuur/GTFS/StaticNets"
+				{
+					container Sparse_uitwerking_Org2Stop_W     := Sparse_uitwerking_T('Org2Stop','','W');
+					container Sparse_uitwerking_Org2Stop_B     := Sparse_uitwerking_T('Org2Stop','','B');
+					container Sparse_uitwerking_Org2StopIC_B   := Sparse_uitwerking_T('Org2Stop','IC','B');
+					container Sparse_uitwerking_Org2StopT_B    := Sparse_uitwerking_T('Org2Stop','T','B');
+					container Sparse_uitwerking_Org2StopTM_B   := Sparse_uitwerking_T('Org2Stop','TM','B');
+					container Sparse_uitwerking_Org2StopTMT_B  := Sparse_uitwerking_T('Org2Stop','TMT','B');
+					container Sparse_uitwerking_Stop2Dest_W    := Sparse_uitwerking_T('Stop2Dest','','W');
+					container Sparse_uitwerking_Stop2Dest_B    := Sparse_uitwerking_T('Stop2Dest','','B');
+					
+					Template Sparse_uitwerking_T
+					{
+						parameter<string> VoorOfNaTransport;
+						parameter<string> AltStartHalte;
+						parameter<string> Mode_Short;
+						///
+						parameter<string> JoinStops_str := VoorOfNaTransport == 'Org2Stop' && AltStartHalte == '' 
+																? 'EindRef'
+																: VoorOfNaTransport == 'Stop2Dest' && AltStartHalte == ''
+																	? 'StartRef'
+																	: 'Complete_Stops_rel';
+						unit<uint32> OD_path := ='RoadNets_'+VoorOfNaTransport+''+AltStartHalte+'_'+Mode_Short+'/ODMatrix';
+						
+						unit<uint32> AB := ='join_equal_values_uint32(OD_path/'+JoinStops_str+', ScheduledSpaceTimeEvents/Stop_rel)'
+						{
+							attribute<Stops>                      Stop_rel          := X_rel;
+							attribute<OD_path>                    OD_rel            := first_rel;
+							attribute<ScheduledSpaceTimeEvents>   SSTE_rel          := second_rel;
+							
+							attribute<allLinks/Places>            Place_rel         := stops/PlaceRef[Stop_rel];
+							attribute<Org>                        Origin_rel        := OD_path/StartRef[OD_rel];
+							attribute<Dest>                       Dest_rel          := OD_path/EindRef[OD_rel];
+							attribute<rdc>                        geometry (arc)    := OD_path/geometry[OD_rel];
+							attribute<Time>                       Duration          := OD_path/Duration[OD_rel] > #Time / 2
+																						? #Time / 2
+																						: OD_path/Duration[OD_rel];
+							
+							attribute<km>                         LengthKm          := OD_path/LengthKm[OD_rel];
+							attribute<Time>                       O2S_FromTime      := sub_or_null(O2S_toTime[int32],Duration[int32]) > 0i
+																						? sub_or_null(O2S_toTime,Duration) 
+																						: (sub_or_null(O2S_toTime[int32],Duration[int32]) + (#Time / 2)[int32])[uint32];
+							attribute<Time>                       O2S_toTime        := ScheduledSpaceTimeEvents/TimeRef[SSTE_rel];
+							attribute<Time>                       S2D_FromTime      := ScheduledSpaceTimeEvents/TimeRef[SSTE_rel];
+							attribute<Time>                       S2D_ToTime        := S2D_FromTime + Duration > #Time
+																						? sub_or_null(S2D_FromTime + Duration, #Time)
+																						: S2D_FromTime + Duration;
+							
+							attribute<string>                     Label             := OD_path/Label[OD_rel];
+							attribute<upoint>                     O2S_MomentxPlace  := point_xy(O2S_toTime, Place_rel, upoint);
+							attribute<upoint>                     S2D_MomentxPlace  := point_xy(S2D_FromTime, Place_rel, upoint);
+							attribute<allLinks/NodeSet>           O2S_NodeRef       := rlookup(O2S_MomentxPlace, allLinks/NodeSet/values);
+							attribute<allLinks/NodeSet>           S2D_NodeRef       := rlookup(S2D_MomentxPlace, allLinks/NodeSet/values);
+							
+							// unit<uint32> uq_stops := unique(Place_rel)
+							// {
+								// attribute<allLinks/Places> UsedStops := values;
+							// }
+						}
+					}
+				}
+			}
+		}
+		
+		container PrivateTransport 
+		{
+			parameter<string> Export_Pedestrian_decayed      := Pedestrian/ExportTable_Decayed/File;
+			parameter<string> Export_Pedestrian_traveltimes  := Pedestrian/ExportTable_Traveltimes/File;
+			parameter<string> Export_Bike_decayed            := Bike/ExportTable_Decayed/File;
+			parameter<string> Export_Bike_traveltimes        := Bike/ExportTable_Traveltimes/File;
+			parameter<string> Export_Car_Decayed             := Car/ExportTable_Decayed/File;
+			parameter<string> Export_Car_traveltimes         := Car/ExportTable_Traveltimes/File;
+			
+			container Impl
+			{
+				parameter<string> fileNamePrefix :=  Advanced/fileNamePrefix;
+				parameter<string> fileNameSuffix :=  
+					'_ORG-'    + ModelParameters/Orgset + '-' + regio_name_if_enkel_sub + 
+					'_DEST-'   + Advanced/DestSet_string +
+					'_NETWERK-@@' +
+					'_MaxTime-##min';
+			}
+			
+			Container Pedestrian
+			{
+				container Create_Optimised_Network  := Templates/CreateNetwork_Efficient_T(org, dest, SourceData/Infrastructuur/OSM/Network_Pedestrian/IsVerbonden, 'Pedestrian');
+				
+				unit<uint32> LinkSet := Create_Optimised_Network/CreateMoreEfficientNetwork/FinalLinkSet;
+				unit<uint32> NodeSet := Create_Optimised_Network/CreateMoreEfficientNetwork/FinalNodeSet;
+				container Calc_Traveltimes_maxspeed_pedestrian := Calc_Traveltimes_T(LinkSet, NodeSet, LinkSet/Impedance_per_ImpedanceType/max_pedestrian, ModelParameters/MaxPedestrianTime_Org2Dest);
+				
+				unit<uint64> ExportTable_Traveltimes := Calc_Traveltimes_maxspeed_pedestrian/Traveltimes
+				{
+					attribute<org > Org_rel := OrgZone_rel;
+					attribute<dest> Dst_rel := DstZone_rel;
+					
+					attribute<min_f> DefaultSpeed_imp    := Impedance;
+					
+					attribute<string> BodyLines :=
+						org/name[Org_rel] + ';' + 
+						dest/name[Dst_rel] + ';' +
+						string(DefaultSpeed_imp);
+					parameter<string> File := 'Org;Dst;Freeflow\n'++AsList(BodyLines, '\n'), StorageName = "=impl/fileNamePrefix+'Traveltimes'+replace(impl/fileNameSuffix, '@@', 'Pedestrian', '##',  string(ModelParameters/MaxPedestrianTime_Org2Dest)) +'.csv'", StorageType = "str";
+				}
+				unit<uint32> ExportTable_Decayed := org
+				{
+					attribute<float32> nr_items_of_interest_decayed_freeflow        := Calc_Traveltimes_maxspeed_pedestrian/Decay/D_i;
+					
+					attribute<string> BodyLines (org) := org/name + ';' + string(nr_items_of_interest_decayed_freeflow);
+					parameter<string> File            := 'Org;freeflow\n'++AsList(BodyLines, '\n'), StorageName = "=impl/fileNamePrefix+''+Advanced/items_of_interest+'_decayed'+replace(impl/fileNameSuffix, '@@', 'Pedestrian', '##',  string(ModelParameters/MaxPedestrianTime_Org2Dest))+'.csv'", StorageType = "str";
+				}
+			}
+			
+			Container Bike
+			{
+				container Create_Optimised_Network_Bike    := Templates/CreateNetwork_Efficient_T(org, dest, SourceData/Infrastructuur/OSM/Network_Bike/IsVerbonden, 'Bike');
+				container Create_Optimised_Network_EBike   := Templates/CreateNetwork_Efficient_T(org, dest, SourceData/Infrastructuur/OSM/Network_Bike/IsVerbonden, 'E_Bike');
+
+				unit<uint32> LinkSet_bike := Create_Optimised_Network_Bike/CreateMoreEfficientNetwork/FinalLinkSet;
+				unit<uint32> NodeSet_bike := Create_Optimised_Network_Bike/CreateMoreEfficientNetwork/FinalNodeSet;
+				container Calc_Traveltimes_maxspeed_bike  := Calc_Traveltimes_T(LinkSet_bike, NodeSet_bike, LinkSet_bike/Impedance_per_ImpedanceType/max_bike, ModelParameters/MaxBikeTime_Org2Dest);
+				container Calc_Traveltimes_congested_bike := Calc_Traveltimes_T(LinkSet_bike, NodeSet_bike, LinkSet_bike/Impedance_per_ImpedanceType/congested_bike, ModelParameters/MaxBikeTime_Org2Dest);
+				
+				unit<uint32> LinkSet_e_bike := Create_Optimised_Network_EBike/CreateMoreEfficientNetwork/FinalLinkSet;
+				unit<uint32> NodeSet_e_bike := Create_Optimised_Network_EBike/CreateMoreEfficientNetwork/FinalNodeSet;
+				container Calc_Traveltimes_maxspeed_e_bike := Calc_Traveltimes_T(LinkSet_e_bike, NodeSet_e_bike, LinkSet_e_bike/Impedance_per_ImpedanceType/max_e_bike, ModelParameters/MaxBikeTime_Org2Dest);
+				container Calc_Traveltimes_congested_e_bike := Calc_Traveltimes_T(LinkSet_e_bike, NodeSet_e_bike, LinkSet_e_bike/Impedance_per_ImpedanceType/congested_e_bike, ModelParameters/MaxBikeTime_Org2Dest);
+				
+				unit<uint64> ExportTable_Traveltimes := Calc_Traveltimes_maxspeed_bike/Traveltimes
+				{
+					attribute<org > Org_rel := OrgZone_rel;
+					attribute<dest> Dst_rel := DstZone_rel;
+					
+					attribute<min_f> DefaultSpeed_imp     := Impedance;
+					attribute<min_f> E_Bike_imp           := rjoin(Org_Dest, Calc_Traveltimes_maxspeed_e_bike/Traveltimes/Org_Dest, Calc_Traveltimes_maxspeed_e_bike/Traveltimes/Impedance);
+					attribute<min_f> ActualBike_imp       := rjoin(Org_Dest, Calc_Traveltimes_congested_bike/Traveltimes/Org_Dest, Calc_Traveltimes_congested_bike/Traveltimes/Impedance);
+					attribute<min_f> ActualE_Bike_Adj_imp := rjoin(Org_Dest, Calc_Traveltimes_congested_e_bike/Traveltimes/Org_Dest, Calc_Traveltimes_congested_e_bike/Traveltimes/Impedance);
+
+					attribute<bool>  IsCorrect_ActualBike     := ActualBike_imp >= DefaultSpeed_imp;
+					
+					attribute<string> BodyLines_ActualBike :=
+						org/name[Org_rel] + ';' + 
+						dest/name[Dst_rel] + ';' +
+						string(DefaultSpeed_imp) + ';' +
+						string(E_Bike_imp) + ';' +
+						string(ActualBike_imp) + ';' +
+						string(ActualE_Bike_Adj_imp);
+					parameter<string> File_ActualBike := 'Org;Dst;Freeflow;Freeflow_ebike;ActualBike;ActualE_Bike_Adj\n'++AsList(BodyLines_ActualBike, '\n'), StorageName = "=impl/fileNamePrefix+'Traveltimes'+replace(impl/fileNameSuffix, '@@', 'Bike', '##',  string(ModelParameters/MaxBikeTime_Org2Dest)) +'.csv'", StorageType = "str";
+					
+					attribute<string> BodyLines_Freeflow :=
+						org/name[Org_rel] + ';' + 
+						dest/name[Dst_rel] + ';' +
+						string(DefaultSpeed_imp) + ';' + 
+						string(E_Bike_imp);
+					parameter<string> File_Freeflow := 'Org;Dst;Freeflow;Freeflow_ebike\n'++AsList(BodyLines_Freeflow, '\n'), StorageName = "=impl/fileNamePrefix+'Traveltimes'+replace(impl/fileNameSuffix, '@@', 'Bike', '##',  string(ModelParameters/MaxBikeTime_Org2Dest)) +'.csv'", StorageType = "str";
+					
+					parameter<string> File := =ModelParameters/UseActualBikeSpeeds ? 'File_ActualBike' : 'File_Freeflow';
+				}
+				
+				unit<uint32> ExportTable_Decayed := org
+				{
+					attribute<float32> nr_items_of_interest_decayed_Bike_MaxSpeed    := Calc_Traveltimes_maxspeed_bike/Decay/D_i;
+					attribute<float32> nr_items_of_interest_decayed_Ebike            := Calc_Traveltimes_maxspeed_e_bike/Decay/D_i;
+					attribute<float32> nr_items_of_interest_decayed_ActualBike       := Calc_Traveltimes_congested_bike/Decay/D_i;
+					attribute<float32> nr_items_of_interest_decayed_ActualE_Bike_adj := Calc_Traveltimes_congested_e_bike/Decay/D_i;
+					attribute<float32> Loss_ActualBike                               := nr_items_of_interest_decayed_Bike_MaxSpeed - nr_items_of_interest_decayed_ActualBike;
+					
+					attribute<string> BodyLines (org) := org/name + ';' + string(nr_items_of_interest_decayed_Bike_MaxSpeed) + ';'+string(nr_items_of_interest_decayed_Ebike) + ';'+string(nr_items_of_interest_decayed_ActualBike) + ';'+string(nr_items_of_interest_decayed_ActualE_Bike_adj);
+					parameter<string> File            := 'Org;freeflow;freeflow_ebike;ActualBike;ActualE_Bike_Adj\n'++AsList(BodyLines, '\n'), StorageName = "=impl/fileNamePrefix+''+Advanced/items_of_interest+'_decayed'+replace(impl/fileNameSuffix, '@@', 'Bike', '##',  string(ModelParameters/MaxBikeTime_Org2Dest))+'.csv'", StorageType = "str";
+				}
+			}
+			
+			container Car := Templates/PrivateTransport_Car_T(org, dest, true); 
+			
+			Template Calc_Traveltimes_T
+			{
+				unit<uint32>     LinkSet;
+				unit<uint32>     NodeSet;
+				attribute<s_f>   impedance   (LinkSet);
+				parameter<min_f> MaxTraveltime_min;
+				///
+				
+				unit<uint64> Traveltimes :=
+					// impedance_matrix_od64('bidirectional;startPoint(Node_rel):max_imp;endPoint(Node_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel'
+					// impedance_matrix_od64('bidirectional;startPoint(Node_rel):max_imp;endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+					impedance_matrix_od64('bidirectional;startPoint(Node_rel):max_imp;endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel,LinkSet'
+						, convert(impedance, min_f)
+						, LinkSet/F1
+						, LinkSet/F2
+						, NodeSet/OrgNode_rel
+						, NodeSet/DestNode_rel
+						, MaxTraveltime_min //cut impedance
+						, LinkSet/LengthKm
+					)
+				{
+					attribute<string> Org_Dest := string(OrgZone_rel)+'_'+string(DstZone_rel);
+					
+					unit<uint64> uq_dest := unique(dstZone_rel);
+				}
+				
+				unit<uint64> Decay := 
+					impedance_matrix_od64('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);interaction(v_i,w_j,dist_logit(alpha,beta,gamma)):D_i'
+						, convert(impedance, min_f)
+						, LinkSet/F1
+						, LinkSet/F2
+						, NodeSet/OrgNode_rel
+						, NodeSet/DestNode_rel
+						, MaxTraveltime_min
+						, 1f                                 // v_i
+						, dest/nr_items_of_interest[float32]        // w_j
+						, Advanced/Distance_Decay/car_a , Advanced/Distance_Decay/car_b , Advanced/Distance_Decay/car_c
+					);
+			}
+		}
+		
+		#include<PublicTransport.dms>
+	}
+}

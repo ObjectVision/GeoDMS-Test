@@ -1,0 +1,160 @@
+container NetworkModel 
+{ 
+	parameter<bool> IsBenchmarkOmgeving := FALSE; //TRUE als je wilt vergelijken met een benchmark. FALSE, gewoon voor normaal gebruik.
+	parameter<bool> UseFence            := value(replace_value(expand(., '%env:UseFence%'), 'env:UseFence', 'TRUE'), bool); 
+	
+	container MaakOntkoppeldeData
+	{
+		container OSM
+		{   
+			// parameter<String> Step1_Generate_roads_shp2fss                   := 'Ready', ExplicitSuppliers = "SourceData/Infrastructuur/OSM/Prepare_SourceData/Generate";
+			parameter<String> Step2_Generate_roads_Final_Network             := 'Ready', ExplicitSuppliers = "SourceData/Infrastructuur/OSM/NetworkPreperation/Network_with_extraverbindingen/Make_Final_Network";
+			
+			// parameter<String> Export_Networks_toShapefile                    := 'Ready', ExplicitSuppliers = "SourceData/Infrastructuur/OSM/OSM_Netwerken_Export/Generate";
+		}
+		
+		container TomTom
+		{
+			parameter<String> GetFilesName_network                           := 'Ready', ExplicitSuppliers = "SourceData/Infrastructuur/TomTom/impl/GetFileNames_Network/WriteFilesCSV";
+			parameter<String> GetFilesName_profiles                          := 'Ready', ExplicitSuppliers = "SourceData/Infrastructuur/TomTom/impl/GetFileNames_Speedprofiles/WriteFilesCSV";
+			parameter<String> Generate_FSS                                   := 'Ready', ExplicitSuppliers = "SourceData/Infrastructuur/TomTom/impl/Generate_FSS";
+		} 
+		
+		container GTFS_2_FSS
+		{
+			parameter<String> Generate_GTSF_FSS                              := 'Ready', ExplicitSuppliers = "/SourceData/Infrastructuur/GTFS/LoadFeeds/storefss";
+		}
+	}
+	#include<ModelParameters_base.dms>
+	container ModelParameters := =IsBenchmarkOmgeving ? 'ModelParameters_test' : 'ModelParameters_base';
+	#include<units.dms>
+	
+	container geometries : using = "units"
+	{
+		#include <ngr_layer.dms>
+		#include <ngr_layer_lea.dms>
+
+		unit<fpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "ngr_layer";
+		unit<fpoint> rdc      := range(rdc_base, point_xy(0f, 300000f), point_xy(280000f, 625000f)); //heel NL
+		unit<ipoint> rdc_mm   := gridset(rdc, point_xy(0.001,0.001), point_xy(0.0, 0.0), ipoint);
+		
+		unit<dpoint> wgs84_base       : SpatialReference = "EPSG:4326";
+		unit<fpoint> LambertEA_base   : SpatialReference = "EPSG:3035", DialogData = "ngr_layer_lea";
+		unit<fpoint> LambertEA        := range(LambertEA_base, point_xy(2500000f, 1300000f), point_xy(4900000f, 4300000f));
+		unit<fpoint> WebMercator_base : SpatialReference = "EPSG:3857";
+		
+		unit<uint32> selection_polygon : nrofrows = 1, Using = "units"
+		{
+			parameter<rdc> top_left     := point_xy(x_min - 5000[m], y_max + 5000[m], rdc); //XY
+			parameter<rdc> top_right    := point_xy(x_max + 5000[m], y_max + 5000[m], rdc);
+			parameter<rdc> bottom_left  := point_xy(x_min - 5000[m], y_min - 5000[m], rdc);
+			parameter<rdc> bottom_right := point_xy(x_max + 5000[m], y_min - 5000[m], rdc);
+			
+			unit<uint32> point_set : nrofrows = 5
+			{
+				attribute<rdc>  point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+				attribute<..>   sequence_rel := const(0, .);
+				attribute<.>    ordinal      := id(.);
+			}
+			
+			attribute<rdc> polygon (poly)      := points2sequence(point_set/point, point_set/sequence_rel, point_set/ordinal);
+		}
+		
+		unit<uint32> Gridsizes : nrofrows = 6
+		{
+			attribute<m>      size : [100, 500, 1000, 5000, 10000, 50000];
+			attribute<string> name := 'size_'+string(size)+'m';
+		}
+		
+		unit<spoint> rdc_100m   := perGridsize/size_100m/domain;
+		unit<spoint> rdc_500m   := perGridsize/size_500m/domain;
+		unit<spoint> rdc_1000m  := perGridsize/size_1000m/domain;
+		unit<spoint> rdc_5000m  := perGridsize/size_5000m/domain;
+		unit<spoint> rdc_10000m := perGridsize/size_10000m/domain;
+		unit<spoint> rdc_50000m := perGridsize/size_50000m/domain;
+	
+		parameter<m> x_min := 0[m];
+		parameter<m> x_max := 280000[m];
+		parameter<m> y_min := 300000[m];
+		parameter<m> y_max := 625000[m];
+		
+		// test study area
+		// parameter<m> x_min := 58986[m];
+		// parameter<m> x_max := 74522[m];
+		// parameter<m> y_min := 414166[m];
+		// parameter<m> y_max := 423385[m];
+		
+		container perGridsize :=
+			for_each_ne(
+				Gridsizes/name
+				, 'Create_GridDomain_T('+string(Gridsizes/size)+'[m])'
+			);
+		
+		Template Create_GridDomain_T
+		{
+			parameter<m> gridsize;
+			
+			parameter<int16> nr_cols := int16((x_max - x_min) / gridsize);
+			parameter<int16> nr_rows := int16((y_max - y_min) / gridsize);
+			
+			unit<spoint> domain :=
+				range(
+					 gridset(
+						 rdc
+						,point_xy(gridsize, -gridsize, rdc)
+						,point_xy(x_min, y_max, rdc)
+						,spoint
+					)
+					,point_xy(0s, 0s)
+					,point_xy(nr_cols, nr_rows)
+				)
+			,	DialogData = "rdc"
+			{
+				parameter<m>                    gridsize        := ../gridsize;
+				parameter<int16>                nr_cols         := ../nr_cols;
+				attribute<rdc>                  point           := mapping(., rdc) + point_xy(-0.5f * gridsize, 0.5f * gridsize, rdc);
+				attribute<rdc>                  geometry           := mapping(., rdc) + point_xy(-0.5f * gridsize, 0.5f * gridsize, rdc);
+				attribute<uint32>               id_rel          := value(uint32(pointrow(id(.))) * uint32(nr_cols) + uint32(pointcol(id(.))), id_key);
+				unit<uint32>  id_key := range(uint32, 0, #domain);
+				
+				attribute<rdc_100m>             rdc_100m_rel    := mapping(., rdc_100m);
+				attribute<rdc_500m>             rdc_500m_rel    := mapping(., rdc_500m);
+				
+				parameter<ha>                   NrHaPerCell     := convert(gridsize * gridsize, ha);
+				parameter<km2>                  NrKm2PerCell    := NrHaPerCell[km2];
+			}
+			
+			unit<uint32> points := select_with_org_rel(isDefined(domain/point))
+			{
+				attribute<rdc>                  geometry  := org_rel -> point;
+				attribute<float32>              x         := PointCol(geometry);
+				attribute<float32>              y         := PointRow(geometry);
+				attribute<domain>               grid_rel  := geometry[domain];	
+			}
+		}
+	}
+	
+	#include<Classifications.dms>
+	#include<SourceData.dms>
+	#include<NetworkSetup.dms>
+	#include<Templates.dms>
+	#include<PostAnalysis.dms>
+	#include<RegressieTest.dms>
+	
+	#include<ModelParameters_test.dms>
+	
+	#include<ExportSettings.dms>
+	container ConfigSettings
+	{
+		container Overridable
+		{
+			parameter<string> NetworkModel_Dir   := '%SourceDataDir%/RegressionTests/NetworkModel_regressietest';
+			// parameter<string> NetworkModel_Dir       := '%SourceDataDir%/NetworkModel';
+			parameter<string> NetworkModel_PrivDir   := '%SourceDataDir%/NetworkModel_PBL_priv';
+			parameter<String> BAG_DataDir        := '%sourceDataDir%';
+			parameter<String> BAG_DataDir_OVSRV6 := 'E:/SourceData';
+		}
+	}
+	
+	// unit<uint64> test := /NetworkSetup/ConfigurationPerRegio/Oost_Groningen/PublicTransport/At_07h00m00s/CreateODs/OD_traveltime_W_OV_W/OD;
+}

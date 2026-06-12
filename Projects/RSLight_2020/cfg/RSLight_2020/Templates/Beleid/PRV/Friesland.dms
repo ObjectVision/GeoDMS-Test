@@ -1,0 +1,72 @@
+container Friesland := PRVT('Friesland')
+{
+	// parameter<string> Prov: ['Friesland'];
+	
+	// attribute<bool> Provincie (domain_grid) := = 'ProvincieK/per_domain_grid == ProvincieK/V/'+Prov;
+	
+	// container Src := = '../Src/'+Prov;
+
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> ecologische_hoofdstructuur                             (domain_grid): = Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart3/ecologische_hoofdstructuur/Bestand/Multi/Result;
+			attribute<bool> reserveringszones_binnen_aaneengesloten_bebouwd_gebied (domain_grid): = Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart5/reserveringszones_binnen_aaneengesloten_bebouwd_gebied/Bestand/Multi/Result; //
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  ecologische_hoofdstructuur
+					, reserveringszones_binnen_aaneengesloten_bebouwd_gebied
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Natuur_buiten_de_EHS                                   (domain_grid): = Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart3/Natuur_buiten_de_EHS/Bestand/Multi/Result;
+			attribute<bool> reserveringszones_buiten_aaneengesloten_bebouwd_gebied (domain_grid): = Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart5/reserveringszones_buiten_aaneengesloten_bebouwd_gebied/Bestand/Multi/Result;
+			attribute<bool> havenkom_Harlingen                                     (domain_grid): = Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart6/havenkom_Harlingen/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Natuur_buiten_de_EHS
+					, reserveringszones_buiten_aaneengesloten_bebouwd_gebied
+					, havenkom_Harlingen
+				);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Weidevogelkansgebieden (domain_grid): = Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart7/Weidevogelkansgebieden/Bestand/Multi/Result;
+			attribute<bool> Weidevogelparels       (domain_grid): = Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart7/Weidevogelparels/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Weidevogelkansgebieden
+					, Weidevogelparels
+				);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute <bool> glastuinbouwlocaties_Noordwest_Fryslan (domain_grid): = Provincie && !Src/NL_IMRO_9921_PVR2014FryslanGC_GC01/Kaart4/glastuinbouwlocaties_Noordwest_Fryslan/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  glastuinbouwlocaties_Noordwest_Fryslan
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

@@ -1,0 +1,137 @@
+container Templates: Using    = "Units;Geography;Classifications" 
+{  
+	#include <Beleid.dms>
+	#include <ReadFiles.dms>
+	#include <ResultsT.dms>
+	// #include<OVBereikbaarheidT.dms>
+	
+	
+	Template Classify_9K_EurHA
+	{
+		//
+		attribute<Eur_ha> target (/domain_grid);
+		unit<spoint> domain_grid;
+		//
+		
+		attribute<Eur_ha> classifyJf (Target_9K)  := ClassifyJenksFisher(target, Target_9K);
+		
+		parameter<uint32> max        := max(classifyJf)[uint32];
+		parameter<uint32> max_strlen := strlen(string(max));
+		parameter<uint64> power      := (10d^(max_strlen[float64]-4d))[uint64];
+		
+		attribute<Eur_ha> classifyJf_rounded         (Target_9K) := ((classifyJf[uint64] / power) * power)[Eur_ha];
+		attribute<uint32> classifyJf_rounded_integer (Target_9K) := ((classifyJf[uint64] / power) * power)[uint32];
+		
+		unit<uint8> Target_9K : nrofrows = 9
+		{
+			parameter<string> dash      := ' - ';
+			parameter<string> comma     := ',';
+			attribute<string> label_src := id(.) == (#target_9K[uint8] - 1b) ? string(classifyJf_rounded_integer) + ' or more' : string(classifyJf_rounded_integer) + dash + string(classifyJf_rounded_integer)[id(.) + 1b];
+			attribute<string> label     := label_src, DialogType = "LabelText";
+			attribute<uint32> PenColor  := Brushcolor, DialogType = "PenColor";
+			attribute<uint32> BrushColor:
+			[
+				rgb(255,255,229),rgb(255,247,188),rgb(254,227,145),
+				rgb(254,196,79) ,rgb(254,153,41) ,rgb(236,112,20),
+				rgb(204,76,2)   ,rgb(153,52,4)   ,rgb(102,37,6)
+			], DialogType = "BrushColor";
+			
+			attribute<Eur_ha> ClassBreaks := classifyJf_rounded , DialogType = "Classification";
+		}
+	}
+	
+	Template Classify_9K_Eurm2
+	{
+		//
+		attribute<Eur_m2> Orgtarget (OrgDomain);
+		unit<uint32> OrgDomain;
+		//
+		
+		attribute<Eur_m2> target (/domain_grid) := Orgtarget[invert(OrgDomain/org_rel)];
+		
+		attribute<Eur_m2> classifyJf (Target_9K)  := ClassifyJenksFisher(target, Target_9K);
+		
+		parameter<uint32> max        := max(classifyJf)[uint32];
+		parameter<uint32> max_strlen := strlen(string(max));
+		parameter<uint64> power      := (10d^(max_strlen[float64]-4d))[uint64];
+		
+		attribute<Eur_m2> classifyJf_rounded         (Target_9K) := ((classifyJf[uint64] / power) * power)[Eur_m2];
+		attribute<uint32> classifyJf_rounded_integer (Target_9K) := ((classifyJf[uint64] / power) * power)[uint32];
+		
+		unit<uint8> Target_9K : nrofrows = 9
+		{
+			parameter<string> dash      := ' - ';
+			parameter<string> comma     := ',';
+			attribute<string> label_src := id(.) == (#target_9K[uint8] - 1b) ? string(classifyJf_rounded_integer) + ' or more' : string(classifyJf_rounded_integer) + dash + string(classifyJf_rounded_integer)[id(.) + 1b];
+			attribute<string> label     := label_src, DialogType = "LabelText";
+			attribute<uint32> PenColor  := Brushcolor, DialogType = "PenColor";
+			attribute<uint32> BrushColor:
+			[
+				rgb(255,255,229),rgb(255,247,188),rgb(254,227,145),
+				rgb(254,196,79) ,rgb(254,153,41) ,rgb(236,112,20),
+				rgb(204,76,2)   ,rgb(153,52,4)   ,rgb(102,37,6)
+			], DialogType = "BrushColor";
+			
+			attribute<Eur_m2> ClassBreaks := classifyJf_rounded , DialogType = "Classification";
+		}
+	}
+
+	Template TableComposer
+	{
+		//
+		unit<uint8> Rij;
+		unit<uint32> Kolom;
+		container Src;
+		parameter<string> FileName;
+		//
+		
+		attribute<string> Rij_name (Rij) := Rij/name;
+		
+		parameter<string> Fieldlist := AsList(Rij_name, ';');
+		parameter<string> FieldSeperator := ';';
+		
+		unit<uint32> Field := range(uint32,0, strcount(Fieldlist,';')+1)
+		{
+			attribute<string> Name := ReadArray(FieldList,.,string,0);
+		}
+		
+		parameter<string> NewLine := '\n';
+		parameter<string> Header := ' '+FieldSeperator+FieldList;
+		
+		attribute<string> Kolom_name (Kolom) := Kolom/name;
+		
+		attribute<string> Body (Kolom) := = 'Kolom_name'+' + '+Quote(FieldSeperator)+' + '+AsList(+'String(Src/'+Field/Name+')',' + '+Quote(FieldSeperator)+' +');
+		
+		parameter<string> Result:= Header+NewLine+AsList(Body, NewLine), StorageName = "=FileName", StorageType = "str";
+	}
+	
+	Template TableComposer_uint32
+	{
+		//
+		unit<uint32> Rij;
+		unit<uint32> Kolom;
+		container Src;
+		parameter<string> FileName;
+		//
+		
+		attribute<string> Rij_name (Rij) := Rij/name;
+		
+		parameter<string> Fieldlist := AsList(Rij_name, ';');
+		parameter<string> FieldSeperator := ';';
+		
+		unit<uint32> Field := range(uint32,0, strcount(Fieldlist,';')+1)
+		{
+			attribute<string> Name := ReadArray(FieldList,.,string,0);
+		}
+		
+		parameter<string> NewLine := '\n';
+		parameter<string> Header := ' '+FieldSeperator+FieldList;
+		
+		attribute<string> Kolom_name (Kolom) := Kolom/name;
+		
+		attribute<string> Body (Kolom) := = 'Kolom_name'+' + '+Quote(FieldSeperator)+' + '+AsList(+'String(Src/'+Field/Name+')',' + '+Quote(FieldSeperator)+' +');
+		
+		parameter<string> Result:= Header+NewLine+AsList(Body, NewLine), StorageName = "=FileName", StorageType = "str";
+	}
+
+}

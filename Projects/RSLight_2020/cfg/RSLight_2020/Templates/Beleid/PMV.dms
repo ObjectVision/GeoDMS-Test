@@ -1,0 +1,76 @@
+container PMV
+{
+	container Src := .../Src/PMV;
+	
+	unit<uint32> ProvincieK := ..../ProvincieK
+	{
+		// attribute<bool> HasRelevantPMVs: [false, false, true, true, false, false, false, true, true, true, true, false, true];
+		
+		attribute<bool>	HasRelevantPMVs := 
+			switch(
+				 case(label == 'Friesland', TRUE)  
+				,case(label == 'Drenthe', TRUE) 
+				,case(label == 'Noord-Holland', TRUE) 
+				,case(label == 'Zuid-Holland', TRUE) 
+				,case(label == 'Zeeland', TRUE) 
+				,case(label == 'Noord-Brabant', TRUE) 
+				,case(label == 'Flevoland', TRUE) 
+				,FALSE
+			);
+		
+		unit<uint32> PMV := select_with_org_rel(HasRelevantPMVs)
+		{
+			attribute<string> name := ProvincieK/name[org_rel];
+		}
+	}
+	
+	container Result := for_each_ne(ProvincieK/PMV/name, 'ResultT('+string(id(ProvincieK/PMV))+'[ProvincieK/PMV])');
+	
+	Template ResultT
+	{
+		//
+		parameter<ProvincieK/PMV> id;
+		//
+		
+		parameter<string> name := ProvincieK/PMV/name[id];
+		
+		container Woongebied_en_werk_bedrijventerrein
+		{
+			container Hard
+			{
+				attribute<bool> Totaal (domain_grid):= const(false, domain_grid);
+			}
+			
+			container Middel
+			{
+				attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+			}
+			
+			container Zacht
+			{
+				attribute<bool> Totaal (domain_grid) := = 'Src/'+name+'/Totaal';
+			}
+		}
+		
+		container Glastuinbouw
+		{
+			container Hard
+			{
+				attribute<bool> Totaal (domain_grid):= const(false, domain_grid);
+			}
+			
+			container Middel
+			{
+				attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+			}
+			
+			container Zacht
+			{
+				attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+			}
+		}
+		
+		container Woongebied := Woongebied_en_werk_bedrijventerrein;
+		container Bedrijventerrein := Woongebied_en_werk_bedrijventerrein;
+	}
+}

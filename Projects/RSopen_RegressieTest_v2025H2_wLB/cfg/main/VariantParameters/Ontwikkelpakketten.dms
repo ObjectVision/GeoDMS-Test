@@ -1,0 +1,154 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Dit is RSOpen, de open source versie van het model RuimteScanner. Het scipt wordt uitgegeven onder GNU-GPL licentie.
+//
+// RSOpen is ontwikkeld door PBL Planbureau voor de Leefomgeving, i.s.m Object Vision B.V. en VU Vrije Universiteit Amsterdam.
+// Opdrachtgever/ontwikkelaar PBL: Bart Rijken
+// Contactpersoon/ontwikkelaar Object Vision B.V.: Jip Claassens (jclaassens@objectvision.nl)
+// Contacpersoon PBL: Bas van Bemmel (Bas.vanBemmel@pbl.nl)
+//
+// Deze file specificeert de opties die virtuele projectontwikkelaars hebben t.a.v. de stedenbouwkiundige inrichting van gridcellen (AlocDomain) nieuw woongebied 
+// Bron: expert judgement PBL
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+container Ontwikkelpakketten
+{
+	#include<Default.dms>      //uit WLO
+	#include<Intensiveren.dms> //was default en dus OO in RVNL
+	
+	unit<UInt8> Transformeren := Intensiveren //fka GR
+	{
+		parameter<String> Variant_name: ['Transformeren'];
+		
+		container InUitgeefbaarExPandfootprint := T(Variant_name, Intensiveren/InUitgeefbaarExPandfootprint, .);
+		container InOpenbaar                   := T(Variant_name, Intensiveren/InOpenbaar, .);
+		container InNettoBuurt                 := InNettoBuurt_T(., InUitgeefbaarExPandfootprint, InOpenbaar);
+		
+		attribute<Float32> Weging_NatNiv := union_data(., 1.000,1.000,0.750,0.750,    0.500,0.500,0.250,0.250,0.000,0.000,    0.500,0.500,0.350,0.350,    0.250,0.250,0.125)[float32];
+	}
+	
+	Template T
+	{
+		
+		parameter<String> Variant_name;
+		container Src;
+		unit<UInt8> SrcUnit;
+		
+		
+		attribute<Float32> Verhard      (SrcUnit) := = 'min_elem(Src/Verhard * VariantK/VerhardingTovDefault[VariantParameters/VariantK/V/'+Variant_name+'], 1f)';
+		attribute<Float32> GroenTotaal  (SrcUnit) := 1f - Verhard;
+		attribute<Float32> GroenTotaal0 (SrcUnit) := add(Src/Boom, Src/Gras, Src/Struik);
+		attribute<Float32> Gras         (SrcUnit) := MakeDefined(Src/Gras   / GroenTotaal0 * GroenTotaal, 0f);
+		attribute<Float32> Struik       (SrcUnit) := MakeDefined(Src/Struik / GroenTotaal0 * GroenTotaal, 0f);
+		attribute<Float32> Boom         (SrcUnit) := MakeDefined(Src/Boom   / GroenTotaal0 * GroenTotaal, 0f);
+	}
+	
+	Template InNettoBuurt_T
+	{
+		//
+		unit<UInt8> SrcUnit;
+		container InUitgeefbaarExPandFootprint;
+		container InOpenbaar;
+		//
+		
+		attribute<Terreinoppervlak> TerreinoppervlakteNettoBuurt (SrcUnit) := SrcUnit/TerreinoppervlakteNettoBuurt
+		{
+			attribute<Terreinoppervlak> Uitgeefbaar (SrcUnit) := . * SrcUnit/FractieUitgeefbaar
+			{
+				attribute<Terreinoppervlak> GebouwVoetafdruk (SrcUnit) := .. * SrcUnit/GSINettoBuurt; // is per definitie de fractie voetafdruk van terreinopp nettobuurt; mag niet hoger zijn dan FractieUitgeefbaar
+				attribute<Terreinoppervlak> Buitenruimte     (SrcUnit) := . - GebouwVoetafdruk
+				{
+					attribute<Terreinoppervlak> Verhard (SrcUnit) := . * InUitgeefbaarExPandFootprint/Verhard;
+					attribute<Terreinoppervlak> Groen   (SrcUnit) := . * InUitgeefbaarExPandFootprint/GroenTotaal
+					{
+						attribute<Terreinoppervlak> Gras   (SrcUnit) := .. * InUitgeefbaarExPandFootprint/Gras;
+						attribute<Terreinoppervlak> Boom   (SrcUnit) := .. * InUitgeefbaarExPandFootprint/Boom;
+						attribute<Terreinoppervlak> Struik (SrcUnit) := .. * InUitgeefbaarExPandFootprint/Struik;
+					}
+				}
+			}
+			
+			attribute<Terreinoppervlak> Openbaar (SrcUnit):= . * (1f - SrcUnit/FractieUitgeefbaar)
+			{
+				attribute<Terreinoppervlak> Verhard (SrcUnit) := . * InOpenbaar/Verhard;
+				attribute<Terreinoppervlak> Groen   (SrcUnit) := . * InOpenbaar/GroenTotaal
+				{
+					attribute<Terreinoppervlak> Gras   (SrcUnit) := .. * InOpenbaar/Gras;
+					attribute<Terreinoppervlak> Boom   (SrcUnit) := .. * InOpenbaar/Boom;
+					attribute<Terreinoppervlak> Struik (SrcUnit) := .. * InOpenbaar/Struik;
+				}
+			}
+		}
+		
+		attribute<Terreinoppervlak> Verhard (SrcUnit) := add(
+			TerreinoppervlakteNettoBuurt/Uitgeefbaar/GebouwVoetafdruk,
+			TerreinoppervlakteNettoBuurt/Uitgeefbaar/Buitenruimte/Verhard,
+			TerreinoppervlakteNettoBuurt/Openbaar/Verhard
+		);
+		
+		container FractiesGroen // tov TerreinoppervlakteNettoBuurt
+		{
+			attribute<Float32> Gras   (SrcUnit) := div(add(TerreinoppervlakteNettoBuurt/Uitgeefbaar/Buitenruimte/Groen/Gras,   TerreinoppervlakteNettoBuurt/Openbaar/Groen/Gras),   TerreinoppervlakteNettoBuurt);
+			attribute<Float32> Boom   (SrcUnit) := div(add(TerreinoppervlakteNettoBuurt/Uitgeefbaar/Buitenruimte/Groen/Boom,   TerreinoppervlakteNettoBuurt/Openbaar/Groen/Boom),   TerreinoppervlakteNettoBuurt);
+			attribute<Float32> Struik (SrcUnit) := div(add(TerreinoppervlakteNettoBuurt/Uitgeefbaar/Buitenruimte/Groen/Struik, TerreinoppervlakteNettoBuurt/Openbaar/Groen/Struik), TerreinoppervlakteNettoBuurt);
+			
+			attribute<Float32> Totaal (SrcUnit) := add(Gras, Boom, Struik);
+		}
+	}
+	
+	Template perWP2xVSSH_T
+	{
+		parameter<String> name;
+		unit<UInt8> OP;
+		//
+		
+		parameter<Vastgoed/WP2xVSSH> WP2xVSSH_rel := rlookup(lowercase(name), lowercase(Vastgoed/WP2xVSSH/name));
+		
+		unit<UInt8> OP_sub := select_with_org_rel(WP2xVSSH_rel == OP/WP2xVSSH_rel)
+		{
+			attribute<String>        name            := OP/name[org_rel];
+			attribute<String>        Label           := name, DialogType = "LabelText";
+			attribute<Bool>          IsHoogbouw      := OP/IsHoogbouw[org_rel];
+			attribute<Woning_ha>     Dichtheid       := OP/Dichtheid[org_rel];
+			attribute<m2BVO_Woning>  BVOPerWoning    := OP/BVOPerWoning[org_rel];
+			attribute<Vastgoed/WP2>  WP2_rel         := const(Vastgoed/WP2xVSSH/first_rel[WP2xVSSH_rel], .);
+			attribute<String>        WP2_name        := Vastgoed/WP2/name[WP2_rel];
+			attribute<String>        WP2xVSSH_name   := OP/WP2xVSSH_name[org_rel];
+			
+			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		}
+		
+		unit<UInt8> NoData: NrOfRows = 1
+		{
+			attribute<String> name: ['NoData'];
+			attribute<String> Label := name, DialogType = "LabelText";
+		}
+		
+		unit<UInt8> OP_sub_noData := union_unit_uint8(NoData, OP_sub)
+		{
+			attribute<String>   name         := union_data(., NoData/name, OP_sub/name);
+			attribute<String>   Label        := union_data(., NoData/Label, OP_sub/Label), DialogType = "LabelText";
+			attribute<OP_sub>   org_rel      := rlookup(lowercase(name), lowercase(OP_sub/name));
+		}
+	}
+	
+	Template perWP2_T
+	{
+		parameter<String> name;
+		unit<UInt8> OP;
+		//
+		
+		parameter<Vastgoed/WP2> WP2_rel := rlookup(lowercase(name), lowercase(Vastgoed/WP2/name));
+		
+		unit<UInt8> OP_sub := select_with_org_rel(WP2_rel == OP/WP2_rel)
+		{
+			attribute<String>    name := OP/name[org_rel];
+			attribute<String>    Label := name, DialogType = "LabelText";
+			attribute<Bool>      IsHoogbouw := OP/IsHoogbouw[org_rel];
+			attribute<Woning_ha> Dichtheid := OP/Dichtheid[org_rel];
+			
+			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		}
+	}
+}

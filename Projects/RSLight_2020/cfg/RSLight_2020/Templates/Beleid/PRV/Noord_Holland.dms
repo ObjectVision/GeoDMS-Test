@@ -1,0 +1,68 @@
+container Noord_Holland := PRVT('Noord_Holland')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> ecologische_hoofdstructuur (domain_grid) := Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/Ecologie/ecologische_hoofdstructuur/Bestand/Multi/Result;
+			attribute<bool> Regionale_waterkering      (domain_grid) := Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/Blauwe_ruimte/Regionale_waterkering/Bestand/Multi/Result;
+			attribute<bool> Aardkundig_monument        (domain_grid) := Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/Aardkundige_waarden/Aardkundig_monument/Bestand/Multi/Result;
+			attribute<bool> Schiphol_contouren_20ke    (domain_grid) := Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/Schiphol_contouren_20ke/Schiphol_contouren_20ke/Bestand/Multi/Result
+																		&& !IsDefined(RegioIndelingen/Bevolkingskern_2011/per_Srcdomain_grid)
+																		;
+
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  ecologische_hoofdstructuur
+					, Regionale_waterkering
+					, Aardkundig_monument
+					, Schiphol_contouren_20ke
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Beemster_Grachtengordel_Amsterdam_Stelling_van_Amsterdam_NHW (domain_grid) := Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/UNESCO/Beemster_Grachtengordel_Amsterdam_Stelling_van_Amsterdam_NHW/Bestand/Multi/Result;
+			attribute<bool> bufferzone                                                   (domain_grid) := Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/Bufferzones/bufferzone/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Beemster_Grachtengordel_Amsterdam_Stelling_van_Amsterdam_NHW
+					, bufferzone
+				);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Weidevogelleefgebied (domain_grid) := Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/Ecologie/Weidevogelleefgebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Weidevogelleefgebied
+				);
+		}
+	}
+		
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Glastuinbouwconcentratiegebied (domain_grid) := provincie && !Src/NL_IMRO_9927_PRVPNHCONSOLID_0103/Landbouwclusters/Glastuinbouwconcentratiegebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Glastuinbouwconcentratiegebied
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

@@ -1,0 +1,134 @@
+container Drenthe : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=drenthe&striVersion=STRI2008"
+{
+	container NL_IMRO_9922_povDrenthe1610_VA01 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9922.povDrenthe1610-VA01"
+	{
+		//Provinciale Omgevingsverordening Drenthe (versie oktober 2016)
+		//planstatus: geconsolideerd 2016-10-14
+		//identificatie: NL.IMRO.9922.povDrenthe1610-VA01
+		//type plan: provinciale verordening
+		//naam overheid: provincie Drenthe
+		//ondergrond: basisregistratie topografie (BRT) (2015-02-23)
+		//IMRO-versie: IMRO2012
+
+		// Kaarten (22)
+		//    Plangebied
+		//    A. Stiltegebieden, Infra en (grond)water
+		//    B. Gebiedsnormen wateroverlast
+		//    C1. Bodemenergie restrictiegebieden zone 1 (0-25 m -mv)
+		//    C2. Bodemenergie restrictiegebieden zone 2 (25-500 m –mv)
+		//    C3. Bodemenergie diepte formatie van Breda
+		//    D1. Bestaand Stedelijk Gebied
+		//    D2. Nationaal Landschap Drentsche Aa
+		//  x D3. Ecologische Hoofdstructuur
+		//    D4. Kernkwalititeit Archeologie
+		//    D5. Kernkwaliteit Aardkundige waarden
+		//    D6. Kernkwaliteit Cultuurhistorie
+		//    D7. Kernkwaliteit Landschap
+		//  x D8. Kernkwaliteit Rust
+		//    D9. Kernkwaliteit Natuur
+		//  x D10. Beschermingszone Radioastronomie
+		//    D11a. Kaart bepalen bouwvlak
+		//  x D11b. Landbouwgebied + 
+		//    D12. Milieu- en externe veiligheidsaspecten
+		//    D13. Zoekgebied grootschalige windenergie
+		//    D14. Beekdal en bergingsgebied
+		//    Bodemsanering en Ontgrondingen
+
+		parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/prv_2017/dr/NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P.shp';
+		parameter<string> OGRQuery: = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\dr\NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitsubvlak_P.gml -where ""besluitgebied=""NL.IMRO.9922.povDrenthe1610-VA01"" -skipfailures -overwrite';
+
+		container KaartD3 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/dr/Provinciale Omgevingsverordening Drenthe.mht"
+		{
+			//D3. Ecologische Hoofdstructuur Lagen:
+			//	x EHS
+			//	  Ecologische verbinding functioneert
+			//	  Ecologische verbinding nog niet ontwikkeld
+			//	  Ecologische verbinding globale aanduiding
+
+			container EHS : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P WHERE naam =''EHS'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9922.povDrenthe1610-VA01/pt_NL.IMRO.9922.povDrenthe1610-VA01.xml#NL.IMRO.PT.s1691'
+				,'=OGRQuery'
+			);
+		}
+
+		container KaartD8 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/dr/Provinciale Omgevingsverordening Drenthe.mht"
+		{
+
+			//D8. Kernkwaliteit Rust. Lagen:
+			//	  Nationale parken
+			//	x Natura2000
+			//	x Stiltegebied
+
+
+			//Zit in principe in het Europese bestand --> check overlapt
+			container Natura2000 : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P WHERE naam =''Natura2000'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9922.povDrenthe1610-VA01/pt_NL.IMRO.9922.povDrenthe1610-VA01.xml#NL.IMRO.PT.s1675'
+				,'=OGRQuery'
+			);
+
+			container Stiltegebied : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P WHERE naam =''Stiltegebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9922.povDrenthe1610-VA01/pt_NL.IMRO.9922.povDrenthe1610-VA01.xml#NL.IMRO.PT.s1804'
+				,'=OGRQuery'
+			);
+		}
+
+		container KaartD10 : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/dr/Provinciale Omgevingsverordening Drenthe.mht"
+		{
+			//D10. Beschermingszone Radioastronomie. Lagen:
+			//	x Zonering radioastronomie zone I
+			//	x Zonering radioastronomie zone II
+
+				//In Zone I, de 'storingsvrije zone', wordt, buiten de verharde wegen Eursinge-Lhee en Hooghalen-Amen, slechts bij uitzondering gemotoriseerd verkeer en activiteiten die 
+				//elektromagnetische straling opwekken toegelaten. Noodzakelijk landbouwverkeer wordt daartoe gerekend. 
+
+				//Zone II geldt als 'overlegzone'. In principe geldt daar eveneens het uitgangspunt dat elektromagnetische straling die de waarneming middels de radiotelescopen verstoord, 
+				//moet worden voorkomen. Er kan natuurlijk onduidelijkheid bestaan over de vraag wanneer van dergelijke verstoring sprake is. Wij verwachten daarom dat wanneer een ruimtelijk plan 
+				//binnen deze zone voorziet in nieuwe bebouwings- of gebruiksmogelijkheden, er in een vroeg stadium overleg wordt gepleegd met het Nederlands Instituut voor Radio Astronomie (ASTRON) 
+				//om hierover helderheid te verkrijgen en te bezien op welke wijze de ontwikkeling kan worden ingepast.
+				
+				//Reink Kuiper december 2017 ZONE I RESTRICTIEF VOOR WONEN EN WERKEN
+				//Reink Kuiper december 2017 ZONE II ENIGSZINS RESTRICTIEF VOOR WONEN EN WERKEN
+
+			container Zonering_radioastronomie_zone_I : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P WHERE naam =''Zonering radioastronomie zone I'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9922.povDrenthe1610-VA01/pt_NL.IMRO.9922.povDrenthe1610-VA01.xml#NL.IMRO.PT.s1689'
+				,'=OGRQuery'
+			);
+
+			container Zonering_radioastronomie_zone_II : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P WHERE naam =''Zonering radioastronomie zone II'''
+				,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9922.povDrenthe1610-VA01/pt_NL.IMRO.9922.povDrenthe1610-VA01.xml#NL.IMRO.PT.s1689'
+				,'=OGRQuery'
+			);
+		}
+
+		container KaartD11b : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/dr/Provinciale Omgevingsverordening Drenthe.mht"
+		{
+			//D11b. Landbouwgebied +
+			//	x Glastuinbouw
+			//	  Landbouwgebied plus
+
+			container Glastuinbouw : = VergriddingT
+			(
+				'=Bestandsloc'
+				,'SELECT * FROM NL_IMRO_9922_povDrenthe1610_VA01_Besluitsubvlak_P WHERE naam =''Glastuinbouw'''
+				//,'http:\//www.ruimtelijkeplannen.nl/web-roo/transform/NL.IMRO.9922.povDrenthe1610-VA01/pt_NL.IMRO.9922.povDrenthe1610-VA01.xml#NL.IMRO.PT.s1456'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/dr/povDrenthe1610-VA01_322_overige_agrarische_activiteiten.jpg'
+				,'=OGRQuery'
+			);
+		}
+	}
+}

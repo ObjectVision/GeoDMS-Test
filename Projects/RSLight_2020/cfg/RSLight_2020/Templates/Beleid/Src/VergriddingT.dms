@@ -1,0 +1,28 @@
+template VergriddingT
+{
+	// template parameters
+	parameter<String> NameFile;
+	parameter<String> SqlStatement;
+	parameter<String> MetadataFile := '';
+	parameter<String> SourceInfo :=  '';
+	// end case parameters
+
+	container Bestand:
+		StorageName     = "=NameFile"
+	,	StorageType     = "gdal.vect"
+	,	StorageReadOnly = "True"
+	, 	DialogType      = "Map"
+	,	Source          = "=SourceInfo"
+	,	url             = "=MetadataFile"
+	, SyncMode          = "Attr"
+	{
+		unit<uint32> Multi
+		//comment out if you want to see all the layers
+		:	SqlString  = "=SqlStatement"
+		{
+			attribute<rdc_meter> Geometry (poly);
+			attribute<uint32>    Result_geom (domain_grid) := poly2grid(Geometry, domain_grid);
+			attribute<bool>      Result (domain_grid)      := Result_geom >= 0;
+		}
+	}
+}

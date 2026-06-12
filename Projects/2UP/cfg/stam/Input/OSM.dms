@@ -1,0 +1,46 @@
+////////////////////////////////////////////////////////////////////////////////////////////
+//            (C) Configuration Towards an Urban Preview - 2UP 2021                       //
+//         Netherlands Environmental Assessment Agency http://www.pbl.nl/en/contact       //
+//  This work is licensed under a Creative Commons Attribution 4.0 International License  //
+//              CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/              //
+////////////////////////////////////////////////////////////////////////////////////////////
+
+// Author:   Bas van Bemmel
+// Function: Source for naming of urb-areas
+
+container OSM
+{
+	container central_america_latest
+	{
+		unit<uint32> src
+			:  StorageName     = "%MondiaalDataDir%/OSM/central_america_latest.osm.pbf"
+			//,	SQLString      = "SELECT * FROM allCountries_with_header WHERE country_code   ='NL'"
+			,  StorageType     = "gdal.vect"
+			,  url             = "http://download.geonames.org/export/dump/"
+			,  StorageReadOnly = "True"
+			,  Source          = "Geonames website http://download.geonames.org/export/dump/ 15 november 2020"
+			, SyncMode         = "None"
+			, DialogType       = "Map"
+			, DialogData       = "Geometry"
+		{
+			attribute<float64> longitude_float64 :=longitude[float64];
+			attribute<float64> latitude_float64  :=latitude[float64];
+			attribute<string> latitude;
+			attribute<string> longitude;
+
+
+			attribute<Input/LatLong> Geometry   := point_yx(latitude_float64, longitude_float64, Input/LatLong)
+			{
+				parameter<uint32>  SymbolColor     := rgb(255,0,0),DialogType = "SymbolColor";
+				parameter<int16>   SymbolIndex     := 169[int16],  DialogType = "SymbolIndex";
+				parameter<float32> SymbolWorldSize := 0.02f,       DialogType = "SymbolWorldSize";
+			}
+
+			attribute<Input/gtopo>   gtopo_rel               := Geometry[Input/gtopo];
+			//attribute<data>          data_rel  (Input/gtopo) := modus(id(data), gtopo_rel);
+
+		}
+
+
+	}
+}

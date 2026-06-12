@@ -1,0 +1,305 @@
+container K_Varianten
+{
+	unit<uint32> UrbaanBulldozerCombi_src := 
+		combine(
+			Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen
+			,BBGK
+			,OVBereikbaarheidK
+			,GGK_Varianten/Urbaan/BinnenZachtePlancapaciteitWonen
+			,EigendomK
+		)
+	{
+		attribute<string> PlancapaciteitK_name   := Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen/name[first_rel];
+		attribute<string> BBGK_name              := BBGK/name[second_rel];
+		attribute<string> OVBereikbaarheidK_name := OVBereikbaarheidK/name[third_rel];
+		attribute<string> GGK_name               := GGK_Varianten/Urbaan/BinnenZachtePlancapaciteitWonen/name[fourth_rel];
+		attribute<string> EigendomK_name         := EigendomK/name[fifth_rel];
+		attribute<string> name                   := PlancapaciteitK_name+'_'+BBGK_name+'_'+OVBereikbaarheidK_name+'_'+GGK_name+'_'+EigendomK_name;
+		
+		attribute<string> RefSrc :=
+		'('+
+			Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen/RefSrc[first_rel]
+			+' && '+ BBGK/RefSrc[second_rel]
+			+' && '+OVBereikbaarheidK/RefSrc[third_rel]
+			+' && '+GGK_Varianten/Urbaan/BinnenZachtePlancapaciteitWonen/RefSrc[fourth_rel]
+			+' && '+EigendomK/RefSrc[fifth_rel]
+			+
+		')';
+	}
+	
+	unit<uint32> UrbaanBulldozerCombi := 
+		combine(
+			Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen
+			,BBGK
+			,OVBereikbaarheidK
+			,GGK_Varianten/Urbaan/BinnenZachtePlancapaciteitWonen
+			,EigendomK
+		)
+	{
+		attribute<string> PlancapaciteitK_name   := Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen/name[first_rel];
+		attribute<string> BBGK_name              := BBGK/name[second_rel];
+		attribute<string> OVBereikbaarheidK_name := OVBereikbaarheidK/name[third_rel];
+		attribute<string> GGK_name               := GGK_Varianten/Urbaan/BinnenZachtePlancapaciteitWonen/name[fourth_rel];
+		attribute<string> EigendomK_name         := EigendomK/name[fifth_rel];
+		attribute<string> name                   := PlancapaciteitK_name+'_'+BBGK_name+'_'+OVBereikbaarheidK_name+'_'+GGK_name+'_'+EigendomK_name;
+		attribute<string> RefSrc :=
+		'('+
+			Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen/RefSrc[first_rel]
+			+' && '+ BBGK/RefSrc[second_rel]
+			+' && '+OVBereikbaarheidK/RefSrc[third_rel]
+			+' && '+GGK_Varianten/Urbaan/BinnenZachtePlancapaciteitWonen/RefSrc[fourth_rel]
+			+' && '+EigendomK/RefSrc[fifth_rel]
+			+
+		')';
+	}
+	
+	unit<uint32> UrbaanBulldozer :=
+		union_unit(
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen,
+			UrbaanBulldozerCombi
+		)
+	{
+		attribute<string> name := union_data(.,
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/name,
+			UrbaanBulldozerCombi/name
+		);
+			
+		attribute<string> RefSrc := union_data(.,
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/RefSrc,
+			UrbaanBulldozerCombi/RefSrc
+		);
+	}
+	
+	container UrbaanCombi
+	{
+		container BinnenZachtePlancapaciteitWonen := T('BinnenZachtePlancapaciteitWonen');
+		container BuitenPlancapaciteitWonen := T('BuitenPlancapaciteitWonen');
+		
+		Template T
+		{
+			parameter<string> SrcRef;
+			
+			unit<uint8> SrcUnit := = 'GGK_Varianten/Urbaan/'+SrcRef;
+			
+			unit<uint32> CombiUnit := combine(BBGK, OVBereikbaarheidK, EigendomK, SrcUnit)
+			{
+				attribute<string> BBGK_name := BBGK/name[first_rel];
+				attribute<string> OVBereikbaarheidK_name := OVBereikbaarheidK/name[second_rel];
+				attribute<string> EigendomK_name := EigendomK/name[third_rel];
+				attribute<string> SrcUnit_name := SrcUnit/name[fourth_rel];
+				attribute<string> name := SrcRef+'_'+BBGK_name+'_'+OVBereikbaarheidK_name+'_'+EigendomK_name+'_'+SrcUnit_name;
+				
+				attribute<string> RefSrc :=
+				'('+
+					SrcRef+' && '+
+					BBGK/RefSrc[first_rel]+' && '+
+					OVBereikbaarheidK/RefSrc[second_rel]+' && '+
+					EigendomK/RefSrc[third_rel]+' && '+
+					SrcUnit/RefSrc[fourth_rel]+
+				')';
+			}
+		}
+	}
+	
+	unit<uint32> Urbaan :=
+		union_unit(
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen,
+			UrbaanCombi/BinnenZachtePlancapaciteitWonen/CombiUnit,
+			UrbaanCombi/BuitenPlancapaciteitWonen/CombiUnit
+		)
+	{
+		attribute<string> name := union_data(.,
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/name,
+			UrbaanCombi/BinnenZachtePlancapaciteitWonen/CombiUnit/name,
+			UrbaanCombi/BuitenPlancapaciteitWonen/CombiUnit/name
+		);
+			
+		attribute<string> RefSrc := union_data(.,
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/RefSrc,
+			UrbaanCombi/BinnenZachtePlancapaciteitWonen/CombiUnit/RefSrc,
+			UrbaanCombi/BuitenPlancapaciteitWonen/CombiUnit/RefSrc
+		);
+	}
+	
+	unit<uint32> AccentUrbaanCombi1 :=
+		combine(
+			OVBereikbaarheidK,
+			GGK_Varianten/AccentUrbaan
+		)
+	{
+		attribute<string> OVBereikbaarheidK_name := OVBereikbaarheidK/name[first_rel];
+		attribute<string> GGK_name := GGK_Varianten/AccentUrbaan/name[second_rel];
+		attribute<string> name := OVBereikbaarheidK_name+'_'+GGK_name;
+		
+		attribute<string> RefSrc :=
+			'('+
+				OVBereikbaarheidK/RefSrc[first_rel]+' && '+
+				GGK_Varianten/AccentUrbaan/RefSrc[second_rel]+
+			')';
+	}
+	
+	unit<uint32> AccentUrbaanUnion1 :=
+		union_unit(
+			AccentUrbaanCombi1,
+			OVBereikbaarheidK
+		)
+	{
+		attribute<string> name := union_data(.,
+			AccentUrbaanCombi1/name,
+			OVBereikbaarheidK/name
+		);
+		
+		attribute<string> RefSrc := union_data(.,
+			AccentUrbaanCombi1/RefSrc,
+			OVBereikbaarheidK/RefSrc
+		);
+	}
+	
+	unit<uint32> AccentUrbaanCombi2 :=
+		combine(
+			BBGK,
+			Plancapaciteit_Varianten/BuitenHardePlancapaciteitWonen,
+			AccentUrbaanUnion1
+		)
+	{
+		attribute<string> BBGK_name := BBGK/name[first_rel];
+		attribute<string> PlancapaciteitK_name := Plancapaciteit_Varianten/BuitenHardePlancapaciteitWonen/name[second_rel];
+		attribute<string> AccentUrbaanUnion1_name := AccentUrbaanUnion1/name[third_rel];
+		attribute<string> name := BBGK_name+'_'+PlancapaciteitK_name+'_'+AccentUrbaanUnion1_name;
+		
+		attribute<string> RefSrc :=
+		'('+
+			BBGK/RefSrc[first_rel]+' && '+
+			Plancapaciteit_Varianten/BuitenHardePlancapaciteitWonen/RefSrc[second_rel]+' && '+
+			AccentUrbaanUnion1/RefSrc[third_rel]+
+		')';
+	}
+	
+	unit<uint32> AccentUrbaan :=
+		union_unit(
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen,
+			AccentUrbaanCombi2
+		)
+	{
+		attribute<string> name :=
+			union_data(.,
+				Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/name,
+				AccentUrbaanCombi2/name
+			);
+			
+		attribute<string> RefSrc :=
+			union_data(.,
+				Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/RefSrc,
+				AccentUrbaanCombi2/RefSrc
+			);
+	}
+	
+	unit<uint32> AccentSuburbaanCombi1 :=
+		combine(
+			OVBereikbaarheidK,
+			GGK_Varianten/AccentSuburbaan
+		)
+	{
+		attribute<string> OVBereikbaarheidK_name := OVBereikbaarheidK/name[first_rel];
+		attribute<string> GGK_name := GGK_Varianten/AccentSuburbaan/name[second_rel];
+		attribute<string> name := OVBereikbaarheidK_name+'_'+GGK_name;
+		
+		attribute<string> RefSrc :=
+			'('+
+				OVBereikbaarheidK/RefSrc[first_rel]+' && '+
+				GGK_Varianten/AccentSuburbaan/RefSrc[second_rel]+
+			')';
+	}
+	
+	unit<uint32> AccentSuburbaanUnion1 :=
+		union_unit(
+			AccentSuburbaanCombi1,
+			OVBereikbaarheidK
+		)
+	{
+		attribute<string> name := union_data(.,
+			AccentSuburbaanCombi1/name,
+			OVBereikbaarheidK/name
+		);
+		
+		attribute<string> RefSrc := union_data(.,
+			AccentSuburbaanCombi1/RefSrc,
+			OVBereikbaarheidK/RefSrc
+		);
+	}
+	
+	unit<uint32> AccentSuburbaanCombi2 :=
+		combine(
+			Plancapaciteit_Varianten/BuitenHardePlancapaciteitWonen,
+			AccentSuburbaanUnion1
+		)
+	{
+		attribute<string> PlancapaciteitK_name := Plancapaciteit_Varianten/BuitenHardePlancapaciteitWonen/name[first_rel];
+		attribute<string> AccentSuburbaanUnion1_name := AccentSuburbaanUnion1/name[second_rel];
+		attribute<string> name := PlancapaciteitK_name+'_'+AccentSuburbaanUnion1_name;
+		
+		attribute<string> RefSrc :=
+			'('+
+				Plancapaciteit_Varianten/BuitenHardePlancapaciteitWonen/RefSrc[first_rel]+' && '+
+				AccentSuburbaanUnion1/RefSrc[second_rel]+
+			')';
+	}
+	
+	unit<uint32> AccentSuburbaan :=
+		union_unit(
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen,
+			AccentSuburbaanCombi2
+		)
+	{
+		attribute<string> name :=
+			union_data(.,
+				Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/name,
+				AccentSuburbaanCombi2/name
+			);
+			
+		attribute<string> RefSrc :=
+			union_data(.,
+				Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/RefSrc,
+				AccentSuburbaanCombi2/RefSrc
+			);
+	}
+	
+	unit<uint32> SuburbaanCombi :=
+		combine(
+			Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen,
+			EigendomK,
+			GGK_Varianten/Suburbaan
+		)
+	{
+		attribute<string> PlancapaciteitK_name := Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen/name[first_rel];
+		attribute<string> EigendomK_name := EigendomK/name[second_rel];
+		attribute<string> GGK_name := GGK_Varianten/Suburbaan/name[third_rel];
+		attribute<string> name := PlancapaciteitK_name+'_'+EigendomK_name+'_'+GGK_name;
+		
+		attribute<string> RefSrc :=
+			'('+
+				Plancapaciteit_Varianten/BinnenZachtePlancapaciteitWonenOfBuitenPlancapaciteitWonen/RefSrc[first_rel]+' && '+
+				EigendomK/name[second_rel]+' && '+
+				GGK_Varianten/Suburbaan/RefSrc[third_rel]+
+			')';
+	}
+	
+	unit<uint32> Suburbaan :=
+		union_unit(
+			Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen,
+			SuburbaanCombi
+		)
+	{
+		attribute<string> name :=
+			union_data(., 
+				Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/name,
+				SuburbaanCombi/name
+			);
+			
+		attribute<string> RefSrc :=
+			union_data(., 
+				Plancapaciteit_Varianten/BinnenHardePlancapaciteitWonen/RefSrc,
+				SuburbaanCombi/RefSrc
+			);
+	}
+}

@@ -1,0 +1,149 @@
+Template Iter_T
+{
+	//
+	parameter<Iter> id;
+	container StateVoorAllocatie;
+	container Context0;
+	unit<UInt8> Iter; //IterK
+	container Impl0;
+	parameter<Bool> IsEnkelIter;
+	//
+	
+	parameter<String> name := Iter/name[id];
+	
+	container StartCalc0{parameter<String> IterName := Context/ThisSequencename+', '+Context/ThisSectorAllocRegioname+', '+Context/ThisItername;}
+	container StartCalc_Fence := FenceContainer(StartCalc0, 'Start calculating results for '+StartCalc0/IterName);
+	container StartCalc_Phase := PhaseContainer(StartCalc0, 'Start calculating results for '+StartCalc0/IterName);
+
+	container StartCalc       := =GeoDMSVersion() < 18.0 ? 'StartCalc_Fence' : 'StartCalc_Phase';
+
+	container Context := Context0
+	{
+		container ThisIter := ..;
+		parameter<String> ThisItername := Iter/name[id];
+		parameter<String> PrevItername := Iter/PrevName[id];
+	}
+	
+	unit<UInt8>  Subsector  := Context/ThisSectorAllocRegio/Subsector;
+	unit<UInt32> AllocRegio := Context/ThisSectorAllocRegio/AllocRegio;
+	unit<UInt8>  OP         := CaseClassifications/Vastgoed/OP;
+	
+	// Er zijn drie soorten IterSubsector templates, omdat voor wonen er een module over OP's nodig is, voor wind een deel over stempels, en voor de overige sectoren is het wel generiek.
+	container Subsectoren :=
+		for_each_ne(
+			 Subsector/name
+			,lowercase(Sector_name) == lowercase('Wonen')
+				? 'IterSubsector_T_Wonen('+string(id(Subsector))+'[Subsector],Subsector,StateVoorAllocatie,Context)'
+				: lowercase(Sector_name) == lowercase('Wind')
+					? 'IterSubsector_T_Wind('+string(id(Subsector))+'[Subsector],Subsector,StateVoorAllocatie,Context)'
+					: 'IterSubsector_T('+string(id(Subsector))+'[Subsector],Subsector,StateVoorAllocatie,Context)'
+	);
+	
+	#include<Iter_Allocatie.dms>
+	
+	attribute<Bool> IsNuGealloceerd (CompactedAdminDomain) := IsDefined(Allocatie/per_SectorxSubsector);
+	
+	container Impl := Impl0
+	{
+		// parameter<Bool> HasNoAllocInCurrentIter := NOT(any(!IsDefined(StateVoorAllocatie/SubSector_rel) && IsDefined(StateNaAllocatie/SubSector_rel)));
+		// parameter<Bool> HasNoRestClaim := RestClaim_NaAlloc == 0f;
+		
+		// parameter<String> RestClaim_NaAlloc_str := asList(
+			// replace(
+			// 'abs(sum(VariantData/Claims/@Z@/SectorAllocRegios/@AS@/@S@) - sum(StateNaAllocatie/@SP@))',
+			// '@Z@' , Context/ThisZichtjaar/name,
+			// '@AS@', Context/ThisSectorAllocRegio/name,
+			// '@S@', Subsector/name,
+			// '@SP@', Subsector/Sector_name_Thisname
+			// )
+		// , ' + ');
+		
+		// parameter<Float32> RestClaim_NaAlloc := =RestClaim_NaAlloc_str;
+		
+		// parameter<String> StopCriterium_NoAlloc    := 'any(HasNoAllocInCurrentIter)';
+		// parameter<String> StopCriterium_NoClaim    := 'HasNoRestClaim';
+		// parameter<Bool>   PrevStop                 := = lowercase(Context/PrevItername) == lowercase('Start') ? 'FALSE' : Context/PrevItername+'/Impl/StopCriterium';
+		// parameter<String> DynamicStopCriterium_str := PrevStop ? 'TRUE' : StopCriterium_NoClaim +' || '+StopCriterium_NoAlloc;
+		// parameter<Bool>   DynamicStopCriterium     := = DynamicStopCriterium_str;
+		// parameter<Bool>   StopCriterium            := DynamicStopCriterium;
+			
+	
+		parameter<Bool> StopCriterium       := StaticStopCriterium;
+		parameter<Bool> StaticStopCriterium := IsEnkelIter ? TRUE : id == (ModelParameters/Default_NrOfIters - 1b)[Iter];
+	}
+	
+	container StateNaAllocatie0 := 
+		for_each_ne(
+			Sector/xSubsector/name
+			, 'StatePrep_T('+string(id(Sector/xSubsector))+'[Sector/xSubsector], Context/ThisIter)'
+		)
+	{
+		container PandFootprint :=
+			for_each_nedv(
+				Jobs6/name
+				, lowercase(Sector_name) == lowercase('Werken') ? replace(Impl/Update_PandFootprint_Expr,'@Y@', Context/ThisZichtjaar/name, '@SS@', Jobs6/name): replace(Impl/Verdring_Expr, '@S@', 'PandFootprint', '@SS@', Jobs6/name)
+				, CompactedAdminDomain
+				, m2PandFootprint
+			);
+	}
+	
+	container StateNaAllocatie1 :=
+		for_each_neidv(
+			Sector/xSubsector/name
+			, 'StateNaAllocatie0/'+Sector/xSubsector/name+'/Result'
+			, 'IsDefined(StateNaAllocatie0/'+Sector/xSubsector/name+'/Result)'
+			, CompactedAdminDomain
+			, float32
+		)
+	{
+		attribute<Sector/xSubsector> SubSector_rel (CompactedAdminDomain) := MakeDefined(StateVoorAllocatie/SubSector_rel, Allocatie/per_SectorxSubsector);
+		attribute<OP>                OP_rel        (CompactedAdminDomain) := MakeDefined(StateVoorAllocatie/OP_rel       , Allocatie/per_OP);
+		
+		container PandFootprint :=
+			for_each_nedv(
+				Jobs6/name
+				, 'StateNaAllocatie0/PandFootprint/'+Jobs6/name
+				, CompactedAdminDomain
+				, m2PandFootprint
+			);
+		
+		container Wind
+		{
+			attribute<Yr> jaartal_ingebruikname (CompactedAdminDomain) := Allocatie/per_SectorxSubsector == Classifications/Actor/Sector/xSubsector/V/Wind_Totaal ? UInt16(right(Context/ThisZichtjaar/name,4))[Yr] : StateVoorAllocatie/Wind/jaartal_ingebruikname;
+		}
+	}
+
+	container StateNaAllocatie2 :=
+		for_each_nedvn(
+			CaseClassifications/StandVar/Path
+			, 'value(StateNaAllocatie1/'+CaseClassifications/StandVar/Path + ', scope(CaseClassifications/StandVar, '+CaseClassifications/StandVar/unit_name+'))'
+			, CompactedAdminDomain
+			, CaseClassifications/StandVar
+			, CaseClassifications/StandVar/unit_name
+		)
+	{
+		container Wonen
+		{
+			attribute<Woning> Aantal_Woningen_Totaal (CompactedAdminDomain) := = 'add('+asItemList(Classifications/Vastgoed/WP2xVSSH/name)+')';
+		}
+	}
+	
+	container StateNaAllocatie_Fence := FenceContainer(StateNaAllocatie2, 'Results for '+Context/ThisSequencename+', '+Context/ThisSectorAllocRegioname+', '+Context/ThisItername+' are finished calculating');
+	container StateNaAllocatie_Phase := PhaseContainer(StateNaAllocatie2, 'Results for '+Context/ThisSequencename+', '+Context/ThisSectorAllocRegioname+', '+Context/ThisItername+' are finished calculating');
+	container StateNaAllocatie       := =GeoDMSVersion() < 18.0 ? 'StateNaAllocatie_Fence' : 'StateNaAllocatie_Phase';
+
+	container Stand_PerAllocRegio := 
+		for_each_nedvn(
+			CaseClassifications/StandVar/Path
+			, 'sum(StateNaAllocatie/'+CaseClassifications/StandVar/Path+', AllocRegio/Per_CompactedAdminDomain)'
+			, AllocRegio
+			, CaseClassifications/StandVar
+			, CaseClassifications/StandVar/unit_name
+		)
+	{
+		container wonen
+		{
+			attribute<Woning> Aantal_Woningen_Totaal (AllocRegio) := = 'add('+asItemList(Classifications/Vastgoed/WP2xVSSH/name)+')';
+		}
+	}
+}

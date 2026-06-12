@@ -1,0 +1,391 @@
+container DataPreparation: IsHidden = "true"
+{
+	/*container AscImport_1km // asc import methods not used anymore due to model changes - delete? CJ 22 Apr 2013
+	{
+		container FactorDataImp:
+				Expr = 
+					"for_each_ndvndacu((IsDefined(MetaData/Factors/EuFileName) && not(MetaData/Factors/Is100m)) ? MetaData/Factors/Name : String(0 / 0), "
+						"Geography/Albers1kmGrid, "
+						"Units, MetaData/Factors/ValuesUnit2,"
+						"MetaData/Factors/Descr, "
+						"'%sourceDataProjDir%.ASC/'+MetaData/Factors/EuFileName+'.asc',"
+						"MetaData/Factors/Cdf2,"
+						"MetaData/Factors/url2"
+					")";
+		container FactorDataTIFF:
+				Expr = 
+					"for_each_nedvndacu((IsDefined(MetaData/Factors/EuFileName) && not(MetaData/Factors/Is100m)) ? MetaData/Factors/Name : String(0 / 0), "
+						"'FactorDataImp/'+MetaData/Factors/Name, "
+						"Geography/Albers1kmGrid, "
+						"Units, MetaData/Factors/ValuesUnit2,"
+						"MetaData/Factors/Descr, "
+						"'%sourceDataProjDir%/'+MetaData/Factors/EuFileName+'.tif',"
+						"MetaData/Factors/Cdf2,"
+						"MetaData/Factors/url2"
+					")";
+		parameter<String> GenerateAllFactors: Expr = "'Ready'",
+			ExplicitSuppliers =  "=AsList((IsDefined(MetaData/Factors/EuFileName) && not(MetaData/Factors/Is100m)) && (strlen(MetaData/Factors/Name) > 0) ? 'FactorDataTIFF/'+MetaData/Factors/Name : '',';')";
+	}
+	container AscImport_100m
+	{
+		container FactorDataImp:
+				Expr = 
+					"for_each_ndvndacu((IsDefined(MetaData/Factors/EuFileName) && MetaData/Factors/Is100m) ? MetaData/Factors/Name : String(0 / 0), "
+						"Geography/Lambert100mGrid, "
+						"Units, MetaData/Factors/ValuesUnit2,"
+						"MetaData/Factors/Descr, "
+						"'%sourceDataProjDir%.ASC/'+MetaData/Factors/EuFileName+'.asc',"
+						"MetaData/Factors/Cdf2,"
+						"MetaData/Factors/url2"
+					")";
+		container FactorDataTIFF:
+				Expr = 
+					"for_each_nedvndacu((IsDefined(MetaData/Factors/EuFileName) && MetaData/Factors/Is100m) ? MetaData/Factors/Name : String(0 / 0), "
+						"'FactorDataImp/'+MetaData/Factors/Name, "
+						"Geography/Lambert100mGrid, "
+						"Units, MetaData/Factors/ValuesUnit2,"
+						"MetaData/Factors/Descr, "
+						"'%sourceDataProjDir%/'+MetaData/Factors/EuFileName+'.tif',"
+						"MetaData/Factors/Cdf2,"
+						"MetaData/Factors/url2"
+					")";
+		parameter<String> GenerateAllFactors: Expr = "'Ready'",
+			ExplicitSuppliers = "=AsList((IsDefined(MetaData/Factors/EuFileName) && MetaData/Factors/Is100m) ? 'FactorDataTIFF/'+MetaData/Factors/Name: '', ';')";
+	}*/
+	
+	#include<ShapeData.dms>
+	
+	container GenRaster
+	{
+		attribute<uint32> LAU2_raster (Geography/Lambert100mGrid): expr = "poly2grid(Geography/Regions/base_zones/Geometry, Geography/Lambert100mGrid)", StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/zones/LAU2_raster.tif";
+	}
+	
+	container SoilSealing
+	{
+		container m100 //CJ: updated so that now the soilsealing layer edited by Filipe Batista is loaded instead of EEA FTSP core land cover data for built-up areas, including degree of soil sealing, 2006
+		{
+			unit<wpoint> MosaicData
+				:	DialogData = "Geography/LambertEA"
+				,	Source = "JRC:LandCover"
+				,	StorageName = "%SourceDataProjDir%/EUCS_100m/soilsealing/ssl_0_100.tif"
+				,	StorageType = "tif"
+				,	StorageReadOnly = "True"
+			{
+				//  TopLeft     900050, 5499950; Extent: 65000 x 46000 = 6500 km x 4600 km
+				//  TopLeft 900 km, 5500 km -> 7400 km, 900 km 
+				attribute<UInt8> ReadData(Geography/Lambert100mGrid);		
+			}
+			attribute<UInt8> ReadData   (Geography/Lambert100mGrid): Expr = "MosaicData/ReadData";
+			attribute<Bool > HasSealData(Geography/Lambert100mGrid): Expr = "IsDefined(ReadData) && (ReadData <= UInt8(100))";
+			attribute<units/Soilsealing100> CleanedData(Geography/Lambert100mGrid): Expr = "HasSealData ? ReadData : UInt8(0 / 0)[units/Soilsealing100]";
+		}
+	}
+	
+	container RiverFloodRisk
+	{
+		unit<wpoint> Albers100Grid:
+			Expr  = "range("
+						"gridset(Geography/AlbersEA, "
+							"point_xy( 100.0, -100.0, Geography/AlbersEA), "
+							"point_xy(-2792300.0, -1963700.000 +  100.0 * 42392.0    , Geography/AlbersEA), "
+							"wpoint), "
+						"point_xy(UInt16(0), UInt16(0)),"
+						"point_xy(UInt16(39156), UInt16(42392))"
+					")";
+					
+		parameter<UInt16>    TileSizeY: [ 256 ];
+		parameter<UInt16>    TileSizeX: Expr = "PointCol(BoundRange(Albers100Grid))";
+		parameter<Albers100Grid>  TileExtent: Expr = "point_xy(TileSizeX, TileSizeY, Albers100Grid)";
+		unit<wpoint> Tiles:
+			Expr  = 
+				"range("
+					"gridset(Albers100Grid, "
+						"TileExtent, "
+						"point_xy(UInt16(0), UInt16(0), Albers100Grid), "
+						"wpoint"
+					"), "
+					"point_xy(UInt16(0), UInt16(0)),"
+					"wpoint((BoundRange(Albers100Grid) + TileExtent - point_xy(UInt16(1), UInt16(1), Albers100Grid)) / TileExtent)"
+				")"
+		{
+			attribute<Albers100Grid> LB100: Expr = "value(wpoint(ID(.)) * TileExtent, Albers100Grid)", KeepData = "False";
+			attribute<Albers100Grid> UB100: Expr = "LB100 + TileExtent", KeepData = "False";
+		}
+		unit<WPoint> TiledAlbers100Grid: Expr ="TiledUnit(Tiles/LB100, Tiles/UB100)";
+		
+		unit<uint8> WaterDepthClass: NrOfRows = 4
+		{
+			attribute<String> Label: DialogType = "LabelText",  [ 'Lake', '0-20cm', '20-50cm', '>50cm' ];
+			attribute<UInt32> Color: DialogType = "BrushColor", [ rgb(128,128,255), rgb(128,255,128), rgb(255,255,128), rgb(255,128,128) ];
+		}
+		container wdclass_scen_1
+				:	Source = "JRC:LandCover"
+				,	StorageName = "%SourceDataProjDir%/EUCS_100m/WaterDepth/wdclass_scen_1.tif"
+				,	StorageReadOnly = "True"
+		{
+				attribute<WaterDepthClass> GridData   (TiledAlbers100Grid);
+		}
+		attribute<Bool> MoreThan50cm(TiledAlbers100Grid): Expr = "wdclass_scen_1/GridData == value(3, UInt8)";
+		attribute<Geography/Albers1kmGrid> Grid1kmRel(TiledAlbers100Grid): Expr = "ID(TiledAlbers100Grid)[Geography/Albers1KmGrid]"; // COMPATIBILITY ISSUE
+		attribute<UInt8> RiverFloodCellCount(Geography/Albers1KmGrid): Expr = "sum(UInt8(MoreThan50cm), Grid1kmRel)";
+		attribute<Classifications/Boolean> RiverFloodProne(Geography/Albers1KmGrid): Expr = "RiverFloodCellCount >= UInt8(25)", StorageName = "%SourceDataProjDir%/Indicators/RiverFloodRisk/RiverFloodProne.tif"
+		{
+			attribute<UInt32> PaletteData(Units/Boolean): Expr = "Classifications/Boolean/Palette";
+		}
+	}
+
+	// CJ: is this not redundant with the code in the Geography container?
+	container BoundsGen
+	{
+		unit<UInt16> JrcRegion: Expr = "Geography/Regions/JrcRegion", StorageName = "%SourceDataProjDir%/EUCS_100m/data/BoundsJrcRegionNew.dbf", KeepData = "False" // , Using = "Geography/LambertEA/Tiles/Jrc"
+		{
+			attribute<Geography/Lambert100mGrid> P1: Expr = "min(ID(Geography/Lambert100mGrid), /JrcFactorData/JrcRegion)", DisableStorage = "True";
+			attribute<Geography/Lambert100mGrid> P2: Expr = "max(ID(Geography/Lambert100mGrid), /JrcFactorData/JrcRegion)", DisableStorage = "True";
+			attribute<UInt16> X1: Expr = "PointCol(P1)"; 
+			attribute<UInt16> X2: Expr = "PointCol(P2)"; 
+			attribute<UInt16> Y1: Expr = "PointRow(P1)"; 
+			attribute<UInt16> Y2: Expr = "PointRow(P2)"; 
+		}
+		unit<UInt16> Nuts2Region: Expr = "Geography/Regions/Nuts2", StorageName = "%SourceDataProjDir%/EUCS_100m/data/BoundsNuts2New.dbf", KeepData = "False" // , Using = "Geography/LambertEA/Tiles/Jrc"
+		{
+			attribute<Geography/Lambert100mGrid> P1: Expr = "min(ID(Geography/Lambert100mGrid), /JrcFactorData/Nuts2)", DisableStorage = "True";
+			attribute<Geography/Lambert100mGrid> P2: Expr = "max(ID(Geography/Lambert100mGrid), /JrcFactorData/Nuts2)", DisableStorage = "True";
+			attribute<UInt16> X1: Expr = "PointCol(P1)"; 
+			attribute<UInt16> X2: Expr = "PointCol(P2)"; 
+			attribute<UInt16> Y1: Expr = "PointRow(P1)"; 
+			attribute<UInt16> Y2: Expr = "PointRow(P2)"; 
+		}
+	}
+	container JRC
+	{
+//		20: 50% -> 8; 50% ->11
+//		21: 25% -> 8; 45% ->11; 30%-> 13
+
+		unit<spoint> DistMatr3: Expr = "range(spoint, point_yx(-int16(3), -int16(3)), point_yx(int16(4), int16(4)))"
+		{
+			attribute<UInt32> Kernel: [
+				1, 1, 1, 1, 1, 1, 1,
+				1, 2, 2, 2, 2, 2, 1, 
+				1, 2, 4, 4, 4, 2, 1,
+				1, 2, 4, 0, 4, 2, 1, 
+				1, 2, 4, 4, 4, 2, 1,
+				1, 2, 2, 2, 2, 2, 1, 
+				1, 1, 1, 1, 1, 1, 1
+			];
+		}
+		container NeighbTempl: IsTemplate = "True"
+		{
+			unit<wpoint> GridDomain;
+			parameter<String> Name;
+			attribute<Bool> OccurenceData(GridDomain);
+			attribute<Int32> Dist3(GridDomain): Expr = "Round(potential(Float32(OccurenceData), Float32(DistMatr3/Kernel)))", StorageName = "=StorageDir+'/'+Name+'3.tif'";
+			parameter<String> Results: Expr = "StorageDir+'/'+Name", 
+				ExplicitSuppliers = "Dist3";
+		}
+		
+		container CountryLanduseTemplate: IsTemplate = "True"
+		{
+			unit<wpoint> GridDomain;
+			attribute<Geography/Albers1kmGrid>   AR(GridDomain);
+			attribute<Classifications/LU/Corine> CorineData(GridDomain);
+			parameter<String> StorageDir;
+			parameter<Geography/Regions/Nuts0>  Nuts0Code;
+
+			attribute<Geography/Lambert100mGrid> LR(GridDomain): Expr = "ID(GridDomain)[Geography/Lambert100mGrid]"
+				,	IntegrityCheck = "GetProjectionFactor(GridDomain)== GetProjectionFactor(Geography/Lambert100mGrid)";
+				
+			attribute<Geography/Regions/Nuts0> Nuts0Data(GridDomain): Expr = "Geography/RegionGrids/Nuts0[LR]";
+			attribute<Bool> IsCountry(GridDomain): Expr = "Nuts0Data == Nuts0Code " ;
+			
+			attribute<Classifications/LU/ModelType> ModelDataSrc(GridDomain): Expr = "IsCountry ? Classifications/LU/Corine/MT [CorineData] : value(0 / 0,Classifications/LU/ModelType)";
+			attribute<Classifications/LU/ViewType > ViewDataSrc (GridDomain): Expr = "IsCountry ? Classifications/LU/Corine/VT2[CorineData] : value(0,Classifications/LU/ViewType )";
+
+			attribute<Classifications/LU/ModelType> ModelData(GridDomain): Expr = "ModelDataSrc", StorageName = "=StorageDir+'_MT.tif'"
+			{
+				attribute<UInt32> PaletteData(Classifications/LU/ModelType): Expr = "Classifications/LU/ModelType/Color";
+			}
+			attribute<Classifications/LU/ViewType> ViewData(GridDomain): Expr = "ViewDataSrc", StorageName = "=StorageDir+'_VT.tif'"
+			{
+				attribute<UInt32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
+			}
+			
+			container NeighbourhoodMT: Expr = "for_each_ne(Classifications/LU/ModelType/Name, 'NeighbTempl(GridDomain,'+Quote(Classifications/LU/ModelType/Name)+', ModelDataSrc == UInt8('+String(ID(Classifications/LU/ModelType))+'))')", FreeData = "True";
+			container NeighbourhoodVT: Expr = "for_each_ne(Classifications/LU/ViewType/Name,  'NeighbTempl(GridDomain,'+Quote(Classifications/LU/ViewType/Name )+', ViewDataSrc  == UInt8('+String(ID(Classifications/LU/ViewType))+'))')", FreeData = "True";
+			
+			parameter<string> Results: Expr = "='add('+asItemList(Quote(';')+'+NeighbourhoodMT/'+Classifications/LU/ModelType/Name+'/Results')+')'";
+//			parameter<string> Results9:  Expr = "='StorageDir+'+Quote('_Jrc22.asc')+'+add('+asItemList(Quote(';')+'+Neighbourhood9/' +Classifications/LU/Jrc9/Name +'/Results')+')'";
+// 				ExplicitSuppliers = "Jrc22Data";
+		}
+		
+// 		unit<UInt8> FactorSet: Expr = "select_with_org_rel(ID(MetaData/Factors) > UInt8(0) && ID(MetaData/Factors) < UInt8(52))"
+// 		{
+// 			attribute<String> Name: Expr = "MetaData/Factors/Name[org_rel]";
+// 		}
+		unit<UInt8> FactorSet: Expr = "MetaData/Factors";
+		
+		container CountryFactorTemplate: IsTemplate = "True"
+		{
+			unit<wpoint> GridDomain;
+			attribute<Geography/Albers1kmGrid>   AR(GridDomain);
+			parameter<String> StorageDir;
+			parameter<Geography/Regions/Nuts0>  Nuts0Code;
+			
+			attribute<Geography/Lambert100mGrid> LR(GridDomain): Expr = "ID(GridDomain)[Geography/Lambert100mGrid]"
+				,	IntegrityCheck = "GetProjectionFactor(GridDomain)== GetProjectionFactor(Geography/Lambert100mGrid)";
+				
+			attribute<Geography/Regions/Nuts0> Nuts0Data(GridDomain): Expr = "Geography/RegionGrids/Nuts0[LR]";
+			attribute<Bool> IsCountry(GridDomain): Expr = "Nuts0Data == Nuts0Code " ;
+			
+			container Factors: Expr = "for_each_nedvndcu("
+				"FactorSet/Name, "
+				"'IsCountry ? ' + (FactorSet/Is100m ? 'JrcFactorData/'+ FactorSet/Name+'[LR]' :'FactorData/'+FactorSet/Name+'[AR]')+' : value(0 / 0, Units/'+FactorSet/ValuesUnit2+' )', "
+				"GridDomain, "
+				"Units, FactorSet/ValuesUnit2,"
+				"FactorSet/Descr, FactorSet/Cdf2, FactorSet/url2"
+				")", FreeData = "True";
+			
+			container Factors2Asc: Expr = "for_each_nedva("
+				"FactorSet/Name, "
+				"'value(Factors/'+FactorSet/Name+', Float32)', "
+				"GridDomain, "
+				"Float32, "
+				"StorageDir+'/'+FactorSet/Name+'.asc')", FreeData = "True";
+				
+			container Factors2Tif: Expr = "for_each_nedvna("
+				"FactorSet/Name, "
+				"'Factors/'+FactorSet/Name, "
+				"GridDomain, "
+				"Units, FactorSet/ValuesUnit2,"
+				"StorageDir+'/'+FactorSet/Name+'.tif')", FreeData = "True";
+				
+// 			unit<UInt32> factorsubset: Expr = "Range(UInt8, 0, 22)";
+// 			attribute<FactorSet> fs(factorsubset): [1, 2, 3, 4, 5, 6, 7, 8, 9, 32, 34, 35, 39, 40, 41, 43, 44, 49, 65, 66, 67, 68];
+			unit<UInt32> factorsubset: Expr = "Range(UInt8, 0, 18)"
+			{
+				attribute<MetaData/FactorID> FactorID: [1, 2, 3, 4, 5, 6, 7, 8, 9, 32, 34, 35, 39, 40, 41, 43, 44, 49 ];
+				attribute<FactorSet> Factor_rel: Expr = "rlookup(FactorID, FactorSet/ID)";
+			}
+			parameter<string> results: Expr = "='add('+AsItemList('PropValue(Factors2Tif/'+FactorSet/Name[factorsubset/Factor_rel]+', '+Quote('StorageName')+')')+')'";
+		}
+		
+		container CountryBaseDataTemplate: IsTemplate = "True"
+		{
+			unit<wpoint> GridDomain;
+			attribute<Geography/Albers1kmGrid> AR(GridDomain);
+			parameter<String> StorageDir;
+			
+			attribute<Geography/Regions/Nuts0> Nuts0Data(GridDomain): Expr = "Geography/RegionGrids/Nuts0",
+				StorageName = "=StorageDir+'.asc'", FreeData = "True";
+			
+			parameter<string> results: Expr = "PropValue(Nuts0Data, 'StorageName')";
+		}
+		
+		unit<UInt16> SmallRegion: Expr = "select_with_org_rel(const(true, Geography/Regions/JrcRegion))"
+		{
+			attribute<String> Name:         Expr = "Geography/Regions/JrcRegion/Name        [org_rel]";
+			attribute<String> Label:        Expr = "Geography/Regions/JrcRegion/Label       [org_rel]";
+			attribute<String> AllocDirName:   Expr = "Geography/Regions/JrcRegion/AllocDirName[org_rel]";
+			attribute<String> AllocDirNameN0: Expr = "AllocDirName";
+			attribute<Geography/Regions/Nuts0>  Nuts0Code: Expr = "Geography/Regions/JrcRegion/Nuts0Code[org_rel]";
+			attribute<.> Grid(Geography/Lambert100mGrid): Expr = "lookup(Geography/Regions/JrcRegion/Grid, invert(org_rel))";
+			
+			attribute<String> Dir:     Expr = "'%LocalDataProjDir%/JRC/'+Label";
+			attribute<String> NutsDir: Expr = "'%LocalDataProjDir%/JRCNUTS/'+Label";
+		}
+		
+		container LC1990
+			:	Expr = 
+					"for_each_ne(SmallRegion/Label, "
+						"'CountryLanduseTemplate("
+							"Geography/RegionDomainSets/JrcRegions100m/'+SmallRegion/Label+', "
+							"/Runs/'+SmallRegion/Label+'/CaseData/JrcFactorData/AlbersGridRel,"
+//							"Geography/m100Data/AR/JrcRegions100m/'+SmallRegion/Label+',"
+							"'+(SmallRegion/Label != 'United_kingdom' ? 'LandUseData/CLC_100m/LC1990/'+SmallRegion/Label : 'LandUseData/CLC_100m/UK1990/ReadData')+',"
+							"'+Quote(SmallRegion/Dir+'/1990')+',"
+							"value('+String(SmallRegion/Nuts0Code)+', Geography/Regions/Nuts0)"
+						")'"
+					")";
+		container LC2000
+			:	Expr = 
+					"for_each_ne(SmallRegion/Label, "
+						"'CountryLanduseTemplate("
+							"Geography/RegionDomainSets/JrcRegions100m/'+SmallRegion/Label+', "
+							"/Runs/'+SmallRegion/Label+'/CaseData/JrcFactorData/AlbersGridRel,"
+//							"Geography/m100Data/AR/JrcRegions100m/'+SmallRegion/Label+',"
+							"LandUseData/CLC_100m/LC2000/'+SmallRegion/Label+',"
+							"'+Quote(SmallRegion/Dir+'/2000')+',"
+							"value('+String(SmallRegion/Nuts0Code)+', Geography/Regions/Nuts0)"
+						")'"
+					")";
+		container Factors
+			:	Expr = 
+					"for_each_ne(SmallRegion/Label, "
+						"'CountryFactorTemplate("
+							"Geography/RegionDomainSets/JrcRegions100m/'+SmallRegion/Label+', "
+							"/Runs/'+SmallRegion/Label+'/CaseData/JrcFactorData/AlbersGridRel,"
+//							"Geography/m100Data/AR/JrcRegions100m/'+SmallRegion/Label+',"
+							"'+Quote(SmallRegion/Dir+'/Factors')+',"
+							"value('+String(SmallRegion/Nuts0Code)+', Geography/Regions/Nuts0)"
+						")'"
+					")";
+// 		container SoilSealingTable
+// 			:	Expr = 
+// 					"for_each_ne(AllRegions/label, "
+// 						"'CountrySealingTemplate (Geography/RegionDomainSets/JrcRegions100m/'+Geography/Regions/JrcRegion/Label+', Geography/m100Data/AR/'+AllRegions/Label+','+Quote(AllRegions/Dir+'/Factors')+')'"
+// 					")";
+		
+		attribute<Geography/Regions/Nuts0> Nuts0(Geography/Lambert100mGrid): Expr = "/JrcFactorData/Nuts0", StorageName = "%LocalDataProjDir%/JRC/Nuts0.tif"
+		{
+			attribute<UInt32> PaletteData(Geography/Regions/Nuts0): Expr = "rnd_uniform(0, Geography/Regions/Nuts0, range(UInt32, 0, rgb(255,255,255)))", DialogData="BrushColor";
+		}
+		parameter<String> CreateAll1990:    Expr = "='add('+AsItemList('LC1990/' +SmallRegion/Label+'/Results')+')'";
+		parameter<String> CreateAll2000:    Expr = "='add('+AsItemList('LC2000/' +SmallRegion/Label+'/Results')+')'";
+		parameter<String> CreateAllFactors: Expr = "='add('+AsItemList('Factors/'+SmallRegion/Label+'/Results')+')'";
+	}
+	
+	container RegionGrids_100m: Using = "Geography"
+	{
+		container Nuts16bitsTiffTempl: IsTemplate = "True"
+		{
+			parameter<String> FileName;
+			container Tiff:
+				StorageName     = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/'+FileName+'.tif'",
+				StorageReadOnly = "True"
+			{
+				unit<wpoint> GridDomain: DialogData = "Geography/LambertEA";
+				attribute<Regions/Nuts2All> GridData(GridDomain);
+				attribute<Regions/Nuts2All> ReadData(Lambert100mGrid);
+			}
+		}
+		container Nuts8bitsTiffTempl: IsTemplate = "True"
+		{
+			parameter<String> FileName;
+			container Tiff:
+				StorageName     = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/'+FileName+'.tif'",
+				StorageReadOnly = "True"
+			{
+				unit<wpoint> GridDomain: DialogData = "Geography/LambertEA";
+				attribute<UInt8> GridData(GridDomain);
+				attribute<UInt8> ReadData(Lambert100mGrid);
+				attribute<Regions/Nuts2All> Nuts2Data(Lambert100mGrid): Expr = "(ReadData == UInt8(1)) ? value(314, Regions/Nuts2All) : value(0 / 0, Regions/Nuts2All)", DisableStorage = "True";
+			}
+		}
+		
+		container Nuts2a:   Expr = "Nuts16bitsTiffTempl('nuts2_a')";
+		container Nuts2b:   Expr = "Nuts16bitsTiffTempl('nuts2_b')";
+		container Nuts2c:   Expr = "Nuts16bitsTiffTempl('nuts2_c')";
+		container Nuts2d:   Expr = "Nuts16bitsTiffTempl('nuts2_d')";
+		container Canarias: Expr = "Nuts8bitsTiffTempl ('Canarias')";
+		
+		attribute<Regions/Nuts2All>  CreateNuts2Grid(Lambert100mGrid): Expr = "MakeDefined(Nuts2a/Tiff/ReadData, Nuts2b/Tiff/ReadData, Nuts2c/Tiff/ReadData, Nuts2d/Tiff/ReadData, Canarias/Tiff/Nuts2Data)",
+			StorageName = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/Nuts2All_New.tif'";
+	}
+	
+	#include <Accessibility.dms>
+	#include <Biodiversity.dms>
+	//#include <CAP.dms>
+	#include <capri.dms>
+	#include <DGRegio_locspecs.dms>
+	#include <AgriculturalAbandonment.dms>
+	#include <Residential_density_change.dms>
+}

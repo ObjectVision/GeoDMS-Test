@@ -1,0 +1,157 @@
+Container BoundarySets: Using = "MetaData;"
+{
+	container RawBoundaryDomains := for_each_ne(MetaData/BoundarySets/Name, 'BoundaryDefinition('+ string(id(MetaData/BoundarySets)) +')')
+	{
+		Container RunRegions 
+		{
+			unit<uint32> Set32 := Geometries/Corridors
+			{
+				attribute<geometries/BaseProjection>  Geometry (poly)  := Geometries/Corridors/geometry[geometries/BaseProjection];
+				attribute<string>                     zoneId           := string(Geometries/Corridors/id);
+				attribute<string>                     Label            := 'Corr'+zoneId;
+				// attribute<bool>select:= Geometries/CountryGroup/select;
+			}
+			// unit<uint16> Set16 := range(uint16, 0s, uint16(#Set32))
+			// {
+				// attribute<geometries/BaseProjection>    Geometry (poly)  := Set32/Geometry[org_rel];
+				// attribute<string>                       ZoneId           := Set32/ZoneId[org_rel];
+				// attribute<Set32>                        org_rel     := id(.)[Set32];
+				// attribute<string>                       Label            := zoneId;
+			// }
+		}
+		// Container MozaikRegions {
+			// unit<uint32> Set32: expr = "select_with_org_rel(RunRegions/Set32/select)" {
+				// attribute<geometries/BaseProjection> 	Geometry (poly): 	expr = "RunRegions/Set32/Geometry[org_rel]";
+				// attribute<string> 						zoneId: 			expr = "RunRegions/Set32/Geometry/Code[org_rel]";
+				// attribute<string>						Label:				expr = "zoneId";
+			// }
+			// unit<uint16> Set16: expr = "range(uint16, uint16(0), uint16(#Set32))" {
+				// attribute<geometries/BaseProjection> 	Geometry (poly): 	expr = "Set32/Geometry[org_rel]";
+				// attribute<string> 						ZoneId: 			expr = "Set32/ZoneId[org_rel]";
+				// attribute<Set32> 						org_rel: 		expr = "id(.)[Set32]";
+				// attribute<string>						Label:				expr = "zoneId";
+			// }
+		// }
+	}
+	
+	container BoundaryDomains := for_each_ind('nex', MetaData/BoundarySets/Name, 'RawBoundaryDomains/'+ MetaData/BoundarySets/Name + '/Set32',uint32)
+	{ 
+		unit<uint32> RunRegions    := RawBoundaryDomains/RunRegions/Set32; 
+		// unit<uint32> MozaikRegions := RawBoundaryDomains/MozaikRegions/Set32;
+	}
+	// container BoundaryDomains16:= for_each_ind('nex', MetaData/BoundarySets/Name, 'RawBoundaryDomains/'+ MetaData/BoundarySets/Name + '/Set16',uint16)
+	// { 
+		// unit<uint16> RunRegions    := RawBoundaryDomains/RunRegions/Set16; 
+		// unit<uint16> MozaikRegions := RawBoundaryDomains/MozaikRegions/Set16;
+	// }
+	
+	container Overlays := 
+		for_each_ind(
+			'nex'
+			, MetaData/BoundarySets/Name
+			, 'overlay_polygon(value(BoundaryDomains/'+ MetaData/BoundarySets/Name +'/Geometry, ipoint), value(BoundaryDomains/RunRegions/Geometry, ipoint))'
+			, uint32
+		);
+	
+	container RasterSets1k := for_each_nedvn(MetaData/BoundarySets/Name, 'poly2grid(BoundaryDomains/'+ MetaData/BoundarySets/Name +'/Geometry, Geometries/SelectedTiledRaster1k)', Geometries/SelectedTiledRaster1k, BoundaryDomains, MetaData/BoundarySets/Name)
+	{
+		attribute<BoundaryDomains/RunRegions> RunRegions (Geometries/SelectedTiledRaster1k):= poly2grid(BoundaryDomains/RunRegions/Geometry, Geometries/SelectedTiledRaster1k);
+	}
+	// container RasterSets1k_16 : = for_each_nedvn(MetaData/BoundarySets/Name, 'poly2grid(BoundaryDomains16/'+ MetaData/BoundarySets/Name +'/Geometry, Geometries/SelectedTiledRaster1k)', Geometries/SelectedTiledRaster1k, BoundaryDomains16, MetaData/BoundarySets/Name) 
+	// {
+		// attribute<BoundaryDomains16/RunRegions> 	RunRegions (Geometries/SelectedTiledRaster1k):= poly2grid(BoundaryDomains16/RunRegions/Geometry, Geometries/SelectedTiledRaster1k);
+		// attribute<BoundaryDomains16/MozaikRegions> 	MozaikRegions (Geometries/SelectedTiledRaster1k): expr = "poly2grid(BoundaryDomains16/MozaikRegions/Geometry, Geometries/SelectedTiledRaster1k)";
+	// }
+	
+	Template BoundaryDefinition 
+	{
+		
+		parameter<uint32> BoundaryDef;
+		
+		parameter<string> CodeDef := strlen(MetaData/BoundarySets/ZoneIdDef[BoundaryDef]) > 0 ? MetaData/BoundarySets/ZoneIdDef[BoundaryDef] : quote('z_') + ' + string(id(.))';
+		
+		unit<uint32> Set32:= = MetaData/BoundarySets/Address[BoundaryDef]
+		{
+			attribute<geometries/BaseProjection> Geometry (poly) := = MetaData/BoundarySets/Address[BoundaryDef] + '/Geometry';
+			attribute<string>                    zoneId          := = CodeDef;
+			attribute<string>                    Label           := zoneId;
+		}
+		// unit<uint16> Set16: expr = "range(uint16, uint16(0), uint16(#Set32))" {
+			// attribute<geometries/BaseProjection> 	Geometry (poly): 	expr = "Set32/Geometry[org_rel]";
+			// attribute<string> 						ZoneId: 			expr = "Set32/ZoneId[org_rel]";
+			// attribute<Set32> 						org_rel: 		expr = "id(.)[Set32]";
+			// attribute<string>						Label:				expr = "zoneId";
+		// }
+	}
+	
+	Template compileBoundaryReferences
+	{
+		parameter<uint32> RunRegionId;
+		unit<ipoint>      domain_1k;
+		
+		container Boundaries := 
+			for_each_ne(
+				MetaData/BoundarySets/Name
+				, 'selectBoundaries('+ string(RunRegionId) +','+ string(id(MetaData/BoundarySets)) +')'
+			)
+		{
+			unit<uint32> OrgUnitRef  := SourceData/BoundarySets/BoundaryDomains/RunRegions;
+			unit<uint32> SelectedSet := select_with_org_rel(id(OrgUnitRef) = RunRegionId)
+			{
+				attribute<geometries/BaseProjection>  Geometry (poly) := OrgUnitRef/Geometry[org_rel];
+				attribute<OrgUnitRef>                 OrgRef          := org_rel;
+				attribute<string>                     ZoneId          := string(id(OrgUnitRef))[org_rel];
+			}
+			// unit<uint16> SelectedSet16: expr = "range(uint16, uint16(0), uint16(#SelectedSet))"
+			// {
+				// attribute<geometries/BaseProjection> 	Geometry (poly): 	expr = "SelectedSet/Geometry[org_rel]";
+				// attribute<string> 						ZoneId: 			expr = "SelectedSet/ZoneId[org_rel]";
+				// attribute<SelectedSet> 					org_rel: 		expr = "id(.)[SelectedSet]";
+				// attribute<OrgUnitRef>					OrgRef:				expr = "SelectedSet/org_rel[org_rel]";
+			// }
+		}
+		container UnitSets := 
+			for_each_ind(
+				'nex'
+				, MetaData/BoundarySets/Name
+				, 'Boundaries/'+ MetaData/BoundarySets/Name + '/SelectedSet'
+				,uint32
+			)
+		{
+			unit<uint32> RunRegions := Boundaries/SelectedSet; 
+		}
+		container RasterSets := 
+			for_each_nedv(
+				MetaData/BoundarySets/Name
+				, 'poly2grid(UnitSets/'+ MetaData/BoundarySets/Name +'/Geometry, domain_1k)'
+				, domain_1k
+				, uint32
+			)
+		{
+			attribute<uint32> RunRegions (domain_1k) := poly2grid(UnitSets/RunRegions/Geometry, domain_1k)[uint32];
+		}
+	}
+	
+	Template selectBoundaries 
+	{
+		parameter<uint32> RunRegionId;
+		parameter<uint32> BoundarySetId;
+			
+		unit<uint32> OrgUnitRef  := = 'BaseData/BoundarySets/BoundaryDomains/'+ MetaData/BoundarySets/Name[BoundarySetId];
+		unit<uint32> OverlayRef  := = 'BaseData/BoundarySets/Overlays/'+ MetaData/BoundarySets/Name[BoundarySetId];
+		
+		unit<uint32> SelectedSet := select_with_org_rel(OverlayRef/second_rel = RunRegionId)
+		{
+			attribute<geometries/BaseProjection> Geometry (poly) := (OverlayRef/Geometry[org_rel])[geometries/BaseProjection];
+			attribute<OrgUnitRef>                OrgRef          := OverlayRef/first_rel[org_rel];
+			attribute<string>                    ZoneId          := OrgUnitRef/ZoneId[OrgRef];
+		}
+		// unit<uint16> SelectedSet16 := range(uint16, 0s, uint16(#SelectedSet))
+		// {
+			// attribute<geometries/BaseProjection>  Geometry (poly) := SelectedSet/Geometry[org_rel];
+			// attribute<string>                     ZoneId          := SelectedSet/ZoneId[org_rel];
+			// attribute<SelectedSet>                org_rel    := id(.)[SelectedSet];
+			// attribute<OrgUnitRef>                 OrgRef          := SelectedSet/OrgRef[org_rel];
+		// }
+	}
+}

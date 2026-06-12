@@ -1,0 +1,804 @@
+container IndicatorData: Using = "Units;Geography", IsHidden = "True"
+{
+	container Legends
+	{		
+		unit<uint8> Percent10K: NrOfRows = 10
+		{
+			attribute<Percent> Classes: DialogType = "Classification",
+				[  0,10,20,30,40,50,60,70,80,90];
+	
+			attribute<String> Label: DialogType = "LabelText",
+				[' 0 -  10','10 -  20','20 -  30','30 -  40','40 -  50','50 -  60','60 -  70','70 -  80','80 -  90','90 - 100'];
+		}
+		
+		attribute<UInt32> i      (Percent10K): Expr = "UInt32(ID(Percent10K))";
+		attribute<UInt32> ri     (Percent10K): Expr = "9-i";
+		attribute<UInt32> RedRamp(Percent10K): Expr = "rgb(i*21, 0, 0)";
+		
+		attribute<Percent> PermanentPastureClasses(Percent10K): Expr = "Percent10K/Classes"
+		{
+			attribute<UInt32> YellowGreenRamp(Percent10K): DialogType = "BrushColor",
+			  Expr = //255,255,128 ->0 64 0
+			  		"rgb(28*ri,21*ri+64, 14*ri)";
+		}			  		
+		attribute<Percent> AgriculturalAreaClasses(Percent10K): Expr = "Percent10K/Classes"
+		{
+			attribute<UInt32> BlueRamp(Percent10K): DialogType = "BrushColor",
+			  Expr = "rgb(25*ri,25*ri, 255)";
+		}
+		attribute<Percent> NonIrrigatedArableClasses(Percent10K): Expr = "Percent10K/Classes"
+		{
+			attribute<UInt32> OrangeRamp(Percent10K): DialogType = "BrushColor",
+			  Expr =  //255,255,128 -> 128,0,0
+			  		"rgb(14*ri+128,28*ri, 14*ri)";
+		}
+		attribute<Percent> NaturalVegetationClasses(Percent10K): Expr = "Percent10K/Classes"
+		{
+			attribute<UInt32> GreenRamp(Percent10K): DialogType = "BrushColor",
+			  Expr =  //255,255,128 -> 0, 128, 0
+			  		"rgb(28*ri, 14*ri+128, 14*ri)";
+		}
+		attribute<Percent> BuiltUpAreaClasses(Percent10K):
+			[ 0, 1, 2, 3, 4, 5, 7, 10, 15, 25]
+		{
+			attribute<String> Label(Percent10K): DialogType = "LabelText",
+				[' 0 -  1',' 1 -  2',' 2 -  3',' 3 -  4',' 4 -  5',' 5 -  7',' 7 - 10','10 - 15','15 - 25','25 - 100'];
+			attribute<UInt32> OrangeRamp(Percent10K): DialogType = "BrushColor",
+			  Expr =  //255,255,128 -> 255,0,0
+			  		"rgb(255,28*ri, 14*ri)";
+		}	
+		unit<uint8> HotspotClass: NrOfRows = 4
+		{
+			attribute<String> Label: DialogType = "LabelText",
+				['no hot spot', 'existing hotspot', 'new hotspot', 'intensive hotspot'];
+			attribute<UInt32> Color: DialogType = "BrushColor",
+				[
+					rgb(156,156,156), // Gray 20%
+					rgb(204,204,204), // Gray 40%
+					rgb(255,170,0),   // Yellow
+					rgb(230,0,0)      // Red
+				];
+		}
+	}	
+	parameter<String> IndiDataDirName: Expr = "'%sourceDataProjDir%/Indicators'";
+
+	#include <Landuse.dms>
+	#include <LisFlood.dms>
+	#include <Carbon.dms>
+	#include <Erosion.dms>
+	#include <Biodiversity.dms>
+/*	container SoilSealing // 1km version of soilsealing data previously used in model. Not necessary anymore (CJ 22 Apr 2013)
+	{
+		attribute<Units/Percent> Mean2006(Geography/Albers1kmGrid): 
+			StorageName = "%SourceDataProjDir%/Indicators/SoilSealing/Mean2006.tif";
+		unit<UInt32> CCLU: Expr = "Combine(Geography/Regions/ClueCountry, Classifications/LU/Clue10)";
+		container Factors:
+			StorageName = "%SourceDataProjDir%/Indicators/SoilSealing/Factors.dbf"
+		{
+			attribute<Units/Percent> MedianSealingDegree(CCLU);
+		}
+	} */
+	container RiverFloodRisk
+	{
+		attribute<Classifications/Boolean> RiverFloodProne(Geography/Albers1KmGrid)
+			:	Descr = "RiverFloodCellCount >= 25/100"
+			,	StorageName = "%SourceDataProjDir%/Indicators/RiverFloodRisk/RiverFloodProne.tif"
+			,	StorageReadOnly = "True";
+	}
+	#include <LCC.dms>
+	unit<SPoint> km10FocalPointMatr: Expr = "range(spoint, point_xy(-int16(10), -int16(10)), point_xy(int16(11), int16(11)))"
+	{
+		attribute<Bool> InCircle: Expr = "dist2(point_xy(Int16(0), Int16(0), .), UInt32)  <= 100";
+		attribute<Float32> RelWeight: Expr = "Float32(InCircle) / sum(Float32(InCircle))";
+	}
+
+	container LccpTempl: IsTemplate = "True"
+	{
+		unit<Wpoint> Domain_Grid;
+
+		attribute<Classifications/LU/Ruralis18> LU18_Org(Domain_Grid);
+		unit<UInt16> FathomYears;
+		
+		container CaseData: IsHidden = "True",
+			Expr = "for_each_ne(FathomYears/Name, 'indicatorData/LCC/Templ(Domain_Grid, '+(ID(FathomYears)==value(0,FathomYears)?'LU18_Org':'..../CaseData/LU18/'+FathomYears/Name)+')')";
+		container PerPatch: Expr = "for_each_nedv(FathomYears/Name, 'CaseData/'+FathomYears/Name+'/PatchCost', Domain_Grid, IndicatorData/LCC/FLEURO)";
+		container AveragePerCell:  Expr = "for_each_nedv(FathomYears/Name, 'CaseData/'+FathomYears/Name+'/AverageCostPerCell', Domain_Grid, IndicatorData/LCC/FLEURO)";
+		container AveragePerNuts2: Expr = "for_each_nedv(FathomYears/Name, 'CaseData/'+FathomYears/Name+'/AverageCostPerNuts2', Geography/RegionShapes/Nuts2, IndicatorData/LCC/FLEURO)";
+		container AveragePerNuts0: Expr = "for_each_nedv(FathomYears/Name, 'CaseData/'+FathomYears/Name+'/AverageCostPerNuts0', Geography/RegionShapes/Nuts0, IndicatorData/LCC/FLEURO)";
+	}
+
+	container SoilSealing100Templ: IsTemplate = "True", url = "%sourcedataprojdir%/Indicators/Soil sealing.pdf"
+	{
+		unit<WPoint> Domain_Grid;
+		unit<UInt8>  LUC;
+		container LandUse;
+		container JrcFactorData;
+		unit<uint16> FathomYears;
+		
+		container SealingData: IsHidden = "True"
+		{
+			unit<WPoint> SoilSealing
+					:	DialogData = "Geography/LambertEA"
+					,	Source = "JRC:LandCover"
+					,	StorageName = "%SourceDataProjDir%/EUCS_100m/soilsealing/ssl_0_100.tif"
+					,	StorageType = "tif"
+					,	StorageReadOnly = "True"
+			{
+					attribute<UInt8> GridData;
+					attribute<UInt8> ReadData(Domain_Grid);
+			}
+			attribute<bool>   IsCountry(Domain_Grid): Expr = "IsDefined(domain/Basisgrid)";
+		
+			attribute<LUC>     OrgLandUse(Domain_Grid): Expr = "JrcFactorData/TiffData/CorineGrid/ModelLandUse ";
+			attribute<bool>    HasSealData(Domain_Grid): Expr = "IsDefined(SoilSealing/ReadData) && (SoilSealing/ReadData <= UInt8(100)) && IsCountry";
+			attribute<Percent> OrgSealing(Domain_Grid): Expr = "value(MakeDefined(SealingData/SoilSealing/ReadData, UInt8(0)), Percent)";
+			attribute<Percent> MedianSealing(LUC): Expr="value(rth_element(HasSealData ? SoilSealing/ReadData : UInt8(255), Float32(0.5), OrgLandUse), Percent)";
+			
+			unit<uint8> PercentClass: Expr = "Range(UInt8, 0[uint8], 254[uint8])" // Frequency tables for specific LUC's for debugging purposes. Why is SNV null for EU? and Indistry 0 for EU?
+			{
+				attribute<UInt32> F0: Expr = "pcount(HasSealData && OrgLandUse == 0[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+				attribute<UInt32> F1: Expr = "pcount(HasSealData && OrgLandUse == 1[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+				attribute<UInt32> F6: Expr = "pcount(HasSealData && OrgLandUse == 6[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+				attribute<UInt32> F7: Expr = "pcount(HasSealData && OrgLandUse == 7[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+			}
+		}
+		container PerCell
+		{
+			container State : Expr = "for_each_nedv(FathomYears/Name, 'SealingData/OrgLandUse == LandUseGridPerYearMT/'+FathomYears/Name+ ' ? SealingData/OrgSealing :  SealingData/MedianSealing[LandUseGridPerYearMT/'+FathomYears/Name+']', Domain_Grid, Percent)";
+			container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + ' - State/'+FathomYears/Name[FathomYears/StartingYear], Domain_Grid, Percent)";
+		}
+		container km10
+		{
+			container State : Expr = "for_each_nedv(FathomYears/Name, 'potential(PerCell/State/'+FathomYears/Name+ ', km10FocalPointMatr/RelWeight)', Domain_Grid, Percent)";
+			container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + ' - State/'+FathomYears/Name[FathomYears/StartingYear], Domain_Grid, Percent)";
+		}
+		container PerNuts0
+		{
+			container State : Expr = "for_each_nedv(FathomYears/Name, 'sum(PerCell/State/'+FathomYears/Name+ ', LandUse/'+First(FathomYears/Name)+'/PerNuts0/Partition) / LandUse/'+First(FathomYears/Name)+'/PerNuts0/LandArea', Geography/Regions/Nuts0, Percent)";
+			container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + ' - State/'+FathomYears/Name[FathomYears/StartingYear], RegionShapes/Nuts0, Percent)";
+		}
+		container PerNuts2
+		{
+			container State : Expr = "for_each_nedv(FathomYears/Name, 'sum(PerCell/State/'+FathomYears/Name+ ', LandUse/'+First(FathomYears/Name)+'/PerNuts2/Partition) / LandUse/'+First(FathomYears/Name)+'/PerNuts2/LandArea', Geography/Regions/Nuts2, Percent)";
+			container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + ' - State/'+FathomYears/Name[FathomYears/StartingYear], RegionShapes/Nuts2, Percent)";
+		}
+		container PerNuts3
+		{
+			container State : Expr = "for_each_nedv(FathomYears/Name, 'sum(PerCell/State/'+FathomYears/Name+ ', LandUse/'+First(FathomYears/Name)+'/PerNuts3/Partition) / LandUse/'+First(FathomYears/Name)+'/PerNuts3/LandArea', Geography/Regions/Nuts3, Percent)";
+			container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + ' - State/'+FathomYears/Name[FathomYears/StartingYear], RegionShapes/Nuts3, Percent)";
+		}
+	}
+	container RiverFloodRiskTempl: IsTemplate = "True",
+		url = "%sourcedataprojdir%/Indicators/Increased river flood risk.pdf"
+	{
+		unit<WPoint> Domain_Grid;
+		unit<UInt16>  FathomYears;
+		
+		attribute<Bool>   IsFirstDecade(FathomYears): Expr = "ID(FathomYears) == value(0, FathomYears)";
+		attribute<String> DecadeName(FathomYears): Expr = "IsFirstDecade ? 'Current' : 'New'+FathomYears/Label";
+		
+		container LandUse: Expr = ".../LandUse";
+		
+		attribute<Boolean> RiverFloodProneAreas(Domain_Grid): Expr = "IndicatorData/RiverFloodRisk/RiverFloodProne[AlbersGridRel]";
+		container PerCell: Expr = 
+			"for_each_nedv("
+				"DecadeName, "
+				"'and(RiverFloodProneAreas, LandUse/'+FathomYears/Name+'/Qualifications/'+(IsFirstDecade ?'IsBuiltupArea':'UrbanDevelopment')+')',"
+				"Domain_Grid, Boolean"
+			")";
+		
+		container km10: Expr = 
+			"for_each_nedv("
+				"DecadeName, "
+				"'potential(Float32(PerCell/'+DecadeName+')*value(1000, Promille), km10FocalPointMatr/RelWeight)',"
+				"Domain_Grid, Promille"
+			")";
+		container PerNuts0: Expr = 
+			"for_each_nedv("
+				"DecadeName, "
+				"'value(1000, Promille) * sum(Float32(PerCell/'+DecadeName+'), LandUse/'+FathomYears/Name+'/PerNuts0/Partition ) / LandUse/'+FathomYears/Name+'/PerNuts0/LandArea',"
+				"RegionShapes/Nuts0, Promille"
+			")";
+
+		container PerNuts2: Expr = 
+			"for_each_nedv("
+				"DecadeName, "
+				"'value(1000, Promille) * sum(Float32(PerCell/'+DecadeName+'), LandUse/'+FathomYears/Name+'/PerNuts2/Partition ) / LandUse/'+FathomYears/Name+'/PerNuts2/LandArea',"
+				"RegionShapes/Nuts2, Promille"
+			")";
+		container PerNuts3: Expr = 
+			"for_each_nedv("
+				"DecadeName, "
+				"'value(1000, Promille) * sum(Float32(PerCell/'+DecadeName+'), LandUse/'+FathomYears/Name+'/PerNuts3/Partition ) / LandUse/'+FathomYears/Name+'/PerNuts3/LandArea',"
+				"RegionShapes/Nuts3, Promille"
+			")";
+	}
+	container UrbanSprawlTempl: IsTemplate = "True",
+		url = "%sourcedataprojdir%/Indicators/urban sprawl.pdf"
+	{
+		unit<WPoint> Domain_Grid;
+		container JrcFactorData;
+		container LandUse;
+		unit<UInt16> FathomYears;
+		unit<UInt16> FathomPeriods;
+
+		container CaseData: IsHidden = "True"
+		{
+			container IsUrban: Expr = "for_each_nedv(FathomYears/Name, 'LandUse/'+FathomYears/Name+'/Qualifications/IsBuiltupArea', Domain_Grid, Bool)";
+			container IsLand : Expr = "for_each_nedv(FathomYears/Name, 'LandUse/'+FathomYears/Name+'/Qualifications/IsLand',        Domain_Grid, Bool)";
+			container UrbanDistrictTempl: IsTemplate = "True"
+			{
+				attribute<Bool>      IsUrban(Domain_Grid);
+				unit<UInt16>         RegionSet;
+				attribute<RegionSet> RegionGrid(Domain_Grid);
+				
+				unit<UInt32> DistrictSet: Expr = "District(UInt8(IsUrban))"
+				{
+					attribute<UInt32> Size: Expr = "pcount(Districts)";
+					attribute<.>      UrbanDistricts(Domain_Grid): Expr = "IsUrban ? Districts : UInt32(-1)";
+					attribute<UInt32> UrbanSize     (Domain_Grid): Expr = "Size[UrbanDistricts]";
+					attribute<UInt32> AvgSizePerCell(RegionSet): Expr = "mean(UrbanSize, RegionGrid)";
+
+					parameter<UInt32> NrPatches: Expr = "NrOfRows(.)";
+					parameter<UInt32> NrRegions: Expr = "NrOfRows(RegionSet)";
+					attribute<UInt32> CombiCode(Domain_Grid): Expr = "UrbanDistricts * NrRegions + UInt32(RegionGrid)";
+					unit<UInt32> UsedCode: Expr = "Unique(CombiCode)"
+					{
+						attribute<RegionSet  > RegionSet_rel: Expr = "value(Values % NrRegions, RegionSet)";
+						attribute<DistrictSet> Patch: Expr = "value(Values / NrRegions, DistrictSet)";
+					}
+					attribute<UInt32> PatchCount       (RegionSet): Expr = "pcount(UsedCode/RegionSet_rel)";
+					attribute<UInt32> AvgSizePerPatch  (RegionSet): Expr = "mean(Size[UsedCode/Patch], UsedCode/RegionSet_rel)";
+				}
+			}
+			
+			container UrbanDistr_Nuts2: Expr = "for_each_ne(FathomYears/Name,'UrbanDistrictTempl(IsUrban/'+FathomYears/Name+', RegionDomain, RegionGrid)')";
+			container UrbanDistr_Nuts0: Expr = "for_each_ne(FathomYears/Name,'UrbanDistrictTempl(IsUrban/'+FathomYears/Name+', Regions/nuts0, Regions/nuts2/nuts0_rel[nuts2_rel][RegionGrid])')";
+		}
+		
+		container TotalUrbanArea
+		{
+			container PerCell
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name, 'CaseData/IsUrban/'+FathomYears/Name, Domain_Grid, Bool)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + '&& !State/'+FathomYears/Name[FathomYears/StartingYear], Domain_Grid, Bool)";
+			}
+			container PerNuts2
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'sum(value(CaseData/IsUrban/'+FathomYears/Name+', luHa), RegionGrid)', RegionDomain, Float32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + '- State/'+FathomYears/Name[FathomYears/StartingYear], RegionDomain, Float32)";
+// 				container State : Expr = "for_each_nedv(FathomYears/Name,     'sum(value(CaseData/IsUrban/'+FathomYears/Name+', luHa), JrcFactorData/Nuts2)', Regions/nuts2, luHa)";
+// 				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + '- State/'+FathomYears/Name[FathomYears/StartingYear], Regions/nuts2, luHa)";
+			}
+			container PerNuts0
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'sum(PerNuts2/State/' +FathomYears/Name    +', Regions/nuts2/nuts0_rel[nuts2_rel])', Regions/nuts0, Float32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'sum(PerNuts2/Change/'+FathomYears/PeriodName+', Regions/nuts2/nuts0_rel[nuts2_rel])', Regions/nuts0, Float32)";
+			}
+		}
+		container UrbanDensity
+		{
+			container PerNuts2
+			{
+				container State : Expr = "for_each_nedv (FathomYears/Name,     'PopulationData/Pop'+FathomYears/Label+'[nuts2_rel] / TotalUrbanArea/PerNuts2/State/'+FathomYears/Name, RegionDomain, Float32)";
+				container Change: Expr = "for_each_nedvc(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + '- State/'+FathomYears/Name[FathomYears/StartingYear], RegionDomain, Float32, 'Classifications/Res_ha_dif_10K/Classes')";
+			}
+			container PerNuts0
+			{
+				container State : Expr = "for_each_nedv (FathomYears/Name,     'sum(PopulationData/Pop' +FathomYears/Label+', Regions/nuts2/nuts0_rel) / TotalUrbanArea/PerNuts0/State/'+FathomYears/Name, Regions/nuts0, Float32)";
+				container Change: Expr = "for_each_nedvc(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + '- State/'+FathomYears/Name[FathomYears/StartingYear], Regions/nuts0, Float32, 'Classifications/Res_ha_dif_10K/Classes')";
+			}
+		}	
+		container UrbanisationDegree
+		{
+			container PerNuts2
+			{
+				container State : Expr = "for_each_nedv (FathomYears/Name,     'sum(value(CaseData/IsUrban/' +FathomYears/Name+', luHa), RegionGrid) / sum(value(CaseData/IsLand/'+FathomYears/Name+',luHa), RegionGrid)', RegionDomain, Ratio)";
+				container Change: Expr = "for_each_nedvc(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + '- State/'+FathomYears/Name[FathomYears/StartingYear], RegionDomain, Ratio, 'Classifications/RatioChange_11k/Classes')";
+			}
+			container PerNuts0
+			{
+				container State : Expr = "for_each_nedv (FathomYears/Name,     'sum(value(CaseData/IsUrban/' +FathomYears/Name+', luHa), Regions/nuts2/nuts0_rel[nuts2_rel][RegionGrid]) / sum(value(CaseData/IsLand/'+FathomYears/Name+',luHa), Regions/nuts2/nuts0_rel[nuts2_rel][RegionGrid])', Regions/nuts0, Ratio)";
+				container Change: Expr = "for_each_nedvc(FathomYears/PeriodName, 'State/'+FathomYears/Name[FathomYears/EndingYear] + '- State/'+FathomYears/Name[FathomYears/StartingYear], Regions/nuts0, Ratio, 'Classifications/RatioChange_11k/Classes')";
+			}
+		}	
+		container NumberOfUrbanAreas
+		{
+			container PerNuts2
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'CaseData/UrbanDistr_Nuts2/' +FathomYears/Name+'/DistrictSet/PatchCount', RegionDomain, UInt32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'Int32(State/'+FathomYears/Name[FathomYears/EndingYear] + ')- Int32(State/'+FathomYears/Name[FathomYears/StartingYear]+')', RegionDomain, Int32)";
+			}
+			container PerNuts0
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'CaseData/UrbanDistr_Nuts0/' +FathomYears/Name+'/DistrictSet/PatchCount', Regions/Nuts0, UInt32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'Int32(State/'+FathomYears/Name[FathomYears/EndingYear] + ')- Int32(State/'+FathomYears/Name[FathomYears/StartingYear]+')', Regions/nuts0, Int32)";
+			}
+		}
+		container UrbanAreaSize
+		{
+			container State : Expr = "for_each_nedv(FathomYears/Name,     'CaseData/UrbanDistr_Nuts2/' +FathomYears/Name+'/DistrictSet/UrbanSize', domain_grid, UInt32)";
+			container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'Int32(MakeDefined(State/'+FathomYears/Name[FathomYears/EndingYear] + ', 0))- Int32(MakeDefined(State/'+FathomYears/Name[FathomYears/StartingYear]+', 0))', domain_grid, Int32)";
+		}
+		container AverageUrbanAreaSize
+		{
+			container PerNuts2
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'CaseData/UrbanDistr_Nuts2/' +FathomYears/Name+'/DistrictSet/AvgSizePerPatch', RegionDomain, UInt32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'Int32(State/'+FathomYears/Name[FathomYears/EndingYear] + ')- Int32(State/'+FathomYears/Name[FathomYears/StartingYear]+')', RegionDomain, Int32)";
+			}
+			container PerNuts0
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'CaseData/UrbanDistr_Nuts0/' +FathomYears/Name+'/DistrictSet/AvgSizePerPatch', Regions/Nuts0, UInt32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'Int32(State/'+FathomYears/Name[FathomYears/EndingYear] + ')- Int32(State/'+FathomYears/Name[FathomYears/StartingYear]+')', Regions/nuts0, Int32)";
+			}
+		}
+		container WeightedAverageUrbanAreaSize
+		{
+			container PerNuts2
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'CaseData/UrbanDistr_Nuts2/' +FathomYears/Name+'/DistrictSet/AvgSizePerCell', RegionDomain, UInt32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'Int32(State/'+FathomYears/Name[FathomYears/EndingYear] + ')- Int32(State/'+FathomYears/Name[FathomYears/StartingYear]+')', RegionDomain, Int32)";
+			}
+			container PerNuts0
+			{
+				container State : Expr = "for_each_nedv(FathomYears/Name,     'CaseData/UrbanDistr_Nuts0/' +FathomYears/Name+'/DistrictSet/AvgSizePerCell', Regions/Nuts0, UInt32)";
+				container Change: Expr = "for_each_nedv(FathomYears/PeriodName, 'Int32(State/'+FathomYears/Name[FathomYears/EndingYear] + ')- Int32(State/'+FathomYears/Name[FathomYears/StartingYear]+')', Regions/nuts0, Int32)";
+			}
+		}
+	}
+	
+/* REMOVE	
+	container EvaluationTemplate: IsTemplate = "True"
+	{
+		container Thematic
+		{	
+			container Carbon:       Expr = "IndicatorData/Carbon/Templ()", 
+				url = "=IndicatorData/Carbon/FactSheetName";
+			container Erosion:      Expr = "IndicatorData/Erosion/Templ()", 
+				url = "=IndicatorData/Erosion/FactSheetName";
+			container biodiversity: Expr = "IndicatorData/biodiversity/Templ(IndicatorData/biodiversity/AdditionalData/B1)",
+				url = "=IndicatorData/biodiversity/FactSheetName";
+			container LandCoverConnectivityPotential: Expr = "LccpTempl(Domain_Grid, LandUseData/LU18_2000, IndicatorData/FathomYears)",
+				url = "=IndicatorData/LCC/FactSheetName";
+//			container SoilSealing: Expr = "SoilSealingTempl(LandUse)",
+//				url = "%sourcedataprojdir%/Indicators/Soil sealing.pdf";
+			container RiverFloodRisk: Expr = "RiverFloodRiskTempl(Domain_Grid, IndicatorData/FathomYears)",
+				url = "%sourcedataprojdir%/Indicators/Increased river flood risk.pdf";
+//			container UrbanSprawl: Expr = "UrbanSprawlTempl(Domain_Grid, IndicatorData/FathomYears)",
+//				url = "%sourcedataprojdir%/Indicators/urban sprawl.pdf";
+		}	
+	}
+REMOVE */
+
+	container WaterRetention {
+		
+		// weights
+		parameter<float32> w_lai  := 0.17f;
+		parameter<float32> w_perm := 0.29f;
+		parameter<float32> w_slope:= 0.10f;
+		parameter<float32> w_tawc := 0.14f;
+		parameter<float32> w_wb   :=0.28f;
+		
+		parameter<float32> w_sumcheck := w_lai+w_perm+w_slope+w_tawc + w_wb;
+		
+		container LAI
+		{
+			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/EUCS_100m/indicatordata/WaterRetention/LAI_values.csv";
+			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
+			{ 
+				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			}
+			unit<uint32> Domain: Expr = "Range(uint32, 0, StrCount(FileData, '\n')-1)";
+			
+			attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
+			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			container ReadData: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)";
+			container Data
+			{
+				attribute< uint8 > ENZ      (Domain): expr = "rjoin(ReadData/ENZNAME, Classifications/EnvZoneClass/ENZ_NAME, Classifications/EnvZoneClass/VALUE)"; // Environmental Zone
+				attribute< uint8 > JRC_CODE (Domain): expr = "uint8(ReadData/JRC_CODE)";
+				attribute< uint16> CombiCode(Domain): expr = "uint16(ENZ)*uint16(100) + uint16(JRC_CODE)";
+				attribute<float32> LAI      (Domain): expr = "Float32(ReadData/LAI)"; // Leaf Area Index
+			}
+		}
+		container SoilSealing
+		{
+			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/EUCS_100m/indicatordata/WaterRetention/SOIL_SEALING.csv";
+			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
+			{ 
+				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			}
+			unit<uint32> Domain: Expr = "Range(uint32, 0, StrCount(FileData, '\n')-1)";
+			
+			attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
+			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			container ReadData: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)";
+			container Data
+			{
+				attribute<Geography/Regions/Nuts0> Nuts0_rel(Domain): expr = "rlookup(ReadData/Nuts0_ID, Geography/Regions/Nuts0/ICC)"; // Nuts0.
+				attribute< JrcCodes> JRC_CODE (Domain): expr = "uint8(ReadData/CLC)";
+				// Urban=1; Industry=2; Arable = 3; PC=4; Pastures=5; Forests=6; SNV=7; OtherNature=9; Wetlands=10;
+				attribute< uint16> CombiCode(Domain): expr = "Nuts0_rel * uint16(100) + uint16(JRC_CODE)";
+				attribute<Percent> SS_Avg   (Domain): expr = "ReadData/SS_Avg[Percent]"; // Leaf Area Index
+			}
+		}
+		unit<uint8> JrcCodes: Expr = "Range(uint8, uint8(0), uint8(11))"
+		{
+			attribute<String> Label: ['', 'Urban', 'Industry', 'Arable', 'PermCrops', 'Pastures', 'Forests', 'SNV', '', 'OtherNature', 'Wetlands'];
+		}
+		unit<uint8> LuClass: Expr = "Classifications/LU/ViewType"
+		{
+			// 0;'None' -> 0 -> R_LAI := 0
+			// 1;'Urban' ->  1
+			// 2;'Industrial' -> 2
+			// 3;'OtherArable' -> 3
+			// 4;'PermanentCrops' -> 3
+			// 5;'Pastures' -> 5
+			// 6;'Forests' -> 6
+			// 7;'TransWoodlandShrub' -> 6
+			// 8;'Cereals' -> 3
+			// 9;'Maize' -> 3
+			// 10;'RootCrops'-> 3
+			// 11;'AbanArable' -> 3
+			// 12;'AbanPermanentCrops' -> 3
+			// 13;'AbanPastures'-> 5
+			// 14;'AbanUrban'-> 1
+			// 15;'AbanIndustry'-> 2
+			// 16;'NewEnergyCrops'-> 3
+			// 17;'SHVA' -> 6
+			// 18;'Infrastructure' -> 0 (not simulated so no change expected)
+			// 19;'OtherNature' -> 0 (idem)
+			// 20;'Wetlands' -> 0 (idem)
+			// 21;'WaterBodies' -> 0 (idem)
+			// 22;'UrbanGreenLeisure' -> 0 (idem)
+			attribute<JrcCodes> JrcCodes_rel: [ 0, 1, 2, 3, 3, 5, 6, 6, 3, 3, 3, 3, 3, 5, 1, 2, 3, 6, 0, 0, 0, 0, 0];
+		}
+		
+		attribute<Bool> IsCrops (LuClass): Expr = "ID(LuClass) == uint8(3) || ID(LuClass) == uint8(4) || ID(LuClass) >= uint8(8) && ID(LuClass) <= uint8(12) || ID(LuClass) == uint8(16)";
+		attribute<Bool> IsGrass (LuClass): Expr = "ID(LuClass) == uint8(5) || ID(LuClass) == uint8(13)|| ID(LuClass) == uint8(17)";
+		attribute<Bool> IsForest(LuClass): Expr = "ID(LuClass) == uint8(6) || ID(LuClass) == uint8(7)";
+		
+		unit<uint32> ChangeTable: Expr = "Combine(LuClass, LuClass)"
+		{
+			attribute<Percent> Value4yr: Expr= 
+				"IsCrops [first_rel] && IsGrass [second_rel] ? 1.0[Percent] :" 
+				"IsCrops [first_rel] && IsForest[second_rel] ? 3.0[Percent] :" 
+				"IsGrass [first_rel] && IsCrops [second_rel] ?-4.0[Percent] :" 
+				"IsGrass [first_rel] && IsForest[second_rel] ?+2.0[Percent] :" 
+				"IsForest[first_rel] && IsCrops [second_rel] ?-7.0[Percent] :" 
+				"IsForest[first_rel] && IsGrass [second_rel] ?-3.0[Percent] :" 
+				"0.0[Percent]";
+			attribute<Percent> Value5yr: Expr=  "Value4yr * 5.0[Year] / 4.0[Year]";
+			
+			attribute<Float32> Factor4Yr: Expr = "(100[Percent] + Value4Yr) / 100[Percent]";
+			attribute<Float32> Factor5Yr: Expr = "(100[Percent] + Value5Yr) / 100[Percent]";
+		}
+			
+		
+		container Templ: IsTemplate = "True"
+		{
+			unit<WPoint> domain_grid;
+			container JrcFactorData;
+			container LandUse;
+			unit<UInt16> FathomYears;
+			
+			unit<UInt32> AllYears: Expr = "union_unit(range(uint16, uint16(0), uint16(1)), FathomYears)"
+			{
+				attribute<uint16> Year: Expr = "union_data(., First(FathomYears/PrevYear), FathomYears/Year)";
+				attribute<String> Name: Expr = "'P'+string(Year)";
+				attribute<string> LuRef:Expr= "union_data(., 'CorineGrid/ViewLandUse', 'LandUse/'+FathomYears/Name+'/ViewType')";
+			}
+	
+			attribute<String> LuRef    (FathomYears): Expr = "AllYears/LuRef[value(ID(FathomYears)+uint16(1), AllYears)]";
+			attribute<String> PrevLuRef(FathomYears): Expr = "AllYears/LuRef[value(ID(FathomYears)+uint16(0), AllYears)]";
+			attribute<String> ChangeTableRef(FathomYears): Expr = "'ChangeTable/Factor'+string(FathomYears/Year - FathomYears/PrevYear)+'yr'";
+			
+			// Permeability
+//			attribute<Float32> Permeability_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/PERM/Perm.tif";
+			attribute<Float32> Permeability(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/PERM/Permeability_corr.tif";
+			
+			// <HistMin>-3.976486914325506e-005</HistMin>
+			// <HistMax>9.999949455261231</HistMax>
+			attribute<Float32> R_PERM   (domain_grid) := max_elem(Permeability, 0f); // replace negative values by 0
+			
+			// Slope
+//			attribute<Float32> R_slope (domain_grid) : StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/slope/slope100.tif";
+			
+			attribute<Float32> slope100_corr (domain_grid) :=  (CaseData/JrcFactorData/slope100_cont > 75degrees) ? 0f : CaseData/JrcFactorData/slope100_cont;
+			attribute<Float32> R_slope(domain_grid) := 10f - slope100_corr * (10f / 75degrees);
+	
+			// the capacity of plants to capture water
+			attribute<UInt8> EZ(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Env_mask.tif";
+			container LaiCombiCode: expr = "for_each_nedv(AllYears/Name, 'uint16(EZ) * uint16(100) + uint16(LuClass/JrcCodes_rel['+AllYears/LuRef+'])', domain_grid, uint16)";
+			container R_LAI: expr = "for_each_nedv(AllYears/Name, 'MakeDefined(rjoin(LaiCombiCode/'+AllYears/Name+', LAI/Data/CombiCode, LAI/Data/LAI), Float32(0.0))', domain_grid, float32)";
+			
+			// Total Available Water Capacity
+			container OC_ChangeFactor: expr = "for_each_nedv(FathomYears/Name, ChangeTableRef+'[value(uint16('+PrevLuRef+') * uint16(#LuClass) + uint16('+LuRef+'), ChangeTable)]', domain_grid, float32)";
+			container R_TAWC := for_each_nedv(FathomYears/Name, 
+				'median('+MakeDefined('R_TAWC/'+FathomYears/Name[ID(FathomYears)-1w], 'P2006')+'* OC_ChangeFactor/'+FathomYears/Name+', interval(0f, 10f))'
+				, domain_grid, float32)
+			{
+//				attribute<Float32> TAWC_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/TAWC/TAWC_06.tif";
+				attribute<Float32> TAWC   (domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/TAWC/TAWC_jan_1res.tif";
+				attribute<Float32> P2006  (domain_grid) := max_elem(TAWC, 0f);
+			}
+			attribute<Float32> R_WB(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/WB_factor.tif";
+			
+			// Soil Sealing
+			container ssCombiCode := for_each_nedv(AllYears/Name, 'uint16(JrcFactorData/Nuts0)*100w + uint16('+AllYears/LuRef+')', domain_grid, uint16);
+			container R_ss := for_each_nedv(AllYears/Name,
+				'MakeDefined(rjoin(ssCombiCode/'+AllYears/Name+', SoilSealing/Data/CombiCode, SoilSealing/Data/SS_avg), 0[Percent])',
+				domain_grid, Percent);
+				
+			container F_sp := for_each_nedv(AllYears/Name,
+				'(100[Percent] - R_ss/'+AllYears/Name+') * (1f / 100[Percent])',
+				domain_grid, Float32);
+				
+			container WRI := 
+				for_each_nedv(AllYears/Name,
+					replace(
+						'median('
+							'F_sp/@Y * (w_lai * R_LAI/@Y + w_perm * R_PERM + w_slope * R_slope + w_tawc * R_TAWC/@Y + w_wb * R_WB)'
+							', interval(0f,10f)'
+						')', 
+						'@Y', AllYears/Name),
+					domain_grid, float32
+				);
+		}
+	}
+	
+	container SoilErosion
+	{
+		unit<uint8> ClimateScenario: Expr= "Range(uint8, uint8(0), uint8(5))"
+		{
+			attribute<String> Name: [ 'RCA3HAD', 'ALADIN', 'HIRHAM', 'CLM', 'RCA3BCM'];
+			attribute<String> Code: Expr = "Name";
+		}
+		unit<uint8> Month:  Expr= "Range(uint8, uint8(0), uint8(12))"
+		{
+			attribute<String> Name: [ 'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+		}
+		container LookupTableMonthly
+		{
+			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/EUCS_100m/indicatordata/SoilErosion/lookup-monthly.csv";
+			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
+			{ 
+				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			}
+			unit<uint32> Domain: Expr = "Range(uint32, 0, StrCount(FileData, '\n')-1)";
+			
+			attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
+			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			container ReadData: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)";
+			container Data: Expr = "for_each_nedv(Month/Name, 'Float32(ReadData/'+Month/Name+')', Domain, Float32)"
+			{
+				attribute<uint8 > EnZ      (Domain): expr = "uint8(ReadData/EnZ)";
+				attribute<uint8 > Class    (Domain): expr = "uint8(ReadData/Class)";
+				attribute<uint16> CombiCode(Domain): expr= "uint16(Enz) * uint16(100) + uint16(Class)";
+			}
+		}
+		
+		
+		container Templ: IsTemplate = "True"
+		{
+			unit<WPoint> domain_grid;
+			container JrcFactorData;
+			container LandUse;
+			unit<UInt16> FathomYears;
+
+			unit<UInt32> AllYears: Expr = "union_unit(range(uint16, uint16(0), uint16(1)), FathomYears)"
+			{
+				attribute<uint16> Year: Expr = "union_data(., First(FathomYears/PrevYear), FathomYears/Year)";
+				attribute<String> Name: Expr = "'P'+string(Year)";
+				attribute<string> LuRef:Expr= "union_data(., 'CorineGrid/ViewLandUse', 'LandUse/'+FathomYears/Name+'/ViewType')";
+			}
+			unit<uint32> FathomMonth: Expr = "Combine(AllYears, Month)"
+			{
+				attribute<String> Name: Expr = "Month/Name[second_rel]+String(AllYears/Year[first_rel])";
+			}
+			container CaseData {
+				attribute<Float32> LS (domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SoilErosion/ls_eu28.tif", StorageType = "gdal.grid";
+				attribute<Float32> K  (domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SoilErosion/Kst_correct_Full.tif", StorageType = "gdal.grid";
+				attribute<Float32> LSK(domain_grid): expr = "max_elem(LS, 0.0[Float32]) * max_elem(K, 0.0[Float32])";
+				
+				attribute<uint8> EZ (domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Env_mask.tif", StorageType = "gdal.grid";
+				
+				container CombiCode: expr = "for_each_nedv(AllYears/Name, 'uint16(EZ) * uint16(100) + uint16('+AllYears/LuRef+')', domain_grid, uint16)";
+				container LC: expr = "for_each_nedv(FathomMonth/Name, 'MakeDefined(rjoin(CombiCode/'+AllYears/Name[FathomMonth/first_rel]+', LookupTableMonthly/Data/CombiCode, LookupTableMonthly/Data/'+Month/Name[FathomMonth/second_rel]+'), Float32(0.0))', domain_grid, float32)";
+				attribute<Float32> P_imp(domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SoilErosion/EU_PFactor_V2.tif", StorageType = "gdal.grid";
+				attribute<Float32> P(domain_grid): Expr = "MakeDefined(P_imp < 0.0[float32] ? 1.0[Float32] : p_imp, 1.0[Float32])";
+				
+				container Snow_m_imp: Expr = "for_each_ndva(FathomMonth/Name, domain_grid, uint8, '%SourceDataProjDir%/EUCS_100m/SNOW/Rm_'+FathomMonth/Name+'.tif')";
+				container Snow_m:     Expr = "for_each_nedv(FathomMonth/Name, replace('Float32(replace_value(MakeDefined(Snow_m_imp/@M, uint8(2)), uint8(128), uint8(2)))', '@M', FathomMonth/Name),domain_grid, Float32)";
+				container LC_m:   Expr = "for_each_nedv(FathomMonth/Name, replace('Snow_m/@M * CaseData/LC/@M', '@M', FathomMonth/Name),domain_grid, Float32)";
+				container LC_y:   Expr = "for_each_nedva(AllYears/Name, replace('add('+AsItemList('LC_m/'+Month/Name+'@Y')+')', '@Y', String(AllYears/Year)),domain_grid, Float32,DirName+'/SoilErosion/LCy_'+AllYears/Name+'.tif')";
+				container C_y: Expr = "for_each_nedva(AllYears/Name, replace('Float32(1.0 / 24.0) * LC_y/@Y', '@Y', AllYears/Name),domain_grid, Float32, DirName+'/SoilErosion/Cy_'+AllYears/Name+'.tif')";
+				container PC_y: Expr = "for_each_nedva(AllYears/Name, replace('P * C_y/@Y', '@Y', AllYears/Name),domain_grid, Float32, DirName+'/Indicators/SoilErosion/PCy_'+AllYears/Name+'.tif')";
+				
+				unit<wpoint> AggrGrid: Expr = "/Geography/AggrRegions/km10/grid";
+				attribute<AggrGrid> AggrGrid_rel(domain_grid): Expr = "ID(domain_grid)[AggrGrid]";
+			}
+			container AggrTempl: IsTemplate = "True"
+			{
+				// Structural Impact
+				container Y:     Expr = "for_each_nedva(AllYears/Name, replace('sum (.../Y/@Y,   CaseData/AggrGrid_rel)','@Y', AllYears/Name), CaseData/AggrGrid, Float32, DirName+'/SoilErosion/'+Code+'_Y_10km_' +AllYears/Name+'.tif')";
+				container E:     Expr = "for_each_nedva(AllYears/Name, replace('mean(.../E/@Y,   CaseData/AggrGrid_rel)','@Y', AllYears/Name), CaseData/AggrGrid, Float32, DirName+'/SoilErosion/'+Code+'_E_10km_' +AllYears/Name+'.tif')";
+				container B_e:   Expr = "for_each_nedva(AllYears/Name, replace('sum (.../B_e/@Y, CaseData/AggrGrid_rel)','@Y', AllYears/Name), CaseData/AggrGrid, Float32, DirName+'/SoilErosion/'+Code+'_Be_10km_'+AllYears/Name+'.tif')";
+				container E_s:   Expr = "for_each_nedva(AllYears/Name, replace('sum (.../E_s/@Y, CaseData/AggrGrid_rel)','@Y', AllYears/Name), CaseData/AggrGrid, Float32, DirName+'/SoilErosion/'+Code+'_Es_10km_'+AllYears/Name+'.tif')";
+				
+				parameter<string> All10kmSuppliers: Expr = "AsList(replace('Y/@Y;E/@Y;B_e/@Y;E_S/@Y', '@Y', AllYears/Name),';')";
+				parameter<string> Generate_10km: Expr = "'Ready'", ExplicitSuppliers = "=All10kmSuppliers";
+			}
+			container ScenarioTempl: IsTemplate = "True"
+			{
+				parameter<String> Code;
+				
+				container RainFallImp:  Expr = "for_each_ndvat(AllYears/Name, domain_grid, Float32, '%SourceDataProjDir%/EUCS_100m/SoilErosion/'+Code+'/'+Code+String(AllYears/Year)+'.tif', 'gdal.grid')";
+				container RainFallData: Expr = "for_each_nedv(AllYears/Name, 'Max_elem(RainFallImp/'+AllYears/Name+',0.0[Float32])', domain_grid, Float32)";
+				
+				// Structural Impact
+				container Y:   Expr = "for_each_nedva(AllYears/Name, replace('CaseData/LSK * RainFallData/@Y','@Y', AllYears/Name), Domain_Grid, Float32, DirName+'/SoilErosion/'+Code+'_Y_100m_'+AllYears/Name+'.tif')";
+				
+				// Soil erosion indicators
+				container A_i :   Expr = "for_each_nedva(AllYears/Name, replace('Y/@Y * CaseData/PC_y/@Y','@Y', AllYears/Name), Domain_Grid, Float32, DirName+'/SoilErosion/'+Code+'_A_100m_'+AllYears/Name+'.tif')";
+				container A_Bi:   Expr = "for_each_nedva(AllYears/Name, replace('Y/@Y - A_i/@Y','@Y', AllYears/Name), Domain_Grid, Float32, DirName+'/SoilErosion/'+Code+'_AB_100m_'+AllYears/Name+'.tif')";
+				
+				// Capacity for Ecosystem Service Provision
+				container E:   Expr = "for_each_nedva(AllYears/Name, replace('1.0[Float32] - CaseData/C_y/@Y','@Y', AllYears/Name), Domain_Grid, Float32, DirName+'/SoilErosion/'+Code+'_E_100m_'+AllYears/Name+'.tif')";
+				
+				// Ecosystem Service Mitigated Impact
+				container B_e:   Expr = "for_each_nedva(AllYears/Name, replace('Y/@Y * CaseData/PC_y/@Y','@Y', AllYears/Name), Domain_Grid, Float32, DirName+'/SoilErosion/'+Code+'_Be_100m_'+AllYears/Name+'.tif')";
+				
+				// Actual Ecosystem Service Provision
+				container E_s:   Expr = "for_each_nedva(AllYears/Name, replace('Y/@Y - B_e/@Y','@Y', AllYears/Name), Domain_Grid, Float32, DirName+'/SoilErosion/'+Code+'_Es_100m_'+AllYears/Name+'.tif')";
+				
+				parameter<string> All100mSuppliers: Expr = "AsList(replace('Y/@Y;E/@Y;B_e/@Y;E_S/@Y', '@Y', AllYears/Name),';')";
+				parameter<string> Generate_100m: Expr = "'Ready'", ExplicitSuppliers = "=All100mSuppliers";
+				
+				container Aggr : Expr= "AggrTempl()";
+			}
+			container Results: Expr = "for_each_ne(ClimateScenario/Name, 'ScenarioTempl('+Quote(ClimateScenario/Code)+')')"
+			{
+				container Averages {
+					parameter<String> Code: Expr = "'MEAN'";
+					
+					parameter<Float32> ScenarioFactor: Expr = "Float32(1.0) / Float32(#ClimateScenario)";
+					container Y:      Expr = "for_each_nedva(AllYears/Name, 'ScenarioFactor*add('+replace(AsItemList(ClimateScenario/Name+'/Y/@Y'),'@Y', AllYears/Name)+')', Domain_Grid, Float32, DirName+'/SoilErosion/Y_'+AllYears/Name+'.tif')";
+					
+					// Soil erosion indicators
+					container A_i :   Expr = "for_each_nedva(AllYears/Name, 'ScenarioFactor*add('+replace(AsItemList(ClimateScenario/Name+'/A_i/@Y'),'@Y', AllYears/Name)+')', Domain_Grid, Float32, DirName+'/SoilErosion/A_'+AllYears/Name+'.tif')";
+					container A_Bi:   Expr = "for_each_nedva(AllYears/Name, 'ScenarioFactor*add('+replace(AsItemList(ClimateScenario/Name+'/A_Bi/@Y'),'@Y', AllYears/Name)+')', Domain_Grid, Float32, DirName+'/SoilErosion/AB_'+AllYears/Name+'.tif')";
+					
+					// Capacity for Ecosystem Service Provision
+					container e:   Expr = "for_each_nedva(AllYears/Name, 'ScenarioFactor*add('+replace(AsItemList(ClimateScenario/Name+'/e/@Y'),'@Y', AllYears/Name)+')', Domain_Grid, Float32, DirName+'/SoilErosion/e_'+AllYears/Name+'.tif')";
+					
+					// Ecosystem Service Mitigated Impact
+					container B_e:   Expr = "for_each_nedva(AllYears/Name, 'ScenarioFactor*add('+replace(AsItemList(ClimateScenario/Name+'/B_e/@Y'),'@Y', AllYears/Name)+')', Domain_Grid, Float32, DirName+'/SoilErosion/Be_'+AllYears/Name+'.tif')";
+					
+					// Actual Ecosystem Service Provision
+					container E_s:   Expr = "for_each_nedva(AllYears/Name, 'ScenarioFactor*add('+replace(AsItemList(ClimateScenario/Name+'/E_s/@Y'),'@Y', AllYears/Name)+')', Domain_Grid, Float32, DirName+'/SoilErosion/Es_'+AllYears/Name+'.tif')";
+					
+					parameter<string> All100mSuppliers: Expr = "AsList(replace('Y/@Y;E/@Y;B_e/@Y;E_S/@Y', '@Y', AllYears/Name),';')";
+					parameter<string> Generate_100m: Expr = "'Ready'", ExplicitSuppliers = "=All100mSuppliers";
+					
+					container Aggr : Expr= "AggrTempl()";
+				}
+				
+				parameter<string> All100mSuppliers: Expr = "AsList(ClimateScenario/Name+'/Generate_100m',';')+';Averages/Generate_100m'";
+				parameter<string> GenerateAll_100m: Expr = "'Ready'", ExplicitSuppliers = "=All100mSuppliers";
+				
+				parameter<string> All10kmSuppliers: Expr = "AsList(ClimateScenario/Name+'/Aggr/Generate_10km',';')+';Averages/Aggr/Generate_10km'";
+				parameter<string> GenerateAll_10km: Expr = "'Ready'", ExplicitSuppliers = "=All10kmSuppliers";
+			}
+		}
+	}
+	container AgriAbandonmentStartingState: IsTemplate = "True"
+	{
+		unit<UINt32> domain;
+		attribute<bool> Arable        (domain): Expr = "const(false, domain)";
+		attribute<bool> PermanentCrops(domain): Expr = "const(false, domain)";
+		attribute<bool> Pastures      (domain): Expr = "const(false, domain)";
+	}
+	container EvaluationTemplate100: IsTemplate = "True"
+	{
+		unit<UInt8> ModelType;
+		unit<UInt16> Periods;
+		
+		unit<WPoint> Domain_Grid;
+		unit<uint32> Domain;
+		
+		container LandUseGridPerYearMT;
+		container LandUsePerYearMT;
+		
+		container JrcFactorData;
+
+		parameter<String> DirName;
+		
+		container PopulationData;
+
+		unit<UInt16> Decennium: Expr = "Periods/Decennium";
+		unit<UInt16> Lustrum:   Expr = "Periods/Lustrum";
+		unit<UInt16> LU_Period: Expr = "Lustrum";
+
+		unit<WPoint> CorineGrid: Expr = "JrcFactorData/TiffData/CorineGrid";
+		attribute<Albers1kmGrid> AlbersGridRel(Domain_Grid): Expr = "JrcFactorData/AlbersGridRel";
+		
+		
+		container Landuse: url = "%sourcedataprojdir%/Indicators/Land use indicators.pdf",
+			Expr = 
+				"for_each_ne("
+					"LU_Period/Name, "
+					"'indicatorData/LandUse/Templ("
+						"Domain_Grid, "
+						"AlbersGridRel, "
+						"JrcFactorData, "
+						"CorineGrid/CorineLandUse, "
+						"LandUseGridPerYearMT/'+LU_Period/Name+', "
+						"LU_Period"
+					")'"
+				")";
+				
+		container StartingAbandonment: Expr ="AgriAbandonmentStartingState(domain)", IsHidden = "True";
+		
+		unit<UInt16> SharedIndicatorsTimeSteps: Expr = "Lustrum"; // or "Periods" @USERINPUT
+		container SharedIndicators:
+			Expr = 
+				"for_each_ne("
+					"SharedIndicatorsTimeSteps/Name, "
+					"'LandUseModels/ModelTraits/OutputGenerators/SharedIndicators("
+						"domain, "
+						"CorineGrid/ModelLandUse[domain/Grid_Rel], "
+						"'+MakeDefined('LandUsePerYearMT/'+SharedIndicatorsTimeSteps/Name[ID(SharedIndicatorsTimeSteps)-UInt16(1)], 'CorineGrid/ModelLandUse[domain/Grid_Rel]')+', "
+						"LandUsePerYearMT/'+SharedIndicatorsTimeSteps/Name+',"
+						"JrcFactorData, "
+						"'+MakeDefined(SharedIndicatorsTimeSteps/Name[ID(SharedIndicatorsTimeSteps)-UInt16(1)]+'/NetAgriAbandonment', 'StartingAbandonment')+',"
+						"RegionDomain, RegionGrid[domain/grid_rel],"
+						"'+Quote(DirName + '/' + SharedIndicatorsTimeSteps/Name)+'"
+					")'"
+				")";
+
+		container LisFlood {
+//			container LisFlood06:        Expr = "  IndicatorData/lisflood/Templ(IndicatorData/LisFlood/IdlDomain, DirName+'/LisFlood', domain_grid, )", Descr = "With indoiator domain and clc from IDL";
+			container FinalYear: Expr = "='IndicatorData/lisflood/Templ(IndicatorData/LisFlood/IdlDomain, DirName+''/LisFlood'', domain_grid, landuse/'+Last(Lustrum/Name)+'/ViewType)'", Descr = "With indocator domain and clc from run result";
+		}
+		container Thematic
+		{	
+// TODO, Get LccTempl working again, low priority
+//			container LandCoverConnectivityPotential: Expr = "LccpTempl(domain_grid, CorineGrid/ViewLandUse, FathomYears)",
+//				url = "=IndicatorData/LCC/FactSheetName";
+
+// TODO, High Priority
+			container SoilSealing: Expr = "SoilSealing100Templ(Domain_Grid, ModelType, LandUse, JrcFactorData, Decennium)",
+				url = "%sourcedataprojdir%/Indicators/Soil sealing.pdf";
+			
+			container UrbanGhostPixels: Expr = "for_each_nedv(Periods/Name, 'sum(uint32((simulation_results/landuse/ClippedGridPerYearVT_ReadOnly/'+Periods/Name+' = 1b) && (simulation_results/landuse/ClippedQiPerYearVT_ReadOnly/'+Periods/Name+' = 0i)))', void, uint32)" {
+				parameter<uint32> P2012: expr = "sum(uint32((simulation_results/landuse/ClippedGridPerYearVT_ReadOnly/P2012 = 1b) && (simulation_results/landuse/ClippedQiPerYearVT_ReadOnly/P2012 = 0i)))";}
+				
+			container GhostPixelMaps: expr = "for_each_nedv(Periods/Name, '(simulation_results/landuse/ClippedGridPerYearVT_ReadOnly/'+Periods/Name+' = 1b) && (simulation_results/landuse/ClippedQiPerYearVT_ReadOnly/'+Periods/Name+' = 0i)', domain_grid, bool)" {
+				attribute<bool> P2012 (domain_grid): expr = "(simulation_results/landuse/ClippedGridPerYearVT_ReadOnly/P2012 = 1b) && (simulation_results/landuse/ClippedQiPerYearVT_ReadOnly/P2012 = 0i)";
+			}
+			container GhostsPixelsInitialUrban: expr = "for_each_nedv(Periods/Name, '(simulation_results/landuse/ClippedGridPerYearVT_ReadOnly/'+Periods/Name+' = 1b) && (simulation_results/landuse/ClippedGridPerYearVT_ReadOnly/P2012 = 1b) && (simulation_results/landuse/ClippedQiPerYearVT_ReadOnly/'+Periods/Name+' = 0i)', domain_grid, bool)";
+			container NewGhostPixels:			expr = "for_each_nedv(Periods/Name, 'GhostPixelMaps/'+Periods/Name+' && !GhostPixelMaps/P2012', domain_grid, bool)";
+			
+			
+// TODO, low priority
+//			container RiverFloodRisk: Expr = "RiverFloodRiskTempl(Domain_Grid, FathomYears)",
+//				url = "%sourcedataprojdir%/Indicators/Increased river flood risk.pdf";
+
+			container UrbanSprawl: Expr = "UrbanSprawlTempl(Domain_Grid, JrcFactorData, LandUse, Decennium)",
+				url = "%sourcedataprojdir%/Indicators/urban sprawl.pdf";
+				
+			container WaterRetention: Expr = "IndicatorData/WaterRetention/Templ(Domain_Grid, JrcFactorData, LandUse, Lustrum)",
+				url = "%sourcedataprojdir%/Indicators/Readme_water_retention.docx";
+			container SoilErosion: Expr = "IndicatorData/SoilErosion/Templ(Domain_Grid, JrcFactorData, LandUse, Decennium)",
+				url = "%sourcedataprojdir%/Indicators/Readme_soil_erosion_v2.docx";
+		}	
+	}
+}

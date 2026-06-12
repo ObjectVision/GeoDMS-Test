@@ -1,0 +1,228 @@
+container Biodiversity: url = "=Biodiversity/FactSheetName"
+{
+	parameter<String> BioDataDirName: Expr = "IndiDataDirName+'/Biodiversity'";
+	parameter<String> FactSheetName: Expr = "IndiDataDirName+'/biodiversity.pdf'";
+	
+	unit<Float32> PercentMSA: Expr = "Units/Percent", cdf = "MsaClass/Classes";
+	unit<UInt8> MsaClass: NrOfRows = 9
+	{
+		attribute<PercentMSA> Classes: [ 0, 5, 10, 20, 30, 40, 50, 75, 100];
+		attribute<String>  Name:    ['0-5', '5-10', '10-20', '20-30', '30-40', '40-50', '50-75', '75-100', '>100'];
+		attribute<UInt32>  BrushColor: DialogType = "BrushColor",
+		[ 
+//	Yellow to Green ramp: far too Greenisch for serious BioDiversity abundance reduction 		
+//			rgb(189,189, 0), rgb(162,189, 0),  rgb(135,189, 0), rgb(108,189, 0),
+//			rgb( 81,189, 0), rgb( 54,189, 0),  rgb( 27,189, 0), rgb(  0,189, 0), 
+//	red -> Yellow -> Green is more expressive
+			rgb(189,  0, 0), rgb(189, 54, 0),  rgb(189,108, 0), rgb(189,162, 0), 
+			rgb(162,189, 0), rgb(108,189, 0),  rgb( 54,189, 0), rgb(  0,189, 0), 
+			rgb(0,0,0)
+		];
+	}
+	
+	unit<Float32> nDepUnit: Expr = "Units/kgN_km2Yr",
+		Descr = "Should be 2000-6000 kg N km^-2 yr^-1, actual data go up to 3500";
+		
+	container AdditionalData
+	{
+		
+		attribute<nDepUnit> cl_n       (Albers1kmGrid): StorageName="=BioDataDirName+'/cl_n.asc'";
+		attribute<Ratio>   verst_2000  (Albers1kmGrid): StorageName="=BioDataDirName+'/verst_2000_0.asc'";
+		attribute<Ratio>   verst_2020  (Albers1kmGrid): StorageName="=BioDataDirName+'/verst_2020_0.asc'";
+		attribute<Float32> snij_2000   (Albers1kmGrid): StorageName="=BioDataDirName+'/snija_2000.asc'";
+		attribute<Float32> snij_2020   (Albers1kmGrid): StorageName="=BioDataDirName+'/snija_2020.asc'";
+		
+		attribute<Bool>    hnv        (Albers1kmGrid): StorageName="=BioDataDirName+'/hnv.asc'";
+		attribute<LU_KM2>  dairy_2000  (Albers1kmGrid): StorageName="=BioDataDirName+'/dairy_2000.asc'";
+		attribute<Bool>    IsExtensive (Albers1kmGrid): Expr = "dairy_2000 < value(60, LU_KM2)";
+		
+		attribute<PercentMSA> MSA_Landuse(Classifications/LU/Ruralis18): [ 
+			5, 10, 
+			null, // pasture is split into intensive (class 2 in factsheet table) and extensive (class 18 in factsheet table)
+			70,
+			100, 100, 5, 30,
+			20, 10, 
+			null,  // Forest is split into age classes (class 10: 50-80 years; class 19-24: other age classes
+			100, 100, 100, 100, 100, 
+			30, 30
+		];
+		attribute<PercentMSA> MSA_Pasture(bool): 
+		[
+			10, // MSA_landuse for intensive pasture
+			40  // MSA_landuse for extensive pasture
+		];
+		unit<UInt8> ForestAgeClass: NrOfRows = 6
+		{
+			attribute<YearRange> ClassBreaks: [0, 10.1, 20.1, 30.1, 40.1, 50.1 ];
+			attribute<PercentMSA> MSA: [ 15, 25, 35, 45, 60, 70 ];
+		}					
+		attribute<bool> IsNatureCategory(Classifications/LU/Ruralis18): [ 
+			false, false, false,
+			true,  true,  true,
+			false, false, false, false,
+			true, true, true, true, true, true, false,
+			false
+		];
+		attribute<bool> IsAgricultureCategory(Classifications/LU/Ruralis18): [ 
+			false, true, true, 
+			false, false, false,
+			true, true, true, true,
+			false, false, false, false, false, false, true,
+			true
+		];
+		attribute<PercentMSA> Organ_Fac(Classifications/LU/Ruralis18): [ 
+			100, 200, 
+			null, // pasture is split into intensive (class 2 in factsheet table) with factor 100 and extensive (class 18 in factsheet table) with factor 140
+			100, 100, 100,
+			300, // 6=irrigated arable land
+			100, // 7=natural vegetation
+			140, // 8=Permanent Crops
+			200, // 9=Biofuel crops 
+			100, //10=Forest
+			100, 100, 100, 100, 100, 100,  // 11-16
+			140 // 17=Woody BioFuel Crops
+		];
+		attribute<PercentMSA> Organ_Fac_Pasture(bool): 
+		[
+			100, // MSA_landuse for intensive pasture
+			140  // MSA_landuse for extensive pasture
+		];
+		unit<UInt8> FragmentationTable: NrOfRows = 5 {
+			attribute<UInt32> ClassBreaks: [0, 1, 10, 100, 1000];
+			attribute<Ratio>  Reduction:    [0.45, 0.25, 0.15, 0.05, 0.0];
+			attribute<Ratio>  MSA: Expr = "value(1.0, Ratio) - Reduction";
+		}
+		unit<uint2> nDepFormulae
+		{
+			attribute<Ratio> Incident: [ 1.0, 0.8, 0.9, 0.8 ];
+			attribute<Ratio> Weight:   [ 0.0, 0.08,0.05,0.14];
+		}
+		attribute<nDepFormulae> nDepFormula(Classifications/LU/Ruralis18): [ 
+			0, 0, 
+			0, // pasture is split into intensive (class 2 in factsheet table) with factor 100 and extensive (class 18 in factsheet table) with factor 140
+			1, 1, 2,
+			0, // 6=irrigated arable land
+			0, // 7=natural vegetation
+			0, // 8=Permanent Crops
+			0, // 9=Biofuel crops 
+			3, //10=Forest
+			2, 2, 2, 2, 2, 0,  // 11-16
+			0 // 17=Woody BioFuel Crops
+		];
+		container A1 {
+			attribute<Ratio> OrganicFarming (Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.05, 1.05, 1.05 ];
+			attribute<Ratio> ForestIntensity(Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.0,  1.1,  1.1  ];	
+		}
+		container B1 {
+			container ndeposition {
+				attribute<nDepUnit> N2000(Albers1kmGrid): StorageName="=BioDataDirName+'/b1_depo_2000.asc'";
+				attribute<nDepUnit> N2010(Albers1kmGrid): StorageName="=BioDataDirName+'/b1_depo_2010.asc'";
+				attribute<nDepUnit> N2020(Albers1kmGrid): StorageName="=BioDataDirName+'/b1_depo_2020.asc'";
+				attribute<nDepUnit> N2030(Albers1kmGrid): StorageName="=BioDataDirName+'/b1_depo_2030.asc'";
+				
+				attribute<nDepUnit> Overload2000(Albers1kmGrid): Expr = "N2000 - cl_n";
+				attribute<nDepUnit> Overload2010(Albers1kmGrid): Expr = "N2010 - cl_n";
+				attribute<nDepUnit> Overload2020(Albers1kmGrid): Expr = "N2020 - cl_n";
+				attribute<nDepUnit> Overload2030(Albers1kmGrid): Expr = "N2030 - cl_n";
+			}
+			attribute<Ratio> OrganicFarming (Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.05, 1.10, 1.15 ];
+			attribute<Ratio> ForestIntensity(Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.0,  1.1,  1.1  ];
+		}
+		container A2 {
+			attribute<Ratio> OrganicFarming (Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.05, 1.08, 1.10 ];
+			attribute<Ratio> ForestIntensity(Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.0,  0.9,  0.0  ];	
+		}
+		container B2 {
+			attribute<Ratio> OrganicFarming (Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.05, 1.10, 1.20 ];
+			attribute<Ratio> ForestIntensity(Parameters/PeriodSets/P2000_2030/FathomYears): [ 1.0, 1.0,  0.9,  0.0  ];	
+		}
+	}
+	
+	
+	container YearTempl: IsTemplate = "True", IsHidden = "True"
+	{
+		attribute<Classifications/LU/Ruralis18> cov_all(Albers1kmGrid);
+		attribute<YearDiffRange> ForestAge(Albers1kmGrid);
+		parameter<Ratio> OrganicFarming;
+		parameter<Ratio> ForestIntensity;
+		attribute<Ratio> verst(Albers1kmGrid);
+		attribute<Ratio> snij (Albers1kmGrid);
+		attribute<nDepUnit> ndepositionOverload(Albers1kmGrid);
+		
+		container CaseData : IsHidden = "True"
+		{
+			attribute<PercentMSA> MsaLanduse_1(Albers1kmGrid): Expr =
+				"cov_all==value( 2, Classifications/LU/Ruralis18) ? AdditionalData/MSA_Pasture[AdditionalData/IsExtensive] :"
+				"cov_all==value(10, Classifications/LU/Ruralis18) ? (ForestAge >= value(80, YearRange) && P2000/ForestAge >= value(80, YearRange) ? value(100, PercentMSA) : AdditionalData/ForestAgeClass/MSA[classify(ForestAge, AdditionalData/ForestAgeClass/ClassBreaks)]) :"
+				"AdditionalData/MSA_Landuse[cov_all]";
+			attribute<PercentMSA> MsaLanduse_2(Albers1kmGrid): Expr =
+				"MsaLanduse_1 * iif(AdditionalData/IsAgricultureCategory[cov_all] && AdditionalData/HNV, value(1.25, Ratio), value(1.0, Ratio))";
+				
+			attribute<PercentMSA> MsaLanduse_3(Albers1kmGrid): Expr =
+				"(cov_all==value( 2, Classifications/LU/Ruralis18) ? AdditionalData/Organ_Fac_Pasture[AdditionalData/IsExtensive] : AdditionalData/Organ_Fac[cov_all]) *OrganicFarming";
+				
+			attribute<PercentMSA> MsaLanduse_4(Albers1kmGrid): Expr = 
+				"iif(AdditionalData/IsAgricultureCategory[cov_all], MsaLanduse_2 * MsaLanduse_3 / value(100, PercentMSA), MsaLanduse_2)";
+			attribute<PercentMSA> MsaLanduse_5(Albers1kmGrid): Expr = 
+				"cov_all==value(10, Classifications/LU/Ruralis18) ? MsaLanduse_4 * ForestIntensity : MsaLanduse_4";
+			attribute<PercentMSA> MSA_Landuse(Albers1kmGrid): Expr = "min_elem(MsaLanduse_5, value(100, PercentMSA))";
+				
+			
+			attribute<Ratio> MSA_InfraBuffer  (Albers1kmGrid): Expr = "value(1.0, Ratio) - verst";
+			
+			attribute<bool>  IsNatureCat  (Albers1kmGrid): Expr = "AdditionalData/IsNatureCategory[cov_all]";
+			attribute<bool>  v_weg0       (Albers1kmGrid): Expr = "snij > value(0, Ratio)";
+			attribute<bool>  Nat_weg      (Albers1kmGrid): Expr = "IsNatureCat && !v_weg0";
+			unit<UInt32>     Patches: Expr = "district(UInt8(Nat_weg))";
+			attribute<UInt32> nat_opp     (Albers1kmGrid): Expr = "Nat_weg ? pcount(Patches/Districts)[Patches/Districts] : 0";
+			
+			attribute<Ratio> MSA_Fragmentation(Albers1kmGrid): Expr = "IsNatureCat ? AdditionalData/FragmentationTable/MSA[classify(nat_opp, AdditionalData/FragmentationTable/ClassBreaks)] :  value(1.0, Ratio)";
+			
+			attribute<AdditionalData/nDepFormulae> N_Formula  (Albers1kmGrid): Expr = "AdditionalData/nDepFormula[cov_all]";
+			attribute<Ratio>        MSA_N_Deposition (Albers1kmGrid): Expr = 
+				"min_elem(AdditionalData/nDepFormulae/Incident[N_Formula] -  AdditionalData/nDepFormulae/Weight[N_Formula] * log(ndepositionOverload / value(1000.0, nDepUnit)), value(1, Ratio))";
+		}
+		attribute<PercentMSA> MSA(Albers1kmGrid): Expr = "min_elem(CaseData/MSA_Landuse * CaseData/MSA_InfraBuffer * CaseData/MSA_Fragmentation * CaseData/MSA_N_Deposition, value(100, PercentMSA))";		
+		attribute<PercentMSA> NearMSA(Albers1kmGrid): Expr = "Potential(MSA, km10FocalPointMatr/RelWeight)";
+	}
+	
+	container AggrTempl: IsTemplate = "True", IsHidden = "True"
+	{
+		parameter<String> RegionName;
+		unit<UInt16> Regions;
+		attribute<Regions> RegionGrid(Albers1kmGrid);
+		
+		container MeanMSA: StorageName = "=IndicatorDirName + '/Biodiversity/'+RegionName+'.dbf'"
+		{
+			attribute<PercentMSA> MSA2000(Regions): Expr = "mean(Local/P2000/MSA, RegionGrid)";
+			attribute<PercentMSA> MSA2010(Regions): Expr = "mean(Local/P2010/MSA, RegionGrid)";
+			attribute<PercentMSA> MSA2020(Regions): Expr = "mean(Local/P2020/MSA, RegionGrid)";
+			attribute<PercentMSA> MSA2030(Regions): Expr = "mean(Local/P2030/MSA, RegionGrid)";
+		}
+	}
+	
+	container Templ: url = "='FactSheetName'", IsTemplate = "True"
+	{
+		container ScenarioData; 
+		
+		container LongCalculationTimeWarning:
+			Descr = "These indicators may take a while since the forest age needs to be calculated by inspecting the land use for each simulation year";
+			
+		attribute<Units/Ratio> OrganicFarming (Parameters/PeriodSets/P2000_2030/FathomYears): Expr = "ScenarioData/OrganicFarming";
+		attribute<Units/Ratio> ForestIntensity(Parameters/PeriodSets/P2000_2030/FathomYears): Expr = "ScenarioData/ForestIntensity";
+		container ndeposition: Expr = "ScenarioData/ndeposition";
+
+		container Local
+		{
+			container P2000: Expr = "YearTempl(LanduseData/LU18_2000, Thematic/Carbon/CaseData/age0               , OrganicFarming[UInt8(0)], ForestIntensity[UInt8(0)], AdditionalData/verst_2000, AdditionalData/snij_2000, ndeposition/Overload2000)";
+			container P2010: Expr = "YearTempl(CaseData/LU18/P2010, Thematic/Carbon/CaseData/Years/P2010/ForestAge, OrganicFarming[UInt8(1)], ForestIntensity[UInt8(1)], AdditionalData/verst_2000, AdditionalData/snij_2000, ndeposition/Overload2010)";
+			container P2020: Expr = "YearTempl(CaseData/LU18/P2020, Thematic/Carbon/CaseData/Years/P2020/ForestAge, OrganicFarming[UInt8(2)], ForestIntensity[UInt8(2)], AdditionalData/verst_2020, AdditionalData/snij_2020, ndeposition/Overload2020)";
+			container P2030: Expr = "YearTempl(CaseData/LU18/P2030, Thematic/Carbon/CaseData/Years/P2030/ForestAge, OrganicFarming[UInt8(3)], ForestIntensity[UInt8(3)], AdditionalData/verst_2020, AdditionalData/snij_2020, ndeposition/Overload2030)";
+		}
+		container Regional:
+			Expr = "for_each_ne('Per'+Geography/IndicatorRegions/Name, "
+				"'AggrTempl('+Quote(Geography/IndicatorRegions/Name)+', Geography/RegionShapes/'+Geography/IndicatorRegions/Name+', Geography/RegionGrids/AggrRel/'+Geography/IndicatorRegions/Name+')'"
+			")";
+		
+	}
+}

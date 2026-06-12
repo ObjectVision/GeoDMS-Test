@@ -1,0 +1,50 @@
+container VerdelingWoningen: using = "units;Classifications/Vastgoed;Model_Classifications"
+{
+	container Src := SourceData/Vastgoed/BAG/vbos/GebruiksdoelSets/woon/GebruiksdoelSet;
+	
+	container PerWP4 :=
+		for_each_nedv(
+			WP4/name
+			, 'sum(Src/count_WP4/'+WP4/name+', AggRegio/per_'+Domain_grid_ref+')[Woning]'
+			, AggRegio
+			, Woning
+		)
+	{
+		attribute<Woning> Totaal (AggRegio) := = 'add('+AsItemList(WP4/name)+')';
+		
+		container Relatief :=
+			for_each_nedv(
+				WP4/name
+				, 'PerWP4/'+WP4/name+' / PerWP4/totaal'
+				, AggRegio
+				, float32
+			);
+		
+		container Relatief_PerWP2 := 
+			for_each_nedv(
+				WP4/name
+				, 'Relatief/'+WP4/name+' / PerWP2/Relatief/'+WP2/name[WP4/WP2_rel]
+				, AggRegio
+				, float32
+			);
+	}
+
+	container PerWP2 :=
+		for_each_nedv(
+			WP2/name
+			,'sum(Src/count_WP2/'+WP2/name+', AggRegio/per_'+Domain_grid_ref+')[Woning]'
+			, AggRegio
+			, Woning
+		)
+	{
+		attribute<Woning> Totaal (AggRegio) := = 'add('+AsItemList('PerWP2/'+WP2/name)+')';
+		
+		container Relatief :=
+			for_each_nedv(
+				WP2/name
+				, 'PerWP2/'+WP2/name+' / PerWP2/totaal'
+				, AggRegio
+				, float32
+			);
+	}
+}

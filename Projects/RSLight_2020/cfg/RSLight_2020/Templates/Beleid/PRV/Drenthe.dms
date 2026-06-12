@@ -1,0 +1,60 @@
+container Drenthe := PRVT('Drenthe')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> ehs (domain_grid) := Src/NL_IMRO_9922_povDrenthe1610_VA01/KaartD3/ehs/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  ehs
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Zonering_radioastronomie_zone_I  (domain_grid): = Src/NL_IMRO_9922_povDrenthe1610_VA01/KaartD10/Zonering_radioastronomie_zone_I/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Zonering_radioastronomie_zone_I
+				);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Zonering_radioastronomie_zone_II (domain_grid): = Src/NL_IMRO_9922_povDrenthe1610_VA01/KaartD10/Zonering_radioastronomie_zone_II/Bestand/Multi/Result;
+			attribute<bool> Stiltegebied (domain_grid) := Src/NL_IMRO_9922_povDrenthe1610_VA01/KaartD8/Stiltegebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Zonering_radioastronomie_zone_II
+					, Stiltegebied
+				);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Glastuinbouw (domain_grid): = Provincie && !Src/NL_IMRO_9922_povDrenthe1610_VA01/KaartD11b/Glastuinbouw/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Glastuinbouw
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

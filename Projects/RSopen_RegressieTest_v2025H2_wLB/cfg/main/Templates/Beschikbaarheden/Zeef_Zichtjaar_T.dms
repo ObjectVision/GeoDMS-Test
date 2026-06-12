@@ -1,0 +1,45 @@
+Template Zeef_Zichtjaar_T
+: Descr = ""
+{
+	//
+	parameter<String> Zichtjaar_name;
+	container Zeef;
+	container Dichtheid;
+	container Geschiktheid;
+	//
+	
+	container SectorxSubsectoren :=
+		for_each_ne(
+			CaseClassifications/Actor/VariantXSectorxSubsector/combi_name,
+			'Zeef_T(
+				CaseClassifications/Actor/VariantXSectorxSubsector
+				,'+string(id(CaseClassifications/Actor/VariantXSectorxSubsector))+'[CaseClassifications/Actor/VariantXSectorxSubsector]
+				,VariantData
+				,Zichtjaar_name
+			)'
+		)
+	{
+		container Landbouw
+		{
+			container NonLandbouw 
+			{
+				container src
+				{
+					attribute<Bool>    GeeftOnvoldoendeRuimte_Landbouw     (CompactedAdminDomain) := const(FALSE, CompactedAdminDomain);
+				}
+			}
+		}
+	}
+	
+	container Wonen := 
+		for_each_ne(
+			Classifications/Actor/Sector/xSubsectoren/Wonen/Subsector/Subsector_name
+			, 'Zeef_Wonen_perSubsector_T(
+				'+quote(Classifications/Actor/Sector/xSubsectoren/Wonen/Subsector/Subsector_name)+'
+				,'+quote(Zichtjaar_name)+'
+				, Zeef
+				, Dichtheid
+				, Geschiktheid
+			)'
+		);
+}

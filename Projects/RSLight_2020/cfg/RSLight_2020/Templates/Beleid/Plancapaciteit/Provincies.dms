@@ -1,0 +1,381 @@
+container Provincies
+{
+	container DichtheidIsGeloofwaardigStr
+	{
+		parameter<float32> AfkapGrens: [1.0];
+		
+		parameter<string> Meergezins := '@ <= rth_element(/SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet/count_per_domain_grid[Woning_ha], '+string(Afkapgrens)+'[float32])[Woning_ha]';
+		parameter<string> Eengezins  := '@ <= rth_element(/SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet/count_per_domain_grid_GeenAppartementen[Woning_ha], '+string(Afkapgrens)+'[float32])[Woning_ha]';
+	}
+	
+	unit<uint32> PlanStatus := unique(Noord_Holland_planstatus/status)
+	{
+		attribute<string>         name_long          := 'S'+replace(values, '/', '_', '-', '_', ' ', '_', '+', '');
+		attribute<string>         name               := id(.) == last(id(.)) ? 'ONB' : left(name_long, 3);
+		attribute<string>         Label              := name, DialogType = "LabelText";
+		attribute<bool>           IsHard             : [true, true, false, true, true, false, false, false, false, false]; //@BR20191218, waar komt dit vandaan?
+		attribute<bool>           IsZacht            := !IsHard;
+		attribute<string>         PlanstatusAggr_ref := IsHard ? 'hard': name;
+		attribute<PlanStatusAggr> PlanStatusAggr_rel := rjoin(PlanstatusAggr_ref, PlanStatusAggr/name, id(PlanStatusAggr));
+	}
+	
+	unit<uint32> PlanStatusAggr := unique(PlanStatus/PlanstatusAggr_ref)
+	{
+		attribute<string> name := values;
+		attribute<string> Label := name, DialogType = "LabelText";
+	}
+	
+	unit<uint32> OpleveringOrg: NrOfRows = 6
+	{
+		attribute<string> name: ['OPL2019', 'OPL202024', 'OPL202529', 'OPL203039', 'OPL204050', 'OPLONB'];
+		attribute<Oplevering> Oplevering_rel: [0, 0, 1, 2, 2, 2];
+	}
+	
+	unit<uint32> Oplevering: NrOfRows = 3
+	{
+		attribute<string> Label: ['Tot2025', 'Vanaf2025Tot2030', 'Vanaf2030'], Dialogtype = "LabelText";
+		attribute<string> name := Label;
+		attribute<string> List := AsItemList(OpleveringOrg/name, OpleveringOrg/Oplevering_rel);
+	}
+	
+	unit<uint32> Noord_Holland_bouwprogramma
+	:	StorageName = "%RSLDataDir%/Beleid/Plancapaciteit/Noord_Holland/Plancapaciteit_MRA_PerVariant.csv"
+	,	Source = "Expert judgement Nils Klopper (prov Noord Holland) tav de programmering van de plancapaciteit in Noord Holland m.b.t. MRA regio"
+	,	DialogData  = "Polygons"
+	,	DialogType  = "Map"
+	,	StorageType = "gdal.vect"
+	,	StorageReadOnly = "true"
+	{
+		attribute<geography/rdc_meter> Polygons (poly) := rjoin(string(planid), Noord_Holland/external_key, Noord_Holland/polygons);
+		attribute<.> per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+		attribute<.> per_Domain_grid (/Domain_grid) := poly2grid(Polygons, /Domain_grid);
+		attribute<string> PlanStatus := rjoin(planid, Noord_Holland_planstatus/planid, Noord_Holland_planstatus/status);
+		attribute<bool> IsHard := rjoin(PlanStatus, Provincies/PlanStatus/Values, Provincies/PlanStatus/IsHard);
+		attribute<bool> IsZacht := rjoin(PlanStatus, Provincies/PlanStatus/Values, Provincies/PlanStatus/IsZacht);
+		
+		container PerVariant := for_each_ne(/Classifications/VariantK/name, 'T('+string(id(/Classifications/VariantK))+'[/Classifications/VariantK])');
+		
+		Template T
+		{
+			//
+			parameter</Classifications/VariantK> id;
+			//
+			
+			container PerTXLHouseType :=
+				for_each_nedv(
+					/Classifications/Vastgoed/TXLHouseType/name,
+					/Classifications/VariantK/BouwprogrammaTbl_Ref[id]+'_'+/Classifications/Vastgoed/TXLHouseType/BouwprogrammaTbl_Ref+'[Woning]',
+					Noord_Holland_bouwprogramma, Woning
+				)
+			{
+				attribute<Woning> Totaal_eengezins  (Noord_Holland_bouwprogramma) := add(eengezins_koop, eengezins_huur);
+				attribute<Woning> Totaal_meergezins (Noord_Holland_bouwprogramma) := add(meergezins_koop, meergezins_huur);
+				attribute<Woning> Totaal            (Noord_Holland_bouwprogramma) := add(Totaal_eengezins, Totaal_meergezins);
+			}
+			
+			unit<uint32> select_with_org_rel := select_with_org_rel(PerTXLHouseType/Totaal > 0[Woning]), DialogData  = "Polygons", DialogType  = "Map"
+			{
+				attribute<geography/rdc_meter> Polygons (poly) := Noord_Holland_bouwprogramma/Polygons[org_rel];
+				attribute<bool> IsHard := Noord_Holland_bouwprogramma/IsHard[org_rel];
+				attribute<bool> IsZacht := Noord_Holland_bouwprogramma/IsZacht[org_rel];
+			}
+		}
+	}
+	
+	unit<uint32> Read_Noord_Holland_planstatus
+	:	StorageName = "%RSLDataDir%/Beleid/Plancapaciteit/Noord_Holland/PlancapaciteitWoningenMRA2019/Planstatus.csv"
+	,	StorageType = "gdal.vect"
+	,	StorageReadOnly = "true";
+	
+	unit<uint32> Make_Noord_Holland_planstatus := Read_Noord_Holland_planstatus
+	,	StorageName = "%projdir%/data/UnlinkedData/Beleid/Plancapaciteit/Noord_Holland/PlancapaciteitWoningenMRA2019_Planstatus.fss"
+	{
+		attribute<string>  status       := Read_Noord_Holland_planstatus/status;
+		attribute<string>  planid       := Read_Noord_Holland_planstatus/planid;
+		attribute<string>  external_key := planid;
+	}
+	
+	unit<uint32> Noord_Holland_planstatus
+	:	StorageName = "%projdir%/data/UnlinkedData/Beleid/Plancapaciteit/Noord_Holland/PlancapaciteitWoningenMRA2019_Planstatus.fss"
+	,	StorageReadOnly = "true"
+	{
+		attribute<string>  status;
+		attribute<string>  external_key;
+		attribute<string>  planid;
+	}
+	
+	unit<uint32> ReadShp_Noord_Holland // Bevat ook rest vd gemeenten uit MRA
+	:	StorageName = "%RSLDataDir%/Beleid/Plancapaciteit/Noord_Holland/PlancapaciteitWoningenMRA2019/PlancapaciteitMRA2019NK.shp"
+	,	StorageType = "gdal.vect"
+	,	Source 		= "Plancapaciteit.nl, via Nils Klopper (prov. Noord Holland)"
+	,	DialogData  = "Polygons"
+	,	DialogType  = "Map"
+	,	url         = ""
+	,	StorageReadOnly = "true"
+	
+	// toelichting veldnamen:
+	// GEMID = gemeente_id
+	// Totaal = total restcapaciteit (nieuwbouw): bruto toevoeging dus
+	// TotaalS = total restcapaciteit (nieuwbouw minus sloop): netto toevoeging dus
+	// Sloop = sloop. Veel nullen. 
+	// OPl... = periode van verwachte oplevering, inclusief onb = onbekend
+	// WTyp ggbc, appc, onbc: woningtype grondgebonden, appartement, onbekend
+	// huur, koop, hrkponbc = aantal van bruto toevoeging in resp. de categorie huur, koop en onbekend
+	// energieneutraal, gasloos = aantal van bruto toevoeging dat resp. energieneutraal of gasloos wordt opgeleverd 
+	{
+		attribute<geography/rdc_meter>          Polygons (poly);
+		attribute<string>                       external_key                         := string(planid);
+		attribute<Woning>                       Bruto                                := Totaal[Woning];
+		attribute<Woning>                       Netto                                := TotaalS[Woning];
+		attribute<Woning>                       Sloop                                := -te_slopen[Woning];
+		attribute<Woning>                       Meergezins0                          := WTYPAPPC[Woning];
+		attribute<Woning>                       Eengezins0                           := WTYPGGBC[Woning];
+		attribute<Woning>                       Onbekend                             := WTYPONBC[Woning];
+		attribute<Woning>                       Huur0                                := HUURC[Woning];
+		attribute<Woning>                       Koop0                                := KOOPC[Woning];
+		attribute<Woning>                       HKOnbekend                           := HRKPONBC[Woning];
+		attribute<PlanStatusAggr>               PlanStatusAggr_rel                   := Planstatus/PlanStatusAggr_rel[Planstatus_rel];
+		attribute<bool>                         IsHard_class                         := Planstatus/IsHard[Planstatus_rel];
+		attribute<string>                       Planstatus_str                       := rjoin(external_key, Noord_Holland_planstatus/external_key, Noord_Holland_planstatus/status);
+		attribute<Planstatus>                   Planstatus_rel                       := rjoin(Planstatus_str, planstatus/values, id(planstatus));
+		attribute<float32>                      OPL2019;
+		attribute<float32>                      OPL202024;
+		attribute<float32>                      OPL202529;
+		attribute<float32>                      OPL203039;
+		attribute<float32>                      OPL204050;
+		attribute<float32>                      OPLONB;
+	}
+	
+	unit<uint32> Make_Noord_Holland := ReadShp_Noord_Holland
+	,	StorageName = "%RSLDataDir%/Beleid/Plancapaciteit/Noord_Holland/PlancapaciteitWoningenMRA2019.fss"
+	{
+		attribute<geography/rdc_meter>          Polygons (poly)                      := ReadShp_Noord_Holland/polygons;
+		attribute<string>                       external_key                         := ReadShp_Noord_Holland/external_key;
+		attribute<Woning>                       Bruto                                := ReadShp_Noord_Holland/Bruto;
+		attribute<Woning>                       Netto                                := ReadShp_Noord_Holland/Netto;
+		attribute<Woning>                       Sloop                                := ReadShp_Noord_Holland/Sloop;
+		attribute<Woning>                       Meergezins0                          := ReadShp_Noord_Holland/Meergezins0;
+		attribute<Woning>                       Eengezins0                           := ReadShp_Noord_Holland/Eengezins0;
+		attribute<Woning>                       Onbekend                             := ReadShp_Noord_Holland/Onbekend;
+		attribute<Woning>                       Huur0                                := ReadShp_Noord_Holland/Huur0;
+		attribute<Woning>                       Koop0                                := ReadShp_Noord_Holland/Koop0;
+		attribute<Woning>                       HKOnbekend                           := ReadShp_Noord_Holland/HKOnbekend;
+		attribute<PlanStatusAggr>               PlanStatusAggr_rel                   := ReadShp_Noord_Holland/PlanStatusAggr_rel;
+		attribute<bool>                         IsHard                               := ReadShp_Noord_Holland/IsHard_class;
+		attribute<Planstatus>                   Planstatus_rel                       := ReadShp_Noord_Holland/Planstatus_rel;
+		attribute<float32>                      OPL2019                              := ReadShp_Noord_Holland/OPL2019;
+		attribute<float32>                      OPL202024                            := ReadShp_Noord_Holland/OPL202024;
+		attribute<float32>                      OPL202529                            := ReadShp_Noord_Holland/OPL202529;
+		attribute<float32>                      OPL203039                            := ReadShp_Noord_Holland/OPL203039;
+		attribute<float32>                      OPL204050                            := ReadShp_Noord_Holland/OPL204050;
+		attribute<float32>                      OPLONB                               := ReadShp_Noord_Holland/OPLONB;
+	}
+	
+	unit<uint32> Noord_Holland
+	:	StorageName = "%RSLDataDir%/Beleid/Plancapaciteit/Noord_Holland/PlancapaciteitWoningenMRA2019.fss"
+	,	StorageReadOnly = "true"
+	{
+		attribute<geography/rdc_meter>          Polygons (poly);
+		attribute<string>                       external_key;
+		attribute<Woning>                       Bruto;
+		attribute<Woning>                       Netto;
+		attribute<Woning>                       Sloop;
+		attribute<Woning>                       Meergezins0;
+		attribute<Woning>                       Eengezins0;
+		attribute<Woning>                       Onbekend;
+		attribute<Woning>                       Huur0;
+		attribute<Woning>                       Koop0;
+		attribute<Woning>                       HKOnbekend;
+		attribute<PlanStatusAggr>               PlanStatusAggr_rel;
+		attribute<bool>                         IsHard;
+		attribute<Planstatus>                   Planstatus_rel;
+		attribute<float32>                      OPL2019;
+		attribute<float32>                      OPL202024;
+		attribute<float32>                      OPL202529;
+		attribute<float32>                      OPL203039;
+		attribute<float32>                      OPL204050;
+		attribute<float32>                      OPLONB;
+	
+		attribute<RegioIndelingen/Gemeente/Gemeente2019> Gemeente2019_rel                     := point_in_polygon(centroid(polygons), RegioIndelingen/Gemeente/Gemeente2019/geometry);
+		attribute<RegioIndelingen/MRA8>         MRA8_rel                             := RegioIndelingen/Gemeente/Gemeente2019/MRA8_rel[Gemeente2019_rel];
+		attribute<.>                            per_domain_grid (/domain_grid)       := poly2grid(Polygons, /Domain_grid);
+		attribute<.>                            per_SrcDomain_grid (/SrcDomain_grid) := poly2grid(Polygons, /SrcDomain_grid);
+		attribute<Ha>                           NrHa                                 := area(Polygons, units/meter2)[units/ha];
+		attribute<Ha>                           NrHaNaVergridding                    := float32(pcount(per_SrcDomain_grid)) * /SrcDomain_grid/NrHaPerCell;
+		attribute<Woning_ha>                    Woningen_ha                          := Netto / NrHa; // total restcapaciteit (nieuwbouw minus sloop)
+		attribute<bool>                         DensGroterDan300                     := Woningen_ha > 300[Woning_ha]; // total restcapaciteit (nieuwbouw minus sloop)
+		
+		parameter<uint32>                       PlannenMetWoningenGroterDan300       := sum(uint32(DensGroterDan300));
+		parameter<float32>                      nWoningenGroterDan300                := sum(float32(DensGroterDan300) * Netto);
+		  
+		attribute<Woning_ha>                    Woningen_haNaVergridding             := Netto / NrHaNaVergridding; // total restcapaciteit (nieuwbouw minus sloop)
+		
+		attribute<bool>                         IsZacht                              := !IsHard;
+		attribute<bool>                         IsBeiden                             := const(true, .);
+		
+		attribute<Woning>                       MeergezinsEengezins                  := Meergezins0 + Eengezins0;
+		attribute<Woning>                       HuurKoop                             := Huur0 + Koop0;
+		
+		attribute<float32>                      PercentageMeergezins0                := Meergezins0 / MeergezinsEengezins;
+		attribute<float32>                      PercentageEengezins0                 := Eengezins0  / MeergezinsEengezins;
+		attribute<float32>                      PercentageHuur0                      := Huur0       / HuurKoop;
+		attribute<float32>                      PercentageKoop0                      := Koop0       / HuurKoop;
+		
+		parameter<string> CalcStr :=
+			'MakeDefined(
+				MakeDefined(
+					Makedefined(
+						Percentage@, mean(Percentage@, Gemeente2019_rel)[Gemeente2019_rel]
+					),
+				Percentage@, mean(Percentage@, MRA8_rel)[MRA8_rel]
+				),
+			mean(Percentage@)
+			)';
+		
+		attribute<float32> PercentageMeergezins := = replace(CalcStr, '@', 'Meergezins0');
+		attribute<float32> PercentageEengezins  := = replace(CalcStr, '@', 'Eengezins0');
+		attribute<float32> PercentageHuur       := = replace(CalcStr, '@', 'Huur0');
+		attribute<float32> PercentageKoop       := = replace(CalcStr, '@', 'Koop0');
+		
+		attribute<Woning> Meergezins := Meergezins0 + Onbekend   * PercentageMeergezins;
+		attribute<Woning> Eengezins  := Eengezins0  + Onbekend   * PercentageEengezins;
+		attribute<Woning> Huur       := Huur0       + HKOnbekend * PercentageHuur;
+		attribute<Woning> Koop       := Koop0       + HKOnbekend * PercentageKoop;
+		
+		attribute<Woning> MeergezinsHuur := PercentageHuur * Meergezins;
+		attribute<Woning> EengezinsHuur  := PercentageHuur * Eengezins;
+		attribute<Woning> MeergezinsKoop := PercentageKoop * Meergezins;
+		attribute<Woning> EengezinsKoop  := PercentageKoop * Eengezins;
+		attribute<Woning> Check  := add(MeergezinsHuur, EengezinsHuur, MeergezinsKoop, EengezinsKoop) - Bruto;
+		
+		attribute<bool> IsVolledigEengezins  := Eengezins == Bruto;
+		attribute<bool> IsVolledigMeergezins := Meergezins == Bruto;
+		
+		container PerOplevertermijn := for_each_ne(Oplevering/label, 'OpleveringT('+string(id(Oplevering))+'[Oplevering])');
+		
+		Template OpleveringT
+		{
+			parameter<Oplevering> id;
+			
+			attribute<Woning> Bruto       (Noord_Holland):= = 'add('+Oplevering/List[id]+')[Woning]';
+			attribute<float32> Percentage (Noord_Holland):= MakeDefined(Bruto / Noord_Holland/Bruto, 0[float32]);
+			
+			attribute<Woning> MeergezinsHuur (Noord_Holland):= Percentage * Noord_Holland/MeergezinsHuur;
+			attribute<Woning> EengezinsHuur  (Noord_Holland):= Percentage * Noord_Holland/EengezinsHuur;
+			attribute<Woning> MeergezinsKoop (Noord_Holland):= Percentage * Noord_Holland/MeergezinsKoop;
+			attribute<Woning> EengezinsKoop  (Noord_Holland):= Percentage * Noord_Holland/EengezinsKoop;
+		}
+		
+		container PerPlanstatus := for_each_ne(planstatus/name, 'T(Planstatus_rel == '+string(id(planstatus))+'[planstatus])');
+		
+		Template T
+		{
+			//
+			attribute<bool> domain (Noord_Holland);
+			//
+			
+			unit<uint32> select_with_org_rel := select_with_org_rel(domain)
+			,	DialogData  = "Polygons"
+			,	DialogType  = "Map"
+			{
+				attribute<geography/rdc_meter>  Polygons (poly)   := Noord_Holland/Polygons[org_rel];
+				attribute<Ha>                   NrHa              := Noord_Holland/NrHa[org_rel];
+				attribute<Ha>                   NrHaNaVergridding := Noord_Holland/NrHaNaVergridding[org_rel];
+				
+				attribute<Woning>               Bruto             := Noord_Holland/Bruto[org_rel];
+				attribute<Woning>               Netto             := Noord_Holland/Netto[org_rel];
+				attribute<Woning>               Sloop             := Noord_Holland/Sloop[org_rel];
+				
+				attribute<Woning>               MeergezinsHuur    := Noord_Holland/MeergezinsHuur[org_rel];
+				attribute<Woning>               EengezinsHuur     := Noord_Holland/EengezinsHuur[org_rel];
+				attribute<Woning>               MeergezinsKoop    := Noord_Holland/MeergezinsKoop[org_rel];
+				attribute<Woning>               EengezinsKoop     := Noord_Holland/EengezinsKoop[org_rel];
+				
+				container PerOplevertermijn := for_each_ne(Oplevering/label, 'OpleveringT('+string(id(Oplevering))+'[Oplevering])');
+		
+				Template OpleveringT
+				{
+					parameter<Oplevering> id;
+					
+					attribute<Woning> Bruto          (select_with_org_rel):= ='Noord_Holland/PerOplevertermijn/'+Oplevering/name[id]+'/Bruto[org_rel]';
+					attribute<Woning> MeergezinsHuur (select_with_org_rel):= ='Noord_Holland/PerOplevertermijn/'+Oplevering/name[id]+'/MeergezinsHuur[org_rel]';
+					attribute<Woning> EengezinsHuur  (select_with_org_rel):= ='Noord_Holland/PerOplevertermijn/'+Oplevering/name[id]+'/EengezinsHuur[org_rel]';
+					attribute<Woning> MeergezinsKoop (select_with_org_rel):= ='Noord_Holland/PerOplevertermijn/'+Oplevering/name[id]+'/MeergezinsKoop[org_rel]';
+					attribute<Woning> EengezinsKoop  (select_with_org_rel):= ='Noord_Holland/PerOplevertermijn/'+Oplevering/name[id]+'/EengezinsKoop[org_rel]';
+				}
+				
+				attribute<Woning_ha> Woningen_ha              := Noord_Holland/Woningen_ha[org_rel];
+				attribute<Woning_ha> Woningen_haNaVergridding := Noord_Holland/Woningen_haNaVergridding[org_rel];
+				
+				attribute<bool>      IsVolledigEengezins      := Noord_Holland/IsVolledigEengezins[org_rel];
+				attribute<bool>      IsVolledigMeergezins     := Noord_Holland/IsVolledigMeergezins[org_rel];
+				
+				// check of netto toename van woningen logische dichtheden geeft gegeven het oppervlak van de totale polygoon vh plan. Hiermee kunnen de grootste excessen eruit gefilterd.
+				container DichtheidIsGeloofwaardig
+				{
+					attribute<bool> Meergezins (..) := = replace(DichtheidIsGeloofwaardigStr/Meergezins, '@', 'Woningen_ha');
+					attribute<bool> Eengezins  (..) := = replace(DichtheidIsGeloofwaardigStr/Eengezins,  '@', 'Woningen_ha');
+					
+					//Als woningtype niet bekend is gaan we uit van meergezins, om zo min mogelijk plannen op voorhand eruit te filteren
+					attribute<bool> GegevenProgramma (..) := IsVolledigEengezins ? Eengezins : IsVolledigMeergezins ? Meergezins : Meergezins;
+					attribute<bool> Inverse          (..) := !GegevenProgramma;
+					
+					container OokGegevenBeschikbareRuimte
+					{
+						attribute<bool> Laag   (...) := Inverse || subsubset/BeschikbareRuimte/Laag/DichtheidIsGeloofwaardig/Inverse[invert(subsubset/org_rel)];
+						attribute<bool> Midden (...) := Inverse || subsubset/BeschikbareRuimte/Midden/DichtheidIsGeloofwaardig/Inverse[invert(subsubset/org_rel)];
+						attribute<bool> Hoog   (...) := Inverse || subsubset/BeschikbareRuimte/Hoog/DichtheidIsGeloofwaardig/Inverse[invert(subsubset/org_rel)];
+					}
+				}
+				
+				unit<uint32> subsubset := select_with_org_rel(DichtheidIsGeloofwaardig/GegevenProgramma)
+				,	DialogData  = "Polygons"
+				,	DialogType  = "Map"
+				{
+					attribute<geography/rdc_meter> Polygons (poly)              := select_with_org_rel/Polygons[org_rel];
+					attribute<Ha>                  NrHa                         := select_with_org_rel/NrHa[org_rel];
+					attribute<Ha>                  NrHaNaVergridding            := select_with_org_rel/NrHaNaVergridding[org_rel];
+					
+					attribute<Woning_ha>           Woningen_ha                  := select_with_org_rel/Woningen_ha[org_rel];
+					attribute<Woning_ha>           Woningen_haNaVergridding     := select_with_org_rel/Woningen_haNaVergridding[org_rel];
+					
+					attribute<Woning>              Netto                        := select_with_org_rel/Netto[org_rel];
+					attribute<bool>                IsVolledigEengezins          := select_with_org_rel/IsVolledigEengezins[org_rel];
+					attribute<bool>                IsVolledigMeergezins         := select_with_org_rel/IsVolledigMeergezins[org_rel];
+					
+					attribute<bool>                Restrictief (SrcDomain_grid) := /Analysis/KvDV/Results/BAU/Zeef/Restricties;
+					
+					container BeschikbareRuimte
+					{
+						container Laag   := T('ruim');
+						container Midden := T('mid');
+						container Hoog   := T('krap');
+						
+						Template T
+						{
+							//
+							parameter<string> BenuttingRef;
+							//
+							
+							attribute<bool> Benut           (/SrcDomain_grid) := = '/Classifications/LandUsePreparation/CBSKlasse/Benutting/Generiek_'+BenuttingRef+'[/SourceData/Grondgebruik/BBG/BBG_Reeks_1996_2015/Dominant/Per_SrcDomain_grid/J2015]';
+							attribute<Ha> BeschikbareRuimte (/SrcDomain_grid) := float32(!Restrictief && !Benut) * /SrcDomain_grid/NrHaPerCell;
+							
+							attribute<Ha> BeschikbareRuimtePerPlan              (subsubset):= sum(BeschikbareRuimte, poly2grid(subsubset/Polygons, /SrcDomain_grid));
+							attribute<Woning_ha> Woningen_haOpBeschikbareRuimte (subsubset):= subsubset/Netto / BeschikbareRuimtePerPlan;
+							attribute<Woning_ha> Delta                          (subsubset):= Woningen_haOpBeschikbareRuimte - subsubset/Woningen_haNaVergridding;
+							
+							// check of netto toename van woningen logische dichtheden geeft ook gegeven het beschikbare oppervlak van de polygoon vh plan.
+							container DichtheidIsGeloofwaardig
+							{
+								attribute<bool> Meergezins       (subsubset) := = replace(DichtheidIsGeloofwaardigStr/Meergezins, '@', 'Woningen_haOpBeschikbareRuimte');
+								attribute<bool> Eengezins        (subsubset) := = replace(DichtheidIsGeloofwaardigStr/Eengezins,  '@', 'Woningen_haOpBeschikbareRuimte');
+								attribute<bool> GegevenProgramma (subsubset) := IsVolledigEengezins ? Eengezins : IsVolledigMeergezins ? Meergezins : Meergezins;
+								attribute<bool> Inverse          (subsubset) := !GegevenProgramma;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,57 @@
+Template UniekJaarT
+{
+	//
+	parameter<UniekJaar> id;
+	parameter<string> SrcRef;
+	parameter<string> Referentie_versie;
+	//
+	
+	parameter<string>                    Modeljaar_label              := UniekJaar/Modeljaar_label[id];
+	parameter<float32>                   DiscontoFactor               := UniekJaar/DiscontoFactor[id];
+	
+	unit<UInt32> src_tabel : StorageName = "= '%SourceDataDir%/Vesta2RS/'+Referentie_versie+'_fss/'+Modeljaar_label+'/'+SrcRef+'.fss'"
+	, StorageReadOnly = "True"
+	, DialogType      = "map"
+	, DialogData      = "geometry"
+	{
+		attribute<rdc_meter_64>                               geometry;
+		attribute<string>                                     id;
+		attribute<Vastgoed/WP4>                               woningtype := rjoin(id, /Analysis/BaseData/Warmtelasten/vbo/identificatie, /Analysis/BaseData/Warmtelasten/vbo/wp4_rel);
+		attribute<Classifications/Vesta/AanbodOptie>          GebiedsOptie;
+		attribute<Classifications/Vastgoed/ELabelK>           Elabel;
+		attribute<float64>                                    CO2prijs_Gas;
+		attribute<float64>                                    CO2prijs_Elek;
+		attribute<float64>                                    CumulInvest_Gebouw; // Is niet cumulatief, foutief zo genoemd in vesta.
+		attribute<float64>                                    Invest_Gebouw := CumulInvest_Gebouw; 
+		attribute<float64>                                    AansluitBijdrage_Gas;
+		attribute<float64>                                    AansluitBijdrage_Elek;
+		attribute<float64>                                    AansluitBijdrage_Warmte;
+		attribute<float64>                                    Eindgebruik_ex_Gas;
+		attribute<float64>                                    Eindgebruik_ex_Elek;
+		attribute<float64>                                    Eindgebruik_ex_Warmte;
+		attribute<float64>                                    Vastrecht_Gas;
+		attribute<float64>                                    Vastrecht_Elek;
+		attribute<float64>                                    Vastrecht_Warmte;
+		
+		container PerWoningtype := for_each_ne(WoningtypeK/name, 'WoningtypeT('+string(id(WoningtypeK))+'[Vastgoed/WP4])');
+	
+		Template WoningtypeT
+		{
+			parameter<Vastgoed/WP4> Woningtype_rel;
+			//
+			unit<uint32> Sub := select_with_org_rel(src_tabel/Woningtype == Woningtype_rel), DialogData = "geometry"
+			{
+				attribute<string>       id       := src_tabel/id[org_rel];
+				attribute<rdc_meter_64> geometry := src_tabel/geometry[org_rel];
+			}
+		}
+	}
+	
+	container PerWoningtype := 
+		for_each_ne(
+			WoningtypeK/name
+			, 'TotaalT('+quote(WoningtypeK/name)+', src_tabel/PerWoningtype/'+string(WoningtypeK/name)+'/Sub)'
+		);
+	
+	#include<TotaalT.dms>
+}

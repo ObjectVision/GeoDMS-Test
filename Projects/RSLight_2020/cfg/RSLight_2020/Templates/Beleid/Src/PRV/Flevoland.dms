@@ -1,0 +1,24 @@
+container Flevoland : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=flevoland&striVersion=STRI2008"
+{
+	parameter<string> Bestandsloc_geo: = '%RSLDataDir%/Beleid/Ruimte/prv_2017/fl/Provincie_Flevoland_geo_services_WFS.gdb';
+	parameter<string> OGRQuery_empty:   = '';
+	
+	container Provincie_Flevoland_geo_services_WFS_GN_NNN : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/fl/RE Actuele digitale verbeelding NNN Flevoland.txt"
+	{
+		//http://geo2.flevoland.nl/geoserver/Extern/wms?service=wms&version=1.1.1&request=GetCapabilities
+		//	  Provincie Flevoland - geo services WFS.fdl
+		//	x Laag: GN_NNN
+		//conversie naar gdb-formaat in ArcGIS 10.3.1.4959
+		//Indentiek aangaande geometrie (wel meer gestripte velden:
+		//Database:	Y:\Project\M500303_Monitor_Infrastructuur_en_Ruimte\Data\MIR2018\10_Gebruikers\Maarten\NNN in PRVs\NNN_contouren.gdb
+		//Feature Class:	NNN_Flevoland_170713
+
+			container GN_NNN : = VergriddingT
+			(
+				'=Bestandsloc_geo'
+				,'SELECT * FROM GN_NNN'
+				,''
+				,'=OGRQuery_empty'
+			);
+	}
+}

@@ -1,0 +1,110 @@
+container ExploreTools: IsHidden = "True"
+{
+	unit<float32> NrResidents: 	expr = "Units/NrResidents";
+	unit<uint8>	  ViewType:		expr = "Classifications/LU/ViewType";
+	unit<uint8>	  LUChange:		expr = "Classifications/LUChange_4k";
+
+	container ResultsPerModelRegion: expr = "for_each_ne(Parameters/Meta/Run/PopParamsRegionName, 'doPerModelRegion('+string(id(Parameters/Meta/Run))+'[Parameters/Meta/Run])')";
+	
+	Template doPerModelRegion
+	{
+		parameter<Parameters/Meta/Run> RegionId;
+		parameter<string> 			   initQipath: expr = "= IsDefined(RegionId) ? 'Parameters/Runs/'+Parameters/Meta/Run/PopParamsRegionName[RegionId]+'/OutputDir' : '/GenerateContainer/MozaikPopulation/impl/DirName'";
+		parameter<string> 			   initLupath: expr = "= IsDefined(RegionId) ? 'Parameters/Runs/'+Parameters/Meta/Run/PopParamsRegionName[RegionId]+'/OutputDir' : '/GenerateContainer/MozaikLandUse/impl/DirName'";
+		
+		unit<wpoint> Raster: expr = "= IsDefined(RegionId) ? 'Geography/RegionDomainSets/JrcRegions100m/'+Parameters/Meta/Run/PopParamsRegionName[RegionId] : 'Geography/Lambert100mGrid'";
+		
+		Container LoadPopFiles: expr = "for_each_ne(Years/name, 'Templates/loadDataFile_int32tiff('+quote(initQipath+'/'+Years/File+'_Qi')+', Raster)')";
+
+		Container QiResults: 	expr = "for_each_nedv(Years/name, 'float32(int16(LoadPopFiles/'+Years/name+'/inFile/ReadData))[NrResidents]',Raster,NrResidents)" {
+			container P5:		expr = "for_each_nedv(Years/name, 'nth_element(MakeDefined(QiResults/'+Years/name+', 0[NrResidents]), (5 * #Raster) / 100)', void, NrResidents)";
+			container globmean:	expr = "for_each_nedv(Years/name, 'mean(QiResults/'+Years/name+')', void, NrResidents)";
+			container popmean:	expr = "for_each_nedv(Years/name, 'mean(IsZero(QiResults/'+Years/name+') ? (0 / 0)[NrResidents] : QiResults/'+Years/name+')', void, NrResidents)";
+			container P95:		expr = "for_each_nedv(Years/name, 'nth_element(MakeDefined(QiResults/'+Years/name+', 0[NrResidents]), (95 * #Raster) / 100)', void, NrResidents)";
+			container P99:		expr = "for_each_nedv(Years/name, 'nth_element(MakeDefined(QiResults/'+Years/name+', 0[NrResidents]), (99 * #Raster) / 100)', void, NrResidents)";
+			container max: 		expr = "for_each_nedv(Years/name, 'max(QiResults/'+Years/name+')', void, NrResidents)";
+			
+		}
+		Container QiDifWithStart:	expr = "for_each_nedv(years/name, 'QiResults/'+years/name+' - QiResults/P'+string(Parameters/PeriodSet/StartYear), Raster, Units/dNrResidents)";
+		Container UrbanDensities {
+			container Urban: 		expr = "for_each_nedv('u_'+years/name, 'sum(float32(LUResults/'+years/name+' = 1[ViewType])) ', void, float32)";
+			container Pop: 			expr = "for_each_nedv('p_'+years/name, 'sum(float32(LoadPopFiles/'+Years/name+'/inFile/ReadData)) ', void, float32)";
+			container Pop_p_urb:	expr = "for_each_nedv('d_'+years/name, 'Pop/p_'+years/name+' / Urban/u_'+years/name, void, float32)";
+			
+		}
+		Container Urban_noQi:		expr = "for_each_nedv(years/name, 'LUResults/'+years/name+' = 1[ViewType] && QiResults/'+years/name+' = 0[NrResidents]', Raster, bool)";
+		Container New_UrbanNoQi:	expr = "for_each_nedv(years/name, 'Urban_noQi/'+years/name+' && !LUResults/'+years/name[0]+' = 1[ViewType]', Raster, bool)";
+		Container Qi_notUrban:	expr = "for_each_nedv(years/name, 'LUResults/'+years/name+' <> 1[ViewType] ? QiResults/'+years/name+' : 0[NrResidents]', Raster, NrResidents)";
+		
+		unit<uint32> Years: expr = "range(uint32, 0, #Parameters/PeriodSet/result + 1)" {
+			attribute<string> 			Name: 		expr = "union_data(., 'P' + string(Parameters/PeriodSet/StartYear), Parameters/PeriodSet/result/name)";
+			attribute<string>			File: 		expr = "union_data(., string(Parameters/PeriodSet/StartYear), Parameters/PeriodSet/result/name)";
+			attribute<float32>			Year:		expr = "union_data(., Parameters/PeriodSet/StartYear, Parameters/PeriodSet/result/ProjectedYear)";
+			attribute<NrResidents>		P5:	  		expr = "= 'union_data(., '+AsItemList('QiResults/P5/'+Name)+')'";
+			attribute<NrResidents>		globmean:	expr = "= 'union_data(., '+AsItemList('QiResults/globmean/'+Name)+')'";
+			attribute<NrResidents>		popmean:	expr = "= 'union_data(., '+AsItemList('QiResults/popmean/'+Name)+')'";
+			attribute<NrResidents>		P95:		expr = "= 'union_data(., '+AsItemList('QiResults/P95/'+Name)+')'";
+			attribute<NrResidents>		P99:		expr = "= 'union_data(., '+AsItemList('QiResults/P99/'+Name)+')'";
+			attribute<NrResidents>		max:		expr = "= 'union_data(., '+AsItemList('QiResults/max/'+Name)+')'";
+		}
+		
+		Container LoadLUFiles:			expr = "for_each_ne(Years/name, 'Templates/loadDataFile_uint8tiff('+quote(initLupath+'/'+Years/File)+', Raster)')";
+		Container LUResults: 			expr = "for_each_nedv(Years/name, 'float32(LoadLUFiles/'+Years/name+'/inFile/ReadData)[ViewType]',Raster,ViewType)";
+		Container LUDifWithStart: 		expr = "for_each_ne(ViewType/Name, 'do_LUDifWithStart('+string(id(ViewType))+'[ViewType])')";
+				
+		Template do_LUDifWithStart {
+			
+			parameter<ViewType> inLU;
+			parameter<string> sLU: expr = "string(inLU)";
+			
+			Container ChangeMaps:	expr = "for_each_nedv(Years/name, 'switch('+"
+				"'case(LUResults/P'+string(Parameters/PeriodSet/StartYear)+' = 	'+sLU+'[ViewType]  && LUResults/'+Years/name+' = '+sLU+'[ViewType], 1[LUChange]), '+"
+				"'case(LUResults/P'+string(Parameters/PeriodSet/StartYear)+' <> 	'+sLU+'[ViewType]  && LUResults/'+Years/name+' = '+sLU+'[ViewType], 2[LUChange]), '+"
+				"'case(LUResults/P'+string(Parameters/PeriodSet/StartYear)+' = 	'+sLU+'[ViewType]  && LUResults/'+Years/name+' <> '+sLU+'[ViewType], 3[LUChange]), '+"
+				"'0[LUChange])', Raster, LUChange)";
+		}
+	}
+	
+	container CompareLanduse: IsTemplate = "True"
+	{
+		attribute<Classifications/LU/ViewType> map1(Geography/Lambert100mGrid):
+			ParamType = "SimilarList", 
+			ParamData = "/Indicators;/GenerateContainer;/Runs;$ExpandCases;$ExactValues";
+
+		attribute<Classifications/LU/ViewType> map2(Geography/Lambert100mGrid):
+			ParamType = "SimilarList", 
+			ParamData = "/Indicators;/GenerateContainer;/Runs;$ExpandCases;$ExactValues";
+		
+		attribute<Classifications/LU/ViewType> diff1(Geography/Lambert100mGrid): Expr = "map1!=map2 ? map1 : value(255, Classifications/LU/ViewType)";
+		attribute<Classifications/LU/ViewType> diff1_e1(Geography/Lambert100mGrid):
+			Expr = "MakeDefined(diff1, "
+				"diff1[ID(Geography/Lambert100mGrid)+point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff1[ID(Geography/Lambert100mGrid)-point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff1[ID(Geography/Lambert100mGrid)+point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)], "
+				"diff1[ID(Geography/Lambert100mGrid)-point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)]"
+			")";
+		attribute<Classifications/LU/ViewType> diff1_e2(Geography/Lambert100mGrid):
+			Expr = "MakeDefined(diff1_e1, "
+				"diff1_e1[ID(Geography/Lambert100mGrid)+point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff1_e1[ID(Geography/Lambert100mGrid)-point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff1_e1[ID(Geography/Lambert100mGrid)+point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)], "
+				"diff1_e1[ID(Geography/Lambert100mGrid)-point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)]"
+			")";
+		
+		attribute<Classifications/LU/ViewType> diff2(Geography/Lambert100mGrid): Expr = "map1!=map2 ? map2 : value(255, Classifications/LU/ViewType)";
+		attribute<Classifications/LU/ViewType> diff2_e1(Geography/Lambert100mGrid):
+			Expr = "MakeDefined(diff2, "
+				"diff2[ID(Geography/Lambert100mGrid)+point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff2[ID(Geography/Lambert100mGrid)-point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff2[ID(Geography/Lambert100mGrid)+point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)], "
+				"diff2[ID(Geography/Lambert100mGrid)-point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)]"
+			")";
+		attribute<Classifications/LU/ViewType> diff2_e2(Geography/Lambert100mGrid):
+			Expr = "MakeDefined(diff2_e1, "
+				"diff2_e1[ID(Geography/Lambert100mGrid)+point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff2_e1[ID(Geography/Lambert100mGrid)-point_xy(UInt16(0),UInt16(1),Geography/Lambert100mGrid)], "
+				"diff2_e1[ID(Geography/Lambert100mGrid)+point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)], "
+				"diff2_e1[ID(Geography/Lambert100mGrid)-point_xy(UInt16(1),UInt16(0),Geography/Lambert100mGrid)]"
+			")";
+	}		
+}

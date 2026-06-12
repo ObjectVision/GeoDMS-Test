@@ -1,0 +1,18 @@
+﻿container Vlaanderen: Using = "geography"
+{
+	unit<fpoint> bl := range(bl_base, point_yx(150000f,20000f), point_yx(250000f,260000f));//linksonder y1.x1, rechtsboven y2, x2
+
+	unit<uint32> municipality
+	: StorageName     = "%ProjDir%/data/Vlaanderen/gemeente/Shapefile/refgem.shp"
+	//: StorageName     = "%ProjDir%/data/Vlaanderen/gemeente/gpkg/refgem.gpkg"
+	, StorageType     = "gdal.vect"
+	, StorageReadOnly = "True"
+	{
+		attribute<bl>       geometry    (polygon);
+		attribute<rdc_base> geometry_rd (polygon):= geometry[rdc_base];//does work in 8.9.1!
+	}
+	unit<uint32> municipality_coordinate := Sequence2points(municipality/geometry);
+}
+
+
+

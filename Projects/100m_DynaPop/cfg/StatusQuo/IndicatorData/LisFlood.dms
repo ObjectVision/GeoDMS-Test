@@ -1,0 +1,532 @@
+container LisFlood
+{
+
+	// ;  PART I: To convert the LUTS for Lisflood inputs to maps for Lisflood using the output of EUCS100. 
+	// ;             The value in the maps is determined by 2 conditions:
+	//                  for all except LAI, we need the Corine legend (CLC)and the NUTS 0 code; 
+	//                  for LAI, we need CLC and environmental stratification maps 
+	// ;             PART II:  To extract USD and LSD, corrected for soil sealing percentage per CLC class
+	// ;             PART III: Create fraction maps for forest, water and "other" (fraction sealed was created in 'part I'
+	// ;             PART IV:  LAI look up value retrieval and mapping 
+	// ;             PART V:   Retrieve all parameters for forest and other fraction maps
+	//                 PART VI: Aggregation of maps from 100m to 5km resolution and return to floating point precision 
+	
+
+	container paths {
+	
+//		parameter<String> lfdir:      [ '%LocalDataProjDir%/Results.use/LisFlood' ]; // @USERINPUT		
+		parameter<String> lsdir:      [ '%SourceDataProjDir%/LisFlood'    ];
+		parameter<String> ddir:      Expr = "lsdir+'/inputMaps'";
+		parameter<String> sdir:      Expr = "lsdir+'/LookUpTables'";
+	
+		parameter<String> lailutsdir:Expr = "sdir + '/lai'";
+		parameter<String> odir:      [ '%LocalDataDir%/100m/LisfloodMaps/baseline2030' ];   // @USERINPUT		
+		parameter<String> laioutdir: Expr = "odir + '/LAI'";
+	}
+
+	// enumerations
+	
+	// ;Corine land cover
+	// ;RECLASSIFIED TO ALPHABETICAL ORDER '4IDL'***
+	// ;arable = 0 
+	// ;forest = 1
+	// ;industry = 2
+	// ;infrastr = 3
+	// ;otherNature = 4
+	// ;Pasture = 5
+	// ;PermanentCrop = 6
+	// ;SemiNaturalVegetation = 7
+	// ;urban = 8
+	// ;water = 9
+	//; denseUrban = 10
+	
+	unit<UInt8> ClcType: NrOfRows = 10
+	{
+		attribute<String> LabelText: [ 'arable', 'forest', 'industry', 'infrastr', 'otherNature', 'Pasture', 'PermanentCrop', 'SemiNaturalVegetation', 'urban', 'water'], DialogType = "LabelText";
+		attribute<ClcType> VT2CLC(Classifications/LU/ViewType): [ null, 8, 2, 0, 6, 5, 1, 7, 0, 0, 0, 4, 4, 4, 8, 3, 4, 4, 9  ]; // all abandoned -> other nature; abandoned urban -> urban; 
+		attribute<String> ClcName(Classifications/LU/ViewType): Expr = "LabelText[ VT2CLC ]"; // DEBUG
+		
+		attribute<UINt32> BrushColor: Expr = "Classifications/LU/ViewType/Color[invert(VT2CLC)]", DialogType = "BrushColor";
+	}
+		
+	// ;Environmental stratification
+	// ;RECLASSIFIED TO ALPHABETICAL ORDER '4IDL'***
+	// ;ALPN = 0
+	// ;ALPS = 1
+	// ;ATLC = 2
+	// ;ATLN = 3
+	// ;BORE = 4
+	// ;CONT = 5
+	// ;LUIS = 6
+	// ;MEDM = 7
+	// ;MEDN = 8
+	// ;MEDS = 9
+	// ;NEMO = 10
+	// ;PANN = 11
+	
+	unit<UInt8> EnvType: NrOfRows = 12
+	{
+		attribute<String> LabelText: [ 'ALPN', 'ALPS', 'ATLC', 'ATLN', 'BORE', 'CONT', 'LUIS', 'MEDM', 'MEDN', 'MEDS', 'NEMO', 'PANN' ];
+	}
+	
+	// ;Countries (NUTS 0)
+	// ;RECLASSIFIED TO ALPHABETICAL ORDER '4IDL'***
+	// final_IDL_codes   country name  IDL aggreg
+	// ;0   AT  austria
+	// ;1   BE  belgium
+	// ;1   LU  belgium
+	// ;1   LI  belgium
+	// ;2   BG  bulgaria
+	// ;3   CH  switzerland
+	// ;4   CZ  czech republic
+	// ;5   DE  germany
+	// ;6   GR  greece
+	// ;6   MT  greece
+	// ;7   ES  spain
+	// ;7 Andorra AD  spain
+	// ;7 Gibraltar GI  spain
+	// ;8   FI  finland
+	// ;8   EE  estonia
+	// ;9   FR  france
+	// ;9 Monaco  MC  france
+	// ;10  Croatia HR  croatia
+	// ;10  Montenegro  ME  croatia
+	// ;10  Serbia and Montenegro CS  serbia
+	// ;10  Serbia  RS  serbia
+	// ;10  Bosnia-Herz BA  bosnia-herz
+	// ;11    HU  hungary
+	// ;12    IE  Ireland
+	// ;13  Greenland GL  iceland
+	// ;13    IS  iceland
+	// ;14    IT  italy
+	// ;14  San Marino  SM  italy
+	// ;14  Vatican City  VA  italy
+	// ;15    RU  russia
+	// ;15    LV  latvia
+	// ;15    LT  lithuania
+	// ;15  Belarus BY  belarus
+	// ;16    AL  albania
+	// ;16  Macedonia MK  greece
+	// ;17    NL  netherlands
+	// ;18    NO  norway
+	// ;18  Svalbard and Jan Mayen  SJ  norway
+	// ;19    PL  poland
+	// ;19    UA  ukraine
+	// ;20    PT  portugal
+	// ;21  Moldova MD  romania
+	// ;21    RO  romania
+	// ;22    SE  sweden
+	// ;22  Faroe Islands FO  denmark
+	// ;22    DK  denmark
+	// ;23    SI  slovenia
+	// ;24    SK  slovakia
+	// ;25    TR  turkey
+	// ;26    UK  uk
+	// ;26  Isle of Man IM  uk
+	// ;26  Guernsey  GG  uk
+	// ;26  Jersey  JE  uk
+	// :27  outside
+	
+	unit<UInt8> Nuts0Type: NrOfRows = 28 // only 27, but required to be compatible with the reading of LUT files
+	{
+		attribute<String> LabelText:
+		[
+			'AT', 'BL', 'BG', 'CH', 'CZ', 'DE', 'GR', 'ES', 'FI', 'FR', 'BN', 'HU', 'IE', 'IS',
+			'IT', 'SU', 'BS', 'NL', 'NO', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK', 'TR', 'UK', 'outside'
+		];
+	}
+	Unit<DPoint> GisCo: Descr = "spherical LisFlood projection" // "coords from SW to NE";
+		,	SpatialReference     = "EPSG:????"; // ??? lets try.
+		
+ 	Unit<WPoint> GisCoGrid: //StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif", DialogData = "GisCo" // read grid extents and scale from .TFW, but range isn't set.
+ 		Expr  =
+ 			"TiledUnit("
+ 				"point_xy(UInt16(4096), UInt16(4096), "
+ 					"range("
+ 						"gridset(GisCo, "
+ 							"point_xy(100.0, -100.0, GisCo), "
+ 							"point_xy(-1907041.8561368210, 2902505.2423000000, GisCo), "
+ 							"wpoint"
+ 						"), "
+ 						"point_xy(UInt16(0),UInt16(0)),"
+ 						"point_xy(UInt16(44551), UInt16(38142))"
+ 					")"
+ 				")"
+ 			")"
+ 	{
+ 		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif";
+ 		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/col_laeaSPH1.tif";
+ 		attribute<Lambert100mGrid> LAEA: Expr = "point_xy(LAEA_Col, LAEA_Row, Lambert100mGrid)";
+	}
+
+	Unit<WPoint> IdlDomainRect: StorageName = "=paths/ddir + '/nations100m.tif'", StorageReadOnly = "True", DialogData = "GisCo";  //@USER
+	Unit<WPoint> IdlDomain: Expr = "TiledUnit(point_xy(UInt16(4096), UInt16(4096), IdlDomainRect))"
+	{
+		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif";
+		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/col_laeaSPH1.tif";
+		attribute<Lambert100mGrid> LAEA: Expr = "point_xy(LAEA_Col, LAEA_Row, Lambert100mGrid)";
+	}
+	// selecte a region
+	// NorthWest {13682, 20030}
+	// SuothEast {21306, 24900}
+	Unit<WPoint> SelDomain: Expr = "Range(IdlDomainRect, point_xy(UInt16(13682), UInt16(20030)), point_xy(UInt16(21306), UInt16(24900)))"
+	{
+		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif";
+		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/col_laeaSPH1.tif";
+		attribute<Lambert100mGrid> LAEA: Expr = "point_xy(LAEA_Col, LAEA_Row, Lambert100mGrid)";
+	}
+
+	
+	container Templ: IsTemplate = "True"
+	{
+		// begin case parameters
+		
+		unit<wpoint> domain_grid;      // given rectangle in GisCo
+		parameter<String>  odir;
+		
+		unit<wpoint> laea_domain_grid:         Expr = "Lambert100mGrid"; // given rectangle in GisCo
+		attribute<Classifications/LU/ViewType> VT_2030_LAEA_Provided(laea_domain_grid): Expr = "inputMaps/VT2030_LAEA";
+		
+		// end case parameters
+		
+		
+		attribute<ClcType> clc_EUCS(domain_grid):
+			StorageName = "=odir+'/CLC2030.tif'"
+		,	expr = "inputMaps/CLC2030" // @@USERINPUT: Decouple by commenting this out.
+		;
+		attribute<ClcType> clc(domain_grid): expr = "MakeDefined(clc_EUCS, inputMaps/clc_NonEU27)";
+
+		container inputMaps
+		{
+		
+			attribute<Classifications/LU/ViewType> VT2030_LAEA (laea_domain_grid): StorageName = "%LocalDataProjDir%/Results/EU/LandUseVT_2030.tif",  StorageReadOnly = "True", DialogType = "LambertEA"; // @@USERINPUT
+			attribute<Classifications/LU/ViewType> VT2030      (domain_grid): Expr = "VT_2030_LAEA_Provided[domain_grid/LAEA[laea_domain_grid]]";
+			attribute<ClcType>                     CLC2030     (domain_grid): Expr = "CLCType/VT2CLC[ VT2030 ]";
+			
+			attribute<EnvType>   enz        (domain_grid): StorageName = "=paths/ddir+'/env100m.tif'",              StorageReadOnly = "True", DialogType = "Gisco";
+			attribute<Nuts0Type> nuts       (domain_grid): StorageName = "=paths/ddir+'/nations100m.tif'",          StorageReadOnly = "True", DialogType = "Gisco";
+			attribute<UInt8>     ts         (domain_grid): StorageName = "=paths/ddir+'/tsd_100m.tif'",             StorageReadOnly = "True", DialogType = "Gisco";
+			attribute<ClcType>   clc_NonEU27(domain_grid): StorageName = "=paths/ddir+'/clcRUSSIA_alphab4idl.tif'", StorageReadOnly = "True", DialogType = "Gisco";
+		}
+		
+		// ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		// ;*****PART I: READ LUTS, WRITE IMAGE FILES*
+		// ;XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+		container Part1
+		{
+			container SoilSealing
+			{
+				
+				unit<UInt16> IdlPerNuts0Type: Expr = "Range(UInt16, UInt16(0), UInt16(#ClcType) * UInt16(#Nuts0Type))"; // better would be "Combine(ClcType, Nuts0Type)", but that stumbles over UInt8->UInt16
+				parameter<String>  ssLUTfltStr: StorageName = "=paths/sdir+'/Allss.txt'", StorageReadOnly = "True", StorageType = "str";
+				attribute<Float32> ssLUTflt(IdlPerNuts0Type): Expr = "ReadArray(ssLUTfltStr, IdlPerNuts0Type, Float32, 0)";
+				attribute<UInt8>   ssLUTbyt(IdlPerNuts0Type): Expr = "UInt8(ssLUTflt)";
+				attribute<IdlPerNuts0Type> x(domain_grid): Expr = "UInt16(clc) + UInt16(inputMaps/nuts) * UInt16(#ClcType)";
+				attribute<UInt8> ss(domain_grid): Expr = "ssLUTbyt[x]";
+				attribute<UInt8> written_ss (domain_grid): Expr = "ss", StorageName = "=odir+'/base_ss2030_100m.tif'"; //, StorageType = "str";  //@USER 
+			
+				attribute<UInt8> noss   (domain_grid): Expr = "UInt8(100)-ss";
+
+				attribute<UInt8> written_noss(domain_grid): Expr = "noss", StorageName = "=odir+'/noss2030_100m.tif'"; //, StorageType = "str";
+			}
+			container Mannings {
+				
+				parameter<String>  mannLUTfltStr: StorageName = "=paths/sdir+'/mannings.txt'", StorageReadOnly = "True", StorageType = "str";
+				attribute<Float32> mannLUTflt(ClcType): Expr = "ReadArray(mannLUTfltStr, ClcType, Float32, 0)";
+				attribute<UInt8>   mannLUTbyt(ClcType): Expr = "UInt8(mannLUTflt*Float32(100))";
+				attribute<UInt8> mann(domain_grid): Expr = "mannLUTbyt[clc]";
+				attribute<UInt8> written_mann(domain_grid): Expr = "mann", StorageName = "=odir+'/mann2030_100m.tif'";
+			}
+			container CropCoefficient {
+	
+				parameter<String>  ccLUTfltStr: StorageName = "=paths/sdir+'/crcoef.txt'", StorageReadOnly = "True", StorageType = "str";
+				attribute<Float32> ccLUTflt(ClcType): Expr = "ReadArray(ccLUTfltStr, ClcType, Float32, 0)";
+				attribute<UInt8>   ccLUTbyt(ClcType): Expr = "UInt8(ccLUTflt*Float32(100))";
+				attribute<UInt8> cropcoeff(domain_grid): Expr = "ccLUTbyt[clc]";
+				attribute<UInt8> written_cropcoeff(domain_grid): Expr = "cropcoeff", StorageName = "=odir+'/cc2030_100m.tif'";
+			}
+			container CropGroupNumber
+			{
+				
+				parameter<String>  cgnLUTfltStr: StorageName = "=paths/sdir+'/crgrn.txt'", StorageReadOnly = "True", StorageType = "str";
+				attribute<Float32> cgnLUTflt(ClcType): Expr = "ReadArray(cgnLUTfltStr, ClcType, Float32, 0)";
+				attribute<UInt8>   cgnLUTbyt(ClcType): Expr = "UInt8(cgnLUTflt*Float32(10))";
+				attribute<UInt8> cropgrnum(domain_grid): Expr = "cgnLUTbyt[clc]";
+				attribute<UInt8> written_cropgrnum(domain_grid): Expr = "cropgrnum", StorageName = "=odir+'/crgrn2030_100m.tif'";
+			}
+			container RootDepth {
+	
+				parameter<String>  rdLUTfltStr: StorageName = "=paths/sdir+'/rd.txt'", StorageReadOnly = "True", StorageType = "str";
+				attribute<Float32> rdLUTflt(ClcType): Expr = "ReadArray(rdLUTfltStr, ClcType, Float32, 0)";
+				attribute<UInt8>   rdLUTbyt(ClcType): Expr = "UInt8(rdLUTflt / Float32(10.0))";
+				attribute<UInt8> root_depth(domain_grid): Expr = "rdLUTbyt[clc]";
+				attribute<UInt8> written_root_depth(domain_grid): Expr = "root_depth", StorageName = "=odir+'/rootdepth2030cm_100m.tif'";
+			}
+		}
+		
+		// ;;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		// ;;*****************************************PART II: SOIL depth mapping*****
+		// ;;XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+		container Part2
+		{
+			unit <UInt8> cm: Expr = "0.01 * BaseUnit('m', UInt8)";
+			
+			attribute<cm> ts(domain_grid): Expr = "inputMaps/ts [cm]";
+			attribute<cm> rd(domain_grid): Expr = "Part1/RootDepth/root_depth [cm]";
+			
+			// ;CONDITIONS (IN CM because the image is in CM - see above, circa line 168)
+			// usmin=5           ;50 mm
+			// usmax=ts-30       ;(ts max,2000mm)-(300mm) = max,1700mm but can also be negative where tsd<300mm
+			// lsmin=30          ;30mm
+			// lsmax=ts-5        ;50mm
+			// tsmin=lsmin+usmin ;theoreticaly 350mm (but in file we see as little as 50mm)
+			// us=rd             ; root depth range is [0,1800mm]
+			// ls=ts             ; ts range is [1,2000mm]
+	//		parameter<cm> usmin: Expr = "5 [cm]";
+	//		parameter<cm> lsmin: Expr = "30 [cm]";
+	//		parameter<cm> tsmin: Expr = "lsmin+usmin";
+	//		attribute<cm> usmax(domain_grid): Expr = "ts - 30[cm]";
+	//		attribute<cm> lsmax(domain_grid): Expr = "ts -  5[cm]";
+
+			attribute<cm> us_uncorr   (domain_grid): Expr = "rd";
+			attribute<cm> ls_uncorr   (domain_grid): Expr = "ts - rd";
+			
+			attribute<cm> us_cond0(domain_grid): Expr = "(ts < rd) ? ts - 30[cm] : us_uncorr";
+			attribute<cm> ls_cond0(domain_grid): Expr = "(ts < rd) ?      30[cm] : ls_uncorr";			
+
+			
+			// ;IF TOTAL SOIL DEPTH IS LT 35 cm, UpperSoil and LowerSoil are EQ to TOTALSoil DIVED BY 2:
+			// ;
+			// y=where(ts le 35 AND ts ge 0, ycount, complement=z, ncomplement=zcount)
+			// if (ycount gt 0) THEN us[y]=ts[y]*0.5
+			// if (ycount gt 0) THEN ls[y]=ts[y]*0.5
+			// if (zcount gt 0) THEN us[z]=us[z]
+			// if (zcount gt 0) THEN ls[z]=ts[z]-us[z]
+			
+			attribute<cm> us_cond1(domain_grid): Expr = "(ts <= 35[cm]) ? ts / UInt8(2) : us_cond0";
+			attribute<cm> ls_cond1(domain_grid): Expr = "(ts <= 35[cm]) ? ts / UInt8(2) : ls_cond0";
+
+			
+			// ;*****************
+			// ;LOWER SOIL LAYER
+			// i=where(ls lt 30 AND ts ge 35, icount,COMPLEMENT=j, NCOMPLEMENT=jcount)
+ 			// if (icount GT 0) THEN us[i]=ts[i]-30
+			// if (icount GT 0) THEN ls[i]=30
+			// if (jcount GT 0) THEN ls[j]=ls[j]
+			// if (jcount GT 0) THEN us[j]=us[j]
+			
+			attribute<cm> us_cond2(domain_grid): Expr = "((ls_cond1 < 30[cm]) && (ts >= 35[cm])) ? ts - 30[cm] : us_cond1";
+			attribute<cm> ls_cond2(domain_grid): Expr = "((ls_cond1 < 30[cm]) && (ts >= 35[cm])) ?       30[cm]: ls_cond1";			
+			attribute<cm> written_us(domain_grid): Expr = "us_cond2", StorageName = "=odir+'/USD2030cm_100m.tif'";
+			attribute<cm> written_ls(domain_grid): Expr = "ls_cond2", StorageName = "=odir+'/LSD2030cm_100m.tif'";
+		}
+		
+			
+		// ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		// ;*****PART III: CREATING FOREST, WATER, SEALED, OTHER MAPS***
+		// ;**********(for percent mapping at 100m resolution)**********
+		// ;XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+		container Part3
+		{
+			attribute< UInt8 > noss(domain_grid): Expr = "Part1/SoilSealing/noss";
+			
+			attribute<bool> fnf(domain_grid): Expr = "clc == 1[ClcType]";
+			attribute< UInt8 > noss_f(domain_grid): Expr = "fnf ? noss : 0[UInt8]";
+			attribute< UInt8 > written_forestCorr(domain_grid): Expr = "noss_f", StorageName = "=odir+'/base_forestCorr2030_100m.tif'";  //@USER
+			attribute<bool> written_fnf(domain_grid): Expr = "fnf", StorageName = "=odir+'/forestMask2030_100m.tif'";
+			
+			attribute<bool> gng(domain_grid): Expr = "clc == 5[ClcType]";
+			attribute< UInt8 > noss_g(domain_grid): Expr = "gng ? noss : 0[UInt8]";
+			attribute< UInt8 > written_grassCorr(domain_grid): Expr = "noss_g", StorageName = "=odir+'/base_grassCorr2030_100m.tif'";  //@USER
+			
+			attribute<bool> ana(domain_grid): Expr = "clc == 0[ClcType]";
+			attribute< UInt8 > noss_a(domain_grid): Expr = "ana ? noss : 0[UInt8]";
+			attribute< UInt8 > written_arableCorr(domain_grid): Expr = "noss_a", StorageName = "=odir+'/base_arableCorr2030_100m.tif'";  //@USER
+			
+  			attribute<Bool> wnw(domain_grid): Expr = "clc == 9[ClcType]";
+			attribute< UInt8 > noss_w(domain_grid): Expr = "wnw ? noss : 0[UInt8]";
+			attribute<bool> written_wnw(domain_grid): Expr = "fnf", StorageName = "=odir+'/waterMask2030_100m.tif'";
+			attribute< UInt8 > written_waterCorr(domain_grid): Expr = "noss_w", StorageName = "=odir+'/base_waterCorr2030_100m.tif'";  //@USER
+			
+			attribute<UInt8> fcorr(domain_grid): Expr = "noss_f"; 
+			attribute<UInt8> gcorr(domain_grid): Expr = "noss_g"; 
+			attribute<UInt8> wcorr(domain_grid): Expr = "noss_w"; 
+			attribute<UInt8> other(domain_grid): Expr = "noss - (wcorr+ fcorr)"; // thus other includes grass (gng) and arable (ana)
+			attribute<UInt8> written_otherCorr(domain_grid): Expr = "other", StorageName = "=odir+'/base_other2030_100m.tif'";   //@USER
+		}
+		
+		// ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		// ;                          PART IV: LAI
+		// ;************************************************************************
+		// ; LAI RETRIEVAL: To retrieve the data contained in a single line of a one-column text file
+		// ;            and to place it in the correct position of a new array. The position in the 
+		// ;            new array is established by 2 conditions: the Corine legend (CLC) and the climate
+		// ;            zone (ENZ) of 2 other arrays.
+		// ;            Example: Where CLC=24 (conif forest) and ENZ=1 (Alpine North), read line 6 of LUT and 
+		// ;                     printf in same locations where CLC=24 AND ENZ=1 
+
+		container Part4
+		{
+			attribute<UInt8> noss(domain_grid): Expr = "Part1/SoilSealing/noss";
+			
+			unit<UInt8> decade: Expr = "Range(UInt8, 0[UInt8], 36[UInt8])"
+			{
+				attribute<String> name: Expr = "'jrc10_dd'+String(ID(.)+UInt8(1))";
+			}
+			unit<UInt8> xType: Expr = "Range(UInt8, 0[UInt8], UInt8(#EnvType) * UInt8(#ClcType))"; // 12*10 = 120
+			
+			attribute<xType> x(domain_grid): Expr= "value(clc + inputmaps/enz * UInt8(#ClcType), xType)";
+			
+			attribute<string> FileName(decade): Expr = "decade/name + '.txt'";
+			attribute<String> laiStr(decade): StorageName = "=paths/lailutsdir", StorageType = "strfiles";
+			
+			attribute<Float32> nossFraction(domain_grid): Expr = "Float32(Part3/noss) / Float32(100.0)";
+			container laiAttr:  Expr = "for_each_nedv (decade/name, 'ReadArray(laiStr['+String(ID(decade))+'[decade]], xType, Float32, 0)', xType, Float32)";
+			container laiAttr2: Expr = "for_each_nedv (decade/name, 'UInt8(laiAttr/'+decade/Name+' * Float32(30.0))', xType, UInt8)";
+			container laiMaps:  Expr = "for_each_nedv (decade/name, 'Float32(laiAttr2/'+decade/Name+') [x]', domain_grid, Float32)";
+			container written_laiMaps:  Expr = "for_each_nedva(decade/name, 'laiMaps/'+decade/Name, domain_grid, Float32, paths/laioutdir+'/'+decade/name+'.tif')"; 
+		}
+		
+		// ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		// ;             Part V: Retrieve the 5 parameters for forest and "other" masks
+		// ;******************************************************************************
+		// ;Open newly created files based on LUTS
+		// ;;TIME: Takes 2.5 hours to process from now to end of program (100m resolution all Europe)
+		// ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		container Part5
+		{
+			attribute<UInt8> gcorr(domain_grid): Expr = "Part3/gcorr";
+			attribute<UInt8> fcorr(domain_grid): Expr = "Part3/fcorr"; 
+			attribute<UInt8> mann(domain_grid): Expr = "Part1/Mannings/mann"; 	
+			attribute<UInt8> mann_f(domain_grid): Expr = "(fcorr > UInt8(0)) ? mann : 255[UInt8]";	
+			attribute<UInt8> written_mann_f(domain_grid): Expr = "mann_f", StorageName = "=odir+'/base_mann2030_f.tif'";    //@USER
+			attribute<UInt8> other(domain_grid): Expr = "Part3/other";
+			attribute<UInt8> mann_o(domain_grid): Expr = "(other > UInt8(0)) ? mann : 255[UInt8]";	
+			attribute<UInt8> written_mann_o(domain_grid): Expr = "mann_o", StorageName = "=odir+'/base_mann2030_o.tif'";	//@USER
+			attribute<UInt8> cc(domain_grid): Expr = "Part1/CropCoefficient/cropcoeff";		
+			attribute<UInt8> cc_f(domain_grid): Expr = "(fcorr > UInt8(0)) ? cc : 255[UInt8]";		
+			attribute<UInt8> written_cc_f(domain_grid): Expr = "cc_f", StorageName = "=odir+'/base_cc2030_f.tif'";  //@USER
+			attribute<UInt8> cc_o(domain_grid): Expr = "(other > UInt8(0)) ? cc : 255[UInt8]";
+			attribute<UInt8> written_cc_o(domain_grid): Expr = "cc_o", StorageName = "=odir+'/base_cc2030_o.tif'";  //@USER
+			attribute<UInt8> cgn(domain_grid): Expr = "Part1/CropGroupNumber/cropgrnum";
+			attribute<UInt8> cgn_f(domain_grid): Expr = "(fcorr > UInt8(0)) ? cgn : 255[UInt8]";
+			attribute<UInt8> written_cgn_f(domain_grid): Expr = "cgn_f", StorageName = "=odir+'/base_cgn2030_f.tif'";  //@USER
+			attribute<UInt8> cgn_o(domain_grid): Expr = "(other > UInt8(0)) ? cgn : 255[UInt8]";
+			attribute<UInt8> written_cgn_o(domain_grid): Expr = "cgn_o", StorageName = "=odir+'/base_cgn2030_o.tif'";  //@USER
+			attribute<UInt8> usd(domain_grid): Expr = "Part2/us_cond2";
+			attribute<UInt8> usd_f(domain_grid): Expr = "(fcorr > UInt8(0)) ? usd : 255[UInt8]";
+			attribute<UInt8> written_usd_f(domain_grid): Expr = "usd_f", StorageName = "=odir+'/base_usd2030_f.tif'";  //@USER
+			attribute<UInt8> usd_o(domain_grid): Expr = "(other > UInt8(0)) ? usd : 255[UInt8]";
+			attribute<UInt8> written_usd_o(domain_grid): Expr = "usd_o", StorageName = "=odir+'/base_usd2030_o.tif'";   //@USER
+			attribute<UInt8> lsd(domain_grid): Expr = "Part2/ls_cond2";
+			attribute<UInt8> lsd_f(domain_grid): Expr = "(fcorr > UInt8(0)) ? lsd : 255[UInt8]";
+			attribute<UInt8> written_lsd_f(domain_grid): Expr = "lsd_f", StorageName = "=odir+'/base_lsd2030_f.tif'";   //@USER
+			attribute<UInt8> lsd_o(domain_grid): Expr = "(other > UInt8(0)) ? lsd : 255[UInt8]";
+			attribute<UInt8> written_lsd_o(domain_grid): Expr = "lsd_o", StorageName = "=odir+'/base_lsd2030_o.tif'";   //@USER
+			
+			container laiMaps_f:  Expr = "for_each_nedv (Part4/decade/name, '(fcorr > UInt8(0)) ? Part4/laiMaps/'+Part4/decade/Name+' : Float32(0 / 0)', domain_grid, Float32)";
+			container written_laiMaps_f:  Expr = "for_each_nedva(Part4/decade/name, 'laiMaps_f/'+Part4/decade/Name, domain_grid, Float32, odir+'/forestLAI/base_f'+Part4/decade/name+'.tif')";  //@USER
+			
+			 
+			container laiMaps_g:  Expr = "for_each_nedv (Part4/decade/name, '(gcorr > UInt8(0)) ? Part4/laiMaps/'+Part4/decade/Name+' : Float32(0 / 0)', domain_grid, Float32)";
+			container written_laiMaps_g:  Expr = "for_each_nedva(Part4/decade/name, 'laiMaps_g/'+Part4/decade/Name, domain_grid, Float32, odir+'/grasslandLAI/base_g'+Part4/decade/name+'.tif')";  //@USER
+
+			container laiMaps_o:  Expr = "for_each_nedv (Part4/decade/name, '(other > UInt8(0)) ? Part4/laiMaps/'+Part4/decade/Name+' : Float32(0 / 0)', domain_grid, Float32)";
+			container written_laiMaps_o:  Expr = "for_each_nedva(Part4/decade/name, 'laiMaps_o/'+Part4/decade/Name, domain_grid, Float32, odir+'/otherLAI/base_o'+Part4/decade/name+'.tif')";   //@USER
+		}
+		container Aggr5km
+		{
+//			unit<wpoint> domain_grid: Expr = "Range(wpoint, point_xy(0[UInt16], 0[uint16]), point_xy(10[UInt16], 10[uint16]))";
+//			attribute<WPoint> grid5km(domain_grid): Expr = "ID(domain_grid) / point_xy(50[UInt16], 50[UInt16])";
+			
+			unit<WPoint> domain5km: Expr = 
+					"gridset("
+						"domain_grid, "
+						"point_xy(UInt16(50), UInt16(50), domain_grid), "
+						"point_xy(UInt16( 0), UInt16( 0), domain_grid), "
+						"wpoint"
+					")";
+			attribute<domain5km> grid5km(domain_grid): Expr = "ID(domain_grid)[domain5km]";
+			
+			container pillars 
+			{
+				attribute<Float32> IsClc (domain5km): Expr = "sum(Float32(IsDefined(clc)), grid5km)";
+				attribute<Float32> Forest(domain5km): Expr = "sum(Float32(Part3/fnf), grid5km)";
+				attribute<Float32> Water (domain5km): Expr = "sum(Float32(Part3/wnw), grid5km)";
+				attribute<Float32> Other (domain5km): Expr = "sum(Float32(Part3/Other), grid5km)";
+			}
+			
+			attribute<Float32> written_forestFraction(domain5km): Expr = "sum(Float32(Part3/noss_f),         grid5km) / pillars/IsClc  / Float32(100.0)", StorageName = "=odir+'/forestCorr2030_5km.tif'";
+			attribute<Float32> written_waterFraction (domain5km): Expr = "sum(Float32(Part3/noss_w),         grid5km) / pillars/IsClc  / Float32(100.0)", StorageName = "=odir+'/waterCorr2030_5km.tif'";
+			attribute<Float32> written_otherFraction (domain5km): Expr = "sum(Float32(Part3/other ),         grid5km) / pillars/IsClc  / Float32(100.0)", StorageName = "=odir+'/otherCorr2030_5km.tif'";
+			attribute<Float32> written_sealedFraction(domain5km): Expr = "sum(Float32(Part1/SoilSealing/ss), grid5km) / pillars/IsClc  / Float32(100.0)", StorageName = "=odir+'/ss2030_5km.tif'";
+			
+			attribute<Float32> written_mann_f        (domain5km): Expr = "sum(Float32(Part5/mann_f),         grid5km) / pillars/Forest / Float32(100.0)", StorageName = "=odir+'/mann2030_f_5km.tif'";
+			attribute<Float32> written_mann_o        (domain5km): Expr = "sum(Float32(Part5/mann_o),         grid5km) / pillars/Other  / Float32(100.0)", StorageName = "=odir+'/mann2030_o_5km.tif'";
+			attribute<Float32> written_cc_f          (domain5km): Expr = "sum(Float32(Part5/cc_f  ),         grid5km) / pillars/Forest / Float32(100.0)", StorageName = "=odir+'/cc2030_f_5km.tif'";
+			attribute<Float32> written_cc_o          (domain5km): Expr = "sum(Float32(Part5/cc_o  ),         grid5km) / pillars/Other  / Float32(100.0)", StorageName = "=odir+'/cc2030_o_5km.tif'";
+			attribute<Float32> written_cgn_f         (domain5km): Expr = "sum(Float32(Part5/cgn_f ),         grid5km) / pillars/Forest / Float32(10.0)", StorageName = "=odir+'/cgn2030_f_5km.tif'";
+			attribute<Float32> written_cgn_o         (domain5km): Expr = "sum(Float32(Part5/cgn_o ),         grid5km) / pillars/Other  / Float32(10.0)", StorageName = "=odir+'/cgn2030_o_5km.tif'";
+			attribute<Float32> written_usd_f         (domain5km): Expr = "sum(Float32(Part5/usd_f ),         grid5km) / pillars/Forest ", StorageName = "=odir+'/usd2030_f_5km.tif'";
+			attribute<Float32> written_usd_o         (domain5km): Expr = "sum(Float32(Part5/usd_o ),         grid5km) / pillars/Other  ", StorageName = "=odir+'/usd2030_o_5km.tif'";
+			attribute<Float32> written_lsd_f         (domain5km): Expr = "sum(Float32(Part5/lsd_f ),         grid5km) / pillars/Forest ", StorageName = "=odir+'/lsd2030_f_5km.tif'";
+			attribute<Float32> written_lsd_o         (domain5km): Expr = "sum(Float32(Part5/lsd_o ),         grid5km) / pillars/Other  ", StorageName = "=odir+'/lsd2030_o_5km.tif'";
+			container written_laiMaps_f:  Expr = "for_each_nedva(Part4/decade/name, 'sum(Float32(Part5/laiMaps_f/'+Part4/decade/Name+'), grid5km) / pillars/Forest / Float32(30.0)', domain5km, Float32, odir+'/forestLAI/f'+Part4/decade/name+'corr_5km.tif')";
+			container written_laiMaps_o:  Expr = "for_each_nedva(Part4/decade/name, 'sum(Float32(Part5/laiMaps_o/'+Part4/decade/Name+'), grid5km) / pillars/Other  / Float32(30.0)', domain5km, Float32, odir+'/otherLAI/o'+Part4/decade/name+'corr_5km.tif')";                                      
+		}
+			
+		// @@@@ Check that the following producets are required for LisFlood; substantial time savings can be made by avoiding producing no longer neccessary intermediary products
+		
+		parameter<String> UpdateAllLutMaps: Expr = "'Ready'",
+			ExplicitSuppliers =
+/*			
+				"Part1/SoilSealing/written_ss;"
+				"Part1/SoilSealing/written_noss;"
+				"Part1/Mannings/written_Out;"
+				"Part1/CropCoefficient/written_Out;"
+				"Part1/CropGroupNumber/written_Out;"
+				"Part1/RootDepth/written_Out;"
+				"Part2/written_us;"
+				"Part2/written_ls;"
+				"Part3/written_noss_f;"
+				"Part3/written_fnf;"
+				"Part3/written_noss_w;"
+				"Part3/written_wnw;"
+				"Part3/written_Other;"
+				"Part4/written_LaiMaps;"
+				"Part5/written_mann_f;"
+				"Part5/written_mann_o;"
+				"Part5/written_cc_f;"
+				"Part5/written_cc_o;"
+				"Part5/written_cgn_f;"
+				"Part5/written_cgn_o;"
+				"Part5/written_usd_f;"
+				"Part5/written_usd_o;"
+				"Part5/written_lsd_f;"
+				"Part5/written_lsd_o;"
+				"Part5/written_laiMaps_f;"
+				"Part5/written_laiMaps_o;"
+*/				
+				"Aggr5km/written_forestFraction;" //YES
+				"Aggr5km/written_waterFraction;"  //YES
+				"Aggr5km/written_otherFraction;"  //YES
+				"Aggr5km/written_sealedFraction;" //YES
+				
+				"Aggr5km/written_mann_f;"         //YES
+				"Aggr5km/written_mann_o;"         //YES
+				"Aggr5km/written_cc_f;"           //YES
+				"Aggr5km/written_cc_o;"           //YES
+				"Aggr5km/written_cgn_f;"          //YES
+				"Aggr5km/written_cgn_o;"          //YES
+				"Aggr5km/written_usd_f;"          //YES
+				"Aggr5km/written_usd_o;"          //YES
+				"Aggr5km/written_lsd_f;"          //YES
+				"Aggr5km/written_lsd_o;"          //YES
+				
+				"Aggr5km/written_laiMaps_f;"      //YES
+				"Aggr5km/written_laiMaps_o"       //YES
+			;
+	}
+	container BaseImplWithIdlDomain: Expr = "Templ(IdlDomain, paths/odir+'_Idl')";
+	container BaseImplWithSelDomain: Expr = "Templ(SelDomain, paths/odir+'_Sel')";
+}

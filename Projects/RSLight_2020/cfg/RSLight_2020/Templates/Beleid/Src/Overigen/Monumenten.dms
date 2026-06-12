@@ -1,0 +1,46 @@
+container Monumenten: url=""
+{
+	container RijksMonumenten
+		: StorageName = "%RSLDataDir%/Omgeving/Monumenten/RCE_Rijksmonumenten_point.gdb"
+		, StorageType = "gdal.vect"
+		, StorageReadOnly = "True"
+		, DialogType  = "Map"
+		, DialogData  = "Point"
+		, Source      = "Website https:\//cultureelerfgoed.nl/rijksmonumenten%20kaartlagen"
+						"download op 21 augustus 2017 van het shp-formaat"
+						"conversie van shp naar gdb-formaat in ArcMap 10.3.1 dmv import Feature Class, Simple"
+		, url         = "%RSLDataDir%/Omgeving/Monumenten/Rijksmonumenten-kaartlagen  Rijksdienst voor het Cultureel Erfgoed.mht"
+		{
+			//Geen BAG-ID opgenomen en punt komt niet exact overeen met de BAG (scheelt ongeveer 1 meter), vraag uitstaan bij InfoDesk van de Rijksdienst voor het Cultureel Erfgoed"
+			unit<uint32> BAG
+			//3 punten rond Parijs, coordinaat 0,0 eruit filteren
+			:	SqlString  = "SELECT * FROM RCE_Rijksmonumenten_point WHERE COORDHERK ='BAG' AND (RIJKSMONNR <> 530206 AND RIJKSMONNR <> 530207 AND RIJKSMONNR <> 530208)"
+			{
+				attribute<rdc_meter> Point;
+			}
+
+			unit<uint32> Totaal
+			:	SqlString  = "SELECT * FROM RCE_Rijksmonumenten_point"
+			{
+				attribute<rdc_meter> Point;
+				attribute<uint32> per_domain_grid (domain_grid) := sum(uint32(status == 'beschermd') , point[domain_grid]);
+			}
+		}
+
+	unit<uint32> Stads_en_Dorpsgezichten
+	: StorageName = "%RSLDataDir%/Omgeving/Monumenten/Stads_en_Dorpsgezichten.gdb"
+	, StorageType = "gdal.vect"
+	, StorageReadOnly = "True"
+	, DialogType  = "Map"
+	, Source      = "website http:\//nationaalgeoregister.nl/geonetwork/srv/dut/catalog.search#/metadata/4e2ef670-cddd-11dd-ad8b-0800200c9a66"
+					"download op 22 augustus 2017 van:"
+					"Stads- en Dorpsgezichten in CRS EPSG:28992 (ShapeFile) (0.88mb, application/x-shapefile, Amersfoort / RD New)"
+					"conversie van shp naar gdb-formaat in ArcMap 10.3.1 dmv import Feature Class, Simple"
+	, url          = "%RSLDataDir%/Omgeving/Monumenten/screendump_download_Stads_en_Dorpsgezichten.jpg"
+	,	SqlString  = "SELECT * FROM Stads_en_Dorpsgezichten"
+	{
+		attribute<rdc_meter> Geometry (poly);
+		attribute<bool> IsHard := JURSTATUS == 'rijksmonument';
+		attribute<bool> IsNietHard := !IsHard;
+	}
+}

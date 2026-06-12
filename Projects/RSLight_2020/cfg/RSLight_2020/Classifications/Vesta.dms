@@ -1,0 +1,76 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Deze DMS-file wordt aangeroepen door Classifications.dms.                            //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
+
+container Vesta
+{
+	unit<uint8> GebiedsOptie : nrofrows = 12 // volgorde niet hier instellen maar in SpecifiekeInstellingen/Voorkeuren/BaseLine/WarmteOpties
+	{
+		attribute<string> Name:
+		[
+			 'RestWarmte'
+			,'GeoThermie'
+			,'WijkWKK'
+			,'BioWKK'
+			,'WKO'
+			,'Lt15_30'
+			,'Lt15_50'
+			,'Lt15_70'
+			,'Lt30_30' // Geen collectieve WP.
+			,'Lt30_50'
+			,'Lt30_70'
+			,'TEO'];
+		// attribute<WarmteOptie> WarmteOptie_rel := rlookup(name, WarmteOptie/name);
+
+		attribute<string> code             := string(id(.));
+		attribute<bool>   IsPlanRegioOptie : [ true, true, true, true, false, false, false, false, false, false, false]; //, false ];
+		attribute<string> label            := Name, DialogType = "LabelText";
+		attribute<uint32> Color            : DialogType = "BrushColor",
+		[
+			 rgb(150,  0,  0)
+			,rgb(  0,  0,150)
+			,rgb(128,128,  0)
+			,rgb(  0,255,128)
+			,rgb(  0,150,  0)
+			,rgb(255,130,  0) // oranje
+			,rgb(255,155,  0) // geel
+			,rgb(255,180,  0) // geel
+			,rgb(255,205,  0) // geel
+			,rgb(255,230,  0) // geel
+			,rgb(255,255,  0) // geel
+		];
+		attribute<uint32> SymbolColor := Color, DialogType = "SymbolColor";
+		attribute<uint32> PenColor := Color, DialogType = "PenColor";
+
+		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+	}
+	
+	unit<uint8> AanbodOptie : nrofrows = 5
+	{
+		attribute<string> Name:
+		[
+			 'RestWarmte'
+			,'GeoThermie'
+			,'WijkWKK'
+			,'BioWKK'
+			,'WKO'
+		];
+		
+		attribute<string> code := string(id(.));
+		attribute<string> label := Name, DialogType = "LabelText";
+		attribute<uint32> Color : DialogType = "BrushColor",
+		[
+			 rgb(150,  0,  0)
+			,rgb(  0,  0,150)
+			,rgb(128,128,  0)
+			,rgb(  0,255,128)
+			,rgb(  0,150,  0)
+		];
+		
+		attribute<uint32> SymbolColor := Color, DialogType = "SymbolColor";
+		
+		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+	}
+}

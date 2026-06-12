@@ -1,0 +1,27 @@
+container Status2050
+{
+	container Woningen
+	{
+		parameter<string> CalcStr := WoningenBasisjaar/SrcStr+'[Woning] + MakeDefined(Woningbouw_netto/@/Per_domain[invert(domain/org_rel)], 0[Woning])';
+		
+		attribute<Woning> Totaal     (/domain_grid) := = replace(CalcStr, '@', 'Totaal');
+		attribute<Woning> Meergezins (/domain_grid) := = replace(CalcStr, '@', 'Meergezins');
+		attribute<Woning> Eengezins  (/domain_grid) := = replace(CalcStr, '@', 'Eengezins');
+	}
+	
+	attribute<Verblijfsobject> VBOs (/domain_grid) := (VariantSpecifiek/VBOsBasisjaar - MakeDefined(Verdringing/VBOs/Totaal, 0[Verblijfsobject]))[invert(domain/org_rel)];
+	
+	container PerGebruiksdoel := for_each_nedv(
+		Classifications/vastgoed/vbo_gebruiksdoel/name,
+		'VBOsBasisjaar/Per_gebruiksdoelSrc/'+Classifications/vastgoed/vbo_gebruiksdoel/name+' * /domain_grid/NrHaPerCell - MakeDefined(Verdringing/VBOs/Per_gebruiksdoel/Per_domain/'+Classifications/vastgoed/vbo_gebruiksdoel/name+'[invert(domain/org_rel)], 0[Verblijfsobject])',
+		/domain_grid, Verblijfsobject
+	);
+	
+//	attribute<CBSKlasse> LandUse (/domain_grid) := GeeftVerdringing[invert(domain/org_rel)] ? CBSKlasse/V/Woongebied : /SourceData/Grondgebruik/BBG/BBG_Reeks_1996_2015/Dominant/per_domain_grid/J2015;
+	
+	container Banen := for_each_nedv(
+		Actor/TXLJobs7/name,
+		'BanenBasisjaarSrc/'+Actor/TXLJobs7/name+' * /domain_grid/NrHaPerCell - MakeDefined(Verdringing/Banen/'+Actor/TXLJobs7/name+'[invert(domain/org_rel)], 0[job])',
+		/domain_grid, job
+	);
+}

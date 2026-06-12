@@ -1,0 +1,59 @@
+container Limburg := PRVT('Limburg')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Goudgroene_natuurzone          (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Beschermingszones_natuur_en_landschap/Goudgroene_natuurzone/Bestand/Multi/Result;
+			attribute<bool> Grondwaterbeschermingsgebieden (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/milieubeschermingsgebieden/Grondwaterbeschermingsgebieden/Bestand/Multi/Result;
+			attribute<bool> Waterwingebieden               (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/milieubeschermingsgebieden/Waterwingebieden/Bestand/Multi/Result;
+			attribute<bool> Gesloten_stortplaats           (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Rioolplichtontheffing_en_gesloten_stortplaatsen/Gesloten_stortplaats/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Goudgroene_natuurzone
+					, Grondwaterbeschermingsgebieden
+					, Waterwingebieden
+					, Gesloten_stortplaats
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Stiltegebieden (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/milieubeschermingsgebieden/Stiltegebieden/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Stiltegebieden
+				);
+		}
+	}
+		
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Ontwikkelingsgebied_glastuinbouw (domain_grid) := provincie && !Src/NL_IMRO_9928_Vr2014_GC03/Intensieve_veehouderijen_en_glastuinbouwbedrijven/Ontwikkelingsgebied_glastuinbouw/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Ontwikkelingsgebied_glastuinbouw
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

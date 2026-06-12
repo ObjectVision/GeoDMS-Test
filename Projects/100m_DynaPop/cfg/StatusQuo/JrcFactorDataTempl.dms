@@ -1,0 +1,886 @@
+container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr = "ReprojectedFactorData" 
+{
+	unit<WPoint> domain_grid;
+	Container RunRegions;
+	parameter<String> BaseYearCorineDataFileName;
+		
+	container TiffData: IsHidden = "True"
+	{
+		unit<WPoint> LC2006
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/clc06_r_v3.tif"
+			,	StorageType = "gdal.grid"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint8>    GridData;
+			attribute<uint8>	ReadData (domain_grid);
+			attribute<Classifications/LU/Corine>    CorineLandUse	(domain_grid): Expr = "rlookup(ReadData, classifications/LU/Corine/CLC06_code)";
+			attribute<Classifications/LU/ModelType> ModelLandUse 	(domain_grid): Expr = "Classifications/LU/Corine/MT [CorineLandUse]";
+			attribute<Classifications/LU/ViewType>  ViewLandUse  	(domain_grid): Expr = "Classifications/LU/Corine/VT2[CorineLandUse]";
+		}
+		unit<WPoint> LC2012
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "JRC:LandCover"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/LUISA_basemap_2012_080521_100m.tif"
+			,	StorageType = "gdal.grid"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint16> GridData;
+			attribute<uint16> ReadData  							(domain_grid);
+			attribute<Classifications/LU/Corine>	CorineLandUse	(domain_grid): Expr = "rlookup(ReadData, Classifications/Lu/Corine/BM18_code)";
+			attribute<Classifications/LU/ModelType> ModelLandUse 	(domain_grid): Expr = "Classifications/LU/Corine/MT [CorineLandUse]";
+			attribute<Classifications/LU/ViewType>  ViewLandUse  	(domain_grid): Expr = "Classifications/LU/Corine/VT2[CorineLandUse]";
+		}
+		
+		unit<WPoint> ghsl1990
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "GHSL"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl1990_v2018.tif"
+			,	StorageType = "gdal.grid"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint8>    GridData;
+			attribute<uint8>    ReadData	(domain_grid);
+		}
+		unit<WPoint> ghsl2000
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "GHSL"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl2000_v2018.tif"
+			,	StorageType = "gdal.grid"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint8>    GridData;
+			attribute<uint8>    ReadData	(domain_grid);
+		}
+		unit<WPoint> ghsl2014
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "GHSL"
+			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl2014_v2018.tif"
+			,	StorageType = "gdal.grid"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint8>    GridData;
+			attribute<uint8>    ReadData	(domain_grid);
+		}
+		unit<WPoint> CorineGrid
+			:	DialogData = "Geography/LambertEA"
+			,	Source = "JRC:LandCover"
+			,	StorageName = "=BaseYearCorineDataFileName"
+			,	StorageType = "gdal.grid"
+			,	StorageReadOnly = "True"
+		{
+			attribute<uint16> GridData;
+			attribute<uint16> ReadData  							(domain_grid);
+			attribute<Classifications/LU/Corine>	CorineLandUse	(domain_grid): Expr = "rlookup(ReadData, Classifications/Lu/Corine/BM18_code)";
+			attribute<Classifications/LU/ModelType> ModelLandUse 	(domain_grid): Expr = "Classifications/LU/Corine/MT [CorineLandUse]";
+			attribute<Classifications/LU/ViewType>  ViewLandUse  	(domain_grid): Expr = "Classifications/LU/Corine/VT2[CorineLandUse]";
+		}
+		unit<wpoint> AgeGrid: DialogData = "Geography/LambertEA" , StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/age0.tif", StorageReadOnly = "True"
+		{
+			attribute<uint8> GridData;
+			attribute<uint8> ReadData (domain_grid);
+		}
+		container AgeFromCLC
+		{
+			attribute<bool> Is_06_12(domain_grid): Expr = "LC2006/ViewLandUse == LC2012/ViewLandUse";
+			attribute<bool> Is_12_18(domain_grid): Expr = "LC2012/ViewLandUse == CorineGrid/ViewLandUse";
+			
+			attribute<uint8> AgeCLC  (domain_grid): Expr = "Is_12_18 ? Is_06_12 ? uint8(12) : uint8(6) : uint8(0)";
+		}
+		container X8: StorageName = "='%SourceDataProjDir%/EUCS_100m/succession/X8.tif'", StorageReadOnly = "True"
+		{
+			attribute<Int16> GridData(Geography/Lambert100mGrid): IsHidden = "True";
+			attribute<Int16> ReadData(domain_grid);
+		}
+		container X9: StorageName = "='%SourceDataProjDir%/EUCS_100m/succession/X9.tif'", StorageReadOnly = "True"
+		{
+			attribute<Int16> GridData(Geography/Lambert100mGrid): IsHidden = "True";
+			attribute<Int16> ReadData(domain_grid);
+		}
+		Unit<WPoint> Eu27_e: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/eu27_e_ha.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		{
+			attribute<units/meter> Elevation (domain_grid): Expr="value(ReadData, units/meter)" ;
+			attribute<Int16> GridData: IsHidden = "True";
+			attribute<Int16> ReadData(domain_grid);
+		}
+		
+		
+		
+		//to be phased out eventually with new calibration [JAN 28 2013] :
+		container slope_euro: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/slope_euro.tif", StorageReadOnly = "True"
+		{
+			attribute<Int8> GridData(Eu27_e): IsHidden = "True";
+			attribute<Int8> ReadData(domain_grid);
+		}	
+		//to replace slope_euro eventually [Jan 28, 2013]
+		Unit<WPoint> slope_continuous: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/slope_deg_int16.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		{
+			attribute<Int16> slope (domain_grid): expr="value(ReadData, int16)" ;
+			attribute<Int16> GridData (Eu27_e): IsHidden = "True";
+			attribute<Int16> ReadData(domain_grid);
+		}				
+		container sosl_euro: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/sosl_euro.tif", StorageReadOnly = "True"
+		{
+			attribute<Int8> GridData(Eu27_e): IsHidden = "True";
+			attribute<Int8> ReadData(domain_grid);
+		}	
+		Unit<WPoint> aspect_degrees: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/aspect_100.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		{
+			attribute<units/degrees> aspect (domain_grid): expr="value(ReadData, units/degrees)" ;
+			attribute<Int16> GridData (Eu27_e): IsHidden = "True";
+			attribute<Int16> ReadData(domain_grid);
+		}	
+		unit<wpoint> pop_fe_1:		StorageName = "%SourceDataProjDir%/EUCS_100m/fixed_effects/pv_101116_1.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
+		{
+			attribute<float32> GridData;
+			attribute<float32> ReadData(domain_grid);
+			attribute<float32> fe (domain_grid);
+			attribute<int32>   exp: 	expr = "int32(GridData)", StorageName = "%SourceDataProjDir%/EUCS_100m/fixed_effects/pv_101116_1_int32.tif";
+		}
+		unit<wpoint> pop_fe_1_int32:		StorageName = "%SourceDataProjDir%/EUCS_100m/fixed_effects/pv_101116_1_int32.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
+		{
+			attribute<int32> GridData;
+			attribute<int32> ReadData(domain_grid);
+			attribute<float32> fe (domain_grid): expr = "float32(ReadData)";
+		}
+		
+		unit<wpoint> DistanceToRoads: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/accessData/m5000dist_to_lvl2to6roads.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int16> GridData: IsHidden = "True";
+			attribute<int16> ReadData(domain_grid);
+		}
+		unit<wpoint> DistanceToWater:
+			StorageName 	  = "%SourceDataProjDir%/EUCS_100m/WaterDist/WaterDist.tif"
+			, StorageReadOnly = "True" 
+			, DialogData	  = "Geography/LambertEA"
+		{
+			attribute<float32> GridData: IsHidden = "True";
+			attribute<float32> ReadData(domain_grid);
+		}
+		unit<wpoint> ghspop90:
+			StorageName 	  = "%SourceDataProjDir%/EUCS_100m/Population/GHS_250m/EU_HPOP250_1990_ETRS.tif"
+			, StorageReadOnly = "True" 
+			, DialogData	  = "Geography/LambertEA"
+		{
+			attribute<float32> GridData: IsHidden = "True";
+			attribute<float32> ReadData	(domain_grid);
+		}
+		unit<wpoint> ghspop15:
+			StorageName 	  = "%SourceDataProjDir%/EUCS_100m/Population/GHS_250m/EU_HPOP250_2015_ETRS.tif"
+			, StorageReadOnly = "True" 
+			, DialogData	  = "Geography/LambertEA"
+		{
+			attribute<float32> GridData: IsHidden = "True";
+			attribute<float32> ReadData	(domain_grid);
+		}
+		container yield_pre2040
+		{
+			unit<wpoint> yieldmaize: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/maize_yield_coarse_1100.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldbarley: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/barley_yield_coarse_1100.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldsugbeet: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sugarbeet_yield_coarse_1100.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldsunflow: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sunflower_yield_coarse_1100.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldwheat: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/wheat_yield_coarse_1100.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldrapeseed: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/rapeseed_yield_coarse_1100.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+		}
+		container yield_post2040
+		{
+			unit<wpoint> yieldmaize: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/maize_yield_coarse_1110.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldbarley: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/barley_yield_coarse_1110.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldsugbeet: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sugarbeet_yield_coarse_1110.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldsunflow: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sunflower_yield_coarse_1110.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldwheat: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/wheat_yield_coarse_1110.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+			unit<wpoint> yieldrapeseed: 	
+				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/rapeseed_yield_coarse_1110.tif"
+				, StorageType = "gdal.grid"
+				, StorageReadOnly = "True"
+				, DialogData      = "Geography/LambertEA"
+			{
+				attribute<int32> GridData: IsHidden = "True";
+				attribute<int32> ReadData(domain_grid);
+			}
+		}
+		unit<wpoint> AgriAbandon_biophysical: 	
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/biophysical/Biophysical_Factors_Final.tif"
+			, StorageType = "gdal.grid"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int16> GridData: IsHidden = "True";
+			attribute<int16> ReadData(domain_grid);
+		}
+		unit<wpoint> Irrigation: 	
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/irrigation/AOI_MGM_ITTIG_CULT_FRQ_2000_2016.tif"
+			, StorageType = "gdal.grid"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<float32> GridData: IsHidden = "True";
+			attribute<float32> ReadData(domain_grid);
+		}
+		unit<wpoint> RiparianAreas:
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/riparianAreas2012.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<units/boolean> riparianAreas(domain_grid): expr = "value(ReadData, units/boolean)" ;
+			attribute<uint8> GridData: IsHidden = "True";
+			attribute<uint8> ReadData(domain_grid);
+		}
+		unit<WPoint> erosionRisk: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/erosion_peseta.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		{
+			attribute<units/tonne_ha> erosionRisk(domain_grid): expr = "value(replace_value(ReadData, Int16(-32768), Int16(0 / 0)), units/tonne_ha)" ;
+			attribute<Int16> GridData: IsHidden = "True";
+			attribute<Int16> ReadData(domain_grid);
+		}
+		unit<wpoint> FloodRisk:
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/FloodRisk_bin.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<units/boolean> FloodRisk (domain_grid): Expr = "value(ReadData,units/boolean)";
+			attribute<uint8> GridData: IsHidden = "True";
+			attribute<uint8> ReadData(domain_grid);
+		}
+		
+		unit<WPoint> CoastalZone: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/CZ_100m.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		{
+			attribute<units/boolean> Coast (domain_grid): Expr = "value(replace_value(ReadData, Int8(-1), Int8(0 / 0)),units/boolean)";
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}	
+		
+		unit<wpoint> salinity2: StorageName = "%SourceDataProjDir%/EUCS_100m/NECR/salinity.tif", 	StorageType = "tif", DialogData = "Geography/LambertEA"
+		{
+			attribute<uint8>	GridData: IsHidden = "True";
+			attribute<uint8>	ReadData (domain_grid);
+		}
+			
+		unit<WPoint> Natura2000: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/n2k_v2011_bin.tif", StorageReadOnly = "True", 	StorageType = "tif", DialogData = "Geography/LambertEA"
+		{
+			attribute<units/boolean> Natura2000 (domain_grid): Expr = "value(replace_value(ReadData, Int8(-1), Int8(0 / 0)),units/boolean)";
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}
+		unit<WPoint> Natura2000Priority: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Natura2000_End2011_clean_union_Priority_bin.tif", StorageReadOnly = "True", StorageType = "tif", DialogData = "Geography/LambertEA"
+		{
+			attribute<uint2> Natura2000Priority (domain_grid);
+			attribute<uint2> GridData: IsHidden = "True";
+			attribute<uint2> ReadData(domain_grid);
+		}
+		unit<WPoint> NDAs: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/nda_100m_bin.tif", StorageReadOnly = "True", 	StorageType = "tif", DialogData = "Geography/LambertEA"
+		{
+			attribute<units/boolean> NDA (domain_grid): Expr = "value(replace_value(ReadData, Int8(-1), Int8(0 / 0)),units/boolean)";
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}	
+		unit<WPoint> NDA_Cat: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/CDDA_v9_clean_unionCat.tif", 	StorageType = "tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		{
+			attribute<uint8> NDA_Cat (domain_grid);
+			attribute<uint8> GridData: IsHidden = "True";
+			attribute<uint8> ReadData(domain_grid);
+		}
+		unit<wpoint> HNV: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/HNV/hnv06_100m_v5"
+			, StorageType = "gdal.grid"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<units/boolean> IsHNV (domain_grid): Expr = "value(replace_value(ReadData, uint8(-1), uint8(0 / 0)),units/boolean)";
+			attribute<uint8> GridData: IsHidden = "True";
+			attribute<uint8> ReadData(domain_grid);
+		}		
+		unit<wpoint> SuitabilityForest: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/forests/Forest_EU28_100m_8bit.tif"
+			, StorageType = "gdal.grid"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<uint8> GridData: IsHidden = "True";
+			attribute<uint8> ReadData(domain_grid);
+		}		
+				
+			//NECR DATA
+			
+		   unit<wpoint> SuitabilityMapNECR:
+			//unit<wpoint> NECR_class: nrofrows = 6
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/NECR/SuitabilityMapEnergyCrop.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+			
+			// This is in case we need to stablish different levels of suitability in the final map
+			//attribute<string> Label: DialogType = "LabelText", [ 'zero', 'Very suitable', 'Suitable', 'Moderately suitable', 'Low suitable', 'Very low suitable'];
+			//attribute<Float32> SuitValue: [ null, 0, 0.3, 0.3,0.2,0.1,0  ]; 										// I do not why
+			//attribute<Bool>    Allowed:   [ false, true, true, true, true, true];	
+		}
+		
+			//attribute<NECR_Class> SuitabilityMapNECR(domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/NECR/SuitabilityMapEnergyCrop.tif"; 
+		
+
+		unit<wpoint> Peatlands:
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/NECR/Peatlands.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<uint2> GridData: IsHidden = "True";
+			attribute<uint2> ReadData(domain_grid);
+			attribute<uint8>  IsPeatlands(domain_grid): Expr  = "ReadData == 1[uint2] ? uint8(15) : uint8(0)";
+			//attribute<uint>  IsPeat(domain_grid): Expr  = "SourceData/IsPeatlands, uint2(15)";
+		}
+				 	
+		unit<uint8> salinityClass: nrofrows = 4
+		{
+			attribute<string> Label: DialogType = "LabelText", ['zero','Medium', 'Low', 'High' ];
+			attribute<uint4>   FileValue: [0, 1, 2, 3];
+			attribute<Float32> SuitValue: [null, 15, -15, 35 ]; 											
+		}
+			attribute<salinityClass> salinity(domain_grid): expr = "TiffData/salinity2/ReadData[salinityClass]"; 
+			
+						
+		unit<uint16> ErodibilityClass: nrofrows= 7
+		{
+			attribute<string> Label: DialogType = "LabelText", ['zero', 'very low erosion', 'very weak', 'weak', 'Moderate','Strong','very strong' ];
+			attribute<uint16>   FileValue: [0, 1, 2, 3, 4, 5, 6];
+			attribute<Float32> SuitValue: [null, 0, 0, 0, 10, 20, 25];								
+
+		//	attribute<Bool>    Allowed:   [ false, true, true, true, true, true, true ];		
+		}
+			attribute<ErodibilityClass> Erodibility(domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/NECR/erodibility.tif"; 	
+			
+				
+		unit<wpoint> ContaminatedLands:
+             StorageName       = "%SourceDataProjDir%/EUCS_100m/NECR/PotentialContaminatedLand.tif"
+             , StorageReadOnly = "True"
+             , DialogData      = "Geography/LambertEA"
+          {
+             attribute<uint8> GridData: IsHidden = "True";
+             attribute<uint8> ReadData(domain_grid);
+             attribute<uint8> IsContaminated(domain_grid): Expr  = "ReadData == 4[uint8] || ReadData == 5[uint8]  ? uint8(20) : uint8(0)";
+            //attribute<uint8> IsContam(domain_grid): Expr  = "IsContaminated ? uint8(20) : uint8(0)";
+           }					
+	}
+	
+	container LocSpec_NECR
+	{
+		attribute<Float32> NECR_LocSpec(domain_grid): Expr = "(TiffData/salinityClass/SuitValue [TiffData/salinity]) + " 
+		" (TiffData/ErodibilityClass/SuitValue [TiffData/Erodibility]) + "
+		" Float32(TiffData/ContaminatedLands/IsContaminated)";
+		
+	}
+	unit<wpoint> LocSpecSQ: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspecSQ_int.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}
+		unit<wpoint> SQLocSpec_nat01: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locSp_nat01.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}
+		unit<wpoint> locspec_integration_agric: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_agric.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}
+		unit<wpoint> locspec_integration_pastures: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_pastures.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}
+		unit<wpoint> locspec_integration_sv: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_sv.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}
+		unit<wpoint> locspec_integration_abandoned: 
+			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_abandoned.tif"
+			, StorageReadOnly = "True"
+			, DialogData      = "Geography/LambertEA"
+		{
+			attribute<int8> GridData: IsHidden = "True";
+			attribute<int8> ReadData(domain_grid);
+		}
+		container DGRegio_locspec
+		{
+			container locspecs_location: expr = "DataPreparation/DGRegio_locspecs";
+			
+			parameter<uint32> FirstYear:  		expr = "locspecs_location/rules/FirstYear";
+			parameter<uint32> LastYear: 		expr = "locspecs_location/rules/LastYear";
+			parameter<float32>YearlyIncrease:	expr = "float32(1) / float32(LastYear - FirstYear)";
+			
+			container cluster_level 
+			{
+				attribute<uint32>  UrbanClusterId			(domain_grid): expr = "poly2grid(locspecs_location/import/UrbanClusters/Geometry, domain_grid)";
+				attribute<uint32>  UrbanForestsZones		(domain_grid): Expr = "poly2grid(locspecs_location/import/UrbanZones/Geometry, domain_grid)";
+				attribute<float32> multimodal_transport 	(domain_grid): expr = "MakeDefined((locspecs_location/multimodal_transport_scaled[UrbanClusterId] * locspecs_location/rules/multimodal_effect), float32(0))";
+				attribute<float32> urban_regeneration 		(domain_grid): expr = "MakeDefined((locspecs_location/urban_regeneration_scaled[UrbanClusterId] * locspecs_location/rules/urban_regeneration_effect), float32(0))";
+				attribute<float32> railway_investments		(domain_grid): expr = "MakeDefined((locspecs_location/railway_investment_scaled[UrbanClusterId] * locspecs_location/rules/railways_effect), float32(0))";
+				
+				attribute<float32> together					(domain_grid): expr = "multimodal_transport + urban_regeneration + railway_investments";
+			}
+			container raster_level
+			{
+				unit<wpoint> airport_industry:	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/Ports_Airports/airports_locspec_industry2.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
+				{attribute<int8> GridData: IsHidden = "True"; attribute<int8> ReadData(domain_grid); attribute<float32> effect (domain_grid): expr = "max_elem((float32(ReadData) / float32(100)) * locspecs_location/rules/airports_effect, float32(0))";}
+				unit<wpoint> airport_urban:   	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/Ports_Airports/airports_locspec_urban2.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
+				{attribute<int8> GridData: IsHidden = "True"; attribute<int8> ReadData(domain_grid); attribute<float32> effect (domain_grid): expr = "max_elem((float32(ReadData) / float32(100)) * locspecs_location/rules/airports_effect, float32(0))";}
+				unit<wpoint> ports_industry:   	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/Ports_Airports/PORTS_LOCSPEC_INDUSTRY_FINAL1.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
+				{attribute<uint8> GridData: IsHidden = "True"; attribute<uint8> ReadData(domain_grid); attribute<float32> effect (domain_grid): expr = "max_elem((float32(ReadData) / float32(100)) * locspecs_location/rules/ports_effect, float32(0))";}
+				
+				attribute<bool>    IsFor(domain_grid): Expr = "CaseData/JrcFactorData/TiffData/CorineGrid/ViewLandUse = uint8(6)";
+				//(Geography/Lambert100mGrid): Expr = "LandUseData/CLC_100m/LC2006/ReadData = uint8(23) || " 
+				//"LandUseData/CLC_100m/LC2006/ReadData = uint8(24) || "
+				//"LandUseData/CLC_100m/LC2006/ReadData = uint8(25)"
+				//, DisableStorage = "True";		
+				attribute<float32>    UrbanForestsLevels 	(domain_grid): Expr = 
+					"switch("
+						"case(bool(cluster_level/UrbanForestsZones > 0) && !IsFor, float32(2)), "
+						"case(bool(cluster_level/UrbanForestsZones > 0) && IsFor, float32(2.3)), "
+						"float32(0)"
+					")";
+				
+				unit<wpoint> UrbanForests				
+				{attribute<float32> effect (domain_grid): expr = "MakeDefined(float32(1) + (UrbanForestsLevels * locspecs_location/rules/UrbFor_effect), float32(1))";}
+				
+				attribute<float32> forest_effect 	(domain_grid): expr = "UrbanForests/effect";
+				attribute<float32> urban_together 	(domain_grid): expr = "airport_urban/effect";
+				attribute<float32> industry_together(domain_grid): expr = "airport_industry/effect + ports_industry/effect";
+			}
+			
+			
+			
+			attribute<float32> urban_increment   (domain_grid): expr = "float32(1) + cluster_level/together + raster_level/urban_together";
+			attribute<float32> industry_increment(domain_grid): expr = "float32(1) + raster_level/industry_together";
+			attribute<float32> forests_increment (domain_grid): expr = "raster_level/forest_effect";
+		}
+
+	container ShapeData: Expr = "DataPreparation/ShapeData"
+	{
+		attribute<uint32> Nuts3	(domain_grid): Expr = "RunRegions/RasterSets/Nuts3_LUISA_old"; // issue: these polygons are in AlbersEA projection; requested raster is on LambertEA
+		//attribute<uint32> Nuts3	(domain_grid): Expr = "RunRegions/RasterSets/Nuts3_LUISA_old"; // issue: these polygons are in AlbersEA projection; requested raster is on LambertEA
+		// FOR TESTING PURPOSES, so far unclear/untested whether this Nuts2 equals TiffData/Nuts2All
+		//attribute<UInt16> Nuts2(domain_grid): Expr = "Poly2Grid(/geography/RegionShapes/Nuts2/Polygons, domain_grid, 5)";
+		
+	}
+
+	attribute<Geography/Lambert100mGrid> Lambert100mGridRel(domain_grid): Expr = "ID(domain_grid)[Geography/Lambert100mGrid]";
+	attribute<Geography/Albers1kmGrid> AlbersGridRel       (domain_grid): Expr = "ID(domain_grid)[Geography/Albers1kmGrid]";
+	/*
+	attribute<Geography/RegionShapes/Nuts3>   Nuts3       (domain_grid): Expr = "ShapeData/Nuts3";
+	attribute<Geography/Regions/Nuts2>        Nuts2       (domain_grid): Expr = "invert(Geography/Regions/Nuts2/nr_Nuts2All)[TiffData/Nuts2All/ReadData]";
+	attribute<Geography/Regions/Nuts1>        Nuts1       (domain_grid): Expr = "Geography/Regions/Nuts2/Nuts1_rel[Nuts2]";
+	attribute<Geography/Regions/Nuts0>        Nuts0       (domain_grid): Expr = "Geography/Regions/Nuts2/Nuts0_rel[Nuts2]";
+	attribute<Geography/Regions/Capri>        Capri       (domain_grid): Expr = "Geography/Regions/Nuts2/Capri_rel[Nuts2]";
+	attribute<Geography/Regions/Country>      Country     (domain_grid): Expr = "Geography/Regions/Nuts2/Country_rel[Nuts2]";
+	attribute<Geography/Regions/Nuts2_Merged> Nuts2_Merged(domain_grid): Expr = "Geography/Regions/Nuts2/Nuts2_Merged_rel[Nuts2]";
+	attribute<Geography/Regions/JrcRegion>    JrcRegion   (domain_grid): Expr = "Geography/Regions/Nuts2All/JrcRegion_rel[ TiffData/Nuts2All/ReadData ]";
+*/
+	
+	attribute<uint8> age0 (domain_grid): Expr = "TiffData/AgeGrid/ReadData";
+	
+	attribute<Classifications/SlopeClass> Slope_100(domain_grid): // factor 65
+		Expr = "value(TiffData/slope_euro/ReadData, Classifications/SlopeClass)", 
+		url = "%SourceDataProjDir%/doc/Slope_100.pdf";
+	attribute<float32> 				DistToWater		(domain_grid): expr = "TiffData/DistanceToWater/ReadData";
+	
+	attribute<float32>				water_km	  	(domain_grid): expr = "TiffData/DistanceToWater/ReadData / float32(1000)";
+	attribute<Units/Boolean>        sosl_100 		(domain_grid): // factor 66
+		Expr = "Bool(TiffData/sosl_euro/ReadData)", 
+		url = "%SourceDataProjDir%/doc/Sosl_100.pdf"; 
+	attribute<DataPreparation/ShapeData/natura2000_v2011> natura2000_v2011_rel(domain_grid): FreeData = "True",
+		Expr = "poly2grid(ShapeData/natura2000_v2011/Geometry, domain_grid)", 
+		url = "%SourceDataProjDir%/docs/natura2000_v2011.pdf";     //updated JAN 15 2013
+	attribute<Units/Boolean> natura2000_v2011(domain_grid): // factor 67
+		Expr = "IsDefined(natura2000_v2011_rel)", 
+		url = "%SourceDataProjDir%/docs/natura2000_v2011.pdf";     //updated JAN 15 2013
+
+	attribute<float32> Elevation_100(domain_grid): // factor 68
+		Expr = "value(replace_value(TiffData/Eu27_e/ReadData, Int16(-32768), Int16(0 / 0)), float32)", 
+		url = "%SourceDataProjDir%/doc/Elevation_100.pdf"; 
+		
+	attribute<float32> slope100_cont(domain_grid): // factor 89
+		Expr = "value(TiffData/slope_continuous/ReadData, float32)";
+
+	attribute<units/degrees> aspect100(domain_grid): // factor 91
+		Expr = "value(TiffData/aspect_degrees/ReadData, units/degrees)";
+		
+	attribute<DataPreparation/ShapeData/nda> nda_rel(domain_grid): FreeData = "True",
+		Expr = "poly2grid(ShapeData/nda/Geometry, domain_grid)"; 
+	attribute<Units/Boolean> nda(domain_grid): FreeData = "True",
+		Expr = "IsDefined(nda_rel)"; 		
+	
+	attribute<units/Boolean> IndustryMask(domain_grid) // factor 69
+		:	StorageName = "%SourceDataProjDir%/EUCS_100m/Masks/IndustryMask2.tif"
+		,	StorageType = "tif"
+		,	StorageReadOnly = "True";
+	attribute<units/Boolean> IndustryAllowed(domain_grid): Expr = "not(IndustryMask)"; // factor 69
+	
+	attribute<float32> pop_fe_1(domain_grid): expr = "float32(TiffData/pop_fe_1_int32/ReadData)";
+	//attribute<float32> pop_fe_1(domain_grid): expr = "TiffData/pop_fe_1/ReadData";
+	//attribute<float32> pop_fe_1(domain_grid): expr = "TiffData/pop_fe_1_int32/fe";
+	
+// Container for triggering the generation of the locspec tiffs and reading a specific section.
+	container LOCSPECS
+	{
+		attribute<int8> LocSpecsAra (domain_grid): Expr = "CAP/ExTemplate/LocSpecsAra";
+		attribute<int8> LocSpecsPC  (domain_grid): Expr = "CAP/ExTemplate/LocSpecsPC";
+		attribute<int8> LocSpecsPast(domain_grid): Expr = "CAP/ExTemplate/LocSpecsPast";
+		attribute<int8> LocSpecsFor (domain_grid): Expr = "CAP/ExTemplate/LocSpecsFor";
+		attribute<int8> LocSpecsNecr(domain_grid): Expr = "int8(LocSpec_NECR/NECR_LocSpec)";
+		attribute<bool> areLocSpecsUAA (domain_grid): expr = "LocSpecsAra + LocSpecsPast + LocSpecsPC > int8(1)";
+	}
+	
+// Added container for Integration locspec files 	
+	Container ReferenceLocSpecs
+	{
+		attribute<int8> Urban                   (domain_grid): expr = "const(0, domain_grid, int8)";
+		attribute<int8> Industrial              (domain_grid): expr = "Biodiversity/LOCSPECS/LocSpecsInd";
+
+		attribute<int8> ArableCrops             (domain_grid): expr = "LOCSPECS/LocSpecsAra"; // previous OthArab
+		attribute<int8> MixedCropLivestock      (domain_grid): expr = "LOCSPECS/LocSpecsAra"; // previous OthArab -> Check with Claudia
+		attribute<int8> Vineyards	            (domain_grid): expr = "LOCSPECS/LocSpecsPC"; // previous permanentcrops
+		attribute<int8> FruitProduction         (domain_grid): expr = "LOCSPECS/LocSpecsPC"; // previous permanentcrops
+		attribute<int8> OliveProduction         (domain_grid): expr = "LOCSPECS/LocSpecsPC"; // previous permanentcrops
+		attribute<int8> LivestockProduction     (domain_grid): expr = "LOCSPECS/LocSpecsPast";  // previous pastures
+		
+		attribute<int8> ForestsMature           (domain_grid): expr = "Biodiversity/LOCSPECS/LocSpecsFor";
+		attribute<int8> TransWoodlandShrub      (domain_grid): expr = "const(0, domain_grid, int8)";
+		
+		//attribute<int8> Cereals                 (domain_grid): expr = "LOCSPECS/LocSpecsAra";
+		//attribute<int8> Maize                   (domain_grid): expr = "LOCSPECS/LocSpecsAra";
+		//attribute<int8> Rootcrops               (domain_grid): expr = "LOCSPECS/LocSpecsAra";
+		attribute<int8> BioEnergyCrops          (domain_grid): expr = "LOCSPECS/LocSpecsNecr"; // previous new energy crops
+		
+		attribute<int8> AbanArable              (domain_grid): expr = "LocSpecSQ/ReadData";
+		attribute<int8> AbanPermanentCrops      (domain_grid): expr = "LocSpecSQ/ReadData";
+		attribute<int8> AbanPastures            (domain_grid): expr = "LocSpecSQ/ReadData";
+		attribute<int8> AbanUrban               (domain_grid): expr = "const(0, domain_grid, int8)";
+		attribute<int8> AbanIndustry            (domain_grid): expr = "const(0, domain_grid, int8)";
+		
+		attribute<int8> SHVA                    (domain_grid): expr = "const(0, domain_grid, int8)";
+		
+		attribute<int8> ForestsYoung            (domain_grid): expr = "Biodiversity/LOCSPECS/LocSpecsFor";
+	}
+
+	// endogenous distance factors
+	attribute<float32> DistToRoads(domain_grid): // factor 76
+		Expr = "float32(TiffData/DistanceToRoads/ReadData)"; 
+	attribute<int32> TownAccess(domain_grid): // factor 73
+		Expr = "round((float32(NetworkAnalysis/DistTown) >= Float32(0)) ? float32(NetworkAnalysis/DistTown) * float32(1000): Float32(0 / 0))"; 
+	//attribute<Float32> AccessToCities(domain_grid): // factor 77
+	//	Expr = "(TiffData/AccessToCities/ReadData >= Float32(0)) ? TiffData/AccessToCities/ReadData : Float32(0 / 0)"; 
+
+	// Additional conditions based on CLC
+	container rice {
+				attribute<bool>  IsRiceFields (domain_grid): Expr = "TiffData/CorineGrid/CorineLandUse = uint8(14)";
+				attribute<uint8> RiceFields   (domain_grid): Expr = "IsRiceFields ? uint8(100) : uint8(0)";
+			   }	
+	
+	container permcrop {
+			attribute<bool>  IsPermCrop (domain_grid): Expr = "TiffData/CorineGrid/CorineLandUse = uint8(15) || TiffData/CorineGrid/CorineLandUse = uint8(16) || TiffData/CorineGrid/CorineLandUse = uint8(17)";
+			attribute<uint8> PermCrop   (domain_grid): Expr = "IsPermCrop ? uint8(0.1) : uint8(1)";
+		   }		   
+			   			
+	// Suitability maps for agricultural commodities
+	//attribute<uint8> SuitCereals(domain_grid): // factor 78
+	//	Expr = "TiffData/SuitabilityCereals/ReadData";
+	//attribute<Float32> SuitCerealsTF(domain_grid): // factor 92
+	//Expr = "Float32(SuitCereals) * Float32(-0.01)";	//default -0.05
+		
+	//attribute<uint8> SuitMaize(domain_grid): // factor 79
+	//	Expr = "TiffData/SuitabilityMaize/ReadData";
+	//attribute<Float32> SuitMaizeTF(domain_grid): // factor 93
+	//	Expr = "Float32(SuitMaize) * Float32(-0.01)";	//default -0.05			
+
+	//attribute<uint8> SuitRoot(domain_grid): // factor 80
+	//	Expr = "TiffData/SuitabilityRootCrops/ReadData";
+	//attribute<Float32> SuitRootTF(domain_grid): // factor 94
+	//	Expr = "Float32(SuitRoot) * Float32(-0.01)";	//default -0.05	
+	
+	container yields_until_2040
+	{
+		attribute<float32> yieldmaize (domain_grid): 	Expr = "TiffData/yield_pre2040/yieldmaize/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_pre2040/yieldmaize/ReadData)", KeepData = "False";
+		attribute<float32> yieldbarley (domain_grid): 	Expr = "TiffData/yield_pre2040/yieldbarley/ReadData  > int32(32766) ? float32(0) : float32(TiffData/yield_pre2040/yieldbarley/ReadData)", KeepData = "False";
+		attribute<float32> yieldsugbeet (domain_grid):	Expr = "TiffData/yield_pre2040/yieldsugbeet/ReadData  > int32(32766) ? float32(0) : float32(TiffData/yield_pre2040/yieldsugbeet/ReadData)", KeepData = "False";
+		attribute<float32> yieldsunflow (domain_grid): 	Expr = "TiffData/yield_pre2040/yieldsunflow/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_pre2040/yieldsunflow/ReadData)", KeepData = "False";
+		attribute<float32> yieldwheat (domain_grid): 	Expr = "TiffData/yield_pre2040/yieldwheat/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_pre2040/yieldwheat/ReadData)", KeepData = "False";
+		attribute<float32> yieldrapeseed (domain_grid): Expr = "TiffData/yield_pre2040/yieldrapeseed/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_pre2040/yieldrapeseed/ReadData)", KeepData = "False";
+		
+		attribute<float32> ln_yieldmaize (domain_grid): 	Expr = "float32(log(yieldmaize + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldbarley (domain_grid): 	Expr = "float32(log(yieldbarley + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldsugbeet (domain_grid):	Expr = "float32(log(yieldsugbeet + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldsunflow (domain_grid): 	Expr = "float32(log(yieldsunflow + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldwheat (domain_grid): 	Expr = "float32(log(yieldwheat + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldrapeseed (domain_grid): 	Expr = "float32(log(yieldrapeseed + float32(0.0000001)))", KeepData = "False";
+	}
+	container yields_from_2040
+	{
+		attribute<float32> yieldmaize (domain_grid): 	Expr = "TiffData/yield_post2040/yieldmaize/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_post2040/yieldmaize/ReadData)", KeepData = "False";
+		attribute<float32> yieldbarley (domain_grid): 	Expr = "TiffData/yield_post2040/yieldbarley/ReadData  > int32(32766) ? float32(0) : float32(TiffData/yield_post2040/yieldbarley/ReadData)", KeepData = "False";
+		attribute<float32> yieldsugbeet (domain_grid):	Expr = "TiffData/yield_post2040/yieldsugbeet/ReadData  > int32(32766) ? float32(0) : float32(TiffData/yield_post2040/yieldsugbeet/ReadData)", KeepData = "False";
+		attribute<float32> yieldsunflow (domain_grid): 	Expr = "TiffData/yield_post2040/yieldsunflow/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_post2040/yieldsunflow/ReadData)", KeepData = "False";
+		attribute<float32> yieldwheat (domain_grid): 	Expr = "TiffData/yield_post2040/yieldwheat/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_post2040/yieldwheat/ReadData)", KeepData = "False";
+		attribute<float32> yieldrapeseed (domain_grid): Expr = "TiffData/yield_post2040/yieldrapeseed/ReadData > int32(32766) ? float32(0) : float32(TiffData/yield_post2040/yieldrapeseed/ReadData)", KeepData = "False";
+		
+		attribute<float32> ln_yieldmaize (domain_grid): 	Expr = "float32(log(yieldmaize + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldbarley (domain_grid): 	Expr = "float32(log(yieldbarley + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldsugbeet (domain_grid):	Expr = "float32(log(yieldsugbeet + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldsunflow (domain_grid): 	Expr = "float32(log(yieldsunflow + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldwheat (domain_grid): 	Expr = "float32(log(yieldwheat + float32(0.0000001)))", KeepData = "False";
+		attribute<float32> ln_yieldrapeseed (domain_grid): 	Expr = "float32(log(yieldrapeseed + float32(0.0000001)))", KeepData = "False";
+	}
+	
+	// Suitability map for energy crops
+	attribute<Int8> SuitNECR(domain_grid): // factor 90; 
+		Expr = "IsNull(TiffData/SuitabilityMapNECR/ReadData) ? Int8(0): TiffData/SuitabilityMapNECR/ReadData";
+	attribute<Float32> SuitNecrTF(domain_grid): // factor 95
+		Expr = "or(TiffData/Natura2000/Natura2000, TiffData/NDAs/NDA, TiffData/HNV/IsHNV) ? Float32(1.5): Float32(SuitNECR) * Float32(-0.005)";	//default -0.05		
+				
+	// Mask for development ---> TO BE CLEANED UP!!!				
+	attribute<Bool> AllowDevelopmentSQ(domain_grid): // factor 81
+		Expr = "Not(natura2000_v2011)"; // not factor 67
+	attribute<Float32> DevelopmentTaxSQ(domain_grid): // factor 82
+		Expr = "Float32(natura2000_v2011) * Float32(1.3)";
+
+	// Suitability map for forest	
+	attribute<uint8> SuitFor(domain_grid): // factor 102
+		Expr = "TiffData/SuitabilityForest/ReadData";
+	attribute<Float32> SuitForTF(domain_grid): // factor 103
+		Expr = "Float32(SuitFor) * float32(permcrop/PermCrop) * Float32(-0.05)";	//default -0.05		
+		
+							
+	attribute<float32> rDomAccess90		(domain_grid): expr = "DomAccess90 / mean(PotAccess90)"; //factor 87
+	attribute<float32> DomAccess90		(domain_grid): expr = "NetworkAnalysis/pop1990/dom_a"; //factor 87
+	attribute<float32> rForAccess90		(domain_grid): expr = "ForAccess90 / mean(PotAccess90)"; //factor 87
+	attribute<float32> ForAccess90		(domain_grid): expr = "NetworkAnalysis/pop1990/for_a"; //factor 87
+	attribute<float32> PotAccess90		(domain_grid): expr = "DomAccess90 + ForAccess90"; //factor 87
+	attribute<float32> rPotAccess90		(domain_grid): expr = "PotAccess90 / mean(PotAccess90)"; //factor 87
+	attribute<float32> PotentialAccess	(domain_grid): expr = "DomesticAccess + ForeignAccess"; //factor 87
+	attribute<float32> DomesticAccess 	(domain_grid): expr = "NetworkAnalysis/dom_a"; //factor 97
+	attribute<float32> ForeignAccess 	(domain_grid): expr = "NetworkAnalysis/for_a"; //factor 98
+	attribute<float32> Population_2006 	(domain_grid): expr = "Population/Qi_2006"; //factor 88
+	attribute<float32> Population_2012 	(domain_grid): expr = "MakeDefined(float32(getOptimalk/modelledQi)[domain/BasisGrid], float32(0))"; //factor 88
+	attribute<float32> ghspop90			(domain_grid): expr = "MakeDefined(TiffData/ghspop90/ReadData, 0f) / ((250f*250f) / (100f*100f))";
+	attribute<float32> ghspop15			(domain_grid): expr = "MakeDefined(TiffData/ghspop15/ReadData, 0f) / ((250f*250f) / (100f*100f))";
+	attribute<float32> ghsl1990			(domain_grid): expr = "MakeDefined(float32(TiffData/ghsl1990/ReadData), 0f)";
+	attribute<float32> ghsl2000			(domain_grid): expr = "MakeDefined(float32(TiffData/ghsl2000/ReadData), 0f)";
+	attribute<float32> ghsl2014			(domain_grid): expr = "MakeDefined(float32(TiffData/ghsl2014/ReadData), 0f)";
+	attribute<float32> ln_ghsl_dif		(domain_grid): expr = "log(ghsl2014 + 1f) - log(ghsl1990 + 1f)";
+	attribute<float32> ln_water			(domain_grid): expr = "log(float32(water_km)+ float32(0.01))"; // factor 101
+	attribute<float32> ln_roads			(domain_grid): expr = "log(float32(DistToRoads)+ float32(0.01))"; // factor 101
+	
+	attribute<float32> TA_attr 			(domain_grid): expr = "float32(pcount(TA_data/TripAdvisor_inputs/Attractions/SelSet/domain_grid_id))", KeepData = "False";
+	attribute<float32> TA_hotel 		(domain_grid): expr = "float32(pcount(TA_data/TripAdvisor_inputs/Hotels/SelSet/domain_grid_id))", KeepData = "False";
+	attribute<float32> TA_rest 			(domain_grid): expr = "float32(pcount(TA_data/TripAdvisor_inputs/Restaurants/SelSet/domain_grid_id))", KeepData = "False";
+	attribute<float32> TA_vacrent 		(domain_grid): expr = "float32(pcount(TA_data/TripAdvisor_inputs/vacationrentals/SelSet/domain_grid_id))", KeepData = "False";
+	attribute<float32> TA_attr_km10		(domain_grid): expr = "MakeDefined(float32(100) / proximity(float32(TA_attr > float32(0)), parameters/FuncKernels/km10_neighbours/matr), float32(13000))", KeepData = "False";
+	attribute<float32> TA_rest_km10		(domain_grid): expr = "MakeDefined(float32(100) / proximity(float32(TA_rest > float32(0)), parameters/FuncKernels/km10_neighbours/matr), float32(13000))", KeepData = "False";
+		
+	
+	
+	// Map with aggregated socioeconomic factors driving agricultural abandonment, including irrigation layer (since REF '19 ewrc)
+	//attribute<float32> AgriAbandon_socioeconomic(domain_grid): Expr = "DataPreparation/AgriculturalAbandonment/SumStaticFactors[RunRegions/UnitSets/Nuts3_LUISA_old/org_rel[RunRegions/RasterSets/Nuts3_LUISA_old]]";	
+	attribute<float32> AgriAbandon_socioeconomic(domain_grid): Expr = 
+		"DataPreparation/AgriculturalAbandonment/SumStaticFactors[RunRegions/UnitSets/Nuts3_LUISA_old/org_rel[RunRegions/RasterSets/Nuts3_LUISA_old]] - (float32(1) - TiffData/irrigation/ReadData)";	
+	
+	// Map with biophysical constraints driving agricultural abandonment
+	attribute<float32> AgriAbandon_biophysical (domain_grid): 	Expr = "float32(TiffData/AgriAbandon_biophysical/ReadData) > float32(1) ? float32(1): float32(TiffData/AgriAbandon_biophysical/ReadData) = float32(1) ? float32(0.5): float32(0)", KeepData = "False";			
+	
+	container BurntAreas
+	{
+		unit<uint32> BurntAreas_shape: StorageName = "%SourceDataProjDir%/EUCS_100m/forests/BurntAreas2000-2012.dbf", StorageReadOnly = "True", DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<Geography/LambertEA> 	Geometry (polygon): StorageName = "%SourceDataProjDir%/EUCS_100m/forests/BurntAreas2000-2012.shp", StorageReadOnly = "True";
+			attribute<uint32>				YearSeason;
+		}
+		attribute<BurntAreas_shape> 	BurntGrid_id (domain_grid):	expr = "poly2grid(BurntAreas_shape/Geometry, domain_grid)";
+		attribute<uint32>				BurntInYear	 (domain_grid):	expr = "BurntAreas_shape/YearSeason[BurntGrid_id]";
+	}
+	
+	container SurfaceWater
+	{
+		attribute<Geography/AdministrativeBoundaries/LUISA_zones/OutsideRun> OutsideEU(domain_grid): expr = "poly2grid(Geography/AdministrativeBoundaries/LUISA_zones/OutsideRun/Polygons, domain_grid)";
+		attribute<bool>	   SurfaceWater_or_beach(domain_grid): Expr = "Classifications/LU/Corine/Water[TiffData/CorineGrid/CorineLandUse]";
+		attribute<bool>	   Sea                  (domain_grid): expr = "TiffData/CorineGrid/CorineLandUse = 0[Classifications/LU/Corine] && IsNull(OutsideEU)";
+		attribute<float32> SurfaceWaterDist     (domain_grid): expr = "(float32(100) - proximity(float32(Sea || SurfaceWater_or_beach), float32(Parameters/FuncKernels/LinearDecay10km/Attr))) * float32(100)";
+		attribute<float32> export               (domain_grid): expr = "SurfaceWaterDist", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterDist/WaterDist.tif";
+	}
+	// endogenous distance factors
+	container preparation
+	{
+		attribute<units/min> GridImpedance (domain_grid): expr = "Classifications/LU/ViewType/GridImpedance[JrcFactorData/TiffData/CorineGrid/ViewLandUse]";
+		attribute<domain_grid> gridNrDestSet_7013(DataPreparation/Accessibility/DistToCities/DstSet): 
+			expr = 
+				"value("
+				"    (DataPreparation/Accessibility/SourceData/destinationPoints/Geometry - Dpoint_xy(GetProjectionOffset(domain_grid))) / Dpoint_xy(GetProjectionfactor(domain_grid))"
+				",   domain_grid"
+				")";
+		attribute<domain_grid> gridNrDestSet_7014(DataPreparation/Accessibility/DistToCities/DstSet): 
+			expr = "DataPreparation/Accessibility/SourceData/destinationPoints/Geometry[domain_grid]";
+		attribute<domain_grid> gridNrDestSet(DataPreparation/Accessibility/DistToCities/DstSet): Expr = "=(GeoDmsVersion() < 7.014) ? 'gridNrDestSet_7013' : 'gridNrDestSet_7014'";
+		
+	}
+	#include <Biodiversity.dms>
+	#include <TA_data.dms>
+	
+	
+	container SpatialFilters
+	{
+		attribute<bool> RiparianAreas     (domain_grid): Expr = "Bool(TiffData/RiparianAreas/ReadData)";
+		attribute<bool> nat2k_buff500     (domain_grid): Expr = "potential(Float32(natura2000_v2011), /Parameters/FuncKernels/Cylinder500m/Matr) > Float32(0)";
+		attribute<bool> nat2k_buff500_out (domain_grid): Expr = "nat2k_buff500 && ! natura2000_v2011";
+		attribute<bool> nat2k_2010_mask   (domain_grid): Expr = "natura2000_v2011";
+		attribute<bool> nda_buff500 	  (domain_grid): Expr = "potential(Float32(nda), /Parameters/FuncKernels/Cylinder500m/Matr) > Float32(0)";
+	}
+	container Tourism
+	{
+		parameter<float32> share_touristic_lu: expr = "rules/share_touristic_lu";
+		
+		unit<uint16> Zones: expr = "= 'RunRegions/UnitSets/'+ MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Touristic]";
+		
+		attribute<float32> urb				 (domain_grid):					expr = "float32(ModelType/IsUrban[TiffData/CorineGrid/ModelLandUse])";
+		attribute<float32> reg_urb			 (Zones):						expr = "= 'sum(urb, RunRegions/RasterSets/'+ MetaData/DemandCharacteristics/OrgRegion[MetaData/DemandCharacteristics/Touristic] +')'";
+		attribute<float32> touristic_lu 	 (Zones): 						expr = "float32(0.01) * ((sum(urb * float32(100)) * share_touristic_lu) * beds) / sum(beds)";
+		attribute<float32> beds				 (Zones):						expr = "DemandSet/Global/Touristic/inColumns/beds_2012[Zones/org_rel]";
+		attribute<float32> beds_per_ha		 (Zones):						expr = "max_elem((beds) / (reg_urb * share_touristic_lu), float32(11))";
+		//parameter<float32> beds_per_ha		 (Zones):						expr = "(beds) / (urb * share_touristic_lu)";
+		attribute<float32> arrivals_2012	 (Zones):						expr = "DemandSet/Global/Touristic/inColumns/y2012[Zones/org_rel]";
+		attribute<float32> beds_modelled_2012(Zones):						expr = "exp((float32(0.8155)*float32(log(arrivals_2012))) - float32(0.4396))";
+	}
+	container Population
+	{
+		container Qi_2006_Import: 
+			StorageName = "%SourceDataProjDir%/EUCS_100m/Population/autogen_pop2006_23mar16.tif", StoragereadOnly = "True", StorageType = "gdal.grid"
+		{
+			attribute<float32> GridData (Geography/Lambert100mGrid);
+			attribute<float32> ReadData (domain_grid);
+		}
+		unit<wpoint> Qi_2011_Import:
+			StorageName = "%SourceDataProjDir%/EUCS_100m/Population/ENACT_respop_grid2011v5/RPOP_yr_night_100m.tif", StoragereadOnly = "True", StorageType = "gdal.grid", DialogData = "LambertEA"
+		{
+			attribute<float32> GridData;
+			attribute<float32> ReadData (domain_grid);
+		}
+		unit<wpoint> Qi_2018_Import:
+			StorageName = "%SourceDataProjDir%/EUCS_100m/Population/Pop_basemap_2018/JRC-GEOSTAT_2018_20210210d_100m.tif", StoragereadOnly = "True", StorageType = "gdal.grid", DialogData = "LambertEA"
+		{
+			attribute<float32> GridData;
+			attribute<float32> ReadData (domain_grid);
+		}
+		attribute<float32> Qi_2006(domain_grid): Expr = "MakeDefined(Qi_2006_Import/ReadData, 0[float32])";
+		attribute<float32> Qi_2011(domain_grid): Expr = "MakeDefined(Qi_2011_Import/ReadData, 0[float32])";
+		attribute<float32> Qi_2018(domain_grid): Expr = "MakeDefined(max_elem(Qi_2018_Import/ReadData, 0f), 0[float32])";
+
+//REMOVE		attribute<Geography/Regions/JrcRegion>	JrcRegion (domain_grid): expr = "TiffData/JrcRegion"; // used to read parameters for allocation
+	}
+}
+

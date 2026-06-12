@@ -1,0 +1,132 @@
+container Verdringing : using = "units"
+{  
+	attribute<bool> GeeftVerdringing (domain) := Toevoeging_bruto/Per_domain > 0[m2footprint];
+	attribute<ha> Areaal (domain) := float32(GeeftVerdringing) * VariantSpecifiek/Capaciteit
+	{
+		attribute<ha> Export (domain_grid) := Areaal[domain/BaseMap], StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/Areaal.tif'";
+		attribute<ha> Import (domain_grid) : StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/Areaal.tif'";
+	}
+	
+	container InHectares
+	{
+		attribute<Ha> Per_domain (domain) := ='(Analysis/BaseData/Banen_Ruimtebeslag/Meter2Basisjaar_grid/'+AllocSectorType+'[domain/org_rel] > 0[m2footprint] ? 1[Ha] : 0[ha]) * float32(GeeftVerdringing)'
+		{
+			attribute<Ha> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/Ha.tif'";
+			attribute<Ha> Import (domain_grid) : StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/Ha.tif'";
+		}
+		attribute<Ha> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+		attribute<Ha> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+	}
+	
+	container InMeter2footprint
+	{
+		attribute<m2footprint> Per_domain (domain) := ='/Analysis/BaseData/Banen_Ruimtebeslag/Meter2Basisjaar_grid/'+AllocSectorType+'[domain/org_rel] * float32(GeeftVerdringing)'
+		{
+			attribute<m2footprint> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/Meter2.tif'";
+			attribute<m2footprint> Import (domain_grid) : StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/Meter2.tif'";
+		}
+		attribute<m2footprint> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+		attribute<m2footprint> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+	}
+	
+	container VBOs
+	{
+		attribute<Verblijfsobject> Totaal (domain) := ='Analysis/BaseData/Banen_Ruimtebeslag/SumVBOFunctie_grid/'+AllocSectorType+'[domain/org_rel] * float32(GeeftVerdringing)'
+		{
+			attribute<Verblijfsobject> Export (domain_grid) := Totaal[domain/BaseMap], StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/VBOs.tif'";
+			attribute<Verblijfsobject> Import (domain_grid) : StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/VBOs.tif'";
+		}
+		attribute<Verblijfsobject> Per_MRA8 (MRA8) := sum(Totaal, MRA8/per_domain);
+	}
+	
+	container Woningen
+	{
+		attribute<Woning> Per_domain (domain) := WoningenBasisjaar/Totaal[domain/org_rel] * float32(GeeftVerdringing)
+		{
+			attribute<Woning> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Verdringing/Woningen.tif'";
+			attribute<Woning> Import (domain_grid) : StorageName = "= StorageRef+'/Verdringing/Woningen.tif'";
+		}
+		
+		attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+	}
+	
+	container LandUse
+	{
+		container Per_domain := for_each_nedv(
+			CBSKlasse/name
+			, 'float32(GrondgebruikBasisjaar == '+ string(id(CBSKlasse))+'[CBSKlasse]) * Areaal'
+			,  domain
+			, ha
+		);
+		
+		attribute<CBSKlasse> Per_CBSKlasse (domain) := (GrondgebruikBasisjaar / GeeftVerdringing[CBSKlasse])[CBSKlasse]
+		{
+			attribute<CBSKlasse> Export (domain_grid) := Per_CBSKlasse[domain/basemap], StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/LandUse.tif'";
+			attribute<CBSKlasse> Import (domain_grid): StorageName = "= StorageRef+'/Verdringing/'+AllocSectorType+'/LandUse.tif'";
+		}
+		
+		container Per_MRA8 :=
+			for_each_nedv(
+				CBSKlasse/name,
+				'sum(Per_domain/'+CBSKlasse/name+', MRA8/per_domain)',
+				MRA8, ha
+			)
+		{
+			container Tabel := /Templates/TableComposer(
+				CBSKlasse,
+				MRA8,
+				Per_MRA8,
+				StorageRef+'/Verdringing/LandUse/Per_MRA8/CBSKlasse.csv'
+			);
+		}
+		
+		container Per_AllocRegio :=
+			for_each_nedv(
+				CBSKlasse/name,
+				'sum(Per_domain/'+CBSKlasse/name+', AllocRegio/per_domain)',
+				AllocRegio, ha
+			)
+		{
+			attribute<ha> Totaal (AllocRegio) := = 'add('+AsItemList(CBSKlasse/name)+')';
+		}
+	}
+	
+	// container Banen :=
+		// for_each_nedv(
+			// Actor/TXLJobs7/name,
+			// 'BanenBasisjaar/'+Actor/TXLJobs7/name+' * float32(GeeftVerdringing)',
+			// domain, job
+		// )
+	// {
+		// attribute<job> Totaal (domain) := = 'add('+AsItemList(Actor/TXLJobs7/name)+')';
+		
+		// container Export :=
+			// for_each_nedva(
+				// Actor/TXLJobs7/name,
+				// 'Banen/'+Actor/TXLJobs7/name+'[domain/basemap]',
+				// domain_grid, job,
+				// StorageRef+'/Verdringing/Banen/'+Actor/TXLJobs7/name+'.tif'
+			// )
+		// {
+			// attribute<job> Totaal (domain_grid) := = 'add('+AsItemList(Actor/TXLJobs7/name)+')', StorageName = "= StorageRef+'/Verdringing/Banen/Totaal.tif'";
+		// }
+		
+		// container Per_MRA8 :=
+			// for_each_nedv(
+				// Actor/TXLJobs7/name,
+				// 'sum(Banen/'+Actor/TXLJobs7/name+', MRA8/per_domain)',
+				// MRA8, job
+			// )
+		// {
+			// attribute<job> Totaal (MRA8) := = 'add('+AsItemList(Actor/TXLJobs7/name)+')';
+			
+			// container Tabel := /Templates/TableComposer(
+				// Actor/TXLJobs7,
+				// MRA8,
+				// Per_MRA8,
+				// StorageRef+'/Verdringing/Banen/Per_MRA8/TXLJobs7.csv'
+			// );
+		// }
+	// }
+}

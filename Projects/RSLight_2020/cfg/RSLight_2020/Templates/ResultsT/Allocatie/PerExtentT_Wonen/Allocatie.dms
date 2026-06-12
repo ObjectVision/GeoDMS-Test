@@ -1,0 +1,57 @@
+container Allocatie
+{ 
+	container WoningDichtheidEndo
+	{
+		attribute<Woning> Restclaim (AllocRegio) := min_elem(Restclaim0 + WoningenBasisjaar/Per_AllocRegio, WoningenEindjaar_max/Per_AllocRegio);
+		attribute<Woning> Resultaat (domain) := ScaleSum(WoningenEindjaar, AllocRegio/per_domain, Restclaim);
+	}
+	
+	container WoningDichtheidExo
+	{
+		attribute<Woning> Restclaim (AllocRegio) := Restclaim0;
+		attribute<bool>   GeenCapaciteitOfRestclaim (AllocRegio) := Capaciteit/Per_AllocRegio == 0[ha] || RestClaim < 1[Woning];
+		
+		attribute<Eur>    Suitability (domain) := max(VariantSpecifiek/Kosten/Suitability, AllocRegio/per_domain)[AllocRegio/per_domain] - VariantSpecifiek/Kosten/Suitability, FreeData = "false";
+		
+		attribute<Eur>    Afkapgrens (AllocRegio) := 
+			GeenCapaciteitOfRestclaim
+				? (0/0)[Eur]
+				: MakeDefined(
+						nth_element_weighted(
+							Suitability,
+							RestClaim,
+							WoningenEindjaar,
+							AllocRegio/per_domain
+						),
+						max(Suitability, AllocRegio/per_domain)
+				)
+		, FreeData = "false";
+		
+		attribute<Woning> Resultaat (domain) :=
+			GeenCapaciteitOfRestclaim[AllocRegio/per_domain] 
+				? (0/0)[Woning] 
+				: Suitability < Afkapgrens[AllocRegio/per_domain] 
+					? WoningenEindjaar 
+					: (0/0)[Woning];
+	}
+	
+	attribute<Woning> Resultaat (domain) :=
+		Restclaim0LagerDanDelta[AllocRegio/per_domain] 
+			? WoningDichtheidExo/Resultaat 
+			: WoningDichtheidEndo/Resultaat
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+	}
+	
+	attribute<Woning> OverExtents (domain) := // binnen betreffende iter
+		= 'MakeDefined(Resultaat,0[Woning])'+iif(id == 0[Extent/K],'',' + PerExtent/'+Extent/K/PrevName_short[id]+'/Allocatie/OverExtents')
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(. , AllocRegio/per_domain);
+	}
+	
+	attribute<Woning> OverIters (domain) := // binnen betreffende extent
+		= 'MakeDefined(Resultaat,0[Woning])'+iif(IterK_id == 0[IterK],'',' + '+IterK/PrevName[IterK_id]+'/PerExtent/'+Extent_name+'/Allocatie/OverIters')
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(. , AllocRegio/per_domain);
+	}
+}

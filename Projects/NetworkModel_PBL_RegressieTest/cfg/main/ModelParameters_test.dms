@@ -1,0 +1,481 @@
+﻿container ModelParameters_test : using = "units"
+{   
+	//Generieke instellingen
+	parameter<string>   AnalyseMoment                := 'Y2022';                            //gebruikt om de rij te selecten in Advanced/AnalyseMomentPresets
+	parameter<string>   Orgset                       := 'Buurt_enkele_Prov';                            //Welke origin punten worden gebruikt? Opties: 'PC4' 'PC6' 'Buurt_y2020' 'Buurt_y2017_centroiden' 'Buurt_y2020_centroiden'
+	parameter<string>   Destset                      := 'Ziekenhuizen_y2022_alg_ac_bp';     //Welke destination punten worden gebruikt? Opties: Groen_BS2017 'LISA' 'Huisartsenposten' 'Huisartsenposten_geclusterd', 'Ziekenhuizen_y2020', 'Ziekenhuizen_y2020_sub' 'Supermarkten_yokt2018' 'Winkelsdagelijks_yokt2018' 'PC6pnt_y2020' 'Basisscholen_okt2021' 'Scholen_voortgezet_onderwijs_okt2021'
+	parameter<string>   CentroidWeightType           := 'Addresses';                        //Als je gewogen centroide neemt bij de orgs, op welke manier wil je die gewogen hebben? Obv Population of Addresses ?
+	parameter<string>   Orgset_EnkeleBuurt_selectie  := 'Laanhuizen';                       //Als je een enkele buurt selecteert bij OrgSet, welke buurt wil je dan? BU00140107  'Laanhuizen'; 'Elzenhof';
+	parameter<string>   Orgset_EnkeleProv_selectie   := 'Zuid_Holland';                        //Als je een enkele provincie selecteert bij OrgSet, welke provincie wil je dan?
+	parameter<bool>     Export_AfgelegdeAfstand      := FALSE;                              // export (en daarmee bereken) de afgelegde afstand in de output cvs's voor private transport.
+	
+	//OV-berekening instellingen
+	parameter<string>   GTFS_file_date               := '20220928';                         //GTFS file date #'20191007' #20201002 20211001 20120917
+	parameter<string>   Analysis_date                := '20221004', IntegrityCheck = "uint32(Analysis_date) >= uint32(GTFS_file_date)";                //GTFS model date #'20191008' 20201006 20201004 20211005 20211003 20171003 (=dinsdag) 20171001 (=zondag)
+
+	parameter<min_f>    MaxPedestrianTime_Org2Stop      := 10[min_f];                          //Maximum looptijd van org naar eerste halte, in seconden. x  MaxWalkingDistSelection_Org2Stop
+	parameter<min_f>    MaxPedestrianTime_Stop2Dest     := 10[min_f];                          //Maximum looptijd van de laatste stop naar dest, in seconden. x
+	parameter<min_f>    MaxBikeTime_Org2Stop       := 10[min_f];                          //Maximum fietstijd van org naar eerste halte, in seconden. x
+	parameter<min_f>    MaxBikeTime_Stop2Dest      := 10[min_f];                          //Maximum fietstijd van laatste halte naar dest, in seconden. x
+	parameter<min_f>    MaxPedestrianTime_Org2Dest   := 15[min_f];                          //Maximale looptijd wanneer er direct van org naar dest locatie wordt gelopen, in seconden.
+	parameter<min_f>    MaxBikeTime_Org2Dest         := 30[min_f];                          //Maximale fietstijd wanneer er direct van org naar dest locatie wordt gefietst, in seconden.
+	parameter<min_f>    MaxOVTime                    := 60[min_f];                          //Maximale reistijd met OV. Te gebruiken om de rekentijd te verkorten. LET OP: hierdoor worden mogelijk de verste locaties niet bereikt. Wannneer een distance decay wordt gebruikt is niet zo erg. Maar bij een volledige OD wel! 
+	parameter<min_f>    OngelijkvloersPenalty        := 2[min_f];                           //Is er sprake van een halte waar je veel verticale afstand moet afleggen? Dan kun je daar een tijd penalty voor geven bij het overstappen, in seconden.
+	parameter<bool>     UseActualBikeSpeeds          := FALSE;                              //Gebruik van actualbike speeds in OV berekening voor voor- en natransport. TRUE: Gebruik FietsTelWeek data fietssnelheden. FALSE: Gebruik default waarde, hieronder gedefinieerd.
+	parameter<bool>     Add_OV_PriceInformation      := TRUE;                               //Wil je OV-beprijzing uitrekenen? Zet deze dan op TRUE.   fka AddODLinkSet
+	
+	//Auto berekening instellingen
+	parameter<min_f>    MaxCarTime                   := 60[min_f];                          //Maximale reistijd met lopen/fiets/auto //120
+	parameter<bool>     UseTomTomNetworkForCars      := TRUE;                               //Gebruik het TomTom auto netwerk, of het OSM netwerk.
+	
+	
+	container Advanced
+	{
+		parameter<bool>     RegioIndelingen_Ontkoppeld   := TRUE;                               //De regioindelingen kunnen in fss worden opgeslagen om het rekenproces te versnellen. heb je dit gedaan, zet dan op true. Anders moet je deze eerst creeren.
+		parameter<bool>     Create_Symmetric_fullOD      := FALSE;                              //Als je van org naar org wilt, zet deze dan op true.
+		parameter<bool>     Getiled_berekenen            := FALSE;                              //Als je getiled wilt rekenen, om het rekenproces sneller te maken. En opsplitst om het effect van crashes te verkleinen
+		parameter<string>   Regio_voor_Tiling            := 'corop';                            //Deze indeling bepaald hoe je wilt tilen. Opties: 'corop', 'provincies'
+		parameter<string>   BAG_jaar                     := RegioIndelingen_jaar;               //Het BAG jaar laten we nu afhankelijk zijn van het gekozen regio indelingen jaar. Gebruikt voor de gewogen centroiden. 
+		parameter<string>   OSM_file_date                := rjoin(AnalyseMoment, Advanced/AnalyseMomentPresets/name, Advanced/AnalyseMomentPresets/OSM_file_date);                         //OpenStreetMap file date #'20200117' 20211004 '20211221' 20221201
+		parameter<string>   RegioIndelingen_jaar         := rjoin(AnalyseMoment, Advanced/AnalyseMomentPresets/name, Advanced/AnalyseMomentPresets/RegioIndelingen_jaar);
+		parameter<string>   LISA_jaar                    := '2018';                             //LISA file date
+		parameter<string>   CarCongestionSpeed_date      := rjoin(AnalyseMoment, Advanced/AnalyseMomentPresets/name, Advanced/AnalyseMomentPresets/CarCongestionSpeed_date);               //De congestionspeeds worden gemaakt met een OSM bestand van een bepaalde datum. Geef hier die datum op.
+		parameter<string>   CongestionSpeed_DaySelection := replace_value(expand(., '%env:DAYGROUP%'), 'env:DAYGROUP', 'tuesday');  // 'Weekday' 'Weekend' 'Week' 'monday' 'tuesday' 'wednesday' 'thursday' 'friday' 'saturday' 'sunday' 
+		parameter<bool>     Dests_geclusterd             := FALSE;                              //Destinations clusteren? aan te raden bij bijv LISA.
+		parameter<string>   items_of_interest            := rjoin(lowercase(DestSet), lowercase(Advanced/dest_domain_list/label), Advanced/dest_domain_list/items_of_interest);
+		parameter<string>   Arrival_or_Departure_at_time := 'Departure';                        //Zijn de analyse tijdsstippen aankomst- of vertrektijden? Opties: 'Arrival'  'Departure'
+		parameter<m>        MaxTransferDistKm            := 500[m];                             //Maximale euclidische loopafstand tussen OV-haltes voor overstappen, in meters.
+		parameter<float32>  MaxODconn                    := 25f;                                //Maximum aantal haltes dat bij de org of de dest wordt gezocht
+		parameter<string>   TomTom_StreetTypeSelectie    := 'FuncRoadClass/V/Local_Road_of_Minor_Importance';    //7 FuncRoadClass/V/Local_Road   8 FuncRoadClass/V/Secondary_Road Local_Road_of_Minor_Importance  Local_Road_of_High_Importance 
+	
+		unit<uint8>  AnalyseMomentPresets : nrofrows = 5
+		{
+			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+			{
+				attribute<String> Text:
+				// name, OSM date , NWB date  , NDW date  , Regios, OSM_perProv, CarCongestionSpeed_date_TomTom
+				[
+				'Y2013','20140101', '20191023', '20210928', '2022', 'FALSE', 'yr2022_12',
+				'Y2020','20200117', '20191023', '20210928', '2020', 'FALSE', 'yr2021_12',
+				'Y2021','20211221', '20211001', '20210928', '2021', 'TRUE',  'yr2021_12',
+				'Y2022','20221201', '20221201', '20210928', '2022', 'TRUE',  'yr2022_12',
+				'Y2023','20240524', '20221201', '20210928', '2023', 'TRUE',  'yr2022_12'
+				];
+			}
+			
+			attribute<string>        name                    := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
+			attribute<string>        OSM_file_date           := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+			attribute<string>        RegioIndelingen_jaar    := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)];
+			attribute<bool>          OSM_NL_prov             := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)][bool];
+			attribute<string>        CarCongestionSpeed_date := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)];
+			
+			parameter<uint32> nrAttr := 7;
+		}
+	
+		unit<uint32> org_domain_list : nrofrows = 16 // Hier worden de paden voor elke org set opgegeven. En wanneer er nieuwe bij komen dat hier ook toegevoegd worden.
+		{
+			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+			{
+				attribute<String> Text:
+				// Label, Path
+				[
+				'Buurt'                               ,'SourceData/RegioIndelingen/Buurt/Centroiden',
+				'Buurt_perProvincie'                  ,'SourceData/RegioIndelingen/Buurt/Per_Prov/@REGIO@/sub',
+				'Buurt_perCOROP'                      ,'SourceData/RegioIndelingen/Buurt/Per_COROP/@REGIO@/sub',
+				'Buurt_enkele_buurt'                  ,'SourceData/RegioIndelingen/Buurt/Enkele_buurt',
+				'Buurt_enkele_Prov'                   ,'SourceData/RegioIndelingen/buurt/Enkele_Prov',
+				
+				'Wijk'                                ,'SourceData/RegioIndelingen/Wijk/Centroiden',
+				'Wijk_perProvincie'                   ,'SourceData/RegioIndelingen/Wijk/Per_Prov/@REGIO@/sub',
+				'Wijk_perCOROP'                       ,'SourceData/RegioIndelingen/Wijk/Per_COROP/@REGIO@/sub',
+				
+				'Gemeente'                            ,'SourceData/RegioIndelingen/Gemeente/Centroiden',
+				'Gemeente_perProvincie'               ,'SourceData/RegioIndelingen/Gemeente/Per_Prov/@REGIO@/sub',
+				'Gemeente_perCOROP'                   ,'SourceData/RegioIndelingen/Gemeente/Per_COROP/@REGIO@/sub',
+				
+				'PC4'                                 ,'SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids',
+				// 'PC4_sub1'                            ,'SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids/sub1',
+				// 'PC4_sub2'                            ,'SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids/sub2',
+				
+				'PC6'                                 ,'SourceData/BAG/Adressen/Woon_Voorraad/PC6_centroids',
+				'PC6_sub'                             ,'SourceData/BAG/Adressen/Woon_Voorraad/PC6_centroids/sub',
+				
+				// 'LMS_gm4_2022_centroiden_NL_src'      ,'/SourceData/RegioIndelingen/LMS_gm4_2022_centroiden',
+				
+				// 'Buurt_y2022_centroiden'              ,'SourceData/RegioIndelingen/Buurt_centroiden/y2022_centroiden',
+				// 'Buurt_y2022_centroiden_perProvincie' ,'SourceData/RegioIndelingen/Buurt_centroiden/y2022_centroiden/Per_Prov/@REGIO@/sub',
+				// 'Buurt_y2022_centroiden_perCOROP'     ,'SourceData/RegioIndelingen/Buurt_centroiden/y2022_centroiden/Per_COROP/@REGIO@/sub',
+				// 'Buurt_y2021_centroiden'              ,'SourceData/RegioIndelingen/Buurt_centroiden/y2021_centroiden',
+				// 'Buurt_y2020_centroiden'              ,'SourceData/RegioIndelingen/Buurt_centroiden/y2020_centroiden',
+				// 'Buurt_y2017_centroiden'              ,'SourceData/RegioIndelingen/Buurt_centroiden/y2017_centroiden',
+				// 'Buurt2022_won_adr_centr_inside'      ,'SourceData/RegioIndelingen/Buurt_centroiden/Buurt2022_won_adr_centr_inside',
+				
+				'BAG_woonpanden'                      ,'SourceData/BAG/Panden/pand/pand_woon_vbo',
+				'BAG_woonpanden_Clustered'            ,'SourceData/BAG/Panden/pand/pand_woon_vbo/HeeftPanden'
+
+				]; 
+			}
+			
+			attribute<uint32>        id              := id(.);
+			attribute<string>        label          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
+			attribute<string>        path           := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)], DialogType = "LabelText";
+			
+			parameter<uint32> nrAttr := 2;
+		}
+		
+		unit<uint32> dest_domain_list : nrofrows = 51 // Hier worden de paden voor elke dest set opgegeven. En wanneer er nieuwe bij komen dat hier ook toegevoegd worden.
+		{ 
+			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+			{
+				attribute<String> Text:
+				// Label, Path
+				[
+				'LISA'                                                           ,'SourceData/locaties/LISA/ReadFSS/y@LISAJAAR@/PerYear/HeeftBanen'                                                  , 'nr_banen',
+				'Buurtpunten_2022_gew_wnadr_geodms'                              ,'/SourceData/Locaties/Buurtpunten/Buurtpunten_2022_gew_wnadr_geodms'                                               , 'nr_buurten',
+				'Huisartsenposten'                                               ,'SourceData/locaties/Huisartsenposten'                                                                             , 'nr_huisartsenposten',
+				'Huisartsenposten_geclusterd'                                    ,'SourceData/locaties/Huisartsenposten/HeeftHuisartsenposten'                                                       , 'nr_huisartsenposten',
+				'PC6pnt_y2020'                                                   ,'SourceData/locaties/PC6pnt2020'                                                                                   , 'nr_pc6',
+				'PC6pnt2020_geclusterd'                                          ,'SourceData/locaties/PC6pnt2020/HeeftPC6pnt2020'                                                                   , 'nr_pc6',
+				'PC5_2022_2012_avg_xy_wpft_obv_LISA_2022'                        ,'SourceData/regioindelingen/PC5_avg_xy_wpft/obv_LISA_2022/PC5pnt_2022_2012'                                        , 'nr_pc5',
+				'Supermarkten_apr2012'                                           ,'SourceData/Locaties/Supermarkten/apr2012/Supermarkten_apr2012_xy'                                                 , 'nr_supermarkten',
+				'Supermarkten_okt2018'                                           ,'SourceData/locaties/Supermarkten/okt2018/Supermarkten_okt2018_xy'                                                 , 'nr_supermarkten',
+				'Supermarkten_2021'                                              ,'SourceData/locaties/Supermarkten/y2021/Supermarkten_2021_xy'                                                      , 'nr_supermarkten',
+				'Supermarkten_okt2022'                                           ,'SourceData/locaties/Supermarkten/y2022/Supermarkten_okt2022_xy'                                                   , 'nr_supermarkten',
+				'Supermarkten_minimarkten_apr2012'                               ,'SourceData/Locaties/Supermarkten_minimarkten/apr2012/Supermarkten_minimarkten_apr2012_xy'                         , 'nr_supermarkten',
+				'Supermarkten_minimarkten_okt2018'                               ,'SourceData/locaties/Supermarkten_minimarkten/okt2018/Supermarkten_minimarkten_okt2018_xy'                         , 'nr_supermarkten',
+				'Supermarkten_minimarkten_2021'                                  ,'SourceData/locaties/Supermarkten_minimarkten/y2021/Supermarkten_minimarkten_2021_xy'                              , 'nr_supermarkten',
+				'Supermarkten_minimarkten_okt2022'                               ,'SourceData/locaties/Supermarkten_minimarkten/y2022/Supermarkten_minimarkten_okt2022_xy'                           , 'nr_supermarkten',
+				'Winkelsdagelijks_okt2018'                                       ,'SourceData/locaties/Winkelsdagelijks/okt2018/Winkelsdagelijks_okt2018_xy'                                         , 'nr_winkelsdagelijks',
+				'Ziekenhuizen_y2012_alg_ac_bp'                                   ,'SourceData/locaties/Ziekenhuizen/y2012_alg_ac_bp/Ziekenhuizen_sep2012_alg_ac_bp_xy'                               , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2022_alg_ac_bp'                                   ,'SourceData/locaties/Ziekenhuizen/y2022_alg_ac_bp/Ziekenhuizen_apr2022_alg_ac_bp_xy'                               , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2012_alg_ac_sub'                                  ,'SourceData/locaties/Ziekenhuizen/y2012_alg_ac/Ziekenhuizen_sep2012_alg_ac_xy/sub'                                 , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2022_alg_ac_sub'                                  ,'SourceData/locaties/Ziekenhuizen/y2022_alg_ac/Ziekenhuizen_apr2022_alg_ac_xy/sub'                                 , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2012_bp_sub'                                      ,'SourceData/locaties/Ziekenhuizen/y2012_bp/Ziekenhuizen_sep2012_bp_xy/sub'                                         , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2022_bp_sub'                                      ,'SourceData/locaties/Ziekenhuizen/y2022_bp/Ziekenhuizen_apr2022_bp_xy/sub'                                         , 'nr_ziekenhuizen',
+				'Ziekenhuizen_1222_alg_ac_xy'                                    ,'SourceData/locaties/Ziekenhuizen/y1222_alg_ac_overlap/Ziekenhuizen_1222_alg_ac_xy'                                , 'nr_ziekenhuizen',
+				'Ziekenhuizen_1222_bp_xy'                                        ,'SourceData/Locaties/Ziekenhuizen/y1222_bp_overlap/Ziekenhuizen_1222_bp_xy'                                        , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2012'                                             ,'SourceData/locaties/Ziekenhuizen/y2012/Ziekenhuizen_sep2012_xy'                                                   , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2012_sub'                                         ,'SourceData/locaties/Ziekenhuizen/y2012/Ziekenhuizen_sep2012_xy/sub'                                               , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2020'                                             ,'SourceData/locaties/Ziekenhuizen/y2020/Ziekenhuizen_dec2019_xy'                                                   , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2020_sub'                                         ,'SourceData/locaties/Ziekenhuizen/y2020/Ziekenhuizen_dec2019_xy/sub'                                               , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2021'                                             ,'SourceData/locaties/Ziekenhuizen/y2021/Ziekenhuizen_mrt2021_xy'                                                   , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2021_sub'                                         ,'SourceData/locaties/Ziekenhuizen/y2021/Ziekenhuizen_mrt2021_xy/sub'                                               , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2021_sub_enkel'                                   ,'SourceData/locaties/Ziekenhuizen/y2021/Ziekenhuizen_mrt2021_xy/sub_enkel'                                         , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2022'                                             ,'SourceData/locaties/Ziekenhuizen/y2022/Ziekenhuizen_apr2022_xy'                                                   , 'nr_ziekenhuizen',
+				'Ziekenhuizen_y2022_sub'                                         ,'SourceData/locaties/Ziekenhuizen/y2022/Ziekenhuizen_apr2022_xy/sub'                                               , 'nr_ziekenhuizen', //zonder polis
+				'Huisartsenpraktijken_y2022_sub'                                 ,'SourceData/locaties/Huisartsenpraktijken/y2022/Huisartsenpraktijken_jan2022_xy/sub'                               , 'nr_huisartspraktijken',
+				'Huisartsenpraktijken_y2022nov_sub'                              ,'SourceData/locaties/Huisartsenpraktijken/y2022_nov/Huisartsenpraktijken_nov2022_xy/sub'                               , 'nr_huisartsenpraktijken',
+				'Basisscholen_okt2021'                                           ,'SourceData/locaties/Scholen/Basisscholen/y2021/basisscholen_okt_2021_xy'                                          , 'nr_scholen',
+				'Basisscholen_okt2022'                                           ,'SourceData/locaties/Scholen/Basisscholen/y2022/basisscholen_okt_2022_xy'                                          , 'nr_scholen',
+				'Scholen_VO_okt2012_BJ_HAVO_VWO'                                 ,'SourceData/locaties/Scholen/Voortgezet_onderwijs/y2012/scholen_voortgezet_onderwijs_okt2012/sub_BJ_HAVO_VWO'      , 'nr_scholen',
+				'Scholen_VO_okt2012_BJ_PRO_VBO'                                  ,'SourceData/locaties/Scholen/Voortgezet_onderwijs/y2012/scholen_voortgezet_onderwijs_okt2012/sub_BJ_PRO_VBO'        , 'nr_scholen',
+				'Scholen_VO_okt2022_BJ_HAVO_VWO'                                 ,'SourceData/locaties/Scholen/Voortgezet_onderwijs/y2022/scholen_voortgezet_onderwijs_okt2022/sub_BJ_HAVO_VWO'       , 'nr_scholen',
+				'Scholen_VO_okt2022_BJ_PRO_VBO'                                  ,'SourceData/locaties/Scholen/Voortgezet_onderwijs/y2022/scholen_voortgezet_onderwijs_okt2022/sub_BJ_PRO_VBO'        , 'nr_scholen',
+				'Scholen_VO_okt1222_BJ_HAVO_VWO'                                 ,'SourceData/locaties/Scholen/Voortgezet_onderwijs/y2022/scholen_voortgezet_onderwijs_okt2022/sub_BJ_HAVO_VWO'       , 'nr_scholen',
+				'Scholen_VO_okt1222_BJ_PRO_VBO'                                  ,'SourceData/locaties/Scholen/Voortgezet_onderwijs/y2022/scholen_voortgezet_onderwijs_okt2022/sub_BJ_PRO_VBO'        , 'nr_scholen',
+				'MBO_hoofdvestigingen_2021_sub'                                  ,'SourceData/locaties/Scholen/MBO/hoofdvestigingen_2021/MBO_hoofdvestigingen_okt2021/sub_MBO_hoofdvestigingen_2021' , 'nr_vestigingen',
+				'MBO_vestigingen_okt2021_sub'                                    ,'SourceData/locaties/Scholen/MBO/vestigingen_2021/mbo_vestigingen_okt2021/sub_MBO_vestigingen_2021'                , 'nr_vestigingen',
+				'HO_hoofdvestigingen_okt2021_sub'                                ,'SourceData/locaties/Scholen/HO/hoofdvestigingen_2021/ho_hoofdvestigingen_okt2021/sub_HO_hoofdvestigingen_2021'    , 'nr_vestigingen',
+				'HO_vestigingen_okt2021_sub'                                     ,'SourceData/locaties/Scholen/HO/vestigingen_2021/HO_vestigingen_okt2021/sub_HO_vestigingen_2021'                   , 'nr_vestigingen',
+				'Scholen'                                                        ,'SourceData/locaties/Scholen/Combinatie'                                                                           , 'nr_scholen',
+				'Apotheken_y2020'                                                ,'SourceData/locaties/Apotheken/y2020/Apotheken_2020_xy'                                                            , 'nr_apotheken',
+				'Groen_BS2017'                                                   ,'SourceData/locaties/Groen/bbg2017/Groen_bbg2017_xy'                                                               , 'nr_groen',
+				'PC4_sub2'                                                       ,'SourceData/BAG/Adressen/Woon_Voorraad/PC4_centroids/sub2'                                                         , 'nr_pc4'
+				]; 
+			}
+			
+			attribute<uint32>        id                := id(.);
+			attribute<string>        label             := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
+			attribute<string>        path              := replace(Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)], '@LISAJAAR@', LISA_jaar), DialogType = "LabelText";
+			attribute<string>        items_of_interest := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+			
+			
+			parameter<uint32> nrAttr := 3;
+		}
+		
+		unit<uint32> Export_CombinationTypes : nrofrows = 1 //Geef hieraan welke combinaties van vervoersmiddelen er gegeneerd moeten worden. Bij combinaties, wordt er per OD-paar de korste reistijd gekozen.
+		{
+			attribute<string> name : 
+			[
+				 // 'WW'                     //direct lopen vanaf org naar dest.
+				// ,'BB'                     //direct fietsen vanaf org naar dest.
+				 // 'W_OV_W'                  //vanaf org lopen, dan OV, dan lopen naar dest.
+				// ,'B_OV_W'                  //vanaf org fietsen, dan OV, dan lopen naar dest.
+				// ,'B_Tic_OV_W'              //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest.
+				// ,'B_T_OV_W'              //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest.
+				// ,'B_TM_OV_W'              //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest.
+				// ,'B_TM_OV_B'              //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest.
+				// ,'B_TMT_OV_W'              //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest.
+				// ,'B_TMT_OV_B'              //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest.
+				'W_OV_W_with_WW'          //vanaf org lopen, dan OV, dan lopen naar dest; gecombineerd met direct lopen vanaf org naar dest.
+				// ,'B_OV_W_with_BB'          //vanaf org fietsen, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_Tic_OV_W_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_Tic_OV_W_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_Tic_OV_W_with_W_OV_W_WW' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_Tic_OV_W_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_T_OV_W_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_T_OV_W_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_T_OV_W_with_W_OV_W_WW' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_T_OV_W_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TM_OV_W_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				//,'B_TM_OV_W_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TM_OV_W_with_W_OV_W_WW' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TM_OV_W_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_W_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_TMT_OV_W_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_W_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_W_with_W_OV_W_WW' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_W_with_B_OV_W_WW' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_Tic_OV_B_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_Tic_OV_B_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_Tic_OV_B_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_T_OV_B_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_T_OV_B_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_T_OV_B_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TM_OV_B_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_TM_OV_B_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TM_OV_B_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_B_with_BB'        //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest.
+				// ,'B_TMT_OV_B_with_W_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_B_with_B_OV_W_BB' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_B_with_W_OV_W_WW' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met lopen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_TMT_OV_B_with_B_OV_W_WW' //vanaf org fietsen naar IC-treinstation, dan OV, dan lopen naar dest; gecombineerd met fietsen vanaf org, dan OV, en lopen naar dest; gecombineerd met direct fietsen vanaf org naar dest. 
+				// ,'B_OV_B_with_BB'          //vanaf org fietsen, dan OV, dan fietsen naar dest; gecombineerd met direct fietsen vanaf org naar dest.)
+			];
+		}
+		
+		unit<uint8> CongestionTimes : nrofrows = 3
+		{
+			attribute<string> name : ['MorningRush','NoonRush','LateEveningRush'];
+			attribute<string> Time : ['0700', '1200', '2100'];
+		}
+	
+	
+		parameter<m>        Fietstel_OSM_link_dist            := 8[m];                                    //De maximale afstand tussen OSM en FietsTelWeek data om te linken  
+		parameter<bool>     OSM_NL_prov                       := rjoin(AnalyseMoment, Advanced/AnalyseMomentPresets/name,Advanced/AnalyseMomentPresets/OSM_NL_prov );                    
+		parameter<string>   Dest_location_scale               := '100m';                                  //Het schaalniveau om destination op te clusteren. Opties: '100m', '500m', '1000m', '5000m', '10000m', '50000m'
+		parameter<m_s>      TransferEffectiveSpeed            := value(4[km_hr] / 1.2f, m_s);           //De loopsnelheid tijdens het overstappen. X km/uur / 1.2 (correctie voor Manhattan distances) en dan geconverteerd naar meter/sec.
+		parameter<float32>  ConnectSearchDist                 := 100f^2f;                                 //Zoek gebied voor connect_info operaties, zoals linken NDW aan NWB en NWB aan OSM, en FietsTelWeek aan OSM.
+		parameter<string>   fileNamePrefix                    :=  '%LocalDataProjDir%/Output/';  //Locatie waar output files moeten worden opgeslagen.
+		parameter<float32>  WegingWachttijdThuisVoortransport := 0f;                                      //Wil je dat de wachttijd thuis wordt meegenomen in de totale reisduur, bij vertrektijd vanaf bepaald moment?
+		parameter<uint8>    NumberOfItersForNetworkCleanUp    := 10b;
+		parameter<string>   PrevDate                          := string(uint32(Analysis_date) - 1);
+		parameter<string>   Date_prefix                       := substr(Analysis_date, 0, 4) + '/' + substr(Analysis_date, 4, 2) + '/' +  substr(Analysis_date, 6, 2);
+		parameter<Weekdays> Today                             := /units/Weekdays/V/tuesday[Weekdays];     //Relevant voor OV-berekening
+		parameter<Weekdays> Yesterday                         := Weekdays/PrevRef[Today];
+		
+		parameter<km_hr>    WalkingSpeed_kmhr                 := 4[km_hr];
+		parameter<km_hr>    BikingSpeed_kmhr                  := 14[km_hr];
+		parameter<km_hr>    E_BikingSpeed_kmhr                := 18[km_hr];
+		parameter<km_hr>    E_BikingSpeed_actualspeed_addition_kmhr := 10[km_hr];
+		parameter<m_s>      WalkingSpeed                      := WalkingSpeed_kmhr / 3600[s_f / hr_f] * 1000[m / km];
+		parameter<m_s>      BikingSpeed                       := BikingSpeed_kmhr / 3600[s_f / hr_f] * 1000[m / km];
+		parameter<m_s>      E_BikingSpeed                     := E_BikingSpeed_kmhr / 3600[s_f / hr_f] * 1000[m / km];
+		parameter<km_hr>    MaxCarSpeed                       := 130[km_hr];
+		parameter<km_hr>    MaxCarSpeed_limit                 := 100[km_hr];
+		parameter<km_hr>    PedestrianDefaultSpeed            := WalkingSpeed_kmhr;
+		parameter<km_hr>    BikeDefaultSpeed                  := BikingSpeed_kmhr;
+		parameter<km_hr>    E_BikeDefaultSpeed                := E_BikingSpeed_kmhr;
+		parameter<km_hr>    CarDefaultSpeed                   := 50[km_hr];
+		parameter<km_hr>    CarDefaultSpeed_low               := 30[km_hr];
+		parameter<km_hr>    Ferry_Speed                       := 25[km_hr];
+		
+		parameter<string>   DestSet_string                    := Create_Symmetric_fullOD 
+																	? lowercase(Orgset) 
+																	: Dests_geclusterd 
+																		? lowercase(Destset) + '_' + lowercase(Dest_location_scale)
+																		: lowercase(Destset);
+		parameter<string>   Orgset_str                        := Getiled_berekenen ? lowercase(Orgset)+'_per'+lowercase(Regio_voor_Tiling) : lowercase(Orgset);    //'PC6_domain_corop'; //'PC6full' 'PC6sub' 'PC4full' 'PC4sub' PC6sub_MRA PC6sub_Pijp Point100m LocatiesMachiel Buurtsub_MRA  //org punten selectie
+		unit<uint32>        Regio                             := =Getiled_berekenen ? 'RegioIndeling' : 'SourceData/RegioIndelingen/NL'; // Als je getiled wilt rekenen, zorgt dit dat je verwijst naar die tiling, of naar heel NL in één keer.
+		unit<uint32>        RegioIndeling                     := ='SourceData/RegioIndelingen/'+Regio_voor_Tiling;
+		
+		container Distance_decay //distance decay parameters, calculated and provided by PBL
+		{
+			parameter<float32> car_a   := -8.65786f;
+			parameter<float32> car_b   := 2.492099f;
+			parameter<float32> car_c   := 0.011641f;
+			parameter<float32> bike_a  := -7.95686f;
+			parameter<float32> bike_b  := 2.675059f;
+			parameter<float32> bike_c  := 0.011981f;
+			parameter<float32> ov_a    := -12.3301f;
+			parameter<float32> ov_b    := 2.907621f;
+			parameter<float32> ov_c    := 0.012824f;
+		}
+	
+		unit<uint32> SampleDay := select_with_attr_by_org_rel(Time, Time/Day = 0) //Hier worden de analyse tijdstippen opgegeven. LET OP: Verander je deze dan zul je ook de NDW_meetmomenten/time moeten aanpassen. En de ChosenMoments ook wanneer er meer/minder momenten opgegeven zijn.
+		{
+			attribute<bool>    ChosenMoments   := =AsList(HoursMinutes/str,' || ');
+			attribute<Time>    Time_rel        := org_rel;
+			
+			unit<uint8> ChosenHours : nrofrows = 1
+			{
+				// attribute<uint32> values : [7,8,12,13,21,22];
+				attribute<uint32> values : [7];
+			}
+			unit<uint8> ChosenMinutes : nrofrows = 1
+			{
+				// attribute<uint32> values : [0,5,10,15,20,25,30,35,40,45,50,55]; 
+				attribute<uint32> values : [0]; 
+			}
+			unit<uint8> HoursMinutes := combine_uint8(ChosenHours, ChosenMinutes)
+			{
+				attribute<uint32> Hours     := ChosenHours/values[first_rel];
+				attribute<uint32> Minutes   := ChosenMinutes/values[second_rel];
+				attribute<string> str       := '(hour == '+string(Hours)+' && minute == '+string(Minutes)+' && second == 0)';
+			}
+		}
+		
+		unit<uint32> MeasureMoments := select_with_attr_by_cond(SampleDay, SampleDay/ChosenMoments)
+		{
+			attribute<Time>    Moment := Time_rel;
+			attribute<string>  Name   := Time/TemplatableText[Moment];
+		}
+		
+		container Combines
+		{
+			unit<uint32> Dijkstra_attributes : nrofrows = 3
+			{
+				attribute<string>    name : ['Impedance','OrgZone_rel','DstZone_rel'];
+			}
+			unit<uint32> MomentXattributes := combine(MeasureMoments,Dijkstra_attributes)
+			{
+				attribute<string> MomentName       := MeasureMoments/name[first_rel];
+				attribute<string> DijkstraAttrName := Dijkstra_attributes/name[second_rel];
+				attribute<string> name             := MomentName + '_' + DijkstraAttrName;
+			}
+		}
+		
+		unit<uint32> TransitionType_list : nrofrows = 8
+		{
+			attribute<string> Type     : ['Org2Stop_W'   ,'Org2Stop_B'   ,'Org2Stop_B_Tic' ,'Org2Stop_B_T' ,'Org2Stop_B_TM' ,'Org2Stop_B_TMT' ,'Stop2Dest_W'  ,'Stop2Dest_B'];
+			attribute<string> Type_shrt: ['O2S'   ,'O2S'   ,'O2S' ,'O2S' ,'O2S' ,'O2S' ,'S2D'  ,'S2D'];
+			attribute<string> Mode     : ['Walk'         ,'Bike'         ,'Bike'           ,'Bike'         ,'Bike'          ,'Bike'          ,'Walk'         ,'Bike'];
+			attribute<string> OrgDest  : ['Origin'       ,'Origin'       ,'Origin'         ,'Origin'       ,'Origin'        ,'Origin'        ,'Dest'         ,'Dest'];
+			attribute<min_f>  ModeMax  := ='union_data(.,MaxPedestrianTime_Org2Stop,MaxBikeTime_Org2Stop,MaxBikeTime_Org2Stop,MaxBikeTime_Org2Stop,MaxBikeTime_Org2Stop,MaxBikeTime_Org2Stop,MaxPedestrianTime_Stop2Dest,MaxBikeTime_Stop2Dest)';
+		}
+		
+		container OSM_impl
+		{
+			unit<uint32> InEenBestand : nrofrows = 4
+			{
+				unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+				{
+					attribute<String> Text:
+					// Regio             , OrgSet , OrgPath, Land, Type, 
+					[
+					'Netherlands'             ,'NL', 'OD',
+
+					'Belgium'                 ,'BE', 'OD',
+
+					'Niedersachsen'           ,'DE', 'OD',
+					'Nordrhein-Westfalen'     ,'DE', 'OD'
+					]; 
+				}
+				
+				attribute<string>        label          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
+				attribute<string>        name           := replace(label, '-', '_');
+				attribute<string>        Country        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+				attribute<string>        Type_src       := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+				
+				parameter<uint32> nrAttr := 3;
+			}
+			unit<uint32> InProvincies : nrofrows = 17
+			{
+				unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+				{
+					attribute<String> Text:
+					// Regio             , OrgSet , OrgPath, Land, Type, 
+					[
+					'Drenthe'                 ,'NL', 'OD',
+					'Flevoland'               ,'NL', 'OD',
+					'Friesland'               ,'NL', 'OD',
+					'Gelderland'              ,'NL', 'OD',
+					'Groningen'               ,'NL', 'OD',
+					'Limburg'                 ,'NL', 'OD',
+					'Noord-Brabant'           ,'NL', 'OD',
+					'Noord-Holland'           ,'NL', 'OD',
+					'Overijssel'              ,'NL', 'OD',
+					'Utrecht'                 ,'NL', 'OD',
+					'Zeeland'                 ,'NL', 'OD',
+					'Zuid-Holland'            ,'NL', 'OD',
+
+					'Belgium'                 ,'BE', 'OD',
+
+					'Niedersachsen'           ,'DE', 'OD',
+					'Duesseldorf-regbez'       ,'DE', 'OD',
+					'Koeln-regbez'             ,'DE', 'OD',
+					'Muenster-regbez'          ,'DE', 'OD'
+					]; 
+				}
+				
+				attribute<string>        label          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
+				attribute<string>        name           := replace(label, '-', '_');
+				attribute<string>        Country        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+				attribute<string>        Type_src       := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+				
+				parameter<uint32> nrAttr := 3;
+			}
+		}
+		
+		unit<uint32> OSM_Regios := =OSM_NL_prov ? 'OSM_impl/InProvincies' : 'OSM_impl/InEenBestand'
+		{
+			attribute<string>        label          := =OSM_NL_prov ? 'OSM_impl/InProvincies/label' : 'OSM_impl/InEenBestand/label';
+			attribute<string>        name           := =OSM_NL_prov ? 'OSM_impl/InProvincies/name' : 'OSM_impl/InEenBestand/name';
+			attribute<string>        Country        := =OSM_NL_prov ? 'OSM_impl/InProvincies/Country' : 'OSM_impl/InEenBestand/Country';
+			attribute<string>        Type_src       := =OSM_NL_prov ? 'OSM_impl/InProvincies/Type_src' : 'OSM_impl/InEenBestand/Type_src';
+			
+			attribute<AnalyseRegios> AnalyseRegios_rel := rlookup(country, AnalyseRegios/short);
+			
+			attribute<bool>          IsOD_Regio      := Type_src == 'OD';
+			
+			
+			unit<uint32> OD_regios := select_with_org_rel(IsOD_Regio)
+			{
+				attribute<string> name  := ../name[org_rel];
+				attribute<string> label := ../label[org_rel];
+			}
+			
+			unit<uint32> Countries : nrofrows = 3
+			{
+				attribute<string> name : ['Germany', 'Netherlands', 'Belgium'];
+			}
+			
+			unit<uint32> Germany := select_with_org_rel(country == 'DE')
+			{
+				attribute<string> name  := ../name[org_rel];
+				attribute<string> label := ../label[org_rel];
+			}
+			unit<uint32> Netherlands := select_with_org_rel(country == 'NL')
+			{
+				attribute<string> name  := ../name[org_rel];
+				attribute<string> label := ../label[org_rel];
+			}
+			unit<uint32> Belgium := select_with_org_rel(country == 'BE')
+			{
+				attribute<string> name  := ../name[org_rel];
+				attribute<string> label := ../label[org_rel];
+			}
+			
+		}
+		
+		
+		unit<uint32> AnalyseRegios : nrofrows = 1 // Hier worden de paden voor elke org set opgegeven. En wanneer er nieuwe bij komen dat hier ook toegevoegd worden.
+		{
+			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
+			{
+				attribute<String> Text:
+				// Regio             , OrgSet , OrgPath, Land, Type, 
+				[
+				'Netherlands'             , 'PC4' , '/SourceData/RegioIndelingen/Dutch_PC4_areas'      ,'NL'
+				]; 
+			}
+
+			attribute<string>        name          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
+			attribute<string>        OrgSet        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+			attribute<string>        OrgSet_path   := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+			attribute<string>        short         := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)];
+			
+			parameter<uint32> nrAttr := 4;
+		}
+	}
+}

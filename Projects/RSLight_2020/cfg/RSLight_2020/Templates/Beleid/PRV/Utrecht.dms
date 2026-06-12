@@ -1,0 +1,64 @@
+container Utrecht := PRVT('Utrecht')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Beschermingszone_drinkwaterwinning                (domain_grid) := Src/NL_IMRO_9926_PV1612PRV_VA01/Kaart2/Beschermingszone_drinkwaterwinning/Bestand/Multi/Result;
+			attribute<bool> Vrijwaringszone_versterking_regionale_waterkering (domain_grid) := Src/NL_IMRO_9926_PV1612PRV_VA01/Kaart2/Vrijwaringszone_versterking_regionale_waterkering/Bestand/Multi/Result;
+			attribute<bool> pro_Militair_erfgoed_NHW                          (domain_grid) := Src/NL_IMRO_9926_PV1612PRV_VA01/Kaart3/Militair_erfgoed_NHW/Bestand/Multi/Result;
+			attribute<bool> Natuur_Netwerk_Nederland                          (domain_grid) := Src/NL_IMRO_9926_PV1612PRV_VA01/Kaart6/Natuur_Netwerk_Nederland/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Beschermingszone_drinkwaterwinning
+					, Vrijwaringszone_versterking_regionale_waterkering
+					, pro_Militair_erfgoed_NHW
+					, Natuur_Netwerk_Nederland
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Groene_contour (domain_grid) := Src/NL_IMRO_9926_PV1612PRV_VA01/Kaart6/Groene_contour/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Groene_contour
+				);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Stiltegebied (domain_grid) := Src/NL_IMRO_9926_PV1612PRV_VA01/Kaart9/Stiltegebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Stiltegebied
+				);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> Glastuinbouw_niet_toegestaan (domain_grid) := Src/NL_IMRO_9926_PV1612PRV_VA01/Kaart10/Glastuinbouw_niet_toegestaan/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Glastuinbouw_niet_toegestaan
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

@@ -1,0 +1,50 @@
+container Bouwkosten :=
+	for_each_ind(
+		'nedvc'
+		, OntwikkelPakketten/name
+		, replace('add('+AsItemList('PerWP4/@P@/'+Vastgoed/WP4/name)+')', '@P@', OntwikkelPakketten/name)
+		, domain_grid
+		, EUR_ha
+		, 'Classified_per_OP/'+OntwikkelPakketten/name+'/Target_9K/ClassBreaks'
+	)
+{
+	attribute<EUR_ha> Winkel    (domain_grid) := const(10000[EUR_ha],domain_grid);
+	attribute<EUR_ha> Kantoor   (domain_grid) := const(10000[EUR_ha],domain_grid);
+	attribute<EUR_ha> Industrie (domain_grid) := const(10000[EUR_ha],domain_grid);
+	
+	container Classified_per_OP := 
+		for_each_ne(
+			OntwikkelPakketten/name
+			, 'Templates/Classify_9K_EurHa(Bouwkosten/'+OntwikkelPakketten/name+', domain_grid)'
+		);
+	
+	container BaseValues 
+	{
+		parameter<Eur_m2> Rijtjeswoning     := ModelParameters/Bouwkosten/Rijtjeswoning;
+		parameter<Eur_m2> Twee_onder_1_kap  := ModelParameters/Bouwkosten/Twee_onder_1_kap;
+		parameter<Eur_m2> Vrijstaand        := ModelParameters/Bouwkosten/Vrijstaand;
+		parameter<Eur_m2> Appartement       := ModelParameters/Bouwkosten/Appartement;
+
+		container Per_OntwikkelPakketten_x_WP4 :=
+			for_each_nedv(
+				OntwikkelPakketten/x_WP4/name,
+				'BaseValues/'+Vastgoed/WP4/name[OntwikkelPakketten/x_WP4/second_rel]+
+				iif(id(OntwikkelPakketten/x_WP4) == OntwikkelPakketten/x_WP4/V/App_HD_hoog_appartement, '* 1.8f', ''), //die factor 1.8 voor HD is een grove inschatting, needs checks!
+				void, Eur_m2
+			);
+	}
+	
+	attribute<float32> RegioFactor (domain_grid) := Sloopkosten/RegioFactor;
+	
+	container PerWP4 := for_each_nedv(OntwikkelPakketten/x_WP4/name,
+		replace(
+			'( OntwikkelPakketten/densities/@P@[Vastgoed/WP4/V/@W@] '
+			'* OntwikkelPakketten/opp_woning/@P@[Vastgoed/WP4/V/@W@] '
+			'* BaseValues/Per_OntwikkelPakketten_x_WP4/'+OntwikkelPakketten/x_WP4/name+')'
+			'* RegioFactor'
+		,	'@W@', Vastgoed/WP4/name[OntwikkelPakketten/x_WP4/second_rel]
+		,	'@P@', OntwikkelPakketten/name[OntwikkelPakketten/x_WP4/first_rel]
+		),
+		domain_grid, EUR_ha
+	);
+}

@@ -1,0 +1,45 @@
+container RegionalAvgCharacteristics
+{
+	
+	container perWP2 := perWP_Type_T('WP2');
+	container perWP4 := perWP_Type_T('WP4');
+	
+	Template perWP_Type_T
+	{
+		parameter<String> WP_Type;
+		
+		//
+		unit<UInt8>  AdminDomain  := ='Classifications/Vastgoed/'+WP_Type;
+		unit<UInt32> comb    := ='Classifications/Vastgoed/'+WP_Type+'xHouseChar';
+		//
+		
+		container NationalAvgCharacteristics :=
+			for_each_ndv(
+				Classifications/Vastgoed/HouseCharacteristics/name
+				, AdminDomain
+				, float32
+			), StorageName = "='%RSo_DataDir%/Vastgoed/NVM_Nationalekarakteristieken/'+WP_Type+'.fss'",  StorageReadOnly = "True" 
+		{
+			attribute<Float32> d_maintgoodNewHouses      (AdminDomain) := const(1f,AdminDomain);
+			attribute<Float32> d_centralheatingNewHouses (AdminDomain) := const(1f,AdminDomain);
+			attribute<Float32> d_isol_complNewHouses     (AdminDomain) := const(1f,AdminDomain);
+			attribute<Float32> d_privparkNewHouses       (AdminDomain) := =WP_Type = 'WP4' ? 'id(AdminDomain) = AdminDomain/V/Twee_onder_1_kap || id(AdminDomain) = AdminDomain/V/vRijstaand ? 1f : d_privpark' : 'd_privpark';
+			
+			attribute<Float32> opp_Woning_log (AdminDomain) := log(size);
+		}
+			
+		container RegionalAvgCharacteristics := 
+			for_each_ndvnat(
+				comb/name
+				, rdc_25m
+				, comb
+				, comb/ValueType
+				, '%RSo_DataDir%/Vastgoed/NVM_Regiokarakteristieken_'+/ModelParameters/nvm_filedate+'/'+WP_Type+'/'+comb/name+'.tif'
+				, 'tif'
+			), StorageReadOnly = "True"
+		{
+			attribute<Float32> vRijstaand_d_privparkNewHouses       (rdc_25m) := const(1f, rdc_25m);
+			attribute<Float32> Twee_onder_1_kap_d_privparkNewHouses (rdc_25m) := vRijstaand_d_privparkNewHouses;
+		}
+	}
+}

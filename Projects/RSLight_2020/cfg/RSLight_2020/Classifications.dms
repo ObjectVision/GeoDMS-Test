@@ -1,0 +1,343 @@
+container Classifications: Using = "Units", KeepData = "True"
+{ 
+	#include<LandUsePreparation.dms>
+	#include<Vastgoed.dms>
+	#include<Actor.dms>
+	#include<TXLTables.dms>	
+	#include<time.dms>
+	#include<grondproductie.dms>
+	#include<vesta.dms>
+	#include<Groen.dms>
+	
+	
+	unit<uint8> VariantK: NrOfRows = 5
+	{
+		attribute<string> name:                     ['UrbaanBulldozer', 'Urbaan'        ,'Suburbaan'     ,'AccentUrbaan'        ,'AccentSuburbaan'    ];
+		attribute<bool> GeenRestrictiesWaarPlannen: [true              , true            ,true            ,false                 ,false                ];
+		attribute<bool> IsDuurzaam:                 [false             , false           ,false           ,false                 ,false                ]; // bepaalt (enkel) of paalrot, energeibelasting etc verwervingskosten beinvloedt
+		attribute<bool> GeeftPlanschadeBijHoogbouw: [false             , false           ,false           ,false                 ,false                ];
+		attribute<string> PlannenRef:               ['HardOfZacht'     ,'HardOfZacht'   ,'HardOfZacht'   ,'HardOfZacht'         ,'HardOfZacht'         ];
+		attribute<string> Restricties_ref:          ['MiddelHardGeen'  ,'MiddelHardGeen','MiddelHardGeen','ZachtMiddelHardGeen' ,'ZachtMiddelHardGeen' ];
+		attribute<Eur_ha> Belasting:                [0                 , 0               ,0               ,0                     ,0                    ]; // Belasting op bouwen op plekken met de duurzaamheidsK hieronder
+		attribute<Eur_woning> Subsidie:             [0                 , 0               ,0               ,0                     ,0                    ]; //doet nog heel weinig. zelfs bij subsidie van ton per woning. ws zijn dichtere woonmilieus nodig om uit te kunnen kiezen
+		attribute<string> BouwprogrammaTbl_Ref:     ['Regio'           ,'Regio'         ,'Sub'           ,'Regio'               ,'Sub'                 ];
+		
+		// woningclaims
+		attribute<string> TXLStocksTbl_Ref:         ['Regio'           ,'Regio'         ,'Suburbaan'     ,'Regio'               ,'Suburbaan'           ]; // bepaalt per claimregio de stock 2050, en de stock in basisjaar TXL, en daarmee de delta basisjaar - 2050. De tabellen uit tigris geven ook de verdeling over woningtypen (eengezins/meergezins; huur/koop) en LMSSubzones. Daarvan kan worden afgeweken.
+		//
+		
+		attribute<Eur_ha> MinimumExploitatieSaldo: [-1000000000       , 0               , -1000000000    , 0                     , 0                   ];
+		
+		attribute<float32> MinimumWoningBouwTovSloop: [1.1            , 1.1             ,1.5             , 1.1                   , 1.5                 ];
+		
+		attribute<vbo_ha> MaximumVBODichtheid := const(999[vbo_ha], .);
+		
+		// Kan desgwenst ook per allocregio uitgesplitst (overruled); moet dan verplaatst naar de WP2Alloc template
+		attribute<float32> Eengezins_Percentiel:    [0.70             , 0.70             , 0.50          , 0.95               ,  0.70]; //suburbBulldozer: 0.5
+		attribute<float32> Meergezins_Percentiel:   [0.70             , 0.70             , 0.50          , 0.95               ,  0.70]; //suburbBulldozer: 0.5
+		attribute<Woning_ha> Eengezins_bovengrens:  [100              , 100              , 100           ,  100               ,   100];
+		attribute<Woning_ha> Eengezins_ondergrens:  [10               , 10               , 10            ,   10               ,    10];
+		attribute<Woning_ha> Meergezins_bovengrens: [350              , 350              , 350           ,  350               ,   350];
+		attribute<Woning_ha> Meergezins_ondergrens: [40               , 40               , 40            ,   40               ,    40];
+		//
+		
+		attribute<bool> BouwenOpSlappeGrond:        [true             , true             , true          , true               ,  true];
+		attribute<bool> BouwenOpZeerSlappeGrond:    [true             , true             , true          , false              , false];
+		attribute<bool> BouwenInNatuurorganisaties: [true             , false            , false         , false              , false];
+		attribute<bool> BouwenInWaterschappen:      [true             , false            , false         , false              , false];
+		
+		//Hogere bouwjaren/energielabels mogen niet gesloopt
+		attribute<string> MaxBouwjaar:              ['1990'           ,'1990'           , '1990'        , '1990'             ,'1985']; // suburbBulldozer: 1990
+		
+		attribute<Vastgoed/ELabelK> MaxELabel := union_data(.,
+			Vastgoed/ELabelK/V/LabelC,
+			Vastgoed/ELabelK/V/LabelD,
+			Vastgoed/ELabelK/V/LabelD,
+			Vastgoed/ELabelK/V/LabelD,
+			Vastgoed/ELabelK/V/LabelD
+		);
+		
+		attribute<BelastingK/Combi> BelastingK_rel := const(BelastingK/Combi/V/NietNabijStation_OpSlappeBodem[BelastingK/Combi], .);
+		attribute<SubsidieK/Combi>  SubsidieK_rel  := const(SubsidieK/Combi/V/NabijStation[SubsidieK/Combi], .);
+		
+		attribute<Scenarios> Scenario_rel := const(Scenarios/V/WLO_Hoog[Scenarios], .); //Refs naar TXL 'scenario's' (eigenlijk varianten van WLO-hoog)
+		
+		attribute<string> BenuttingRef := name;
+		attribute<string> Label := name, DialogType = "LabelText";
+		
+		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+	}
+
+	unit<uint8> Scenarios: NrOfRows = 2
+	{
+		attribute<string> name : ['WLO_laag', 'WLO_hoog'];
+		
+		container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+	}
+	
+	unit<uint32> BelastingK: NrOfRows = 2
+	{
+		attribute<string> name:
+		[
+			'NietNabijStation',
+			'OpSlappeBodem'
+		];
+		
+		attribute<string> SrcRef := replace('Analysis/BaseData/Duurzaamheid/'+name, '_', '/');
+		
+		attribute<string> Rekenregel: = 'float32('+SrcRef+')';
+		
+		unit<uint32> Combi2 := combine(.,.)
+		{
+			unit<uint32> Relevant := select_with_org_rel(first_rel < second_rel)
+			{
+				attribute<string> name: = BelastingK/name[first_rel[org_rel]] + '_' + BelastingK/name[second_rel[org_rel]];
+				attribute<string> Rekenregel: = BelastingK/Rekenregel[first_rel[org_rel]] + ' + ' + BelastingK/Rekenregel[second_rel[org_rel]];
+			}
+		}
+		
+		unit<uint32> Combi := union_unit(BelastingK, Combi2/Relevant)
+		{
+			attribute<string> name := union_data(., BelastingK/name, Combi2/Relevant/name);
+			attribute<string> Rekenregel0:= union_data(., BelastingK/Rekenregel, Combi2/Relevant/Rekenregel);
+			attribute<string> Rekenregel:= 'rescale('+Rekenregel0+', 0f, 1f)';
+			
+			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		}
+	}
+	
+	unit<uint32> SubsidieK: NrOfRows = 1
+	{
+		attribute<string> name:
+		[
+			'NabijStation'
+		];
+		
+		attribute<string> SrcRef := 'Analysis/BaseData/Duurzaamheid/'+name;
+		
+		attribute<string> Rekenregel: = 'float32('+SrcRef+')';
+		
+		unit<uint32> Combi := SubsidieK
+		{
+			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		}
+	}
+	
+	unit<uint32> AllocRegioKxVariantK := combine(AllocRegioK, VariantK)
+	{
+		attribute<string> AllocRegioK_name := AllocRegioK/name[first_rel];
+		attribute<string> VariantK_name := VariantK/name[second_rel];
+		attribute<string> name := AllocRegioK_name+'/'+VariantK_name;
+		attribute<string> Label := replace(name, '/', '_'), DialogType = "LabelText";
+		// attribute<string> AggrRegio_ref := AllocRegioK/name[first_rel]; // de regionale randtotalen uit txl die we vastzetten
+		attribute<string> AllocRegio_ref := AllocRegioK/name[first_rel]; // De alloc regio. Deze moet een n op 1 of een 1 op 1 rel hebben met aggregio. Indien n op 1 dan wordt de verdeling vd stock per aggregio over de allocregio's daarbinnen gebaseerd op deze verdeling (percentueel) vd oktoverrun.
+	}
+	
+	unit<uint32> AllocRegioKxVariantKxDensityK := combine(AllocRegioK, VariantK, DensityK)
+	{
+		attribute<string>  AllocRegioK_name                   := AllocRegioK/name[first_rel];
+		attribute<string>  VariantK_name                      := VariantK/name[second_rel];
+		attribute<string>  DensityK_name                      := DensityK/name[third_rel];
+		attribute<string>  name                               := VariantK_name+'/'+AllocRegioK_name+'/'+DensityK_name;
+		attribute<string>  Label                              := replace(name, '/', '_'), DialogType = "LabelText";
+		// attribute<string>  AggrRegio_ref                      := AllocRegioK/name[first_rel]; // de regionale randtotalen uit txl die we vastzetten
+		attribute<string>  AllocRegio_ref                     := AllocRegioK/name[first_rel]; // De alloc regio. Deze moet een n op 1 of een 1 op 1 rel hebben met aggregio. Indien n op 1 dan wordt de verdeling vd stock per aggregio over de allocregio's daarbinnen gebaseerd op deze verdeling (percentueel) vd oktoverrun.
+		attribute<float32> MaxStijgingWoningdichtheid_meergez := DensityK/MaxStijgingWoningdichtheid_meergez[third_rel];
+		attribute<float32> MaxStijgingWoningdichtheid_eengez  := DensityK/MaxStijgingWoningdichtheid_eengez[third_rel];
+		
+		//inachattimg obv expert judgement van bart rijken obv met name claim onderrealisatie
+		attribute<bool> IsRelevantVoorKvDV_MRA :=
+			
+			((VariantK_name == 'UrbaanBulldozer' ) && AllocRegioK_name == 'LMSSubzone' && DensityK_name == 'Referentie') ||
+			((VariantK_name == 'Suburbaan'       ) && AllocRegioK_name == 'LMSSubzone' && DensityK_name == 'Referentie') ||
+			
+			// extra toevoegingen voor model test redenen
+			((VariantK_name == 'Urbaan'          ) && AllocRegioK_name == 'Gemeente' && DensityK_name == 'Referentie') ||
+			((VariantK_name == 'Suburbaan'       ) && AllocRegioK_name == 'Gemeente' && DensityK_name == 'Referentie') ||
+			((VariantK_name == 'AccentSuburbaan' ) && AllocRegioK_name == 'NVM'      && DensityK_name == 'Referentie') ||
+			((VariantK_name == 'AccentUrbaan'    ) && AllocRegioK_name == 'NVM'      && DensityK_name == 'Referentie');
+			
+		attribute<bool> IsRelevantVoorNLLater2 :=
+			((VariantK_name == 'Urbaan'          ) && AllocRegioK_name == 'Gemeente' && DensityK_name == 'Referentie') ||
+			((VariantK_name == 'Suburbaan'       ) && AllocRegioK_name == 'Gemeente' && DensityK_name == 'Referentie') ||
+			((VariantK_name == 'AccentSuburbaan' ) && AllocRegioK_name == 'NVM'      && DensityK_name == 'Referentie') ||
+			((VariantK_name == 'AccentUrbaan'    ) && AllocRegioK_name == 'NVM'      && DensityK_name == 'Referentie');
+		
+		unit<uint32> Relevant := = 'select_with_org_rel(IsRelevantVoor'+/ModelParameters/ToepassingsRef+')'
+		{
+			attribute<string>  name                               := ../name[org_rel];
+			attribute<string>  AllocRegioK_name                   := ../AllocRegioK_name[org_rel];
+			attribute<string>  VariantK_name                      := ../VariantK_name[org_rel];
+			attribute<string>  DensityK_name                      := ../DensityK_name[org_rel];
+			attribute<string>  Label                              := replace(name, '/', '_'), DialogType = "LabelText";
+			// attribute<string>  AggrRegio_ref                      := ../AggrRegio_ref[org_rel]; // de regionale randtotalen uit txl die we vastzetten
+			attribute<string>  AllocRegio_ref                     := ../AllocRegio_ref[org_rel]; // De alloc regio. Deze moet een n op 1 of een 1 op 1 rel hebben met aggregio. Indien n op 1 dan wordt de verdeling vd stock per aggregio over de allocregio's daarbinnen gebaseerd op deze verdeling (percentueel) vd oktoverrun.
+			attribute<float32> MaxStijgingWoningdichtheid_meergez := ../MaxStijgingWoningdichtheid_meergez[org_rel];
+			attribute<float32> MaxStijgingWoningdichtheid_eengez  := ../MaxStijgingWoningdichtheid_eengez[org_rel];
+		}
+	}
+	
+	unit<uint8> DensityK: NrOfRows = 3
+	{
+		attribute<string> name: ['Referentie', 'Hoger', 'Hoogst'];
+		attribute<float32> MaxStijgingWoningdichtheid_eengez:  [1.0 ,2.0, 3.0];
+		attribute<float32> MaxStijgingWoningdichtheid_meergez := MaxStijgingWoningdichtheid_eengez * 2f;
+		attribute<string> Label := name, DialogType = "LabelText";
+	}
+	
+	unit<uint8> AllocRegioK: NrOfRows = 5
+	{
+		attribute<string> name:           ['LMSSubzone','Gemeente', 'MRA8', 'MRA1', 'NVM'];
+		attribute<float32> DensityFactor: [1.0         ,1.0       ,1.0    ,1.0    , 1.0  ];
+		attribute<string> Label := name, DialogType = "LabelText";
+	}
+	
+	unit<uint8> IBIS: nrofrows = 9
+	{
+		attribute<string> code: ['X','A','B','C','C1','C2','C3','C4','C5'];
+		attribute<string> name: ['Onbekend'
+									, 'Zeehaventerrein'
+									, 'Bedrijventerrein'
+									, 'Economische_zone'
+									, 'EZ_retail_meubelboulevards'
+									, 'EZ_onderwijslocaties'
+									, 'EZ_Zorglocaties'
+									, 'EZ_platform_gebonden_bedrijvigheid'
+									, 'EZ_agribusiness_complexen'
+								];
+		attribute<string> Label:= name, DialogType = "LabelText";
+		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+
+	}
+	
+	unit<uint8> YesNo_K2: nrofrows = 2
+	{
+		attribute<YesNo> ClassBreaks: DialogType = "Classification",
+			[0, 1];
+		attribute<uint32> BrushColor:  DialogType = "BrushColor",
+			[rgb(255,255,255),rgb(255,0,0)];
+		attribute<string> Label: DialogType = "LabelText",
+			['No','Yes'];
+	}
+	
+	Template Classify_9K_Eur
+	{
+		//
+		attribute<Eur> target (domain);
+		unit<uint32> domain;
+		//
+		
+		attribute<Eur>      classifyJf        (Target_9K)  := ClassifyJenksFisher(target, Target_9K);
+		parameter<uint32>   max                            := max(classifyJf)[uint32];
+		parameter<uint32>   max_strlen                     := strlen(string(max));
+		parameter<uint64>   power                          := (10d^(max_strlen[float64]-4d))[uint64];
+		attribute<Eur>      classifyJf_rounded (Target_9K) := ((classifyJf[uint64] / power) * power)[Eur];
+		attribute<uint32>   classifyJf_rounded_integer (Target_9K) := ((classifyJf[uint64] / power) * power)[uint32];
+		
+		unit<uint8> Target_9K : nrofrows = 9
+		{
+			parameter<string>   dash         := ' - ';
+			parameter<string>   comma        := ',';
+			attribute<string>   label_src    := id(.) == (#target_9K[uint8] - 1b) ? string(classifyJf_rounded_integer) + ' or more' : string(classifyJf_rounded_integer) + dash + string(classifyJf_rounded_integer)[id(.) + 1b];
+			attribute<string>   label        := replace(label_src	, '00000000000'	,'00.000.000.000'
+																	, '0000000000'	, '0.000.000.000'
+																	, '000000000'	,  '.000.000.000'
+																	, '00000000'	,    '00.000.000'
+																	, '0000000'		,     '0.000.000'
+																	, '000000'		,      '.000.000'
+																	, '00000'		,        '00.000'
+																	, '0000'		,         '0.000'), DialogType = "LabelText";
+			attribute<uint32>   PenColor     := Brushcolor, DialogType = "PenColor";
+			attribute<uint32>   BrushColor   : [rgb(255,255,229),rgb(255,247,188),rgb(254,227,145),
+												rgb(254,196,79) ,rgb(254,153,41) ,rgb(236,112,20),
+												rgb(204,76,2)   ,rgb(153,52,4)   ,rgb(102,37,6)], DialogType = "BrushColor";
+			attribute<Eur>      ClassBreaks  := classifyJf_rounded , DialogType = "Classification";
+		}
+	}
+	
+	container Warmtelasten
+	{
+		unit<uint8> Modeljaar: nrofrows = 9
+		{
+			attribute<units/jaar> Jaar: [2015, 2020, 2030, 2040, 2050, 2060, 2070, 2080, 2090];
+
+			attribute<Zichtjaar> ZichtJaar_rel := union_data(.,
+				Zichtjaar/V/J2015,
+				Zichtjaar/V/J2018,
+				Zichtjaar/V/J2020,
+				Zichtjaar/V/J2025,
+				Zichtjaar/V/J2030,
+				Zichtjaar/V/J2035,
+				Zichtjaar/V/J2040,
+				Zichtjaar/V/J2045,
+				Zichtjaar/V/J2050
+			);
+			
+			attribute<string> name := 'J' + string(Jaar);
+			attribute<string> Label := id(.) == 0b ? 'StartJaar' : name; // eerste Modeljaar wordt startjaar genoemd omdat de gebruikte data betrekking heeft op verschillende jaren.
+			attribute<string> PrevName := name[id(.) - 1[.]];
+			attribute<string> UniekJaar_name := UniekJaar/name[invert(UniekJaar/Modeljaar_rel)];
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+		
+		unit<uint8> Zichtjaar: nrofrows = 9
+		{
+			attribute<ModelJaar> ModelJaar_rel := invert(Modeljaar/ZichtJaar_rel);
+			attribute<units/jaar> Jaar := union_data(., 2015[units/jaar], 2018[units/jaar], 2020[units/jaar], 2025[units/jaar], 2030[units/jaar], 2035[units/jaar], 2040[units/jaar], 2045[units/jaar], 2050[units/jaar]);
+			attribute<units/jaar> PrevJaar := MakeDefined(Jaar[id(.) - 1[.]], 0[units/jaar]);
+			attribute<string> ModelJaar_name := ModelJaar/name[ModelJaar_rel];
+			attribute<string> ModelJaar_label := ModelJaar/label[ModelJaar_rel];
+			attribute<string> ModelJaar_PrevName := ModelJaar/PrevName[ModelJaar_rel];
+			attribute<string> Label := string(Jaar);
+			attribute<string> Name := 'J' + Label;
+			attribute<string> PrevName := Name[id(.) - 1[.]];
+			
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+		
+		unit<uint32> UniekJaar := range(uint32, uint32(first(ZichtJaar/jaar)), uint32(last(ZichtJaar/jaar) + 1f))
+		{
+			attribute<units/jaar> Jaar                         := float32(id(.))[units/jaar];
+			attribute<Zichtjaar>  Zichtjaar_rel                := classify(Jaar, ZichtJaar/PrevJaar + 1[units/jaar]);
+			attribute<string>     name                         := 'J'+string(Jaar);
+			attribute<ModelJaar>  Modeljaar_rel                := ZichtJaar/ModelJaar_rel[Zichtjaar_rel];
+			attribute<string>     Modeljaar_name               := ZichtJaar/ModelJaar_name[Zichtjaar_rel];
+			attribute<string>     Modeljaar_label              := ZichtJaar/ModelJaar_label[Zichtjaar_rel];
+			attribute<string>     PrevModelJaar_UniekJaar_name := ModelJaar/UniekJaar_name[ModelJaar_rel - 1[ModelJaar]];
+			attribute<bool>       IsLaatsteJaar                := Jaar == ZichtJaar/jaar[Zichtjaar_rel];
+			attribute<float32>    DiscontoFactor               := 1f / (1f + Analysis/BaseData/Warmtelasten/discontovoet)^(jaar - first(jaar));
+		}
+	}
+	
+	unit<uint32> TP1ScenariosK: NrOfRows = 10
+	{
+		attribute<string> name:
+		[
+			'RHardTVGeenTPLaagA300mWerkPlanTotaal',
+			'RHardTVGeenTPLaagA300mWerkPlanHard',
+			'RHardTVGeenTPLaagA300mWerkPlanGeen',
+			'RHardTVGeenTPLaagA600mWerkPlanHard',
+			'RHardTVGeenTPLaagA1200mWerkPlanHard',
+			'RHardTVGeenTPHoogA300mWerkPlanHard',
+			'RHardTVLaagTPLaagA300mWerkPlanHard',
+			'RHardTVHoogTPLaagA300mWerkPlanHard',
+			'RZachtTVGeenTPLaagA300mWerkPlanHard',
+			'RZachtTVHoogTPHoogA1200mWerkPlanGeen'
+		];
+
+		attribute<string> Label := name, DialogType = "LabelText";
+		attribute<Bool>   GivesRefPot := id(.) == V/RHardTVGeenTPLaagA300mWerkPlanHard;
+		
+		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+	}
+	
+	unit<uint32> EigendomK := /SourceData/Actoren/Grondposities/EigendomK;
+	unit<uint32> Woningbouwprogramma := /SourceData/Beleid/Plancapaciteit/Wonen/Provincies/Noord_Holland_bouwprogramma;
+	
+	unit<uint32> BBgK: NrOfRows = 2
+	{
+		attribute<string> name: ['BBG', 'Geen_BBG'];
+		attribute<string> Label := name, DialogType = "LabelText";
+	}
+}

@@ -1,0 +1,33 @@
+Template Merge_Regions_OV_T
+{
+	parameter<string> Export_CombinationTypes;
+	parameter<string> Time;	
+	parameter<string> Dest_str;
+	//
+	
+	unit<uint32> Merged := ='union_unit('+AsItemList('Read/'+Advanced/Regio/name+'/PerTime/'+Time+'/domain')+')'
+	{
+		attribute<string>  OrgName    := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/PerTime/'+Time+'/data/OrgName')+')';
+		attribute<string>  DestName   := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/PerTime/'+Time+'/data/DestName')+')';
+		attribute<min_f>   Traveltime := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/PerTime/'+Time+'/data/Traveltime')+')';
+		attribute<euro>    Price      := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/PerTime/'+Time+'/data/Price[euro]')+')';
+		attribute<string>  ModeUsed   := ='union_data(.,'+AsItemList('Read/'+Advanced/Regio/name+'/PerTime/'+Time+'/data/ModeUsed')+')';
+		attribute<string>  Label      := OrgName +'_'+DestName, DialogType = "LabelText";
+	}
+	
+	container LongFormat
+	{
+		attribute<string>  BodyLines_fullOD (Merged) := Merged/OrgName + ';' + Merged/DestName + ';' + string(Merged/Traveltime) + ';' + string(Merged/Price) + ';' + Merged/ModeUsed;
+		parameter<string>  File_fullOD               := 'OrgName;DestName;Traveltime_m_'+Time+';Price;ModeUsed_'+Time+'\n'++AsList(BodyLines_fullOD, '\n')
+																	, StorageName = "= '%LocalDataProjDir%/Output/Traveltime_Long_'+Export_CombinationTypes+''+fileNameSuffix +'.csv'", StorageType = "str";
+	}
+	
+	parameter<string> Export_filename       := Advanced/fileNamePrefix+'Traveltime_Long_'+Export_CombinationTypes+''+fileNameSuffix+'.csv';
+	parameter<string> fileNameSuffix :=  
+		'_' + Analysis_Date + 
+		'_' + Advanced/Arrival_or_Departure_at_time + 
+		'_' + Time + 
+		'_ORG-' + Orgset + 
+		'_DEST-'   + Dest_str +
+		'_FENCE-'   + string(/UseFence);
+}

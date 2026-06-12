@@ -1,0 +1,90 @@
+container Totaal
+{
+	parameter<HardheidK> MinimumHardheid := HardheidK/V/Hard;
+	
+	unit<uint8> SectorK: NrOfRows = 3
+	{
+		attribute<string> name: ['Woongebied', 'Bedrijventerrein', 'Glastuinbouw'];
+	}
+	
+	unit<uint32> HardheidK: NrOfRows = 4
+	{
+		attribute<string> name:    ['Geen', 'Hard', 'Middel', 'Zacht'];
+		attribute<string> CumName  := = replace(AsList('MakeDefined(name[id(.)-'+string(id(.))+'[.]], @)', '+'), '@', quote(''));
+		
+		container V := for_each_nedv(HardheidK/name, string(id(.))+'[..]', void, .);
+		
+		unit<uint32> Sub := select_with_org_rel(name <> 'Geen')
+		{
+			attribute<string> name := HardheidK/name[org_rel];
+			attribute<string> label := name;
+		
+			container V := for_each_nedv(name, string(id(.))+'[..]', void, .);
+		}
+	}
+	
+	unit<uint32> CombiK := combine(SectorK, HardheidK)
+	{
+		attribute<string> SectorK_name := SectorK/name[first_rel];
+		attribute<string> HardheidK_name := HardheidK/name[second_rel];
+		attribute<string> HardheidK_CumName := HardheidK/CumName[second_rel];
+		attribute<string> name := SectorK_name + '_' + HardheidK_name;
+		attribute<string> Ref := replace(name, '_', '/');
+		attribute<string> CumRef := SectorK_name + '/' + HardheidK_CumName;
+	}
+	
+	container MakePerCombi := for_each_nedva(
+		CombiK/Ref,
+		iif(
+			CombiK/HardheidK_name == 'Geen',
+			'const(0[bool], domain_grid)',
+			replace(
+				'max_elem('
+					'EU/@C@,'
+					'AMVB/@C@,'
+					'Bevi/@C@,'
+					+AsItemList('PRV/'+ProvincieK/sub/name+'/@C@')+','+
+					+AsItemList('PMV/Result/'+PMV/ProvincieK/PMV/name+'/@C@')+','+
+					'Overigen/@C@'
+				')',
+				'@C@', CombiK/Ref +'/Totaal'
+			)
+		),
+		domain_grid, bool,
+		'%projdir%/data/UnlinkedData/Restricties/'+CombiK/Ref+'.fss'
+	);
+
+	container ReadPerCombi := for_each_ndva(
+		CombiK/Ref,
+		domain_grid, bool,
+		'%projdir%/data/UnlinkedData/Restricties/'+CombiK/Ref+'.fss'
+	);
+	
+	container PerCombi := for_each_nedv(
+		CombiK/Ref
+		,'ReadPerCombi/'+CombiK/Ref
+		, domain_grid
+		, bool
+	);
+	
+	container Cum := for_each_nedv(
+		CombiK/CumRef,
+		'max_elem('
+			'PerCombi/'+CombiK/Ref+
+				iif(
+					CombiK/second_rel > 0[HardheidK],
+					','+CombiK/SectorK_name+'/'+CombiK/HardheidK_CumName[invert(CombiK/second_rel)[CombiK/second_rel - 1[HardheidK]]],
+					''
+				)+
+			')',
+		domain_grid, bool
+	);
+	
+	container Per_rdc_100m := for_each_nedv(
+		CombiK/Ref,
+		'any(PerCombi/'+CombiK/Ref+', domain_grid/rdc_100m_rel)',
+		rdc_100m, bool
+	);
+	
+	// container BijMinimumHardheid := for_each_nedv(SectorK/name, 'Cum/'+SectorK/name+'/'+HardheidK/name[MinimumHardheid], domain_grid, bool), FreeData = "False";
+}

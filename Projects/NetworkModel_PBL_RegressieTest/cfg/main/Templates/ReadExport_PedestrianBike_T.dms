@@ -1,0 +1,45 @@
+Template ReadExport_PedestrianBike_T
+{ 
+	parameter<string> Regio;
+	parameter<string> Dest_str;
+	parameter<string> netwerk_type_OSM;
+	///
+	parameter<string> MaxTravelTime       := ='string(ModelParameters/Max'+netwerk_type_OSM+'Time_Org2Dest)';
+	parameter<string> filename            := Advanced/fileNamePrefix+'Traveltimes'+fileNameSuffix+'.csv';
+
+	parameter<string> fileNameSuffix :=  
+		'_ORG-' + Orgset + '-' + Regio + 
+		'_DEST-'   + Dest_str +
+		'_NETWERK-'+ netwerk_type_OSM + 
+		'_MaxTime-' + MaxTravelTime+'min';
+
+
+	unit<uint64>      domain         := range(uint64, 0[uint64], count_rows);
+	parameter<string> fieldseparator := ';';
+	parameter<string> filedata       :  StorageType   = "str",  StorageName = "=filename",  StorageReadOnly = "true";
+	parameter<uint64> count_rows     := (strcount(filedata, fieldseparator) / strcount(headerline, fieldseparator))[uint64] - 1[uint64];
+	parameter<string> headerline     := readLines(filedata, void, 0);
+	
+	unit<uint32> field := Range(uint32, 0, strcount(headerline, fieldseparator) + 1)
+	{
+		attribute<string> name := ReadArray(headerline , field, string, 0);
+	}
+		
+	attribute<string> bodylines (domain) := readLines(filedata, domain, headerline/ReadPos);
+
+	container data := 
+		for_each_nedv(
+			field/name
+			,'ReadElems(
+				BodyLines
+				,string
+				,'+ MakeDefined(field/name[sub_or_null(id(field),1)] + '/ReadPos','const(0, domain)')+'
+				, 17
+			)'
+			,domain
+			,string
+		)
+	{
+		attribute<string>              OrgDestName             (domain) := Org + '_' + Dst;
+	}
+}

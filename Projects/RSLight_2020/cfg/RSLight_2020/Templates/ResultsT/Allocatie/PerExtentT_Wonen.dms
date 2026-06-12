@@ -1,0 +1,117 @@
+Template PerExtentT_Wonen : using = "VariantSpecifiek;classifications/Actor"
+{
+	// PerExtentT
+	parameter<Extent/K> id;
+	//
+	
+	parameter<string> Extent_name := Extent/K/name_short[id];
+
+	attribute<Woning> Restclaim0 (AllocRegio) := =
+		IterK_id == 0[IterK] && id == 0[Extent/K] 
+			? ClaimSrc_Wonen
+			: IterK_id == 0[IterK] 
+				? ClaimSrc_Wonen + ' - PerExtent/'+Extent/K/PrevName_short[id]+'/Netto_woningbouw/OverExtents/Per_AllocRegio' 
+				: IterK/PrevName[IterK_id]+'/PerExtent/'+Extent_name+'/Displacement/Totaal/Per_AllocRegio';
+	
+	attribute<bool> GeenAllocatieInVorigeIter (domain) := =
+		IterK_id == 0[IterK]
+			? 'const(true, domain)'
+			: IterK/PrevName[IterK_id]+'/PerExtent/'+Extent_name+'/Allocatie/OverIters == 0[Woning]';
+			
+	attribute<bool> IsBuitenVorigeExtent (domain) := =
+		id == 0[Extent/K]
+			? 'const(true, domain)'
+			: 'PerExtent/'+Extent/K/PrevName_short[id]+'/Capaciteit/OverExtents == 0[ha]';
+		
+	attribute<Woning> WoningenEindjaar0 (domain) := WoningDichtheid/PlannenEnVoorraad/Result;
+	
+	attribute<ha> Capaciteit0 (domain) := = '('+Extent/K/RefSrc[id]+' && GeenAllocatieInVorigeIter && IsBuitenVorigeExtent)[float32] * VariantSpecifiek/ZeefInput/Capaciteit';
+	
+	attribute<ha> Capaciteit (domain) :=
+		VariantSpecifiek/WoningSpecifiek/WoningenBasisjaar/Totaal[domain/org_rel] == 0[Woning]
+			? Capaciteit0
+			: Capaciteit0 * float32(WoningenEindjaar0[float32] / (VariantSpecifiek/WoningSpecifiek/WoningenBasisjaar/Totaal[domain/org_rel])[float32] >= VariantK/MinimumWoningBouwTovSloop[variant_id])
+	{
+		attribute<ha> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		
+		attribute<ha> OverExtents (domain) := ='MakeDefined(Capaciteit,0[ha])'+iif(id == 0[Extent/K],'',' + PerExtent/'+Extent/K/PrevName_short[id]+'/Capaciteit/OverExtents')
+		{
+			attribute<ha> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		}
+	}
+	
+	attribute<Woning> WoningenBasisjaar (domain) := VariantSpecifiek/WoningSpecifiek/WoningenBasisjaar/Totaal[domain/org_rel] * Capaciteit[float32]
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+	}
+	
+	attribute<Woning> WoningenEindjaar (domain) := WoningenEindjaar0 * Capaciteit[float32]
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+	}
+	
+	attribute<Woning> Delta (domain) := WoningenEindjaar - WoningenBasisjaar
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+	}
+	
+	attribute<Woning> WoningenEindjaar_max (domain) := Woningdichtheid/max/Result * Capaciteit[float32]
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+	}
+	
+	attribute<Woning> Delta_max (domain) := WoningenEindjaar_max - WoningenBasisjaar
+	{
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+	}
+	
+	attribute<bool> Restclaim0LagerDanDelta     (AllocRegio) := Restclaim0 < Delta/Per_AllocRegio;
+	attribute<bool> Restclaim0LagerDanDelta_max (AllocRegio) := Restclaim0 < Delta_max/Per_AllocRegio;
+	
+	#include<Allocatie.dms>
+	
+	container Displacement // voor volgende iter
+	{
+		attribute<Woning> Totaal (domain) :=
+			Restclaim0LagerDanDelta[AllocRegio/per_domain] 
+				? WoningenBasisjaar / float32(Allocatie/Resultaat > 0[Woning]) 
+				: 0[Woning]
+		{
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		}
+	}
+	
+	container Sloop // voor volgende extent
+	{
+		attribute<Woning> Totaal (domain) :=
+			Restclaim0LagerDanDelta[AllocRegio/per_domain] 
+				? 0[Woning] 
+				: WoningenBasisjaar / float32(Allocatie/Resultaat > 0[Woning])
+		{
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		}
+	}
+	
+	container Netto_woningbouw // voor volgende extent
+	{
+		attribute<Woning> Totaal (domain) := Allocatie/Resultaat - Sloop/Totaal
+		{
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		}
+		
+		attribute<Woning> OverExtents (domain) :=
+			= 'MakeDefined(Totaal,0[Woning])'+iif(id == 0[Extent/K],'',' + PerExtent/'+Extent/K/PrevName_short[id]+'/Netto_woningbouw/OverExtents')
+		{
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(., AllocRegio/per_domain);
+		}
+	}
+	
+	parameter<bool> HasNoAllocationInCurrentIterExtent := sum(Allocatie/Resultaat) == 0f;
+	
+	parameter<bool> HasAllocationInCurrentIter := =
+		id == 0[Extent/K]
+			? 'FALSE'
+			: 'PerExtent/'+Extent/K/PrevName_short[id]+'/HasAllocationInCurrentIter || !HasNoAllocationInCurrentIterExtent';
+	
+	parameter<bool> StopCriterium  := = quote(Extent/K/name_short[id])+' == '+quote(Extent/K/LastExtentName)+' ? !HasAllocationInCurrentIter : FALSE';
+}

@@ -1,0 +1,188 @@
+container Carbon: url = "=Carbon/FactSheetName"
+{
+	parameter<String> CarbonDataDirName: Expr = "IndiDataDirName+'/CarbonSequestration'";
+	parameter<String> FactSheetName: Expr = "IndiDataDirName+'/carbon sequestration.pdf'";
+	container AdditionalData
+	{
+//		attribute<Classifications/LU/Ruralis18> RenumberTable(Classifications/LU/Ruralis18): [0, 1, 2, 3, 4, 0, 1, 10, 8, 1, 10, 0, 0, 0, 0, 15, 10, 17];
+		attribute<Classifications/LU/ModelType> RenumberTable(Classifications/LU/ModelType): [0, 1, 2, 3, 4, 0, 1, 10, 8, 1, 10, 0, 0, 0, 0, 15, 10, 17];
+		container EmissionFactors
+		{
+			attribute<tonneC_km2> Crop2 (Albers1kmGrid): StorageName = "=CarbonDataDirName+'/efcrop2.asc'";
+			attribute<tonneC_km2> Forest(Albers1kmGrid): StorageName = "=CarbonDataDirName+'/efforest.asc'";
+			attribute<tonneC_km2> Grass2(Albers1kmGrid): StorageName = "=CarbonDataDirName+'/efgrass2.asc'";
+			attribute<tonneC_km2> Peat  (Albers1kmGrid): StorageName = "=CarbonDataDirName+'/efpeat.asc'";
+		}
+		attribute<tonneC_km2> CarbonInMatureForest(Albers1kmGrid): StorageName = "=CarbonDataDirName+'/cforbio.asc'";
+		
+		unit<UInt32> AgeTable: Expr = "Range(UInt32, 0, 8)"
+		{
+			attribute<YearDiffRange> Age:    [6, 6, 22, 22, 44, 44, 121, 121];
+			attribute<Float32>       Factor: Expr = "Float32(union_data(AgeTable, "
+				"0.0, "
+				"(0.0525 * 6.0) - 0.085, (0.0525 * 22.0) - 0.085, "
+				"1.05, 1.05,"
+				"(-0.007 * 44.0) + 1.35, (-0.007 * 121.0) + 1.35, "
+				"0.5))";
+		}
+	}
+	container YearTempl: IsTemplate = "true"
+	{
+		parameter<string> YearName;
+		parameter<Periods> YearID;
+		attribute<YearDiffRange>             age(Albers1kmGrid): 
+			Expr = "(cov_all == cov_all_prev) ? age_prev + value(1, YearDiffRange) : value(0, YearDiffRange)";  
+		attribute<Classifications/LU/Ruralis18> cov_all     (Albers1kmGrid): Expr = "='....../CaseData/LU18/'+YearName";
+		attribute<Classifications/LU/Ruralis18> cov_all_prev(Albers1kmGrid): Expr = "=(YearID == 0) ? 'cov_all0': 'P'+String(2000+YearID)+'/cov_all'";
+		
+		attribute<Classifications/LU/Ruralis18> cseqlu_prev (Albers1kmGrid): Expr = "=(YearID == 0) ? 'cseqlu0' : 'P'+String(2000+YearID)+'/cseqlu'";
+		attribute<YearDiffRange> age_prev    (Albers1kmGrid): Expr = "=(YearID == 0) ? 'age0': 'P'+String(2000+YearID)+'/age'";
+		attribute<YearDiffRange> cseqage_prev(Albers1kmGrid): Expr = "=(YearID == 0) ? 'age0': 'P'+String(2000+YearID)+'/ForestAge'";
+		
+		attribute<Classifications/LU/Ruralis18> cseqlu_base(Albers1kmGrid): Expr = "AdditionalData/RenumberTable[ cov_all ]";
+		attribute<Classifications/LU/Ruralis18> cseqlu(Albers1kmGrid): 
+			Expr = "iif(cseqlu_prev == value( 10, Classifications/LU/Ruralis18) && cseqlu_base == value( 3, Classifications/LU/Ruralis18),"
+						"value(10, Classifications/LU/Ruralis18),"
+						"cseqlu_base)";
+						
+		attribute<YearDiffRange> ForestPrevAge(Albers1kmGrid):
+			Expr = "cseqlu_prev == value(10, Classifications/LU/Ruralis18)"
+						"? cseqage_prev"
+						": Value(0, YearDiffRange)";
+		attribute<YearDiffRange> ForestAge(Albers1kmGrid):
+			Expr = "ForestPrevAge >= value(20/2, YearDiffRange)"
+						"? ForestPrevAge + value(0.2, YearDiffRange)"
+						": ForestPrevAge + value(0.5, YearDiffRange)";
+
+		attribute<Float32> AgeFactor(Albers1kmGrid): Expr = "interpolate_linear(ForestAge, AdditionalData/AgeTable/Age, AdditionalData/AgeTable/Factor)";
+	
+		attribute<tonneC_km2> SinkBase(Albers1kmGrid): 
+			Expr = "switch("
+				"case(cseqlu == value( 4, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Peat  )," // Inland Wetlands
+				"case(cseqlu == value( 8, Classifications/LU/Ruralis18), Float32(1.0/3.0) * AdditionalData/EmissionFactors/Forest)," // Permanent Crops
+				"case(cseqlu == value(17, Classifications/LU/Ruralis18), Float32(1.0/3.0) * AdditionalData/EmissionFactors/Forest)," // Perennial Biofuel crop cultivation
+				"case(cseqlu == value( 2, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Grass2)," // Pasture
+				"case(cseqlu == value(15, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Grass2)," // Heather and Moorlands
+				"case(cseqlu == value( 3, Classifications/LU/Ruralis18), Float32(0.20)    * AdditionalData/EmissionFactors/Forest)," // Nature
+				"case(cseqlu == value( 1, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Crop2 )," // ArableLand
+				"case(cseqlu == value(10, Classifications/LU/Ruralis18), AgeFactor        * AdditionalData/EmissionFactors/Forest)," // Forest
+				"value(0, tonneC_km2)"
+			")";
+			
+	    // calc deforestationsource: eerst calc biomass C content als functie van age, daarna deforestation opzoeken. 
+		attribute<tonneC_km2> CarbonInForest(Albers1kmGrid): 
+			Expr = "cseqlu_prev == value(10, Classifications/LU/Ruralis18)"
+						"? min_elem(cseqage_prev *Float32(0.02) , Float32(1)) * AdditionalData/CarbonInMatureForest"
+						": value(0,tonneC_km2)";
+						
+		attribute<tonneC_km2> CarbonLossFromForest(Albers1kmGrid): 
+			Expr = "cseqlu != value(10, Classifications/LU/Ruralis18)"
+						"? CarbonInForest * Float32(0.8)"
+						": value(0,tonneC_km2)";
+						
+		attribute<tonneC_km2> Sink(Albers1kmGrid): Expr = "SinkBase - CarbonLossFromForest";
+		attribute<tonneC_km2> PrevSink(Albers1kmGrid):
+			Expr = "=(YearID == 0) ? 'Sink0': 'P'+String(2000+YearID)+'/Sink'";
+		attribute<tonneC_km2> CumulSink(Albers1kmGrid): Expr = "PrevSink + Sink";					
+	}
+	
+	container AggrTempl: IsTemplate = "True", IsHidden = "True"
+	{
+		parameter<String> RegionName;
+		unit<UInt16> Regions;
+		attribute<Regions> RegionGrid(Albers1kmGrid);
+		
+		container MeanSink: StorageName = "=IndicatorDirName + '/CarbonSequestration/Sink'+RegionName+'.dbf'"
+		{
+			attribute<tonneC_km2> S2000(Regions): Expr = "mean(Local/P2000/Sink, RegionGrid)";
+			attribute<tonneC_km2> S2010(Regions): Expr = "mean(Local/P2010/Sink, RegionGrid)";
+			attribute<tonneC_km2> S2020(Regions): Expr = "mean(Local/P2020/Sink, RegionGrid)";
+			attribute<tonneC_km2> S2030(Regions): Expr = "mean(Local/P2030/Sink, RegionGrid)";
+		}
+		container MeanCumulSink: StorageName = "=IndicatorDirName + '/CarbonSequestration/Cumul'+RegionName+'.dbf'"
+		{
+			attribute<tonneC_km2> S2000(Regions): Expr = "mean(Local/P2000/CumulSink, RegionGrid)";
+			attribute<tonneC_km2> S2010(Regions): Expr = "mean(Local/P2010/CumulSink, RegionGrid)";
+			attribute<tonneC_km2> S2020(Regions): Expr = "mean(Local/P2020/CumulSink, RegionGrid)";
+			attribute<tonneC_km2> S2030(Regions): Expr = "mean(Local/P2030/CumulSink, RegionGrid)";
+		}
+	}
+	
+	container Templ: url = "=FactSheetName", IsTemplate = "True"
+	{	
+		container LongCalculationTimeWarning:
+			Descr = "These indicators may take a while since the forest age needs to be calculated by inspecting the land use for each simulation year";
+		container CaseData: IsHidden = "True"
+		{
+			attribute<YearDiffRange>                age0    (Albers1kmGrid): Expr = "value(LanduseData/age0, YearDiffRange)";
+			attribute<Classifications/LU/Ruralis18> cov_all0(Albers1kmGrid): Expr = "LanduseData/LU18_2000";
+		 
+			// temp0 = con(cov_all0_R == 1 OR cov_all0_R == 6 OR cov_all0_R == 9, 1, cov_all0_R) 
+			// cseqlu0 = con(cov_all0_R == 0 OR cov_all0_R == 5 OR cov_all0_R == 11 OR cov_all0_R == 12 OR cov_all0_R == 13 OR cov_all0_R == 14, 0, temp0)
+		
+			attribute<Classifications/LU/Ruralis18> cseqlu0(Albers1kmGrid): Expr = "AdditionalData/RenumberTable[ cov_all0 ]";
+		 	 
+			//     temp1 = con(cseqlu0 == 4, %.gridsdir%\efpeat, 0)
+			//     temp2 = con(cseqlu0 == 8 OR cseqlu0 == 17, 0.2 * %.gridsdir%\efforest, temp1)
+			//     temp3 = con(cseqlu0 == 15 OR cseqlu0 == 2, %.gridsdir%\efgrass2, temp2)
+			//     temp4 = con(cseqlu0 == 3, %.gridsdir%\efforest / 3, temp3)
+			//     temp5 = con(cseqlu0 == 1, %.gridsdir%\efcrop2, temp4)
+			//     temp6 = con(cseqlu0 == 10 AND age0 < 6, 0, temp5)
+			//     temp7 = con(cseqlu0 == 10 AND age0 > 5 AND age0 < 22, ((0.0525 * age0) - 0.085) * %.gridsdir%\efforest, temp6)
+			//     temp8 = con(cseqlu0 == 10 AND age0 > 21 AND age0 < 44, 1.05 * %.gridsdir%\efforest, temp7)
+			//     temp9 = con(cseqlu0 == 10 AND age0 > 43 AND age0 < 121, ((-0.007 * age0) + 1.35) * %.gridsdir%\efforest, temp8)
+			//     temp10 = con(cseqlu0 == 10 AND age0 > 120, 0.5 * %.gridsdir%\efforest, temp9)
+			//     sink0 = int(temp10)
+		
+			attribute<Float32> AgeFactor(Albers1kmGrid): Expr = "interpolate_linear(age0, AdditionalData/AgeTable/Age, AdditionalData/AgeTable/Factor)";
+			attribute<tonneC_km2> Sink0(Albers1kmGrid): 
+				Expr = "switch("
+					"case(cseqlu0 == value( 4, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Peat  )," // Inland Wetlands
+					"case(cseqlu0 == value( 8, Classifications/LU/Ruralis18), Float32(1.0/3.0) * AdditionalData/EmissionFactors/Forest)," // Permanent Crops
+					"case(cseqlu0 == value(17, Classifications/LU/Ruralis18), Float32(1.0/3.0) * AdditionalData/EmissionFactors/Forest)," // Perennial Biofuel crop cultivation
+					"case(cseqlu0 == value( 2, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Grass2)," // Pasture
+					"case(cseqlu0 == value(15, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Grass2)," // Heather and Moorlands
+					"case(cseqlu0 == value( 3, Classifications/LU/Ruralis18), Float32(0.20)    * AdditionalData/EmissionFactors/Forest)," // Nature
+					"case(cseqlu0 == value( 1, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Crop2 )," // ArableLand
+					"case(cseqlu0 == value(10, Classifications/LU/Ruralis18), AgeFactor        * AdditionalData/EmissionFactors/Forest)," // Forest
+					"value(0, tonneC_km2)"
+				")";
+				
+			container Years: Expr = "for_each_ne(Periods/Name, 'YearTempl('+Quote(Periods/Name)+','+String(ID(Periods))+')')";
+		}		
+		container Local
+		{
+			container P2000
+			{
+				attribute<tonneC_km2> Sink         (Albers1kmGrid): Expr = "CaseData/Sink0";
+				attribute<tonneC_km2> NearSink     (Albers1kmGrid): Expr = "Potential(Sink, km10FocalPointMatr/RelWeight)";
+				attribute<tonneC_km2> CumulSink    (Albers1kmGrid): Expr = "CaseData/Sink0";
+				attribute<tonneC_km2> NearCumulSink(Albers1kmGrid): Expr = "Potential(CumulSink, km10FocalPointMatr/RelWeight)";
+			}
+			container P2010
+			{
+				attribute<tonneC_km2> Sink     (Albers1kmGrid): Expr = "CaseData/Years/P2010/Sink";
+				attribute<tonneC_km2> NearSink     (Albers1kmGrid): Expr = "Potential(Sink, km10FocalPointMatr/RelWeight)";
+				attribute<tonneC_km2> CumulSink(Albers1kmGrid): Expr = "CaseData/Years/P2010/CumulSink";
+				attribute<tonneC_km2> NearCumulSink(Albers1kmGrid): Expr = "Potential(CumulSink, km10FocalPointMatr/RelWeight)";
+			}
+			container P2020
+			{
+				attribute<tonneC_km2> Sink     (Albers1kmGrid): Expr = "CaseData/Years/P2020/Sink";
+				attribute<tonneC_km2> NearSink     (Albers1kmGrid): Expr = "Potential(Sink, km10FocalPointMatr/RelWeight)";
+				attribute<tonneC_km2> CumulSink(Albers1kmGrid): Expr = "CaseData/Years/P2020/CumulSink";
+				attribute<tonneC_km2> NearCumulSink(Albers1kmGrid): Expr = "Potential(CumulSink, km10FocalPointMatr/RelWeight)";
+			}
+			container P2030
+			{
+				attribute<tonneC_km2> Sink     (Albers1kmGrid): Expr = "CaseData/Years/P2030/Sink";
+				attribute<tonneC_km2> NearSink     (Albers1kmGrid): Expr = "Potential(Sink, km10FocalPointMatr/RelWeight)";
+				attribute<tonneC_km2> CumulSink(Albers1kmGrid): Expr = "CaseData/Years/P2030/CumulSink";
+				attribute<tonneC_km2> NearCumulSink(Albers1kmGrid): Expr = "Potential(CumulSink, km10FocalPointMatr/RelWeight)";
+			}
+		}
+		container Regional: Expr = "for_each_ne('Per'+Geography/IndicatorRegions/Name, "
+				"'AggrTempl('+Quote(Geography/IndicatorRegions/Name)+', Geography/RegionShapes/'+Geography/IndicatorRegions/Name+', Geography/RegionGrids/'+Geography/IndicatorRegions/Name+')'"
+			")";
+	}
+}

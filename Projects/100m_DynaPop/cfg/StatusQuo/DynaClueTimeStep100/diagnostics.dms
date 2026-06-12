@@ -1,0 +1,24 @@
+container Diagnostics
+{
+	
+	unit<uint8> nbu: expr = "select_with_org_rel(!ModelType/IsBuiltUpArea)" {attribute<string> Name: expr = "ModelType/Name[org_rel]";}
+	
+
+	attribute<Int32> max_transpot 	(domain): expr = "= 'max_elem(0[Int32],'+ AsItemList('ScaledTranspot/'+ModelType/Name) +')'";
+	attribute<bool>	 Change	     	(domain): expr = "PrevState/landuse != d_alloc/landuse";
+	
+	container Gone: 	Expr = "for_each_nedv(ModelType/Name, '(PrevState/landuse = '+ string(id(ModelType)) +'[ModelType]) && (d_alloc/landuse != '+ string(id(ModelType)) +'[ModelType])', domain, bool)";	
+	container NewlyAlloc:	Expr = "for_each_nedv(ModelType/Name, '(PrevState/landuse != '+ string(id(ModelType)) +'[ModelType]) && (d_alloc/landuse = '+ string(id(ModelType)) +'[ModelType])', domain, bool)" {
+		attribute<bool>			NwUrban_noqi (domain): expr = "Urban && DynamicComponent/Population/Qi = 0f";
+	}
+	container NumSuit: 	Expr = "for_each_nednv(ModelType/Name, 'sum(uint32(ScaledTranspot/'+ ModelType/Name +' >= 0[Int32]), CaseData/RegionGrids/'+ CaseData/DestClaimTableName[id(ModelType)] +')', CaseData/RegionNumbers, CaseData/DestClaimTableName, uint32)";
+	container NumMaxSuit: 	Expr = "for_each_nednv(ModelType/Name, 'sum(uint32(ScaledTranspot/'+ ModelType/Name +' >= max_transpot), CaseData/RegionGrids/'+ CaseData/DestClaimTableName[id(ModelType)] +')', CaseData/RegionNumbers, CaseData/DestClaimTableName, uint32)";
+	container AllocSuits: 	Expr = "for_each_nedv(ModelType/Name, 'd_alloc/landuse = ' + string(id(ModelType)) + '[ModelType] ? ScaledTranspot/'+  ModelType/Name +' : int32(0) / int32(0)', domain, int32)";
+	container inAllowed:  	Expr = "for_each_nedv(ModelType/Name, '!DynamicComponent/Allowed/' + ModelType/Name + ' && d_alloc/landuse = ' + string(id(ModelType)) + '[ModelType]', domain, bool)";
+	
+	attribute<int32>	OverallAllocSuit 	(domain): expr = "= 'switch(' + AsItemList('case(d_alloc/landuse = ' + string(id(ModelType)) + '[ModelType], ScaledTranspot/'+  ModelType/Name +')') + ', int32(0) / int32(0))'";
+	attribute<bool> 	IsMaxSuit	 	(domain): expr = "OverallAllocSuit = max_transpot";
+	attribute<bool> 	NoAlternative		(domain): expr = "ModelType/IsBuiltUpArea[d_alloc/landuse] && NonBuiltUpMaxSuit <= int32(0)";
+	attribute<bool>		ProblematicNoAlternative(domain): expr = "!ModelType/IsBuiltUpArea[PrevState/landuse] && NoAlternative";
+	attribute<int32>	NonBuiltUpMaxSuit	(domain): expr = "= 'max_elem('+ AsItemList('ScaledTransPot/'+ nbu/Name) +')'";
+}

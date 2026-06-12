@@ -1,0 +1,27 @@
+container Friesland: url = ""
+{
+	attribute<bool> Waterwingebied (domain_grid):
+		Source      = "Raadpleging en download van provinciaal georegister 22 mei 2015"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\fr\WATER_Waterwingebieden_v.shp"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/fr/WATER_Waterwingebieden_v.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/fr/waterwingebied.tif";
+	
+	attribute<bool> _25_jaarszone (domain_grid):
+		Source      = "Raadpleging en download van provinciaal georegister 22 mei 2015"
+					  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\fr\WATER_Waterwingebieden_v.shp"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/fr/WATER_Waterwingebieden_v.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/fr/25_jaarszone.tif";
+
+	parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/pmv_2017/fr/PGR_MILIEU_Stiltegebieden.shp';
+	parameter<string> Source:      = 'Raadpleging en download Nationaal Georegister 22 juni 2018, Stiltegebieden Friesland';
+		
+	container PGR_MILIEU_Stiltegebieden : = VergriddingT
+	(
+		'=Bestandsloc'
+		,'SELECT * FROM PGR_MILIEU_Stiltegebieden WHERE STATUS =''bestaand'''
+		,'http:\//www.nationaalgeoregister.nl/geonetwork/srv/dut/catalog.search#/metadata/5778985e-5da0-47bb-b429-b08b780ed8cb?tab=relations'
+		,'=Source'
+	);
+
+	attribute<bool> Totaal (domain_grid) := max_elem(Waterwingebied, _25_jaarszone, PGR_MILIEU_Stiltegebieden/Bestand/Multi/result);
+}

@@ -1,0 +1,41 @@
+container NetworkSetup : using = "units;geometries;SourceData;Classifications"
+{
+	unit<uint32> Dest_populated_grid := ='select_with_attr_by_cond(Geometries/Base_grid_'+ModelParameters/DestGridsize+'/points, Geometries/Base_grid_'+ModelParameters/DestGridsize+'/points/population > 0)';
+
+	container Base_Analysis := =
+		'Call_CreateNetwork_T('
+			'Geometries/Base_grid_'+ModelParameters/OrgGridsize+'/points'   //Org
+			',Dest_populated_grid' //Dest
+			',''PopRaster'''
+		')';
+	
+	//Analysis for Felipe
+	container Pop_Weighted_NUTS_centroids := =
+		'Call_CreateNetwork_T('
+			'SourceData/RegionalUnits/NUTS3/CalcCentroids'   //Org
+			',SourceData/RegionalUnits/NUTS3/CalcCentroids' //Dest
+			',''PopW_NUTS'''
+		')';
+	
+	
+	Template Call_CreateNetwork_T
+	{
+		unit<uint32>      Org;
+		unit<uint32>      Dest;
+		parameter<string> ProjName;
+		///
+		
+		container NetwerkSpec :=
+			Templates/CreateNetwork_T(
+				  org
+				, dest
+				, SourceData/Infrastructure/TomTom/Streets 
+				, SourceData/Infrastructure/TomTom/Junctions 
+			);
+		
+		
+		// parameter<string> Generator_Network1         := 'Ready', ExplicitSuppliers = "NetwerkSpec/CreateInitialWorkingNetwork/LinkSet_Write";
+		// parameter<string> Generator_Network2         := 'Ready', ExplicitSuppliers = "NetwerkSpec/CreateMoreEfficientNetwork/FinalNodeSet_Write;NetwerkSpec/CreateMoreEfficientNetwork/FinalLinkSet_Write";
+		parameter<string> Export_Cleaned_RoadNetwork := 'Ready', explicitsuppliers = "NetwerkSpec/CreateMoreEfficientNetwork/FinalLinkset/store/store";
+	}
+}

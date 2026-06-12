@@ -1,0 +1,363 @@
+container Capri: using = "Units"
+{
+	unit<uint64> m2_u64: Expr = "uint64(Meter2)";
+	unit<uint32>  ha_u32: Expr = "uint32(luHa)";
+	unit<float64> ha_f64: Expr = "float64(luHa)";
+	unit<float32> kha_f32: Expr = "float32(1000 * luHa)";
+	
+	unit<uint8> CapriGroup: expr = "unique(/Classifications/CapriClasses/Group)";
+
+	container ProcessCapriLines: isTemplate = "True"
+	{
+		unit<uint32> Lines // set of text lines to process
+		{
+			attribute<string> AttStr;
+		}
+		container Region
+		{
+			attribute<uint32> posRegion(Lines):  expr = "strpos(Lines/AttStr,'Region')";
+			unit<uint32>      LinesWithRegion:    expr = "select_with_org_rel(isDefined(posRegion))"
+			{
+				attribute<string> Label:  expr = "substr(Lines/AttStr[org_rel], posRegion[org_rel] + 6,4)";
+			}
+		}
+		container LabelAttValue
+		{
+			attribute<uint32> posAtt (Lines): expr = "strpos(Lines/AttStr,'CERE')";
+			unit<uint32>      uniquePosAtt:   expr = "unique(posAtt)";
+			parameter<Bool>   controlPosAtt:  expr = "#uniquePosAtt==1";
+			
+			attribute<string> AttStr(Lines):  expr = "substr(Lines/AttStr,uniquePosAtt/values[0],4)";
+		}
+		container LevelAttValue // read and convert 'LEVL' values in kilo-ha.
+		{
+			attribute<uint32>  posAtt (Lines): expr = "strpos(Lines/AttStr,'LEVL')";
+			unit<uint32>       uniquePosAtt:   expr = "unique(posAtt)";
+			parameter<Bool>    controlPosAtt:  expr = "#uniquePosAtt==1";
+			
+			attribute<string>  AttStr(Lines):  expr = "substr(Lines/AttStr,uniquePosAtt/values[0],10)";
+			attribute<kha_f32> Att(Lines):     expr = "value(AttStr, kha_f32)";
+		}
+		
+		unit<uint32> LinesWithLabel: expr = "select_with_org_rel(trim(LabelAttValue/AttStr) != '')"
+		{
+			attribute<string>  Regio: expr = "Region/LinesWithRegion/Label[classify(org_rel,Region/LinesWithRegion/org_rel)]";
+			attribute<string>  Crop:  expr = "LabelAttValue/AttStr[org_rel]";
+			attribute<ha_u32>  Value: expr = "uint32(makedefined(LevelAttValue/Att[org_rel],float32(0)) * 1000[ ha_u32 / kha_f32 ] )";
+			
+			attribute<string> key: expr =  "Regio + ';' + Crop + ';' + string(Value)";
+		}
+		
+		unit<uint32> UniqueLinesWithValue: expr = "unique(LinesWithLabel/key)"
+		{
+			attribute<string> Region:           expr = "ReadElems(Values, string, const(0, .))";
+			attribute<string> Crop:             expr = "ReadElems(Values, string, Region/readPos)";
+			attribute<ha_u32> CropValue:        expr = "ReadElems(Values, ha_u32, Crop/readPos)";
+			
+			attribute<string> CapriGroup:       expr = "rjoin(Crop, /Classifications/CapriClasses/Name, /Classifications/CapriClasses/Group)";
+			attribute<string> RegionGroup:      expr = "Region + ';' + CapriGroup";
+			attribute<GroupTotals> GroupTotals_rel: expr = "rlookup(RegionGroup,GroupTotals/Values)";
+		}
+		
+		unit<uint32> GroupTotals: expr = "unique(UniqueLinesWithValue/RegionGroup)" 
+		{
+			attribute<string> Region: expr = "ReadElems(Values, string, const(0, .))";
+			attribute<string> Group : expr = "ReadElems(Values, string, Region/readPos)";
+			attribute<ha_u32> value : expr = "sum(UniqueLinesWithValue/CropValue, UniqueLinesWithValue/GroupTotals_rel)";
+		}
+	}
+	container PrepareSourceFile_90_05: isTemplate = "True"
+	{
+		parameter<String> country;
+		
+		parameter<String>  FileName: expr = "'%SourceDataProjDir%/EUCS_100m/capri/CAPRI_COCO1990-2005/' + country + '.txt'";
+		
+		parameter<String> FileData: StorageType = "str", StorageName = "=FileName";
+		unit<uint32> Lines:   Expr = "Range(uint32, 0, strcount(FileData, '\n')+1)"
+		{
+			attribute<String> AttStr: expr = "readLines(FileData, ., 0)";
+		}
+		
+		container Year
+		{
+			attribute<uint32> posYear (Lines): expr = "strpos(Lines/AttStr,'Years')";
+			unit<uint32>      LinesWithYear:    expr = "select_with_org_rel(isDefined(posYear))"
+			{
+				attribute<string> Label: expr = "substr(Lines/AttStr[org_rel], posYear[org_rel] + 5, 4)";
+			}
+			unit<uint32>      LinesFor2005:   expr = "select_with_org_rel(classify(id(Lines),LinesWithYear/org_rel) == rlookup('2005', LinesWithYear/Label))"
+			{
+				attribute<string> AttStr: expr ="Lines/AttStr[org_rel]";
+			}
+		}
+		container ProcessLines: expr = "ProcessCapriLines(Year/LinesFor2005)";
+				
+		unit<uint32> UniqueLinesWithValue: expr = "ProcessLines/UniqueLinesWithValue"
+		{
+			// specific for 2005
+			attribute<string> UAAGroup:             expr = "rjoin(Crop, /Classifications/CapriClasses/Name, /Classifications/CapriClasses/UAA)";
+			attribute<string> RegionUAAGroup:       expr = "Region + ';' + UAAGroup";
+			attribute<uint32> RegionUAA_rel:        expr = "rlookup(RegionUAAGroup,RegionUAA/Values)";
+		}
+		
+		unit<uint32> GroupTotals: expr = "ProcessLines/GroupTotals";
+		
+		// specific for 2005
+		unit<uint32> RegionUAA: expr = "unique(UniqueLinesWithValue/RegionUAAGroup)"
+		{
+			attribute<string> Region: expr = "ReadElems(Values, string, const(0, .))";
+			attribute<ha_u32> value:  expr = "sum(UniqueLinesWithValue/CropValue, UniqueLinesWithValue/RegionUAA_rel)";
+		}
+	}
+	
+	container PrepareSourceFiles_10_50: isTemplate = "True"
+	{
+		parameter<String> country;
+		parameter<String> year;
+		
+		parameter<String>  FileName: expr = "'%SourceDataProjDir%/EUCS_100m/capri/CAPRI_2010_2050/' + year + '/'  + country + '.txt'";
+		
+		parameter<String> FileData: StorageType = "str", StorageName = "=FileName";
+		unit<uint32>      Lines:   Expr = "Range(uint32, 0, strcount(FileData, '\n')+1)"
+		{
+			attribute<String> AttStr: expr = "readLines(FileData, ., 0)";
+		}
+		
+		container ProcessLines: expr = "ProcessCapriLines(Lines)";
+		
+		unit<uint32> GroupTotals: expr = "ProcessLines/GroupTotals";
+		
+	}
+	
+	container CLCData
+	{
+		parameter<String>  FileName: expr = "'%SourceDataProjDir%/EUCS_100m/capri/CLC/tabul06r_v2.csv'";
+		
+		parameter<String> FileData
+		:  StorageType = "str"
+		,  StorageName = "=FileName";
+		
+		unit<uint32> Import: Expr = "Range(uint32, 0, strcount(FileData, '\n'))"
+		{
+			attribute<String> Lines:       expr = "readLines(FileData, Import, 0)";
+			attribute<string> CLCRegion:   expr = "ReadElems(Lines, string, const(0, Import))";
+			attribute<m2_u64> urban:       expr = "ReadElems(Lines, m2_u64,CLCRegion/readPos)";
+			attribute<m2_u64> industry:    expr = "ReadElems(Lines, m2_u64,urban/readPos)";
+			attribute<m2_u64> arable:      expr = "ReadElems(Lines, m2_u64,industry/readPos)";
+			attribute<m2_u64> pc:          expr = "ReadElems(Lines, m2_u64,arable/readPos)";
+			attribute<m2_u64> pasture:     expr = "ReadElems(Lines, m2_u64,pc/readPos)";
+			attribute<m2_u64> forest:      expr = "ReadElems(Lines, m2_u64,pasture/readPos)";
+			attribute<m2_u64> snv:         expr = "ReadElems(Lines, m2_u64,forest/readPos)";
+			attribute<m2_u64> othernature: expr = "ReadElems(Lines, m2_u64,snv/readPos)";
+			attribute<m2_u64> otherinfra:  expr = "ReadElems(Lines, m2_u64,othernature/readPos)";
+			attribute<m2_u64> water:       expr = "ReadElems(Lines, m2_u64,otherinfra/readPos)";
+			
+			attribute</Geography/Regions/Capri/CLCTranslate> CLCTranslate_rel: expr = "rlookup(CLCRegion,/Geography/Regions/Capri/CLCTranslate/CLCCode)";
+			attribute<string>       capri_region:     expr = "iif(IsDefined(CLCTranslate_rel),/Geography/Regions/Capri/CLCTranslate/CapriCode[CLCTranslate_rel],CLCRegion)";
+		}
+		unit<uint16> MissingCapri: expr = "select_with_org_rel(!IsDefined(rlookup(/Geography/Regions/Capri/code, Import/capri_region)))"
+		{
+			attribute<string> code: expr = "/Geography/Regions/Capri/code[org_rel]";
+		}
+	}
+	
+	container Combine_years: isTemplate = "True"
+	{
+		parameter<String> icc;
+		parameter<String> ccc; // capri country code
+		
+		unit<uint32> CLC_Data: Expr = "select_with_org_rel(substr(CLCData/Import/CLCRegion,0,2) == icc && IsDefined(CLCData/Import/capri_region))"
+		{
+			attribute<string> CLCRegion: expr = "CLCData/Import/CLCRegion[org_rel]";
+			attribute<string> Region:    expr = "CLCData/Import/capri_region[org_rel]";
+			attribute<ha_u32> arable:    expr = "uint32(CLCData/Import/arable     [org_rel] / 10000[m2_u64 / uint64(luHa)])";
+			attribute<ha_u32> pc:        expr = "uint32(CLCData/Import/pc         [org_rel] / 10000[m2_u64 / uint64(luHa)])";
+			attribute<ha_u32> pasture:   expr = "uint32(CLCData/Import/pasture    [org_rel] / 10000[m2_u64 / uint64(luHa)])";
+			attribute<ha_u32> uaa:       expr = "arable + pc + pasture";
+		}
+		unit<uint32> CapriRegionGroup:   Expr = "select_with_org_rel(trim(y2005/GroupTotals/Group) != '')"
+		{
+			attribute<string>  RegionGroup(CapriRegionGroup): expr = "y2005/GroupTotals/Values[org_rel]";
+			attribute<string>  Region     (CapriRegionGroup): expr = "y2005/GroupTotals/Region[org_rel]";
+			attribute<string>  Group      (CapriRegionGroup): expr = "y2005/GroupTotals/Group [org_rel]";
+			attribute<ha_u32>  Value_2005 (CapriRegionGroup): expr = "y2005/GroupTotals/value [org_rel]";
+			attribute<ha_u32>  Value_2010 (CapriRegionGroup): expr = "rjoin(RegionGroup,y2010/GroupTotals/Values,y2010/GroupTotals/value)";
+			attribute<ha_u32>  Value_2020 (CapriRegionGroup): expr = "rjoin(RegionGroup,y2020/GroupTotals/Values,y2020/GroupTotals/value)";
+			attribute<ha_u32>  Value_2030 (CapriRegionGroup): expr = "rjoin(RegionGroup,y2030/GroupTotals/Values,y2030/GroupTotals/value)";
+			attribute<ha_u32>  Value_2040 (CapriRegionGroup): expr = "rjoin(RegionGroup,y2040/GroupTotals/Values,y2040/GroupTotals/value)";
+			attribute<ha_u32>  Value_2050 (CapriRegionGroup): expr = "rjoin(RegionGroup,y2050/GroupTotals/Values,y2050/GroupTotals/value)";
+		}
+		
+		parameter<uint32> StartYear: [ 2006 ];
+		parameter<uint32> EndYear:   [ 2050 ];
+		
+		unit<UInt32> YearRange: Expr = "range(uint32, 0, EndYear+1-StartYear)"
+		{
+			attribute<Float64> CurrYear: Expr = "Float64(ID(.)+StartYear)";
+			
+			// weights for linear interpolation from capri values to each year.
+			attribute<Float64> Weight_2005: expr = " CurrYear < 2010.0 ? (2010.0 - CurrYear) / 5.0"
+			                                       ":0.0";
+			attribute<Float64> Weight_2010: expr = " CurrYear < 2010.0 ? (CurrYear - 2005.0) /  5.0"
+			                                       ":CurrYear < 2020.0 ? (2020.0 - CurrYear) / 10.0"
+			                                       ":0.0";
+			attribute<Float64> Weight_2020: expr = " CurrYear < 2010.0 ? 0.0"
+			                                       ":CurrYear < 2020.0 ? (CurrYear - 2010.0) / 10.0"
+			                                       ":CurrYear < 2030.0 ? (2030.0 - CurrYear) / 10.0"
+			                                       ":0.0";
+			attribute<Float64> Weight_2030: expr = " CurrYear < 2020.0 ? 0.0"
+			                                       ":CurrYear < 2030.0 ? (CurrYear - 2020.0) / 10.0"
+			                                       ":CurrYear < 2040.0 ? (2040.0 - CurrYear) / 10.0"
+			                                       ":0.0";
+			attribute<Float64> Weight_2040: expr = " CurrYear < 2030.0 ? 0.0"
+			                                       ":CurrYear < 2040.0 ? (CurrYear - 2030.0) / 10.0"
+			                                       ":CurrYear < 2050.0 ? (2050.0 - CurrYear) / 10.0"
+			                                       ":0.0";
+			attribute<Float64> Weight_2050: expr = " CurrYear < 2040.0 ? 0.0"
+			                                       ":CurrYear < 2050.0 ? (CurrYear - 2040.0) / 10.0"
+			                                       ":CurrYear < 2060.0 ? (2060.0 - CurrYear) / 10.0"
+			                                       ":0.0";
+			attribute<Float64> TotalWeight: expr = "Weight_2005 + Weight_2010 + Weight_2020 + Weight_2030 + Weight_2040 + Weight_2050"; // must be equal to 1 for all years.
+		}
+		unit<uint32> CapriRegionGroupYear: expr = "Combine(CapriRegionGroup, YearRange)"
+		{
+			attribute<string>  Region: expr = "CapriRegionGroup/Region[first_rel]";
+			attribute<string>  Group : expr = "CapriRegionGroup/Group [first_rel]";
+			attribute<float64> Year: expr =   "YearRange/CurrYear[second_rel]";
+			attribute<ha_f64>  ValueF64: Expr = 
+				" Float64(MakeDefined(CapriRegionGroup/Value_2005[first_rel],0[ha_u32])) * YearRange/Weight_2005[second_rel]"
+				"+Float64(MakeDefined(CapriRegionGroup/Value_2010[first_rel],0[ha_u32])) * YearRange/Weight_2010[second_rel]"
+				"+Float64(MakeDefined(CapriRegionGroup/Value_2020[first_rel],0[ha_u32])) * YearRange/Weight_2020[second_rel]"
+				"+Float64(MakeDefined(CapriRegionGroup/Value_2030[first_rel],0[ha_u32])) * YearRange/Weight_2030[second_rel]"
+				"+Float64(MakeDefined(CapriRegionGroup/Value_2040[first_rel],0[ha_u32])) * YearRange/Weight_2040[second_rel]"
+				"+Float64(MakeDefined(CapriRegionGroup/Value_2050[first_rel],0[ha_u32])) * YearRange/Weight_2050[second_rel]";
+			attribute<ha_u32>  Value: Expr = "uint32(ValueF64)";
+		}
+		unit<uint16> AllCapriRegion: expr = "select_with_org_rel(substr(/Geography/Regions/Capri/code, 0, 2) == ccc)"
+		{
+			attribute<string> code: expr = "/Geography/Regions/Capri/code[org_rel]";
+		}
+		unit<uint16> CapriRegion: expr = "select_with_org_rel(IsDefined(rlookup(AllCapriRegion/code, CLC_Data/Region)) || IsDefined(rlookup(AllCapriRegion/code, y2005/RegionUAA/Region)))"
+		{
+			attribute<string> code: expr = "AllCapriRegion/code[org_rel]";
+			attribute<CLC_data> CLC_Data_rel: expr = "rlookup(code, CLC_Data/Region)";
+		
+			attribute<ha_u32>  Capri_UAA:         expr = "rjoin(code, y2005/RegionUAA/Region, y2005/RegionUAA/Value)";
+			attribute<float64> correction_factor: expr = "makedefined(float64(CLC_Data/uaa[CLC_Data_rel]) / float64(Capri_UAA), 1.0)";
+			
+			attribute<ha_f64> clc_pasture: Expr = "MakeDefined(Float64(CLC_Data/Pasture[CLC_Data_rel]), 0.0[ha_f64])";
+			attribute<ha_f64> clc_arable:  Expr = "MakeDefined(Float64(CLC_Data/arable [CLC_Data_rel]), 0.0[ha_f64])";
+			attribute<ha_f64> clc_pc:      Expr = "MakeDefined(Float64(CLC_Data/pc     [CLC_Data_rel]), 0.0[ha_f64])";
+		}
+		unit<uint32> CapriRegionYear: expr = "combine(CapriRegion, YearRange)"
+		{
+			attribute<String> Region:    expr = "CapriRegion/code[first_rel]";
+			attribute<Float64> CurrYear: expr = "YearRange/CurrYear[second_rel]";
+			
+			parameter<float64> min_Factor_base: [ 0.90 ]; // @@@@ USER-INPUT
+			parameter<float64> max_Factor_base: [ 1.05 ]; // @@@@ USER-INPUT
+			
+			attribute<float64> correction_factor: Expr = "CapriRegion/correction_factor[first_rel]";
+			attribute<float64> reduce_factor: Expr = "min_elem(correction_factor, 1.0)";
+			attribute<float64> min_Factor: Expr = "min_Factor_base * reduce_factor";
+			attribute<float64> max_Factor: Expr = "max_Factor_base * reduce_factor";
+			
+			attribute<ha_f64> Pasture:     expr = "MakeDefined(CapriRegionGroupYear/ValueF64[value(rlookup(Region+';Pasture',     CapriRegionGroup/RegionGroup) * #YearRange + uint32(second_rel), CapriRegionGroupYear)], 0.0)";
+			attribute<ha_f64> PermCrop:    expr = "MakeDefined(CapriRegionGroupYear/ValueF64[value(rlookup(Region+';PermCrop',    CapriRegionGroup/RegionGroup) * #YearRange + uint32(second_rel), CapriRegionGroupYear)], 0.0)";
+			attribute<ha_f64> Cereals:     expr = "MakeDefined(CapriRegionGroupYear/ValueF64[value(rlookup(Region+';Cereals',     CapriRegionGroup/RegionGroup) * #YearRange + uint32(second_rel), CapriRegionGroupYear)], 0.0)";
+			attribute<ha_f64> Maize:       expr = "MakeDefined(CapriRegionGroupYear/ValueF64[value(rlookup(Region+';Maize',       CapriRegionGroup/RegionGroup) * #YearRange + uint32(second_rel), CapriRegionGroupYear)], 0.0)";
+			attribute<ha_f64> RootCrops:   expr = "MakeDefined(CapriRegionGroupYear/ValueF64[value(rlookup(Region+';RootCrops',   CapriRegionGroup/RegionGroup) * #YearRange + uint32(second_rel), CapriRegionGroupYear)], 0.0)";
+			attribute<ha_f64> OtherArable: expr = "MakeDefined(CapriRegionGroupYear/ValueF64[value(rlookup(Region+';OtherArable', CapriRegionGroup/RegionGroup) * #YearRange + uint32(second_rel), CapriRegionGroupYear)], 0.0)";
+			attribute<ha_f64> NewEnergy:   expr = "MakeDefined(CapriRegionGroupYear/ValueF64[value(rlookup(Region+';NewEnergy',   CapriRegionGroup/RegionGroup) * #YearRange + uint32(second_rel), CapriRegionGroupYear)], 0.0)";
+			
+			attribute<ha_f64> clc_pasture: expr = "CapriRegion/clc_pasture[first_rel]";
+			attribute<ha_f64> clc_pc:      expr = "CapriRegion/clc_pc     [first_rel]";
+			attribute<ha_f64> clc_oa:      expr = "max_elem(CapriRegion/clc_arable [first_rel] - reduce_factor * (Cereals+Maize+RootCrops), 0.0)";
+			
+			attribute<ha_f64> OtherArableMin: expr = "min_elem(OtherArable, correction_factor * OtherArable, clc_oa)";
+			attribute<ha_f64> OtherArableMax: expr = "max_elem(OtherArable, correction_factor * OtherArable, clc_oa)";
+			attribute<ha_f64> PermCropMin:    expr = "min_elem(PermCrop   , correction_factor * PermCrop   , clc_pc)";
+			attribute<ha_f64> PermCropMax:    expr = "max_elem(PermCrop   , correction_factor * PermCrop   , clc_pc)";
+			attribute<ha_f64> PastureMin:     expr = "min_elem(Pasture    , correction_factor * Pasture    , clc_pasture)";
+			attribute<ha_f64> PastureMax:     expr = "max_elem(Pasture    , correction_factor * Pasture    , clc_pasture)";
+			attribute<ha_f64> CerealsMin:     expr = "min_Factor * Cereals";
+			attribute<ha_f64> CerealsMax:     expr = "max_Factor * Cereals";
+			attribute<ha_f64> MaizeMin:       expr = "min_Factor * Maize";
+			attribute<ha_f64> MaizeMax:       expr = "max_Factor * Maize";
+			attribute<ha_f64> RootCropsMin:   expr = "min_Factor * RootCrops";
+			attribute<ha_f64> RootCropsMax:   expr = "max_Factor * RootCrops";
+			attribute<ha_f64> NewEnergyMin:   expr = "min_Factor * NewEnergy * Float64(CurrYear >= 2020.0)";
+			attribute<ha_f64> NewEnergyMax:   expr = "max_Factor * NewEnergy * Float64(CurrYear >= 2020.0)";
+		}
+	}
+	
+	container ExportTempl: IsTemplate = "true"
+	{
+		parameter<string> ICC;
+		unit<uint32> result;
+		
+		parameter<string> Header: Expr = "'Region,Year,OtherArableMin,OtherArableMax,PermCropMin,PermCropMax,PastureMin,PastureMax,CerealsMin,CerealsMax,MaizeMin,MaizeMax,RootCropsMin,RootCropsMax,NewEnergyMin,NewEnergyMax'";
+		attribute<string> BodyLines(result): Expr = 
+			"result/Region+','+"
+			"String(int32(result/CurrYear))+','+"
+			"String(int32(result/OtherArableMin))+','+"
+			"String(int32(result/OtherArableMax))+','+"
+			"String(int32(result/PermCropMin))+','+"
+			"String(int32(result/PermCropMax))+','+"
+			"String(int32(result/PastureMin))+','+"
+			"String(int32(result/PastureMax))+','+"
+			"String(int32(result/CerealsMin))+','+"
+			"String(int32(result/CerealsMax))+','+"
+			"String(int32(result/MaizeMin))+','+"
+			"String(int32(result/MaizeMax))+','+"
+			"String(int32(result/RootCropsMin))+','+"
+			"String(int32(result/RootCropsMax))+','+"
+			"String(int32(result/NewEnergyMin))+','+"
+			"String(int32(result/NewEnergyMax))";
+		parameter<string> File: Expr= "Header +'\n'+AsList(BodyLines, '\n')", StorageType = "str", StorageName = "='%SourceDataProjDir%/EUCS_100m/data/Demand/StatusQuo/'+ICC+'_capri.csv'";
+	}
+	
+	container CountryList: isTemplate = "True"
+	{
+		parameter<String> icc; // EUCS country code, also used in the clc table
+		parameter<String> ccc; // Capri Country code.
+		
+		container y2005: expr = "PrepareSourceFile_90_05 ( ccc )";
+		container y2010: expr = "PrepareSourceFiles_10_50( ccc,'2010')";
+		container y2020: expr = "PrepareSourceFiles_10_50( ccc,'2020')";
+		container y2030: expr = "PrepareSourceFiles_10_50( ccc,'2030')";
+		container y2040: expr = "PrepareSourceFiles_10_50( ccc,'2040')";
+		container y2050: expr = "PrepareSourceFiles_10_50( ccc,'2050')";
+		
+		container combined: expr = "Combine_years(icc, ccc)";
+		container Export: expr = "ExportTempl(icc, combined/CapriRegionYear)";
+	}
+	
+	unit<uint16> AllCountryCodes: expr = "unique(substr(/Geography/Regions/Capri/Code,0,2))"
+	{
+		attribute<string> ccc: expr = "values";
+		attribute<string> icc: expr = "rjoin(ccc, substr(/Geography/Regions/Nuts2/CapriLookup/CapriCode,0,2), /Geography/Regions/Nuts2/CapriLookup/ICC)";
+	}
+	
+	unit<uint16> CountryCodes: Expr = "/Geography/Regions/JrcRegion"
+	{
+		attribute<string> ccc: expr= "rjoin(icc, AllCountryCodes/icc, AllCountryCodes/ccc)";
+	}
+	
+	container Countries: Expr =
+		"for_each_ne(CountryCodes/ICC, "
+			"'CountryList(' + "
+				" quote(CountryCodes/ICC) + ','+ "
+				" quote(CountryCodes/ccc) +"
+			"')'"
+		")";
+		
+	container MultipleRunRegions
+	{
+		unit<uint16> RegionSet: Expr = "select_with_org_rel(not(IsDefined(strpos(/Geography/Regions/JrcRegion/ICC,'HR'))))"
+		{
+			attribute<string> ICC: Expr= "/Geography/Regions/JrcRegion/ICC[org_rel]";
+		}
+		parameter<string> Result: Expr = "'Ready'", ExplicitSuppliers = "=AsList('Countries/'+RegionSet/ICC+'/Export/File',';')";
+	}
+}

@@ -1,0 +1,68 @@
+container Zuid_Holland := PRVT('Zuid_Holland')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> beschermingscategorie_1         (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Beschermingscategorieen_ruimtelijke_kwaliteit/beschermingscategorie_1/Bestand/Multi/Result;
+			attribute<bool> NatuurNetwerk_Nederland_NNN     (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Natuurnetwerk_Nederland/NatuurNetwerk_Nederland_NNN/Bestand/Multi/Result;
+			attribute<bool> strategische_reservering_natuur (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Natuurnetwerk_Nederland/strategische_reservering_natuur/Bestand/Multi/Result;
+			attribute<bool> kasteelbiotoop                  (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Cultureel_erfgoed/kasteelbiotoop/Bestand/Multi/Result;
+
+			attribute<bool> UrbanContours_bebouwingscontour_2003 (domain_grid) := RegioIndelingen/Bevolkingskern_2011/per_Srcdomain_grid >= 0 ? 1[bool] : Src/NL_IMRO_9928_Vr2014_GC03/Schiphol_contouren_20ke/bebouwingscontour_2003/Bestand/Multi/Result;
+
+			attribute<bool> Schiphol_contouren_20ke (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Schiphol_contouren_20ke/Schiphol_contouren_20ke/Bestand/Multi/Result
+																  && !UrbanContours_bebouwingscontour_2003;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  beschermingscategorie_1
+					, NatuurNetwerk_Nederland_NNN
+					, strategische_reservering_natuur
+					, kasteelbiotoop
+					, Schiphol_contouren_20ke
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> beschermingscategorie_2 (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Beschermingscategorieen_ruimtelijke_kwaliteit/beschermingscategorie_2/Bestand/Multi/Result;
+			attribute<bool> landgoedbiotoop         (domain_grid) := Src/NL_IMRO_9928_Vr2014_GC03/Cultureel_erfgoed/landgoedbiotoop/Bestand/Multi/Result;
+
+
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  beschermingscategorie_2
+					, landgoedbiotoop
+				);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+		
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute<bool> glastuinbouwgebied (domain_grid) := provincie && !Src/NL_IMRO_9928_Vr2014_GC03/Teeltgebieden/glastuinbouwgebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  glastuinbouwgebied
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

@@ -1,0 +1,18 @@
+Template OVBereikbaarheidT
+{
+	//
+	parameter<Regios/OVRegio> id;
+	//
+	
+	attribute<bool> IsRegio (domain) := Regios/OVRegio/per_rdc_100m[domain/org_rel] == id;
+	
+	unit<uint8> K := Extent/OVBereikbaarheidK
+	{
+		attribute<string>   name        := 'K'+string(id(.) + 1[.]);
+		attribute<string>   label       := name, DialogType = "LabelText";
+		attribute<Job_min>  ClassBreaks := ClassifyEqualCount(Src, .);
+	}
+	
+	attribute<Job_min> Src (domain)   := SrcSrc / float32(IsRegio);
+	attribute<K>       Per_K (domain) := classify(Src, K/ClassBreaks);
+}

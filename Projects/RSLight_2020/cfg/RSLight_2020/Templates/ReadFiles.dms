@@ -1,0 +1,189 @@
+container ReadFiles
+{
+	template TigrisXLTable
+	{
+		//
+		parameter<Classifications/TigrisXL/Table> table_id;
+		container Src;
+		//
+		
+		parameter<string> FileNm := Classifications/TigrisXL/Table/ModuleNm[table_id] + '/' + Classifications/TigrisXL/Table/name[table_id] + '.dat';
+		container metainfo := Src
+			, StorageName = "=FileNm"
+			, StorageType = "cfg"
+			, StorageReadOnly = "True";
+			
+		container Scenario := for_each_ne(MetaInfo/GenericSrc/ScenarioTimeCombiUnit/name
+				, 'Case('+string(ID(MetaInfo/GenericSrc/ScenarioTimeCombiUnit))+'[MetaInfo/GenericSrc/ScenarioTimeCombiUnit], Metainfo)'
+		);
+	}
+
+	template Case
+	{
+		// begin case parameters
+		parameter<Classifications/TigrisXL/Table> table_id;
+		parameter<Classifications/Time/Zichtjaar> Jaar;
+		parameter<string> Scenario;
+		// end case parameters
+
+		parameter<string> FileName := Classifications/TigrisXL/Table/name[table_id]+'.dat';
+		parameter<string> FileName_bare := Classifications/TigrisXL/Table/name[table_id];
+		parameter<string>  File
+		:	StorageName = "=replace(ClaimSrcDir, '@S@', Scenario) + '_beta8_LMS/'+ String(Jaar) + '/' + FileName"
+		,	StorageType = "str";
+
+		unit<uint32> SrcDomain := range(uint32,0,StrCount(File, '\n'))
+		{
+			attribute<string> FullLine (SrcDomain) := ReadLines(File, .,0);
+			attribute<uint32> EK := ReadElems(FullLine, ., const(0, .));
+		}
+		parameter<string> Validator := '\\s*-?\\d+(\\.\\d+)?';
+		unit<uint32> SrcAttribute := ='Classifications/TigrisXL/MetaInfo/'+ Classifications/TigrisXL/Table/name[table_id] +'/SrcAttribute' 
+		{
+			attribute<bool> is_oke := ='union_data(., '+AsItemList('all(regex_match(substr(SrcDomain/FullLine,'+string(SrcAttribute/StartPos)+','+string(SrcAttribute/Length)+'), Validator))')+')';
+		}
+		unit<uint32> TargetDomain := Geography/RegioIndelingen/LMSSubzone;
+		unit<float64> TargetValues;
+		
+		container SrcAttributes_strings := 
+			for_each_nedv(
+				SrcAttribute/name
+				, 'substr(SrcDomain/FullLine,' + String(SrcAttribute/StartPos) +',' + String(SrcAttribute/Length) + ')'
+				, SrcDomain 
+				, string
+			)
+		{
+			attribute<uint32> EK(SrcDomain) := uint32(LmsSubzone);
+		}
+		
+		container SrcAttributes_oke := 
+			for_each_nedv(
+				SrcAttribute/name
+				, 'regex_match(SrcAttributes_strings/'+SrcAttribute/name+', Validator)'
+				, SrcDomain
+				, bool
+			)
+		{
+			attribute<uint32> EK (SrcDomain) := uint32(LmsSubzone);
+		}
+
+		container SrcAttributes := 
+			for_each_neidv(
+				SrcAttribute/name
+				, 'value(SrcAttributes_strings/'+SrcAttribute/name+', TargetValues)'
+				, 'SrcAttributes_oke/'+SrcAttribute/name
+				, SrcDomain
+				, TargetValues
+			)
+		{
+			attribute<uint32> EK(SrcDomain) := uint32(LmsSubzone);
+		}
+		
+		container MakeAttributes := 
+			for_each_nedva(
+				SrcAttribute/name
+				, SrcAttribute/is_oke
+					? 'rjoin(TargetDomain/LmsSubF, SrcAttributes/EK, SrcAttributes/'+ SrcAttribute/name +')'
+					: 'Formatting Error: MetaInfo defined a column with an unexpected number format: '
+				, TargetDomain
+				, TargetValues
+				, '%ProjDir%/Data/UnlinkedData/Tigris/'+Scenario+'_'+FileName_bare+'_'+string(Jaar)+'_'+SrcAttribute/name+'.fss'
+			);
+			
+		parameter<String> Generate_Attributes := 'Ready',
+			ExplicitSuppliers = "=AsList('MakeAttributes/' +SrcAttribute/name,';')";
+
+		container Attributes := 
+			for_each_ndva(
+				SrcAttribute/name
+				, TargetDomain
+				, TargetValues
+				, '%ProjDir%/Data/UnlinkedData/Tigris/'+Scenario+'_'+FileName_bare+'_'+string(Jaar)+'_'+SrcAttribute/name+'.fss'
+			), StorageReadOnly = "true"
+		{
+			attribute<float64> Totaal (TargetDomain) := add(Totaal_aantal_koop_eengezinswoningen, Totaal_aantal_huur_eengezinswoningen, Totaal_aantal_koop_meergezinswoningen, Totaal_aantal_huur_meergezinswoningen);
+			attribute<float32> Fractie (/Geography/RegioIndelingen/MRA8) :=
+				float32(sum(Totaal, TargetDomain/Relaties/MRA8) /
+				sum(Totaal, TargetDomain/Relaties/MRA1)[/Geography/RegioIndelingen/MRA8/MRA1_rel]);
+		}
+			
+	}
+
+	template MetaInfo
+	{
+		//
+		parameter<String> FileName;
+		//
+		unit<uint32> FileData:
+			StorageName = "=FileName",
+			StorageType = "gdal.vect",
+			StorageReadOnly = "True";
+			
+		parameter<String> FileNameFSS := substr(FileName, 0, strlen(FileName) - 3) + 'fss';
+
+		unit<uint32> MakeFileDataFSS := FileData
+		, StorageName = "=FileNameFSS"
+		{
+			attribute<string> Variable := FileData/Variable;
+			attribute<string> Length   := FileData/Length;
+		}
+		
+		unit<uint32> ReadFileDataFSS
+		: StorageName = "=FileNameFSS"
+		, StorageReadOnly = "True"
+		{
+			attribute<string> Variable;
+			attribute<string> Length;
+		}
+		
+		unit<uint32> SrcAttribute := ReadFileDataFSS
+		{
+			attribute<string> Name:      = ReadFileDataFSS/variable;
+			attribute<uint32> Length:    = ReadFileDataFSS/length[uint32];
+			attribute<uint32> EndPos:    = cumulate(Length);
+			attribute<uint32> Startpos:  = EndPos - Length;
+		}
+	}
+	
+	container csv
+	{
+		container Per_uint32: IsTemplate = "True"
+		{
+			// Start template parameters
+			parameter<String> Src;
+			unit <uint32>     Unit;
+			parameter<string> FieldSeparator;
+			// End template parameters
+						
+			parameter<String> FileName:   Expr = "Src";
+			parameter<String> FileData:
+				StorageType = "str"
+			,	StorageName = "=FileName";
+			
+			parameter<String> HeaderLine: Expr = "readLines(FileData, void, 0)";
+			parameter<Bool>   HeaderOK:   Expr = "regex_match(HeaderLine, '\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			
+			unit<UInt32> Field: Expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			{
+				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			}
+			attribute<String> BodyLines(Unit): Expr = "readLines(FileData, Unit, HeaderLine/ReadPos)"; //, IntegrityCheck = "HeaderOK";
+			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Unit): Expr = "regex_match(BodyLines, '(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			
+			container Data: Expr =
+				"for_each_nedv("
+					" Field/Name"
+					",'ReadElems("
+						" BodyLines"
+						",string"
+						",'+MakeDefined("
+							" Field/Name[ID(Field)-1]+'/ReadPos'"
+							",'const(0, Unit)'"
+						")+'"
+					")'"
+					",Unit"
+					",string"
+				")";
+		}
+	}
+}

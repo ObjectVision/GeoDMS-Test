@@ -1,0 +1,27 @@
+container Zuid_Holland: url = "%RSLDataDir%/Beleid/Ruimte/Pmv/zh/Milieubeschermingsgebieden_voor_grondwater_v.xml"
+{
+	attribute<bool> Waterbeschermingsgebied (domain_grid):
+		Source      = "Raadpleging en download van provinciaal georegister 27 mei 2015"
+				  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\zh\Milieubeschermingsgebieden voor grondwater\Milieubeschermingsgebieden_voor_grondwater_v.shp veld OMSCHRIJVI=waterbeschermingsgebied"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/zh/Milieubeschermingsgebieden_voor_grondwater_v.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/zh/waterbeschermingsgebied.tif";
+
+	attribute<bool> Waterwingebied (domain_grid):
+		Source      = "Raadpleging en download van provinciaal georegister 27 mei 2015"
+				  "Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Pmv\zh\Milieubeschermingsgebieden voor grondwater\Milieubeschermingsgebieden_voor_grondwater_v.shp veld OMSCHRIJVI=waterwingebied"
+	,	url         = "%RSLDataDir%/Beleid/Ruimte/Pmv/zh/Milieubeschermingsgebieden_voor_grondwater_v.xml"
+	,	StorageName = "%RSLDataDir%/Beleid/Ruimte/Pmv/zh/waterwingebied.tif";
+
+	parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/pmv_2017/zh/StilteGebieden.shp';
+	parameter<string> Source:      = 'http://geoservices.zuid-holland.nl/arcgis/services/Anders/Inspire_WFS/MapServer/WFSServer?request=GetCapabilities&service=WFS ';
+		
+	container Stiltegebieden : = VergriddingT
+	(
+		'=Bestandsloc'
+		,'SELECT * FROM StilteGebieden'
+		,''
+		,'=Source'
+	);
+
+	attribute<bool> Totaal (domain_grid) := max_elem(Waterbeschermingsgebied, Waterwingebied, Stiltegebieden/Bestand/Multi/result);
+}

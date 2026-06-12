@@ -1,0 +1,28 @@
+container EU
+{
+	container Src := .../Src/EU;
+	
+	container Woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Natura2000 (domain_grid):= Src/natura2000/gebied/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem(Natura2000);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+	
+	container Woongebied := Woongebied_en_werk_bedrijventerrein;
+	container Bedrijventerrein := Woongebied_en_werk_bedrijventerrein;
+	container Glastuinbouw := Woongebied_en_werk_bedrijventerrein;
+}

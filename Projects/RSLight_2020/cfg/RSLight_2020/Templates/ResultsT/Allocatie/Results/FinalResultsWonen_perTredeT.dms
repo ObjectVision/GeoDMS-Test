@@ -1,0 +1,251 @@
+Template FinalResultsWonen_perTredeT
+{
+	//
+	parameter<string> SrcRef;
+	//
+	
+	parameter<string> StorageRef := '%LocalDataProjDir%/Indicatoren/'+AllocRegioKxVariantKxDensityK_name;
+	
+	container Woningbouw_bruto
+	{
+		container Totaal
+		{
+			attribute<Woning> Per_domain0 (domain) := = SrcRef
+			{
+				attribute<Woning> Export (domain_grid) := Per_domain0[domain/BaseMap], StorageName = "= StorageRef+'/Woningbouw_bruto/Totaal.tif'";
+				attribute<Woning> Import (domain_grid) : StorageName = "= StorageRef+'/Woningbouw_bruto/Totaal.tif'";
+			}
+			
+			attribute<Woning> Per_domain (domain) := = iif(ModelParameters/ResultatenOntkoppeld, 'Per_domain0/Import', 'Per_domain0/Export')+'[domain/org_rel]';
+			
+			attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+		}
+		
+		container Meergezins
+		{
+			attribute<Woning> Per_domain (domain) := Totaal/Per_domain * Woningbouwprogrammas/ShareMeergezins
+			{
+				attribute<Woning> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Woningbouw_bruto/Meergezins.tif'";
+				attribute<Woning> Import (domain_grid) : StorageName = "= StorageRef+'/Woningbouw_bruto/Meergezins.tif'";
+			}
+			
+			attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+		}
+		
+		container Eengezins
+		{
+			attribute<Woning> Per_domain (domain) := Totaal/Per_domain - Meergezins/Per_domain
+			{
+				attribute<Woning> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Woningbouw_bruto/Eengezins.tif'";
+				attribute<Woning> Import (domain_grid) : StorageName = "= StorageRef+'/Woningbouw_bruto/Eengezins.tif'";
+			}
+			
+			attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+		}
+		
+		container Tabel 
+		{
+			container Src := 
+				for_each_nedv(
+					classifications/Vastgoed/WP2/name
+					, 'Woningbouw_bruto/'+/classifications/Vastgoed/WP2/name+'/Per_MRA8', MRA8, Woning
+				);
+			
+			container Result := 
+				Templates/TableComposer(
+					 classifications/Vastgoed/WP2
+					, MRA8
+					, Src
+					, StorageRef+'/Woningbouw_bruto/Per_MRA8/Woningtype.csv'
+				);
+		}
+	}
+	
+	#include<Verdringing.dms>
+	
+	container Woningbouw_netto
+	{
+		container Totaal
+		{
+			attribute<Woning> Per_domain (domain) := Woningbouw_bruto/Totaal/Per_domain - Verdringing/Woningen/Totaal/Per_domain, StoreData = "true"
+			{
+				attribute<Woning> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Woningbouw_netto/Totaal.tif'";
+				attribute<Woning> Import (domain_grid) : StorageName = "= StorageRef+'/Woningbouw_netto/Totaal.tif'";
+			}
+			
+			attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+		}
+		
+		container Meergezins
+		{
+			attribute<Woning> Per_domain (domain) := Woningbouw_bruto/Meergezins/Per_domain - Verdringing/Woningen/Meergezins/Per_domain
+			{
+				attribute<Woning> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Woningbouw_netto/Meergezins.tif'";
+				attribute<Woning> Import (domain_grid): StorageName = "= StorageRef+'/Woningbouw_netto/Meergezins.tif'";
+			}
+			
+			attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+		}
+		
+		container Eengezins
+		{
+			attribute<Woning> Per_domain (domain) := Woningbouw_bruto/Eengezins/Per_domain - Verdringing/Woningen/Eengezins/Per_domain
+			{
+				attribute<Woning> Export (domain_grid) := Per_domain[domain/BaseMap], StorageName = "= StorageRef+'/Woningbouw_netto/Eengezins.tif'";
+				attribute<Woning> Import (domain_grid) : StorageName = "= StorageRef+'/Woningbouw_netto/Eengezins.tif'";
+			}
+			
+			attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain);
+			attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+		}
+		
+		container Tabel 
+		{
+			container Src := for_each_nedv(
+				/classifications/Vastgoed/WP2/name,
+				'Woningbouw_netto/'+/classifications/Vastgoed/WP2/name+'/Per_MRA8', MRA8, Woning);
+			
+			container Result := /Templates/TableComposer(
+				/classifications/Vastgoed/WP2,
+				MRA8,
+				Src,
+				StorageRef+'/Woningbouw_netto/Per_MRA8/Woningtype.csv'
+			);
+		}
+	}
+	
+	container Claim_realisatie
+	{
+		attribute<Woning> OrgClaim   (AllocRegio) := VariantSpecifiek/Claims/Woningen/Totaal/Delta_2050[AllocRegio/org_rel];
+		attribute<Woning> Realisatie (AllocRegio) := Woningbouw_netto/Totaal/Per_AllocRegio;
+		attribute<float32> Fractie   (AllocRegio) := Realisatie[float32] / OrgClaim[float32];
+		attribute<Woning> RestClaim  (AllocRegio) := OrgClaim - Realisatie
+		{
+			attribute<Woning> Per_AllocRegio0 (AllocRegio0) := RestClaim[invert(AllocRegio/org_rel)];
+		}
+		
+		container Tabel
+		{
+			unit<uint8> Kolom: NrOfRows = 3
+			{
+				attribute<string> name: ['OrgClaim', 'Realisatie', 'RestClaim'];
+				attribute<string> Label := name;
+			}
+			
+			container Result := /Templates/TableComposer(
+				Kolom,
+				AllocRegio,
+				Claim_realisatie,
+				StorageRef+'/Claim_realisatie.csv'
+			);
+		}
+	}
+	
+	container OVBereikbaarheid
+	{
+		attribute<Job_min> Per_domain (domain) := VariantSpecifiek/OVBereikbaarheid/SrcSrc / float32(Verdringing/GeeftVerdringing);
+	}
+	
+	container Suitability
+	{
+		attribute<Eur> Per_domain (domain) := VariantSpecifiek/Kosten/Suitability / float32(Verdringing/GeeftVerdringing);
+	}
+	
+	container WoningbouwLocatie
+	{
+		attribute<Woning> WoningbouwSrc (domain) := Woningbouw_netto/Totaal/Per_domain;
+		
+		container BinnenBBG                       := WoningbouwlocatieTypeT('BinnenBBG'                      , /Geography/RegioIndelingen/Bevolkingskern_2011/Is_bbg[domain/org_rel], WoningbouwSrc);
+		container BinnenHardePlancapaciteitWonen  := WoningbouwlocatieTypeT('BinnenHardePlancapaciteitWonen' , VariantSpecifiek/ZeefInput/BinnenHardePlancapaciteitWonen, WoningbouwSrc);
+		container BinnenZachtePlancapaciteitWonen := WoningbouwlocatieTypeT('BinnenZachtePlancapaciteitWonen', VariantSpecifiek/ZeefInput/BinnenZachtePlancapaciteitWonen, WoningbouwSrc);
+		container OpSlappeBodems                  := WoningbouwlocatieTypeT('OpSlappeBodems'                 , BaseData/AndersBouwen[domain/org_rel], WoningbouwSrc);
+		
+		container PerGrondgebruikBasisjaar :=
+			for_each_ne(
+				CBSKlasse/name,
+				'WoningbouwlocatieTypeT('+quote('PerCBSKlasse/'+CBSKlasse/name)+', GrondgebruikBasisjaar == CBSKlasse/V/'+CBSKlasse/name+', WoningbouwSrc)'
+			)
+		{
+			container Tabel 
+			{
+				container Src := for_each_nedv(CBSKlasse/name, 'PerGrondgebruikBasisjaar/'+CBSKlasse/name+'/Per_MRA8', MRA8, Woning);
+				
+				container Result := /Templates/TableComposer(
+					CBSKlasse,
+					MRA8,
+					Src,
+					StorageRef+'/WoningbouwLocatie/PerGrondgebruikBasisjaar.csv'
+				);
+			}
+		}
+		
+		unit<uint32> RestrictieK := /SourceData/Beleid/OmgRecht/Restricties/Totaal/HardheidK/Sub;
+		
+		container PerRestrictieK :=
+			for_each_ne(
+				RestrictieK/name,
+				'WoningbouwlocatieTypeT('+quote('PerRestrictieKlasse/'+RestrictieK/name)+', /SourceData/Beleid/OmgRecht/Restricties/Totaal/Per_rdc_100m/Woongebied/'+RestrictieK/name+'[domain/org_rel], WoningbouwSrc)'
+			)
+		{
+			container Tabel 
+			{
+				container Src := for_each_nedv(
+					RestrictieK/name,
+					'PerRestrictieK/'+RestrictieK/name+'/Per_MRA8', MRA8, Woning);
+				
+				container Result := /Templates/TableComposer_uint32(
+					RestrictieK,
+					MRA8,
+					Src,
+					StorageRef+'/WoningbouwLocatie/PerRestrictieK.csv'
+				);
+			}
+		}
+		
+		container PerEigendomK :=
+			for_each_ne(
+				EigendomK/name,
+				'WoningbouwlocatieTypeT('+quote('PerEigendomsKlasse/'+EigendomK/name)+', Eigendom/per_domain_grid[domain/org_rel] == '+string(id(EigendomK))+'[EigendomK], WoningbouwSrc)'
+			)
+		{
+			container Tabel
+			{
+				container Src := for_each_nedv(
+					EigendomK/name,
+					'PerEigendomK/'+EigendomK/name+'/Per_MRA8', MRA8, Woning);
+				
+				container Result := /Templates/TableComposer_uint32(
+					EigendomK,
+					MRA8,
+					Src,
+					StorageRef+'/WoningbouwLocatie/PerEigendomK.csv'
+				);
+			}
+		}
+	}
+	
+	#include<Status2050.dms>
+	
+	Template WoningbouwlocatieTypeT
+	{
+		//
+		parameter<string> Ref;
+		attribute<bool> IsLocatieType (domain);
+		attribute<Woning> Woningbouw (domain);
+		//
+		
+		attribute<Woning> Per_domain (domain) := Woningbouw * float32(IsLocatieType);
+		attribute<Woning> Per_MRA8 (MRA8) := sum(Per_domain, MRA8/per_domain)
+		{
+			attribute<Woning> Export (MRA8) := Per_MRA8, StorageName = "= StorageRef+'/Woningbouw_netto/PerMRA8/'+Ref+'.dbf'";
+		}
+		
+		attribute<Woning> Per_AllocRegio (AllocRegio) := sum(Per_domain, AllocRegio/per_domain);
+	}
+
+}

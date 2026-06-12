@@ -1,0 +1,147 @@
+container RegressieTest : using = "ModelParameters"
+{
+	parameter<String> Step1_prepare_data                  := 'Ready', ExplicitSuppliers = "/MaakOntkoppeldeData/OSM/Step2_Generate_roads_Final_Network;/MaakOntkoppeldeData/GTFS_2_FSS/Generate_GTSF_FSS";
+	parameter<String> Step2_1_run_model_tiled_zonderFence := 'Ready', ExplicitSuppliers = "/NetworkSetup/ConfigurationPerRegio/Generate_Output/OUTPUT_Generate_PublicTransport_fullOD_long_CSVFiles_zonderFence";
+	parameter<String> Step2_2_run_model_tiled_metFence    := 'Ready', ExplicitSuppliers = "/NetworkSetup/ConfigurationPerRegio/Generate_Output/OUTPUT_Generate_PublicTransport_fullOD_long_CSVFiles_metFence";
+	// parameter<String> Step2_1_run_model_tiled_zonderFence := 'Ready', ExplicitSuppliers = "='NetworkSetup/ConfigurationPerRegio/'+OrgProv+'/PublicTransport/Generate_Output_zonderFence/OUTPUT_Generate_fullOD_long_CSVFiles'";
+	// parameter<String> Step2_2_run_model_tiled_metFence    := 'Ready', ExplicitSuppliers = "='NetworkSetup/ConfigurationPerRegio/'+OrgProv+'/PublicTransport/Generate_Output_metFence/OUTPUT_Generate_fullOD_long_CSVFiles'";
+
+	parameter<string> OrgProv := 'Groningen';
+	
+	container t405_1_NetworkModel_PBL_prepare_data
+	{
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result_html := 
+			'<description>NetworkModel PBL results <br><I> git revision: XXXX, git repo: https://github.com/ObjectVision/NetworkModel_PBL; branch: RegressieTest) </I></description>' + 
+			'<result>prepare data: OK</result>'
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t405_1_NetworkModel_PBL_prepare_data.txt'";
+	}
+
+	container t405_2_NetworkModel_PBL_indicator_results_test
+	{
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result := 
+			'<description>NetworkModel PBL results <br><I> git revision: XXXX, git repo: https://github.com/ObjectVision/NetworkModel_PBL; branch: RegressieTest) </I></description>' + 
+			'<result>' + 
+			'<br><b>WW</b>' +
+			'<br>count_tt: ' + replace(string(PerType/WW/Indicators/count_tt),'.',',') +' <br>' + 
+			'mean_tt: ' + replace(string(PerType/WW/Indicators/mean_tt),'.',',') +'  <br>' + 
+			'max_tt: ' + replace(string(PerType/WW/Indicators/max_tt),'.',',') +'<br>' + 
+			'min_tt: ' + replace(string(sum(PerType/WW/Indicators/min_tt)),'.',',') +' <br>'  + 
+			'modus_tt: ' + replace(string(sum(PerType/WW/Indicators/modus_tt)),'.',',') +' <br>' + 
+			'mean_price: ' + replace(string(PerType/WW/Indicators/mean_price),'.',',') +'  <br>'
+			
+			'<br><b>W_OV_W</b>' +
+			'<br>count_tt: ' + replace(string(PerType/W_OV_W/Indicators/count_tt),'.',',') +'   <br>' + 
+			'mean_tt: ' + replace(string(PerType/W_OV_W/Indicators/mean_tt),'.',',') +'   <br>' + 
+			'max_tt: ' + replace(string(PerType/W_OV_W/Indicators/max_tt),'.',',') +'  <br>' + 
+			'min_tt: ' + replace(string(sum(PerType/W_OV_W/Indicators/min_tt)),'.',',') +' <br>'  + 
+			'modus_tt: ' + replace(string(sum(PerType/W_OV_W/Indicators/modus_tt)),'.',',') +'  <br>'  + 
+			'mean_price: ' + replace(string(PerType/W_OV_W/Indicators/mean_price),'.',',') +' <br>'
+			
+			'<br><b>W_OV_W_with_WW</b>' +
+			'<br>count_tt: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/count_tt),'.',',') +'   <br>' + 
+			'mean_tt: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/mean_tt),'.',',') +'   <br>' + 
+			'max_tt: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/max_tt),'.',',') +'  <br>' + 
+			'min_tt: ' + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/min_tt)),'.',',') +' <br>'  + 
+			'modus_tt: ' + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/modus_tt)),'.',',') +' <br>'  + 
+			'mean_price: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/mean_price),'.',',') +' </result>';
+
+		parameter<string> result_html := result
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t405_2_NetworkModel_PBL_zonderFence.txt'";
+	}
+
+	container t405_3_NetworkModel_PBL_fenced_indicator_results_test
+	{
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result := 
+			'<description>NetworkModel (Fenced) PBL results <br><I> git revision: XXXX, git repo: https://github.com/ObjectVision/NetworkModel_PBL; branch: RegressieTest) </I></description>' + 
+			'<result>' + 
+			'<br><b>WW</b>' +
+			'<br>count_tt: ' + replace(string(PerType/WW/Indicators/count_tt),'.',',') +' <br>' + 
+			'mean_tt: ' + replace(string(PerType/WW/Indicators/mean_tt),'.',',') +'  <br>' + 
+			'max_tt: ' + replace(string(PerType/WW/Indicators/max_tt),'.',',') +'<br>' + 
+			'min_tt: ' + replace(string(sum(PerType/WW/Indicators/min_tt)),'.',',') +' <br>'  + 
+			'modus_tt: ' + replace(string(sum(PerType/WW/Indicators/modus_tt)),'.',',') +' <br>' + 
+			'mean_price: ' + replace(string(PerType/WW/Indicators/mean_price),'.',',') +'  <br>'
+			
+			'<br><b>W_OV_W</b>' +
+			'<br>count_tt: ' + replace(string(PerType/W_OV_W/Indicators/count_tt),'.',',') +'   <br>' + 
+			'mean_tt: ' + replace(string(PerType/W_OV_W/Indicators/mean_tt),'.',',') +'   <br>' + 
+			'max_tt: ' + replace(string(PerType/W_OV_W/Indicators/max_tt),'.',',') +'  <br>' + 
+			'min_tt: ' + replace(string(sum(PerType/W_OV_W/Indicators/min_tt)),'.',',') +' <br>'  + 
+			'modus_tt: ' + replace(string(sum(PerType/W_OV_W/Indicators/modus_tt)),'.',',') +'  <br>'  + 
+			'mean_price: ' + replace(string(PerType/W_OV_W/Indicators/mean_price),'.',',') +' <br>'
+			
+			'<br><b>W_OV_W_with_WW</b>' +
+			'<br>count_tt: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/count_tt),'.',',') +'   <br>' + 
+			'mean_tt: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/mean_tt),'.',',') +'   <br>' + 
+			'max_tt: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/max_tt),'.',',') +'  <br>' + 
+			'min_tt: ' + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/min_tt)),'.',',') +' <br>'  + 
+			'modus_tt: ' + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/modus_tt)),'.',',') +' <br>'  + 
+			'mean_price: ' + replace(string(PerType/W_OV_W_with_WW/Indicators/mean_price),'.',',') +' </result>';
+
+		parameter<string> result_html := result
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t405_3_NetworkModel_PBL_metFence.txt'";
+	}
+
+
+
+	unit<uint8> Types : nrofrows = 3
+	{
+		attribute<string> name : ['WW','W_OV_W','W_OV_W_with_WW'];
+	}
+
+	container ReadExports := 
+		for_each_ne(
+			Advanced/Export_CombinationTypes/name
+			, 'Templates/ReadMergeExports_OV_perType_T('+quote(Advanced/Export_CombinationTypes/name)+','+quote(DestSet)+')'
+		)
+	{
+		// parameter<string> OUTPUT_Merge_Types       := =AsList(Advanced/Export_CombinationTypes/name+'/merge/OUTPUT_Merge_Regions',' + '); 
+	}
+
+
+	container PerType :=
+		for_each_ne(
+			Types/name
+			, 'PerType_T('+quote(Types/name)+')'
+		);
+
+	Template PerType_T
+	{
+		parameter<string> name;
+		//
+		// unit<uint64> OD := ='/NetworkSetup/ConfigurationPerRegio/Noord_Holland/PublicTransport/At_07h00m00s/CreateODs/CreateExports/'+name+'/domain_UniqueOD'
+		// unit<uint64> OD := ='/RegressieTest/ReadExports/'+name+'/read/'+OrgProv+'/PerTime/At_07h00m00s/domain'
+		unit<uint32> OD := ='/RegressieTest/ReadExports/'+name+'/merge/At_07h00m00s/Merged'
+		{
+			// attribute<float32> traveltime := ='float32(RegressieTest/ReadExports/'+name+'/read/'+OrgProv+'/PerTime/At_07h00m00s/data/traveltime)';
+			// attribute<float32> price      := ='float32(RegressieTest/ReadExports/'+name+'/read/'+OrgProv+'/PerTime/At_07h00m00s/data/price)';
+			attribute<float32> traveltime := ='float32(RegressieTest/ReadExports/'+name+'/merge/At_07h00m00s/Merged/traveltime)';
+			attribute<float32> price      := ='float32(RegressieTest/ReadExports/'+name+'/merge/At_07h00m00s/Merged/price)';
+		}
+	
+		container Indicators
+		{
+			parameter<uint32>   count_tt                  := count(uint32(OD/traveltime));
+			parameter<float32>  mean_tt                   := mean(OD/traveltime);
+			parameter<float32>  max_tt                    := max(OD/traveltime);
+			parameter<float32>  min_tt                    := min(OD/traveltime);
+			parameter<uint32>   modus_tt                  := modus(uint32(OD/traveltime));
+			parameter<float32>  mean_price                := mean(OD/price);
+		}
+	}
+}

@@ -1,0 +1,53 @@
+Template CreateNetwork_Pedestrian_Bike_T : using = "geometries"
+{
+	unit<uint32>      inStart;
+	unit<uint32>      inEind;
+	unit<uint32>      Roads;
+	parameter<string> TravelMode;
+	parameter<string> Direction;
+	////
+	parameter<min_f> MaxDistSelectie_min := ='ModelParameters/Max'+TravelMode+'Time_'+Direction;
+	parameter<s_f>   MaxDistSelectie_sec := convert(MaxDistSelectie_min, s_f);
+	
+	
+	container Create_Optimised_Network  := ='Templates/CreateNetwork_Efficient_T(inStart, inEind, Roads, TravelMode)';
+	unit<uint32> LinkSet := Create_Optimised_Network/CreateMoreEfficientNetwork/FinalLinkSet;
+	unit<uint32> NodeSet := Create_Optimised_Network/CreateMoreEfficientNetwork/FinalNodeSet;
+	
+	attribute<s_f> impedance (LinkSet) := ='LinkSet/Impedance_per_ImpedanceType/max_'+TravelMode;
+	
+	unit<uint32> ODMatrix :=
+		impedance_matrix('bidirectional;startPoint(Node_rel):max_imp;endPoint(Node_rel);cut(OrgZone_max_imp);limit(OrgZone_max_mass,DstZone_mass);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+			, impedance
+			, LinkSet/F1
+			, LinkSet/F2
+			, NodeSet/OrgNode_rel
+			, NodeSet/DestNode_rel
+			, MaxDistSelectie_sec //cut impedance      
+			, ModelParameters/Advanced/MaxODconn, 1f //limit
+			, LinkSet/LengthKm //alt imp
+		)
+	{
+		attribute<Time>	   Duration                         := RoundUp(Impedance)[uint32][Time];
+		attribute<float32> Duration_minutes                 := Impedance / 60f;
+		attribute<inStart> StartRef                         := OrgZone_rel; 
+		attribute<inEind>  EindRef                          := DstZone_rel; 
+		attribute<string>  StartName                        := inStart/name[StartRef];
+		attribute<string>  EindName                         := inEind/name[EindRef];
+		attribute<km>      LengthKm                         := alt_imp; 
+		attribute<rdc>     Start_point                      := inStart/geometry[StartRef];
+		attribute<rdc>     Eind_point                       := inEind/geometry[EindRef];
+		attribute<Complete_Stops_Domain> Complete_Stops_rel := inEind/Stops_rel[EindRef]; 
+		attribute<rdc>     geometry (arc)                   := points2sequence(LinkPoints/geometry, LinkPoints/ODPathRel, LinkPoints/CumulOrdinal);
+		attribute<string>  Label                            := TravelMode+' path from: ' + StartName + ' to ' + EindName;
+
+		unit<uint32> LinkPoints := union_unit(., .)
+		{
+			attribute<..>                   ODPathRel    := union_data(., id(..), id(..));
+			attribute<rdc>                  geometry     := union_data(., ../Start_point, ../Eind_point);
+			attribute<uint32>               CumulOrdinal := union_data(., const(0,..,uint32), const(1,..,uint32));
+		}
+		
+		unit<uint32> Complete_Stops_Domain := SourceData/Infrastructuur/GTFS/StudyAreaFeeds/Stops;
+	}
+}

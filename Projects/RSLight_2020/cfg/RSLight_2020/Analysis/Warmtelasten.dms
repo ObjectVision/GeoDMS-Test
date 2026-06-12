@@ -1,0 +1,64 @@
+container Warmtelasten: Using  = "Units;Geography;Classifications/Warmtelasten"
+{
+	parameter<float32> discontovoet: [0.05];
+	parameter<string>  grid_domain_ref: ['rdc_100m'];
+	
+	unit<spoint> grid_domain := = 'Geography/'+grid_domain_ref;
+	
+	unit<uint32> vbo := SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet
+	{
+		attribute<grid_domain> grid_domain_rel := geometry[grid_domain];
+	}
+	
+	unit<uint8> WoningtypeK := Classifications/Vastgoed/WP4
+	{
+		attribute<string> name                 := Classifications/Vastgoed/WP4/name;
+		attribute<string> NieuwbouwWoningTypeK : ['Vrijstaand12','TweeOnderEenkap12','Rijtjeshuis12','Appartement12'];
+	}
+	
+	container BestaandeWoning := ResultsT('BestaandeWoning','Referentie')
+	{
+		attribute<Eur> NCW (vbo) := =
+			'merge(
+				vbo/wp4_rel
+				, Eur
+				,'+AsItemList(
+					'rjoin(
+						vbo/identificatie
+						, GenericSrc_tabel/PerWoningtype/'+WoningtypeK/name+'/sub/id
+						, CW_PerWoningtype/'+WoningtypeK/name+'/Total)')+')';
+			
+		attribute<Eur> Per_domain_grid (domain_grid) := sum(NCW, vbo/NL_grid_domain_rel);
+	}
+	
+	container BestaandeWoning_Aplus := ResultsT('BestaandeWoning','Referentie_Aplus')
+	{
+		attribute<Eur> NCW (vbo) := =
+			'merge(
+				vbo/wp4_rel
+				, Eur
+				,'+AsItemList(
+					'rjoin(
+						vbo/identificatie
+						, GenericSrc_tabel/PerWoningtype/'+WoningtypeK/name+'/sub/id
+						, CW_PerWoningtype/'+WoningtypeK/name+'/Total)')+')';
+			
+		attribute<Eur> Per_domain_grid (domain_grid) := sum(NCW, vbo/NL_grid_domain_rel);
+	}
+	
+	container Results 
+	{
+		attribute<Eur>        Verschil        (vbo)         := BestaandeWoning/NCW - BestaandeWoning_Aplus/NCW;
+
+		attribute<Eur_ha>     Per_domain_grid (domain_grid) := sum(Verschil, vbo/NL_grid_domain_rel)[Eur] / domain_grid/NrHaPerCell, Storagename = "%RSLDataDir%/Vastgoed/Warmtelasten/Warmtelasten_verschil.fss";
+
+		attribute<Eur_ha>     Read_per_domain_grid (domain_grid) : Storagename = "%RSLDataDir%/Vastgoed/Warmtelasten/Warmtelasten_verschil.fss";
+
+		attribute<Eur_ha>     GroterDanNul    (domain_grid) := Read_per_domain_grid / float32(Read_per_domain_grid > 0[Eur_ha]);
+		attribute<Eur_woning> per_woning      (domain_grid) := GroterDanNul / (vbo/count_per_domain_grid);
+		
+	} 
+	
+	#include<ResultsT.dms>
+	#include<UniekJaarT.dms>
+}

@@ -1,0 +1,142 @@
+container Noord_Brabant : url="http://www.ruimtelijkeplannen.nl/web-roi/index/showManifest?organizationId=noordbrabant&striVersion=STRI2008"
+{
+	container NL_IMRO_9930_VrNBrgecons_0717 : url="http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9930.VrNBrgecons-0717"
+	//http://www.ruimtelijkeplannen.nl/web-roo/roo/bestemmingsplannen_p?planidn=NL.IMRO.9930.VrNBrgecons-0119
+	{
+		//Verordening ruimte Noord-Brabant
+		//planstatus: geconsolideerd 2017-07-15
+		//identificatie: NL.IMRO.9930.VrNBrgecons-0717
+		//type plan: provinciale verordening
+		//naam overheid: provincie Noord-Brabant
+		//ondergrond: basisregistratie topografie (BRT) (2016-04-01)
+		//IMRO-versie: IMRO2012
+
+		//Kaarten (6)
+		//	  Integrale plankaart met structuren en aanduidingen
+		//	  Themakaart stedelijke ontwikkeling
+		//	  Themakaart cultuurhistorie
+		//	x Themakaart agrarische ontwikkeling en windturbines
+		//	x Themakaart water
+		//	x Themakaart natuur en landschap
+
+		parameter<string> Bestandsloc_vlak : = '%RSLDataDir%/Beleid/Ruimte/prv_2017/nb/NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P.shp';
+		parameter<string> OGRQuery_vlak    :    = 'ogr2ogr -f ""ESRI Shapefile"" N:\SD\LUMOS\Beleid\Ruimte\prv_2017\nb\NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P.shp  Y:\data\Leefomgeving\RS\brondata\BASIS2012\Beleid\Ruimte\Prv_2017\Besluitvlak_P.gml -where ""besluitgebied=""NL.IMRO.9930.VrNBrgecons-0717"" -skipfailures -overwrite';
+
+		container  agrarische_ontwikkeling_en_windturbines : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nb/Verordening ruimte Noord-Brabant Regels.mht"
+		{
+			//Themakaart agrarische ontwikkeling en windturbines
+			//	..Aanduiding - Beperkingen veehouderij
+			//	..Aanduiding - Doorgroeigebied glastuinbouw
+			//	x.Aanduiding - Maatwerk glastuinbouw
+			//	..Aanduiding - Sanerings- en verplaatsingslocatie
+			//	..Aanduiding - Stalderingsgebied
+			//	..Aanduiding - Teeltgebied Zundert
+			//	..Aanduiding - Teeltondersteunende kassen
+			//	x.Aanduiding - Vestigingsgebied glastuinbouw
+			//	..Aanduiding - Zoekgebied windturbines
+			//	..Rechtstreeks werkende regel voor sanerings- en verplaatsingslocatie - BIV
+			//	..Rechtstreeks werkende regel voor sanerings- en verplaatsingslocatie - GTB
+			//	..Rechtstreeks werkende regel voor sanerings- en verplaatsingslocatie - RBV
+			//	..Rechtstreeks werkende regel voor sanerings- en verplaatsingslocatie - VIV
+			//	..Structuur - Gemengd landelijk gebied 
+
+			// gelijk aan vorige versie: 42 cellen  //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NB/agrarische_ontwikkeling_en_windturbines/agrarische_ontwikkeling_en_windturbines_PRV_NB_aanduiding_maatwerk_glastuinbouw
+			container Maatwerk_glastuinbouw : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Aanduiding - Maatwerk glastuinbouw'''
+				//,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_31_Maatwerkglastuinbouw'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/nb/VrNBrgecons-0118_27_28_glastuinbouw.jpg'
+				,'=OGRQuery_vlak'
+			);
+
+			container Doorgroeigebied_glastuinbouw : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Aanduiding - Doorgroeigebied glastuinbouw'''
+				//,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_31_Maatwerkglastuinbouw'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/nb/VrNBrgecons-0118_27_28_glastuinbouw.jpg'
+				,'=OGRQuery_vlak'
+			);
+
+			//niet gelijk aan vorige versie: 2567 cellen (was 3369) ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NB/agrarische_ontwikkeling_en_windturbines/agrarische_ontwikkeling_en_windturbines_PRV_NB_aanduiding_vestigingsgebied_glastuinbouw
+			container Vestigingsgebied_glastuinbouw : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Aanduiding - Vestigingsgebied glastuinbouw'''
+				//,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_27_Vestigingsgebiedglastuinbouw'
+				,'%RSLDataDir%/Beleid/Ruimte/prv_2017/nb/VrNBrgecons-0118_27_28_glastuinbouw.jpg'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Water : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nb/Verordening ruimte Noord-Brabant Regels.mht"
+		{
+			//Themakaart water
+			//	  Aanduiding - Aansluiting primaire waterkering
+			//	  Aanduiding - Behoud en herstel watersystemen
+			//	  Aanduiding - Boringsvrije zone
+			//	  Aanduiding - Grondwaterbeschermingsgebied
+			//	  Aanduiding - Regionale waterberging
+			//	  Aanduiding - Reservering waterberging
+			//	  Aanduiding - Rivierbed
+			//	  Aanduiding - Waterwingebied
+
+			//niet gelijk aan vorige versie: 13516 cellen (was 14955). Zie: /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NB/water/water_PRV_NB_aanduiding_grondwaterbeschermingsgebied
+			container Grondwaterbeschermingsgebied : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Aanduiding - Grondwaterbeschermingsgebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_16_Grondwaterbeschermingsgebied'
+				,'=OGRQuery_vlak'
+			);
+
+			// gelijk aan vorige versie: 22995 cellen  /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NB/water/water_PRV_NB_aanduiding_rivierbed
+			container Rivierbed : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Aanduiding - Rivierbed'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_20_Rivierbed'
+				,'=OGRQuery_vlak'
+			);
+
+			//niet gelijk aan vorige versie: 1929 (was 1905). Zie: /StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NB/water/water_PRV_NB_aanduiding_waterwingebied
+			container Waterwingebied : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Aanduiding - Waterwingebied'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_15_Waterwingebied'
+				,'=OGRQuery_vlak'
+			);
+		}
+
+		container  Natuur_en_landschap : url="%RSLDataDir%/Beleid/Ruimte/prv_2017/nb/Verordening ruimte Noord-Brabant Regels.mht"
+		{
+			//Themakaart natuur en landschap
+			//	  Aanduiding - Attentiegebied Natuur Netwerk Brabant
+			//	  Aanduiding - Behoud en herstel watersystemen
+			//	  Aanduiding - Natuur Netwerk Brabant - Ecologische verbindingszone
+			//	x Structuur - Groenblauwe mantel
+			//	x Structuur - Natuur Netwerk Brabant
+
+			//niet gelijk aan vorige versie: 103815 cellen (was 103731) ///StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NB/natuur_en_landschap/natuur_en_landschap_PRV_NB_structuur_groenblauwe_mantel
+			//Een bestemmingsplan dat is gelegen in de groenblauwe mantel bepaalt dat uitbreiding van, vestiging van of omschakeling naar een glastuinbouwbedrijf niet zijn toegestaan.
+			container Structuur_Groenblauwe_mantel : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Structuur - Groenblauwe mantel'''
+				,'http:\//www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_6_Groenblauwemantel'
+				,'=OGRQuery_vlak'
+			);
+
+			//niet gelijk aan vorige versie: 128536 cellen (was 124290) //StudieGebieden/NlBaseYear/BronData/Beleid/Ruimte/PRV2014/PRV_NB/hoofdstructuur/hoofdstructuur_PRV_NB_structuur_ecologische_hoofdstructuur
+			container Structuur_Natuur_Netwerk_Brabant : = VergriddingT
+			(
+				'=Bestandsloc_vlak'
+				,'SELECT * FROM NL_IMRO_9930_VrNBrgecons_0717_Besluitvlak_P WHERE naam =''Structuur - Natuur Netwerk Brabant'''
+				,'http://www.ruimtelijkeplannen.nl/documents/NL.IMRO.9930.VrNBrgecons-0717/r_NL.IMRO.9930.VrNBrgecons-0717.html#_5_NatuurNetwerkBrabant'
+				,'=OGRQuery_vlak'
+			);
+		}
+	}
+}

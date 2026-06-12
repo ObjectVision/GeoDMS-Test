@@ -1,0 +1,185 @@
+container SourceData: using = "Classifications;units;Geography"
+{ 
+	#include <Bodem.dms>
+	#include <GG.dms>
+	#include <Vastgoed.dms>
+	#include <Claims.dms>
+	
+	container Claims2
+	{
+		container Woningen
+		{
+			parameter<string> TXLBasisjaar_ref := 'Y2018'; //dit is de tigris output die het beste aansluit op het BAG basisjaar in deze cfg (1 jan 2019)
+			
+			container BAG
+			{
+				attribute<Woning> Eengezins  (/Geography/RegioIndelingen/LMSSubzone) := sum(/SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet/count_WP2/Eengezins,  /Geography/RegioIndelingen/LMSSubzone/per_rdc_100m)[Woning], FreeData = "false";
+				attribute<Woning> Meergezins (/Geography/RegioIndelingen/LMSSubzone) := sum(/SourceData/Vastgoed/BAG/VBOs/GebruiksdoelSets/WoON/GebruiksdoelSet/count_WP2/Meergezins, /Geography/RegioIndelingen/LMSSubzone/per_rdc_100m)[Woning], FreeData = "false";
+				attribute<Woning> Totaal     (/Geography/RegioIndelingen/LMSSubzone) := add(Eengezins, Meergezins);
+			}
+			
+			container Per_VariantKxTXLHouseType :=
+				for_each_ne(
+					/Classifications/Vastgoed/VariantKxTXLHouseType/Label,
+					'T('+string(id(/Classifications/Vastgoed/VariantKxTXLHouseType))+'[/Classifications/Vastgoed/VariantKxTXLHouseType])'
+				);
+				
+			container Per_Variant :=
+				for_each_ne(
+					/Classifications/VariantK/name,
+					'T2('+string(id(/Classifications/VariantK))+'[/Classifications/VariantK])'
+				);
+			
+			Template T
+			{
+				//
+				parameter</Classifications/Vastgoed/VariantKxTXLHouseType> id;
+				//
+				
+				unit<uint32> Src
+				:	StorageName = "= '%RSLDataDir%/Claims/TXLv70_beta9/WLO_hoog_beta8_LMS/'+/Classifications/Vastgoed/VariantKxTXLHouseType/TXLStocksTbl_Ref[id]+'.csv'"
+				,	Source = "Tigris XL..."
+				,	StorageType = "gdal.vect"
+				,	StorageReadOnly = "true"
+				{
+					attribute</Geography/RegioIndelingen/LMSSubzone> LMSSubzone_rel := rjoin(zone, string(Geography/RegioIndelingen/LMSSubzone/zone_id), id(Geography/RegioIndelingen/LMSSubzone));
+				}
+				
+				container Per_LMSSubzone :=
+					for_each_nedv(
+						/classifications/Time/TigrisJaar/name,
+						'(Src/'+/classifications/Time/TigrisJaar/name+'[invert(Src/LMSSubzone_rel)])[Woning]',
+						/Geography/RegioIndelingen/LMSSubzone, Woning
+					);
+			}
+			
+			Template T2
+			{
+				//
+				parameter</Classifications/VariantK> id;
+				//
+				
+				container Totaal_eengezins :=
+					for_each_nedv(
+						/classifications/Time/TigrisJaar/name,
+						'add(
+							Per_VariantKxTXLHouseType/'+/Classifications/VariantK/name[id]+'/Eengezins/Koop/Per_LMSSubzone/'+/classifications/Time/TigrisJaar/name+',
+							Per_VariantKxTXLHouseType/'+/Classifications/VariantK/name[id]+'/Eengezins/Huur/Per_LMSSubzone/'+/classifications/Time/TigrisJaar/name+
+						')',
+						/Geography/RegioIndelingen/LMSSubzone, Woning
+					)
+				{
+					attribute<Woning> InBasisjaar (/Geography/RegioIndelingen/LMSSubzone) := = TXLBasisjaar_ref;
+				}
+				
+				container Totaal_meergezins :=
+					for_each_nedv(
+						/classifications/Time/TigrisJaar/name,
+						'add(
+							Per_VariantKxTXLHouseType/'+/Classifications/VariantK/name[id]+'/meergezins/Koop/Per_LMSSubzone/'+/classifications/Time/TigrisJaar/name+',
+							Per_VariantKxTXLHouseType/'+/Classifications/VariantK/name[id]+'/meergezins/Huur/Per_LMSSubzone/'+/classifications/Time/TigrisJaar/name+
+						')',
+						/Geography/RegioIndelingen/LMSSubzone, Woning
+					)
+				{
+					attribute<Woning> InBasisjaar (/Geography/RegioIndelingen/LMSSubzone) := = TXLBasisjaar_ref;
+				}
+				
+				container Totaal :=
+					for_each_nedv(
+						/classifications/Time/TigrisJaar/name,
+						'add(
+							Totaal_eengezins/'+/classifications/Time/TigrisJaar/name+',
+							Totaal_meergezins/'+/classifications/Time/TigrisJaar/name+
+						')',
+						/Geography/RegioIndelingen/LMSSubzone, Woning
+					)
+				{
+					attribute<Woning> InBasisjaar (/Geography/RegioIndelingen/LMSSubzone) := = TXLBasisjaar_ref;
+				}
+			}
+		}
+	}
+	
+	container Beleid   := Templates/Beleid  (SrcDomain_grid); //@BR, 20180906: later op rdc_10m zetten, of grid vervangen door bouwblokken/percelen
+
+	container Omgeving
+	{
+		attribute<uint32>  Kaveldichtheid_src   (domain_grid) : StorageName = "%RSLDataDir%/Omgeving/Kaveldichtheid2018.tif";
+		attribute<sec>     Reistijd5kInw        (domain_grid) : StorageName = "%RSLDataDir%/Omgeving/Bereikbaarheid/Reistijd5kInw.tif";
+		
+		attribute<min>     reistijd_minuten_station_2006 (domain_grid) : StorageName = "%RSLDataDir%/Omgeving/Bereikbaarheid/reistijd_minuten_station_2006.tif"; // te updaten naar recenter jaar. En welke rweistijd is dit? Ik vermoed auto. Moet gewogen zijn, met laag gewicht auto
+		attribute<bool>    IsKleinerDan4 (domain_grid) := reistijd_minuten_station_2006 < 4[min];
+		
+		unit<uint16> Banen_OVnetwerk_2030_segs2014
+		:  StorageName = "%RSLDataDir%/Omgeving/Bereikbaarheid/Banen_OV_netwerk_2030_segs2014_2.csv"
+		,  StorageType = "gdal.vect"
+		,  StorageReadOnly = "True"
+		{
+			attribute<RegioIndelingen/LMSSubzone> LMSSubzone_rel                              := rjoin(LMS_subzone_id, string(RegioIndelingen/LMSSubzone/zone_id), id(RegioIndelingen/LMSSubzone));
+			attribute<Job>                        Bereikbaarheid_banen_OV_ongewogen1          := Bereikbaarheid_banen_OV_ongewogen[Job];
+			attribute<Job>                        Per_LMSSubzone (RegioIndelingen/LMSSubzone) := Bereikbaarheid_banen_OV_ongewogen1[invert(LMSSubzone_rel)];
+		}
+		
+		attribute<Job_min> Banen_minuut (domain_grid):= = 'Banen_OVnetwerk_2030_segs2014/Per_LMSSubzone[RegioIndelingen/LMSSubzone/per_'+/domain_grid_ref+'] / reistijd_minuten_station_2006';
+	}
+	
+	container Actoren
+	{
+		#include <Grondposities.dms>
+		
+		container Impl
+		{
+			unit<uint32> Read_LISA_2018
+			: StorageName     = "%RSLDataDir%/LISA/LISA_tm2018_2.gdb"
+			, StorageReadOnly = "True"
+			, StorageType     = "gdal.vect"
+			{
+				unit<uint32> LISA2018nw_pnt 
+				{
+					attribute<rdc_meter>                            geometry; 
+				}
+			}
+			
+			unit<uint32> Make_LISA_2018 := Read_LISA_2018/LISA2018nw_pnt
+			,	StorageName     = "%PrivDataDir%/LISA2018.fss"
+			{
+				attribute<rdc_meter> point := Read_LISA_2018/LISA2018nw_pnt/geometry;
+				attribute<string>    SBI08 := Read_LISA_2018/LISA2018nw_pnt/SBI08;
+				attribute<uint32>    banen := Read_LISA_2018/LISA2018nw_pnt/banen[uint32];
+			}
+		}
+		
+		unit<uint32> LISA
+		:	StorageName     = "%PrivDataDir%/LISA2018.fss"
+		,	StorageReadOnly = "True"
+		,	DialogData      = "Point"
+		,	DialogType      = "Map"
+		{
+			attribute</geography/rdc_meter> point;
+			attribute<string>               SBI08;
+			attribute<uint32>               banen;
+			attribute<Actor/TXLJobs7> TXLJobs7_rel := rjoin(SBI08, Actor/SBI08/SBI2008, Actor/SBI08/TXLJobs7_rel); 
+			
+			container WritePer_TXLJobs7 :=
+				for_each_nedva(
+					Actor/TXLJobs7/name
+					, 'sum(int32(banen) * int32(TXLJobs7_rel == '+string(id(Actor/TXLJobs7))+'[Actor/TXLJobs7]), point[domain_grid])'
+					, domain_grid
+					, int32
+					,'%ProjDir%/Data/UnlinkedData/Jobs/Per_TXLJobs7_'+Actor/TXLJobs7/name+'.tif'
+				);
+				
+			container ReadPer_TXLJobs7 :=
+				for_each_ndva(
+					Actor/TXLJobs7/name
+					, domain_grid
+					, int32
+					,'%ProjDir%/Data/UnlinkedData/Jobs/Per_TXLJobs7_'+Actor/TXLJobs7/name+'.tif'
+				);
+				
+			container Per_TXLJobs7 := = iif(ModelParameters/InputOntkoppeld, 'Read', 'Write')+'Per_TXLJobs7';
+		}
+	
+	}
+}

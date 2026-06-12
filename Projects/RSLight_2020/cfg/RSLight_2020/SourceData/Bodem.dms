@@ -1,0 +1,72 @@
+container Bodem
+{
+	Unit<uint32> fysisch_geografische_regios:
+		StorageName     = "%RSLDataDir%/Omgeving/natuurlandschap/fysisch_geografische_regios/fysisch_geografische_regios.gdb"
+	,	StorageReadOnly = "True"
+	,	Source          = "Raadpleging nationaal georegister 14 januari 2019 WFS: https://geodata.nationaalgeoregister.nl/fysischgeografischeregios/wfs?&request=GetCapabilities&service=WFS"
+						  "In ArcGIS 10.3.1 omgezet naar gdb-formaat"
+	,	DialogData      = "Polygons"
+	,	DialogType      = "Map"
+	,	StorageType     = "gdal.vect"
+	,	SyncMode        = "Attr"
+	{
+		attribute<geography/rdc_meter> Polygons (poly);
+		attribute<string> FGRK0     := replace(fgr, ' ', '_', '(', '_', ')', '_');
+		attribute<FGRK> FGRK_rel    := rjoin(FGRK0, FGRK/Label, id(FGRK));
+		attribute<bool> IsKwetsbaar := FGRK/IsKwetsbaar[FGRK_rel];
+	}
+
+	attribute<uint32> FG_grid(domain_grid) :=poly2grid(fysisch_geografische_regios/Polygons,domain_grid);
+
+	unit<uint32> FGRK:= Unique(fysisch_geografische_regios/FGRK0)
+	{
+		attribute<string> Label := values, DialogType = "LabelText";
+		attribute<uint32> BrushColor: DialogType = "BrushColor",
+		[
+			 rgb(204,255,229), rgb(255,255,0), rgb(204,255,229), rgb(  204, 255, 153), rgb(255,255,0),
+			 rgb(204,204,0), rgb(  224, 224, 224), rgb(204,255,255), rgb(  229, 204, 255), rgb(  204, 153, 255)
+		];
+		attribute<bool> IsKwetsbaar:[True,False,False,False,False,True,False,False,True,True];
+	}
+	
+	//Bron: expert judgement van Gilbert Maas (WUR), verkregen (kaarten, rekenregels) via Arjen Koekoek (stichting CAS), voorjaar 2019. 
+	container DraagkrachtKwel
+	{
+		parameter<string> SrcRef: ['%RSLDataDir%/Bodem/risico_draagkracht_openformat'];
+		
+		attribute<Meter> DraagkrachtSrc (domain_grid)
+		:	StorageName     = "= SrcRef + '/DANK024a_draagkracht_totale_zetting1.tif'"
+		,	StorageType     = "gdal.grid"
+		,	StorageReadOnly = "True";
+		
+		attribute<Meter> Draagkracht (domain_grid) := DraagkrachtSrc = -9999[meter] ? (0/0)[Meter] : DraagkrachtSrc;
+		
+		attribute<float32> KwelSrc (domain_grid)
+		:	StorageName     = "= SrcRef + '/PKS_Klimaateffecten_Wateroverlast_Kwel_en_infiltratie_Huidig_v15_t0_uit1.tif'"
+		,	StorageType     = "gdal.grid"
+		,	StorageReadOnly = "True";
+		
+		attribute<float32> Kwel (domain_grid) := KwelSrc > -50f ? KwelSrc : (0/0)[float32];
+		
+		attribute<int32> RisicoklasseDikteVeenlaagFlevoland (domain_grid)
+		:	StorageName     = "= SrcRef + '/DikteVeenlaag1.tif'"
+		,	StorageType     = "gdal.grid"
+		,	StorageReadOnly = "True";
+		
+		attribute<int32> RisicoklassePleistoceenFlevoland (domain_grid)
+		:	StorageName     = "= SrcRef + '/TopPleistoceen.tif'"
+		,	StorageType     = "gdal.grid"
+		,	StorageReadOnly = "True";
+		
+		attribute<bool> AndersBouwen (domain_grid) := 
+			Draagkracht >= 0.5[Meter] ||
+			Kwel <= -2f ||
+			(RisicoklassePleistoceenFlevoland <= -10i ||
+			RisicoklasseDikteVeenlaagFlevoland > 180i);
+		
+		attribute<bool> BouwenMetMaatregelen (domain_grid) :=
+			(Draagkracht >= 0.1[Meter] && Draagkracht < 0.5[Meter]) ||
+			(Kwel > -2f && Kwel <= -0.5f) &&
+			!AndersBouwen;
+	}
+}

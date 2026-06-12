@@ -1,0 +1,87 @@
+container TXL: using = "units;Model_Classifications"
+{
+	parameter<string> SrcStr : ['Claims/ReadData/@S@/ReadData/@T@/zichtjaren/@J@'];
+	unit<uint8> Scenario := Model_Classifications/Scenarios;
+	unit<uint32> ScenarioxModelJaar := combine(Scenario, ModelJaar)
+	{
+		attribute<string> Scenario_name := Scenario/name[first_rel];
+		attribute<string> ModelJaar_name := ModelJaar/name[second_rel];
+		attribute<string> Label := Scenario_name+'_'+ModelJaar_name, DialogType = "LabelText";
+		attribute<string> name := Scenario_name+'/'+ModelJaar_name;
+	}
+	
+	unit<uint32> ScenarioxModelJaarxTXLClaims := combine(ScenarioxModelJaar, TXLClaims)
+	{
+		attribute<string> Scenario_name := ScenarioxModelJaar/Scenario_name[first_rel];
+		attribute<string> TXLClaims_name := TXLClaims/name[second_rel];
+		attribute<string> ModelJaar_name := ScenarioxModelJaar/ModelJaar_name[first_rel];
+		attribute<string> Label := Scenario_name+'_'+ModelJaar_name+'_'+TXLClaims_name, DialogType = "LabelText";
+		attribute<string> name := Scenario_name+'/'+ModelJaar_name+'/'+TXLClaims_name;
+		attribute<string> TXLClaims_ref := TXLClaims/TigrisXL_Table_ref[second_rel];
+	}
+	
+	container AggrSrc :=
+		for_each_ne(
+			ScenarioxModelJaarxTXLClaims/name,
+			'ScenarioxModelJaarxTXLClaimsT('+string(id(ScenarioxModelJaarxTXLClaims))+'[ScenarioxModelJaarxTXLClaims])');
+	
+	container Edit := for_each_ne(ScenarioxModelJaar/name, 'EditT('+string(id(ScenarioxModelJaar))+'[ScenarioxModelJaar])');
+
+	Template ScenarioxModelJaarxTXLClaimsT
+	{
+		//
+		parameter<ScenarioxModelJaarxTXLClaims> id;
+		//
+		
+		parameter<string> SrcStr :=
+			replace(
+				TXL/SrcStr,
+				'@S@', ScenarioxModelJaarxTXLClaims/Scenario_name[id],
+				'@T@', ScenarioxModelJaarxTXLClaims/TXLClaims_ref[id],
+				'@J@', ScenarioxModelJaarxTXLClaims/ModelJaar_name[id]
+			);
+			
+		unit<uint8> AttrUnit := = TXLClaims/Attr_ref[ScenarioxModelJaarxTXLClaims/second_rel[id]];
+		unit<int32> TargetValUnit := = TXLClaims/TargetValUnitRef[ScenarioxModelJaarxTXLClaims/second_rel[id]];
+			
+		container Results :=
+			for_each_nedv(
+				AttrUnit/name,
+				SrcStr+'/attributes/'+AttrUnit/TXLTbl_Ref+'[TargetValUnit]',
+				SrcRegio, TargetValUnit
+			);
+	}
+	
+	Template EditT
+	{
+		//
+		parameter<ScenarioxModelJaar> id;
+		//
+		
+		container Src := = 'AggrSrc/'+ScenarioxModelJaar/Scenario_name[id]+'/'+ScenarioxModelJaar/ModelJaar_name[id];
+		
+		container Banen // P.M.
+		{
+		}
+		
+		container Woningen
+		{
+			container per_WP2 :=
+				for_each_nedv(
+					WP2/name,
+					replace(
+						'add('+AsItemList('Src/Woningen/Results/@W@_'+Classifications/Vastgoed/HuurKoop/name)+')',
+						'@W@', WP2/name
+					),
+					AggRegio, NrWoningen
+				);
+				
+			container Per_WP4 :=
+				for_each_nedv(
+					WP4/name,
+					'(float32(per_WP2/'+WP2/name[WP4/WP2_rel]+') * SourceData/Claims/VerdelingWoningen/PerWP4/Relatief_PerWP2/'+WP4/name+')[NrWoningen]',
+					AggRegio, NrWoningen
+				);
+		}
+	}
+}

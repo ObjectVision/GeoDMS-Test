@@ -1,0 +1,94 @@
+container Units:
+	isHidden       = "True",
+	DisableStorage = "True"
+{
+	unit<Float32> Meter:          Expr = "BaseUnit('m', float32)";
+	unit<Float32> Meter2:         Expr = "Meter * Meter";
+	unit<Float32> mm:             Expr = "0.001 * Meter";
+	unit<Float32> km:             Expr = "1000.0  * Meter";	
+	unit<float32> km2:            Expr = "100.0 * luHa"; 
+	
+	unit<Float32> m:  Expr = "Meter";
+	unit<Int16>   m_I16: Expr = "Int16(m)";
+	unit<Float32> sec: Expr = "baseUnit('sec', Float32)";
+	unit<Float32> min: Expr = "60 * sec", cdf = "Classifications/MinuteClass/ClassBreaks";
+	unit<Float32> hr: Expr = "60 * min";
+	unit<Float32> km_hr: Expr = "km / hr";
+	
+	unit<float32> luHa:           Expr = "10000.0 * Meter2",              cdf = "Classifications/LandUseHa9K/Classes";
+	unit<float32> kHa:	          Expr = "1000.0 * luHa";
+	unit<Float32> LuHaDiff:       Expr = "10000.0 * Meter2",              cdf = "Classifications/LuHaDiff11K/Classes";
+	unit<Float64> claimHa:        Expr = "10000.0 * Float64(Meter2)",     cdf = "Classifications/ClaimHa9K/Classes";
+	
+	unit<Float32> Ratio:          Expr = "1.0 * luHa / luHa",             cdf = "Classifications/ratio_10K/Classes";
+	
+	unit<float32> Continuous:	  Expr = "BaseUnit('Continuous', float32)";
+	unit<Float32> Factor:         Expr = "Ratio";
+	unit<Uint8>   Factor_uint8:   Expr = "uint8(Factor)";
+	unit<int16>   Factor_int16:   Expr = "int16(Factor)";
+	
+	unit<Bool>    Boolean:        Expr = "Classifications/Boolean"; // support for 
+	unit<int16>   SuccessionCode: Range = "[-1000, 2000) ";
+	
+	unit<Float32> Rad:            Expr = "BaseUnit('Rad', float32)";
+	unit<Float32> Degrees:        Expr = "Float32( pi() / 180.0) * Rad";
+	
+	unit<Float32> Percent:        Expr = "0.01 * Ratio",                  cdf = "Classifications/Percent_13K/Classes";
+	unit<Float32> Promille:       Expr = "0.1 * Percent"; // no preconfigured classification, which causes auto-classification (equal count in 5 classes with user defined ramp colours)
+	
+	unit<Float32> EUR:            Expr = "BaseUnit('EURO', float32)";
+	unit<Float32> EUR_Ha:         Expr = "EUR / luHa";
+	unit<Float32> EUR_M2:         Expr = "EUR / Meter2",                  cdf = "Classifications/Eur_M2_15K/Classes";
+	unit<Float32> kEUR_M2:        Expr = "1000.0 * EUR_M2";
+
+	unit<Float32> kg:             Expr = "BaseUnit('kg', float32)";
+	unit<Float32> tonne:          Expr = "1000.0 * kg";
+	unit<float32> tonne_km2:      Expr = "tonne / km2";   // used for CarbonSequestration
+	unit<float32> tonne_ha:       Expr = "tonne / luHa";  // used for Erosion
+
+	unit<Float32> year:           Expr = "BaseUnit('Yr', float32)";
+	
+	unit<Float32> YearRange:      Range = "[1900, 2100) ";
+	unit<Float32> YearDiffRange:  Range = "[-100, 100) ";
+	
+//	unit<Float32> YearRange:      Expr = "Range(BaseUnit('Yr', Float32), Float32(1900), Float32(2100))";
+//	unit<Float32> YearDiffRange:  Expr = "Range(YearRange,  Float32(-100), Float32(100))";
+	
+	unit<Float32> celsius:        Expr = "Baseunit('celsius', float32)";
+	
+	// EuRuralis indicator related units
+	unit<float32> tonneC_km2:       
+		Expr = "Range(tonne_km2, Float32(-40), Float32(150))", 
+		url  = "%sourceDataProjDir%/IndicatorData/CarbonSequestration/Doc/carbon method factsheet.doc", 
+		cdf  = "Classifications/tonneC_km2_K7/Classes";
+		
+	unit<float32> tonneE_ha:        
+		Expr = "Range(tonne_ha, Float32(0), Float32(10000))", 
+		url  = "%sourceDataProjDir%/IndicatorData/Erosion/Doc/Factsheet soil erosion.doc", 
+		cdf  = "Classifications/tonneE_ha_K7/Classes";
+	
+	unit<Float32> kgN:          Expr = "BaseUnit('kg N', float32)";
+	unit<Float32> tonneN:       Expr = "1000.0 * kgN";
+	unit<Float32> kgN_km2Yr:    Expr = "kgN    / (km2 * BaseUnit('Yr', Float32))";
+	unit<Float32> tonneN_km2Yr: Expr = "1000.0 * kgN_km2Yr";
+
+	// Demand Module
+	unit<Float32> NrResidents:    Expr = "BaseUnit('Residents', float32)", cdf = "Classifications/Residents_10K/Classes";	
+	unit<float32> dNrResidents:	  Expr = "NrResidents", cdf = "Classifications/residents_dif_10K/Classes";
+	unit<Float32> MResidents:     Expr = "1000000.0 * NrResidents";
+	unit<Float32> InteractionPotential: Expr = "NrResidents / min";
+	unit<uint8>  SoilSealing100: 	Expr = "BaseUnit('SealingLevel', uint8)", cdf = "Classifications/Soilsealing/Classes";
+	unit<Float32> m2_Res:         Expr = "Meter2 / NrResidents ";
+	unit<Float32> km2_Res:        Expr = "km2 / NrResidents ";
+	unit<Float32> Res_m2:         Expr = "1.0 / m2_Res ";
+	unit<Float32> Res_ha:         Expr = "NrResidents / luHa", label = "NrResidents per hectare", cdf = "Classifications/Res_ha_10K/Classes";
+
+	unit<Float32> NrOfPersons:    Expr = "NrResidents";	
+	unit<Float32> ForcedConversion;
+	
+	// Dairy cattle
+	unit<Float32> NrLivestock:    Expr = "BaseUnit('LU', float32)", cdf = "Classifications/Residents_10K/Classes";	
+	unit<Float32> LU_KM2:         Expr = "NrLivestock / km2";	
+	
+	unit<uint8> SlopeClass: Expr = "Classifications/SlopeClass";
+}

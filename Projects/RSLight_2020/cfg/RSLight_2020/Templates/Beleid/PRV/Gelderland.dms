@@ -1,0 +1,61 @@
+container Gelderland := PRVT('Gelderland')
+{
+	container woongebied_en_werk_bedrijventerrein
+	{
+		container Hard
+		{
+			attribute<bool> Gelders_natuurnetwerk       (domain_grid) := Src/NL_IMRO_9925_PVOmgverordeningGC_gc04/natuur/Gelders_natuurnetwerk/Bestand/Multi/Result;
+			attribute<bool> Nieuwe_Hollandse_Waterlinie (domain_grid) := Src/NL_IMRO_9925_PVOmgverordeningGC_gc04/landschap/Nieuwe_Hollandse_Waterlinie/bestand/Multi/result;
+			attribute<bool> Waardevol_open_gebied       (domain_grid) := Src/NL_IMRO_9925_PVOmgverordeningGC_gc04/landschap/Waardevol_open_gebied/bestand/Multi/result;
+			attribute<bool> Grondwaterbescherming       (domain_grid) := Src/NL_IMRO_9925_PVOmgverordeningGC_gc04/Water_en_Milieu/Grondwaterbescherming/Bestand/Multi/Result;
+			attribute<bool> waterwingebied              (domain_grid) := Src/NL_IMRO_9925_PVOmgverordeningGC_gc04/Water_en_Milieu/waterwingebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Gelders_natuurnetwerk
+					, Nieuwe_Hollandse_Waterlinie
+					, Waardevol_open_gebied
+					, Grondwaterbescherming
+					, waterwingebied
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Stiltegebieden (domain_grid) := Src/NL_IMRO_9925_PVOmgverordeningGC_gc04/Veilige_Leefomgeving/Stiltegebieden/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Stiltegebieden
+				);
+		}
+	}
+	
+	container Glastuinbouw
+	{
+		container Hard
+		{
+			attribute <bool> Glastuinbouwontwikkelingsgebied (domain_grid) := provincie && !Src/NL_IMRO_9925_PVOmgverordeningGC_gc04/glastuinbouw/Glastuinbouwontwikkelingsgebied/Bestand/Multi/Result;
+			
+			attribute<bool> Totaal (domain_grid):= Max_elem
+				(
+					  Glastuinbouwontwikkelingsgebied
+				);
+		}
+		
+		container Middel
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+		
+		container Zacht
+		{
+			attribute<bool> Totaal (domain_grid) := const(false, domain_grid);
+		}
+	}
+}

@@ -1,0 +1,65 @@
+container ShapeData
+{
+	unit<UInt32> lfa :
+		StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/lfa.shp" ,
+		StorageType = "gdal.vect" ,
+		StorageReadOnly = "True" ,
+		DialogType =  "Map" ,
+		DialogData = "Geometry"
+
+	{
+		attribute<Geography/LambertEA> Geometry(poly);
+		attribute<bool> art18_all: Expr = "LFA_comb2 = 'TNN' ||LFA_comb2 = 'PNN' || LFA_comb2 ='PNP' || LFA_comb2 ='PPN' || LFA_comb2 ='PPP'";
+		attribute<bool> art18_totally: Expr = "LFA_comb2 = 'TNN'";
+		attribute<bool> art18_partially: Expr = "LFA_comb2 = 'PNN' || LFA_comb2 ='PNP' || LFA_comb2 ='PPN' || LFA_comb2 ='PPP'";
+		attribute<bool> art19_all: Expr = "LFA_comb2 = 'NTN' || LFA_comb2 = 'NPN' || LFA_comb2 ='NPP' || LFA_comb2 ='PPN' || LFA_comb2 ='PPP'";
+		attribute<bool> art19_totally: Expr = "LFA_comb2 = 'NTN'";
+		attribute<bool> art19_partially: Expr = "LFA_comb2 = 'NPN' || LFA_comb2 ='NPP' || LFA_comb2 ='PPN' || LFA_comb2 ='PPP'";
+		attribute<bool> art20_all: Expr = "LFA_comb2 = 'NNT' || LFA_comb2 = 'NNP' || LFA_comb2 ='NPP' || LFA_comb2 ='PNP' || LFA_comb2 ='PPP'";
+		attribute<bool> art20_totally: Expr = "LFA_comb2 = 'NNT'";
+		attribute<bool> art20_partially: Expr = "LFA_comb2 = 'NNP' || LFA_comb2 ='NPP' || LFA_comb2 ='PNP' || LFA_comb2 ='PPP'";
+	}
+	unit<UInt32> natura2000_v2011_domain:
+		StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Natura2000_End2011.shp",
+		StorageType = "gdal.vect",
+		StorageReadOnly = "True",
+		SyncMode = "None";
+
+	unit<UInt32> natura2000_v2011_tiled_domain: Expr = "TiledUnit(value(5000, Range(UInt32, 0, #natura2000_v2011_domain)))";
+
+	unit<UInt32> natura2000_v2011: Expr = "natura2000_v2011_tiled_domain",
+		StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Natura2000_End2011.shp",
+		StorageType = "gdal.vect",
+		StorageReadOnly = "True",
+		DialogType =  "Map",
+		DialogData = "Geometry"
+	{
+		attribute<Geography/LambertEA> Geometry(poly);
+	}
+
+	unit<UInt32> nda:
+		StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/nda.shp",
+		StorageType = "gdal.vect",
+		StorageReadOnly = "True",
+		DialogType =  "Map",
+		DialogData = "Geometry"
+	{
+		attribute<Geography/LambertEA> Geometry(poly);
+	}
+	
+	
+	unit<uint32> TripAdvisor_data: StorageName = "%SourceDataProjDir%/EUCS_100m/TripAdvisor/TRIPADVISOR_Z17_ALL_ETRS.shp", StorageType = "gdal.vect", DialogData = "Geometry", DialogType = "Map", StorageReadOnly = "True"
+	{
+		attribute<Geography/LambertEA> Geometry;
+		attribute<string> Type;
+		attribute<float32> Weight;
+		
+		attribute<Geography/Regions/JrcRegion> runzone_id: expr = "point_in_polygon(Geometry, Geography/Regions/JrcRegion/Geometry)";
+		
+		unit<uint32> Types: NrOfRows = 4
+		{
+			attribute<string> Values: ['Attractions','Hotels','Restaurants','vacationrentals'];
+		}
+	}
+}
+

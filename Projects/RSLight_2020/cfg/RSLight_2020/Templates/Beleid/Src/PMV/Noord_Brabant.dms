@@ -1,0 +1,15 @@
+container Noord_Brabant: url = ""
+{
+	parameter<string> Bestandsloc: = '%RSLDataDir%/Beleid/Ruimte/pmv_2017/nb/StilteGebieden.shp';
+	parameter<string> Source:      = 'http://atlas.brabant.nl/arcgis/services/pgr_inspire/MapServer/WFSServer?request=GetCapabilities&service=WFS ';
+		
+	container StilteGebieden : = VergriddingT
+	(
+		'=Bestandsloc'
+		,'SELECT * FROM StilteGebieden'
+		,''
+		,'=Source'
+	);
+
+	attribute<bool> Totaal (domain_grid) := max_elem(StilteGebieden/Bestand/Multi/result);
+}

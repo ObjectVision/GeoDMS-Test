@@ -1,0 +1,124 @@
+container RunRegions: Using = "Geography/AdministrativeBoundaries;"
+{
+	
+	attribute<UnitSets/base_zones> base_raster (domain_grid): expr = "poly2grid(UnitSets/base_zones/Geometry, domain_grid)";
+	
+	container RasterSets: expr = "for_each_nedvn(BoundarySets/uniName, 'base_rels/'+ BoundarySets/uniName +'[base_raster]', domain_grid, UnitSets, BoundarySets/uniName)", FreeData = "True"
+	{
+		attribute<UnitSets/RunAreas> 			RunAreas 			(domain_grid): 	expr = "base_rels/RunAreas[base_raster]";
+		attribute<UnitSets/ForestDemandRegions> ForestDemandRegions (domain_grid): 	expr = "base_rels/ForestDemandRegions[base_raster]";
+		attribute<UnitSets/Capri> 				Capri 				(domain_grid): 	expr = "base_rels/Capri[base_raster]";
+		attribute<UnitSets/CapriAggr> 			CapriAggr 			(domain_grid): 	expr = "base_rels/CapriAggr[base_raster]";
+	}
+	
+	container UnitSets: expr = "for_each_ind('nex', BoundarySets/uniName, 'RegionalSets/'+ BoundarySets/uniName +'/Set16',uint16)", FreeData = "True"
+	{
+		unit<uint16> base_zones: 			expr = "RegionalSets/base_zones/Set16" 
+		{
+			attribute<LambertEA> centroid: expr = "centroid_or_mid(Geometry)"; 
+			attribute<float32> area: expr = "float32(area(base_zones/Geometry, float64)) / float32(1000 * 1000)";
+			
+			attribute<Float64>   CellWeight(domain_grid) := Float64(!IsNull(CaseData/OrgLandUse));
+			
+			attribute<LambertEA> lu_numerator         := sum(id(domain_grid)[LambertEA] * point_xy(CellWeight, CellWeight), base_raster) ;
+			attribute<Float64>   lu_denominator       := sum(CellWeight, base_raster);
+			attribute<LambertEA> lu_weighted_centroid := lu_numerator / point_xy(lu_denominator, lu_denominator); 
+		}
+		unit<uint16> RunAreas:		 		expr = "RegionalSets/RunAreas/Set16";
+		unit<uint16> ForestDemandRegions:	expr = "RegionalSets/ForestDemandRegions/Set16";
+		unit<uint16> Capri:					expr = "RegionalSets/Capri/Set16";
+		unit<uint16> CapriAggr:				expr = "RegionalSets/CapriAggr/Set16";
+		
+	}
+	container UnitSets32: expr = "for_each_ind('nex', BoundarySets/uniName, 'RegionalSets/'+ BoundarySets/uniName +'/Set',uint32)", FreeData = "True"
+	{
+		unit<uint32> base_zones: 			expr = "RegionalSets/base_zones/Set" {attribute<LambertEA> centroid: expr = "centroid_or_mid(Geometry)"; attribute<float32> area: expr = "float32(area(base_zones/Geometry, float64)) / float32(1000 * 1000)";}
+	}
+	
+	container base_rels: expr = "for_each_nedvn(BoundarySets/uniName, "
+	 "'MakeDefined(point_in_polygon(UnitSets/base_zones/centroid, UnitSets/'+ BoundarySets/uniName +'/Geometry), '+"
+		"'point_in_polygon(UnitSets/base_zones/lu_weighted_centroid, UnitSets/'+ BoundarySets/uniName +'/Geometry))',"
+		"UnitSets/base_zones, UnitSets, BoundarySets/uniName)"
+	{
+		attribute<UnitSets/RunAreas> 			RunAreas 			(UnitSets/base_zones): expr = "MakeDefined(point_in_polygon(UnitSets/base_zones/centroid, UnitSets/RunAreas/Geometry), point_in_polygon(UnitSets/base_zones/lu_weighted_centroid, UnitSets/RunAreas/Geometry))";
+		attribute<UnitSets/ForestDemandRegions> ForestDemandRegions (UnitSets/base_zones): expr = "MakeDefined(point_in_polygon(UnitSets/base_zones/centroid, UnitSets/ForestDemandRegions/Geometry), point_in_polygon(UnitSets/base_zones/lu_weighted_centroid, UnitSets/ForestDemandRegions/Geometry))";
+		attribute<UnitSets/Capri> 				Capri 				(UnitSets/base_zones): expr = "MakeDefined(point_in_polygon(UnitSets/base_zones/centroid, UnitSets/Capri/Geometry), point_in_polygon(UnitSets/base_zones/lu_weighted_centroid, UnitSets/Capri/Geometry))";
+		attribute<UnitSets/CapriAggr> 			CapriAggr 			(UnitSets/base_zones): expr = "MakeDefined(point_in_polygon(UnitSets/base_zones/centroid, UnitSets/CapriAggr/Geometry), point_in_polygon(UnitSets/base_zones/lu_weighted_centroid, UnitSets/CapriAggr/Geometry))";
+	}
+	
+	container base_rels32: expr = "for_each_nedvn(BoundarySets/uniName, "
+	 "'point_in_polygon(UnitSets32/base_zones/centroid, UnitSets32/'+ BoundarySets/uniName +'/Geometry)', UnitSets32/base_zones, UnitSets32, BoundarySets/uniName)"
+	{
+		//attribute<UnitSets32/RunAreas> 			  RunAreas 				(UnitSets32/base_zones): expr = "point_in_polygon(UnitSets32/base_zones/centroid, UnitSets32/RunAreas/Geometry)";
+		//attribute<UnitSets32/ForestDemandRegions> ForestDemandRegions 	(UnitSets32/base_zones): expr = "point_in_polygon(UnitSets32/base_zones/centroid, UnitSets32/ForestDemandRegions/Geometry)";
+		//attribute<UnitSets32/Capri> 			  Capri 				(UnitSets32/base_zones): expr = "point_in_polygon(UnitSets32/base_zones/centroid, UnitSets32/Capri/Geometry)";
+	}
+
+	
+	container RegionalSets: expr = "for_each_ne(BoundarySets/uniName, 'getRegionSet('+string(JrcRegionId)+'[Geography/Regions/Runs], '+ quote(BoundarySets/uniName) +')')"
+	{
+		container base_zones: 			expr = "getRegionSet(JrcRegionId, 'base_zones')";
+		container RunAreas:		  		expr = "getRegionSet(JrcRegionId, 'RunAreas')";
+		container Capri:				expr = "getRegionSet(JrcRegionId, 'Capri')";
+		container CapriAggr:			expr = "getRegionSet(JrcRegionId, 'CapriAggr')";
+		container ForestDemandRegions: 	expr = "getRegionSet(JrcRegionId, 'ForestDemandRegions')";
+	}
+	container region_overlays: expr = "for_each_ind('nex', BoundarySets/uniName, 'overlay_polygon(value(RegionalSets/'+ BoundarySets/uniName +'/set/Buffered, ipoint), value(RegionalSets/'+ BoundarySets/uniName +'/set/Buffered, ipoint))', uint32)"
+	{
+		unit<uint32> Capri: 	expr = "overlay_polygon(value(RegionalSets/Capri/set/Buffered, ipoint), 	value(RegionalSets/Capri/set/Buffered, ipoint))";
+		unit<uint32> CapriAggr: expr = "overlay_polygon(value(RegionalSets/CapriAggr/set/Buffered, ipoint), value(RegionalSets/CapriAggr/set/Buffered, ipoint))";
+	}
+	
+	container contiguity_matrices: expr = "for_each_ne(BoundarySets/uniName, 'getContiguityMatrices(UnitSets/'+ BoundarySets/uniName +', region_overlays/'+ BoundarySets/uniName +')')", FreeData = "True"
+	{
+		container Capri: 		expr = "getContiguityMatrices(UnitSets/Capri, region_overlays/Capri)";
+		container CapriAggr: 	expr = "getContiguityMatrices(UnitSets/CapriAggr, region_overlays/CapriAggr)";
+	}
+	
+	container getRegionSet: IsTemplate = "True"
+	{
+		parameter<Geography/Regions/Runs>				RunRegion;
+		parameter<string> 								inZoneSetName;
+		
+		unit<uint32> OrgZones: expr = "= 'Geography/Regions/' + inZoneSetName";
+		
+		unit<uint32> Set: expr = "= 'select_with_org_rel(relational/'+ inZoneSetName +' = '+ string(RunRegion) +'[Geography/Regions/Runs])'",
+			DialogData = "Geometry",
+			DialogType = "map"
+		{
+			attribute<string> 		ZoneId: 				expr = "OrgZones/ZoneId[org_rel]";
+			attribute<LambertEA> 	Geometry	(polygon): 	expr = "OrgZones/Geometry[org_rel]";
+			attribute<string>		Label:					expr = "ZoneId";
+			attribute<LambertEA>	Buffered	(polygon): 	expr = "polygon_inflated(value(Geometry, ipoint), float64(10))[LambertEA]";
+		}
+		unit<uint16> Set16: expr = "range(uint16, uint16(0), uint16(#Set))", DialogData = "Geometry", DialogType = "map"
+		{
+			attribute<OrgZones> 	org_rel: 		expr = "Set/org_rel[link32]";
+			attribute<Set> 			link32:				expr = "id(.)[Set]";
+			attribute<string> 		ZoneId:				expr = "Set/ZoneId[link32]";
+			attribute<LambertEA> 	Geometry (polygon): expr = "Set/Geometry[link32]";
+			attribute<string>		Label:				expr = "Set/Label[link32]";
+			
+		}
+		
+	}
+	
+	container getContiguityMatrices: IsTemplate = "True"
+	{
+		unit<uint32> zone_set;
+		unit<uint32> overlay_set;
+		
+		unit<uint32> matrix: expr = "overlay_set"
+		{
+			attribute<zone_set> first_rel: expr = "first_rel";
+			attribute<zone_set> second_rel: expr = "second_rel";
+			attribute<float32>  proto_weight: 	expr = "first_rel != second_rel ? float32(1) : float32(0)";
+			attribute<float32>  weight:			expr = "proto_weight / sum(proto_weight, first_rel)[first_rel]";
+		}
+		
+	}
+	
+	
+	
+
+}
