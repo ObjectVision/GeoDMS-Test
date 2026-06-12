@@ -191,41 +191,57 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)
 
     # add experiments
+    # t010 — Operator/functie-test: draait de Operator-config die vele DMS-operatoren/functies dekt.
     regression.add_exp(exps, name=f"{result_folder_name}__t010_operator_test", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test.txt", indicator_results_file=f"{result_paths["results_folder"]}/t010_operator_test.txt")
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Storage"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t050 — Storage: schrijf ESRI-shapefile (polygon) via de storage manager; file-compare van area.* tegen referentie in Storage/data.
     regression.add_exp(exps, name=f"{result_folder_name}__t050_Storage_Write_Shape_Polygon_Folder_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["StoragePath"]} EsriShape/polygon/Write", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt", file_comparison=(f"{regression_test_paths["TstDir"]}/Storage/data/polygon/area.*", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/Storage/polygon/area.*"))
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/BAG20"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t060 — Storage: maak BAG-snapshot Utrecht in GeoPackage-formaat; vergelijk gegenereerde .gpkg met referentie.
     regression.add_exp(exps, name=f"{result_folder_name}__t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["BAG20MakeSnapShotPath"]} snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt", file_comparison=(f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/BAG20/snapshot_Utrecht_20210701.gpkg", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/BAG20/snapshot_Utrecht_20210701.gpkg"))
+    # t100 — Netwerk: verbind PC6-punten aan het wegennet (NL/BE/GE); vergelijk met opgenomen referentie.
     regression.add_exp(exps, name=f"{result_folder_name}__t100_network_connect", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t100_network_connect.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t100_network_connect/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t100_network_connect.txt", indicator_results_file=f"{result_paths["results_folder"]}/t100_network_connect.txt")
+    # t101 — Netwerk: OD PC4 dense impedance-matrix over wegennet (NL/BE/GE). (Mantis #1021, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t101_network_od_pc4_dense", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t101_network_od_pc4_dense.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t101_network_od_pc4_dense/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t101_network_od_pc4_dense.txt", indicator_results_file=f"{result_paths["results_folder"]}/t101_network_od_pc4_dense.txt")
+    # t102 — Netwerk: OD PC6 sparse impedance-matrix (met cut) over wegennet (NL/BE/GE). (Mantis #1021, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t102_network_od_pc6_sparse", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t102_network_od_pc6_sparse.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t102_network_od_pc6_sparse/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t102_network_od_pc6_sparse.txt", indicator_results_file=f"{result_paths["results_folder"]}/t102_network_od_pc6_sparse.txt") 
+    # t151 — Conversie van Belgische (Lambert) naar RD-coördinaten voor Belgische gemeenten.
     regression.add_exp(exps, name=f"{result_folder_name}__t151_conversie_bl_rd_test", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t151_conversie_bl_rd_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["BLRDConversiePath"]} t151_conversie_bl_rd_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t151_conversie_bl_rd_test.txt", indicator_results_file=f"{result_paths["results_folder"]}/t151_conversie_bl_rd_test.txt") 
+    # t200 — Grid: poly2grid van CBS-bodemgebruik (BBG) naar 10m-grid (NL). (Mantis #929, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t200_grid_Poly2Grid", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t200_grid_Poly2Grid.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t200_grid_Poly2Grid/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t200_grid_Poly2Grid.txt", indicator_results_file=f"{result_paths["results_folder"]}/t200_grid_Poly2Grid.txt") 
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t300 — XML-bestanden (BAG) lezen en polygon-geometrieën parsen.
     regression.add_exp(exps, name=f"{result_folder_name}__t300_xml_ReadParse", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t300_xml_ReadParse.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t300_xml_ReadParse/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t300_xml_ReadParse.txt", indicator_results_file=f"{result_paths["results_folder"]}/t300_xml_ReadParse.txt")
+    # t301 — Woningtype (residential type) afleiden uit BAG-geometrie pand/vbo; vergelijk met referentie (1 promille foutmarge).
     regression.add_exp(exps, name=f"{result_folder_name}__t301_BAG_ResidentialType", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t301_BAG_ResidentialType/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt", indicator_results_file=f"{result_paths["results_folder"]}/t301_BAG_ResidentialType.txt") 
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/NetworkModel"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t405_1 — NetworkModel PBL, stap 1: invoerdata prepareren.
     regression.add_exp(exps, name=f"{result_folder_name}__t405_1_NetworkModel_PBL_prepare_data", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t405_1_NetworkModel_PBL_prepare_data.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_pbl_regressietest"]}/main.dms RegressieTest/Step1_prepare_data", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t405_1_NetworkModel_PBL_prepare_data.txt")
 
     regression_test_paths["UseFence"] = "FALSE"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t405_2 — NetworkModel PBL, stap 2.1: tiled modelrun zonder fence (UseFence=FALSE).
     regression.add_exp(exps, name=f"{result_folder_name}__t405_2_NetworkModel_PBL_zonderFence", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t405_2_NetworkModel_PBL_zonderFence.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_pbl_regressietest"]}/main.dms RegressieTest/Step2_1_run_model_tiled_zonderFence", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t405_2_NetworkModel_PBL_zonderFence.txt")
+    # t405_2_2 — indicator-vergelijking van de zonderFence-run.
     regression.add_exp(exps, name=f"{result_folder_name}__t405_2_2_NetworkModel_PBL_indicator_zonderFence", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t405_2_2_NetworkModel_PBL_indicator_zonderFence.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_pbl_regressietest"]}/main.dms RegressieTest/t405_2_NetworkModel_PBL_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t405_2_2_NetworkModel_PBL_indicator_zonderFence.txt", store_results=False)
     
     regression_test_paths["UseFence"] = "TRUE"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t405_3 — NetworkModel PBL, stap 2.2: tiled modelrun met fence (UseFence=TRUE).
     regression.add_exp(exps, name=f"{result_folder_name}__t405_3_NetworkModel_PBL_metFence", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t405_3_NetworkModel_PBL_metFence.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_pbl_regressietest"]}/main.dms RegressieTest/Step2_2_run_model_tiled_metFence", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t405_3_NetworkModel_PBL_metFence.txt")
+    # t405_3_2 — indicator-vergelijking van de metFence-run.
     regression.add_exp(exps, name=f"{result_folder_name}__t405_3_2_NetworkModel_PBL_indicator_metFence", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t405_3_2_NetworkModel_PBL_indicator_metFence.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_pbl_regressietest"]}/main.dms RegressieTest/t405_3_NetworkModel_PBL_fenced_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t405_3_2_NetworkModel_PBL_indicator_metFence.txt", store_results=False)
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/networkmodel_eu_regressietest"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t410 — NetworkModel EU: indicator-results regressietest.
     regression.add_exp(exps, name=f"{result_folder_name}__t410_NetworkModel_EU", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t410_NetworkModel_EU.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["Networkmodel_eu_regressietest"]}/main.dms RegressieTest/t410_NetworkModel_EU_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t410_NetworkModel_EU.txt")
 
     #regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Hestia"
@@ -234,6 +250,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/LUSDemo2023"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t611 — LUS Demo 2023 (Land Use Scanner): allocatie-resultaten vergelijken.
     regression.add_exp(exps, name=f"{result_folder_name}__t611_Lus_demo_2023", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t611_Lus_demo_2023.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["LusDemoRunPath2023"]} t611_lus_demo_2023_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t611_Lus_demo_2023.txt")
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/RSopen_RegressieTest_v2025"
@@ -244,7 +261,9 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     #add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_results_test_result_html", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_results_test_result_html.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath"]}/Regression_test.dms t640_3_RSopen_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_results_test_result_html.txt")
     regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t641_1 — RuimteScanner Open v2025H2: basisdata genereren (WriteBasedata).
     regression.add_exp(exps, name=f"{result_folder_name}__t641_1_RSopen_MakeBaseData", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_1_RSopen_MakeBaseData.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms WriteBasedata/Generate_Run1", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_1_RSopen_MakeBaseData.txt")
+    # t641_1_2 — indicator-vergelijking van de basisdata-stap.
     regression.add_exp(exps, name=f"{result_folder_name}__t641_1_2_RSopen_prepare_base_data_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_1_2_RSopen_prepare_base_data_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms /t641_1_RSopen_MakeBaseData/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_1_2_RSopen_prepare_base_data_indicator.txt", store_results=False)
     
     regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
@@ -252,44 +271,60 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     regression_test_paths["RSL_VARIANT_NAME"] = "BAU"
     regression_test_paths["AlleenEindjaar"] = "FALSE"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t641_2 — RSopen: variantdata genereren (BAU-variant, WriteVariantData).
     regression.add_exp(exps, name=f"{result_folder_name}__t641_2_RSopen_MakeVariantData", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms WriteVariantData/Generate_Run1", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData.txt")
+    # t641_2 (indicator) — indicator-vergelijking van de variantdata-stap.
     regression.add_exp(exps, name=f"{result_folder_name}__t641_2_RSopen_MakeVariantData_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms t641_2_RSopen_MakeVariantData/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData_indicator.txt", store_results=False)
 
     regression_test_paths["VariantDataOntkoppeld"] = "TRUE"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t641_3 — RSopen: allocatie zichtjaar Y2050 (met VariantDataOntkoppeld=TRUE).
     regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_Allocatie", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_Allocatie.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms Allocatie/Zichtjaren/Y2050/Impl/Generate", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_Allocatie.txt")
-    regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_indicator",  cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms t641_3_RSopen_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt", store_results=False)
+    # t641_3 (indicator) — indicator-vergelijking van de allocatie.
+    regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms t641_3_RSopen_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt", store_results=False)
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/2UP"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t710 — 2UP-model (mondiaal urbanisatiemodel): indicator-results, zonder calcache.
     regression.add_exp(exps, name=f"{result_folder_name}__t710_2UP", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t710_2UP.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["TwoUPRunPath"]} test_2UP_indicator_results/result_html_zonder_calcache", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t710_2UP.txt")
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/2BURP"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t720 — 2BURP-model: indicator-results regressietest.
     regression.add_exp(exps, name=f"{result_folder_name}__t720_2BURP", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t720_2BURP.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["TwoBURPRunPath"]} t720_2BURP_indicator_results/result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t720_2BURP.txt")
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/100m_DynaPop"
     regression_test_paths["GEODMS_Overridable_SourceDataProjDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}"
     #regression_test_paths["GEODMS_Overridable_RunRegions"] = "JrcRegion"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t810 — ValLuisa/100m_DynaPop (EuClueScanner): LandUse & bevolking Tsjechië 2050 op 100m.
     regression.add_exp(exps, name=f"{result_folder_name}__t810_ValLuisa", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t810_ValLuisa.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["DynaPopPath"]} t810_ValLuisa_Czech_LU_POP/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t810_ValLuisa.txt")
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Cusa"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
+    # t910 — Cusa2 Afrika-model (geodms_africa_cusa2): indicator-results regressietest.
     regression.add_exp(exps, name=f"{result_folder_name}__t910_Cusa2_Africa", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t910_Cusa2_Africa.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["CusaRunPath"]} t910_cusa2_Africa_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t910_Cusa2_Africa.txt")
 
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/gui"
+    # t1630 — GUI-robuustheidstest: klap SourceData/Claims/ReadData van RSLight_2020 volledig
+    #         uit (items worden rood door onbereikbare RSL-data — dat is verwacht) en check dat
+    #         de GUI dit overleeft; het gescoorde resultaat is een classificatie-labelcheck.
+    #         (Mantis #887/#1429, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t1630_expandtest", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1630_expandtest.txt /T{regression_test_paths["TstDir"]}/dmsscript/RSLight_2020_expand_S1S2.dmsscript /{MT1} /{MT2} /{MT3} {regression_test_paths["RSLight_2020Path"]} t1630_expandtest_S1S2", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1630_expandtest.txt")
+    # t1640 — GUI: vergelijk detailpagina value-info op aggregaties met opgenomen referentie (14.5.0). (Mantis #1434, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t1640_value_info", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1640_value_info.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info.dmsscript /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} t1640_value_info", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1640_value_info.txt")
+    # t1642 — GUI: vergelijk detailpagina statistics/value-info met group-by op geometrie. (Mantis #1438, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {regression_test_paths["TstDir"]}/operator/cfg/MicroTst.dms t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt")
 
+    # t1742 — command-line @statistics op de Operator-config (/Arithmetics/UnTiled/add/attr);
+    #         vergelijk gegenereerde HTML met norm/Statistics_AUAA.html.
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t1742_command_statistics_stat.html"
     reference_statfile = f"{regression_test_paths["TstDir"]}/norm/Statistics_AUAA.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t1742_command_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t1742_command_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} @statistics /Arithmetics/UnTiled/add/attr @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1742_command_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     
-    # hestia development
-    # /Jaarreeksen/hWP_asl
+    # t2000 — Hestia-development (model-hestia-development.main_18_0_4): @statistics op
+    #         /Jaarreeksen/hWP_asl; vergelijk met referentie-HTML in HESTIA_dev.
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t2000_hestia_hWP_asl_statistics.html"
     reference_statfile = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/HESTIA_dev/t2000_hestia_hWP_asl_statistics.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} @statistics /Jaarreeksen/hWP_asl @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
