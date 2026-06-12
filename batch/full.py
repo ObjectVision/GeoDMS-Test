@@ -38,6 +38,10 @@ _BUILT_IN_DEFAULTS = {
     "ProfilerDir": "C:/Program Files/ObjectVision/GeoDms20.0.4.m", #str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
     "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
     "LocalBuilds": {},
+    # Limit the HTML/bokeh report columns to full GitHub releases (no
+    # pre-releases or drafts) plus the version under test. Set to false to
+    # compare against every historical result folder again.
+    "ReportOnlyReleases": True,
 }
 
 def _load_local_settings() -> dict:
@@ -326,6 +330,61 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} @statistics /Jaarreeksen/hWP_asl @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     return exps
 
+_RELEASE_CACHE_FILENAME = "github_release_versions.json"
+
+def _github_release_versions(cache_dir:str):
+    """Return the set of full-release versions ('major.minor.patch') of
+    github.com/ObjectVision/GeoDMS (pre-releases and drafts excluded), or
+    None when neither the GitHub API nor a previously cached list is
+    available. The list is cached in cache_dir so offline runs keep
+    filtering consistently."""
+    cache = Path(cache_dir) / _RELEASE_CACHE_FILENAME
+    versions = None
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.github.com/repos/ObjectVision/GeoDMS/releases?per_page=100",
+            headers={"Accept": "application/vnd.github+json", "User-Agent": "GeoDMS-Test-regression"})
+        with urllib.request.urlopen(req, timeout=10) as f:
+            releases = json.load(f)
+        # tag_name comes as v20.1.0 / v19.0.0.b / v17.9.5b -> keep the numeric triple
+        versions = sorted({m.group(1) for r in releases
+                           if not r.get("prerelease") and not r.get("draft")
+                           for m in [re.match(r"v?(\d+\.\d+\.\d+)", r.get("tag_name", ""))] if m})
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache, "w", encoding="utf-8") as f:
+            json.dump(versions, f)
+    except Exception as e:
+        if cache.exists():
+            print(f"[report filter] GitHub releases not reachable ({e}); using cached list {cache}")
+            with open(cache, "r", encoding="utf-8") as f:
+                versions = json.load(f)
+        else:
+            print(f"[report filter] GitHub releases not reachable ({e}) and no cache; report will show all versions")
+    return set(versions) if versions is not None else None
+
+def restrict_report_to_releases(display_version:str, tmp_file_dir:str):
+    """Monkeypatch regression.get_valid_result_folders so the comparison
+    report only gets columns for full GitHub releases plus the version under
+    test. Result folders of pre-releases / retracted / intermediate versions
+    stay on disk but are no longer shown."""
+    releases = _github_release_versions(tmp_file_dir)
+    if releases is None:
+        return
+    keep = set(releases)
+    current = re.match(r"(\d+\.\d+\.\d+)", display_version)
+    if current:
+        keep.add(current.group(1))
+    original_get_valid_result_folders = regression.get_valid_result_folders
+    def _only_release_folders(version, result_paths):
+        folders = original_get_valid_result_folders(version, result_paths)
+        kept = [f for f in folders if regression.get_semantic_version_from_folder_name(f) in keep]
+        dropped = len(folders) - len(kept)
+        if dropped:
+            print(f"[report filter] {dropped} result folder(s) of non-release versions hidden from the report (ReportOnlyReleases=false shows them again)")
+        return kept
+    regression.get_valid_result_folders = _only_release_folders
+
 def remove_local_data_dir_regression(local_data_regression_folder:str):
     files = glob.glob(local_data_regression_folder+"/*")
     for f in files:
@@ -470,6 +529,17 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             "t06* (t060, t061, ...). Omit to run the full suite."
         ),
     )
+    parser.add_argument(
+        "-all-versions",
+        dest="all_versions",
+        action="store_true",
+        help=(
+            "Show every historical result folder as a report column, including "
+            "pre-releases and intermediate versions. Default: only full GitHub "
+            "releases plus the version under test (see also ReportOnlyReleases "
+            "in local_settings.json)."
+        ),
+    )
     args = parser.parse_args()
     
     if args.version:
@@ -490,6 +560,11 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
     regression.import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
 
     display_version = geodms_paths["GeoDmsDisplayVersion"]
+
+    report_only_releases = str(_load_local_settings().get("ReportOnlyReleases", True)).lower() not in ("false", "0", "no", "")
+    if report_only_releases and not args.all_versions:
+        restrict_report_to_releases(display_version, local_machine_parameters["tmpFileDir"])
+
     regression_test_paths = get_regression_test_paths(local_machine_parameters)
     result_paths = regression.get_result_paths(geodms_paths, regression_test_paths, display_version, MT1, MT2, MT3)
 
