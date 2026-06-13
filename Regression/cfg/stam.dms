@@ -17,7 +17,10 @@ container Regression:	FreeData = "True"
 	{
 		container Overridable
 		{
-			parameter<String> RegressionDataDir   := '%sourceDataDir%/RegressionTests';
+			parameter<String> RegressionDataDir   := '%sourceDataDir%';
+			// Centrale map met referentiebestanden, per test een submap (t100/, t301/, ...).
+			// full.py overschrijft dit via GEODMS_Overridable_TestRefDir.
+			parameter<String> TestRefDir          := '%sourceDataDir%/TestReferenceFiles';
 		}
 		
 		parameter<String> DataDir := '%RSLDataDir%';
@@ -70,7 +73,7 @@ container Regression:	FreeData = "True"
 
 	container brondata
 	{
-		unit<uint32> PC4_centroid: StorageName = "%RegressionDataDir%/pc4_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
+		unit<uint32> PC4_centroid: StorageName = "%RegressionDataDir%/NetworkTests/pc4_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
 			attribute<eenheden/point_rd> geometry := point_xy(float32(X), float32(Y), eenheden/point_rd);
 		}
@@ -88,11 +91,11 @@ container Regression:	FreeData = "True"
 			parameter<float32> Y_min := min(Y);
 			parameter<float32> Y_max := max(Y);
 		}*/
-		unit<uint32> PC6_centroid: StorageName = "%RegressionDataDir%/pc6_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
+		unit<uint32> PC6_centroid: StorageName = "%RegressionDataDir%/NetworkTests/pc6_centroid.csv", StorageType = "gdal.vect", StorageReadOnly = "True"
 		{
 			attribute<eenheden/point_rd> geometry := point_xy(float32(X), float32(Y), eenheden/point_rd);
 		}
-		unit<uint32> weg: StorageName = "%RegressionDataDir%/roads_nl_be_du.fss", StorageReadOnly = "True"
+		unit<uint32> weg: StorageName = "%RegressionDataDir%/NetworkTests/roads_nl_be_du.fss", StorageReadOnly = "True"
 		{
 			attribute<eenheden/point_rd> geometry (arc);
 			attribute<eenheden/point_rd> geometry_simplified (arc) := bg_simplify_linestring(geometry, 10.0);
@@ -100,7 +103,7 @@ container Regression:	FreeData = "True"
 			attribute<bool>              isSnelWeg;
 		}
 
-		parameter<string> PC6_connect_ok_filename := '%RegressionDataDir%/pc6_connect' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
+		parameter<string> PC6_connect_ok_filename := '%TestRefDir%/t100/pc6_connect' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
 		unit<uint32> PC6_connect_ok: StorageName = "= PC6_connect_ok_filename", StorageReadOnly = "True"
 		{
 			attribute<eenheden/point_rd> UnionData (arc);
@@ -110,7 +113,7 @@ container Regression:	FreeData = "True"
 			}
 		}
 
-		parameter<string> PC6_impedance_ok_filename := '%RegressionDataDir%/pc6_impedance' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
+		parameter<string> PC6_impedance_ok_filename := '%TestRefDir%/t102/pc6_impedance' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
 		unit<uint32> PC6_impedance_ok: StorageName = "= PC6_impedance_ok_filename", StorageReadOnly = "True"
 		{
 			attribute<eenheden/m> alt_imp;
@@ -118,7 +121,7 @@ container Regression:	FreeData = "True"
 			attribute<uint32>     OrgZone_rel;
 			attribute<uint32>     DstZone_rel;
 		}
-		unit<uint32> PC4_impedance_ok: StorageName = "%RegressionDataDir%/PC4_impedance.fss", StorageReadOnly = "True"
+		unit<uint32> PC4_impedance_ok: StorageName = "%TestRefDir%/t101/PC4_impedance.fss", StorageReadOnly = "True"
 		{
 			attribute<eenheden/m> alt_imp;
 			attribute<eenheden/s> impedance;
@@ -126,14 +129,14 @@ container Regression:	FreeData = "True"
 			attribute<uint32>     DstZone_rel;
 		}
 
-		unit<uint32> Make_BAG_type_woonpand_rel: StorageName = "%RegressionDataDir%/type_woonpand_rel_ok.fss"
+		unit<uint32> Make_BAG_type_woonpand_rel: StorageName = "%TestRefDir%/t301/type_woonpand_rel_ok.fss"
 		{
 			unit<uint32> domain := results/t301_BAG_ResidentialType/pand_snapshot;
 			attribute<string> identificatie     (domain):= results/t301_BAG_ResidentialType/pand_id;
 			attribute<uint8>  type_woonpand_rel (domain):= results/t301_BAG_ResidentialType/calculated;
 		}
 
-		unit<uint32> BAG_type_woonpand_rel: StorageName = "%RegressionDataDir%/type_woonpand_rel_ok.fss", StorageReadOnly = "True"
+		unit<uint32> BAG_type_woonpand_rel: StorageName = "%TestRefDir%/t301/type_woonpand_rel_ok.fss", StorageReadOnly = "True"
 		{
 			unit<uint32> domain;
 			attribute<string> identificatie     (domain);
@@ -158,7 +161,7 @@ container Regression:	FreeData = "True"
 		}
 		container bodemgebruik_groep_10m_ok
 		{
-			attribute<uint8> GridData (grid/domain_10m): StorageName = "%RegressionDataDir%/bbg_2012.tif";
+			attribute<uint8> GridData (grid/domain_10m): StorageName = "%RegressionDataDir%/t200_BBG/bbg_2012.tif";
 		}
 	}
 
@@ -180,7 +183,7 @@ container Regression:	FreeData = "True"
 				, netwerk_PC4/nr_destNode
 				, netwerk_PC4/LinkSet/length_m
 			);
-		//,StorageName = "%RegressionDataDir%/PC4_impedance.fss";
+		//,StorageName = "%TestRefDir%/t101/PC4_impedance.fss";
 		
 		container netwerk_PC6:= netwerk/WegenMetLokaties/PC6;
 		unit<uint32> PC6_sparse_count :=
@@ -284,7 +287,7 @@ container Regression:	FreeData = "True"
 				, 120[eenheden/s]
 				, netwerk_PC6/LinkSet/length_m
 			)
-			,	StorageName = "%RegressionDataDir%/PC6_impedance.fss"
+			// t102: geen StorageName -> vers berekenen i.p.v. cachen, zodat de vergelijking met %TestRefDir%/t102 echt iets test (ref+cache waren voorheen hetzelfde bestand)
 		{
 			attribute<eenheden/m> alt_imp;
 			attribute<eenheden/s> impedance;
@@ -313,7 +316,7 @@ container Regression:	FreeData = "True"
 				, netwerk_PC6/LinkSet/length_m
 				, PC6_sparse_count/OrgZone_NrDstZones
 			)
-			,	StorageName = "%RegressionDataDir%/PC6_impedance.fss"
+			// t102: geen StorageName -> vers berekenen i.p.v. cachen, zodat de vergelijking met %TestRefDir%/t102 echt iets test (ref+cache waren voorheen hetzelfde bestand)
 		{
 			attribute<eenheden/m> alt_imp;
 			attribute<eenheden/s> impedance;
@@ -734,7 +737,7 @@ container Regression:	FreeData = "True"
 		container t1640_value_info
 		{
 			parameter<string> recorded:
-				storagename = "%RegressionDataDir%/t1640_value_info_recorded.txt"
+				storagename = "%TestRefDir%/t1640/t1640_value_info_recorded.txt"
 			,	StorageType = "str";
 
 			parameter<string> TargetFile := = quote(results/VersionInfo/results_folder + '/t1640_value_info.tmp') ;
@@ -762,7 +765,7 @@ container Regression:	FreeData = "True"
 		container t1642_value_info_group_by
 		{
 			parameter<string> recorded:
-				storagename = "%RegressionDataDir%/t1642_value_info_group_by_recorded.txt"
+				storagename = "%TestRefDir%/t1642/t1642_value_info_group_by_recorded.txt"
 			,	StorageType = "str";
 
 			parameter<string> TargetFile1 := = quote(results/VersionInfo/results_folder + '/t1642_value_info_group_by.tmp') ;
