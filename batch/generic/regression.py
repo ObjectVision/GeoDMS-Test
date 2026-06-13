@@ -1,4 +1,5 @@
 import os
+import re
 import platform
 import importlib
 import warnings
@@ -355,41 +356,50 @@ def get_valid_result_folders(version:str, result_paths:dict) -> list:
     return valid_result_folders
 
 def folder_is_results_folder(result_folder_name:str) -> bool:
-    # valid legacy:    17_4_5_x64_SF_C1C2C3_OVSRV07               (7 parts)
-    # valid flavored:  20_0_0_c_x64_SF_C1C2C3_OVSRV10             (8 parts)
-    # legacy + ts/hash:   17_4_5_x64_SF_C1C2C3_OVSRV07_<ts>_<hash>   (9)
-    # flavored + ts/hash: 20_0_0_c_x64_SF_C1C2C3_OVSRV10_<ts>_<hash> (10)
-    split_result_folder_name = result_folder_name.split("_")
-    if len(split_result_folder_name) not in (7, 8, 9, 10):
+    # A result folder starts with a numeric major_minor_patch version. Accepts
+    # both the current short names (e.g. 20_1_0_m, 20_1_0_m_<ts>_<hash>) and the
+    # historical long names (e.g. 17_4_5_x64_SF_C1C2C3_OVSRV07[_<ts>_<hash>]).
+    parts = result_folder_name.split("_")
+    if len(parts) < 3:
         return False
-    major, minor, patch = split_result_folder_name[0:3]
+    major, minor, patch = parts[0:3]
     return major.isdigit() and minor.isdigit() and patch.isdigit()
 
 def parse_folder_name(result_folder_name:str) -> list:
     """Always returns 10 elements:
     [major, minor, patch, flavor, arch, sf, multitask, machine, time, hash].
-    Legacy 7/9-part names get an empty flavor inserted at index 3."""
+    Parsed by content so both the current short names (20_1_0_m[_<ts>_<hash>])
+    and historical long names (17_4_5_x64_SF_C1C2C3_OVSRV07[_<ts>_<hash>]) work;
+    fields absent in a given name come back as empty strings."""
     parts = result_folder_name.split("_")
-    n = len(parts)
-    if n == 7:
-        major, minor, patch, arch, sf, mt, machine = parts
-        return [major, minor, patch, "", arch, sf, mt, machine, "", ""]
-    if n == 8:
-        major, minor, patch, flavor, arch, sf, mt, machine = parts
-        return [major, minor, patch, flavor, arch, sf, mt, machine, "", ""]
-    if n == 9:
-        major, minor, patch, arch, sf, mt, machine, time, hash = parts
-        return [major, minor, patch, "", arch, sf, mt, machine, time, hash]
-    if n == 10:
-        return parts
-    return parts
+    major, minor, patch = (parts + ["", "", ""])[0:3]
+    rest = parts[3:]
+    # trailing timestamp(14 digits) + abbreviated hash
+    time = hash = ""
+    if len(rest) >= 2 and re.fullmatch(r"\d{14}", rest[-2]):
+        time, hash = rest[-2], rest[-1]
+        rest = rest[:-2]
+    flavor = ""
+    if rest and re.fullmatch(r"[a-z]", rest[0]):          # single-letter flavor (m/c/l)
+        flavor, rest = rest[0], rest[1:]
+    arch = ""
+    if rest and re.match(r"x(64|86)", rest[0]):           # x64, x86, x64-windows-msbuild, ...
+        arch, rest = rest[0], rest[1:]
+    sf = ""
+    if rest and rest[0] == "SF":                          # vestigial status-flags marker
+        sf, rest = rest[0], rest[1:]
+    multitask = ""
+    if rest and re.fullmatch(r"[SC]1[SC]2[SC]3", rest[0]):
+        multitask, rest = rest[0], rest[1:]
+    machine = rest[0] if rest else ""
+    return [major, minor, patch, flavor, arch, sf, multitask, machine, time, hash]
 
 def get_datetime_from_folder_name(result_folder_name:str) -> datetime:
-    parts = result_folder_name.split("_")
-    commit_time = datetime(1970, 1, 1)
-    if len(parts) in (9, 10):
-        commit_time = datetime.strptime(parts[-2], r'%Y%m%d%H%M%S')
-    return commit_time
+    # Timestamp is the 14-digit part (present only for local-build folders).
+    for part in result_folder_name.split("_"):
+        if re.fullmatch(r"\d{14}", part):
+            return datetime.strptime(part, r'%Y%m%d%H%M%S')
+    return datetime(1970, 1, 1)
 
 def get_semantic_version_from_folder_name(result_folder_name:str):
     major, minor, patch, *_ = parse_folder_name(result_folder_name)
@@ -491,7 +501,12 @@ def get_git_repo_latest_commit_timestamp_and_hash(local_git_repo:str) -> list[da
 
 def get_result_folder_name(version:str, geodms_paths:dict, MT1:str, MT2:str, MT3:str, local_git_repo:str=None) -> str:
     # datetime format: git show
-    folder_name = f"{version.replace(".", "_")}_{geodms_paths["GeoDmsPlatform"]}_SF_{MT1}{MT2}{MT3}_{get_local_machine_name()}"
+    # Folder identity = version (incl. flavor), e.g. "20_1_0_m". Architecture
+    # (always x64 since 32-bit is gone), the SF/multitasking flags (dropped from
+    # the report) and the machine name (one ResultsBaseDir holds one machine's
+    # results) are no longer encoded. Local builds still get a timestamp+hash
+    # suffix to distinguish successive builds of the same version.
+    folder_name = version.replace(".", "_")
     if local_git_repo:
         latest_commit_timestamp, abbreviated_hash = get_git_repo_latest_commit_timestamp_and_hash(local_git_repo)
         folder_name = f"{folder_name}_{latest_commit_timestamp.strftime('%Y%m%d%H%M%S')}_{abbreviated_hash}"
