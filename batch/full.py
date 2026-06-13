@@ -35,7 +35,11 @@ _BUILT_IN_DEFAULTS = {
     # per-user working copy so several working copies / users share one result
     # history. If blank, falls back to <TstDir>/Regression/GeoDMSTestResults.
     "ResultsBaseDir": "C:/LocalData/GeoDMS-Test/Regression",
-    "ProfilerDir": "C:/Program Files/ObjectVision/GeoDms20.0.4.m", #str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "profiler").replace("\\", "/"),
+    # ProfilerDir is ONLY used for `-version local` builds: its parent is taken
+    # as the GeoDMS source-repo root (to read the build version + locate bin/).
+    # The report scripts no longer come from here (see report_scripts_dir below).
+    # A test machine that only tests installed GeoDms versions can ignore this.
+    "ProfilerDir": "C:/dev/GeoDMS/profiler",
     "LocalBuildDir": str(Path(__file__).resolve().parent.parent.parent / "GeoDMS" / "build" / "windows-x64-release" / "bin").replace("\\", "/"),
     "LocalBuilds": {},
     # Limit the HTML/bokeh report columns to full GitHub releases (no
@@ -187,8 +191,12 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["GEODMS_Overridable_MondiaalDataDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/2UP"
     regression_test_paths["GEODMS_Overridable_CUSA2_DataDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/CUSA2"
     regression_test_paths["GEODMS_Overridable_LUSDemo_DataDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/LUS_Demo"
-    regression_test_paths["GEODMS_Overridable_NetworkModel_Dir"]      = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_regressietest"
-    regression_test_paths["GEODMS_Overridable_NetworkModelDataDir"]   = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_EU_RegressionTest"
+    regression_test_paths["GEODMS_Overridable_NetworkModel_Dir"]      = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_PBL"
+    regression_test_paths["GEODMS_Overridable_NetworkModelDataDir"]   = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/NetworkModel_EU"
+    # Centrale map met referentie-/benchmark-bestanden, per test in een submap.
+    # Configs lezen deze via %TestRefDir%; full.py-file_comparisons via onderstaande paden.
+    regression_test_paths["TestRefDir"] = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/TestReferenceFiles"
+    regression_test_paths["GEODMS_Overridable_TestRefDir"] = regression_test_paths["TestRefDir"]
     return regression_test_paths
 
 def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str) -> list:
@@ -201,13 +209,15 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     regression.add_exp(exps, name=f"{result_folder_name}__t010_operator_test", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test.txt", indicator_results_file=f"{result_paths["results_folder"]}/t010_operator_test.txt")
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Storage"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    # t050 — Storage: schrijf ESRI-shapefile (polygon) via de storage manager; file-compare van area.* tegen referentie in Storage/data.
+    # t050 — Storage: schrijf ESRI-shapefile (polygon) via de storage manager; round-trip-test.
+    #        De referentie is tevens de bron-input (Storage/data/polygon/area.*) en blijft daarom
+    #        bij de config in de repo — niet in TestReferenceFiles.
     regression.add_exp(exps, name=f"{result_folder_name}__t050_Storage_Write_Shape_Polygon_Folder_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["StoragePath"]} EsriShape/polygon/Write", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt", file_comparison=(f"{regression_test_paths["TstDir"]}/Storage/data/polygon/area.*", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/Storage/polygon/area.*"))
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/BAG20"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t060 — Storage: maak BAG-snapshot Utrecht in GeoPackage-formaat; vergelijk gegenereerde .gpkg met referentie.
-    regression.add_exp(exps, name=f"{result_folder_name}__t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["BAG20MakeSnapShotPath"]} snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt", file_comparison=(f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/BAG20/snapshot_Utrecht_20210701.gpkg", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/BAG20/snapshot_Utrecht_20210701.gpkg"))
+    regression.add_exp(exps, name=f"{result_folder_name}__t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["BAG20MakeSnapShotPath"]} snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt", file_comparison=(f"{regression_test_paths["TestRefDir"]}/t060/snapshot_Utrecht_20210701.gpkg", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/BAG20/snapshot_Utrecht_20210701.gpkg"))
     # t100 — Netwerk: verbind PC6-punten aan het wegennet (NL/BE/GE); vergelijk met opgenomen referentie.
     regression.add_exp(exps, name=f"{result_folder_name}__t100_network_connect", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t100_network_connect.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t100_network_connect/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t100_network_connect.txt", indicator_results_file=f"{result_paths["results_folder"]}/t100_network_connect.txt")
     # t101 — Netwerk: OD PC4 dense impedance-matrix over wegennet (NL/BE/GE). (Mantis #1021, gearchiveerd)
@@ -316,15 +326,15 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {regression_test_paths["TstDir"]}/operator/cfg/MicroTst.dms t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt")
 
     # t1742 — command-line @statistics op de Operator-config (/Arithmetics/UnTiled/add/attr);
-    #         vergelijk gegenereerde HTML met norm/Statistics_AUAA.html.
+    #         vergelijk gegenereerde HTML met TestReferenceFiles/t1742/Statistics_AUAA.html.
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t1742_command_statistics_stat.html"
-    reference_statfile = f"{regression_test_paths["TstDir"]}/norm/Statistics_AUAA.html"
+    reference_statfile = f"{regression_test_paths["TestRefDir"]}/t1742/Statistics_AUAA.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t1742_command_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t1742_command_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} @statistics /Arithmetics/UnTiled/add/attr @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1742_command_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     
     # t2000 — Hestia-development (model-hestia-development.main_18_0_4): @statistics op
     #         /Jaarreeksen/hWP_asl; vergelijk met referentie-HTML in HESTIA_dev.
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t2000_hestia_hWP_asl_statistics.html"
-    reference_statfile = f"{local_machine_parameters["GEODMS_OVERRIDABLE_RegressionTestsSourceDataDir"]}/HESTIA_dev/t2000_hestia_hWP_asl_statistics.html"
+    reference_statfile = f"{regression_test_paths["TestRefDir"]}/t2000/t2000_hestia_hWP_asl_statistics.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} @statistics /Jaarreeksen/hWP_asl @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     return exps
 
@@ -500,8 +510,14 @@ def get_geodms_paths(version:str) -> dict:
             geodms_paths["GeoDmsRunPrefix"] = ""
             geodms_paths["GeoDmsExeSuffix"] = ".exe"
             geodms_paths["GeoDmsLocalFlavor"] = ""
-    geodms_paths["GeoDmsProfilerPath"] = f"{s["ProfilerDir"]}/profiler.py"
-    geodms_paths["GeoDmsRegressionPath"] = f"{s["ProfilerDir"]}/regression.py"
+    # Report-generation scripts (profiler.py + regression.py) are bundled with
+    # this test harness in batch/generic/ and version-controlled here, so a test
+    # machine only needs [this repo] + [installed GeoDms versions] — not the
+    # GeoDMS source tree. (They also ship inside each GeoDms install and live in
+    # the GeoDMS repo's profiler/, but full.py uses its own bundled copy.)
+    report_scripts_dir = str(Path(__file__).resolve().parent / "generic").replace("\\", "/")
+    geodms_paths["GeoDmsProfilerPath"] = f"{report_scripts_dir}/profiler.py"
+    geodms_paths["GeoDmsRegressionPath"] = f"{report_scripts_dir}/regression.py"
     exe = geodms_paths["GeoDmsExeSuffix"]
     # If a RunPrefix is set (e.g. "wsl --" for linux-release flavors), prepend
     # it so any consumer that just builds f"{GeoDmsRunPath} <args>" actually
