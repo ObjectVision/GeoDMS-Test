@@ -805,6 +805,11 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
 
     figs = []
     renderers = []
+    # Renderers grouped per experiment so the legend can toggle one experiment
+    # at a time. Grouping by color (the old behaviour) made experiments that
+    # share a color -- colors wrap every 9 via i % 9 -- toggle together, e.g.
+    # the crash graph of 18.1.3 reappearing when 19.4.0 is shown (issue #17).
+    exp_renderers = [[] for _ in experiments]
     colors = []
     labels = []
     for i, exp in enumerate(experiments):
@@ -812,6 +817,11 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
         colors.append(Category10[10][color_index])
         fldrname, filename = getExperimentFileName(exp)
         labels.append(filename[:-4])
+
+    def add_renderer(idx, r):
+        renderers.append(r)
+        exp_renderers[idx].append(r)
+        return r
 
     # create ColumnDataSource(s)
     exps_ds = []
@@ -875,21 +885,21 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
                 # we're trying to remove.
                 continue
             if type(vgroup[0]) is tuple: # do something with this vgroup case
-                renderers.append(p.line('time', vgroup[0][0], color=color, line_dash="4 4", source=exps_ds[i][0]))
-                renderers.append(p.line('time', vgroup[0][1], color=color, source=exps_ds[i][0]))
+                add_renderer(i,p.line('time', vgroup[0][0], color=color, line_dash="4 4", source=exps_ds[i][0]))
+                add_renderer(i,p.line('time', vgroup[0][1], color=color, source=exps_ds[i][0]))
                 if ExpHasLogAvailable(exp, vgroup[0][0]):
-                    renderers.append(p.scatter('time', vgroup[0][1], size=5, color=color, source=exps_ds[i][1]))
+                    add_renderer(i,p.scatter('time', vgroup[0][1], size=5, color=color, source=exps_ds[i][1]))
 
                 if exps_ds[i][2]: # allocation log was available
-                    renderers.append(p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
-                    renderers.append(p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
+                    add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
+                    add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
             else:
-                renderers.append(p.line('time', vgroup[0],            color=color, source=exps_ds[i][0]))
+                add_renderer(i,p.line('time', vgroup[0],            color=color, source=exps_ds[i][0]))
                 if ExpHasLogAvailable(exp, vgroup[0]):
-                    renderers.append(p.scatter('time', vgroup[0], size=5, color=color, source=exps_ds[i][1]))       
+                    add_renderer(i,p.scatter('time', vgroup[0], size=5, color=color, source=exps_ds[i][1]))       
             if vgroup[0]=="vms": # allocator log only added to committed memory figure
-                renderers.append(p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
-                renderers.append(p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
+                add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
+                add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
                 print(exps_ds[i][2])
                 
         p.xaxis.axis_label = 'time (s)'
@@ -915,8 +925,8 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
         figs.append(p) # add figure to figs
 
     legend_items = []
-    for i,color in enumerate(colors):
-        legend_items.append(LegendItem(label=labels[i], renderers=[renderer for renderer in renderers if renderer.glyph.line_color==color]))
+    for i, exp in enumerate(experiments):
+        legend_items.append(LegendItem(label=labels[i], renderers=exp_renderers[i]))
     
     ## Use dummy figure as legend for all experiments 
     dum_fig = plotting.figure(width=1000,height=50*len(legend_items), outline_line_alpha=0,tools="pan,wheel_zoom,box_zoom,reset,save,hover")
