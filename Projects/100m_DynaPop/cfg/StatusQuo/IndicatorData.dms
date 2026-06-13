@@ -120,7 +120,7 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 			unit<WPoint> SoilSealing
 					:	DialogData = "Geography/LambertEA"
 					,	Source = "JRC:LandCover"
-					,	StorageName = "%SourceDataProjDir%/EUCS_100m/soilsealing/ssl_0_100.tif"
+					,	StorageName = "%SourceDataProjDir%/LUISA/soilsealing/ssl_0_100.tif"
 					,	StorageType = "tif"
 					,	StorageReadOnly = "True"
 			{
@@ -384,7 +384,7 @@ REMOVE */
 		
 		container LAI
 		{
-			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/EUCS_100m/indicatordata/WaterRetention/LAI_values.csv";
+			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/WaterRetention/LAI_values.csv";
 			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
 			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
@@ -406,7 +406,7 @@ REMOVE */
 		}
 		container SoilSealing
 		{
-			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/EUCS_100m/indicatordata/WaterRetention/SOIL_SEALING.csv";
+			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/WaterRetention/SOIL_SEALING.csv";
 			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
 			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
@@ -499,21 +499,21 @@ REMOVE */
 			attribute<String> ChangeTableRef(FathomYears): Expr = "'ChangeTable/Factor'+string(FathomYears/Year - FathomYears/PrevYear)+'yr'";
 			
 			// Permeability
-//			attribute<Float32> Permeability_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/PERM/Perm.tif";
-			attribute<Float32> Permeability(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/PERM/Permeability_corr.tif";
+//			attribute<Float32> Permeability_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/PERM/Perm.tif";
+			attribute<Float32> Permeability(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/PERM/Permeability_corr.tif";
 			
 			// <HistMin>-3.976486914325506e-005</HistMin>
 			// <HistMax>9.999949455261231</HistMax>
 			attribute<Float32> R_PERM   (domain_grid) := max_elem(Permeability, 0f); // replace negative values by 0
 			
 			// Slope
-//			attribute<Float32> R_slope (domain_grid) : StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/slope/slope100.tif";
+//			attribute<Float32> R_slope (domain_grid) : StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/slope/slope100.tif";
 			
 			attribute<Float32> slope100_corr (domain_grid) :=  (CaseData/JrcFactorData/slope100_cont > 75degrees) ? 0f : CaseData/JrcFactorData/slope100_cont;
 			attribute<Float32> R_slope(domain_grid) := 10f - slope100_corr * (10f / 75degrees);
 	
 			// the capacity of plants to capture water
-			attribute<UInt8> EZ(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Env_mask.tif";
+			attribute<UInt8> EZ(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Env_mask.tif";
 			container LaiCombiCode: expr = "for_each_nedv(AllYears/Name, 'uint16(EZ) * uint16(100) + uint16(LuClass/JrcCodes_rel['+AllYears/LuRef+'])', domain_grid, uint16)";
 			container R_LAI: expr = "for_each_nedv(AllYears/Name, 'MakeDefined(rjoin(LaiCombiCode/'+AllYears/Name+', LAI/Data/CombiCode, LAI/Data/LAI), Float32(0.0))', domain_grid, float32)";
 			
@@ -523,11 +523,11 @@ REMOVE */
 				'median('+MakeDefined('R_TAWC/'+FathomYears/Name[ID(FathomYears)-1w], 'P2006')+'* OC_ChangeFactor/'+FathomYears/Name+', interval(0f, 10f))'
 				, domain_grid, float32)
 			{
-//				attribute<Float32> TAWC_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/TAWC/TAWC_06.tif";
-				attribute<Float32> TAWC   (domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/TAWC/TAWC_jan_1res.tif";
+//				attribute<Float32> TAWC_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/TAWC/TAWC_06.tif";
+				attribute<Float32> TAWC   (domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/TAWC/TAWC_jan_1res.tif";
 				attribute<Float32> P2006  (domain_grid) := max_elem(TAWC, 0f);
 			}
-			attribute<Float32> R_WB(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterRetention/WB_factor.tif";
+			attribute<Float32> R_WB(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/WB_factor.tif";
 			
 			// Soil Sealing
 			container ssCombiCode := for_each_nedv(AllYears/Name, 'uint16(JrcFactorData/Nuts0)*100w + uint16('+AllYears/LuRef+')', domain_grid, uint16);
@@ -565,7 +565,7 @@ REMOVE */
 		}
 		container LookupTableMonthly
 		{
-			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/EUCS_100m/indicatordata/SoilErosion/lookup-monthly.csv";
+			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/SoilErosion/lookup-monthly.csv";
 			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
 			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
@@ -604,18 +604,18 @@ REMOVE */
 				attribute<String> Name: Expr = "Month/Name[second_rel]+String(AllYears/Year[first_rel])";
 			}
 			container CaseData {
-				attribute<Float32> LS (domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SoilErosion/ls_eu28.tif", StorageType = "gdal.grid";
-				attribute<Float32> K  (domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SoilErosion/Kst_correct_Full.tif", StorageType = "gdal.grid";
+				attribute<Float32> LS (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/ls_eu28.tif", StorageType = "gdal.grid";
+				attribute<Float32> K  (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/Kst_correct_Full.tif", StorageType = "gdal.grid";
 				attribute<Float32> LSK(domain_grid): expr = "max_elem(LS, 0.0[Float32]) * max_elem(K, 0.0[Float32])";
 				
-				attribute<uint8> EZ (domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Env_mask.tif", StorageType = "gdal.grid";
+				attribute<uint8> EZ (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Env_mask.tif", StorageType = "gdal.grid";
 				
 				container CombiCode: expr = "for_each_nedv(AllYears/Name, 'uint16(EZ) * uint16(100) + uint16('+AllYears/LuRef+')', domain_grid, uint16)";
 				container LC: expr = "for_each_nedv(FathomMonth/Name, 'MakeDefined(rjoin(CombiCode/'+AllYears/Name[FathomMonth/first_rel]+', LookupTableMonthly/Data/CombiCode, LookupTableMonthly/Data/'+Month/Name[FathomMonth/second_rel]+'), Float32(0.0))', domain_grid, float32)";
-				attribute<Float32> P_imp(domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/SoilErosion/EU_PFactor_V2.tif", StorageType = "gdal.grid";
+				attribute<Float32> P_imp(domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/EU_PFactor_V2.tif", StorageType = "gdal.grid";
 				attribute<Float32> P(domain_grid): Expr = "MakeDefined(P_imp < 0.0[float32] ? 1.0[Float32] : p_imp, 1.0[Float32])";
 				
-				container Snow_m_imp: Expr = "for_each_ndva(FathomMonth/Name, domain_grid, uint8, '%SourceDataProjDir%/EUCS_100m/SNOW/Rm_'+FathomMonth/Name+'.tif')";
+				container Snow_m_imp: Expr = "for_each_ndva(FathomMonth/Name, domain_grid, uint8, '%SourceDataProjDir%/LUISA/SNOW/Rm_'+FathomMonth/Name+'.tif')";
 				container Snow_m:     Expr = "for_each_nedv(FathomMonth/Name, replace('Float32(replace_value(MakeDefined(Snow_m_imp/@M, uint8(2)), uint8(128), uint8(2)))', '@M', FathomMonth/Name),domain_grid, Float32)";
 				container LC_m:   Expr = "for_each_nedv(FathomMonth/Name, replace('Snow_m/@M * CaseData/LC/@M', '@M', FathomMonth/Name),domain_grid, Float32)";
 				container LC_y:   Expr = "for_each_nedva(AllYears/Name, replace('add('+AsItemList('LC_m/'+Month/Name+'@Y')+')', '@Y', String(AllYears/Year)),domain_grid, Float32,DirName+'/SoilErosion/LCy_'+AllYears/Name+'.tif')";
@@ -640,7 +640,7 @@ REMOVE */
 			{
 				parameter<String> Code;
 				
-				container RainFallImp:  Expr = "for_each_ndvat(AllYears/Name, domain_grid, Float32, '%SourceDataProjDir%/EUCS_100m/SoilErosion/'+Code+'/'+Code+String(AllYears/Year)+'.tif', 'gdal.grid')";
+				container RainFallImp:  Expr = "for_each_ndvat(AllYears/Name, domain_grid, Float32, '%SourceDataProjDir%/LUISA/SoilErosion/'+Code+'/'+Code+String(AllYears/Year)+'.tif', 'gdal.grid')";
 				container RainFallData: Expr = "for_each_nedv(AllYears/Name, 'Max_elem(RainFallImp/'+AllYears/Name+',0.0[Float32])', domain_grid, Float32)";
 				
 				// Structural Impact

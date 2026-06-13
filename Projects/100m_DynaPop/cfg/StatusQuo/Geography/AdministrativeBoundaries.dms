@@ -76,7 +76,7 @@ container AdministrativeBoundaries
 	
 	container RegionGrids: expr = "for_each_nedvn(BoundarySets/uniName, 'relational/'+ BoundarySets/uniName +'[base_raster]', Lambert100mGrid, BoundaryDomains, BoundarySets/uniName)"
 	{
-		attribute<uint32> base_raster (Lambert100mGrid): StorageName = "%SourceDataProjDir%/EUCS_100m/zones/LAU2_raster.tif", StorageType = "gdal.grid", StorageReadOnly = "True";
+		attribute<uint32> base_raster (Lambert100mGrid): StorageName = "%SourceDataProjDir%/LUISA/zones/LAU2_raster.tif", StorageType = "gdal.grid", StorageReadOnly = "True";
 		
 		
 	
@@ -226,7 +226,7 @@ container AdministrativeBoundaries
 		
 		parameter<string> IDfield2 := strlen(IDfield) = 0 ? 'autoID' : IDfield;
 		
-		unit<uint32> inFile: StorageName = "= '%SourceDataProjDir%/EUCS_100m/zones/' + path + '.shp'", StorageType = "gdal.vect", StorageReadOnly = "True", DialogData = "Geometry", DialogType  ="map"
+		unit<uint32> inFile: StorageName = "= '%SourceDataProjDir%/LUISA/zones/' + path + '.shp'", StorageType = "gdal.vect", StorageReadOnly = "True", DialogData = "Geometry", DialogType  ="map"
 		{
 			attribute<LambertEA> Geometry (polygon);
 			attribute<string> 	 autoID:	expr = "'z_' + string(id(.))";

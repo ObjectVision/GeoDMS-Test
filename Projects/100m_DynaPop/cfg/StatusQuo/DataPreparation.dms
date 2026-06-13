@@ -57,7 +57,7 @@ container DataPreparation: IsHidden = "true"
 	
 	container GenRaster
 	{
-		attribute<uint32> LAU2_raster (Geography/Lambert100mGrid): expr = "poly2grid(Geography/Regions/base_zones/Geometry, Geography/Lambert100mGrid)", StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/EUCS_100m/zones/LAU2_raster.tif";
+		attribute<uint32> LAU2_raster (Geography/Lambert100mGrid): expr = "poly2grid(Geography/Regions/base_zones/Geometry, Geography/Lambert100mGrid)", StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/zones/LAU2_raster.tif";
 	}
 	
 	container SoilSealing
@@ -67,7 +67,7 @@ container DataPreparation: IsHidden = "true"
 			unit<wpoint> MosaicData
 				:	DialogData = "Geography/LambertEA"
 				,	Source = "JRC:LandCover"
-				,	StorageName = "%SourceDataProjDir%/EUCS_100m/soilsealing/ssl_0_100.tif"
+				,	StorageName = "%SourceDataProjDir%/LUISA/soilsealing/ssl_0_100.tif"
 				,	StorageType = "tif"
 				,	StorageReadOnly = "True"
 			{
@@ -120,7 +120,7 @@ container DataPreparation: IsHidden = "true"
 		}
 		container wdclass_scen_1
 				:	Source = "JRC:LandCover"
-				,	StorageName = "%SourceDataProjDir%/EUCS_100m/WaterDepth/wdclass_scen_1.tif"
+				,	StorageName = "%SourceDataProjDir%/LUISA/WaterDepth/wdclass_scen_1.tif"
 				,	StorageReadOnly = "True"
 		{
 				attribute<WaterDepthClass> GridData   (TiledAlbers100Grid);
@@ -137,7 +137,7 @@ container DataPreparation: IsHidden = "true"
 	// CJ: is this not redundant with the code in the Geography container?
 	container BoundsGen
 	{
-		unit<UInt16> JrcRegion: Expr = "Geography/Regions/JrcRegion", StorageName = "%SourceDataProjDir%/EUCS_100m/data/BoundsJrcRegionNew.dbf", KeepData = "False" // , Using = "Geography/LambertEA/Tiles/Jrc"
+		unit<UInt16> JrcRegion: Expr = "Geography/Regions/JrcRegion", StorageName = "%SourceDataProjDir%/LUISA/data/BoundsJrcRegionNew.dbf", KeepData = "False" // , Using = "Geography/LambertEA/Tiles/Jrc"
 		{
 			attribute<Geography/Lambert100mGrid> P1: Expr = "min(ID(Geography/Lambert100mGrid), /JrcFactorData/JrcRegion)", DisableStorage = "True";
 			attribute<Geography/Lambert100mGrid> P2: Expr = "max(ID(Geography/Lambert100mGrid), /JrcFactorData/JrcRegion)", DisableStorage = "True";
@@ -146,7 +146,7 @@ container DataPreparation: IsHidden = "true"
 			attribute<UInt16> Y1: Expr = "PointRow(P1)"; 
 			attribute<UInt16> Y2: Expr = "PointRow(P2)"; 
 		}
-		unit<UInt16> Nuts2Region: Expr = "Geography/Regions/Nuts2", StorageName = "%SourceDataProjDir%/EUCS_100m/data/BoundsNuts2New.dbf", KeepData = "False" // , Using = "Geography/LambertEA/Tiles/Jrc"
+		unit<UInt16> Nuts2Region: Expr = "Geography/Regions/Nuts2", StorageName = "%SourceDataProjDir%/LUISA/data/BoundsNuts2New.dbf", KeepData = "False" // , Using = "Geography/LambertEA/Tiles/Jrc"
 		{
 			attribute<Geography/Lambert100mGrid> P1: Expr = "min(ID(Geography/Lambert100mGrid), /JrcFactorData/Nuts2)", DisableStorage = "True";
 			attribute<Geography/Lambert100mGrid> P2: Expr = "max(ID(Geography/Lambert100mGrid), /JrcFactorData/Nuts2)", DisableStorage = "True";
@@ -349,7 +349,7 @@ container DataPreparation: IsHidden = "true"
 		{
 			parameter<String> FileName;
 			container Tiff:
-				StorageName     = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/'+FileName+'.tif'",
+				StorageName     = "='%SourceDataProjDir%/LUISA/nuts2_100m/'+FileName+'.tif'",
 				StorageReadOnly = "True"
 			{
 				unit<wpoint> GridDomain: DialogData = "Geography/LambertEA";
@@ -361,7 +361,7 @@ container DataPreparation: IsHidden = "true"
 		{
 			parameter<String> FileName;
 			container Tiff:
-				StorageName     = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/'+FileName+'.tif'",
+				StorageName     = "='%SourceDataProjDir%/LUISA/nuts2_100m/'+FileName+'.tif'",
 				StorageReadOnly = "True"
 			{
 				unit<wpoint> GridDomain: DialogData = "Geography/LambertEA";
@@ -378,7 +378,7 @@ container DataPreparation: IsHidden = "true"
 		container Canarias: Expr = "Nuts8bitsTiffTempl ('Canarias')";
 		
 		attribute<Regions/Nuts2All>  CreateNuts2Grid(Lambert100mGrid): Expr = "MakeDefined(Nuts2a/Tiff/ReadData, Nuts2b/Tiff/ReadData, Nuts2c/Tiff/ReadData, Nuts2d/Tiff/ReadData, Canarias/Tiff/Nuts2Data)",
-			StorageName = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/Nuts2All_New.tif'";
+			StorageName = "='%SourceDataProjDir%/LUISA/nuts2_100m/Nuts2All_New.tif'";
 	}
 	
 	#include <Accessibility.dms>

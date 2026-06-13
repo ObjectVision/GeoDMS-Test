@@ -9,7 +9,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		unit<WPoint> LC2006
 			:	DialogData = "Geography/LambertEA"
 			,	Source = "JRC:LandCover"
-			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/clc06_r_v3.tif"
+			,	StorageName = "%SourceDataProjDir%/LUISA/landuse/clc06_r_v3.tif"
 			,	StorageType = "gdal.grid"
 			,	StorageReadOnly = "True"
 		{
@@ -22,7 +22,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		unit<WPoint> LC2012
 			:	DialogData = "Geography/LambertEA"
 			,	Source = "JRC:LandCover"
-			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/LUISA_basemap_2012_080521_100m.tif"
+			,	StorageName = "%SourceDataProjDir%/LUISA/landuse/LUISA_basemap_2012_080521_100m.tif"
 			,	StorageType = "gdal.grid"
 			,	StorageReadOnly = "True"
 		{
@@ -36,7 +36,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		unit<WPoint> ghsl1990
 			:	DialogData = "Geography/LambertEA"
 			,	Source = "GHSL"
-			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl1990_v2018.tif"
+			,	StorageName = "%SourceDataProjDir%/LUISA/landuse/ghsl1990_v2018.tif"
 			,	StorageType = "gdal.grid"
 			,	StorageReadOnly = "True"
 		{
@@ -46,7 +46,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		unit<WPoint> ghsl2000
 			:	DialogData = "Geography/LambertEA"
 			,	Source = "GHSL"
-			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl2000_v2018.tif"
+			,	StorageName = "%SourceDataProjDir%/LUISA/landuse/ghsl2000_v2018.tif"
 			,	StorageType = "gdal.grid"
 			,	StorageReadOnly = "True"
 		{
@@ -56,7 +56,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		unit<WPoint> ghsl2014
 			:	DialogData = "Geography/LambertEA"
 			,	Source = "GHSL"
-			,	StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/ghsl2014_v2018.tif"
+			,	StorageName = "%SourceDataProjDir%/LUISA/landuse/ghsl2014_v2018.tif"
 			,	StorageType = "gdal.grid"
 			,	StorageReadOnly = "True"
 		{
@@ -76,7 +76,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<Classifications/LU/ModelType> ModelLandUse 	(domain_grid): Expr = "Classifications/LU/Corine/MT [CorineLandUse]";
 			attribute<Classifications/LU/ViewType>  ViewLandUse  	(domain_grid): Expr = "Classifications/LU/Corine/VT2[CorineLandUse]";
 		}
-		unit<wpoint> AgeGrid: DialogData = "Geography/LambertEA" , StorageName = "%SourceDataProjDir%/EUCS_100m/landuse/age0.tif", StorageReadOnly = "True"
+		unit<wpoint> AgeGrid: DialogData = "Geography/LambertEA" , StorageName = "%SourceDataProjDir%/LUISA/landuse/age0.tif", StorageReadOnly = "True"
 		{
 			attribute<uint8> GridData;
 			attribute<uint8> ReadData (domain_grid);
@@ -88,17 +88,17 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			
 			attribute<uint8> AgeCLC  (domain_grid): Expr = "Is_12_18 ? Is_06_12 ? uint8(12) : uint8(6) : uint8(0)";
 		}
-		container X8: StorageName = "='%SourceDataProjDir%/EUCS_100m/succession/X8.tif'", StorageReadOnly = "True"
+		container X8: StorageName = "='%SourceDataProjDir%/LUISA/succession/X8.tif'", StorageReadOnly = "True"
 		{
 			attribute<Int16> GridData(Geography/Lambert100mGrid): IsHidden = "True";
 			attribute<Int16> ReadData(domain_grid);
 		}
-		container X9: StorageName = "='%SourceDataProjDir%/EUCS_100m/succession/X9.tif'", StorageReadOnly = "True"
+		container X9: StorageName = "='%SourceDataProjDir%/LUISA/succession/X9.tif'", StorageReadOnly = "True"
 		{
 			attribute<Int16> GridData(Geography/Lambert100mGrid): IsHidden = "True";
 			attribute<Int16> ReadData(domain_grid);
 		}
-		Unit<WPoint> Eu27_e: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/eu27_e_ha.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		Unit<WPoint> Eu27_e: StorageName = "%SourceDataProjDir%/LUISA/Elevation/eu27_e_ha.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
 		{
 			attribute<units/meter> Elevation (domain_grid): Expr="value(ReadData, units/meter)" ;
 			attribute<Int16> GridData: IsHidden = "True";
@@ -108,37 +108,37 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		
 		
 		//to be phased out eventually with new calibration [JAN 28 2013] :
-		container slope_euro: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/slope_euro.tif", StorageReadOnly = "True"
+		container slope_euro: StorageName = "%SourceDataProjDir%/LUISA/Elevation/slope_euro.tif", StorageReadOnly = "True"
 		{
 			attribute<Int8> GridData(Eu27_e): IsHidden = "True";
 			attribute<Int8> ReadData(domain_grid);
 		}	
 		//to replace slope_euro eventually [Jan 28, 2013]
-		Unit<WPoint> slope_continuous: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/slope_deg_int16.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		Unit<WPoint> slope_continuous: StorageName = "%SourceDataProjDir%/LUISA/Elevation/slope_deg_int16.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
 		{
 			attribute<Int16> slope (domain_grid): expr="value(ReadData, int16)" ;
 			attribute<Int16> GridData (Eu27_e): IsHidden = "True";
 			attribute<Int16> ReadData(domain_grid);
 		}				
-		container sosl_euro: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/sosl_euro.tif", StorageReadOnly = "True"
+		container sosl_euro: StorageName = "%SourceDataProjDir%/LUISA/Elevation/sosl_euro.tif", StorageReadOnly = "True"
 		{
 			attribute<Int8> GridData(Eu27_e): IsHidden = "True";
 			attribute<Int8> ReadData(domain_grid);
 		}	
-		Unit<WPoint> aspect_degrees: StorageName = "%SourceDataProjDir%/EUCS_100m/Elevation/aspect_100.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		Unit<WPoint> aspect_degrees: StorageName = "%SourceDataProjDir%/LUISA/Elevation/aspect_100.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
 		{
 			attribute<units/degrees> aspect (domain_grid): expr="value(ReadData, units/degrees)" ;
 			attribute<Int16> GridData (Eu27_e): IsHidden = "True";
 			attribute<Int16> ReadData(domain_grid);
 		}	
-		unit<wpoint> pop_fe_1:		StorageName = "%SourceDataProjDir%/EUCS_100m/fixed_effects/pv_101116_1.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
+		unit<wpoint> pop_fe_1:		StorageName = "%SourceDataProjDir%/LUISA/fixed_effects/pv_101116_1.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
 		{
 			attribute<float32> GridData;
 			attribute<float32> ReadData(domain_grid);
 			attribute<float32> fe (domain_grid);
-			attribute<int32>   exp: 	expr = "int32(GridData)", StorageName = "%SourceDataProjDir%/EUCS_100m/fixed_effects/pv_101116_1_int32.tif";
+			attribute<int32>   exp: 	expr = "int32(GridData)", StorageName = "%SourceDataProjDir%/LUISA/fixed_effects/pv_101116_1_int32.tif";
 		}
-		unit<wpoint> pop_fe_1_int32:		StorageName = "%SourceDataProjDir%/EUCS_100m/fixed_effects/pv_101116_1_int32.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
+		unit<wpoint> pop_fe_1_int32:		StorageName = "%SourceDataProjDir%/LUISA/fixed_effects/pv_101116_1_int32.tif", StorageReadOnly = "True", StorageType = "gdal.grid", DialogData = "Geography/LambertEA"
 		{
 			attribute<int32> GridData;
 			attribute<int32> ReadData(domain_grid);
@@ -146,7 +146,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		}
 		
 		unit<wpoint> DistanceToRoads: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/accessData/m5000dist_to_lvl2to6roads.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/accessData/m5000dist_to_lvl2to6roads.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -154,7 +154,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<int16> ReadData(domain_grid);
 		}
 		unit<wpoint> DistanceToWater:
-			StorageName 	  = "%SourceDataProjDir%/EUCS_100m/WaterDist/WaterDist.tif"
+			StorageName 	  = "%SourceDataProjDir%/LUISA/WaterDist/WaterDist.tif"
 			, StorageReadOnly = "True" 
 			, DialogData	  = "Geography/LambertEA"
 		{
@@ -162,7 +162,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<float32> ReadData(domain_grid);
 		}
 		unit<wpoint> ghspop90:
-			StorageName 	  = "%SourceDataProjDir%/EUCS_100m/Population/GHS_250m/EU_HPOP250_1990_ETRS.tif"
+			StorageName 	  = "%SourceDataProjDir%/LUISA/Population/GHS_250m/EU_HPOP250_1990_ETRS.tif"
 			, StorageReadOnly = "True" 
 			, DialogData	  = "Geography/LambertEA"
 		{
@@ -170,7 +170,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<float32> ReadData	(domain_grid);
 		}
 		unit<wpoint> ghspop15:
-			StorageName 	  = "%SourceDataProjDir%/EUCS_100m/Population/GHS_250m/EU_HPOP250_2015_ETRS.tif"
+			StorageName 	  = "%SourceDataProjDir%/LUISA/Population/GHS_250m/EU_HPOP250_2015_ETRS.tif"
 			, StorageReadOnly = "True" 
 			, DialogData	  = "Geography/LambertEA"
 		{
@@ -180,7 +180,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		container yield_pre2040
 		{
 			unit<wpoint> yieldmaize: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/maize_yield_coarse_1100.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/maize_yield_coarse_1100.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -189,7 +189,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldbarley: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/barley_yield_coarse_1100.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/barley_yield_coarse_1100.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -198,7 +198,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldsugbeet: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sugarbeet_yield_coarse_1100.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/sugarbeet_yield_coarse_1100.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -207,7 +207,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldsunflow: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sunflower_yield_coarse_1100.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/sunflower_yield_coarse_1100.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -216,7 +216,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldwheat: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/wheat_yield_coarse_1100.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/wheat_yield_coarse_1100.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -225,7 +225,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldrapeseed: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/rapeseed_yield_coarse_1100.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/rapeseed_yield_coarse_1100.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -237,7 +237,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		container yield_post2040
 		{
 			unit<wpoint> yieldmaize: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/maize_yield_coarse_1110.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/maize_yield_coarse_1110.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -246,7 +246,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldbarley: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/barley_yield_coarse_1110.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/barley_yield_coarse_1110.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -255,7 +255,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldsugbeet: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sugarbeet_yield_coarse_1110.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/sugarbeet_yield_coarse_1110.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -264,7 +264,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldsunflow: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/sunflower_yield_coarse_1110.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/sunflower_yield_coarse_1110.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -273,7 +273,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldwheat: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/wheat_yield_coarse_1110.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/wheat_yield_coarse_1110.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -282,7 +282,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 				attribute<int32> ReadData(domain_grid);
 			}
 			unit<wpoint> yieldrapeseed: 	
-				StorageName       = "%SourceDataProjDir%/EUCS_100m/Yield_maps/rapeseed_yield_coarse_1110.tif"
+				StorageName       = "%SourceDataProjDir%/LUISA/Yield_maps/rapeseed_yield_coarse_1110.tif"
 				, StorageType = "gdal.grid"
 				, StorageReadOnly = "True"
 				, DialogData      = "Geography/LambertEA"
@@ -292,7 +292,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			}
 		}
 		unit<wpoint> AgriAbandon_biophysical: 	
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/biophysical/Biophysical_Factors_Final.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/biophysical/Biophysical_Factors_Final.tif"
 			, StorageType = "gdal.grid"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
@@ -301,7 +301,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<int16> ReadData(domain_grid);
 		}
 		unit<wpoint> Irrigation: 	
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/irrigation/AOI_MGM_ITTIG_CULT_FRQ_2000_2016.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/irrigation/AOI_MGM_ITTIG_CULT_FRQ_2000_2016.tif"
 			, StorageType = "gdal.grid"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
@@ -310,7 +310,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<float32> ReadData(domain_grid);
 		}
 		unit<wpoint> RiparianAreas:
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/riparianAreas2012.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/SensitiveAreas/riparianAreas2012.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -318,14 +318,14 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<uint8> GridData: IsHidden = "True";
 			attribute<uint8> ReadData(domain_grid);
 		}
-		unit<WPoint> erosionRisk: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/erosion_peseta.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		unit<WPoint> erosionRisk: StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/erosion_peseta.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
 		{
 			attribute<units/tonne_ha> erosionRisk(domain_grid): expr = "value(replace_value(ReadData, Int16(-32768), Int16(0 / 0)), units/tonne_ha)" ;
 			attribute<Int16> GridData: IsHidden = "True";
 			attribute<Int16> ReadData(domain_grid);
 		}
 		unit<wpoint> FloodRisk:
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/FloodRisk_bin.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/SensitiveAreas/FloodRisk_bin.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -334,45 +334,45 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<uint8> ReadData(domain_grid);
 		}
 		
-		unit<WPoint> CoastalZone: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/CZ_100m.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		unit<WPoint> CoastalZone: StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/CZ_100m.tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
 		{
 			attribute<units/boolean> Coast (domain_grid): Expr = "value(replace_value(ReadData, Int8(-1), Int8(0 / 0)),units/boolean)";
 			attribute<int8> GridData: IsHidden = "True";
 			attribute<int8> ReadData(domain_grid);
 		}	
 		
-		unit<wpoint> salinity2: StorageName = "%SourceDataProjDir%/EUCS_100m/NECR/salinity.tif", 	StorageType = "tif", DialogData = "Geography/LambertEA"
+		unit<wpoint> salinity2: StorageName = "%SourceDataProjDir%/LUISA/NECR/salinity.tif", 	StorageType = "tif", DialogData = "Geography/LambertEA"
 		{
 			attribute<uint8>	GridData: IsHidden = "True";
 			attribute<uint8>	ReadData (domain_grid);
 		}
 			
-		unit<WPoint> Natura2000: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/n2k_v2011_bin.tif", StorageReadOnly = "True", 	StorageType = "tif", DialogData = "Geography/LambertEA"
+		unit<WPoint> Natura2000: StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/n2k_v2011_bin.tif", StorageReadOnly = "True", 	StorageType = "tif", DialogData = "Geography/LambertEA"
 		{
 			attribute<units/boolean> Natura2000 (domain_grid): Expr = "value(replace_value(ReadData, Int8(-1), Int8(0 / 0)),units/boolean)";
 			attribute<int8> GridData: IsHidden = "True";
 			attribute<int8> ReadData(domain_grid);
 		}
-		unit<WPoint> Natura2000Priority: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/Natura2000_End2011_clean_union_Priority_bin.tif", StorageReadOnly = "True", StorageType = "tif", DialogData = "Geography/LambertEA"
+		unit<WPoint> Natura2000Priority: StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Natura2000_End2011_clean_union_Priority_bin.tif", StorageReadOnly = "True", StorageType = "tif", DialogData = "Geography/LambertEA"
 		{
 			attribute<uint2> Natura2000Priority (domain_grid);
 			attribute<uint2> GridData: IsHidden = "True";
 			attribute<uint2> ReadData(domain_grid);
 		}
-		unit<WPoint> NDAs: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/nda_100m_bin.tif", StorageReadOnly = "True", 	StorageType = "tif", DialogData = "Geography/LambertEA"
+		unit<WPoint> NDAs: StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/nda_100m_bin.tif", StorageReadOnly = "True", 	StorageType = "tif", DialogData = "Geography/LambertEA"
 		{
 			attribute<units/boolean> NDA (domain_grid): Expr = "value(replace_value(ReadData, Int8(-1), Int8(0 / 0)),units/boolean)";
 			attribute<int8> GridData: IsHidden = "True";
 			attribute<int8> ReadData(domain_grid);
 		}	
-		unit<WPoint> NDA_Cat: StorageName = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/CDDA_v9_clean_unionCat.tif", 	StorageType = "tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
+		unit<WPoint> NDA_Cat: StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/CDDA_v9_clean_unionCat.tif", 	StorageType = "tif", StorageReadOnly = "True", DialogData = "Geography/LambertEA"
 		{
 			attribute<uint8> NDA_Cat (domain_grid);
 			attribute<uint8> GridData: IsHidden = "True";
 			attribute<uint8> ReadData(domain_grid);
 		}
 		unit<wpoint> HNV: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/SensitiveAreas/HNV/hnv06_100m_v5"
+			StorageName       = "%SourceDataProjDir%/LUISA/SensitiveAreas/HNV/hnv06_100m_v5"
 			, StorageType = "gdal.grid"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
@@ -382,7 +382,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<uint8> ReadData(domain_grid);
 		}		
 		unit<wpoint> SuitabilityForest: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/forests/Forest_EU28_100m_8bit.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/forests/Forest_EU28_100m_8bit.tif"
 			, StorageType = "gdal.grid"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
@@ -395,7 +395,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			
 		   unit<wpoint> SuitabilityMapNECR:
 			//unit<wpoint> NECR_class: nrofrows = 6
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/NECR/SuitabilityMapEnergyCrop.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/NECR/SuitabilityMapEnergyCrop.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -408,11 +408,11 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			//attribute<Bool>    Allowed:   [ false, true, true, true, true, true];	
 		}
 		
-			//attribute<NECR_Class> SuitabilityMapNECR(domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/NECR/SuitabilityMapEnergyCrop.tif"; 
+			//attribute<NECR_Class> SuitabilityMapNECR(domain_grid): StorageName = "%SourceDataProjDir%/LUISA/NECR/SuitabilityMapEnergyCrop.tif"; 
 		
 
 		unit<wpoint> Peatlands:
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/NECR/Peatlands.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/NECR/Peatlands.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -439,11 +439,11 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 
 		//	attribute<Bool>    Allowed:   [ false, true, true, true, true, true, true ];		
 		}
-			attribute<ErodibilityClass> Erodibility(domain_grid): StorageName = "%SourceDataProjDir%/EUCS_100m/NECR/erodibility.tif"; 	
+			attribute<ErodibilityClass> Erodibility(domain_grid): StorageName = "%SourceDataProjDir%/LUISA/NECR/erodibility.tif"; 	
 			
 				
 		unit<wpoint> ContaminatedLands:
-             StorageName       = "%SourceDataProjDir%/EUCS_100m/NECR/PotentialContaminatedLand.tif"
+             StorageName       = "%SourceDataProjDir%/LUISA/NECR/PotentialContaminatedLand.tif"
              , StorageReadOnly = "True"
              , DialogData      = "Geography/LambertEA"
           {
@@ -462,7 +462,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		
 	}
 	unit<wpoint> LocSpecSQ: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspecSQ_int.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/locspecs/locspecSQ_int.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -470,7 +470,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<int8> ReadData(domain_grid);
 		}
 		unit<wpoint> SQLocSpec_nat01: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locSp_nat01.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/locspecs/locSp_nat01.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -478,7 +478,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<int8> ReadData(domain_grid);
 		}
 		unit<wpoint> locspec_integration_agric: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_agric.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/locspecs/locspec_integration_agric.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -486,7 +486,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<int8> ReadData(domain_grid);
 		}
 		unit<wpoint> locspec_integration_pastures: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_pastures.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/locspecs/locspec_integration_pastures.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -494,7 +494,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<int8> ReadData(domain_grid);
 		}
 		unit<wpoint> locspec_integration_sv: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_sv.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/locspecs/locspec_integration_sv.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -502,7 +502,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			attribute<int8> ReadData(domain_grid);
 		}
 		unit<wpoint> locspec_integration_abandoned: 
-			StorageName       = "%SourceDataProjDir%/EUCS_100m/locspecs/locspec_integration_abandoned.tif"
+			StorageName       = "%SourceDataProjDir%/LUISA/locspecs/locspec_integration_abandoned.tif"
 			, StorageReadOnly = "True"
 			, DialogData      = "Geography/LambertEA"
 		{
@@ -529,11 +529,11 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 			}
 			container raster_level
 			{
-				unit<wpoint> airport_industry:	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/Ports_Airports/airports_locspec_industry2.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
+				unit<wpoint> airport_industry:	StorageName = "%SourceDataProjDir%/LUISA/PolicyScenarios/Ports_Airports/airports_locspec_industry2.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
 				{attribute<int8> GridData: IsHidden = "True"; attribute<int8> ReadData(domain_grid); attribute<float32> effect (domain_grid): expr = "max_elem((float32(ReadData) / float32(100)) * locspecs_location/rules/airports_effect, float32(0))";}
-				unit<wpoint> airport_urban:   	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/Ports_Airports/airports_locspec_urban2.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
+				unit<wpoint> airport_urban:   	StorageName = "%SourceDataProjDir%/LUISA/PolicyScenarios/Ports_Airports/airports_locspec_urban2.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
 				{attribute<int8> GridData: IsHidden = "True"; attribute<int8> ReadData(domain_grid); attribute<float32> effect (domain_grid): expr = "max_elem((float32(ReadData) / float32(100)) * locspecs_location/rules/airports_effect, float32(0))";}
-				unit<wpoint> ports_industry:   	StorageName = "%SourceDataProjDir%/EUCS_100m/PolicyScenarios/Ports_Airports/PORTS_LOCSPEC_INDUSTRY_FINAL1.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
+				unit<wpoint> ports_industry:   	StorageName = "%SourceDataProjDir%/LUISA/PolicyScenarios/Ports_Airports/PORTS_LOCSPEC_INDUSTRY_FINAL1.tif", StorageReadOnly = "True", DialogData      = "Geography/LambertEA"
 				{attribute<uint8> GridData: IsHidden = "True"; attribute<uint8> ReadData(domain_grid); attribute<float32> effect (domain_grid): expr = "max_elem((float32(ReadData) / float32(100)) * locspecs_location/rules/ports_effect, float32(0))";}
 				
 				attribute<bool>    IsFor(domain_grid): Expr = "CaseData/JrcFactorData/TiffData/CorineGrid/ViewLandUse = uint8(6)";
@@ -619,7 +619,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		Expr = "IsDefined(nda_rel)"; 		
 	
 	attribute<units/Boolean> IndustryMask(domain_grid) // factor 69
-		:	StorageName = "%SourceDataProjDir%/EUCS_100m/Masks/IndustryMask2.tif"
+		:	StorageName = "%SourceDataProjDir%/LUISA/Masks/IndustryMask2.tif"
 		,	StorageType = "tif"
 		,	StorageReadOnly = "True";
 	attribute<units/Boolean> IndustryAllowed(domain_grid): Expr = "not(IndustryMask)"; // factor 69
@@ -797,9 +797,9 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 	
 	container BurntAreas
 	{
-		unit<uint32> BurntAreas_shape: StorageName = "%SourceDataProjDir%/EUCS_100m/forests/BurntAreas2000-2012.dbf", StorageReadOnly = "True", DialogData = "Geometry", DialogType = "map"
+		unit<uint32> BurntAreas_shape: StorageName = "%SourceDataProjDir%/LUISA/forests/BurntAreas2000-2012.dbf", StorageReadOnly = "True", DialogData = "Geometry", DialogType = "map"
 		{
-			attribute<Geography/LambertEA> 	Geometry (polygon): StorageName = "%SourceDataProjDir%/EUCS_100m/forests/BurntAreas2000-2012.shp", StorageReadOnly = "True";
+			attribute<Geography/LambertEA> 	Geometry (polygon): StorageName = "%SourceDataProjDir%/LUISA/forests/BurntAreas2000-2012.shp", StorageReadOnly = "True";
 			attribute<uint32>				YearSeason;
 		}
 		attribute<BurntAreas_shape> 	BurntGrid_id (domain_grid):	expr = "poly2grid(BurntAreas_shape/Geometry, domain_grid)";
@@ -812,7 +812,7 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 		attribute<bool>	   SurfaceWater_or_beach(domain_grid): Expr = "Classifications/LU/Corine/Water[TiffData/CorineGrid/CorineLandUse]";
 		attribute<bool>	   Sea                  (domain_grid): expr = "TiffData/CorineGrid/CorineLandUse = 0[Classifications/LU/Corine] && IsNull(OutsideEU)";
 		attribute<float32> SurfaceWaterDist     (domain_grid): expr = "(float32(100) - proximity(float32(Sea || SurfaceWater_or_beach), float32(Parameters/FuncKernels/LinearDecay10km/Attr))) * float32(100)";
-		attribute<float32> export               (domain_grid): expr = "SurfaceWaterDist", StorageName = "%SourceDataProjDir%/EUCS_100m/WaterDist/WaterDist.tif";
+		attribute<float32> export               (domain_grid): expr = "SurfaceWaterDist", StorageName = "%SourceDataProjDir%/LUISA/WaterDist/WaterDist.tif";
 	}
 	// endogenous distance factors
 	container preparation
@@ -859,19 +859,19 @@ container JrcFactorDataTempl: IsTemplate = "True", IsHidden = "true"  //, Expr =
 	container Population
 	{
 		container Qi_2006_Import: 
-			StorageName = "%SourceDataProjDir%/EUCS_100m/Population/autogen_pop2006_23mar16.tif", StoragereadOnly = "True", StorageType = "gdal.grid"
+			StorageName = "%SourceDataProjDir%/LUISA/Population/autogen_pop2006_23mar16.tif", StoragereadOnly = "True", StorageType = "gdal.grid"
 		{
 			attribute<float32> GridData (Geography/Lambert100mGrid);
 			attribute<float32> ReadData (domain_grid);
 		}
 		unit<wpoint> Qi_2011_Import:
-			StorageName = "%SourceDataProjDir%/EUCS_100m/Population/ENACT_respop_grid2011v5/RPOP_yr_night_100m.tif", StoragereadOnly = "True", StorageType = "gdal.grid", DialogData = "LambertEA"
+			StorageName = "%SourceDataProjDir%/LUISA/Population/ENACT_respop_grid2011v5/RPOP_yr_night_100m.tif", StoragereadOnly = "True", StorageType = "gdal.grid", DialogData = "LambertEA"
 		{
 			attribute<float32> GridData;
 			attribute<float32> ReadData (domain_grid);
 		}
 		unit<wpoint> Qi_2018_Import:
-			StorageName = "%SourceDataProjDir%/EUCS_100m/Population/Pop_basemap_2018/JRC-GEOSTAT_2018_20210210d_100m.tif", StoragereadOnly = "True", StorageType = "gdal.grid", DialogData = "LambertEA"
+			StorageName = "%SourceDataProjDir%/LUISA/Population/Pop_basemap_2018/JRC-GEOSTAT_2018_20210210d_100m.tif", StoragereadOnly = "True", StorageType = "gdal.grid", DialogData = "LambertEA"
 		{
 			attribute<float32> GridData;
 			attribute<float32> ReadData (domain_grid);

@@ -138,7 +138,7 @@ container LisFlood
 	Unit<DPoint> GisCo: Descr = "spherical LisFlood projection" // "coords from SW to NE";
 		,	SpatialReference     = "EPSG:????"; // ??? lets try.
 		
- 	Unit<WPoint> GisCoGrid: //StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif", DialogData = "GisCo" // read grid extents and scale from .TFW, but range isn't set.
+ 	Unit<WPoint> GisCoGrid: //StorageName = "%SourceDataProjDir%/LUISA/LookupMatrix/row_laeaSPH1.tif", DialogData = "GisCo" // read grid extents and scale from .TFW, but range isn't set.
  		Expr  =
  			"TiledUnit("
  				"point_xy(UInt16(4096), UInt16(4096), "
@@ -154,16 +154,16 @@ container LisFlood
  				")"
  			")"
  	{
- 		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif";
- 		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/col_laeaSPH1.tif";
+ 		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/LUISA/LookupMatrix/row_laeaSPH1.tif";
+ 		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/LUISA/LookupMatrix/col_laeaSPH1.tif";
  		attribute<Lambert100mGrid> LAEA: Expr = "point_xy(LAEA_Col, LAEA_Row, Lambert100mGrid)";
 	}
 
 	Unit<WPoint> IdlDomainRect: StorageName = "=paths/ddir + '/nations100m.tif'", StorageReadOnly = "True", DialogData = "GisCo";  //@USER
 	Unit<WPoint> IdlDomain: Expr = "TiledUnit(point_xy(UInt16(4096), UInt16(4096), IdlDomainRect))"
 	{
-		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif";
-		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/col_laeaSPH1.tif";
+		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/LUISA/LookupMatrix/row_laeaSPH1.tif";
+		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/LUISA/LookupMatrix/col_laeaSPH1.tif";
 		attribute<Lambert100mGrid> LAEA: Expr = "point_xy(LAEA_Col, LAEA_Row, Lambert100mGrid)";
 	}
 	// selecte a region
@@ -171,8 +171,8 @@ container LisFlood
 	// SuothEast {21306, 24900}
 	Unit<WPoint> SelDomain: Expr = "Range(IdlDomainRect, point_xy(UInt16(13682), UInt16(20030)), point_xy(UInt16(21306), UInt16(24900)))"
 	{
-		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/row_laeaSPH1.tif";
-		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/EUCS_100m/LookupMatrix/col_laeaSPH1.tif";
+		attribute<UInt16> LAEA_Row: StorageName = "%SourceDataProjDir%/LUISA/LookupMatrix/row_laeaSPH1.tif";
+		attribute<UInt16> LAEA_Col: StorageName = "%SourceDataProjDir%/LUISA/LookupMatrix/col_laeaSPH1.tif";
 		attribute<Lambert100mGrid> LAEA: Expr = "point_xy(LAEA_Col, LAEA_Row, Lambert100mGrid)";
 	}
 

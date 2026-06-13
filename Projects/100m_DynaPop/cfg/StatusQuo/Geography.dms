@@ -589,7 +589,7 @@ container Geography: Using = "Units", IsHidden = "True"
 		{
 			parameter<String> FileName;
 			unit<uint32> VAT:
-				StorageName     = "='%SourceDataProjDir%/EUCS_100m/nuts2_100m/'+FileName+'.tif.vat.dbf'",
+				StorageName     = "='%SourceDataProjDir%/LUISA/nuts2_100m/'+FileName+'.tif.vat.dbf'",
 				StorageReadOnly = "True"
 			{
 				attribute<Regions/Nuts2All> Value;
@@ -610,7 +610,7 @@ container Geography: Using = "Units", IsHidden = "True"
 		
 		container Nuts2:
 			StorageReadOnly = "True",
-			StorageName = "%SourceDataProjDir%/EUCS_100m/nuts2_100m/Nuts2All.tif"
+			StorageName = "%SourceDataProjDir%/LUISA/nuts2_100m/Nuts2All.tif"
 		{
 			attribute<Regions/Nuts2All> GridData(Lambert100mGrid);
 		}
@@ -618,7 +618,7 @@ container Geography: Using = "Units", IsHidden = "True"
 */
 		attribute<Regions/Nuts2All>  Nuts2GridOrg(Lambert100mStripedGrid):
 			StorageReadOnly = "True",
-			StorageName = "%SourceDataProjDir%/EUCS_100m/nuts2_100m/Nuts2All.tif";
+			StorageName = "%SourceDataProjDir%/LUISA/nuts2_100m/Nuts2All.tif";
 		
 		container Tiles
 		{
@@ -644,7 +644,7 @@ container Geography: Using = "Units", IsHidden = "True"
 				attribute<Lambert100mStripedGrid> UB100:    Expr = "point_xy(min_elem(PointCol(UB100Org), PointCol(UpperBound(Lambert100mStripedGrid))),min_elem(PointRow(UB100Org), PointRow(UpperBound(Lambert100mStripedGrid))), Lambert100mStripedGrid)", KeepData = "False";
 			}
 			attribute<TileSetNew> AggrRel(Lambert100mStripedGrid): Expr = "value((ID(Lambert100mStripedGrid) - LowerBound(Lambert100mStripedGrid)) / JrcTileExtent, TileSetNew)";
-			attribute<Bool> HasLandOrg(TileSetNew): Expr = "any(IsDefined(Nuts2GridOrg), AggrRel)", StorageName = "%SourceDataProjDir%/EUCS_100m/data/SelectedTiles.bmp"
+			attribute<Bool> HasLandOrg(TileSetNew): Expr = "any(IsDefined(Nuts2GridOrg), AggrRel)", StorageName = "%SourceDataProjDir%/LUISA/data/SelectedTiles.bmp"
 			{
 				attribute<UInt32> PaletteData(Bool): Expr = "Classifications/Boolean/Palette";
 			}
@@ -666,9 +666,9 @@ container Geography: Using = "Units", IsHidden = "True"
 		{
 			
 			// BEGIN redundant data 
-			unit<uint32> poly: storagename = "%SourceDataProjDir%/EUCS_100m/Geography/Grid_LAEA5210_10K_polygons.dbf"
+			unit<uint32> poly: storagename = "%SourceDataProjDir%/LUISA/Geography/Grid_LAEA5210_10K_polygons.dbf"
 			{
-				attribute<LambertEA> Geometry(poly): storagename = "%SourceDataProjDir%/EUCS_100m/Geography/Grid_LAEA5210_10K_polygons.shp";
+				attribute<LambertEA> Geometry(poly): storagename = "%SourceDataProjDir%/LUISA/Geography/Grid_LAEA5210_10K_polygons.shp";
 			}
 			// END redundand data
 			

@@ -568,7 +568,7 @@ container StorageManagerTest
 			unit<uint32> optionSet:= range(uint32, 0, 2);
 			attribute<string> GDAL_Options(optionSet): [ 'yyy=a', 'zzz=b' ];
 			container NetCDF
-				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\""
+				:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\""
 				,	StorageType     = "gdal.grid"
 				,	SyncMode        = "AllTables"
 				,	DialogData      = "units/LatLong"
@@ -586,8 +586,8 @@ container StorageManagerTest
 		container NetDriver {
 			parameter<string> GDAL_Driver : [ 'netCDF' ];
 			unit<spoint> msk_rgn
-//				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":lon_bnds"
-				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":msk_rgn"
+//				:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":lon_bnds"
+				:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":msk_rgn"
 				,	StorageType     = "gdal.grid"
 				,	SyncMode        = "AllTables"
 				,	DialogData      = "units/LatLong"
@@ -596,7 +596,7 @@ container StorageManagerTest
 				attribute<uint32> GridData;
 			}
 			unit<spoint> tas
-				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":tas"
+				:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":tas"
 				,	StorageType     = "gdal.grid"
 				,	SyncMode        = "AllTables"
 				,	DialogData      = "units/LatLong"
@@ -605,7 +605,7 @@ container StorageManagerTest
 				attribute<uint32> GridData;
 			}
 			unit<spoint> ua
-				:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":ua"
+				:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":ua"
 				,	StorageType     = "gdal.grid"
 				,	SyncMode        = "AllTables"
 				,	DialogData      = "units/LatLong"
@@ -618,19 +618,19 @@ container StorageManagerTest
 			container bij_elkaar
 			{
 				attribute<uint32> tas(msk_rgn)
-					:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":tas"
+					:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":tas"
 					,	StorageType     = "gdal.grid"
 					,	StorageReadOnly = "True";
 					
 				attribute<uint32> ua(msk_rgn)
-					:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":ua"
+					:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":ua"
 					,	StorageType     = "gdal.grid"
 					,	StorageReadOnly = "True";
 					
 				attribute<uint32> tas_ua(msk_rgn) := tas + ua;
 					
 				unit<spoint> lon_bnds
-					:	StorageName     = "NETCDF:\"D:/SourceData/RegressionTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":lon_bnds"
+					:	StorageName     = "NETCDF:\"%SourceDataDir%/UnitTests/fileformats/sresa1b_ncar_ccsm3-example.nc\":lon_bnds"
 					,	StorageType     = "gdal.grid"
 					,	SyncMode        = "AllTables"
 					,	DialogData      = "units/LatLong"
