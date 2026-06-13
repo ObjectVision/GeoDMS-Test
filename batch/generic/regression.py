@@ -90,8 +90,14 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
 
         #2025 05 21 : 12.24.32
         command = summary_col_row["command"]#.replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
-        command = command.replace("'", '"')
-        command = command.replace("\"", "")
+        # Merge the leading "dir"/GeoDmsRun.exe into one quoted token so the
+        # executable path — which lives under "Program Files" (a space) — stays
+        # paste-ready (issue #21). Linux 'wsl -- /opt/...' commands have no
+        # leading quote and are left untouched.
+        command = re.sub(r'^"([^"]*)"(\S+)', r'"\1\2"', command)
+        # HTML-escape for the href attribute; copy_href reads getAttribute("href"),
+        # which decodes entities, so the clipboard receives the real quotes.
+        command = command.replace("&", "&amp;").replace('"', "&quot;")
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y %m %d %H:%M:%S") if start_time_value else "n/a")
