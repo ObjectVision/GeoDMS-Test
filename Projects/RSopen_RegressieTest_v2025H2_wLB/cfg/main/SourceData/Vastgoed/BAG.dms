@@ -564,7 +564,7 @@ container BAG : using = "Classifications/Vastgoed;Classifications"
 			
 			unit<UInt32> src := Import
 			{
-				attribute<rdc_meter>                    geometry_org (poly)          := Import/geometry;
+				//attribute<rdc_meter>                    geometry_org (poly)          := Import/geometry;
 				attribute<rdc_meter>                    geometry_simpl_org (poly)    := Import/geometry_simpl;
 				attribute<uint64>                       pand_bag_nr                  := uint64(identificatie);
 				attribute<pand_status>                  status_rel                   := Import/meta/status_rel;
@@ -572,25 +572,26 @@ container BAG : using = "Classifications/Vastgoed;Classifications"
 				attribute<Int32>                        Einddatum                    := Impl/Einddatum0 < 19600101i ? Impl/EINDREGISTRATIE : Impl/Einddatum0;
 				attribute<yr>                           Bouwjaar                     := Import/Bouwjaar;
 				attribute<yr>                           Bouwjaar_trunc               := =replace(Bouwjaar_truncation_Expr, '@YYYY@', max_Bouwjaar);
-				attribute<m2PandFootprint>              Footprint                    := area(geometry, meter2_f64)[m2PandFootprint];
+				attribute<m2PandFootprint>              Footprint                    := area(geometry_simpl, meter2_f64)[m2PandFootprint];
 				
 				// attribute<Bool>                         LigtInCBSVerblijfsrecreatie  := IsDefined(point_in_polygon(centroid_or_mid(geometry), SourceData/Grondgebruik/VerblijfsrecreatieBuffer/geometry_rd));
-				attribute<Bool>                         LigtInCBSVerblijfsrecreatie  := IsDefined(point_in_polygon(centroid_or_mid(geometry), /SourceData/Grondgebruik/BBG/Dominant/IsVerblijfsRecreatieSub/union_jaren/split_union_buffer/geometry));
+				attribute<Bool>                         LigtInCBSVerblijfsrecreatie  := IsDefined(point_in_polygon(centroid_or_mid(geometry_simpl), /SourceData/Grondgebruik/BBG/Dominant/IsVerblijfsRecreatieSub/union_jaren/split_union_buffer/geometry));
 				attribute<Bool>                         IsLogistiekFunctie           := IsDefined(rlookup(pand_bag_nr, SourceData/Vastgoed/Logistiek_panden/Logistics/pand_bag_nr));
 				attribute<Bool>                         IsVoorraad                   := pand_status/isVoorraad[status_rel];
 				attribute<Bool>                         IsStudyArea                  := ='Is'+ModelParameters/StudyArea;
 				
 				attribute<rdc_meter>                    geometry_inflated_20cm (poly):= Import/geometry_inflated_20cm;
-				attribute<rdc_meter>                    geometry (poly)              := recollect_by_cond(Impl/HasNegativearea, Impl/select_reversed_winding_order/geometry_reversed, geometry_org);
+				//attribute<rdc_meter>                    geometry (poly)              := recollect_by_cond(Impl/HasNegativearea, Impl/select_reversed_winding_order/geometry_reversed, geometry_org);
+				attribute<rdc_meter>                    geometry (poly)              := geometry_simpl;
 				attribute<rdc_meter>                    geometry_simpl (poly)        := recollect_by_cond(Impl/HasNegativearea, Impl/select_reversed_winding_order/geometry_reversed, geometry_simpl_org);
 				
 				unit<UInt32> Impl := .
 				{
 					//script to flip negative winding orders
-					attribute<Bool>                     HasNegativearea              := area(geometry_org, meter2_f64) < 0[meter2_f64];
+					attribute<Bool>                     HasNegativearea              := area(geometry_simpl_org, meter2_f64) < 0[meter2_f64];
 					unit<UInt32> select_reversed_winding_order := select_with_org_rel(HasNegativearea)
 					{
-						attribute<rdc_meter>                geometry (poly)          := src/geometry_org[org_rel];
+						attribute<rdc_meter>                geometry (poly)          := src/geometry_simpl_org[org_rel];
 						attribute<Int32>                    Begindatum0              := Impl/Begindatum0[org_rel];
 						unit<UInt32> seq_points := sequence2points(geometry)
 						{
@@ -606,8 +607,8 @@ container BAG : using = "Classifications/Vastgoed;Classifications"
 					attribute<Int32>                        EINDREGISTRATIE              := int32(replace(substr(Import/meta/EINDREGISTRATIE,0,10),'-',''));
 					attribute<Int32>                        Begindatum0                  := Import/meta/Begindatum == 0i ? MaxDatum : Import/meta/Begindatum;
 					attribute<Int32>                        Einddatum0                   := Import/meta/Einddatum == 0i ? MaxDatum : Import/meta/Einddatum;
-					attribute<rdc_meter>                    NW                           := lower_bound(geometry);
-					attribute<rdc_meter>                    SE                           := upper_bound(geometry);
+					attribute<rdc_meter>                    NW                           := lower_bound(geometry_simpl);
+					attribute<rdc_meter>                    SE                           := upper_bound(geometry_simpl);
 					attribute<Float64>                      X_ext                        := sub_or_null(PointCol(SE),PointCol(NW));
 					attribute<Float64>                      Y_ext                        := sub_or_null(PointRow(SE),PointRow(NW));
 					
