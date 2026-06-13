@@ -11,7 +11,7 @@ import argparse
 import csv
 import sys
 from bokeh import plotting
-from bokeh.models import HoverTool, PanTool, ResetTool, WheelZoomTool, CheckboxGroup, CheckboxButtonGroup, CustomJS, Legend, LegendItem, Label
+from bokeh.models import HoverTool, PanTool, ResetTool, WheelZoomTool, CheckboxGroup, CheckboxButtonGroup, CustomJS, Legend, LegendItem, Label, ColumnDataSource, Div, InlineStyleSheet
 from bokeh.layouts import row, column
 from bokeh.palettes import Category10, Category20, Category20b, Category20c
 import glob
@@ -781,25 +781,169 @@ def vgroupToLabel(vgroup):
         label = "total written bytes (GB)"    
     elif type(vgroup[0]) is tuple or vgroup[0]=="vms":
         label = "Committed and freelist allocated memory (^) (GB)"
-    
+
     return label
-    
+
+# Per-graph titles (issue #13/#4): technically correct but readable for users
+# who don't know the metric from the axis alone. Each title also states the
+# time dimension (the x-axis is elapsed wall-clock runtime in seconds), which
+# is otherwise only clear after inspecting the chart. The y-axis keeps the
+# short unit label (vgroupToLabel).
+_VGROUP_TITLES = {
+    "cpu_percent":       "CPU load (%) over runtime: share of total processor capacity this process used, sampled across elapsed wall-clock seconds",
+    "cpu_curr_time":     "Cumulative CPU time (s) over runtime: processor-seconds consumed so far (summed over all threads), against elapsed wall-clock seconds",
+    "memory_percent":    "Memory footprint (%) over runtime: share of system RAM held by this process, sampled across elapsed wall-clock seconds",
+    "num_threads":       "Active threads (#) over runtime: worker threads running concurrently, sampled across elapsed wall-clock seconds",
+    "total_read_bytes":  "Disk read (GB) over runtime: cumulative data read from disk, against elapsed wall-clock seconds",
+    "total_write_bytes": "Disk written (GB) over runtime: cumulative data written to disk, against elapsed wall-clock seconds",
+}
+
+def vgroupToTitle(vgroup):
+    key = vgroup[0]
+    if isinstance(key, tuple) or key == "vms":
+        return ("Memory use (GB) over runtime: committed virtual memory (line) and "
+                "allocator reservations (triangles), against elapsed wall-clock seconds")
+    return _VGROUP_TITLES.get(key, vgroupToLabel(vgroup))
+
+
 def ExpHasLogAvailable(exp, key):
     if key in exp.result and len(exp.result[key]):
         return True
     return False
 
-def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_percent", (0,100)), ("cpu_curr_time", False), ("vms", False), ("num_threads", False), ("total_read_bytes", False), ("total_write_bytes", False)]) -> str:
+# --- Log-message categorisation for the hover-tooltip filter (issue #13) -----
+# Categories mirror the GeoDMS GUI eventlog buckets. When GeoDMS is built to
+# write its severity + MsgCategory into the /L log (a "[<sev>][<category>]"
+# prefix right after the thread marker, see DebugStream.cpp), we use those
+# authoritatively; otherwise we fall back to text heuristics so historical
+# .bin results still filter.
+#
+# One bucket per message: progress is split into minor/major by trace severity;
+# storage / background-layer / memory / commands / other come from MsgCategory;
+# warnings and errors come from severity (case-mixup warnings have their own
+# severity in GeoDMS, ST_CaseMixup).
+LOG_CATEGORIES = ["minor", "major", "read", "write", "connection", "request",
+                  "commands", "memory", "other",
+                  "case mix-up warnings", "other warnings", "error"]
+# The deprecation noise lives in the two warning buckets (case-mixup =
+# ST_CaseMixup, "depreciated operator used" = ST_Warning), so both are hidden
+# by default; everything informative stays visible.
+LOG_CATEGORIES_HIDDEN_BY_DEFAULT = {"case mix-up warnings", "other warnings"}
+_DEFAULT_ACTIVE = {c for c in LOG_CATEGORIES if c not in LOG_CATEGORIES_HIDDEN_BY_DEFAULT}
+_DEFAULT_ACTIVE_IDX = [i for i, c in enumerate(LOG_CATEGORIES) if c in _DEFAULT_ACTIVE]
+
+# Optional GeoDMS tags emitted right after the "[<thread>]" marker: a severity
+# char in . ! C W E F D N and/or a bracketed MsgCategory name.
+_THREAD_CAPTURE_RE = re.compile(r"^\s*(\[\d+\])\s*")
+_SEVCAT_RE = re.compile(
+    r"^(?:\[([.!CWEFDN])\])?\s*"
+    r"(?:\[(progress|storage read|storage write|background layer connection|"
+    r"background layer request|other|memory|commands)\])?\s*")
+
+_SEV_WARN_ERR = {"C": "case mix-up warnings", "W": "other warnings",
+                 "E": "error", "F": "error", "D": "error"}
+_CAT_BUCKET = {"storage read": "read", "storage write": "write",
+               "background layer connection": "connection",
+               "background layer request": "request",
+               "memory": "memory", "commands": "commands", "other": "other"}
+
+def _bucket_from_tags(sev, cat):
+    if sev in _SEV_WARN_ERR:
+        return _SEV_WARN_ERR[sev]
+    if cat in (None, "progress"):
+        return "major" if sev == "!" else "minor"
+    return _CAT_BUCKET.get(cat, "other")
+
+def _bucket_from_text(msg):
+    """Best-effort bucket for logs without GeoDMS tags (historical .bin)."""
+    low = msg.lower()
+    if "mix-up of cases" in low:
+        return "case mix-up warnings"
+    if ("depreciated" in low or "deprecated" in low or "obsolete" in low
+            or low.startswith("use ")):
+        return "other warnings"
+    if ("error" in low or "failure" in low or "cannot open" in low
+            or "no such file" in low):
+        return "error"
+    if ("reserved in blocks" in low or "emptyworkingset" in low
+            or "empty working set" in low or "pagefileusage" in low):
+        return "memory"
+    if msg.startswith("@@@@@") or low.startswith("load ") or msg.startswith("Item "):
+        return "commands"
+    return "minor"  # progress traces: operations, reads, network markers, etc.
+
+def classify_and_clean(line):
+    """Return (gui_bucket, display_line) for one GeoDMS log line. Uses the
+    GeoDMS [severity][category] tags when present (authoritative), else text
+    heuristics. The display line keeps the [thread] marker + message but drops
+    the severity/category tags so the tooltip stays readable."""
+    thread = ""
+    rest = line
+    mt = _THREAD_CAPTURE_RE.match(rest)
+    if mt:
+        thread = mt.group(1)
+        rest = rest[mt.end():]
+    msc = _SEVCAT_RE.match(rest)
+    sev = msc.group(1) if msc else None
+    cat = msc.group(2) if msc else None
+    if sev or cat:
+        rest = rest[msc.end():]
+        bucket = _bucket_from_tags(sev, cat)
+    else:
+        bucket = _bucket_from_text(rest.strip())
+    display = f"{thread}{rest}" if thread else rest
+    return bucket, display
+
+def split_log_text_to_cat_lines(text:str):
+    """Split a concatenated tooltip text ("line1<br>line2<br>...") into a list
+    of [bucket, display_line] pairs (display without its trailing <br> and
+    without the severity/category tags)."""
+    if not text:
+        return []
+    out = []
+    for p in text.split("<br>"):
+        if not p.strip():
+            continue
+        bucket, display = classify_and_clean(p)
+        out.append([bucket, display])
+    return out
+
+def render_cat_lines(cat_lines, active, max_lines=50):
+    """Join the [cat, line] pairs whose category is in `active` into tooltip
+    HTML, capped at max_lines with a trailing ellipsis marker. Mirrors the
+    JavaScript rebuild in the CheckboxGroup callback so initial and toggled
+    states stay identical."""
+    out = []
+    for cat, line in cat_lines:
+        if cat not in active:
+            continue
+        if len(out) >= max_lines:
+            out.append("...")
+            break
+        out.append(line)
+    return "<br>".join(out) + "<br>" if out else ""
+
+# Graph order (issue #13/#5): most decision-relevant first. Memory is the
+# prime regression risk (leaks / OOM), then CPU load (utilisation), then total
+# CPU cost, thread parallelism, and finally disk I/O.
+_DEFAULT_VGROUPS = [
+    ("vms", False),
+    ("cpu_percent", (0, 100)),
+    ("cpu_curr_time", False),
+    ("num_threads", False),
+    ("total_read_bytes", False),
+    ("total_write_bytes", False),
+]
+
+def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=_DEFAULT_VGROUPS) -> str:
     print("Rendering experiments.\n")
+    # The tooltip shows only the GeoDMS log message(s) at that point -- the x/y
+    # coordinates carry no information for the reader (issue #13). The tooltip is
+    # attached to the scatter log-points only; the continuous lines get no hover
+    # at all (so they never show Bokeh's "???" missing-field marker either).
     tool_tips = """
-    <div>
-        <div>
-            <span style="font-size: 12px;">x: $x, y: $y</span>
-        </div>
-        <div>
-            <span style="font-size: 12px;">@text</span>
-        </div>
-    
+    <div style="max-width: 900px; white-space: normal;">
+        <span style="font-size: 12px;">@text</span>
     </div>
     """
 
@@ -825,6 +969,7 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
 
     # create ColumnDataSource(s)
     exps_ds = []
+    log_sources = []   # shared CDS per experiment, fed to the #13 filter callback
     for i, exp in enumerate(experiments):
         exp_ds_graphs = {}
         exp_ds_logs = {}
@@ -854,16 +999,42 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
                     for i in range(len(exp.result["log_alloc"]["dtime"])):
                         exp_ds_alloc["text"].append(f"A: {exp.result['log_alloc']['allocated'][i]}, R: {exp.result['log_alloc']['reserved'][i]}, F: {exp.result['log_alloc']['freed'][i]}, U: {exp.result['log_alloc']['uncommitted'][i]}")
 
-        exps_ds.append([exp_ds_graphs, exp_ds_logs, exp_ds_alloc])
+        # Give the continuous line source a (blank) `text` column so hovering a
+        # line point no longer shows Bokeh's missing-field placeholder "???"
+        # (issue #13). The "x: .., y: .." coordinate read-out is unaffected.
+        exp_ds_graphs["text"] = [""] * len(exp_ds_graphs["time"])
+
+        # Tag each tooltip log line with a category and wrap the log source in a
+        # ColumnDataSource shared across every figure, so the CheckboxGroup
+        # callback can rebuild the visible `text` from the ticked categories
+        # (issue #13). Categories are derived from the text, so historical .bin
+        # results -- pickled before this feature -- filter too.
+        if "text" in exp_ds_logs:
+            cat_lines = [split_log_text_to_cat_lines(t) for t in exp_ds_logs["text"]]
+            exp_ds_logs["cat_lines"] = cat_lines
+            exp_ds_logs["text"] = [render_cat_lines(cl, _DEFAULT_ACTIVE) for cl in cat_lines]
+            log_cds = ColumnDataSource(exp_ds_logs)
+            log_sources.append(log_cds)
+            exps_ds.append([exp_ds_graphs, log_cds, exp_ds_alloc])
+        else:
+            exps_ds.append([exp_ds_graphs, exp_ds_logs, exp_ds_alloc])
         
     for ii, vgroup in enumerate(vgroups):
-        title = ""
-        
+        title = vgroupToTitle(vgroup)
+
+        # No figure-level hover: we attach two scoped HoverTools below so that
+        # lines (no log text) never trigger the "???" placeholder (issue #13).
+        base_tools = "pan,wheel_zoom,box_zoom,reset,save"
         if not vgroup[1]: # no y_range
-            p = plotting.figure(width=2000, height=500, tooltips=tool_tips, tools="pan,wheel_zoom,box_zoom,reset,save,hover", title=title)
+            p = plotting.figure(width=2000, height=500, tools=base_tools, title=title)
         else:
-            p = plotting.figure(width=2000, height=500, y_range=(vgroup[1][0], vgroup[1][1]), tooltips=tool_tips, tools="pan,wheel_zoom,box_zoom,reset,save,hover", title=title)
-            
+            p = plotting.figure(width=2000, height=500, y_range=(vgroup[1][0], vgroup[1][1]), tools=base_tools, title=title)
+
+        # Collect per-figure renderers so hover can be scoped: scatter/log
+        # points get the @text tooltip, continuous lines get coords only.
+        scatter_renderers = []
+        line_renderers = []
+
         # Track failed-profiler experiments per figure so we can overlay a
         # placeholder annotation instead of misleading the user with a flat
         # zero line. Status comes from getPerformance / RunExperiments and
@@ -885,23 +1056,27 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
                 # we're trying to remove.
                 continue
             if type(vgroup[0]) is tuple: # do something with this vgroup case
-                add_renderer(i,p.line('time', vgroup[0][0], color=color, line_dash="4 4", source=exps_ds[i][0]))
-                add_renderer(i,p.line('time', vgroup[0][1], color=color, source=exps_ds[i][0]))
+                line_renderers.append(add_renderer(i,p.line('time', vgroup[0][0], color=color, line_dash="4 4", source=exps_ds[i][0])))
+                line_renderers.append(add_renderer(i,p.line('time', vgroup[0][1], color=color, source=exps_ds[i][0])))
                 if ExpHasLogAvailable(exp, vgroup[0][0]):
-                    add_renderer(i,p.scatter('time', vgroup[0][1], size=5, color=color, source=exps_ds[i][1]))
+                    scatter_renderers.append(add_renderer(i,p.scatter('time', vgroup[0][1], size=5, color=color, source=exps_ds[i][1])))
 
                 if exps_ds[i][2]: # allocation log was available
-                    add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
-                    add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
+                    line_renderers.append(add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2])))
+                    scatter_renderers.append(add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2])))
             else:
-                add_renderer(i,p.line('time', vgroup[0],            color=color, source=exps_ds[i][0]))
+                line_renderers.append(add_renderer(i,p.line('time', vgroup[0],            color=color, source=exps_ds[i][0])))
                 if ExpHasLogAvailable(exp, vgroup[0]):
-                    add_renderer(i,p.scatter('time', vgroup[0], size=5, color=color, source=exps_ds[i][1]))       
+                    scatter_renderers.append(add_renderer(i,p.scatter('time', vgroup[0], size=5, color=color, source=exps_ds[i][1])))
             if vgroup[0]=="vms": # allocator log only added to committed memory figure
-                add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
-                add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
-                print(exps_ds[i][2])
-                
+                line_renderers.append(add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2])))
+                scatter_renderers.append(add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2])))
+
+        # Hover only on the scatter log-points (they carry @text); the lines
+        # (line_renderers) intentionally get no hover -- coordinates are not
+        # informative and a line hover would only show the "???" marker.
+        p.add_tools(HoverTool(renderers=scatter_renderers, tooltips=tool_tips))
+
         p.xaxis.axis_label = 'time (s)'
         #p.xaxis.axis_label_text_font_size = '15px'
         #p.yaxis.axis_label_text_font_size = '15px'
@@ -927,30 +1102,103 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_perc
     legend_items = []
     for i, exp in enumerate(experiments):
         legend_items.append(LegendItem(label=labels[i], renderers=exp_renderers[i]))
-    
-    ## Use dummy figure as legend for all experiments 
-    dum_fig = plotting.figure(width=1000,height=50*len(legend_items), outline_line_alpha=0,tools="pan,wheel_zoom,box_zoom,reset,save,hover")
+
+    # Transparent "dummy figure" that only hosts the shared Legend so
+    # click_policy='hide' toggles a version across every graph (issue #17). The
+    # height grows with the number of versions so no entry is clipped; the
+    # legend is pinned top-left with zero borders so there is no empty white
+    # band beside or below it (issue #13/#3).
+    legend_height = 24 * len(legend_items) + 30
+    dum_fig = plotting.figure(width=470, height=legend_height, outline_line_alpha=0,
+                              tools="", toolbar_location=None,
+                              min_border=0, min_border_left=0, min_border_right=0,
+                              min_border_top=0, min_border_bottom=0)
+    dum_fig.background_fill_alpha = 0
+    dum_fig.border_fill_alpha = 0
+    dum_fig.outline_line_color = None
+    # Bokeh 3.x renders the plot in a shadow root, so a page-level <style> can't
+    # reach the canvas. An InlineStyleSheet on the figure is injected *inside*
+    # that shadow root, so it can kill the blue focus outline the browser draws
+    # around the canvas when a legend entry is clicked (issue #13/#2).
+    dum_fig.stylesheets = [InlineStyleSheet(css=(
+        ":host, :host:focus, :host:focus-within { outline: none !important; } "
+        "canvas:focus, canvas:focus-visible { outline: none !important; }"))]
     for fig_component in [dum_fig.grid[0],dum_fig.ygrid[0],dum_fig.xaxis[0],dum_fig.yaxis[0]]:
         fig_component.visible = False
     dum_fig.renderers += renderers
     dum_fig.x_range.end = 1001
     dum_fig.x_range.start = 1000
-    dum_fig.add_layout(Legend(click_policy='hide',border_line_alpha=0,items=legend_items))
+    dum_fig.add_layout(Legend(click_policy='hide', border_line_alpha=0, items=legend_items,
+                              location="top_left", glyph_height=16, label_height=16,
+                              spacing=3, padding=2, margin=0,
+                              label_text_font_size='12px'))
 
     output_fn = f"{experiments[0].experiment_folder}/compare.html"
     print(f"Storing experiments interactive figure in {output_fn}")
-    
-    grid_structure = [[dum_fig, None]]
-    for i,fig in enumerate(figs):
-        if i == 0:
-            grid_structure.append([fig, None])
-        else:
-            grid_structure.append([fig, None])
-    grid = plotting.gridplot(grid_structure, toolbar_location="left")
+
+    # Graphs stacked vertically; the Bokeh tool icons merge to the left of the
+    # stack (next to the top graph).
+    grid = plotting.gridplot([[fig] for fig in figs], toolbar_location="left")
+
+    # Overall header so a reader immediately knows what they are looking at.
+    test_label = labels[0].split("__")[-1] if labels and "__" in labels[0] else (labels[0] if labels else "")
+    title_div = Div(width=1100, text=(
+        f"<h2 style='margin:2px 0'>GeoDMS regression: {test_label}</h2>"
+        "<div style='color:#555;font-size:12px;margin-bottom:6px'>"
+        "Resource use over elapsed wall-clock runtime, per GeoDMS version. "
+        "Each dot marks a GeoDMS log event; hover a dot to read its message. "
+        "Use the legend to show/hide a version, and the checkboxes to filter "
+        "log categories shown in the tooltips.</div>"))
+
+    # Issue #13: log-category filter for the hover tooltips. The CheckboxGroup's
+    # CustomJS rebuilds every log source's `text` column from the ticked
+    # categories and re-emits, so the static HTML stays fully client-side (no
+    # server needed). Mirrors render_cat_lines() so initial == toggled state.
+    if log_sources:
+        checkbox = CheckboxGroup(labels=LOG_CATEGORIES, active=list(_DEFAULT_ACTIVE_IDX))
+        checkbox.js_on_change('active', CustomJS(
+            args=dict(sources=log_sources, cats=LOG_CATEGORIES, max_lines=50),
+            code="""
+            const active = new Set(cb_obj.active.map(i => cats[i]));
+            for (const src of sources) {
+                const cl = src.data['cat_lines'];
+                const txt = src.data['text'];
+                if (!cl) { continue; }
+                for (let i = 0; i < cl.length; i++) {
+                    const pairs = cl[i] || [];
+                    const out = [];
+                    for (let j = 0; j < pairs.length; j++) {
+                        if (!active.has(pairs[j][0])) { continue; }
+                        if (out.length >= max_lines) { out.push('...'); break; }
+                        out.push(pairs[j][1]);
+                    }
+                    txt[i] = out.length ? out.join('<br>') + '<br>' : '';
+                }
+                src.change.emit();
+            }
+        """))
+        filters = column(
+            Div(text="<b>Show log categories in tooltips</b><br>(unchecked = hidden):"),
+            checkbox,
+        )
+        # Both boxes get a title + one-line explanation so they line up and it
+        # is clear the legend entries are clickable toggles too (issue #13/#3).
+        legend_box = column(
+            Div(text="<b>Versions</b><br>(click a name to show/hide):"),
+            dum_fig,
+        )
+        # Header row: the version legend on the left, the category filters to
+        # its right; the graphs (with their toolbar) sit below.
+        header = row(legend_box, filters)
+    else:
+        header = dum_fig
+
+    layout = column(title_div, header, grid)
+
     plotting.output_file(output_fn)
-    plotting.save(grid)
+    plotting.save(layout)
     if show_figure:
-        plotting.show(grid)
+        plotting.show(layout)
     return output_fn
 
 def InitExperimentFromCommandLineDefinition(direct_call:str):
