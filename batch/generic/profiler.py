@@ -1,0 +1,1170 @@
+import os
+import re
+import psutil
+from datetime import datetime
+import time
+import pickle
+import difflib
+import subprocess
+import shlex
+import argparse
+import csv
+import sys
+from bokeh import plotting
+from bokeh.models import HoverTool, PanTool, ResetTool, WheelZoomTool, CheckboxGroup, CheckboxButtonGroup, CustomJS, Legend, LegendItem, Label
+from bokeh.layouts import row, column
+from bokeh.palettes import Category10, Category20, Category20b, Category20c
+import glob
+import filecmp
+
+class Experiment:
+    def __init__(self, name:str=None, command:str=None, experiment_folder:str=None, environment_variables=None, cwd=None, geodms_logfile:str=None, indicator_results_file:str=None, binary_experiment_file:str=None, file_comparison:tuple=None, store_results:bool=True):
+        self.name                   = name
+        self.command                = command
+        self.experiment_folder      = experiment_folder
+        self.environment_variables  = environment_variables
+        self.cwd                    = cwd
+        self.geodms_logfile         = geodms_logfile
+        self.indicator_results_file = indicator_results_file
+        self.binary_experiment_file = binary_experiment_file
+        self.file_comparison=file_comparison
+        self.store_results = store_results
+        self.result = {}
+
+    def __str__(self):
+        return f"Experiment: name:{self.name} command:{self.command}"
+    
+    def __repr__(self):
+        # name;command;experiment_folder;environment_variables;cwd;geodms_logfile;binary_experiment_file
+        return f"{self.name};{self.command};{self.experiment_folder};{self.environment_variables};{self.cwd};{self.geodms_logfile};{self.binary_experiment_file}"
+    
+    def __eq__(self, other):
+        name_is_eq = self.name == other.name
+        command_is_eq = self.command == other.command
+        exp_fldr_is_eq = self.experiment_folder == other.experiment_folder
+        env_vars_is_eq = self.environment_variables == other.environment_variables
+        cwd_is_eq = self.cwd == other.cwd
+        logfile_is_eq = self.geodms_logfile == other.geodms_logfile
+        binfile_is_eq = self.binary_experiment_file == other.binary_experiment_file
+        return name_is_eq and command_is_eq and exp_fldr_is_eq and env_vars_is_eq and cwd_is_eq and logfile_is_eq and binfile_is_eq  
+
+    def summary(self) -> dict:
+        status = True if self.result else False
+        log = self.result.get('log') if self.result else None
+        if not log or not log.get('time'):
+            # Experiment ran but produced no profile samples (a truncated or
+            # failed run, or a sampler that wrote 0 rows). Return a no-data
+            # summary with the same keys so the report renders an empty cell
+            # -- still showing the real pass/fail status set by the caller --
+            # instead of crashing on log['time'][0] (issue: empty report columns).
+            return {"status": status, "command": self.command, "start_time": None,
+                    "end_time": None, "duration": 0, "highest_commit": 0,
+                    "total_read": 0, "total_write": 0, "max_threads": 0}
+        start_time = log['time'][0]
+        end_time = log['time'][-1]
+        duration = (end_time - start_time).total_seconds()
+        highest_commit = max(log['vms'])
+        total_read = log['total_read_bytes'][-1]
+        total_write = log['total_write_bytes'][-1]
+        max_threads = max(log['num_threads'])
+        
+        return {"status":status, "command":self.command, "start_time":start_time, "end_time":end_time, "duration":duration, "highest_commit":highest_commit, "total_read":total_read, "total_write":total_write, "max_threads":max_threads}
+
+def readLog(log_filename, filter=None):
+    ret = {"time":[], "text":[]}
+    if not os.path.exists(log_filename):
+        return ret
+
+    with open(log_filename, "r") as f:
+        date_end = 19
+        while (True):
+            line = f.readline()
+            if not line:
+                break
+                
+            if len(line) <= 26: # empty line, no information
+                continue
+                 
+            if not line[0].isnumeric():
+                continue
+                
+            if filter and not filter in line:
+                continue
+
+            date  = line[0:date_end]
+
+            #2023-11-15 09:39:22
+            datet = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            ret["time"].append(datet)
+            ret["text"].append(f"{line[date_end:]}<br>")
+    return ret
+
+def readLogAllocator(log_fn, start_time):
+    log_alloc = {"time":[], "dtime":[], "reserved":[], "allocated":[], "freed":[], "uncommitted":[], "PageFileUsage":[]}
+    alloc_log = readLog(log_fn, filter="Reserved in Blocks")
+
+    if len(alloc_log["time"]) == 0:
+        return None
+
+    for ind in range(len(alloc_log["time"])):
+        print(alloc_log["time"][ind], alloc_log["text"][ind])  
+        # 2023-11-21 14:10:50[1]Reserved in Blocks 63532[MB]; allocated: 0[MB]; freed: 62532[MB]; uncommitted: 999[MB]; PageFileUsage: 62767[MB]
+        integers_in_entry = re.findall(r"\d+", alloc_log["text"][ind])[1:]
+        print(integers_in_entry)
+        if len(integers_in_entry) < 5:
+            continue
+        
+        log_alloc["time"].append(alloc_log["time"][ind])
+        log_alloc["dtime"].append((alloc_log["time"][ind]-start_time).total_seconds())
+        log_alloc["reserved"].append(int(integers_in_entry[0])*10**-3)      # [GB]
+        log_alloc["allocated"].append(int(integers_in_entry[1])*10**-3)     # [GB]
+        log_alloc["freed"].append(int(integers_in_entry[2])*10**-3)         # [GB]
+        log_alloc["uncommitted"].append(int(integers_in_entry[3])*10**-3)   # [GB]
+        log_alloc["PageFileUsage"].append(int(integers_in_entry[4])*10**-3) # [GB]
+    return log_alloc
+
+def _to_wsl_path(p:str) -> str:
+    """Translate a Windows path like 'C:/foo/bar.csv' into the WSL form
+    '/mnt/c/foo/bar.csv'. Paths that already look POSIX or are not drive-
+    rooted are returned unchanged."""
+    if not p or len(p) < 2:
+        return p
+    if p[1] == ":" and p[0].isalpha():
+        return f"/mnt/{p[0].lower()}{p[2:]}".replace("\\", "/")
+    return p.replace("\\", "/")
+
+
+def _read_sampler_csv(csv_path:str) -> dict:
+    """Read a linux_sampler.py CSV into the same dict shape as the
+    Windows-side profile_log. Returns an empty-but-keyed dict if the
+    CSV is missing or unreadable, so downstream code sees consistent
+    structure even on sampler failure."""
+    profile_log = {"time":[], "dtime":[], "cpu_percent":[], "cpu_curr_time":[],
+                   "memory_percent":[], "rss":[], "vms":[], "num_threads":[],
+                   "total_read_bytes":[], "total_write_bytes":[],
+                   "net_connections":[], "processes":[]}
+    if not os.path.exists(csv_path):
+        return profile_log
+    try:
+        with open(csv_path, "r", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # `time` is ISO-8601 in the CSV; profile_log uses datetime
+                # objects on the Windows path, so parse for parity.
+                try:
+                    t = datetime.fromisoformat(row["time"])
+                except (ValueError, KeyError):
+                    continue
+                profile_log["time"].append(t)
+                profile_log["dtime"].append(float(row["dtime"]))
+                profile_log["cpu_percent"].append(float(row["cpu_percent"]))
+                profile_log["cpu_curr_time"].append(float(row["cpu_curr_time"]))
+                profile_log["memory_percent"].append(float(row["memory_percent"]))
+                profile_log["rss"].append(float(row["rss"]))
+                profile_log["vms"].append(float(row["vms"]))
+                profile_log["num_threads"].append(int(row["num_threads"]))
+                profile_log["total_read_bytes"].append(float(row["total_read_bytes"]))
+                profile_log["total_write_bytes"].append(float(row["total_write_bytes"]))
+                profile_log["net_connections"].append(int(row["net_connections"]))
+                profile_log["processes"].append(int(row["processes"]))
+    except (OSError, csv.Error, ValueError) as e:
+        print(f"_read_sampler_csv: failed to parse {csv_path}: {e}")
+    return profile_log
+
+
+def _tree_kill(parent_process:psutil.Process):
+    """Terminate parent_process AND every descendant. Plain
+    parent_process.kill() on Windows is TerminateProcess on a single PID
+    — it doesn't propagate to children, so a `cmd.exe` wrapper's wsl.exe
+    descendants survive as orphans, conhost keeps the console window
+    visible, and the Linux GeoDmsRun keeps running detached. Walk first
+    so we don't lose visibility into descendants when the parent dies."""
+    try:
+        descendants = parent_process.children(recursive=True)
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        descendants = []
+    for p in descendants:
+        try:
+            p.kill()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    try:
+        parent_process.kill()
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        pass
+    # Belt-and-braces on Windows: also issue `taskkill /T /F /PID <ppid>`
+    # in case a child was reparented mid-walk and now hangs off the
+    # session leader instead of our parent. Cheap and silent on success.
+    if os.name == "nt":
+        try:
+            subprocess.run(
+                ["taskkill", "/T", "/F", "/PID", str(parent_process.pid)],
+                capture_output=True, check=False,
+            )
+        except FileNotFoundError:
+            pass
+
+
+def getProcessCurrentStatistics(process:psutil.Process, experiment_start_time):
+    t=None
+    dt=None
+    cpu_p=0
+    mem_p=0
+    rss=0
+    vms=0
+    num_threads=0
+    rb=0
+    wb=0
+    net_c=0
+
+    try:
+        with process.oneshot():
+            cur_time = datetime.now()
+            t = cur_time
+            dt = (cur_time-experiment_start_time).total_seconds()
+            cpu_p_raw = process.cpu_percent()
+            num_cpus = psutil.cpu_count()
+            cpu_p = cpu_p_raw / num_cpus
+            if cpu_p_raw > 0.0:
+                print(f"{process.name()} {num_cpus} {cpu_p_raw} {cpu_p}")
+            mem_p = process.memory_percent()
+            memory_info = process.memory_info()
+            rss = memory_info.rss * 10.0**-9.0 # GB
+            vms = memory_info.vms * 10.0**-9.0 # GB
+            num_threads = process.num_threads()
+            io_counters = process.io_counters()
+            rb = io_counters.read_bytes/10.0**9 # GB
+            wb = io_counters.write_bytes/10.0**9 # GB
+            net_c = len(process.net_connections())
+    except:
+        return [t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c]
+    return [t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c]
+
+def getPerformance(exp:Experiment, sampling_rate=1.0, timeout=14400):
+    profile_log = {"time":[], "dtime":[], "cpu_percent":[], "cpu_curr_time":[], "memory_percent":[], "rss":[], "vms":[], "num_threads":[], "total_read_bytes":[], "total_write_bytes":[], "net_connections":[], "processes":[]} # rss=resident set size (aka physical non swapped memory in use by process), vms virtual memory ize
+    command_with_args = exp.command
+    environment_string = exp.environment_variables
+    cwd = exp.cwd
+    profiler_status = "ok"
+    profiler_status_detail = ""
+    sample_csv = None
+    is_linux_flavor = False
+
+    try:
+        # If command_with_args is a full string like "path\\to\\script.bat arg1 arg2"
+        # and the first part is a relative path, resolve it:
+        parts = shlex.split(command_with_args)  # splits respecting quotes
+
+        if cwd:
+            parts[0] = os.path.abspath(os.path.join(cwd, parts[0]))  # make sure script path is absolute
+
+        # ----- Linux/WSL flavor detection (#1104) --------------------
+        # For the .l flavor, parts looks like:
+        #   ["wsl", "--", "/opt/ObjectVision/GeoDms<ver>/GeoDmsRun", ...]
+        # Splice run_with_sampler.sh between "--" and GeoDmsRun so the
+        # wrapper runs Linux-side and forks linux_sampler.py against the
+        # exact GeoDmsRun PID. The CSV path is on the Windows side (under
+        # the experiment folder) and translated to /mnt/<x>/... for wsl.
+        is_linux_flavor = bool(parts) and parts[0] in ("wsl", "wsl.exe") and len(parts) >= 3 and parts[1] == "--"
+        if is_linux_flavor:
+            geodms_exec_linux = parts[2]
+            install_root_linux = os.path.dirname(geodms_exec_linux)
+            wrapper_linux = f"{install_root_linux}/profiler/run_with_sampler.sh"
+            sample_csv = os.path.join(exp.experiment_folder, f"{exp.name}.sample.csv").replace("\\", "/")
+            sample_csv_linux = _to_wsl_path(sample_csv)
+            # Remove a stale CSV from a prior aborted run so an empty/old
+            # file can't masquerade as a successful sample.
+            if os.path.exists(sample_csv):
+                try:
+                    os.remove(sample_csv)
+                except OSError:
+                    pass
+            parts = parts[:2] + [
+                wrapper_linux, sample_csv_linux, str(sampling_rate), "--",
+            ] + parts[2:]
+
+        title = exp.name.replace('"', "'")  # zorg dat er geen quotes inzitten
+        print(f"Running subprocess: {parts}, cwd={cwd}, title={title}")
+
+        # Bouw custom_env, en vertaal environment_string
+        custom_env = os.environ.copy()  # behoud bestaande omgeving
+        if environment_string:
+            for pair in environment_string.split(';'):
+                if '=' in pair:
+                    key, value = pair.split('=', 1)
+                    custom_env[key.strip()] = value.strip()
+
+        # Construct a single command that sets the title, calls the batch, and optionally pauses (if needed to detect command-line syntax errors)
+        cmd_parts = [
+            "cmd", "/C",#"/k",  # new console, keep open on error
+            "title", title, "&&",  # set title
+            "call",  # call the batch file
+        ] + parts  # add the rest of the command
+        # + ["&&", "pause"]  # keep the console open, uncomment for debugging non-waiting failures
+
+        cmd_parts_final = []
+        for cmd_part in cmd_parts:
+            cmd_parts_final.append(cmd_part.replace('"', ""))
+        print(f"Full command: {cmd_parts}\n")
+
+        cmd_parts = cmd_parts_final
+
+        # Launch this in a new console window (not via start!)
+        try:
+            parent_process_open_handle = subprocess.Popen(
+                cmd_parts,
+                cwd=cwd, env=custom_env,
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+                shell=False
+            )
+        except Exception as e:
+            pass
+
+        parent_process = psutil.Process(parent_process_open_handle.pid)
+        experiment_start_time = datetime.fromtimestamp(parent_process.create_time())
+        cpu_ct = 0
+
+        if is_linux_flavor:
+            # No Windows-side sample loop -- linux_sampler.py inside WSL is
+            # writing the CSV. Just watch for timeout and wait. The CSV is
+            # ingested after parent_process.wait() returns.
+            while psutil.pid_exists(parent_process.pid):
+                if (datetime.now() - experiment_start_time).total_seconds() > timeout:
+                    profiler_status = "failed"
+                    profiler_status_detail = f"timeout after {timeout}s -- tree-killed"
+                    _tree_kill(parent_process)
+                    break
+                time.sleep(sampling_rate)
+        else:
+            while (psutil.pid_exists(parent_process.pid)):
+                time_measurement_start = datetime.now()
+
+                # timeout
+                if (time_measurement_start - experiment_start_time).total_seconds() > timeout:
+                    profiler_status = "failed"
+                    profiler_status_detail = f"timeout after {timeout}s -- tree-killed"
+                    _tree_kill(parent_process)
+                    break
+
+                try: # dry run cpu_p for every child, first time cpu_percent() always returns 0.0, see
+
+                    child_processes = parent_process.children(recursive=True)
+                    dummy_parent_cpu_p = parent_process.cpu_percent()
+                    for child_process in child_processes:
+                        dummy_child_cpu_p = child_process.cpu_percent()
+                except:
+                    pass
+                time.sleep(0.1)
+
+                t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(parent_process, experiment_start_time)
+                if not t:
+                    continue
+
+                # add a log row to each attribute
+                profile_log["time"].append(t)
+                profile_log["dtime"].append(dt)
+                profile_log["cpu_percent"].append(cpu_p)
+                profile_log["memory_percent"].append(mem_p)
+                profile_log["rss"].append(rss)
+                profile_log["vms"].append(vms)
+                profile_log["num_threads"].append(num_threads)
+                profile_log["total_read_bytes"].append(rb)
+                profile_log["total_write_bytes"].append(wb)
+                profile_log["net_connections"].append(net_c)
+
+                profile_log["processes"].append(len(child_processes)+1)
+
+                for child_process in child_processes:
+                    t, _, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c = getProcessCurrentStatistics(child_process, experiment_start_time)
+                    if not t:
+                        continue
+                    profile_log["cpu_percent"][-1]       += cpu_p
+                    profile_log["memory_percent"][-1]    += mem_p
+                    profile_log["rss"][-1]               += rss
+                    profile_log["vms"][-1]               += vms
+                    profile_log["num_threads"][-1]       += num_threads
+                    profile_log["total_read_bytes"][-1]  += rb
+                    profile_log["total_write_bytes"][-1] += wb
+                    profile_log["net_connections"][-1]   += net_c
+                cpu_ct += profile_log["cpu_percent"][-1] / 100.0
+                profile_log["cpu_curr_time"].append(cpu_ct)
+
+                time_measurement_end = datetime.now()
+                dtimestamp = (time_measurement_end-time_measurement_start).total_seconds()
+                sleep_time = sampling_rate-dtimestamp
+
+                if sleep_time > 0.0:
+                    time.sleep(sleep_time)
+                else:
+                    print(f"Warning: measurements of calculation process took {dtimestamp} seconds, and is longer than sampling rate: {sampling_rate}")
+
+    except FileNotFoundError as e:
+        print(f"FileNotFoundError: {e}")
+        print("Check if the batch, command, or executable file exists at the specified location:")
+        print(f"  Resolved command path: {parts[0]}")
+        print(f"  Working directory: {cwd}")
+        if profiler_status == "ok":
+            profiler_status = "failed"
+            profiler_status_detail = f"FileNotFoundError: {e}"
+
+    except Exception as e:
+        print(f"Unexpected error occurred: {e}")
+        if profiler_status == "ok":
+            profiler_status = "failed"
+            profiler_status_detail = f"sampling exception: {e}"
+
+    return_code = parent_process.wait()
+
+    # ---- Linux-flavor: ingest sampler CSV -----------------------------
+    if is_linux_flavor and sample_csv:
+        linux_log = _read_sampler_csv(sample_csv)
+        if not linux_log["time"]:
+            if profiler_status == "ok":
+                profiler_status = "unavailable"
+                profiler_status_detail = (
+                    "WSL sampler produced no rows; run_with_sampler.sh or "
+                    "linux_sampler.py may be missing from the .deb install "
+                    "(check /opt/ObjectVision/GeoDms<ver>/profiler/), or "
+                    "python3-psutil is not installed in the WSL distro."
+                )
+        else:
+            profile_log = linux_log
+
+    # ---- Common: detect empty/short profile_log as a sampler failure --
+    # A real GeoDmsRun is expected to take at least a few seconds. If the
+    # run took noticeable wall time but we ended up with zero samples or a
+    # near-zero CommitCharge while the test reported success, the sampler
+    # was broken. Flag it so VisualizeExperiments can overlay a placeholder
+    # series instead of misleading the user with a flat-zero line.
+    wall_time_s = (datetime.now() - experiment_start_time).total_seconds()
+    if profiler_status == "ok" and wall_time_s >= 5 and len(profile_log["time"]) == 0:
+        profiler_status = "failed"
+        profiler_status_detail = (
+            f"sampler produced 0 rows for a {wall_time_s:.0f}s run "
+            "(test may still have passed -- check GeoDmsRun /L log)"
+        )
+
+    #C005 -> access violation niet in log
+    # return_code 0 -> geen fout
+    # return_code > 0 fout
+    # toevoegen log file aan output
+    # error level -> kleur
+    return profile_log, experiment_start_time, return_code, profiler_status, profiler_status_detail
+
+def getClosestLog(dms_log_t, profile_log, param, current_ind):
+    smallest_dt = float("inf") # start with positive infinity
+    ind_chosen = None
+    profile_log_time_array = profile_log["time"]
+    max_ind = len(profile_log_time_array)
+
+   # Start searching from the initial estimate and go in both directions
+    for direction in (-1, 1):  # First search backwards, then forwards
+        search_ind = current_ind
+        while 0 <= search_ind < max_ind:
+            profile_log_t = profile_log_time_array[search_ind]
+            dt = abs((dms_log_t - profile_log_t).total_seconds())
+            
+            # Update if a smaller dt is found
+            if dt < smallest_dt:
+                smallest_dt = dt
+                ind_chosen = search_ind
+            elif dt > smallest_dt:
+                # If the difference is increasing or larger than already found values, stop searching in this direction
+                break
+            
+            search_ind += direction
+
+    assert ind_chosen is not None, (
+        "dms_log datetime falls within profile log datetime range, "
+        "hence index should be between 0 and the end of the profile log"
+    )
+    return (ind_chosen, profile_log[param][ind_chosen])
+
+def getClosestProfilelogForGeodmslog(profile_log, geodms_log, param):
+    xy = {"ind":[], "x":[], "y":[], "dms_log_ind":[]}
+    ind = 0
+    profile_log_first_datetime = profile_log['time'][0]
+    profile_log_last_datetime = profile_log['time'][-1]
+
+    for i, dms_log_t in enumerate(geodms_log["time"]):
+        if not (profile_log_first_datetime <= dms_log_t <= profile_log_last_datetime):
+            print(f"Geodms log entry is outside experiment timeline: {dms_log_t}")
+            continue
+
+        (ind, y) = getClosestLog(dms_log_t, profile_log, param, ind)
+        xy["ind"].append(ind)
+        xy["x"].append(profile_log["dtime"][ind])
+        xy["y"].append(y)
+        xy["dms_log_ind"].append(i)
+    return xy
+
+def getCompactClosestLogForRLog(profile_log, geodms_log, param, max_lines=50):
+    rlog_compact = {"inds":{}, "x":[], "y":[], "text":[], "num_text_lines":[], "IsEnded":{}}
+    xy = getClosestProfilelogForGeodmslog(profile_log, geodms_log, param)
+    
+    ind_cur = 0
+    for i in range(len(xy["x"])):
+        ind_log = xy["ind"][i]
+        dtime = xy["x"][i]
+        val   = xy["y"][i]
+        ind_geodms_log = xy["dms_log_ind"][i]
+
+        if ind_log not in rlog_compact["inds"]:
+            rlog_compact["inds"][ind_log] = ind_cur
+            rlog_compact["x"].append(dtime)
+            rlog_compact["y"].append(val)
+            rlog_compact["text"].append(geodms_log["text"][ind_geodms_log])
+            rlog_compact["num_text_lines"].append(1)
+            ind_cur += 1
+        else:
+            rlog_compact["num_text_lines"][rlog_compact["inds"][ind_log]] += 1
+            if (rlog_compact["num_text_lines"][rlog_compact["inds"][ind_log]] > max_lines):
+                continue
+            rlog_compact["text"][rlog_compact["inds"][ind_log]] += geodms_log["text"][ind_geodms_log]
+            if (rlog_compact["num_text_lines"][rlog_compact["inds"][ind_log]] == max_lines):
+                rlog_compact["text"][rlog_compact["inds"][ind_log]] += "...<br>"
+
+    return rlog_compact
+    
+def getLogInfoForPlotting(log, log_fn, param):
+    geodms_log = readLog(log_fn)
+    rlog_compact = getCompactClosestLogForRLog(log, geodms_log, param)
+    return rlog_compact
+
+def getSvnVersion(exp):
+    if exp.svn[0]:
+        svn_id = subprocess.run("svn info --show-item last-changed-revision", cwd=exp.svn[0], capture_output=True).stdout.decode("utf-8")
+        svn_id = svn_id.replace("\n", "")
+        svn_id = svn_id.replace("\r", "")
+    else:
+        svn_id = "<non versioned>"
+    return svn_id
+
+def getExperimentFileName(experiment:Experiment):
+    #experiment_hash = int(hashlib.sha256((experiment.name + experiment.command).encode('utf-8')).hexdigest(), 16) % 10**15
+    
+    fldrname = f"{experiment.experiment_folder}"
+    if not os.path.exists(fldrname):
+        os.makedirs(fldrname)
+    filename  = f"{experiment.name}.bin"
+    return (fldrname, filename)
+
+def storeExperimentToPickleFile(experiment):
+    fldrname, filename = getExperimentFileName(experiment)
+    exp_fn = f"{fldrname}/{filename}"
+    with open(exp_fn, "wb") as f:
+        pickle.dump(experiment, f)
+    return
+    
+def loadExperimentFromPickleFile(experiment, exp_fn=None):
+    if not exp_fn:
+        fldrname, filename = getExperimentFileName(experiment)
+        exp_fn = fldrname + filename
+
+    # Legacy .bin files were pickled under module name "Profiler" (capital P);
+    # the current module loads under "profiler". Alias so unpickling resolves.
+    sys.modules.setdefault('Profiler', sys.modules[__name__])
+    with open(exp_fn, "rb") as f:
+        experiment = pickle.load(f)
+    return experiment
+
+def get_filepairs(benchmark_files:list, generated_files:list) -> list:
+    file_pairs = []
+
+    # single file case
+    if len(benchmark_files) == 1 and len(generated_files) == 1:
+        return [(benchmark_files[0], generated_files[0])]
+
+    # multi file case
+    for benchmark_file in benchmark_files:
+        benchmark_filename = os.path.basename(benchmark_file)
+        for index, generated_file in enumerate(generated_files):
+            generated_filename = os.path.basename(generated_file)
+            if benchmark_filename ==  generated_filename:
+                file_pairs.append((benchmark_file, generated_file))
+            if index == len(generated_files)-1:
+                file_pairs.append((benchmark_file, None))
+    return file_pairs
+
+def _normalised_bytes(path:str) -> bytes:
+    """Read file as bytes with CRLF/CR collapsed to LF so cross-platform
+    line-ending differences (e.g. Windows-captured norm vs Linux-generated
+    @file output) don't cause spurious file-comparison failures."""
+    with open(path, "rb") as f:
+        data = f.read()
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+# Files we compare table-by-table instead of byte-for-byte. GeoPackage and
+# SQLite store user data deterministically but also carry SQLite-managed
+# internal book-keeping (rtree_*_node / _parent / _rowid index packing,
+# sqlite_sequence) whose physical layout is non-deterministic across runs
+# of the same producer. Byte-comparing them therefore reports spurious
+# diffs even when every user-visible row is identical.
+_SQLITE_SUFFIXES = (".gpkg", ".sqlite", ".sqlite3", ".db")
+
+def _is_sqlite_path(path:str) -> bool:
+    return path.lower().endswith(_SQLITE_SUFFIXES)
+
+# Per-table columns to ignore during the content hash. These hold values
+# that vary between runs of the same producer even though the user data
+# is identical — write-timestamps, generation IDs etc. Match table-name
+# case-insensitively, column-name case-insensitively.
+_SQLITE_SKIP_COLS = {
+    "gpkg_contents":           {"last_change"},        # GeoPackage write timestamp
+    "gpkg_metadata":           {"timestamp"},          # GeoPackage metadata timestamp
+    "gpkg_metadata_reference": {"timestamp"},
+}
+
+def _hash_sqlite_table(con, table:str) -> str:
+    """Hash all rows of `table` from `con`, ordered by the first column.
+    BLOB columns are hex-encoded so the hash captures content, not the
+    Python sqlite3 driver's memoryview-vs-bytes representation. Columns
+    listed in _SQLITE_SKIP_COLS for this table are excluded so timestamp-
+    like fields don't trip the comparison."""
+    import hashlib
+    cols_info = list(con.execute(f'PRAGMA table_info("{table}")'))
+    if not cols_info:
+        return ""
+    skip = {c.lower() for c in _SQLITE_SKIP_COLS.get(table.lower(), set())}
+    select_exprs = []
+    for cid, name, ctype, notnull, dflt, pk in cols_info:
+        if name.lower() in skip:
+            continue
+        if ctype and ctype.upper() == "BLOB":
+            select_exprs.append(f'hex("{name}")')
+        else:
+            select_exprs.append(f'"{name}"')
+    if not select_exprs:
+        return ""
+    sql = f'SELECT {", ".join(select_exprs)} FROM "{table}" ORDER BY 1'
+    h = hashlib.sha256()
+    for row in con.execute(sql):
+        h.update(repr(row).encode())
+    return h.hexdigest()
+
+def _sqlite_content_equivalent(path_a:str, path_b:str) -> bool:
+    """True if both .gpkg/.sqlite files have identical user-data tables.
+    Skips internal SQLite/GeoPackage tables whose physical layout is not
+    a function of the user data (rtree_* index packing, sqlite_sequence).
+    """
+    import sqlite3
+    keep_q = ("SELECT name FROM sqlite_master "
+              "WHERE type='table' "
+              "AND name NOT LIKE 'rtree_%' "
+              "AND name NOT LIKE 'sqlite_%' "
+              "ORDER BY name")
+    con_a = sqlite3.connect(path_a)
+    con_b = sqlite3.connect(path_b)
+    try:
+        tables_a = [r[0] for r in con_a.execute(keep_q)]
+        tables_b = [r[0] for r in con_b.execute(keep_q)]
+        if tables_a != tables_b:
+            return False
+        for t in tables_a:
+            if _hash_sqlite_table(con_a, t) != _hash_sqlite_table(con_b, t):
+                return False
+        return True
+    finally:
+        con_a.close()
+        con_b.close()
+
+def _files_equivalent(benchmark:str, generated:str) -> bool:
+    """Dispatch: SQLite-family files go through content compare so non-
+    deterministic index packing doesn't fail the test; everything else
+    is byte-compared with CRLF/CR normalisation."""
+    if _is_sqlite_path(benchmark) and _is_sqlite_path(generated):
+        return _sqlite_content_equivalent(benchmark, generated)
+    return _normalised_bytes(benchmark) == _normalised_bytes(generated)
+
+def compare_files(file_comparison:tuple):
+    benchmark_files = glob.glob(file_comparison[0])
+    generated_files = glob.glob(file_comparison[1])
+    filepairs = get_filepairs(benchmark_files, generated_files)
+
+    for benchmark_file, generated_file in filepairs:
+        if not generated_file:
+            return False
+        if not _files_equivalent(benchmark_file, generated_file):
+            return False
+    return True
+
+def RunExperiments(experiments:list[Experiment]):
+    for exp_index, exp in enumerate(experiments):
+        print(f"Running experiment: {experiments[exp_index].__dict__}\n")
+        bin_exp_fn = exp.binary_experiment_file
+        if bin_exp_fn:
+            if not os.path.exists(bin_exp_fn): # check if experiment exists
+                print(f"Experiment file: {bin_exp_fn} does not exist, skipping experiment.")
+                experiments[exp_index] = None
+                continue
+            experiments[exp_index] = loadExperimentFromPickleFile(None, exp_fn=bin_exp_fn)
+            print(experiments[exp_index])
+            continue
+        
+        fldrname, filename = getExperimentFileName(exp)
+        exp_fn = f"{fldrname}/{filename}"
+
+        print(f"experiment file: {exp_fn}")
+        
+        if os.path.exists(exp_fn): # Experiment is calculated before, do not recalculate
+            print(f"already exists; results are reused and not recalculated!\n")
+            experiments[exp_index] = loadExperimentFromPickleFile(None, exp_fn)
+            continue
+
+        # Remove named experiment figure filename, as experiment is being recalculated the previous figure is invalid
+        named_experiment_figure = None
+        try:
+            named_experiment_figure = f"{fldrname}/{filename.split("__")[1][0:-4]}.html"
+        except:
+            pass
+        if named_experiment_figure and os.path.isfile(named_experiment_figure):
+            os.remove(named_experiment_figure)
+
+        # Sample performance
+        geodms_logfile = exp.geodms_logfile
+        if os.path.exists(geodms_logfile): # always start with empty log
+            os.remove(geodms_logfile)
+        exp.result["log"], start_time, status_code, profiler_status, profiler_status_detail = getPerformance(exp)
+        exp.result["status_code"] = status_code
+        exp.result["profiler_status"] = profiler_status
+        exp.result["profiler_status_detail"] = profiler_status_detail
+
+        # if file comparison check, change status in case of failure
+        if exp.result["status_code"]==0 and exp.file_comparison and not compare_files(exp.file_comparison):
+            exp.result["status_code"] = 99
+
+        # Indicators
+        exp.result["indicators"] = None
+        if exp.indicator_results_file and os.path.isfile(exp.indicator_results_file):
+            with open(exp.indicator_results_file) as f:
+                exp.result["indicators"] = f.read()
+
+        if os.path.exists(geodms_logfile):
+            exp.result["cpu_percent"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "cpu_percent")
+            exp.result["cpu_curr_time"]     = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "cpu_curr_time")
+            exp.result["memory_percent"]    = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "memory_percent")
+            exp.result["num_threads"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "num_threads")
+            exp.result["rss"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "rss")
+            exp.result["vms"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "vms")
+            #exp.result["read_bytes"]        = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "read_bytes")
+            #exp.result["write_bytes"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "write_bytes")
+            exp.result["total_read_bytes"]  = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_read_bytes")
+            exp.result["total_write_bytes"] = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_write_bytes")
+
+        # Get allocator state from log
+        log_alloc = readLogAllocator(geodms_logfile, start_time) # temporarily disable allocator logging
+        exp.result["log_alloc"] = None
+        if log_alloc:
+            exp.result["log_alloc"] = log_alloc
+        if exp.store_results:
+            storeExperimentToPickleFile(exp)
+
+    print(f"Experiments profiling completed\n")
+    return experiments
+
+def vgroupToLabel(vgroup):
+    if vgroup[0] == "cpu_percent":
+        label = "cpu (%)"
+    elif vgroup[0] == "cpu_curr_time":
+        label = "cpu time (s)"
+    elif vgroup[0] == "memory_percent":
+        label = "memory (%)"
+    elif vgroup[0] == "num_threads":
+        label = "threads (#)"
+    elif vgroup[0] == "read_bytes":
+        label = "read bytes (mb/s)"
+    elif vgroup[0] == "write_bytes":
+        label = "written bytes (mb/s)"
+    elif vgroup[0] == "total_read_bytes":
+        label = "total read bytes (GB)"
+    elif vgroup[0] == "total_write_bytes":
+        label = "total written bytes (GB)"    
+    elif type(vgroup[0]) is tuple or vgroup[0]=="vms":
+        label = "Committed and freelist allocated memory (^) (GB)"
+    
+    return label
+    
+def ExpHasLogAvailable(exp, key):
+    if key in exp.result and len(exp.result[key]):
+        return True
+    return False
+
+def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=[("cpu_percent", (0,100)), ("cpu_curr_time", False), ("vms", False), ("num_threads", False), ("total_read_bytes", False), ("total_write_bytes", False)]) -> str:
+    print("Rendering experiments.\n")
+    tool_tips = """
+    <div>
+        <div>
+            <span style="font-size: 12px;">x: $x, y: $y</span>
+        </div>
+        <div>
+            <span style="font-size: 12px;">@text</span>
+        </div>
+    
+    </div>
+    """
+
+    figs = []
+    renderers = []
+    colors = []
+    labels = []
+    for i, exp in enumerate(experiments):
+        color_index = i % 9
+        colors.append(Category10[10][color_index])
+        fldrname, filename = getExperimentFileName(exp)
+        labels.append(filename[:-4])
+
+    # create ColumnDataSource(s)
+    exps_ds = []
+    for i, exp in enumerate(experiments):
+        exp_ds_graphs = {}
+        exp_ds_logs = {}
+        exp_ds_alloc = {"time":[], "allocated":[], "text":[]}
+        exp_ds_graphs["time"] = exp.result["log"]["dtime"]
+        for ii, vgroup in enumerate(vgroups):
+            if type(vgroup[0]) is tuple:
+                if not "time" in exp_ds_logs and ExpHasLogAvailable(exp, vgroup[0][0]):
+                    exp_ds_logs["time"]     = exp.result[vgroup[0][0]]["x"]
+                    exp_ds_logs["text"]     = exp.result[vgroup[0][0]]["text"]
+                if ExpHasLogAvailable(exp, vgroup[0][0]):
+                    exp_ds_logs[vgroup[0][0]]   = exp.result[vgroup[0][0]]["y"]
+                    exp_ds_logs[vgroup[0][1]]   = exp.result[vgroup[0][1]]["y"]
+                exp_ds_graphs[vgroup[0][0]] = exp.result["log"][vgroup[0][0]]
+                exp_ds_graphs[vgroup[0][1]] = exp.result["log"][vgroup[0][1]]
+            else:
+                if not "time" in exp_ds_logs and ExpHasLogAvailable(exp, vgroup[0]):
+                    exp_ds_logs["time"] = exp.result[vgroup[0]]["x"]
+                    exp_ds_logs["text"] = exp.result[vgroup[0]]["text"]
+                if ExpHasLogAvailable(exp, vgroup[0]):
+                    exp_ds_logs[vgroup[0]]  = exp.result[vgroup[0]]["y"]
+                exp_ds_graphs[vgroup[0]] = exp.result["log"][vgroup[0]]
+            if vgroup[0]=="vms": # allocator log only added to committed memory figure
+                if exp.result["log_alloc"]:
+                    exp_ds_alloc["time"] = exp.result["log_alloc"]["dtime"] 
+                    exp_ds_alloc["allocated"] = exp.result["log_alloc"]["allocated"]
+                    for i in range(len(exp.result["log_alloc"]["dtime"])):
+                        exp_ds_alloc["text"].append(f"A: {exp.result['log_alloc']['allocated'][i]}, R: {exp.result['log_alloc']['reserved'][i]}, F: {exp.result['log_alloc']['freed'][i]}, U: {exp.result['log_alloc']['uncommitted'][i]}")
+
+        exps_ds.append([exp_ds_graphs, exp_ds_logs, exp_ds_alloc])
+        
+    for ii, vgroup in enumerate(vgroups):
+        title = ""
+        
+        if not vgroup[1]: # no y_range
+            p = plotting.figure(width=2000, height=500, tooltips=tool_tips, tools="pan,wheel_zoom,box_zoom,reset,save,hover", title=title)
+        else:
+            p = plotting.figure(width=2000, height=500, y_range=(vgroup[1][0], vgroup[1][1]), tooltips=tool_tips, tools="pan,wheel_zoom,box_zoom,reset,save,hover", title=title)
+            
+        # Track failed-profiler experiments per figure so we can overlay a
+        # placeholder annotation instead of misleading the user with a flat
+        # zero line. Status comes from getPerformance / RunExperiments and
+        # is sticky in exp.result (issue #1104, also Windows sampler crashes).
+        failed_overlay_lines = []
+        for i, exp in enumerate(experiments):
+            if not exp:
+                continue
+            color_index = i % 9
+            color = Category10[10][color_index]
+
+            fldrname, filename = getExperimentFileName(exp)
+            prof_status = exp.result.get("profiler_status", "ok")
+            if prof_status != "ok":
+                detail = exp.result.get("profiler_status_detail", "") or prof_status
+                failed_overlay_lines.append(f"{labels[i]}: {detail}")
+                # Skip the line/scatter render -- the only data we'd plot is
+                # a flat zero series, which is exactly the visual confusion
+                # we're trying to remove.
+                continue
+            if type(vgroup[0]) is tuple: # do something with this vgroup case
+                renderers.append(p.line('time', vgroup[0][0], color=color, line_dash="4 4", source=exps_ds[i][0]))
+                renderers.append(p.line('time', vgroup[0][1], color=color, source=exps_ds[i][0]))
+                if ExpHasLogAvailable(exp, vgroup[0][0]):
+                    renderers.append(p.scatter('time', vgroup[0][1], size=5, color=color, source=exps_ds[i][1]))
+
+                if exps_ds[i][2]: # allocation log was available
+                    renderers.append(p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
+                    renderers.append(p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
+            else:
+                renderers.append(p.line('time', vgroup[0],            color=color, source=exps_ds[i][0]))
+                if ExpHasLogAvailable(exp, vgroup[0]):
+                    renderers.append(p.scatter('time', vgroup[0], size=5, color=color, source=exps_ds[i][1]))       
+            if vgroup[0]=="vms": # allocator log only added to committed memory figure
+                renderers.append(p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2]))
+                renderers.append(p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2]))
+                print(exps_ds[i][2])
+                
+        p.xaxis.axis_label = 'time (s)'
+        #p.xaxis.axis_label_text_font_size = '15px'
+        #p.yaxis.axis_label_text_font_size = '15px'
+        p.yaxis.axis_label = vgroupToLabel(vgroup)
+        p.toolbar.logo = None # remove Bokeh logo
+
+        # Overlay the sampler-failure annotation pinned to the top-left in
+        # screen space so it stays visible regardless of pan/zoom. One line
+        # per failed experiment (#1104).
+        for line_idx, msg in enumerate(failed_overlay_lines):
+            p.add_layout(Label(
+                x=10, y=10 + 18 * line_idx, x_units="screen", y_units="screen",
+                text=msg, text_color="#a00", text_font_size="11px",
+                background_fill_color="#fff", background_fill_alpha=0.85,
+                border_line_color="#a00", border_line_alpha=0.4,
+            ))
+
+        if figs:
+            p.x_range = figs[0].x_range # sync xrange between figures
+
+        figs.append(p) # add figure to figs
+
+    legend_items = []
+    for i,color in enumerate(colors):
+        legend_items.append(LegendItem(label=labels[i], renderers=[renderer for renderer in renderers if renderer.glyph.line_color==color]))
+    
+    ## Use dummy figure as legend for all experiments 
+    dum_fig = plotting.figure(width=1000,height=50*len(legend_items), outline_line_alpha=0,tools="pan,wheel_zoom,box_zoom,reset,save,hover")
+    for fig_component in [dum_fig.grid[0],dum_fig.ygrid[0],dum_fig.xaxis[0],dum_fig.yaxis[0]]:
+        fig_component.visible = False
+    dum_fig.renderers += renderers
+    dum_fig.x_range.end = 1001
+    dum_fig.x_range.start = 1000
+    dum_fig.add_layout(Legend(click_policy='hide',border_line_alpha=0,items=legend_items))
+
+    output_fn = f"{experiments[0].experiment_folder}/compare.html"
+    print(f"Storing experiments interactive figure in {output_fn}")
+    
+    grid_structure = [[dum_fig, None]]
+    for i,fig in enumerate(figs):
+        if i == 0:
+            grid_structure.append([fig, None])
+        else:
+            grid_structure.append([fig, None])
+    grid = plotting.gridplot(grid_structure, toolbar_location="left")
+    plotting.output_file(output_fn)
+    plotting.save(grid)
+    if show_figure:
+        plotting.show(grid)
+    return output_fn
+
+def InitExperimentFromCommandLineDefinition(direct_call:str):
+    name, experiment_folder, geodms_logfile, command = direct_call.split(";")
+    return [Experiment(name=name, command=command, experiment_folder=experiment_folder, environment_variables=None, cwd=None, geodms_logfile=geodms_logfile, binary_experiment_file=None)]
+
+def InitExperimentsFromCsvFile(fn):
+    if not os.path.exists(fn):
+        raise Exception(f"Experiment file does not exist: {fn}")
+    
+    experiments = []
+    with open(fn) as experiment_csv_file:
+        csv_reader = csv.reader(experiment_csv_file, delimiter=";")
+
+        print("Skipping first line in experiment file, assuming it has a header")
+        next(csv_reader)
+        for row_index, csv_row in enumerate(csv_reader):
+            assert len(csv_row)==7, f"Unexpected number of csv fields ({len(csv_row)}) in experiment file row {row_index}, should be semicolon separated with fields: name;command;experiment_folder;environment_variables(optional);cwd(optional);geodms_logfile(optional);binary_experiment_file(optional), skipping"
+            # experiment fields
+            name,command,experiment_folder,environment_variables,cwd,geodms_logfile,binary_experiment_file = csv_row 
+            experiments.append(Experiment(name=name, command=command, experiment_folder=experiment_folder, environment_variables=environment_variables,cwd=cwd,geodms_logfile=geodms_logfile,binary_experiment_file=binary_experiment_file))
+
+    return experiments
+    
+def pause():
+    while (True):
+        abort = input("Results differ between experiments, investigation required, abort? Press 'y' [yes] or 'n' [no] followed by <ENTER>")
+        if abort == "y":
+            return True
+        elif abort == "n":
+            break
+        else:
+            print(f"Invalid input: {abort}")
+        
+    return False
+    
+def compareStatFiles(name1, statfn_1, name2, statfn_2):
+    files_are_different = False
+    with open(statfn_1) as f, open(statfn_2) as g:
+        flines = f.readlines()
+        glines = g.readlines()
+
+        d = difflib.Differ()
+        diffs = d.compare(flines, glines)
+        for lineNum, line in enumerate(diffs):
+            # split off the code
+            code = line[:2]
+            # if the  line is in both files or just b, increment the line number.
+            if code in ("  ", "+ "):
+                lineNum += 1
+            # if this line is only in b, print the line number and the text on the line
+            if code == "+ " or code == "- ":
+                files_are_different = True
+                print(f"{code} {line[2:].strip()}")
+        
+        if files_are_different:
+            print(f"\nFound differences in statistics of experiments: {name1} and {name2}")
+        
+        return files_are_different
+
+def compareExperimentStatisticsFiles(experiments):
+    evaluated_combinations = {}
+    results = []
+    for i,exp1 in enumerate(experiments):
+        if not exp1.cfg and not exp1.item: # batch processed experiment
+            continue
+        fldrname, filename = getExperimentFileName(exp1)
+        name1 = filename[:-4]
+        statfn_1 = stat_fn = f"{exp1.storage_fldr}stat{i}.txt"
+        for j,exp2 in enumerate(experiments):
+            if i == j: # same experiment, same statistics file
+                continue
+            if (i,j) in evaluated_combinations or (j,i) in evaluated_combinations: # dont evaluate similar combinations
+                continue
+
+            fldrname, filename = getExperimentFileName(exp2)
+            name2 = filename[:-4]
+            statfn_2 = f"{exp2.storage_fldr}stat{j}.txt"
+            results.append(compareStatFiles(name1, statfn_1, name2, statfn_2))
+            
+            evaluated_combinations[(i,j)] = True
+            evaluated_combinations[(j,i)] = True
+            
+    result = False    
+    if any(results):    
+        result = pause()
+    
+    return result
+
+def testReadLog():
+    log_fn = "D:\\GeoDMS_experiments\\log3.txt"
+    log = readLog(log_fn)
+    print(log)
+    return
+
+def testReadAllocatorInfoLog():
+    alloc_info = {"time":[], "reserved":[], "allocated":[], "freed":[], "uncommitted":[]}
+    log_fn = "log_with_alloc_info.txt"
+    alloc_log = readLog(log_fn, filter="Reserved in Blocks")
+
+    for ind in range(len(alloc_log["time"])):
+        print(alloc_log["time"][ind], alloc_log["text"][ind])
+
+        integers_in_entry = re.findall(r"\d+", alloc_log["text"][ind])[1:]
+        assert(len(integers_in_entry)==4)
+        
+        alloc_info["time"].append(alloc_log["time"][ind])
+        alloc_info["reserved"].append(int(integers_in_entry[0]))
+        alloc_info["allocated"].append(int(integers_in_entry[1]))
+        alloc_info["freed"].append(int(integers_in_entry[2]))
+        alloc_info["uncommitted"].append(int(integers_in_entry[3]))
+
+    return alloc_log
+
+def Run(experiment_filename):
+    # init experiments from either direct_call or csv experiment file definition
+    experiments = InitExperimentsFromCsvFile(experiment_filename)
+
+    if not experiments:
+        print(f"No valid experiments found in experiment file: {experiment_filename}")
+        return
+        
+    # run 
+    experiments = RunExperiments(experiments)
+    
+    # visualize    
+    #vgroups = [("cpu_percent", (0,100)), ("cpu_curr_time", False), ("vms", False), ("num_threads", False), ("total_read_bytes", False), ("total_write_bytes", False)]
+    visualized_experiments_filename = VisualizeExperiments(experiments)
+
+    return
+
+def UpdateExperiments(experiments:list[Experiment], new_experiment:Experiment) -> list[Experiment]:
+    for experiment in experiments:
+        if experiment == new_experiment: # new_experiment is duplicate
+            return experiments
+    return experiments.append(new_experiment)
+
+def WriteExperimentsToExperimentFile(experiment_filename:str, experiments:list[Experiment]):
+    pass
+
+def WriteExperimentsToExperimentFile(experiment_filename:str, experiments:list[Experiment]):
+    with open(experiment_filename, "w") as f:
+        f.write("name;command;experiment_folder;environment_variables;cwd;geodms_logfile;binary_experiment_file\n") # header
+        for experiment in experiments:
+            f.write(f"{repr(experiment)}\n")
+    return
+
+
+def AppendExperimentToExperimentFile(experiment_filename:str, experiment_definition:str):
+    new_experiment = InitExperimentFromCommandLineDefinition(experiment_definition)
+
+    # make sure experiment_filename exists
+    os.makedirs(os.path.dirname(experiment_filename), exist_ok=True)
+    if not os.path.isfile(experiment_filename):
+        with open(experiment_filename, "w") as f:
+            f.write("")
+
+    experiments = InitExperimentsFromCsvFile(experiment_filename)
+    experiments = UpdateExperiments(experiment_filename, experiments, new_experiment)
+    WriteExperimentsToExperimentFile(experiment_filename, experiments)
+
+def ExportExperimentSummariesToFile(experiment_filename:str):
+    # retrieve summary
+    experiments = InitExperimentsFromCsvFile(experiment_filename)
+    experiment_summaries = []
+    for exp_index, experiment in enumerate(experiments):
+        fldrname, filename = getExperimentFileName(experiment)
+        exp_fn = f"{fldrname}/{filename}"
+        print(f"Summarizing experiment file: {exp_fn}")
+        experiment = loadExperimentFromPickleFile(None, exp_fn)
+        experiment_summaries.append(experiment.summary())
+
+    # write to file
+    summary_file = f"{experiment_filename[:-4]}.summary"
+    with open(summary_file, "w") as f:
+        f.write("name;status;start_time;duration;highest_commit\n")
+        for summary in experiment_summaries:
+            f.write(f"{summary}\n")
+    
+    return
+
+def RunFromCmdLine():
+    # arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", help="filename that describes experiments, syntax: -f path/to/file.csv")
+    parser.add_argument("-a", help="append an cmdline defined experiment to the experiment filename, syntax: -a name;experiment_folder;geodms_logfile;command")
+    parser.add_argument("-s", help="exports a summary of all experiments in the experiment file, syntax: -s name;status;starttime;duration;highestcommit;")
+    
+    print(sys.argv[1:])
+    args = parser.parse_args()
+    experiment_filename = args.f
+
+    if args.a:
+        experiment_definition = args.a
+        print(f"Appending experiment definition {args.a}")
+        AppendExperimentToExperimentFile(experiment_definition)
+        return
+
+    if args.s:
+        ExportExperimentSummariesToFile(experiment_filename)
+        return
+
+
+    Run(experiment_filename=experiment_filename)
+    return
+
+def RunTestConfig(experiment_filename):
+    Run(experiment_filename=experiment_filename)
+    return
+
+def main():
+    RunFromCmdLine()
+    return
+    
+if __name__=="__main__":
+    main() # python Profiler.py -direct_call test_profile_direct_call;'C:/Program Files/ObjectVision/GeoDms17.4.6/GeoDmsRun.exe' /LE:/experiments/direct_call/log.txt 'c:/users/cicada/prj/edm/cfg/stam.dms' @statistics /Evaluatie/test_tov_vorige_versie/checks/FR/test;E:/experiments/direct_call;E:/experiments/direct_call/log.txt
+    #python Profiler.py -direct_call naam_van_run E:/experiments/direct_call E:/experiments/direct_call/log.txt "C:/Program Files/ObjectVision/GeoDms17.4.6/GeoDmsRun.exe" /LE:/experiments/direct_call/log.txt "c:/users/cicada/prj/edm/cfg/stam.dms" @statistics /Evaluatie/test_tov_vorige_versie/checks/FR/test
+    #RunTestDirectCall("test_profile_direct_call;'C:/Program Files/ObjectVision/GeoDms17.4.6/GeoDmsRun.exe' /LE:/experiments/direct_call/log.txt 'c:/users/cicada/prj/edm/cfg/stam.dms' @statistics /Evaluatie/test_tov_vorige_versie/checks/FR/test;E:/experiments/direct_call;E:/experiments/direct_call/log.txt") # name, command, experiment_folder, geodms_logfile
+    #RunTestConfig("./profile_setups.txt")
+    #RunTestConfig("C:/Users/Cicada/prj/GeoDMS-Test/Performance/scripts/profiler_rework.txt")
+    #RunTestConfig("./profile_setups_profile_rework.txt")
+    #testReadLog()
+    #testReadAllocatorInfoLog()
+
+    # -a regel toevoegen experiment file, tenzij deze al bestaat
+    # apparte run command
+    # run specifiek experiment: naam
