@@ -267,26 +267,22 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/RSopen_RegressieTest_v2025"
     regression_test_paths["AlleenEindjaar"] = "FALSE"
-    regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
+    # VariantDataOntkoppeld wordt bewust NIET via een env-var gezet: de config
+    # is leidend (ModelParameters/VariantDataOntkoppeld := FALSE). Daardoor
+    # berekent de allocatie (t641_3) de variantdata inline en is de losse
+    # WriteVariantData-stap (voorheen t641_2) overbodig. Zie issue #22.
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t641_1 — RuimteScanner Open v2025H2: basisdata genereren (WriteBasedata).
     regression.add_exp(exps, name=f"{result_folder_name}__t641_1_RSopen_MakeBaseData", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_1_RSopen_MakeBaseData.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms WriteBasedata/Generate_Run1", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_1_RSopen_MakeBaseData.txt")
     # t641_1_2 — indicator-vergelijking van de basisdata-stap.
     regression.add_exp(exps, name=f"{result_folder_name}__t641_1_2_RSopen_prepare_base_data_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_1_2_RSopen_prepare_base_data_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms /t641_1_RSopen_MakeBaseData/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_1_2_RSopen_prepare_base_data_indicator.txt", store_results=False)
     
-    regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
     regression_test_paths["IsProductieRun"] = "FALSE"
     regression_test_paths["RSL_VARIANT_NAME"] = "BAU"
-    regression_test_paths["AlleenEindjaar"] = "FALSE"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    # t641_2 — RSopen: variantdata genereren (BAU-variant, WriteVariantData).
-    regression.add_exp(exps, name=f"{result_folder_name}__t641_2_RSopen_MakeVariantData", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms WriteVariantData/Generate_Run1", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData.txt")
-    # t641_2 (indicator) — indicator-vergelijking van de variantdata-stap.
-    regression.add_exp(exps, name=f"{result_folder_name}__t641_2_RSopen_MakeVariantData_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms t641_2_RSopen_MakeVariantData/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_2_RSopen_MakeVariantData_indicator.txt", store_results=False)
-
-    regression_test_paths["VariantDataOntkoppeld"] = "TRUE"
-    env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
-    # t641_3 — RSopen: allocatie zichtjaar Y2050 (met VariantDataOntkoppeld=TRUE).
+    # t641_3 — RSopen: allocatie zichtjaar Y2050. De variantdata wordt inline
+    #          meeberekend (VariantDataOntkoppeld=FALSE, bepaald door de config,
+    #          niet door full.py). Voorheen draaide hiervoor de losse t641_2-stap.
     regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_Allocatie", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_Allocatie.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms Allocatie/Zichtjaren/Y2050/Impl/Generate", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_Allocatie.txt")
     # t641_3 (indicator) — indicator-vergelijking van de allocatie.
     regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms t641_3_RSopen_indicator_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt", store_results=False)
