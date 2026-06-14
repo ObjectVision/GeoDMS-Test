@@ -8534,8 +8534,10 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				unit<uint32> road_sel := select_with_org_rel(id(RoadDomain) < 1RoadDomain )
 				{
-					attribute<point_rd> geometry (arc) := road/line[org_rel];
-					unit<uint32> pointset := Sequence2points(geometry);
+					attribute<point_rd> arc_geo (arc) := road/line[org_rel];
+					unit<uint32> pointset := Sequence2points(arc_geo);
+					// reconstruct as genuine multipoint geometry so bg_buffer_multi_point gets ValueComposition multipoint (#1038)
+					attribute<point_rd> geometry (multipoint) := points2multi_point(pointset/point, pointset/sequence_rel, pointset/ordinal);
 				}
 				attribute<point_rd>    att  (poly, road_sel) := bg_buffer_multi_point(road_sel/Geometry, 100d, 16b);
 				unit<uint32> pointset := Sequence2points(att)
