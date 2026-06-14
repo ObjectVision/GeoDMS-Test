@@ -240,6 +240,59 @@ def getProcessCurrentStatistics(process:psutil.Process, experiment_start_time):
         return [t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c]
     return [t, dt, cpu_p, mem_p, rss, vms, num_threads, rb, wb, net_c]
 
+# Per-test wall-clock timeout caps (seconds). A test that runs longer than ~5x
+# its expected duration is treated as hung/regressed, tree-killed, and the suite
+# continues -- so a fast test can never block the whole run for hours again (a 4s
+# test once held the run on the flat 4h default). Values are 5x the benchmark
+# duration determined from the historical reports, rounded, floored at 60s.
+# t301 uses its post-fix benchmark (~2.5 min), NOT the stale pre-fix 2.9h.
+# Tests not listed (e.g. indicator sub-steps) fall back to DEFAULT_TIMEOUT.
+DEFAULT_TIMEOUT = 14400  # 4h, safe fallback for tests with no determined cap
+# WSL (.l) is markedly slower on I/O-heavy tests (drvfs over /mnt), so linux runs
+# get extra headroom on top of the base cap before a test counts as hung.
+LINUX_TIMEOUT_FACTOR = 2
+TEST_TIMEOUTS = {
+    "t010_operator_test":                                  60,
+    "t050_Storage_Write_Shape_Polygon_Folder_Compare":     60,
+    "t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare": 1500,   # ~25m
+    "t100_network_connect":                                60,
+    "t101_network_od_pc4_dense":                           1200,   # ~20m
+    "t102_network_od_pc6_sparse":                          60,
+    "t151_conversie_bl_rd_test":                           60,
+    "t200_grid_Poly2Grid":                                 180,
+    "t300_xml_ReadParse":                                  750,
+    "t301_BAG_ResidentialType":                            750,    # post-fix ~2.5m x5
+    "t405_1_NetworkModel_PBL_prepare_data":                4500,
+    "t405_2_NetworkModel_PBL_zonderFence":                 5400,
+    "t405_3_NetworkModel_PBL_metFence":                    5400,
+    "t410_NetworkModel_EU":                                1500,
+    "t611_Lus_demo_2023":                                  180,
+    "t641_1_RSopen_MakeBaseData":                          21600,  # ~6h (slower on .l)
+    "t641_2_RSopen_MakeVariantData":                       900,
+    "t641_3_RSopen_Allocatie":                             21600,
+    "t710_2UP":                                            360,
+    "t720_2BURP":                                          3600,
+    "t810_ValLuisa":                                       1500,
+    "t910_Cusa2_Africa":                                   240,
+    "t1630_expandtest":                                    300,
+    "t1640_value_info":                                    60,
+    "t1642_value_info_group_by":                           60,
+    "t1742_command_statistics":                            60,
+    "t2000_hestia_hWP_asl_statistics":                     21600,  # ~6h
+}
+
+def timeout_for_experiment(exp) -> int:
+    """Per-test wall-clock timeout cap. exp.name is '<resultfolder>__<test>';
+    look the test part up in TEST_TIMEOUTS, else DEFAULT_TIMEOUT. Linux-flavor
+    (.l, wsl) commands get LINUX_TIMEOUT_FACTOR extra headroom (drvfs is slow)."""
+    name = getattr(exp, "name", "") or ""
+    test = name.split("__", 1)[1] if "__" in name else name
+    base = TEST_TIMEOUTS.get(test, DEFAULT_TIMEOUT)
+    cmd = getattr(exp, "command", "") or ""
+    if cmd.lstrip().lower().startswith("wsl"):
+        base *= LINUX_TIMEOUT_FACTOR
+    return base
+
 def getPerformance(exp:Experiment, sampling_rate=1.0, timeout=14400):
     profile_log = {"time":[], "dtime":[], "cpu_percent":[], "cpu_curr_time":[], "memory_percent":[], "rss":[], "vms":[], "num_threads":[], "total_read_bytes":[], "total_write_bytes":[], "net_connections":[], "processes":[]} # rss=resident set size (aka physical non swapped memory in use by process), vms virtual memory ize
     command_with_args = exp.command
@@ -724,10 +777,26 @@ def RunExperiments(experiments:list[Experiment]):
         geodms_logfile = exp.geodms_logfile
         if os.path.exists(geodms_logfile): # always start with empty log
             os.remove(geodms_logfile)
-        exp.result["log"], start_time, status_code, profiler_status, profiler_status_detail = getPerformance(exp)
+        exp_timeout = timeout_for_experiment(exp)
+        exp.result["log"], start_time, status_code, profiler_status, profiler_status_detail = getPerformance(exp, timeout=exp_timeout)
         exp.result["status_code"] = status_code
         exp.result["profiler_status"] = profiler_status
         exp.result["profiler_status_detail"] = profiler_status_detail
+
+        # Reset WSL after every .l (WSL) test that actually ran. A killed or
+        # degraded test otherwise leaves the VM in a state where the next test's
+        # sampler gets no rows (the cascade we saw after a t641_1 timeout); a
+        # fresh VM per test also avoids cumulative memory/swap degradation on
+        # long unattended runs. Cheap (~10s boot) relative to test durations.
+        is_wsl = bool(exp.command) and exp.command.lstrip().lower().startswith("wsl")
+        if is_wsl:
+            print(f"Linux-flavor test '{exp.name}' finished ({profiler_status}); "
+                  f"'wsl --shutdown' to give the next test a clean WSL VM.")
+            try:
+                subprocess.run(["wsl", "--shutdown"], timeout=180)
+                time.sleep(3)
+            except Exception as e:
+                print(f"wsl --shutdown failed: {e}")
 
         # if file comparison check, change status in case of failure
         if exp.result["status_code"]==0 and exp.file_comparison and not compare_files(exp.file_comparison):

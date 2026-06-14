@@ -1,3 +1,10 @@
+# Long runs: do NOT launch this as a child of an interactive terminal or an
+# automation/agent session -- such a child gets killed when that session is
+# cleaned up (the whole python + wsl-bridge + GeoDmsRun tree dies at once, no
+# error, GeoDMS log cut off mid-line; looks like a crash but is not). Use the
+# detached launcher instead:  batch\run_detached.ps1 -Version <ver> [-Tests ...]
+# It starts the run as a session-independent Windows process (Start-Process),
+# logs stdout/stderr to a file, and saves the PID next to the results.
 import argparse
 import json
 import os
@@ -603,6 +610,15 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
     # to the Linux distro. Without this every linux-flavor test fails
     # at the first I/O on the cfg path or log path.
     if geodms_paths.get("GeoDmsLocalFlavor") == "linux-release":
+        # GUI tests (GeoDmsGuiQt) need Qt6, which is absent in WSL. They don't
+        # just fail -- they hang and, when killed, wedge WSL so every following
+        # test reports "sampler produced no rows" (cascade). Skip them on .l.
+        gui_exps = [e for e in operator_experiments if "GeoDmsGuiQt" in (e.command or "")]
+        if gui_exps:
+            print(f"linux flavor: skipping {len(gui_exps)} GUI test(s) (GeoDmsGuiQt needs Qt6, absent in WSL): "
+                  + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
+            operator_experiments = [e for e in operator_experiments if "GeoDmsGuiQt" not in (e.command or "")]
+
         for exp in operator_experiments:
             # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
             # Linux-produced output (statistics HTML, test_log strings) matches
