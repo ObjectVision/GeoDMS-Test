@@ -8536,8 +8536,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				{
 					attribute<point_rd> arc_geo (arc) := road/line[org_rel];
 					unit<uint32> pointset := Sequence2points(arc_geo);
-					// reconstruct as genuine multipoint geometry so bg_buffer_multi_point gets ValueComposition multipoint (#1038)
-					attribute<point_rd> geometry (multipoint) := points2multi_point(pointset/point, pointset/sequence_rel, pointset/ordinal);
+					// reconstruct as genuine multipoint geometry so bg_buffer_multi_point gets ValueComposition multipoint (#1038).
+					// points2multi_point requires GeoDMS 20.2.0; older versions fall back to points2sequence (arc), the pre-20.2.0 input for buffer_multi_point.
+					attribute<point_rd> geometry (multipoint) := = GeoDmsVersion() >= 20.0200d
+						? 'points2multi_point(pointset/point, pointset/sequence_rel, pointset/ordinal)'
+						: 'points2sequence(pointset/point, pointset/sequence_rel, pointset/ordinal)';
 				}
 				attribute<point_rd>    att  (poly, road_sel) := bg_buffer_multi_point(road_sel/Geometry, 100d, 16b);
 				unit<uint32> pointset := Sequence2points(att)
