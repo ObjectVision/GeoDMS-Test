@@ -103,7 +103,13 @@ container Regression:	FreeData = "True"
 			attribute<bool>              isSnelWeg;
 		}
 
-		parameter<string> PC6_connect_ok_filename := '%TestRefDir%/t100/pc6_connect' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
+		// The connect / impedance_matrix operators changed the produced row COUNT at the 19->20
+		// boundary, so the current (20.x) reference no longer matches pre-20 builds (t100: 19.x
+		// gives 6,634,150 vs 6,638,349; t102: 7,812,332 vs 7,779,646). The _tm_v19 refs were
+		// generated from 19.0.0's own output (verified 2026-06-15) and apply to all pre-20 builds
+		// (in Feb-2026 17.9.2 and 19.0.0 shared the same ref, so the count predates v20). If a
+		// future <19 build shows a different count, split the boundary further.
+		parameter<string> PC6_connect_ok_filename := '%TestRefDir%/t100/pc6_connect' + (GeoDMSVersion() < 7.198d ? '_before7198' : GeoDMSVersion() < 20d ? '_tm_v19' : '') + '.fss';
 		unit<uint32> PC6_connect_ok: StorageName = "= PC6_connect_ok_filename", StorageReadOnly = "True"
 		{
 			attribute<eenheden/point_rd> UnionData (arc);
@@ -113,7 +119,7 @@ container Regression:	FreeData = "True"
 			}
 		}
 
-		parameter<string> PC6_impedance_ok_filename := '%TestRefDir%/t102/pc6_impedance' + (GeoDMSVersion() < 7.198d ? '_before7198' : '') + '.fss';
+		parameter<string> PC6_impedance_ok_filename := '%TestRefDir%/t102/pc6_impedance' + (GeoDMSVersion() < 7.198d ? '_before7198' : GeoDMSVersion() < 20d ? '_tm_v19' : '') + '.fss'; // see PC6_connect_ok_filename above for the _tm_v19 rationale
 		unit<uint32> PC6_impedance_ok: StorageName = "= PC6_impedance_ok_filename", StorageReadOnly = "True"
 		{
 			attribute<eenheden/m> alt_imp;
