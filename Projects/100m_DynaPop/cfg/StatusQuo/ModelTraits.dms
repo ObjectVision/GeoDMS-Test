@@ -1165,15 +1165,15 @@ container ModelTraits
 				
 			attribute<Classifications/LU/ViewType> ClippedLandUseVT(domainGrid)
 				:	Expr = "CaseData/Land/IsInRunRegion ? LandUseVT : value(0, Classifications/LU/ViewType)"
-				,	StorageName = "=ClippedLandUseVT_FileName"
-				, 	StorageType = "tif"
+				// ,	StorageName = "=ClippedLandUseVT_FileName"
+				// , 	StorageType = "tif"
 			{
 				attribute<UInt32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
 			}
 			attribute<int32> Clipped_Qi (domainGrid)
-				:   Expr = "CaseData/Land/IsInRunRegion ? Qi_Grid : 0[int32]"
-				,   StorageName = "=Qi_FileName"
-				, 	StorageType = "tif";
+				:   Expr = "CaseData/Land/IsInRunRegion ? Qi_Grid : 0[int32]";
+				// ,   StorageName = "=Qi_FileName"
+				// , 	StorageType = "tif";
 			attribute<float32> Clipped_Ai (domainGrid)
 				:   Expr = "CaseData/Land/IsInRunRegion ? MakeDefined(Ai_Grid, float32(0)) : 0[float32]"
 				,   StorageName = "=Ai_FileName"
