@@ -586,13 +586,12 @@ Template PublicTransport_T
 			
 			
 			parameter<string> fileNamePrefix := ModelParameters/Advanced/fileNamePrefix;
-			parameter<string> fileNameSuffix :=  
-				'_' + ModelParameters/Analysis_Date + 
-				'_' + ModelParameters/Advanced/Arrival_or_Departure_at_time + 
-				'_' + inTime_string + 
-				'_ORG-'    + ModelParameters/Orgset + '-' + regio_name_if_enkel_sub + 
-				'_DEST-'   + ModelParameters/Advanced/DestSet_string +
-				'_FENCE-'   + string(/UseFence);
+			// pre-#916 (GeoDMS < 20.x) cannot resolve a long calculated StorageName at metainfo, which
+			// makes the calc-rule CSV-export items read-only and fails t405 on e.g. 19.0.0. A short,
+			// metainfo-foldable suffix lets old builds run; the CSV filename is just less descriptive there.
+			parameter<string> fileNameSuffix := GeoDmsVersion() < 20d
+				?  '_' + ModelParameters/Analysis_Date + '_' + ModelParameters/Advanced/Arrival_or_Departure_at_time + '_' + inTime_string
+				:  '_' + ModelParameters/Analysis_Date + '_' + ModelParameters/Advanced/Arrival_or_Departure_at_time + '_' + inTime_string + '_ORG-' + ModelParameters/Orgset + '-' + regio_name_if_enkel_sub + '_DEST-' + ModelParameters/Advanced/DestSet_string + '_FENCE-' + string(/UseFence);
 		}
 	}
 }
