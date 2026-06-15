@@ -17,7 +17,10 @@ container subitem
 	}
 	
 	parameter<string> linebreak:= '\n';
-	parameter<bool>   test     := trim(result) == trim(norm);
+	// Compare EOL-agnostically: SaveDetailPage (Qt toHtml) writes LF, but the norm may be checked
+	// out CRLF (.gitattributes eol=crlf), e.g. on a fresh clone. GeoDMS SingleUnQuote understands
+	// '\r' (rtc/dll/src/utl/quotes.cpp), so we strip it from both sides.
+	parameter<bool>   test     := trim(replace(result, '\r', '')) == trim(replace(norm, '\r', ''));
 	parameter<string> test_log := test 
 		? '' 
 		: replace('Detail Page General Explicit Supplier Error test: ' 

@@ -9,13 +9,16 @@ container SubItem
 
 	parameter<String> norm_with_replace_characters : StorageName = "%projdir%/Norm/DPGeneral_missing_file_error.txt", StorageType = "str";
 	parameter<String> ProjDir_local_path           := expand(.,'%projdir%');
-	parameter<String> norm                         := replace(norm_with_replace_characters,'@projdir@',ProjDir_local_path);
-
-	parameter<String> UserName          := expand(., '%UserName%');
-	parameter<String> result_normalized := replace(replace(result, ProjDir_local_path, '@projdir@'), UserName, '@USERNAME@');
+	parameter<String> UserName                     := expand(., '%UserName%');
+	// Expand the norm's placeholders to this machine's real values (same direction as the
+	// explicit_supplier test), then compare to the raw result.
+	parameter<String> norm := replace(replace(norm_with_replace_characters, '@projdir@', ProjDir_local_path), '@USERNAME@', UserName);
 
 	parameter<String> linebreak:= '\n';
-	parameter<Bool>   test     := trim(result_normalized) == trim(norm_with_replace_characters);
+	// Compare EOL-agnostically: SaveDetailPage (Qt toHtml) writes LF, but the norm may be checked
+	// out CRLF (.gitattributes eol=crlf), e.g. on a fresh clone. GeoDMS SingleUnQuote understands
+	// '\r' (rtc/dll/src/utl/quotes.cpp), so we strip it from both sides.
+	parameter<Bool>   test     := trim(replace(result, '\r', '')) == trim(replace(norm, '\r', ''));
 	parameter<String> test_log := test 
 		? '' 
 		: replace('Detail Page General Missing file Error test: ' 
