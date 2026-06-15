@@ -721,13 +721,60 @@ def _sqlite_content_equivalent(path_a:str, path_b:str) -> bool:
         con_a.close()
         con_b.close()
 
+_NUM_RE = re.compile(r"[-+]?\d[\d,]*\.?\d*(?:[eE][-+]?\d+)?")
+
+def _parse_num(tok:str) -> float:
+    """Locale-robust number parse for comparison. Dot present -> dot is the
+    decimal separator and commas are thousand separators; otherwise a comma is
+    the decimal separator (Dutch output). Applied identically to both files, so
+    the relative comparison stays valid even where the absolute reading is
+    ambiguous."""
+    tok = tok.strip()
+    if "." in tok:
+        return float(tok.replace(",", ""))
+    if "," in tok:
+        return float(tok.replace(",", "."))
+    return float(tok)
+
+def _numeric_tolerant_equivalent(benchmark:str, generated:str, rel_tol:float=1e-4) -> bool:
+    """True if two TEXT files differ only in numeric values within a small
+    relative tolerance (default 1e-4 = 0.01%). The non-numeric skeleton must be
+    identical and the number count must match, so structural or large numeric
+    changes still fail -- but float noise in e.g. t2000 @statistics output does
+    not. Returns False for non-decodable (binary) files, leaving the byte
+    comparison as the verdict."""
+    try:
+        a = _normalised_bytes(benchmark).decode("utf-8")
+        b = _normalised_bytes(generated).decode("utf-8")
+    except (UnicodeDecodeError, OSError):
+        return False
+    if _NUM_RE.split(a) != _NUM_RE.split(b):   # non-numeric skeleton must match
+        return False
+    a_nums, b_nums = _NUM_RE.findall(a), _NUM_RE.findall(b)
+    if len(a_nums) != len(b_nums):
+        return False
+    for na, nb in zip(a_nums, b_nums):
+        if na == nb:
+            continue
+        try:
+            fa, fb = _parse_num(na), _parse_num(nb)
+        except ValueError:
+            return False
+        denom = max(abs(fa), abs(fb))
+        if denom != 0 and abs(fa - fb) / denom > rel_tol:
+            return False
+    return True
+
 def _files_equivalent(benchmark:str, generated:str) -> bool:
     """Dispatch: SQLite-family files go through content compare so non-
-    deterministic index packing doesn't fail the test; everything else
-    is byte-compared with CRLF/CR normalisation."""
+    deterministic index packing doesn't fail the test; everything else is
+    byte-compared with CRLF/CR normalisation, with a numeric-tolerant fallback
+    for text files (float noise in @statistics output etc.)."""
     if _is_sqlite_path(benchmark) and _is_sqlite_path(generated):
         return _sqlite_content_equivalent(benchmark, generated)
-    return _normalised_bytes(benchmark) == _normalised_bytes(generated)
+    if _normalised_bytes(benchmark) == _normalised_bytes(generated):
+        return True
+    return _numeric_tolerant_equivalent(benchmark, generated)
 
 def compare_files(file_comparison:tuple):
     benchmark_files = glob.glob(file_comparison[0])
