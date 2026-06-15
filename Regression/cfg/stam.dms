@@ -461,13 +461,15 @@ container Regression:	FreeData = "True"
 			{
 				parameter<string> file:= ver_key, Storagename = "= TempDir + '/ver_key.txt'", StorageType = "str";
 			}
-			parameter<string> results_folder := replace(ResultDir + '/' + ver_key, ' ', '')
-			{
-				parameter<string> file:= expand(., results_folder), Storagename = "= TempDir + '/results_folder.txt'", StorageType = "str";
-			}
+			// Read the result folder the harness (full.py) provides via TempDir/results_folder.txt,
+			// so the result_html indicator .txt files land where the report looks for them. The old
+			// 'ResultDir + ver_key' scheme wrote to a pre-refactor folder name (e.g.
+			// 20_1_0_x64-windows-msbuild_SF_S1S2S3_OVSRV05) that no longer matches the report folder
+			// (20_1_0_m), which silently left t100/t101/t102/t200/t300/t301 unvalidated.
+			parameter<string> results_folder: Storagename = "= TempDir + '/results_folder.txt'", StorageType = "str", StorageReadOnly = "True";
 
 			parameter<string> all := version + BuildConfig + platform // + StatusFlag
-			,	ExplicitSuppliers = "ver_key/file;results_folder/file"
+			,	ExplicitSuppliers = "ver_key/file"
 			,	StorageType       = "str"
 			,	storagename       = "= TempDir + '/GeoDMSVersionInfo.txt'";
 		}
