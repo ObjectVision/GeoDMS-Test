@@ -617,10 +617,18 @@ container Regression:	FreeData = "True"
 				parameter<bool> strcount_0       := sum(strcount(bron/pand_id,'0')) == 38691899;
 
 				parameter<float64> dif := 0.99d;
-				parameter<bool> area_id_0        := float_isNearby(bron/area[0]      , -312.912538,  dif);
-				parameter<bool> area_id_500000   := float_isNearby(bron/area[500000] ,  -32.681908,  dif);
-				parameter<bool> area_id_1000000  := float_isNearby(bron/area[1000000],  -57.6939875, dif);
-				parameter<bool> meanarea         := float_isNearby(mean(bron/area)   , -253.061977,  dif);
+				// Polygon area is positive (signed-area convention, CCW exterior). The
+				// earlier negative references (-312.912538 / -32.681908 / -57.6939875 and
+				// mean -253.061977) were stale, inherited from a pre-19 build with a
+				// reversed winding convention; they were masked by the old "hollow OK"
+				// until the indicator-writing fix (#12) exposed them. GeoDmsRun 19.0.0 and
+				// 20.1.0 both produce these exact values byte-for-byte (verified 2026-06-15),
+				// so this is not a version drift. XML.dms already carries the positive
+				// individuals; the mean is corrected here too (was overlooked in 56e7153).
+				parameter<bool> area_id_0        := float_isNearby(bron/area[0]      , 312.912538,  dif);
+				parameter<bool> area_id_500000   := float_isNearby(bron/area[500000] ,  32.681908,  dif);
+				parameter<bool> area_id_1000000  := float_isNearby(bron/area[1000000],  57.6939875, dif);
+				parameter<bool> meanarea         := float_isNearby(mean(bron/area)   , 352.988150,  dif);
 
 				parameter<bool> all              := pand_id_0 && pand_id_500000 && pand_id_1000000 && strcount_0 && area_id_0 && area_id_500000 && area_id_1000000 && meanarea;
 			}
@@ -629,7 +637,7 @@ container Regression:	FreeData = "True"
 
 			parameter<string> result := tests/all ? 'OK' : 'False';
 
-			parameter<string> result_html := 
+			parameter<string> result_html :=
 				'<description>reading xml files, parsing poly geometries</description>'+
 				'<size>' + size/result + ' bag panden</size>' +
 				'<result>'+ result+ '</result>'
