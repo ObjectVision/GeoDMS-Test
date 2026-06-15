@@ -558,6 +558,16 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         ),
     )
     parser.add_argument(
+        "-linux-gui",
+        dest="linux_gui",
+        action="store_true",
+        help=(
+            "Run the GeoDmsGuiQt GUI tests (t1630/t1640/t1642) on the .l (linux) "
+            "flavor too. Off by default because GUI tests hang and wedge WSL when "
+            "Qt6 is missing; only pass this once Qt6 + a WSLg display are present."
+        ),
+    )
+    parser.add_argument(
         "-report-only",
         dest="report_only",
         action="store_true",
@@ -630,14 +640,20 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
     # to the Linux distro. Without this every linux-flavor test fails
     # at the first I/O on the cfg path or log path.
     if geodms_paths.get("GeoDmsLocalFlavor") == "linux-release":
-        # GUI tests (GeoDmsGuiQt) need Qt6, which is absent in WSL. They don't
-        # just fail -- they hang and, when killed, wedge WSL so every following
-        # test reports "sampler produced no rows" (cascade). Skip them on .l.
+        # GUI tests (GeoDmsGuiQt) historically needed Qt6, which used to be absent
+        # in WSL. They don't just fail -- they hang and, when killed, wedge WSL so
+        # every following test reports "sampler produced no rows" (cascade). So they
+        # are skipped on .l by default. Pass -linux-gui to run them anyway once Qt6
+        # (libqt6{core,gui,widgets,svg}6) and a WSLg display (DISPLAY/wayland) are in
+        # place; the per-test timeout + wsl --shutdown (profiler) contain a hang.
         gui_exps = [e for e in operator_experiments if "GeoDmsGuiQt" in (e.command or "")]
-        if gui_exps:
-            print(f"linux flavor: skipping {len(gui_exps)} GUI test(s) (GeoDmsGuiQt needs Qt6, absent in WSL): "
+        if gui_exps and not args.linux_gui:
+            print(f"linux flavor: skipping {len(gui_exps)} GUI test(s) (GeoDmsGuiQt; pass -linux-gui to run on .l): "
                   + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
             operator_experiments = [e for e in operator_experiments if "GeoDmsGuiQt" not in (e.command or "")]
+        elif gui_exps:
+            print(f"linux flavor: -linux-gui set -> running {len(gui_exps)} GUI test(s) on .l: "
+                  + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
 
         for exp in operator_experiments:
             # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
