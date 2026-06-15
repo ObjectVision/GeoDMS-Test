@@ -241,7 +241,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t300 — XML-bestanden (BAG) lezen en polygon-geometrieën parsen.
     regression.add_exp(exps, name=f"{result_folder_name}__t300_xml_ReadParse", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t300_xml_ReadParse.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t300_xml_ReadParse/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t300_xml_ReadParse.txt", indicator_results_file=f"{result_paths["results_folder"]}/t300_xml_ReadParse.txt")
     # t301 — Woningtype (residential type) afleiden uit BAG-geometrie pand/vbo; vergelijk met referentie (1 promille foutmarge).
-    regression.add_exp(exps, name=f"{result_folder_name}__t301_BAG_ResidentialType", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t301_BAG_ResidentialType/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt", indicator_results_file=f"{result_paths["results_folder"]}/t301_BAG_ResidentialType.txt") 
+    regression.add_exp(exps, name=f"{result_folder_name}__t301_BAG_ResidentialType", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RegressionPath"]} results/t301_BAG_ResidentialType/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t301_BAG_ResidentialType.txt", indicator_results_file=f"{result_paths["results_folder"]}/t301_BAG_ResidentialType.txt")
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/NetworkModel"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
@@ -557,6 +557,17 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             "in local_settings.json)."
         ),
     )
+    parser.add_argument(
+        "-report-only",
+        dest="report_only",
+        action="store_true",
+        help=(
+            "Skip running any experiments; just (re)generate the HTML report "
+            "from the result folders already in ResultsBaseDir. Use after a run "
+            "was interrupted before the report step, or after editing the report "
+            "renderer, to refresh the report without re-running the suite."
+        ),
+    )
     args = parser.parse_args()
     
     if args.version:
@@ -598,6 +609,15 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         os.makedirs(result_paths["results_log_folder"], exist_ok=True)
     #remove_local_data_dir_regression(local_machine_parameters["LocalDataDirRegression"])
     #import_module_from_path(geodms_paths["GeoDmsProfilerPath"])
+
+    # Report-only: skip building/running experiments entirely and just rebuild
+    # the HTML report from the result folders already on disk. The report uses
+    # the same release-filter + ResultsBaseDir setup as a real run, so the
+    # output is identical to what a completed run would have produced.
+    if args.report_only:
+        print("-report-only: regenerating HTML report from existing result folders (no experiments run)")
+        regression.collect_and_generate_test_results(display_version, result_paths)
+        return
 
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
