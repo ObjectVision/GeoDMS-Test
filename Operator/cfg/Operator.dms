@@ -555,14 +555,20 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				parameter<bool>    test_param    := float_isNearby(float64(source/ParamA) ^ float64(source/ParamC), 25.0, Dif_all_float64) ;
 				attribute<float32> attr (Domain) := float32(source/C) ^ float32(source/D);
-				attribute<bool>    test (Domain) := float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
+				// pre-#839 (GeoDmsVersion < 20.01): a^b was rewritten to exp(b*log(a)), giving Null for any base <= 0; first-class pow operator since 20.1.0 returns the sign-correct value.
+				attribute<bool>    test (Domain) := GeoDmsVersion() < 20.01d
+					? (float32(source/C) <= 0f ? isNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
+					: float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
 				parameter<bool>    test_attr     := all(test);
 			}
 			container pow: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/pow"
 			{
 				parameter<bool>    test_param    := float_isNearby(pow(float64(source/ParamA), float64(source/ParamC)), 25.0, Dif_all_float64) ;
 				attribute<float32> attr (Domain) := pow(float32(source/C), float32(source/D));
-				attribute<bool>    test (Domain) := float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
+				// pre-#839 (GeoDmsVersion < 20.01): pow(a,b) was rewritten to exp(b*log(a)), giving Null for any base <= 0; first-class pow operator since 20.1.0 returns the sign-correct value.
+				attribute<bool>    test (Domain) := GeoDmsVersion() < 20.01d
+					? (float32(source/C) <= 0f ? isNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
+					: float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
 				parameter<bool>    test_attr     := all(test);
 			}
 			container plus_op
@@ -3249,13 +3255,15 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				parameter<bool>   test_param_uint32 := min(City/NrInhabitants) = params/minNrInhabitants ;
 				parameter<String> param_string_value:= min(MakeDefined(City/CityName, 'zzz'));
-				parameter<bool>   test_param_string := param_string_value == params/minCityName;
+				// pre-v20: the min-over-empty string sentinel is expected as '\xFF\xFF\xFF\xFF', which needs the \xHH escape added in GeoDMS v20 (#61ccd3a3); the computed min is correct in all versions, only the expected literal is inexpressible pre-v20. Skip just the empty-source case (count==0) on old builds.
+				parameter<bool>   test_param_string := (GeoDmsVersion() < 20d && params/count == 0) ? True : param_string_value == params/minCityName;
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
 	
 				attribute<uint32> att_uint32  (Region) := min(MakeDefined(City/NrInhabitants, 999999), City/RegionNr);
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/minNrInhabitants);
 				attribute<string> att_string  (Region) := min(MakeDefined(City/CityName, 'zzz'), City/RegionNr);
-				attribute<bool>   test_string (Region) := eq_or_both_null(att_string, Region/minCityName);
+				// pre-v20: empty-partition (pcount==0) min sentinel '\xFF\xFF\xFF\xFF' needs the \xHH escape (v20, #61ccd3a3); computed value is correct, only the expected literal is inexpressible pre-v20.
+				attribute<bool>   test_string (Region) := (GeoDmsVersion() < 20d && Region/pcountRegionNr == 0) ? True : eq_or_both_null(att_string, Region/minCityName);
 				parameter<bool>   test_attr            := all(test_uint32) && all(test_string);
 			}
 			container min_index: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
@@ -8027,7 +8035,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_inflated_100     (polygon, building) := bp_polygon_inflated(building_ipoint, float64(100))
+				attribute<ipoint> building_inflated_100     (polygon, building) := =GeoDmsVersion() <= 19.0000d 
+																						? 'polygon_inflated(building_ipoint, float64(100))' 
+																						: 'bp_polygon_inflated(building_ipoint, float64(100))'
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
@@ -8060,28 +8070,38 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_deflated_50     (polygon, building) := bp_polygon_deflated(building_ipoint, float64(50))
+				attribute<ipoint> building_deflated_50     (polygon, building) := =GeoDmsVersion() <= 19.0000d 
+																						? 'polygon_deflated(building_ipoint, float64(50))' 
+																						: 'bp_polygon_deflated(building_ipoint, float64(50))'
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
 
-				attribute<ipoint> building_polygon_d4D75  (polygon, building) :=  bp_polygon_d4D(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d4D75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d4D(building_ipoint, float64(75))'
+																						: 'bp_polygon_d4D(building_ipoint, float64(75))'
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_polygon_d8D75  (polygon, building) :=  bp_polygon_d8D(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d8D75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d8D(building_ipoint, float64(75))'
+																						: 'bp_polygon_d8D(building_ipoint, float64(75))'
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_polygon_d16D75  (polygon, building) :=  bp_polygon_d16D(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d16D75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d16D(building_ipoint, float64(75))'
+																						: 'bp_polygon_d16D(building_ipoint, float64(75))'
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
 				}
-				attribute<ipoint> building_polygon_d4HV75  (polygon, building) := bp_polygon_d4HV(building_ipoint, float64(75))
+				attribute<ipoint> building_polygon_d4HV75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d4HV(building_ipoint, float64(75))'
+																						: 'bp_polygon_d4HV(building_ipoint, float64(75))'
 				{
 					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
 					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
@@ -12148,7 +12168,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				parameter<string> ha          := PropValue(source/ha, 'Metric');
 				parameter<string> per_ha      := PropValue(source/per_ha, 'Metric');
 				parameter<string> nr_pers_pha := PropValue(source/nr_pers_pha, 'Metric');
-				parameter<bool>   test_param  := m2 == 'm²' && ha == '10 kilo m²' && per_ha ==' per 10 kilo m²' && nr_pers_pha ='persoon per 10 kilo m²' ; 
+				parameter<bool>   test_param  := GeoDmsVersion() < 20.0004d ? (m2 == 'm^2' && ha == '10 kilo m^2' && per_ha == ' per 10 kilo m^2' && nr_pers_pha == 'persoon per 10 kilo m^2') : (m2 == 'm²' && ha == '10 kilo m²' && per_ha ==' per 10 kilo m²' && nr_pers_pha ='persoon per 10 kilo m²') ; 
 			}
 			container nrofrows_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/nrofrows"
 			{
