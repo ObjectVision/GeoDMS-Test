@@ -135,11 +135,22 @@ container Regression:	FreeData = "True"
 			attribute<uint32>     DstZone_rel;
 		}
 
+		// GUARD — this is the manual "(re)generate the t301 reference" tool, NOT part of any test run.
+		// It writes THIS build's `calculated` straight into the live reference
+		// %TestRefDir%/t301/type_woonpand_rel_ok.fss that BAG_type_woonpand_rel (below) reads back as
+		// the expected value. Materializing it silently replaces the reference with this build's own
+		// output, after which t301 trivially passes against itself. It is NOT a supplier of the t301
+		// test (result_html reads the StorageReadOnly BAG_type_woonpand_rel), so a normal run never
+		// touches it. The IntegrityCheck makes an accidental update FAIL LOUDLY instead of overwriting
+		// the reference; to regenerate on purpose, set RegenerateReference to True for that one run.
 		unit<uint32> Make_BAG_type_woonpand_rel: StorageName = "%TestRefDir%/t301/type_woonpand_rel_ok.fss"
 		{
-			unit<uint32> domain := results/t301_BAG_ResidentialType/pand_snapshot;
-			attribute<string> identificatie     (domain):= results/t301_BAG_ResidentialType/pand_id;
-			attribute<uint8>  type_woonpand_rel (domain):= results/t301_BAG_ResidentialType/calculated;
+			parameter<bool> RegenerateReference := False; // set True only to deliberately rebuild the t301 reference
+			// Gate the domain too, not just the attributes: targeting an attribute first materializes
+			// the domain, which would otherwise restamp domain.dmsdata in the live reference.
+			unit<uint32> domain := results/t301_BAG_ResidentialType/pand_snapshot, IntegrityCheck = "RegenerateReference";
+			attribute<string> identificatie     (domain):= results/t301_BAG_ResidentialType/pand_id,    IntegrityCheck = "RegenerateReference";
+			attribute<uint8>  type_woonpand_rel (domain):= results/t301_BAG_ResidentialType/calculated, IntegrityCheck = "RegenerateReference";
 		}
 
 		unit<uint32> BAG_type_woonpand_rel: StorageName = "%TestRefDir%/t301/type_woonpand_rel_ok.fss", StorageReadOnly = "True"
