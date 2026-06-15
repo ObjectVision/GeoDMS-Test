@@ -497,6 +497,35 @@ def getPerformance(exp:Experiment, sampling_rate=1.0, timeout=14400):
             "(test may still have passed -- check GeoDmsRun /L log)"
         )
 
+    # ---- Detect a binary that crashed at startup before it ran anything ----
+    # A successful GeoDmsRun/GeoDmsGuiQt always writes its /L log, starting with
+    # the "@@@@@ Logging started" header. If the run reports success (return_code
+    # 0) but the log was never written / is empty / lacks that header, the binary
+    # aborted before doing any work and the 0 is bogus -- e.g. a GeoDmsGuiQt Qt
+    # platform-plugin abort or segfault on .l, whose real exit code is swallowed
+    # by the wsl -> run_with_sampler.sh -> timeout pipe chain (observed: reported
+    # "finished (ok)" with a 231-byte header-only sample and no /L log). Surface
+    # it as a failure instead of a hollow "ok".
+    log_fn = getattr(exp, "geodms_logfile", None)
+    if return_code == 0 and log_fn:
+        logged_start = False
+        try:
+            if os.path.exists(log_fn) and os.path.getsize(log_fn) > 0:
+                with open(log_fn, "r", errors="ignore") as f:
+                    logged_start = "Logging started" in f.read(8192)
+        except OSError:
+            logged_start = False
+        if not logged_start:
+            return_code = 134  # crashed before logging (SIGABRT-ish) -> renders as fail
+            if profiler_status == "ok":
+                profiler_status = "failed"
+                profiler_status_detail = (
+                    f"GeoDms binary wrote no /L log ({log_fn}); it aborted at "
+                    "startup before doing any work, so the 0 exit code is bogus "
+                    "(e.g. a GeoDmsGuiQt Qt-platform/segfault on .l swallowed by "
+                    "the wsl/run_with_sampler.sh/timeout chain)."
+                )
+
     #C005 -> access violation niet in log
     # return_code 0 -> geen fout
     # return_code > 0 fout

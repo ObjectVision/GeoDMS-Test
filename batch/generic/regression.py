@@ -38,7 +38,7 @@ def get_status_meta(status:str) -> tuple:
     an indicator <result> text) to (human label, css class, code note) for the
     report. css class is one of: ok, fail, warn, timeout."""
     code_labels = {"1": "data error", "2": "config / parse fout", "6": "config fout",
-                   "15": "timeout", "99": "output verschilt"}
+                   "15": "timeout", "99": "output verschilt", "134": "gecrasht (geen log)"}
     if status == "OK":
         return ("ok", "ok", "")
     if status == "TIMEOUT":
