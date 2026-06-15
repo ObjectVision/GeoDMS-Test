@@ -29,14 +29,52 @@ import subprocess
 from datetime import datetime
 
 def get_empty_table_row_col_html() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid @@@COLOR@@@; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"></td>\n'
+    # An empty cell means the experiment was not run for that version -> show it
+    # explicitly instead of a blank (e.g. GUI tests skipped on the linux flavor).
+    return '<td class="cell skip"><span class="pill skip">niet gedraaid</span></td>\n'
 
-def get_table_row_col_color(status:str) -> str:
+def get_status_meta(status:str) -> tuple:
+    """Map a raw status (OK / TIMEOUT / FCFAIL / a numeric GeoDmsRun exit code /
+    an indicator <result> text) to (human label, css class, code note) for the
+    report. css class is one of: ok, fail, warn, timeout."""
+    code_labels = {"1": "data error", "2": "config / parse fout", "6": "config fout",
+                   "15": "timeout", "99": "output verschilt"}
     if status == "OK":
-        return "#90ee90"
+        return ("ok", "ok", "")
     if status == "TIMEOUT":
-        return "#ccddee"
-    return "#ff6f6f"
+        return ("timeout", "timeout", "exit 15")
+    if status == "FCFAIL":
+        return ("output verschilt", "fail", "exit 99")  # output differs from reference = a real failure (red)
+    if status == "geen resultaat":
+        return ("niet gevalideerd", "warn", "indicator ontbreekt")
+    if status in ("False", "false"):
+        return ("test faalt", "fail", "")
+    if status.lstrip("-").isdigit():
+        if int(status) < 0:
+            return ("niet gedraaid", "skip", "")
+        return (code_labels.get(status, f"fout (code {status})"), "fail", f"exit {status}")
+    return (status, "ok", "")  # arbitrary <result> text
+
+def fmt_gb(x:float) -> str:
+    """Uniform GB formatting: always 2 decimals so a column lines up
+    (mem 51.00 / rd 0.00 / wr 0.00)."""
+    return f"{x:.2f}"
+
+def cap_testname(name:str) -> str:
+    """Uniformly capitalize the first letter of a test name's descriptive part,
+    leaving the tNNN[_n] code lowercase and preserving deviant casing elsewhere
+    (e.g. hWP, Poly2Grid, RSopen). Only the first descriptive word is touched,
+    and only if it currently starts lowercase."""
+    words = name.split(" ")
+    for i, w in enumerate(words):
+        if i == 0 and re.match(r"^t\d", w):   # leading test code (t010, t641)
+            continue
+        if w.isdigit():                        # sub-number (t641 _3_ ...)
+            continue
+        if w and w[0].islower():
+            words[i] = w[0].upper() + w[1:]
+        break
+    return " ".join(words)
 
 def get_days_hours_minutes_seconds_from_duration(duration:int):
     # split duration [s] into components
@@ -67,7 +105,10 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
         status = parsed_results[indicator][1]
         if not status:
             set_indicator_flag = True
-        indicator_part += f"{indicator}: <B style='color:red;'>{value}</B><BR>" if not status else f"{indicator}: <B>{value}</B><BR>"
+        cls = "ind-line changed" if not status else "ind-line"
+        indicator_part += f"<div class='{cls}'>{indicator}: <b>{value}</b></div>"
+    if indicator_part:
+        indicator_part = f"<div class='ind'>{indicator_part}</div>"
     return [indicator_part, set_indicator_flag]
 
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
@@ -82,11 +123,12 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
             continue
         table_col_header = get_table_row_col_html_template(result_paths, summary_col_row["log_filename"], summary_col_row["profile_figure_filename"])
         status = summary_col_row["status"]
-        color = get_table_row_col_color(status)
+        status_label, status_class, status_code = get_status_meta(status)
         table_col_header = table_col_header.replace("@@@TESTCLASS@@@", testclass)
-        table_col_header = table_col_header.replace("@@@STATUS@@@", status)
-        table_col_header = table_col_header.replace("@@@COLOR@@@", color)
-        day, hour, minutes, seconds = get_days_hours_minutes_seconds_from_duration(summary_col_row["duration"])
+        table_col_header = table_col_header.replace("@@@STATUSLABEL@@@", status_label)
+        table_col_header = table_col_header.replace("@@@STATUSCLASS@@@", status_class)
+        table_col_header = table_col_header.replace("@@@STATUSCODE@@@", status_code)
+        table_col_header = table_col_header.replace("@@@DURATION@@@", format_duration(summary_col_row["duration"]))
 
         #2025 05 21 : 12.24.32
         command = summary_col_row["command"]#.replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
@@ -100,51 +142,43 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         command = command.replace("&", "&amp;").replace('"', "&quot;")
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
-        table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y %m %d %H:%M:%S") if start_time_value else "n/a")
-        table_col_header = table_col_header.replace("@@@DAYS@@@", str(int(day)))
-        table_col_header = table_col_header.replace("@@@HOURS@@@", str(int(hour)))
-        table_col_header = table_col_header.replace("@@@MINS@@@", str(int(minutes)))
-        table_col_header = table_col_header.replace("@@@SECONDS@@@", str(int(seconds)))
-        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f"{summary_col_row["highest_commit"]:.3f}")
+        table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y-%m-%d %H:%M") if start_time_value else "n/a")
+        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", fmt_gb(summary_col_row["highest_commit"]))
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
-        table_col_header = table_col_header.replace("@@@TOTALREAD@@@", f"{summary_col_row["total_read"]:.5f}")
-        table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", f"{summary_col_row["total_write"]:.5f}")
+        table_col_header = table_col_header.replace("@@@TOTALREAD@@@", fmt_gb(summary_col_row["total_read"]))
+        table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", fmt_gb(summary_col_row["total_write"]))
         table_col_header = table_col_header.replace("@@@LOG@@@", summary_col_row["log_filename"])
         table_col_header = table_col_header.replace("@@@PROFILE_FIGURE@@@", summary_col_row["profile_figure_filename"])
 
         # indicators        
         indicator_part, indicator_flag = get_indicator_part_from_parsed_results(summary_col_row["results"][1])
-        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="material-symbols-outlined" style="cursor:pointer;" title="Indicators changed">warning</span>' if indicator_flag else "") 
+        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span title="indicatoren gewijzigd t.o.v. vorige versie" style="color:#a32d2d;">&#9650; gewijzigd</span>' if indicator_flag else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
 
-    return f'<tr style="background-color: #EEEEFF">{regression_test_row}</tr>\n'
+    return f'<tr>{regression_test_row}</tr>\n'
 
 def get_table_row_title_html_template() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;white-space:nowrap">\
-                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" style="border:0px transparent; background-color: transparent;">@@@TESTNAME@@@</button>\
+    return '<td class="testname">\
+                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" title="klik om alle versies van deze test uit/in te klappen">@@@TESTNAME@@@</button>\
             </td>\n'
 
 def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_fig_fn:str=None) -> str:
     absolute_log_fn = f"{result_paths["results_base_folder"]}/{log_fn[3:]}"
     absolute_profile_fn = f"{result_paths["results_base_folder"]}/{profile_fig_fn[3:]}"
-    
-    log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@" target="_blank"><span class="material-symbols-outlined">article</span></a>'
-    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@" target="_blank"><span class="material-symbols-outlined">timeline</span></a>'
-    geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)"><span class="material-symbols-outlined">globe</span></a>'
-    return f'<td style="border-right: 0px; border-bottom: 1px solid @@@COLOR@@@; background-color:@@@COLOR@@@; box-shadow: 0 1px 0 #FFFFFF; padding: 0px; white-space: nowrap">\
+
+    log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@" target="_blank" title="log">log</a>'
+    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@" target="_blank" title="profiel">profiel</a>'
+    geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)" title="kopieer GeoDmsRun-commando">commando</a>'
+    return f'<td class="cell @@@STATUSCLASS@@@">\
     <details class=@@@TESTCLASS@@@>\
-    <summary>@@@STATUS@@@</summary>\
-    start: @@@STARTTIME@@@<BR>\
-    duration: <B>@@@DAYS@@@</B>d<B> @@@HOURS@@@</B>h<B> @@@MINS@@@</B>m<B> @@@SECONDS@@@</B>s<BR>\
-    highest Commit: <B>@@@HIGHESTCOMMIT@@@[GB]</B><BR>\
-    max threads: <B>@@@MAXTHREADS@@@</B><BR>\
-    total read: <B>@@@TOTALREAD@@@[GB]</B><BR>\
-    total write: <B>@@@TOTALWRITE@@@[GB]</B><BR>\
+    <summary><span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span></summary>\
+    <div class="meta">@@@STARTTIME@@@ &middot; @@@DURATION@@@</div>\
+    <div class="metrics">mem @@@HIGHESTCOMMIT@@@ GB &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
     @@@INDICATORS@@@\
     </details>\
-    {log_part} {geodms_part} {profile_part} @@@INDICATOR_FLAG@@@\
+    <div class="links">{log_part} {geodms_part} {profile_part} @@@INDICATOR_FLAG@@@</div>\
     </td>\n'
 
 def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
@@ -152,17 +186,20 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
     rows = len(regression_test_names)+1
     cols = len(sorted_valid_result_folders)+1
     summaries = [[None for _ in range(cols)] for _ in range(rows)]
+    # Per column, which column counts as its "previous version" for the
+    # indicator-changed (gewijzigd) flag -- same flavor preferred, else mainline.
+    prev_col_map = build_prev_col_map(sorted_valid_result_folders)
 
     if "title" in result_paths and "logo" in result_paths:
         summaries[0][0] = f"<img src='{result_paths["logo"]}' alt='TNO logo' width='150' height='75'><br>\
                             {result_paths["title"]}<br>"
     else:
-        summaries[0][0] = f"geodms regression test results:<br> {version_range[0]}...{version_range[1]}"
+        summaries[0][0] = "GeoDMS regression test results"
 
     # fill table with summaries
     for regression_test in regression_test_files.keys():
         row = get_result_row(regression_test, regression_test_names)
-        summaries[row][0] = regression_test.replace("_", " ")
+        summaries[row][0] = cap_testname(regression_test.replace("_", " "))
         binary_experiment_result_files = regression_test_files[regression_test]
         regression_test_experiments = []
         for experiment_file in reversed(binary_experiment_result_files):
@@ -178,12 +215,14 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             summaries[row][col]["log_filename"] = f"../{log_filename}"
             status_code = experiment.result["status_code"] if "status_code" in experiment.result else 0
             prev_indicators = {}
-            if col<len(binary_experiment_result_files)-1:
-                if summaries[row][col+1]:
-                    prev_results = summaries[row][col+1]["results"]
-                    prev_indicators = prev_results[1]
+            prev_col = prev_col_map.get(col)
+            # prev_col is always an older version => higher column index, which
+            # is processed earlier (experiments run old->new here), so it is
+            # already filled in `summaries` by the time we reach this column.
+            if prev_col and summaries[row][prev_col]:
+                prev_indicators = summaries[row][prev_col]["results"][1]
 
-            results = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}", experiment.file_comparison, experiment.result.get('indicators'), prev_indicators)
+            results = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}", experiment.file_comparison, experiment.result.get('indicators'), prev_indicators, getattr(experiment, "indicator_results_file", None))
             summaries[row][col]["status"] = results[0]
             summaries[row][col]["results"] = results
         
@@ -221,8 +260,20 @@ def parse_indicators(indicators:str) -> dict:
         result_dict[child.name] = [child.text, True]
     return result_dict
 
-def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}) -> tuple:
-    
+def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None) -> tuple:
+
+    # Did the experiment DECLARE a result indicator? If so its <result> is the
+    # test's verdict and a missing file must NOT silently become a hollow "OK".
+    declared_indicator = bool(indicator_results_file)
+    if not indicators and indicator_results_file:
+        # The cfg writes the file the experiment declared; read exactly that one
+        # (its basename can be longer than the experiment name, e.g.
+        # t810_ValLuisa -> t810_ValLuisa_Czech_LU_POP.txt).
+        declared = f"{regression_test_folder}/{os.path.basename(indicator_results_file)}"
+        if os.path.isfile(declared):
+            with open(declared, "r") as f:
+                indicators = f.read()
+
     if not indicators: # attempt get default indicators from experiment if not specified
         indicators_default_fn_txt = f"{regression_test_folder}/{regression_test}.txt"
         indicators_default_fn_xml = f"{regression_test_folder}/{regression_test}.xml"
@@ -232,6 +283,12 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
         elif os.path.isfile(indicators_default_fn_xml):
             with open(indicators_default_fn_xml, "r") as f:
                 indicators = f.read()
+        else:
+            for cand in sorted(glob.glob(f"{regression_test_folder}/{regression_test}*.txt")
+                               + glob.glob(f"{regression_test_folder}/{regression_test}*.xml")):
+                with open(cand, "r") as f:
+                    indicators = f.read()
+                break
 
     if status_code == 99:
         return ("FCFAIL", {})
@@ -243,7 +300,9 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
         return (str(status_code), {})
 
     if not indicators:
-        return ("OK", {})
+        # exit 0 but the declared result indicator is missing -> the test ran but
+        # was never validated. Surface it (red) instead of a hollow "OK".
+        return ("geen resultaat", {}) if declared_indicator else ("OK", {})
     
     # compare previous with current indicators for flagging differences
     parsed_indicators = parse_indicators(indicators)
@@ -310,6 +369,15 @@ def collect_experiment_filenames_per_experiment(regression_tests:list, result_pa
                 regression_tests_experiment_filenames[regression_test].append(experiment_filename)
     return regression_tests_experiment_filenames
 
+def test_sort_key(name:str):
+    """Order test names by their numeric tNNN code (and sub-numbers), so e.g.
+    t200 sorts before t1742 -- not alphabetically, where 't1742' < 't200'
+    because '1' < '2'. t405_2 sorts before t405_3 via the sub-numbers."""
+    m = re.match(r"t(\d+)((?:_\d+)*)", name)
+    if not m:
+        return (10**9, [], name)
+    return (int(m.group(1)), [int(x) for x in m.group(2).split("_") if x], name)
+
 def get_all_regression_tests_by_name(result_paths:dict, valid_result_folders:list):
     regression_tests = []
     for result_folder in valid_result_folders:
@@ -320,7 +388,7 @@ def get_all_regression_tests_by_name(result_paths:dict, valid_result_folders:lis
             if experiment_name in regression_tests:
                 continue
             regression_tests.append(experiment_name)
-    return regression_tests
+    return sorted(regression_tests, key=test_sort_key)
 
 def sort_valid_result_folders_new_to_old(valid_result_folders:list) -> list:
     sorted_valid_result_folders = []
@@ -330,6 +398,26 @@ def sort_valid_result_folders_new_to_old(valid_result_folders:list) -> list:
         sorted_valid_result_folders.append((result_folder, time, version))
         sorted_valid_result_folders.sort(reverse=True, key=lambda x: (x[1], x[2]))
     return sorted_valid_result_folders
+
+def build_prev_col_map(sorted_valid_result_folders:list) -> dict:
+    """For each column (1-based, as used in `summaries`), the column to diff its
+    indicators against = the "previous version". Flavor-aware: prefer the newest
+    strictly-older result of the SAME flavor (e.g. 20.1.0.m -> 20.0.x.m), and if
+    there is none, fall back to the newest strictly-older result with NO flavor
+    (the mainline reference, e.g. 20.1.0.m -> 19.0.0). Returns col -> prev_col|None."""
+    metas = []  # (col, flavor, version)
+    for i, (folder, _, _) in enumerate(sorted_valid_result_folders):
+        major, minor, patch, flavor, *_ = parse_folder_name(folder)
+        metas.append((i + 1, flavor, Version(f"{major}.{minor}.{patch}")))
+    prev_col_map = {}
+    for col, flavor, ver in metas:
+        same_flavor_older = [(c, v) for (c, f, v) in metas if f == flavor and v < ver]
+        if same_flavor_older:
+            prev_col_map[col] = max(same_flavor_older, key=lambda cv: cv[1])[0]
+            continue
+        mainline_older = [(c, v) for (c, f, v) in metas if f == "" and v < ver]
+        prev_col_map[col] = max(mainline_older, key=lambda cv: cv[1])[0] if mainline_older else None
+    return prev_col_map
 
 def get_all_experiments_from_experiment_folder(experiment_folder_path:str):
     return glob.glob(f"{experiment_folder_path}/*.bin")
@@ -560,14 +648,12 @@ def header_stuff_to_be_removed_in_future(local_machine_parameters:dict, result_p
     return
 
 def get_table_title_html_template() -> str:
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><H4>@@@TITLE@@@</H4></td>\n'
+    return '<td class="corner"><div class="report-title">@@@TITLE@@@</div></td>\n'
 
 def get_table_col_header_html_template() -> str:
-    #<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 5px;"><I>version</I>: <B>17.4.6</B><BR><I>build</I>: <B>Release</B><BR><I>platform</I>: <B>x64</B><BR><I>multi tasking</I>: <B>S1S2S3</B><BR> 			<I>operating system</I>: <B>Windows 10</B><BR> 			<I>computername</I>: <B>OVSRV07</B><BR> </td>
-    return '<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><B>@@@VERSION@@@</B><BR>\
-    <B>@@@GITSHORTHASH@@@<B><BR>\
-    <B>@@@TOTALTIME@@@</B><BR>\
-    <B>@@@SUCCESSRATIO@@@</B></td>\n'
+    return '<td class="colhdr"><div class="ver">@@@VERSION@@@</div>\
+    <div class="subhdr">@@@GITSHORTHASH@@@</div>\
+    <div class="subhdr">@@@TOTALTIME@@@ &middot; @@@SUCCESSRATIO@@@ ok</div></td>\n'
 
     #'<td style="border-right: 0px; border-bottom: 1px solid #BEBEE6; box-shadow: 0 1px 0 #FFFFFF; padding: 0px;"><B>@@@VERSION@@@</B><BR>\
     #<B>Release</B><BR>\
@@ -588,7 +674,7 @@ def get_table_header_row(summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@COMPUTER_NAME@@@", summary_col_header["computer_name"])
         table_header_row += table_col_header
         
-    return f'<tr style="background-color: #ffffff">{table_header_row}</tr>'
+    return f'<tr class="hdr">{table_header_row}</tr>'
 
 def get_table_rows(result_paths:dict, regression_test_summaries:list[list]) -> str:
     rows = ""    
@@ -605,6 +691,33 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />\
         <head>\
             <meta charset="UTF-8">\
+            <style>\
+              body { font-family: "Aptos","Aptos Display","Segoe UI Variable","Segoe UI",system-ui,-apple-system,sans-serif; color:#1c1c1a; background:#fbfbfa; margin:20px; font-size:13px; }\
+              table.report { border-collapse:separate; border-spacing:0; }\
+              table.report td { padding:7px 10px; vertical-align:top; border-bottom:1px solid #ececE6; }\
+              tr.hdr td { border-bottom:1.5px solid #d7d7d0; position:sticky; top:0; background:#fbfbfa; }\
+              td.corner .report-title { font-weight:500; font-size:16px; white-space:nowrap; }\
+              td.colhdr .ver { font-weight:500; font-size:14px; }\
+              td.colhdr .subhdr { color:#86867e; font-size:11.5px; }\
+              td.testname { white-space:nowrap; font-weight:500; }\
+              td.testname button { border:0; background:transparent; font:inherit; font-weight:500; color:#1c1c1a; cursor:pointer; padding:0; text-align:left; }\
+              td.testname button:hover { color:#534ab7; text-decoration:underline; }\
+              td.cell { border-left:3px solid transparent; }\
+              td.cell.ok { background:#d6efce; border-left-color:#2e9e5b; }\
+              td.cell.fail { background:#ffd1d1; border-left-color:#d6453d; }\
+              td.cell.warn { background:#ffe4b8; border-left-color:#d98a1f; }\
+              td.cell.skip { background:#ececE8; border-left-color:#b8b8b0; }\
+              summary { cursor:pointer; list-style:none; outline:none; } summary::-webkit-details-marker { display:none; }\
+              .pill { display:inline-flex; align-items:center; font-size:11.5px; font-weight:500; padding:2px 10px; border-radius:999px; color:#fff; }\
+              .pill.ok { background:#2e9e5b; } .pill.fail { background:#d6453d; } .pill.warn { background:#cf8420; } .pill.timeout { background:#3a78c2; } .pill.skip { background:#9a9a92; }\
+              .code { color:#a6a69e; font-size:11px; margin-left:7px; }\
+              .meta { color:#6b6b64; font-size:11.5px; margin-top:6px; white-space:nowrap; }\
+              .metrics { color:#444441; font-size:12px; margin-top:3px; white-space:nowrap; font-variant-numeric:tabular-nums; }\
+              .ind { margin-top:6px; padding-top:5px; border-top:1px solid #ececE6; font-size:11.5px; color:#5f5e5a; }\
+              .ind-line.changed { color:#a32d2d; font-weight:500; }\
+              .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
+              .links a:hover { color:#534ab7; text-decoration:underline; }\
+            </style>\
         </head>\
         <body>\
             <script>\
@@ -641,7 +754,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                     }\
                 }\
             </script>\
-            <table style="border: 0; background-color: #ddd;">\
+            <table class="report">\
                 @@@TABLE_CONTENT@@@\
             </Table>\
         </body>\
