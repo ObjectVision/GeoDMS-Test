@@ -1,3 +1,9 @@
+# Before running tests, read the operational wiki -- it captures the non-obvious
+# gotchas (detaching runs, WSL/Linux, references, the report, integrity rules):
+#   https://github.com/ObjectVision/GeoDMS-Test/wiki/Running-tests-with-Claude
+#   https://github.com/ObjectVision/GeoDMS-Test/wiki/Running-Linux-tests-on-Windows
+#   https://github.com/ObjectVision/GeoDMS-Test/wiki/Test-references-and-report-generation
+#
 # Long runs: do NOT launch this as a child of an interactive terminal or an
 # automation/agent session -- such a child gets killed when that session is
 # cleaned up (the whole python + wsl-bridge + GeoDmsRun tree dies at once, no
