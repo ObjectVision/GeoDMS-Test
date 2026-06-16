@@ -666,6 +666,25 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             print(f"linux flavor: -linux-gui set -> running {len(gui_exps)} GUI test(s) on .l: "
                   + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
 
+        # t2000 (Hestia) has a ~73 GB working set -- larger than a 64 GB host such
+        # as OVSRV05. On Windows the OS page file absorbs the overflow, but on .l it
+        # swap-thrashes through WSL and never finishes in practice (raising the WSL
+        # memory cap only delays the wall, since the working set exceeds total host
+        # RAM). So skip t2000 on .l when the host has too little RAM; it runs fine on
+        # .l on a >=96 GB box (e.g. Maarten's 128 GB machine). Detection failure ->
+        # do not skip. (t2000 still runs on .m / 19.0.0 here -- this is .l-only.)
+        try:
+            import psutil
+            _host_gb = psutil.virtual_memory().total / (1024 ** 3)
+        except Exception:
+            _host_gb = None
+        if _host_gb is not None and _host_gb < 96:
+            t2000_exps = [e for e in operator_experiments if "t2000" in e.name]
+            if t2000_exps:
+                print(f"linux flavor on a {_host_gb:.0f} GB host: skipping t2000 Hestia "
+                      "(~73 GB working set > host RAM; run it on a >=96 GB machine)")
+                operator_experiments = [e for e in operator_experiments if "t2000" not in e.name]
+
         for exp in operator_experiments:
             # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
             # Linux-produced output (statistics HTML, test_log strings) matches
