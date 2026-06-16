@@ -425,6 +425,11 @@ def get_all_experiments_from_experiment_folder(experiment_folder_path:str):
 def get_experiment_name_from_experiment_filename(experiment_filename:str) -> str:
     return experiment_filename.split("__")[1][:-4]
 
+# Set to True (by full.py for -all-versions) to drop the "<= version under test"
+# filter below, so EVERY result folder in ResultsBaseDir becomes a report column
+# -- including versions NEWER than the one whose run triggered the report.
+report_include_all_versions = False
+
 def get_valid_result_folders(version:str, result_paths:dict) -> list:
     valid_result_folders = []
     if not os.path.isdir(result_paths["results_base_folder"]):
@@ -437,7 +442,7 @@ def get_valid_result_folders(version:str, result_paths:dict) -> list:
         major, minor, patch, flavor, architecture, sf, multithreading, local_machine_name, time, hash = parse_folder_name(candidate)
         # Non-semver `version` (e.g. "local") is treated as newer than any
         # historical numeric version, so all candidates are valid for compare.
-        if target is None or Version(f"{major}.{minor}.{patch}") <= target:
+        if report_include_all_versions or target is None or Version(f"{major}.{minor}.{patch}") <= target:
             # Skip folders with no stored experiments (*.bin) -- they only
             # produce empty report columns. These are typically abandoned runs
             # or old preset-named folders (e.g. 20_0_1_x64-linux-cmake_... and
