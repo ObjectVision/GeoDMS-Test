@@ -22,6 +22,7 @@ import importlib.util
 #from generic.regression import *
 import glob
 import shutil
+import subprocess
 
 def import_module_from_path(path):
     module_name = os.path.splitext(os.path.basename(path))[0]  # Extract "module" from "module.py"
@@ -666,24 +667,40 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             print(f"linux flavor: -linux-gui set -> running {len(gui_exps)} GUI test(s) on .l: "
                   + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
 
-        # t2000 (Hestia) has a ~73 GB working set -- larger than a 64 GB host such
-        # as OVSRV05. On Windows the OS page file absorbs the overflow, but on .l it
-        # swap-thrashes through WSL and never finishes in practice (raising the WSL
-        # memory cap only delays the wall, since the working set exceeds total host
-        # RAM). So skip t2000 on .l when the host has too little RAM; it runs fine on
-        # .l on a >=96 GB box (e.g. Maarten's 128 GB machine). Detection failure ->
-        # do not skip. (t2000 still runs on .m / 19.0.0 here -- this is .l-only.)
+        # Heavy .l tests whose working set exceeds this host's RAM swap-thrash through
+        # WSL and never finish in practice (raising the WSL memory cap only delays the
+        # wall -- the working set exceeds total host RAM). On Windows the OS page file
+        # absorbs the overflow so they still pass on .m; this is .l-only. So skip them
+        # when the host has too little RAM. Detection failure -> do not skip.
+        #   t2000 (Hestia)  ~73 GB working set  -> needs a >=96 GB box (e.g. Maarten's 128 GB).
+        #   t641  (RSopen) ~155 GB working set  -> its drvfs BaseData-write failure is fixed
+        #         (ext4 relocation below), but once PAST the writes the allocation phase
+        #         balloons to ~155 GB (44 GB RSS + 111 GB swap) and thrashes on this 64 GB
+        #         host (~5% CPU, log frozen). Even a 128 GB box swaps; ~192 GB to run clean.
+        _HEAVY_L_MIN_HOST_GB = {"t2000": 96, "t641": 192}
         try:
             import psutil
             _host_gb = psutil.virtual_memory().total / (1024 ** 3)
         except Exception:
             _host_gb = None
-        if _host_gb is not None and _host_gb < 96:
-            t2000_exps = [e for e in operator_experiments if "t2000" in e.name]
-            if t2000_exps:
-                print(f"linux flavor on a {_host_gb:.0f} GB host: skipping t2000 Hestia "
-                      "(~73 GB working set > host RAM; run it on a >=96 GB machine)")
-                operator_experiments = [e for e in operator_experiments if "t2000" not in e.name]
+        if _host_gb is not None:
+            for _tag, _min_gb in _HEAVY_L_MIN_HOST_GB.items():
+                if _host_gb < _min_gb and any(_tag in e.name for e in operator_experiments):
+                    print(f"linux flavor on a {_host_gb:.0f} GB host: skipping {_tag} "
+                          f"(working set > host RAM; needs a >={_min_gb} GB machine)")
+                    operator_experiments = [e for e in operator_experiments if _tag not in e.name]
+
+        # %LocalDataProjDir% holds each project's writable working data (CalcCache
+        # + generated BaseData). For t641 (RSopen) that is GBs of libtiff TIFs;
+        # on .l it resolves to /mnt/c/... (drvfs), where large sequential strip
+        # writes sporadically fail ("gdal Failure: TIFFAppendToStrip: Write error
+        # at scanline N" — a drvfs/9p write-reliability limit, not disk-full) and
+        # are very slow. Relocate the RSopen projdir onto a WSL-native ext4 path so
+        # those writes land on ext4 (reliable + fast). tmpFileDir, results_folder.txt
+        # and %LocalDataDir% stay on /mnt/c: small reads, and written by this
+        # (Windows) python process, which cannot write into the distro's ext4 fs.
+        wsl_projdir_base  = to_wsl_path(local_machine_parameters["LocalDataDirRegression"])  # /mnt/c/LocalData/regression
+        ext4_projdir_base = "/root/regression"  # ext4 (WSL default user = root); ~950 GB free on the D:\WSL distro disk
 
         for exp in operator_experiments:
             # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
@@ -699,12 +716,32 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             exp.command = to_wsl_path(cmd)
             if exp.environment_variables:
                 ev = to_wsl_path(exp.environment_variables)
+                # t641 (RSopen) writes GBs of BaseData TIFs under %LocalDataProjDir%;
+                # keep those off drvfs (see above). Anchored on the LOCALDATAPROJDIR
+                # assignment so the sibling /mnt/c paths (tmpFileDir, …) are untouched.
+                if "t641" in exp.name:
+                    ev = ev.replace(
+                        f"GEODMS_DIRECTORIES_LOCALDATAPROJDIR={wsl_projdir_base}",
+                        f"GEODMS_DIRECTORIES_LOCALDATAPROJDIR={ext4_projdir_base}")
                 # Build WSLENV listing every variable name so wsl.exe propagates
                 # them (without /p — we've already translated paths ourselves).
                 names = [pair.split('=', 1)[0].strip()
                          for pair in ev.split(';') if '=' in pair]
                 ev = ev + ';WSLENV=' + ':'.join(names)
                 exp.environment_variables = ev
+
+        # The relocated ext4 projdir must exist before GeoDMS writes into it, and
+        # the issue-1101 non-ASCII .fss cleanup (done for the /mnt/c copy by
+        # workaround_issue_1101 above) must also cover the ext4 copy so repeat runs
+        # keep fresh-create semantics. Best-effort — never abort the run on this.
+        if any("t641" in e.name for e in operator_experiments):
+            ext4_rsopen = f"{ext4_projdir_base}/RSopen_RegressieTest_v2025"
+            stale = " ".join(f"'{ext4_projdir_base}/{rel}'" for rel in _ISSUE_1101_AFFECTED_FSS)
+            try:
+                subprocess.run(["wsl", "--", "bash", "-c",
+                                f"mkdir -p '{ext4_rsopen}'; rm -rf {stale}"], check=False)
+            except OSError as e:
+                print(f"[.l projdir] could not prepare {ext4_rsopen}: {e}")
 
         # Override results_folder.txt with the WSL-translated path so the
         # cfg-side `results_folder` parameter (read via %LocalDataDir%/.../
