@@ -343,7 +343,12 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t2000 — Hestia-development (model-hestia-development.main_18_0_4): @statistics op
     #         /Jaarreeksen/hWP_asl; vergelijk met referentie-HTML in HESTIA_dev.
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t2000_hestia_hWP_asl_statistics.html"
-    reference_statfile = f"{regression_test_paths["TestRefDir"]}/t2000/t2000_hestia_hWP_asl_statistics.html"
+    # The 20.x @statistics output prepends the unit Descr ("aantal aansluitingen:")
+    # to the ValuesMetric line; 19.x does not. The statistics themselves are identical,
+    # so use a version-specific reference (the _tm_v19 pattern, as for t100/t102).
+    _t2000_maj = version.split(".")[0]
+    _t2000_suffix = "_tm_v19" if (_t2000_maj.isdigit() and int(_t2000_maj) < 20) else ""
+    reference_statfile = f"{regression_test_paths["TestRefDir"]}/t2000/t2000_hestia_hWP_asl_statistics{_t2000_suffix}.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} @statistics /Jaarreeksen/hWP_asl @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     return exps
 
