@@ -35,7 +35,8 @@
 	
 	container Advanced
 	{
-		parameter<bool>     Create_Symmetric_fullOD      := FALSE, IntegrityCheck = "NOT(Getiled_berekenen)";                             //Als je van org naar org wilt, zet deze dan op true
+		parameter<bool>     Create_Symmetric_fullOD_user := FALSE;                    //Als je van org naar org wilt, zet deze dan op true. 
+		parameter<bool>     Create_Symmetric_fullOD      := Create_Symmetric_fullOD_user, IntegrityCheck = "NOT(Create_Symmetric_fullOD_user && Getiled_berekenen)"; // Check verbiedt alleen de ongeldige combinatie symmetric_fullOD + getiled (#1139)
 		parameter<bool>     Getiled_berekenen            := TRUE;                              //Als je getiled wilt rekenen, om het rekenproces sneller te maken. En opsplitst om het effect van crashes te verkleinen
 		parameter<string>   Regio_voor_Tiling            := 'provincie';                            //Deze indeling bepaald hoe je wilt tilen. Opties: 'corop', 'provincies'
 		parameter<string>   BAG_jaar                     := RegioIndelingen_jaar;               //Het BAG jaar laten we nu afhankelijk zijn van het gekozen regio indelingen jaar. Gebruikt voor de gewogen centroiden. 
