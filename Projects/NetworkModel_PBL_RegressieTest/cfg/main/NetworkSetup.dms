@@ -130,7 +130,11 @@ container NetworkSetup : using = "units;geometries;SourceData;Classifications;Mo
 				parameter<string>   OUTPUT_Generate_fullOD_long_CSVFiles  := =AsList(Advanced/MeasureMoments/Name+'/OUTPUT_Generate_fullOD_long_CSVFiles',' + ');
 				// parameter<string>   OUTPUT_Generate_fullOD_wide_CSVFiles  := =AsList(Advanced/MeasureMoments/Name+'/OUTPUT_Generate_fullOD_wide_CSVFiles',' + ');
 			}
-			container Generate_Output_metFence := PhaseContainer(Generate_Output_zonderFence, 'Generated output for '+regio_name);
+			
+			parameter<string> PhaseString := 'Generated output for ';
+			container Generate_Output_metFence := = GeoDMSVersion() >= 17.0600 
+														? 'PhaseContainer(Generate_Output_zonderFence, '+quote(PhaseString)+quote(regio_name)+')' 
+														: 'FenceContainer(Generate_Output_zonderFence, '+quote(PhaseString)+quote(regio_name)+')';
 			
 			container ODConnections
 			{
