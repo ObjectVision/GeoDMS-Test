@@ -1,1 +1,5 @@
 *.txt text eol=crlf
+# Shell scripts MUST stay LF: bash (incl. WSL Linux unit/setup runs) fails on CRLF
+# ($'\r': command not found, sourced helpers "not found"). Without this, autocrlf=true
+# rewrites them to CRLF on checkout/merge and breaks the Linux build + unit tests.
+*.sh text eol=lf
