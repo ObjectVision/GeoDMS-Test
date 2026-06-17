@@ -46,12 +46,8 @@ container EuClueScanner
 			attribute<Classifications/LU/ViewType> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/ClippedLandUseVT;
 			
 			attribute<bool> test (domainGrid) := calculated == recorded;
-			parameter<bool> all := all(test);
-			// findings vs reference (permanent; see report): #different cells and % of total
+			// measurement vs reference: # differing cells (the report computes % + verdict)
 			parameter<uint32>  nr_diff  := uint32(#domainGrid) - sum(uint32(MakeDefined(test, false)));
-			parameter<uint32>  pct_bp   := uint32((uint64(nr_diff) * uint64(10000) + uint64(#domainGrid) / uint64(2)) / uint64(#domainGrid)); // %*100, rounded
-			parameter<uint32>  pct_frac := pct_bp - (pct_bp / uint32(100)) * uint32(100);
-			parameter<string>  pct      := string(pct_bp / uint32(100)) + '.' + ((pct_frac < uint32(10)) ? '0' : '') + string(pct_frac) + '%';
 		}
 
 		container POP
@@ -61,29 +57,30 @@ container EuClueScanner
 			attribute<Int32> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi ;
 			
 			attribute<bool> test (domainGrid) := MakeDefined(calculated, int32(0)) == MakeDefined(recorded, int32(0));
-			parameter<bool> all := all(test);
-			// findings vs reference (permanent; see report): #different cells and % of total
+			// measurement vs reference: # differing cells (the report computes % + verdict)
 			parameter<uint32>  nr_diff  := uint32(#domainGrid) - sum(uint32(MakeDefined(test, false)));
-			parameter<uint32>  pct_bp   := uint32((uint64(nr_diff) * uint64(10000) + uint64(#domainGrid) / uint64(2)) / uint64(#domainGrid)); // %*100, rounded
-			parameter<uint32>  pct_frac := pct_bp - (pct_bp / uint32(100)) * uint32(100);
-			parameter<string>  pct      := string(pct_bp / uint32(100)) + '.' + ((pct_frac < uint32(10)) ? '0' : '') + string(pct_frac) + '%';
 		}
-
-		parameter<string> result := (LU/all && POP/all)  ? 'OK' : 'False';
 
 		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
 		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-		parameter<string> result_html :=
-			'<cells>cells in test: '+ string(uint32(#domainGrid)) +'</cells>'+
-			'<lu_diff>land-use cells difference: '+ string(LU/nr_diff) +' ('+ LU/pct +')</lu_diff>'+
-			'<pop_diff>population difference: '+ string(POP/nr_diff) +' ('+ POP/pct +')</pop_diff>'+
-			'<result>'+ result + '</result>'
+		// --- structured MEASUREMENT (raw counts; the report judges, see TEST_OUTPUT_STANDARD.md) ---
+		container m_lu  := TestResult/metric('land-use cells', 'cells', uint32(#domainGrid), LU/nr_diff);
+		container m_pop := TestResult/metric('population',     'cells', uint32(#domainGrid), POP/nr_diff);
+
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t810","kind":"reference_comparison"'
+			+ ',"title":"ValLuisa Czechia 2050 - land use & population"'
+			+ ',"compared":"land-use & population on the Czechia 2050 100m grid"'
+			+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"%TestRefDir%/t810/Czechia_P2050*.tif"}'
+			+ ',"metrics":[' + m_lu/result + ',' + m_pop/result + ']'
+			+ '}'
 		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t810_ValLuisa_Czech_LU_POP.txt'";
+		,	storagename = "= results_folder + '/t810_ValLuisa_Czech_LU_POP.result.json'";
 	}
 
+	#include <../../../../Regression/cfg/generic/TestResult.dms>
 	#include <Units.dms>
 	#include <Geography.dms>
 	#include <Classifications.dms>

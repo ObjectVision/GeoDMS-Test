@@ -64,6 +64,7 @@ container demo
 	#include <Current_situation.dms>
 	#include <ScenarioComponents.dms>
 	#include <Simulations.dms>
+	#include <../../../../Regression/cfg/generic/TestResult.dms>
 	
 	container Final_Results : IsHidden = "true"
 	{
@@ -81,26 +82,35 @@ container demo
 	container t611_lus_demo_2023_results_test
 	{
 		attribute<Classifications/LUclasses> A1_GE_Discr_calculated (domain) := Final_Results/A1_GE_Discr; //, Storagename = "%LUSDemo_DataDir%/A1_GE_Discr.tif";
-		attribute<Classifications/LUclasses> A1_GE_Discr_recorded   (domain): Storagename = "%LUSDemo_DataDir%/A1_GE_Discr.tif";
+		attribute<Classifications/LUclasses> A1_GE_Discr_recorded   (domain): Storagename = "%TestRefDir%/t611/A1_GE_Discr.tif";
 
 		attribute<Classifications/LUclasses> A1_GE_Cont_calculated (domain) := Final_Results/A1_GE_Cont; //, Storagename = "%LUSDemo_DataDir%/A1_GE_Cont.tif";
-		attribute<Classifications/LUclasses> A1_GE_Cont_recorded   (domain): Storagename = "%LUSDemo_DataDir%/A1_GE_Cont.tif";
+		attribute<Classifications/LUclasses> A1_GE_Cont_recorded   (domain): Storagename = "%TestRefDir%/t611/A1_GE_Cont.tif";
 		
 		attribute<bool> test_A1_GE_Disc (domain) := A1_GE_Discr_calculated == A1_GE_Discr_recorded;
 		attribute<bool> test_A1_GE_Cont (domain) := A1_GE_Cont_calculated  == A1_GE_Cont_recorded;
+
+		parameter<uint32> nr_total     := #domain;
+		parameter<uint32> nr_disc_diff := nr_total - sum(uint32(MakeDefined(test_A1_GE_Disc, false)));
+		parameter<uint32> nr_cont_diff := nr_total - sum(uint32(MakeDefined(test_A1_GE_Cont, false)));
 
 		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
 		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-		parameter<string> result := all(test_A1_GE_Disc) && all(test_A1_GE_Cont) ? 'OK' : 'False';	
+		// --- structured MEASUREMENT (raw counts; the report judges, see TEST_OUTPUT_STANDARD.md) ---
+		container m_disc := TestResult/metric('discrete cells', 'cells', nr_total, nr_disc_diff);
+		container m_cont := TestResult/metric('continuous cells', 'cells', nr_total, nr_cont_diff);
 
-		parameter<string> result_html := 
-			'<description>LUS Demo 2023, Allocation results</description>'+
-			'<size>a discrete allocation and a continuous result on 100 meter grid cell level</size>' +
-			'<result>'+ result + '</result>'
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t611","kind":"reference_comparison"'
+			+ ',"title":"LUS Demo 2023 - allocation (discrete & continuous)"'
+			+ ',"compared":"discrete & continuous land use on a 100m grid"'
+			+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"%TestRefDir%/t611/A1_GE_*.tif"}'
+			+ ',"metrics":[' + m_disc/result + ',' + m_cont/result + ']'
+			+ '}'
 		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t611_lus_demo_2023_results_test.txt'";
+		,	storagename = "= results_folder + '/t611_lus_demo_2023_results_test.result.json'";
 		
 	}
 	

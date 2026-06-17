@@ -287,7 +287,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/LUSDemo2023"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t611 — LUS Demo 2023 (Land Use Scanner): allocatie-resultaten vergelijken.
-    regression.add_exp(exps, name=f"{result_folder_name}__t611_Lus_demo_2023", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t611_Lus_demo_2023.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["LusDemoRunPath2023"]} t611_lus_demo_2023_results_test/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t611_Lus_demo_2023.txt")
+    regression.add_exp(exps, name=f"{result_folder_name}__t611_Lus_demo_2023", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t611_Lus_demo_2023.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["LusDemoRunPath2023"]} t611_lus_demo_2023_results_test/result_json", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t611_Lus_demo_2023.txt")
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/RSopen_RegressieTest_v2025"
     regression_test_paths["AlleenEindjaar"] = "FALSE"
@@ -326,7 +326,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     #regression_test_paths["GEODMS_Overridable_RunRegions"] = "JrcRegion"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t810 — ValLuisa/100m_DynaPop (EuClueScanner): LandUse & bevolking Tsjechië 2050 op 100m.
-    regression.add_exp(exps, name=f"{result_folder_name}__t810_ValLuisa", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t810_ValLuisa.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["DynaPopPath"]} t810_ValLuisa_Czech_LU_POP/result_html", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t810_ValLuisa.txt")
+    regression.add_exp(exps, name=f"{result_folder_name}__t810_ValLuisa", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t810_ValLuisa.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["DynaPopPath"]} t810_ValLuisa_Czech_LU_POP/result_json", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t810_ValLuisa.txt")
     
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Cusa"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
