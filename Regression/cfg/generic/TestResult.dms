@@ -1,0 +1,26 @@
+// GeoDMS-Test — shared test-result helpers.  See batch/TEST_OUTPUT_STANDARD.md.
+//
+// Included per-config via a relative path, e.g. from Projects/<proj>/cfg/x.dms:
+//   #include <../../../Regression/cfg/generic/TestResult.dms>
+// (adjust the number of ../ to the config's depth).
+//
+// Builds the structured <test>.result.json that the report consumes, so the
+// presentation (HTML) lives in the report, not hand-built in dms.
+
+container TestResult
+{
+	// A cell-comparison MEASUREMENT: raw counts only, in /result as a JSON object.
+	// GeoDMS does NOT judge -- the report applies the per-test tolerance and decides
+	// pass/fail (so tolerances are tunable with -report-only, no model rerun).
+	template metric
+	{
+		parameter<string> name;
+		parameter<string> unit;
+		parameter<uint32> n_total;
+		parameter<uint32> n_diff;
+		parameter<string> result :=
+			'{"name":"' + name + '","unit":"' + unit
+			+ '","n_total":' + string(n_total)
+			+ ',"n_diff":' + string(n_diff) + '}';
+	}
+}
