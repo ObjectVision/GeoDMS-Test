@@ -651,18 +651,20 @@ container Regression:	FreeData = "True"
 				parameter<bool> meanarea         := float_isNearby(mean(bron/area)   , 352.988150,  dif);
 
 				parameter<bool> all              := pand_id_0 && pand_id_500000 && pand_id_1000000 && strcount_0 && area_id_0 && area_id_500000 && area_id_1000000 && meanarea;
+
+				parameter<uint32> nr_pass := uint32(pand_id_0) + uint32(pand_id_500000) + uint32(pand_id_1000000) + uint32(strcount_0) + uint32(area_id_0) + uint32(area_id_500000) + uint32(area_id_1000000) + uint32(meanarea);
+				parameter<uint32> nr_fail := uint32(8) - nr_pass;
 			}
 
-			container size := formatnumber_1000_seperators(string(#bron));
-
-			parameter<string> result := tests/all ? 'OK' : 'False';
-
-			parameter<string> result_html :=
-				'<description>reading xml files, parsing poly geometries</description>'+
-				'<size>' + size/result + ' bag panden</size>' +
-				'<result>'+ result+ '</result>'
+			container m := TestResult/metric('spot-checks', 'checks', 8[uint32], tests/nr_fail);
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t300","kind":"reference_comparison"'
+				+ ',"title":"read XML + parse polygon geometries (BAG)"'
+				+ ',"compared":"8 spot-checks vs in-script reference values"'
+				+ ',"reference":{"source":"inline","compare":"scalar","path":"in-script constants"}'
+				+ ',"metrics":[' + m/result + ']}'
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t300_xml_ReadParse.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t300_xml_ReadParse.result.json'";
 		}
 
 		container t301_BAG_ResidentialType
