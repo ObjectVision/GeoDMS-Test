@@ -614,6 +614,10 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
     report_only_releases = str(_load_local_settings().get("ReportOnlyReleases", True)).lower() not in ("false", "0", "no", "")
     if report_only_releases and not args.all_versions:
         restrict_report_to_releases(display_version, local_machine_parameters["tmpFileDir"])
+    # -all-versions also drops the "<= version under test" filter in
+    # get_valid_result_folders, so EVERY result folder becomes a report column
+    # (incl. versions newer than the one under test). Default: only <= target.
+    regression.report_include_all_versions = bool(args.all_versions)
 
     regression_test_paths = get_regression_test_paths(local_machine_parameters)
     result_paths = regression.get_result_paths(geodms_paths, regression_test_paths, display_version, MT1, MT2, MT3)
