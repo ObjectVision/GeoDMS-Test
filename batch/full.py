@@ -215,6 +215,16 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
 
 def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str) -> list:
     exps = []
+    # GeoDMS < 18.1.0 has no bare yx()/xy() point-literal syntax (added in v18.1.0,
+    # engine commit 80932667); the Operator config uses it, so t010 and t1742 (which
+    # run that config) fail to parse on 17.x builds. Route the Operator config to
+    # operator_pre1810.dms — an auto-generated copy with the pre-18.1.0 brace {y,x}
+    # notation (see batch/make_operator_pre1810.py). 18.1.0+ keeps the canonical file.
+    # Done before env_vars so the OperatorPath env entry matches the config actually used.
+    _vm = re.match(r"(\d+)\.(\d+)\.(\d+)", version)
+    if _vm and tuple(int(g) for g in _vm.groups()) < (18, 1, 0):
+        regression_test_paths["OperatorPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/operator_pre1810.dms"
+
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)
 
@@ -338,17 +348,31 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t1742 — command-line @statistics op de Operator-config (/Arithmetics/UnTiled/add/attr);
     #         vergelijk gegenereerde HTML met TestReferenceFiles/t1742/Statistics_AUAA.html.
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t1742_command_statistics_stat.html"
-    reference_statfile = f"{regression_test_paths["TestRefDir"]}/t1742/Statistics_AUAA.html"
+    # Pre-18 @statistics output has no thousand-separators ("1105" vs "1,105") and echoes
+    # the requested path casing ("add/attr" vs the canonical "add/Attr"); the statistics
+    # themselves are identical. Use a version-specific reference for major < 18 (the
+    # _tm_v19 pattern, as for t2000). These builds also load operator_pre1810.dms.
+    _t1742_maj = version.split(".")[0]
+    _t1742_suffix = "_tm_v17" if (_t1742_maj.isdigit() and int(_t1742_maj) < 18) else ""
+    reference_statfile = f"{regression_test_paths["TestRefDir"]}/t1742/Statistics_AUAA{_t1742_suffix}.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t1742_command_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t1742_command_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} @statistics /Arithmetics/UnTiled/add/attr @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1742_command_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     
     # t2000 — Hestia-development (model-hestia-development.main_18_0_4): @statistics op
     #         /Jaarreeksen/hWP_asl; vergelijk met referentie-HTML in HESTIA_dev.
     generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t2000_hestia_hWP_asl_statistics.html"
-    # The 20.x @statistics output prepends the unit Descr ("aantal aansluitingen:")
-    # to the ValuesMetric line; 19.x does not. The statistics themselves are identical,
-    # so use a version-specific reference (the _tm_v19 pattern, as for t100/t102).
+    # @statistics output format drifts across versions; the statistics themselves are
+    # identical, so use version-specific references (the _tm_v* pattern, as for t100/t102):
+    #   < 18 : pre-18 output has NO thousand-separators ("93142" vs "93,142")  -> _tm_v17
+    #   18-19: thousand-separators, but no unit-Descr prefix                   -> _tm_v19
+    #   >= 20: also prepends the unit Descr ("aantal aansluitingen:")          -> canonical
+    # Pre-18 builds also load operator_pre1810.dms (see t010/t1742 above).
     _t2000_maj = version.split(".")[0]
-    _t2000_suffix = "_tm_v19" if (_t2000_maj.isdigit() and int(_t2000_maj) < 20) else ""
+    if _t2000_maj.isdigit() and int(_t2000_maj) < 18:
+        _t2000_suffix = "_tm_v17"
+    elif _t2000_maj.isdigit() and int(_t2000_maj) < 20:
+        _t2000_suffix = "_tm_v19"
+    else:
+        _t2000_suffix = ""
     reference_statfile = f"{regression_test_paths["TestRefDir"]}/t2000/t2000_hestia_hWP_asl_statistics{_t2000_suffix}.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} @statistics /Jaarreeksen/hWP_asl @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     return exps
@@ -580,6 +604,18 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         ),
     )
     parser.add_argument(
+        "-no-gui",
+        dest="no_gui",
+        action="store_true",
+        help=(
+            "Skip the GeoDmsGuiQt GUI tests (t1630/t1640/t1642) on ANY flavor. "
+            "Use for older builds whose GUI binary crashes on the current test "
+            "scripts (OS structured exception + modal crash dialog). On .l the GUI "
+            "tests are already skipped unless -linux-gui is set; this is the "
+            "Windows / cross-flavor opt-out."
+        ),
+    )
+    parser.add_argument(
         "-report-only",
         dest="report_only",
         action="store_true",
@@ -648,6 +684,18 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3)
+
+    # -no-gui: drop the GeoDmsGuiQt GUI tests (t1630/t1640/t1642) on ANY flavor.
+    # Older Windows builds crash GeoDmsGuiQt on the current test scripts (OS
+    # structured exception, e.g. read at 0x38), and the modal crash dialog blocks
+    # nothing but clutters the screen and needs manual dismissal. (.l skips GUI
+    # separately for the Qt6 mismatch.)
+    if args.no_gui:
+        gui_exps = [e for e in operator_experiments if "GeoDmsGuiQt" in (e.command or "")]
+        if gui_exps:
+            print(f"-no-gui: skipping {len(gui_exps)} GUI test(s): "
+                  + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
+            operator_experiments = [e for e in operator_experiments if "GeoDmsGuiQt" not in (e.command or "")]
 
     # Linux-flavor path translation. The whole command line + every env var
     # value contains Windows-style paths (C:/…, F:/…); the WSL-side binary
