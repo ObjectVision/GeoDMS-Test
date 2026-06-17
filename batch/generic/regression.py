@@ -344,6 +344,18 @@ TEST_TOLERANCES = {
         "Sum Diff TP wFlood":    {"expected": -6906.0117,  "tolerance_pct": 0.01},
         "Sum Diff TA wFlood":    {"expected": -1050740032, "tolerance_pct": 0.01},
     },
+    "t410": {
+        "count": {"expected": 176064,    "tolerance_pct": 0.0},
+        "mean":  {"expected": 154.73293, "tolerance_pct": 0.01},
+        "max":   {"expected": 239.99937, "tolerance_pct": 0.01},
+        "min":   {"expected": 2.1098754, "tolerance_pct": 0.01},
+        "modus": {"expected": 145,       "tolerance_pct": 0.0},
+    },
+    "t710": {
+        "Population 2100":   {"expected": 894019008,   "tolerance_pct": 0.0},
+        "Urban 2100":        {"expected": 234615,      "tolerance_pct": 0.01},
+        "Buildup area 2100": {"expected": 0.034366544, "tolerance_pct": 0.01},
+    },
 }
 
 def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:

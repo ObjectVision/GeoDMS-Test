@@ -11,24 +11,28 @@ container NetworkModel_EU
 	
 	container RegressieTest : using = "units"
 	{
+		#include <../../../../Regression/cfg/generic/TestResult.dms> // shared measurement template
+
 		container t410_NetworkModel_EU_indicator_results_test
 		{
 			parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
 			parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 			parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-			parameter<string> result := 
-				'<description>NetworkModel EU results</description>' + 
-				'<result>' + 
-				'<br>count: ' + replace(string(Indicators/count),'.',',') +' <br>' + 
-				'mean: ' + replace(string(Indicators/mean),'.',',') +'  <br>' + 
-				'max: ' + replace(string(Indicators/max),'.',',') +'<br>' + 
-				'min: ' + replace(string(sum(Indicators/min)),'.',',') +' <br>'  + 
-				'modus: ' + replace(string(sum(Indicators/modus)),'.',',') +' </result>';
+			container v_count := TestResult/metric_value('count', 'cells', string(Indicators/count));
+			container v_mean  := TestResult/metric_value('mean', 'min', string(Indicators/mean));
+			container v_max   := TestResult/metric_value('max', 'min', string(Indicators/max));
+			container v_min   := TestResult/metric_value('min', 'min', string(Indicators/min));
+			container v_modus := TestResult/metric_value('modus', 'min', string(Indicators/modus));
 
-			parameter<string> result_html := result
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t410","kind":"reference_comparison"'
+				+ ',"title":"NetworkModel EU indicator results"'
+				+ ',"compared":"OD travel-time indicators vs curated reference"'
+				+ ',"reference":{"source":"inline","compare":"scalar","path":"TEST_TOLERANCES (report-side)"}'
+				+ ',"metrics":[' + v_count/result + ',' + v_mean/result + ',' + v_max/result + ',' + v_min/result + ',' + v_modus/result + ']}'
 			,	StorageType = "str"
-			,	storagename = "= results_folder + '/t410_NetworkModel_EU_indicator_results_test.txt'";
+			,	storagename = "= results_folder + '/t410_NetworkModel_EU_indicator_results_test.result.json'";
 		}
 
 		container Indicators

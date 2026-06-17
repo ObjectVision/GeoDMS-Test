@@ -34,6 +34,8 @@ container toUP: url = "%projdir%/doc/pbl-2018-Towards-an-urban-preview_3255.pdf"
 	#include <Reference.dms>
 	#include <Sandbox.dms>
 	
+	#include <../../../../Regression/cfg/generic/TestResult.dms> // shared measurement template
+
 	container test_2UP_indicator_results
 	{
 		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
@@ -42,16 +44,18 @@ container toUP: url = "%projdir%/doc/pbl-2018-Towards-an-urban-preview_3255.pdf"
 
 		parameter<float32> sumPopYear     := sum(Scenarios/SSPs/SSP1/Export/Modelled/Pop/Y2100 >= 0f ? Scenarios/SSPs/SSP1/Export/Modelled/Pop/Y2100 : 0f);
 
-		parameter<string> result_html := 
-			'<description>2UP indicator results, Scenario:SSP1, Year:2100, Countries: Europe</description>' +
-			'<result><BR>' + 
-			' Population 2100 : ' + replace(string(sumPopYear),'.',',') +' number of persons <br>' + 
-			' Urban 2100 : ' + replace(string(sum(uint32(Scenarios/SSPs/SSP1/Export/Modelled/IsUrban/Y2100))),'.',',') +' number of urban cells <br>' + 
-			' Buildup area 2100 : ' + replace(string(mean(Scenarios/SSPs/SSP1/Export/Modelled/Builtuparea/Y2100)),'.',',') +' ratio</result>';
+		container v_pop     := TestResult/metric_value('Population 2100', 'persons', string(sumPopYear));
+		container v_urban   := TestResult/metric_value('Urban 2100', 'cells', string(sum(uint32(Scenarios/SSPs/SSP1/Export/Modelled/IsUrban/Y2100))));
+		container v_buildup := TestResult/metric_value('Buildup area 2100', 'ratio', string(mean(Scenarios/SSPs/SSP1/Export/Modelled/Builtuparea/Y2100)));
 
-		parameter<string> result_html_zonder_calcache := result_html
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t710","kind":"reference_comparison"'
+			+ ',"title":"2UP indicator results, SSP1, 2100, Europe"'
+			+ ',"compared":"model indicators vs curated reference"'
+			+ ',"reference":{"source":"inline","compare":"scalar","path":"TEST_TOLERANCES (report-side)"}'
+			+ ',"metrics":[' + v_pop/result + ',' + v_urban/result + ',' + v_buildup/result + ']}'
 		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t710_2UP_indicator_results_zonder_CalCache.txt'";
+		,	storagename = "= results_folder + '/t710_2UP_indicator_results_zonder_CalCache.result.json'";
 
 		// parameter<string> result_html_met_calcache := result_html
 		// ,	StorageType = "str"
