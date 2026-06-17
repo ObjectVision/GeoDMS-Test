@@ -418,8 +418,10 @@ container Regression:	FreeData = "True"
 				, id(.) == 0 ? 0 : length_first_part + (sub_or_null(id(.), 1)) * 3 // startpos
 				, id(.) == 0 ? length_first_part : 3);// length
 		}
-		parameter<string> result := AsList(strparts/part,'.');
+		parameter<string> result := AsList(strparts/part,',');
 	}
+
+	#include <../generic/TestResult.dms> // shared measurement template (TestResult/metric)
 	container results
 	{
 		container VersionInfo
@@ -485,16 +487,17 @@ container Regression:	FreeData = "True"
 			attribute<eenheden/point_rd> recorded   (uniondata_pointset) := union_data(uniondata_pointset, Brondata/PC6_connect_ok/pointset/Point );
 			attribute<bool> test                    (uniondata_pointset) := calculated == recorded;
 
-			container size := formatnumber_1000_seperators(string(#netwerk/WegenMetLokaties/pc6/SubWegenMetVerbondenLocaties));
-
-			parameter<string> result := all(test) ? 'OK' : 'False';
-
-			parameter<string> result_html :=
-				'<description>connect pc6 points to <BR>road network (NL/BE/GE)</description>' + 
-				'<size>' + size/result + ' connections </size>' + 
-				'<result>' + result + '</result>'
+			parameter<uint32> nr_diff := #uniondata_pointset - sum(uint32(MakeDefined(test, false)));
+			container m := TestResult/metric('points', 'points', #uniondata_pointset, nr_diff);
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t100","kind":"reference_comparison"'
+				+ ',"title":"connect PC6 points to road network (NL/BE/GE)"'
+				+ ',"compared":"PC6 connection points vs reference"'
+				+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"%TestRefDir%/t100/pc6_connect.fss"}'
+				+ ',"metrics":[' + m/result + ']'
+				+ '}'
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t100_network_connect.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t100_network_connect.result.json'";
 			
 		}
 		container t101_network_od_pc4_dense
@@ -527,18 +530,17 @@ container Regression:	FreeData = "True"
 
 			parameter<bool> all := all(impedance/test) && all(alt_imp/test) && all(DstZone_rel/test) && all(OrgZone_rel/test);
 
-			container size_imp   := formatnumber_1000_seperators(string(#brondata/PC4_centroid * #brondata/PC4_centroid));
-			container size_nodes := formatnumber_1000_seperators(string(#netwerk/WegenMetLokaties/PC4/NodeSet));
-
-			parameter<string> result := all ? 'OK' : 'False';
-
-			parameter<string> result_html := 
-				'<description>OD PC4 dense matrix with<BR>road network (NL/BE/GE)</description>' + 
-				'<size>' + size_imp/result + ' impedances & alt impedances, <BR>' + size_nodes/result + ' nodes</size>' +
-				'<issue>1021</issue>' + 
-				'<result>' + result + '</result>'
+			parameter<uint32> nr_diff := #OD/PC4_dense - sum(uint32(MakeDefined(impedance/test && alt_imp/test && DstZone_rel/test && OrgZone_rel/test, false)));
+			container m := TestResult/metric('OD cells', 'cells', #OD/PC4_dense, nr_diff);
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t101","kind":"reference_comparison"'
+				+ ',"title":"OD PC4 dense matrix with road network (NL/BE/GE)"'
+				+ ',"compared":"PC4 OD impedance matrix vs reference (issue #1021)"'
+				+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"%TestRefDir%/t101/PC4_impedance.fss"}'
+				+ ',"metrics":[' + m/result + ']'
+				+ '}'
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t101_network_od_pc4_dense.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t101_network_od_pc4_dense.result.json'";
 		}
 
 		container t102_network_od_pc6_sparse
@@ -572,18 +574,17 @@ container Regression:	FreeData = "True"
 
 			parameter<bool> all := all(impedance/test) && all(alt_imp/test) && all(DstZone_rel/test) && all(OrgZone_rel/test);
 
-			container size_imp   := formatnumber_1000_seperators(string(#OD/PC6_sparse));
-			container size_nodes := formatnumber_1000_seperators(string(#netwerk/WegenMetLokaties/PC6/NodeSet));
-
-			parameter<string> result := all ? 'OK' : 'False';
-
-			parameter<string> result_html := 
-				'<description>OD PC6 sparse matrix with <BR>road network (NL/BE/GE)</description>' + 
-				'<size>' + size_imp/result + ' impedances & alt impedances , <BR>' + size_nodes/result + ' nodes</size>' +
-				'<issue>1021</issue>' + 
-				'<result>' + (all ? 'OK' : 'False')+ '</result>'
+			parameter<uint32> nr_diff := #OD/PC6_sparse - sum(uint32(MakeDefined(impedance/test && alt_imp/test && DstZone_rel/test && OrgZone_rel/test, false)));
+			container m := TestResult/metric('OD cells', 'cells', #OD/PC6_sparse, nr_diff);
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t102","kind":"reference_comparison"'
+				+ ',"title":"OD PC6 sparse matrix with road network (NL/BE/GE)"'
+				+ ',"compared":"PC6 OD impedance matrix vs reference (issue #1021)"'
+				+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"%TestRefDir%/t102/pc6_impedance.fss"}'
+				+ ',"metrics":[' + m/result + ']'
+				+ '}'
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t102_network_od_pc6_sparse.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t102_network_od_pc6_sparse.result.json'";
 
 			container error_analysis
 			{
@@ -611,17 +612,17 @@ container Regression:	FreeData = "True"
 
 			parameter<bool> all := all(test);
 
-			container size := formatnumber_1000_seperators(string(#grid/domain_10m));
-
-			parameter<string> result := all ? 'OK' : 'False';
-
-			parameter<string> result_html := 
-				'<description>poly2grid bbg to 10m grid (NL)</description>'+
-				'<size>' + size/result + ' grid cells</size>' +
-				'<issue>929</issue>' + 
-				'<result>'+ result + '</result>'
+			parameter<uint32> nr_diff := #grid/domain_10m - sum(uint32(MakeDefined(test, false)));
+			container m := TestResult/metric('cells', 'cells', #grid/domain_10m, nr_diff);
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t200","kind":"reference_comparison"'
+				+ ',"title":"poly2grid BBG to 10m grid (NL)"'
+				+ ',"compared":"CBS bodemgebruik poly2grid vs reference (issue #929)"'
+				+ ',"reference":{"source":"project_data","compare":"cell","path":"%RegressionDataDir%/t200_BBG/bbg_2012.tif"}'
+				+ ',"metrics":[' + m/result + ']'
+				+ '}'
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t200_grid_Poly2Grid.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t200_grid_Poly2Grid.result.json'";
 		}
 
 		container t300_xml_ReadParse
@@ -678,16 +679,17 @@ container Regression:	FreeData = "True"
 
 			parameter<bool> all := all(test);
 
-			container size := formatnumber_1000_seperators(string(#BAG_MakeSnapshot/snapshot_20170701/pand/results/unique));
-
-			parameter<string> result := (#pand_snapshot - sum_uint32(test)) < (#pand_snapshot / 1000) ? 'OK' : 'False'; // one pro mille error margin.
-
-			parameter<string> result_html := 
-				'<description>calculate residence type based on BAG geometry pand/vbo</description>'+
-				'<size>' + size/result + ' bag panden</size>' +
-				'<result>'+ result + '</result>'
+			parameter<uint32> nr_diff := #pand_snapshot - sum_uint32(test);
+			container m := TestResult/metric('residential type', 'panden', #pand_snapshot, nr_diff);
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t301","kind":"reference_comparison"'
+				+ ',"title":"residence type from BAG geometry (pand/vbo)"'
+				+ ',"compared":"BAG residential type vs reference (tolerance 0.1%)"'
+				+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"%TestRefDir%/t301/type_woonpand_rel_ok.fss"}'
+				+ ',"metrics":[' + m/result + ']'
+				+ '}'
 			,	StorageType = "str"
-			,	storagename = "= results/VersionInfo/results_folder + '/t301_BAG_ResidentialType.txt'";
+			,	storagename = "= results/VersionInfo/results_folder + '/t301_BAG_ResidentialType.result.json'";
 
 			container error_analysis
 			{
