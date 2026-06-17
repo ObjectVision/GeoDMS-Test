@@ -31,28 +31,28 @@ from datetime import datetime
 def get_empty_table_row_col_html() -> str:
     # An empty cell means the experiment was not run for that version -> show it
     # explicitly instead of a blank (e.g. GUI tests skipped on the linux flavor).
-    return '<td class="cell skip"><span class="pill skip">niet gedraaid</span></td>\n'
+    return '<td class="cell skip"><span class="pill skip">not run</span></td>\n'
 
 def get_status_meta(status:str) -> tuple:
     """Map a raw status (OK / TIMEOUT / FCFAIL / a numeric GeoDmsRun exit code /
     an indicator <result> text) to (human label, css class, code note) for the
     report. css class is one of: ok, fail, warn, timeout."""
-    code_labels = {"1": "data error", "2": "config / parse fout", "6": "config fout",
-                   "15": "timeout", "99": "output verschilt", "134": "gecrasht (geen log)"}
+    code_labels = {"1": "data error", "2": "config / parse error", "6": "config error",
+                   "15": "timeout", "99": "output differs", "134": "crashed (no log)"}
     if status == "OK":
         return ("ok", "ok", "")
     if status == "TIMEOUT":
         return ("timeout", "timeout", "exit 15")
     if status == "FCFAIL":
-        return ("output verschilt", "fail", "exit 99")  # output differs from reference = a real failure (red)
-    if status == "geen resultaat":
-        return ("niet gevalideerd", "warn", "indicator ontbreekt")
+        return ("output differs", "fail", "exit 99")  # output differs from reference = a real failure (red)
+    if status == "no result":
+        return ("not validated", "warn", "indicator missing")
     if status in ("False", "false"):
-        return ("test faalt", "fail", "")
+        return ("test failed", "fail", "")
     if status.lstrip("-").isdigit():
         if int(status) < 0:
-            return ("niet gedraaid", "skip", "")
-        return (code_labels.get(status, f"fout (code {status})"), "fail", f"exit {status}")
+            return ("not run", "skip", "")
+        return (code_labels.get(status, f"error (code {status})"), "fail", f"exit {status}")
     return (status, "ok", "")  # arbitrary <result> text
 
 def fmt_gb(x:float) -> str:
@@ -95,18 +95,26 @@ def format_duration(duration:int) -> str:
     time_part = f"{int(hour)}:{int(minutes):02d}:{int(seconds):02d}"
     return f"{int(day)}d {time_part}" if day else time_part
 
+def _add_thousand_separators(text:str) -> str:
+    """Insert thousand separators into standalone integers of 4+ digits, leaving
+    decimals (dot- or comma-separated) and already-grouped numbers untouched."""
+    return re.sub(r"(?<![\d.,])(\d{4,})(?![\d.,])", lambda m: f"{int(m.group(1)):,}", text)
+
 def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
+    # Render each indicator's VALUE (the label lives in the value, set by the test's
+    # result_html) -- not "tagname: value", so no underscored tag names leak into the
+    # overview. 'result' is the verdict pill; 'description' is shown under the test name.
     indicator_part = ""
     set_indicator_flag = False
     for indicator in parsed_results:
-        if indicator == "result":
+        if indicator in ("result", "description"):
             continue
         value = parsed_results[indicator][0]
         status = parsed_results[indicator][1]
         if not status:
             set_indicator_flag = True
         cls = "ind-line changed" if not status else "ind-line"
-        indicator_part += f"<div class='{cls}'>{indicator}: <b>{value}</b></div>"
+        indicator_part += f"<div class='{cls}'>{_add_thousand_separators(value)}</div>"
     if indicator_part:
         indicator_part = f"<div class='ind'>{indicator_part}</div>"
     return [indicator_part, set_indicator_flag]
@@ -117,6 +125,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     testclass = testname.replace(" ", "_")
     regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", testname)
     regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
+    regression_test_row = regression_test_row.replace("@@@TESTDESC@@@", get_test_description(testname))
     for summary_col_row in summary_row[1:]:
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
@@ -152,16 +161,58 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
 
         # indicators        
         indicator_part, indicator_flag = get_indicator_part_from_parsed_results(summary_col_row["results"][1])
-        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span title="indicatoren gewijzigd t.o.v. vorige versie" style="color:#a32d2d;">&#9650; gewijzigd</span>' if indicator_flag else "")
+        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="indicators changed vs previous version">&#9650; changed</span>' if indicator_flag else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
 
     return f'<tr>{regression_test_row}</tr>\n'
 
+TEST_DESCRIPTIONS = {
+    "t010": "Operator/function test — exercises many DMS operators on the Operator config.",
+    "t050": "Storage: write an ESRI shapefile (polygon) via the storage manager; round-trip.",
+    "t060": "Storage: build a BAG snapshot (Utrecht) as GeoPackage; compare to reference.",
+    "t100": "Network: connect PC6 points to the road network (NL/BE/DE); compare to reference.",
+    "t101": "Network: OD PC4 dense impedance matrix over the road network (NL/BE/DE).",
+    "t102": "Network: OD PC6 sparse impedance matrix (with cut) over the road network.",
+    "t151": "Coordinate conversion Belgian Lambert → RD for Belgian municipalities.",
+    "t200": "Grid: poly2grid of CBS land use (BBG) to a 10 m grid (NL).",
+    "t300": "Read BAG XML files and parse polygon geometries.",
+    "t301": "Derive residential type from BAG pand/vbo geometry; compare to reference (1‰).",
+    "t405_1": "NetworkModel PBL, step 1: prepare input data.",
+    "t405_2": "NetworkModel PBL, step 2.1: tiled model run without fence.",
+    "t405_2_2": "NetworkModel PBL: indicator comparison of the no-fence run.",
+    "t405_3": "NetworkModel PBL, step 2.2: tiled model run with fence.",
+    "t405_3_2": "NetworkModel PBL: indicator comparison of the fenced run.",
+    "t410": "NetworkModel EU: indicator-results regression test.",
+    "t611": "LUS Demo 2023 (Land Use Scanner): compare allocation results.",
+    "t641_1": "RuimteScanner Open v2025H2: generate base data (write BaseData).",
+    "t641_1_2": "RSopen: indicator comparison of the base-data step.",
+    "t641_3": "RSopen: land-use allocation for target year 2050.",
+    "t710": "2UP global urbanisation model: indicator results.",
+    "t720": "2BURP model: indicator-results regression test.",
+    "t810": "ValLuisa / 100m DynaPop (EuClueScanner): land use & population, Czechia 2050.",
+    "t910": "Cusa2 Africa model: indicator-results regression test.",
+    "t1630": "GUI robustness: fully expand RSLight_2020 SourceData/Claims/ReadData.",
+    "t1640": "GUI: value-info detail page on aggregations vs recorded reference.",
+    "t1642": "GUI: statistics/value-info detail page with group-by on geometry.",
+    "t1742": "Command-line @statistics on the Operator config (Arithmetics/UnTiled/add/attr).",
+    "t2000": "Hestia development: @statistics on /Jaarreeksen/hWP_asl.",
+}
+
+def get_test_description(testname:str) -> str:
+    """Short English description for a test, keyed by its leading code (t010,
+    t405_3_2, ...). Returns '' when no description is defined."""
+    m = re.match(r"(t\d+(?:[ _]\d+)*)", testname, re.IGNORECASE)
+    if not m:
+        return ""
+    code = m.group(1).lower().replace(" ", "_")
+    return TEST_DESCRIPTIONS.get(code, "")
+
 def get_table_row_title_html_template() -> str:
     return '<td class="testname">\
-                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" title="klik om alle versies van deze test uit/in te klappen">@@@TESTNAME@@@</button>\
+                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" title="click to expand/collapse all versions of this test">@@@TESTNAME@@@</button>\
+                <div class="testdesc">@@@TESTDESC@@@</div>\
             </td>\n'
 
 def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_fig_fn:str=None) -> str:
@@ -169,16 +220,16 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     absolute_profile_fn = f"{result_paths["results_base_folder"]}/{profile_fig_fn[3:]}"
 
     log_part = "" if not os.path.isfile(absolute_log_fn) else '<a href="@@@LOG@@@" target="_blank" title="log">log</a>'
-    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@" target="_blank" title="profiel">profiel</a>'
-    geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)" title="kopieer GeoDmsRun-commando">commando</a>'
+    profile_part = "" if not os.path.isfile(absolute_profile_fn) else '<a href="@@@PROFILE_FIGURE@@@" target="_blank" title="profile">profile</a>'
+    geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)" title="copy GeoDmsRun command">command</a>'
     return f'<td class="cell @@@STATUSCLASS@@@">\
     <details class=@@@TESTCLASS@@@>\
-    <summary><span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span></summary>\
+    <summary><span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@INDICATOR_FLAG@@@</summary>\
     <div class="meta">@@@STARTTIME@@@ &middot; @@@DURATION@@@</div>\
     <div class="metrics">mem @@@HIGHESTCOMMIT@@@ GB &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
     @@@INDICATORS@@@\
+    <div class="links">{log_part} {geodms_part} {profile_part}</div>\
     </details>\
-    <div class="links">{log_part} {geodms_part} {profile_part} @@@INDICATOR_FLAG@@@</div>\
     </td>\n'
 
 def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
@@ -302,7 +353,7 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     if not indicators:
         # exit 0 but the declared result indicator is missing -> the test ran but
         # was never validated. Surface it (red) instead of a hollow "OK".
-        return ("geen resultaat", {}) if declared_indicator else ("OK", {})
+        return ("no result", {}) if declared_indicator else ("OK", {})
     
     # compare previous with current indicators for flagging differences
     parsed_indicators = parse_indicators(indicators)
@@ -720,6 +771,8 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .metrics { color:#444441; font-size:12px; margin-top:3px; white-space:nowrap; font-variant-numeric:tabular-nums; }\
               .ind { margin-top:6px; padding-top:5px; border-top:1px solid #ececE6; font-size:11.5px; color:#5f5e5a; }\
               .ind-line.changed { color:#a32d2d; font-weight:500; }\
+              td.testname .testdesc { font-weight:400; font-style:italic; color:#86867e; font-size:11px; white-space:normal; max-width:300px; margin-top:3px; }\
+              .flag { color:#a32d2d; font-size:11px; font-weight:500; margin-left:8px; white-space:nowrap; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
             </style>\
@@ -774,7 +827,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
     report_dir = f"{result_paths['results_base_folder']}/reports"
     if not os.path.isdir(report_dir):
         os.makedirs(report_dir)
-    with open(final_html_filename, "w") as f:
+    with open(final_html_filename, "w", encoding="utf-8") as f:  # report declares <meta charset="UTF-8">
         f.write(result_html)
     return final_html_filename
 
