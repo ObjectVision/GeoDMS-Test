@@ -10,8 +10,10 @@ gui_instance() {
     local result_file="$3"
     local f1="${4:-S1}" f2="${5:-S2}" f3="${6:-S3}"
 
-    if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
-        echo "NOTE: gui_instance skipped — no DISPLAY/WAYLAND_DISPLAY"
+    # Need either a real display (xcb/wayland) or an explicit platform plugin
+    # such as QT_QPA_PLATFORM=offscreen (set by unit_linux.sh on headless hosts).
+    if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" && -z "${QT_QPA_PLATFORM:-}" ]]; then
+        echo "NOTE: gui_instance skipped — no DISPLAY/WAYLAND_DISPLAY/QT_QPA_PLATFORM"
         echo "$GEODMS_GUI_QT_PATH /T$dmsscript /$f1 /$f2 /$f3 $dms_file  SKIPPED (no display)" >> "$RESULT_FILENAME"
         return
     fi

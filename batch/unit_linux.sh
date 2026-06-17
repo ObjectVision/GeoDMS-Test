@@ -85,9 +85,16 @@ echo "" >> "$RESULT_FILENAME"
 # ---------------------------------------------------------------------------
 # GUI tests — same set as Windows unit_flagged.bat (MapViewClassification,
 # DPGeneral GUI parts that write the .tmp baselines, then GeoDmsRun parts that
-# verify them). Skip if no display is available.
+# verify them). On a headless host (e.g. OVSRV05, no usable WSLg device) the
+# default 'xcb' plugin can't connect to a display, so fall back to the bundled
+# 'offscreen' Qt platform plugin, which needs no display/GPU device. These
+# tests score computed text, not pixels, so results are identical. (#1134)
 # ---------------------------------------------------------------------------
-if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
+    export QT_QPA_PLATFORM=offscreen
+    echo "NOTE: no DISPLAY/WAYLAND_DISPLAY — running GUI tests with QT_QPA_PLATFORM=offscreen"
+fi
+if true; then
     export GEODMS_DIRECTORIES_LOCALDATAPROJDIR="$LOCAL_DATA_DIR_REGRESSION/gui"
 
     GUI_RESULT_DIR="$RESULT_DIR/Unit/GUI"
@@ -136,9 +143,6 @@ if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
 
     geodms_instance "$TST_DIR/Unit/GUI/cfg/background_layer.dms" test_log \
         "$RESULT_DIR/unit/gui/background_layer_error.txt" $flag1 $flag2 $flag3
-else
-    echo "NOTE: DISPLAY not set — skipping GUI tests"
-    echo "NOTE: GUI tests skipped (no display)" >> "$RESULT_FILENAME"
 fi
 
 # ---------------------------------------------------------------------------
