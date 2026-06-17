@@ -327,6 +327,23 @@ def parse_indicators(indicators:str) -> dict:
 # regression cannot silently rebaseline itself.
 TEST_TOLERANCES = {
     "t301": {"residential type": {"tolerance_pct": 0.1}},
+    # Monitoring tests baselined from trusted cross-version values (see
+    # batch/MONITORING_BASELINE_ANALYSIS.md). Integer counts: exact. Float sums: 0.01%
+    # (absorbs float32 noise). t910 "Sum Diff TA wFlood" is deliberately baselined from
+    # the stable pre-20 value: 20.1.0 drifts 0.028% -> FAILS on purpose (regression candidate).
+    "t720": {
+        "Population 2100":                 {"expected": 578020431, "tolerance_pct": 0.0},
+        "BuiltUp cells 2100":              {"expected": 12653121,  "tolerance_pct": 0.0},
+        "BuiltUp area 2100":               {"expected": 197180.27, "tolerance_pct": 0.01},
+        "Population in urban centre 2100": {"expected": 270776737, "tolerance_pct": 0.0},
+    },
+    "t910": {
+        "Sum NetworkEfficiency": {"expected": 334.64032,   "tolerance_pct": 0.01},
+        "Sum PotentialAccess":   {"expected": 46703.84,    "tolerance_pct": 0.01},
+        "Sum TP_Flood":          {"expected": 22439.209,   "tolerance_pct": 0.01},
+        "Sum Diff TP wFlood":    {"expected": -6906.0117,  "tolerance_pct": 0.01},
+        "Sum Diff TA wFlood":    {"expected": -1050740032, "tolerance_pct": 0.01},
+    },
 }
 
 def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:

@@ -26,6 +26,8 @@ container toBURP : IntegrityCheck = "GeoDMSVersion() >= 14.1000" //because of xy
 	
 	container Desktops;
 	
+	#include <../../../../Regression/cfg/generic/TestResult.dms> // shared measurement template
+
 	container t720_2BURP_indicator_results
 	{
 		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
@@ -34,16 +36,18 @@ container toBURP : IntegrityCheck = "GeoDMSVersion() >= 14.1000" //because of xy
 		
 		attribute<bool>   IsUrbanCentre2100 (geography/domain)       := /Analysis/Future/Indicators/Prep/DegreesOfUrbanisation/Y2100/Typology_Domain == /Classifications/TypologyK/V/Urban_Centre;
 		
-		parameter<string> result_html := 
-			'<description>2BURP indicator results, Year:2100, Regio: '+ModelParameters/StudyArea+'</description>' +
-			'<result><BR>' + 
-			' Population 2100 : '    + replace(string(sum(uint32(Analysis/Future/Indicators/Prep/Population/Y2100))),'.',',') +' number of persons <br>' + 
-			' BuiltUp cells 2100 : ' + replace(string(sum(uint32(Analysis/Future/Indicators/Prep/Builtup_Total_Share/Y2100 > 0f))),'.',',') +' number of urban cells <br>' + 
-			' BuiltUp area 2100 : '  + replace(string(sum(Analysis/Future/Indicators/Prep/Builtup_Total_Share/Y2100)),'.',',') +' km2</result>' +
-			' Population in urban centre 2100 : ' + replace(string(sum(IsUrbanCentre2100 ? Analysis/Future/Indicators/Prep/Population/Y2100 : 0i)),'.',',') +' number of persons</result>';
+		container v_pop     := TestResult/metric_value('Population 2100', 'persons', string(sum(uint32(Analysis/Future/Indicators/Prep/Population/Y2100))));
+		container v_bcells  := TestResult/metric_value('BuiltUp cells 2100', 'cells', string(sum(uint32(Analysis/Future/Indicators/Prep/Builtup_Total_Share/Y2100 > 0f))));
+		container v_barea   := TestResult/metric_value('BuiltUp area 2100', 'km2', string(sum(Analysis/Future/Indicators/Prep/Builtup_Total_Share/Y2100)));
+		container v_pcentre := TestResult/metric_value('Population in urban centre 2100', 'persons', string(sum(IsUrbanCentre2100 ? Analysis/Future/Indicators/Prep/Population/Y2100 : 0i)));
 
-		parameter<string> result := result_html
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t720","kind":"reference_comparison"'
+			+ ',"title":"2BURP indicator results, Year:2100, Regio: '+ModelParameters/StudyArea+'"'
+			+ ',"compared":"model indicators vs curated reference"'
+			+ ',"reference":{"source":"inline","compare":"scalar","path":"TEST_TOLERANCES (report-side)"}'
+			+ ',"metrics":[' + v_pop/result + ',' + v_bcells/result + ',' + v_barea/result + ',' + v_pcentre/result + ']}'
 		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t720_2BURP_indicator_results.txt'";
+		,	storagename = "= results_folder + '/t720_2BURP_indicator_results.result.json'";
 	}
 }

@@ -23,4 +23,17 @@ container TestResult
 			+ '","n_total":' + string(n_total)
 			+ ',"n_diff":' + string(n_diff) + '}';
 	}
+
+	// A scalar/monitoring MEASUREMENT: one emitted value (no reference in dms; the
+	// report compares to TEST_TOLERANCES[test][name].expected, else reference_pending).
+	// Pass value_str = string(x); ',' is forced to '.' so it is a valid JSON number.
+	template metric_value
+	{
+		parameter<string> name;
+		parameter<string> unit;
+		parameter<string> value_str;
+		parameter<string> result :=
+			'{"name":"' + name + '","unit":"' + unit
+			+ '","value":' + replace(value_str, ',', '.') + '}';
+	}
 }

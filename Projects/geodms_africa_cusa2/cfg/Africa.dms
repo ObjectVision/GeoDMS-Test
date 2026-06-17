@@ -163,6 +163,8 @@ container CUSA2
 	#include<Templates.dms>
 	
 
+	#include <../../../../Regression/cfg/generic/TestResult.dms> // shared measurement template
+
 	container t910_cusa2_Africa_test
 	{
 		container indicatoren
@@ -177,16 +179,20 @@ container CUSA2
 		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-		parameter<string> result_html := 
-			'<description>CUSA2, Africa, indicator results<br><I>version</i>: 2023-03-29</description>' + 
-			'<result>' + 
-			' Sum NetworkEfficiency : ' + replace(string(indicatoren/sum_NetworkEfficiency),'.',',') +'<br>' +
-			' Sum PotentialAccess   : ' + replace(string(indicatoren/sum_PotentialAccess)  ,'.',',') +'<br>' +
-			' Sum TP_Flood          : ' + replace(string(indicatoren/sum_TP_Flood)  ,'.',',') +'<br>' +
-			' Sum Diff TP wFlood    : ' + replace(string(indicatoren/sum_Diff_TP_wFlood)  ,'.',',') +'<br>'
-			' Sum Diff TA wFlood    : ' + replace(string(indicatoren/sum_Diff_TA_wFlood)  ,'.',',') +'<br>'
+		container v_ne   := TestResult/metric_value('Sum NetworkEfficiency', '', string(indicatoren/sum_NetworkEfficiency));
+		container v_pa   := TestResult/metric_value('Sum PotentialAccess',   '', string(indicatoren/sum_PotentialAccess));
+		container v_tpf  := TestResult/metric_value('Sum TP_Flood',          '', string(indicatoren/sum_TP_Flood));
+		container v_dtpf := TestResult/metric_value('Sum Diff TP wFlood',    '', string(indicatoren/sum_Diff_TP_wFlood));
+		container v_dtaf := TestResult/metric_value('Sum Diff TA wFlood',    '', string(indicatoren/sum_Diff_TA_wFlood));
+
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t910","kind":"reference_comparison"'
+			+ ',"title":"CUSA2 Africa indicator results (v2023-03-29)"'
+			+ ',"compared":"network / flood indicators vs curated reference"'
+			+ ',"reference":{"source":"inline","compare":"scalar","path":"TEST_TOLERANCES (report-side)"}'
+			+ ',"metrics":[' + v_ne/result + ',' + v_pa/result + ',' + v_tpf/result + ',' + v_dtpf/result + ',' + v_dtaf/result + ']}'
 		, StorageType = "str"
-		, storagename = "= results_folder + '/t910_cusa2_Africa_test.txt'";
+		, storagename = "= results_folder + '/t910_cusa2_Africa_test.result.json'";
 	}
 
 	container ConfigSettings
