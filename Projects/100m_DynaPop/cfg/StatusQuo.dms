@@ -47,8 +47,13 @@ container EuClueScanner
 			
 			attribute<bool> test (domainGrid) := calculated == recorded;
 			parameter<bool> all := all(test);
+			// findings vs reference (permanent; see report): #different cells and % of total
+			parameter<uint32>  nr_diff  := uint32(#domainGrid) - sum(uint32(MakeDefined(test, false)));
+			parameter<uint32>  pct_bp   := uint32((uint64(nr_diff) * uint64(10000) + uint64(#domainGrid) / uint64(2)) / uint64(#domainGrid)); // %*100, rounded
+			parameter<uint32>  pct_frac := pct_bp - (pct_bp / uint32(100)) * uint32(100);
+			parameter<string>  pct      := string(pct_bp / uint32(100)) + '.' + ((pct_frac < uint32(10)) ? '0' : '') + string(pct_frac) + '%';
 		}
-		
+
 		container POP
 		{
 			// attribute<Int32> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050_Qi.tif";
@@ -57,6 +62,11 @@ container EuClueScanner
 			
 			attribute<bool> test (domainGrid) := MakeDefined(calculated, int32(0)) == MakeDefined(recorded, int32(0));
 			parameter<bool> all := all(test);
+			// findings vs reference (permanent; see report): #different cells and % of total
+			parameter<uint32>  nr_diff  := uint32(#domainGrid) - sum(uint32(MakeDefined(test, false)));
+			parameter<uint32>  pct_bp   := uint32((uint64(nr_diff) * uint64(10000) + uint64(#domainGrid) / uint64(2)) / uint64(#domainGrid)); // %*100, rounded
+			parameter<uint32>  pct_frac := pct_bp - (pct_bp / uint32(100)) * uint32(100);
+			parameter<string>  pct      := string(pct_bp / uint32(100)) + '.' + ((pct_frac < uint32(10)) ? '0' : '') + string(pct_frac) + '%';
 		}
 
 		parameter<string> result := (LU/all && POP/all)  ? 'OK' : 'False';
@@ -65,8 +75,11 @@ container EuClueScanner
 		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-		parameter<string> result_html := 
+		parameter<string> result_html :=
 			'<description>Calculate the LandUse & Population for Czechia in 2050, EuClueScanner, 100m_DynaPop</description>'+
+			'<cells>'+ string(uint32(#domainGrid)) +'</cells>'+
+			'<lu_diff>'+ string(LU/nr_diff) +' ('+ LU/pct +' of '+ string(uint32(#domainGrid)) +')</lu_diff>'+
+			'<pop_diff>'+ string(POP/nr_diff) +' ('+ POP/pct +' of '+ string(uint32(#domainGrid)) +')</pop_diff>'+
 			'<result>'+ result + '</result>'
 		,	StorageType = "str"
 		,	storagename = "= results_folder + '/t810_ValLuisa_Czech_LU_POP.txt'";
