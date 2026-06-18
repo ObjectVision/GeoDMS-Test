@@ -58,6 +58,36 @@ container RegressieTest : using = "ModelParameters"
 		parameter<string> result_html := result
 		,	StorageType = "str"
 		,	storagename = "= results_folder + '/t405_2_NetworkModel_PBL_zonderFence.txt'";
+
+		// JSON measurement (report judges vs references.json at 0% tol). result_html kept as a
+		// fallback until this is validated on a real t405 run; values reuse the result_html expressions.
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t405_2","kind":"reference_comparison"'
+			+ ',"title":"NetworkModel PBL indicators (zonder fence)"'
+			+ ',"compared":"PT travel-time / price indicators per type vs 17.4.6 reference"'
+			+ ',"reference":{"source":"reference-file","compare":"scalar","path":"references.json:t405_2"}'
+			+ ',"metrics":['
+			+  '{"name":"WW count_tt","unit":"","value":'               + replace(string(    PerType/WW/Indicators/count_tt   ),',','.') + '}'
+			+ ',{"name":"WW mean_tt","unit":"","value":'                + replace(string(    PerType/WW/Indicators/mean_tt    ),',','.') + '}'
+			+ ',{"name":"WW max_tt","unit":"","value":'                 + replace(string(    PerType/WW/Indicators/max_tt     ),',','.') + '}'
+			+ ',{"name":"WW min_tt","unit":"","value":'                 + replace(string(sum(PerType/WW/Indicators/min_tt    )),',','.') + '}'
+			+ ',{"name":"WW modus_tt","unit":"","value":'               + replace(string(sum(PerType/WW/Indicators/modus_tt  )),',','.') + '}'
+			+ ',{"name":"WW mean_price","unit":"","value":'             + replace(string(    PerType/WW/Indicators/mean_price  ),',','.') + '}'
+			+ ',{"name":"W_OV_W count_tt","unit":"","value":'           + replace(string(    PerType/W_OV_W/Indicators/count_tt   ),',','.') + '}'
+			+ ',{"name":"W_OV_W mean_tt","unit":"","value":'            + replace(string(    PerType/W_OV_W/Indicators/mean_tt    ),',','.') + '}'
+			+ ',{"name":"W_OV_W max_tt","unit":"","value":'             + replace(string(    PerType/W_OV_W/Indicators/max_tt     ),',','.') + '}'
+			+ ',{"name":"W_OV_W min_tt","unit":"","value":'             + replace(string(sum(PerType/W_OV_W/Indicators/min_tt    )),',','.') + '}'
+			+ ',{"name":"W_OV_W modus_tt","unit":"","value":'           + replace(string(sum(PerType/W_OV_W/Indicators/modus_tt  )),',','.') + '}'
+			+ ',{"name":"W_OV_W mean_price","unit":"","value":'         + replace(string(    PerType/W_OV_W/Indicators/mean_price  ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW count_tt","unit":"","value":'   + replace(string(    PerType/W_OV_W_with_WW/Indicators/count_tt   ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW mean_tt","unit":"","value":'    + replace(string(    PerType/W_OV_W_with_WW/Indicators/mean_tt    ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW max_tt","unit":"","value":'     + replace(string(    PerType/W_OV_W_with_WW/Indicators/max_tt     ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW min_tt","unit":"","value":'     + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/min_tt    )),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW modus_tt","unit":"","value":'   + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/modus_tt  )),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW mean_price","unit":"","value":' + replace(string(    PerType/W_OV_W_with_WW/Indicators/mean_price  ),',','.') + '}'
+			+ ']}'
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t405_2_NetworkModel_PBL_zonderFence.result.json'";
 	}
 
 	container t405_3_NetworkModel_PBL_fenced_indicator_results_test
@@ -97,6 +127,36 @@ container RegressieTest : using = "ModelParameters"
 		parameter<string> result_html := result
 		,	StorageType = "str"
 		,	storagename = "= results_folder + '/t405_3_NetworkModel_PBL_metFence.txt'";
+
+		// JSON measurement (report judges vs references.json at 0% tol). result_html kept as a
+		// fallback until this is validated on a real t405 run; values reuse the result_html expressions.
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t405_3","kind":"reference_comparison"'
+			+ ',"title":"NetworkModel PBL indicators (met fence)"'
+			+ ',"compared":"PT travel-time / price indicators per type vs 17.4.6 reference"'
+			+ ',"reference":{"source":"reference-file","compare":"scalar","path":"references.json:t405_3"}'
+			+ ',"metrics":['
+			+  '{"name":"WW count_tt","unit":"","value":'               + replace(string(    PerType/WW/Indicators/count_tt   ),',','.') + '}'
+			+ ',{"name":"WW mean_tt","unit":"","value":'                + replace(string(    PerType/WW/Indicators/mean_tt    ),',','.') + '}'
+			+ ',{"name":"WW max_tt","unit":"","value":'                 + replace(string(    PerType/WW/Indicators/max_tt     ),',','.') + '}'
+			+ ',{"name":"WW min_tt","unit":"","value":'                 + replace(string(sum(PerType/WW/Indicators/min_tt    )),',','.') + '}'
+			+ ',{"name":"WW modus_tt","unit":"","value":'               + replace(string(sum(PerType/WW/Indicators/modus_tt  )),',','.') + '}'
+			+ ',{"name":"WW mean_price","unit":"","value":'             + replace(string(    PerType/WW/Indicators/mean_price  ),',','.') + '}'
+			+ ',{"name":"W_OV_W count_tt","unit":"","value":'           + replace(string(    PerType/W_OV_W/Indicators/count_tt   ),',','.') + '}'
+			+ ',{"name":"W_OV_W mean_tt","unit":"","value":'            + replace(string(    PerType/W_OV_W/Indicators/mean_tt    ),',','.') + '}'
+			+ ',{"name":"W_OV_W max_tt","unit":"","value":'             + replace(string(    PerType/W_OV_W/Indicators/max_tt     ),',','.') + '}'
+			+ ',{"name":"W_OV_W min_tt","unit":"","value":'             + replace(string(sum(PerType/W_OV_W/Indicators/min_tt    )),',','.') + '}'
+			+ ',{"name":"W_OV_W modus_tt","unit":"","value":'           + replace(string(sum(PerType/W_OV_W/Indicators/modus_tt  )),',','.') + '}'
+			+ ',{"name":"W_OV_W mean_price","unit":"","value":'         + replace(string(    PerType/W_OV_W/Indicators/mean_price  ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW count_tt","unit":"","value":'   + replace(string(    PerType/W_OV_W_with_WW/Indicators/count_tt   ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW mean_tt","unit":"","value":'    + replace(string(    PerType/W_OV_W_with_WW/Indicators/mean_tt    ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW max_tt","unit":"","value":'     + replace(string(    PerType/W_OV_W_with_WW/Indicators/max_tt     ),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW min_tt","unit":"","value":'     + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/min_tt    )),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW modus_tt","unit":"","value":'   + replace(string(sum(PerType/W_OV_W_with_WW/Indicators/modus_tt  )),',','.') + '}'
+			+ ',{"name":"W_OV_W_with_WW mean_price","unit":"","value":' + replace(string(    PerType/W_OV_W_with_WW/Indicators/mean_price  ),',','.') + '}'
+			+ ']}'
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t405_3_NetworkModel_PBL_metFence.result.json'";
 	}
 
 
