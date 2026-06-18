@@ -109,4 +109,29 @@ container HestiaRun
 	#include <%projDir%/model/ConfigSettings.dms>
 	#include <%projDir%/model/ExportSettings.dms>
 	#include <%projDir%/model/Tellingen.dms>
+
+	// t2000 regression test: emit the hWP_asl (hybrid heat-pump) family of connection
+	// indicators per zichtjaar (Jaarreeksen, 6 rows here) as a JSON measurement. The report
+	// judges each value against the 17.4.6 reference (references.json), replacing the old
+	// @statistics-HTML-page file comparison with a real in-engine value comparison.
+	container t2000_hestia_test
+	{
+		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
+		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
+		parameter<string> results_folder           :  Storagename = "= results_folder_filename", StorageType = "str";
+
+		parameter<string> result_json :=
+			'{"schema":2,"test":"t2000","kind":"reference_comparison"'
+			+ ',"title":"Hestia hybrid-heat-pump (hWP_asl) indicators per zichtjaar"'
+			+ ',"compared":"hWP_asl / A_asl / eWP_asl / gebiedsoptie_nieuw per zichtjaar vs 17.4.6 reference"'
+			+ ',"reference":{"source":"reference-file","compare":"scalar","path":"references.json:t2000"}'
+			+ ',"metrics":['
+			+        AsList('{"name":"hWP_asl '            + Jaarreeksen/name + '","unit":"asl","value":' + replace(string(Jaarreeksen/hWP_asl            ), ',', '.') + '}', ',')
+			+ ',' + AsList('{"name":"A_asl '              + Jaarreeksen/name + '","unit":"asl","value":' + replace(string(Jaarreeksen/A_asl              ), ',', '.') + '}', ',')
+			+ ',' + AsList('{"name":"eWP_asl '            + Jaarreeksen/name + '","unit":"asl","value":' + replace(string(Jaarreeksen/eWP_asl             ), ',', '.') + '}', ',')
+			+ ',' + AsList('{"name":"gebiedsoptie_nieuw ' + Jaarreeksen/name + '","unit":"asl","value":' + replace(string(Jaarreeksen/gebiedsoptie_nieuw   ), ',', '.') + '}', ',')
+			+ ']}'
+		,	StorageType = "str"
+		,	storagename = "= results_folder + '/t2000_hestia_hWP_asl_statistics.result.json'";
+	}
 }

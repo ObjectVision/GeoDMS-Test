@@ -357,24 +357,12 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     reference_statfile = f"{regression_test_paths["TestRefDir"]}/t1742/Statistics_AUAA{_t1742_suffix}.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t1742_command_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t1742_command_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} @statistics /Arithmetics/UnTiled/add/attr @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1742_command_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     
-    # t2000 — Hestia-development (model-hestia-development.main_18_0_4): @statistics op
-    #         /Jaarreeksen/hWP_asl; vergelijk met referentie-HTML in HESTIA_dev.
-    generated_statfile = f"{local_machine_parameters["tmpFileDir"]}/t2000_hestia_hWP_asl_statistics.html"
-    # @statistics output format drifts across versions; the statistics themselves are
-    # identical, so use version-specific references (the _tm_v* pattern, as for t100/t102):
-    #   < 18 : pre-18 output has NO thousand-separators ("93142" vs "93,142")  -> _tm_v17
-    #   18-19: thousand-separators, but no unit-Descr prefix                   -> _tm_v19
-    #   >= 20: also prepends the unit Descr ("aantal aansluitingen:")          -> canonical
-    # Pre-18 builds also load operator_pre1810.dms (see t010/t1742 above).
-    _t2000_maj = version.split(".")[0]
-    if _t2000_maj.isdigit() and int(_t2000_maj) < 18:
-        _t2000_suffix = "_tm_v17"
-    elif _t2000_maj.isdigit() and int(_t2000_maj) < 20:
-        _t2000_suffix = "_tm_v19"
-    else:
-        _t2000_suffix = ""
-    reference_statfile = f"{regression_test_paths["TestRefDir"]}/t2000/t2000_hestia_hWP_asl_statistics{_t2000_suffix}.html"
-    regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} @statistics /Jaarreeksen/hWP_asl @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
+    # t2000 — Hestia-development (model-hestia-development.main_18_0_4): hWP_asl family of
+    #         connection indicators (hWP_asl / A_asl / eWP_asl / gebiedsoptie_nieuw per
+    #         zichtjaar) compared in-engine to the 17.4.6 reference (references.json:t2000).
+    #         Replaces the old @statistics-HTML-page file comparison with a real measurement
+    #         (HestiaRun/t2000_hestia_test/result_json). Still RAM-heavy (~73 GB working set).
+    regression.add_exp(exps, name=f"{result_folder_name}__t2000_hestia_hWP_asl_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["HestiaDevelopment"]} t2000_hestia_test/result_json", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t2000_hestia_hWP_asl_statistics.txt")
     return exps
 
 _RELEASE_CACHE_FILENAME = "github_release_versions.json"
