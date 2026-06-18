@@ -48,7 +48,7 @@ _BUILT_IN_DEFAULTS = {
     # Where result folders + the HTML report are stored. Keep this OUT of the
     # per-user working copy so several working copies / users share one result
     # history. If blank, falls back to <TstDir>/Regression/GeoDMSTestResults.
-    "ResultsBaseDir": "C:/LocalData/GeoDMS-Test/Regression",
+    "ResultsBaseDir": "C:/LocalData/GeoDMS_Test_Results",
     # ProfilerDir is ONLY used for `-version local` builds: its parent is taken
     # as the GeoDMS source-repo root (to read the build version + locate bin/).
     # The report scripts no longer come from here (see report_scripts_dir below).
@@ -801,7 +801,7 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         # of a C:/… path that maps to nowhere on Linux.
         rf_path = f"{local_machine_parameters['tmpFileDir']}/results_folder.txt"
         with open(rf_path, "w") as f:
-            f.write(to_wsl_path(result_paths["results_folder"]))
+            f.write(to_wsl_path(result_paths["results_folder"] + "/result"))
 
     # Optional test-name filter for fast iteration. The HTML report still
     # picks up cached results for the unselected tests, so consistency with

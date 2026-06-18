@@ -356,6 +356,13 @@ def _fmt_num(x):
     except (ValueError, TypeError):
         return str(x)
 
+def _fmt_pct(dev:float) -> str:
+    """Signed deviation %. A nonzero diff below 0.001% is shown as '<0.001%' rather than
+    rounding to a misleading '0.000%' -- so 1-ulp float noise stays visibly nonzero."""
+    if abs(dev) >= 0.001:
+        return f"{dev:+.3f}%"
+    return ("+" if dev >= 0 else "-") + "<0.001%"
+
 def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:
     """Read a <test>.result.json MEASUREMENT (raw counts / values; GeoDMS does not judge)
     and return the (verdict_text, indicator_dict) the report expects. The verdict is computed
@@ -406,7 +413,7 @@ def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:
                 if value == ref:
                     lines[name] = [f"{name}: {_fmt_num(value)}{unit_s}", ok]
                 else:
-                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {REFERENCE_BUILD} {_fmt_num(ref)}, {dev:+.3f}%)", ok]
+                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {REFERENCE_BUILD} {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
 
     verdict = "False" if any_fail else ("reference pending" if any_pending else "OK")
     parsed = {"result": [verdict, True]}
@@ -428,18 +435,19 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     # Did the experiment DECLARE a result indicator? If so its <result> is the
     # test's verdict and a missing file must NOT silently become a hollow "OK".
     declared_indicator = bool(indicator_results_file)
+    rdir = _result_dir(regression_test_folder)  # <version>/result, or the flat folder if un-migrated
     if not indicators and indicator_results_file:
         # The cfg writes the file the experiment declared; read exactly that one
         # (its basename can be longer than the experiment name, e.g.
         # t810_ValLuisa -> t810_ValLuisa_Czech_LU_POP.txt).
-        declared = f"{regression_test_folder}/{os.path.basename(indicator_results_file)}"
+        declared = f"{rdir}/{os.path.basename(indicator_results_file)}"
         if os.path.isfile(declared):
             with open(declared, "r") as f:
                 indicators = f.read()
 
     if not indicators: # attempt get default indicators from experiment if not specified
-        indicators_default_fn_txt = f"{regression_test_folder}/{regression_test}.txt"
-        indicators_default_fn_xml = f"{regression_test_folder}/{regression_test}.xml"
+        indicators_default_fn_txt = f"{rdir}/{regression_test}.txt"
+        indicators_default_fn_xml = f"{rdir}/{regression_test}.xml"
         if os.path.isfile(indicators_default_fn_txt):
             with open(indicators_default_fn_txt, "r") as f:
                 indicators = f.read()
@@ -451,9 +459,9 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
             # sidecars (incl. *.result.xml written next to a migrated .result.json),
             # which have no <result> tag -- only fall back to .xml when there is no
             # .txt, and never to a *.result.xml sidecar.
-            cands = sorted(glob.glob(f"{regression_test_folder}/{regression_test}*.txt"))
+            cands = sorted(glob.glob(f"{rdir}/{regression_test}*.txt"))
             if not cands:
-                cands = sorted(c for c in glob.glob(f"{regression_test_folder}/{regression_test}*.xml")
+                cands = sorted(c for c in glob.glob(f"{rdir}/{regression_test}*.xml")
                                if not c.endswith(".result.xml"))
             for cand in cands:
                 with open(cand, "r") as f:
@@ -471,7 +479,7 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
 
     # Prefer the structured <test>.result.json (new standard) over the legacy tag
     # .txt; fall through to the legacy path on a parse error.
-    json_cands = sorted(glob.glob(f"{regression_test_folder}/{regression_test}*.result.json"))
+    json_cands = sorted(glob.glob(f"{rdir}/{regression_test}*.result.json"))
     if json_cands:
         try:
             return parse_result_json(json_cands[0], prev_indicators)
@@ -504,11 +512,26 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
 
     return (result_text, parsed_indicators)
 
+# --- Per-version-folder layout: log/ bin/ result/ html/. Reads fall back to the flat
+# layout, so historical / not-yet-migrated folders keep working. ---
+def _result_dir(folder:str) -> str:
+    """GeoDMS result files (.result.json/.xml, legacy .txt) live in <folder>/result;
+    fall back to the flat <folder> for folders not migrated to the new layout."""
+    sub = f"{folder}/result"
+    return sub if os.path.isdir(sub) else folder
+
+def _bin_glob(folder:str) -> list:
+    """*.bin under <folder>/bin, falling back to the flat <folder>."""
+    sub = glob.glob(f"{folder}/bin/*.bin")
+    return sub if sub else glob.glob(f"{folder}/*.bin")
+
 def get_log_filename(result_folder:str, regression_test:str):
     return f"{result_folder}/log/{regression_test}.txt"
 
 def get_profile_figure_filename(result_folder:str, regression_test:str):
-    return f"{result_folder}/{regression_test}.html"
+    d = f"{result_folder}/html"
+    os.makedirs(d, exist_ok=True)
+    return f"{d}/{regression_test}.html"
 
 def get_col_header(col:int, sorted_valid_result_folders:list) -> dict:
     result_folder_name, _,_ = sorted_valid_result_folders[col-1]
@@ -600,7 +623,7 @@ def build_prev_col_map(sorted_valid_result_folders:list) -> dict:
     return prev_col_map
 
 def get_all_experiments_from_experiment_folder(experiment_folder_path:str):
-    return glob.glob(f"{experiment_folder_path}/*.bin")
+    return _bin_glob(experiment_folder_path)
 
 def get_experiment_name_from_experiment_filename(experiment_filename:str) -> str:
     return experiment_filename.split("__")[1][:-4]
@@ -628,7 +651,7 @@ def get_valid_result_folders(version:str, result_paths:dict) -> list:
             # or old preset-named folders (e.g. 20_0_1_x64-linux-cmake_... and
             # 20_0_1_x64-windows-{cmake,msbuild}_... instead of 20_0_1_{l,c,m}_...),
             # which carry 0 experiments.
-            if not glob.glob(f"{result_paths['results_base_folder']}/{candidate}/*.bin"):
+            if not _bin_glob(f"{result_paths['results_base_folder']}/{candidate}"):
                 continue
             valid_result_folders.append(candidate)
 
@@ -828,8 +851,10 @@ def header_stuff_to_be_removed_in_future(local_machine_parameters:dict, result_p
     with open(f"{local_machine_parameters["tmpFileDir"]}/statusflags.txt", "w") as f:
         f.write(status_flags)
 
+    result_data_dir = f"{result_paths["results_folder"]}/result"
+    os.makedirs(result_data_dir, exist_ok=True)
     with open(f"{local_machine_parameters["tmpFileDir"]}/results_folder.txt", "w") as f:
-        f.write(result_paths["results_folder"])
+        f.write(result_data_dir)
     return
 
 def get_table_title_html_template() -> str:

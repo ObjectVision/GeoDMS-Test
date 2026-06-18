@@ -24,20 +24,25 @@
 param(
     [Parameter(Mandatory = $true)][string]$Version,
     [string]$Tests = "",
-    [string]$ResultsBase = "C:\LocalData\GeoDMS-Test\Regression"
+    [switch]$NoGui,
+    [switch]$LinuxGui,
+    [string]$ResultsBase = "C:\LocalData\GeoDMS_Test_Results"
 )
 
 $batch = $PSScriptRoot
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $tag   = $Version -replace '[^0-9A-Za-z]', '_'
-$out   = Join-Path $ResultsBase "run_${tag}_$stamp.out"
-$err   = Join-Path $ResultsBase "run_${tag}_$stamp.err"
-$pidf  = Join-Path $ResultsBase "run_${tag}.pid"
-
-if (-not (Test-Path $ResultsBase)) { New-Item -ItemType Directory -Force $ResultsBase | Out-Null }
+# Detached-run logs (.out/.err/.pid) are scratch -> keep them in _Temp, not beside results.
+$tmpDir = Join-Path $ResultsBase "_Temp"
+if (-not (Test-Path $tmpDir)) { New-Item -ItemType Directory -Force $tmpDir | Out-Null }
+$out   = Join-Path $tmpDir "run_${tag}_$stamp.out"
+$err   = Join-Path $tmpDir "run_${tag}_$stamp.err"
+$pidf  = Join-Path $tmpDir "run_${tag}.pid"
 
 $pyArgs = @("full.py", "-version", $Version)
 if ($Tests) { $pyArgs += @("-tests", $Tests) }
+if ($NoGui) { $pyArgs += "-no-gui" }
+if ($LinuxGui) { $pyArgs += "-linux-gui" }
 
 $proc = Start-Process -FilePath "python" -ArgumentList $pyArgs -WorkingDirectory $batch `
             -RedirectStandardOutput $out -RedirectStandardError $err -WindowStyle Hidden -PassThru

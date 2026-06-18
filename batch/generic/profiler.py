@@ -625,7 +625,7 @@ def getSvnVersion(exp):
 def getExperimentFileName(experiment:Experiment):
     #experiment_hash = int(hashlib.sha256((experiment.name + experiment.command).encode('utf-8')).hexdigest(), 16) % 10**15
     
-    fldrname = f"{experiment.experiment_folder}"
+    fldrname = f"{experiment.experiment_folder}/bin"
     if not os.path.exists(fldrname):
         os.makedirs(fldrname)
     filename  = f"{experiment.name}.bin"
