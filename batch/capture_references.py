@@ -14,7 +14,7 @@ intentionally NOT written here.
 Usage:
     python capture_references.py <results_folder> [--build 17.4.6] [--out <path>]
 e.g.
-    python capture_references.py C:/LocalData/GeoDMS-Test/Regression/17_4_6 --build 17.4.6
+    python capture_references.py C:/LocalData/GeoDMS_Test_Results/17_4_6 --build 17.4.6
 """
 import argparse
 import glob

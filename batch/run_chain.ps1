@@ -10,7 +10,7 @@
 #>
 param(
     [string[]]$Versions = @("20.1.0.m", "19.0.0"),
-    [string]$ResultsBase = "C:\LocalData\GeoDMS-Test\Regression"
+    [string]$ResultsBase = "C:\LocalData\GeoDMS_Test_Results"
 )
 $batch = $PSScriptRoot
 $prog  = Join-Path $ResultsBase "run_chain_progress.log"
