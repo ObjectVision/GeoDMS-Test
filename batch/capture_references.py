@@ -30,7 +30,10 @@ def main() -> None:
     ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "generic", "references.json"))
     args = ap.parse_args()
 
-    files = sorted(glob.glob(os.path.join(args.results_folder, "*.result.json")))
+    # New per-version layout keeps results under <folder>/result/; fall back to flat.
+    files = sorted(glob.glob(os.path.join(args.results_folder, "result", "*.result.json")))
+    if not files:
+        files = sorted(glob.glob(os.path.join(args.results_folder, "*.result.json")))
     if not files:
         sys.exit(f"no *.result.json found in {args.results_folder}")
 

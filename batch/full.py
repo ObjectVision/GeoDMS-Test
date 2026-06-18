@@ -823,7 +823,7 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         wiped = 0
         for exp in filtered:
             print(f"  {exp.name}")
-            cache = f"{result_paths['results_folder']}/{exp.name}.bin"
+            cache = f"{result_paths['results_folder']}/bin/{exp.name}.bin"
             if os.path.exists(cache):
                 os.remove(cache)
                 wiped += 1
