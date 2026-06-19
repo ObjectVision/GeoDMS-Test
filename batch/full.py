@@ -308,8 +308,12 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     #          meeberekend (VariantDataOntkoppeld=FALSE, bepaald door de config,
     #          niet door full.py). Voorheen draaide hiervoor de losse t641_2-stap.
     regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_Allocatie", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_Allocatie.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms Allocatie/Zichtjaren/Y2050/Impl/Generate", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_Allocatie.txt")
-    # t641_3 (indicator) — indicator-vergelijking van de allocatie.
-    regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms /t641_3_RSopen_Indicator_results/result_json", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt", store_results=False)
+    # t641_3 (indicator) — indicator-vergelijking van de allocatie. Eigen rij
+    # (store_results -> .bin): de Allocatie-stap kan non-zero exiten (bv. tennet
+    # 3D-laag uit op 17.4.6), en dat zou in het rapport voor de result.json-parse
+    # kortsluiten (get_regression_test_result: status_code != 0 -> early return).
+    # De indicator-stap zelf exit 0, dus die rij toont de indicatoren betrouwbaar.
+    regression.add_exp(exps, name=f"{result_folder_name}__t641_3_RSopen_indicator_indicator", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms /t641_3_RSopen_Indicator_results/result_json", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_3_RSopen_indicator_indicator.txt")
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/2UP"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
