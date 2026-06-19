@@ -43,7 +43,11 @@ container EuClueScanner
 		{
 			// attribute<Classifications/LU/ViewType> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050.tif";
 			attribute<Classifications/LU/ViewType> recorded   (domainGrid) : StorageName = "%TestRefDir%/t810/Czechia_P2050.tif";
-			attribute<Classifications/LU/ViewType> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/ClippedLandUseVT;
+			// calculated is ALSO persisted as a per-version .tif in the result folder, so the
+			// cell-comparison can be re-judged against a changed reference WITHOUT re-running
+			// the ~5min model (the diff-count alone lives in the result.json; the raster does not).
+			attribute<Classifications/LU/ViewType> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/ClippedLandUseVT
+			,	StorageName = "= results_folder + '/t810_ValLuisa_Czech_LU.tif'", StorageType = "gdalwrite.grid";
 			
 			attribute<bool> test (domainGrid) := calculated == recorded;
 			// measurement vs reference: # differing cells (the report computes % + verdict)
@@ -54,7 +58,8 @@ container EuClueScanner
 		{
 			// attribute<Int32> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050_Qi.tif";
 			attribute<Int32> recorded   (domainGrid) : StorageName = "%TestRefDir%/t810/Czechia_P2050_Qi.tif";
-			attribute<Int32> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi ;
+			attribute<Int32> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi
+			,	StorageName = "= results_folder + '/t810_ValLuisa_Czech_Pop.tif'", StorageType = "gdalwrite.grid";
 			
 			attribute<bool> test (domainGrid) := MakeDefined(calculated, int32(0)) == MakeDefined(recorded, int32(0));
 			// measurement vs reference: # differing cells (the report computes % + verdict)
