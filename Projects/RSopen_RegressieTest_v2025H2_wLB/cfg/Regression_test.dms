@@ -66,11 +66,11 @@ container RSOpen
 		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-		parameter<string> result_html :=
-			'<description>RSopen make base data, BAU, 2050 <br><I> git revision: 55cf66, git repo: https://github.com/ObjectVision/RSopen; branch: RegressieTest_wLB </I></description>' +
-			'<result>prepare base data: OK</result>'
-		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t641_1_RSopen_prepare_base_data.txt'";
+		// parameter<string> result_html :=
+			// '<description>RSopen make base data, BAU, 2050 <br><I> git revision: 55cf66, git repo: https://github.com/ObjectVision/RSopen; branch: RegressieTest_wLB </I></description>' +
+			// '<result>prepare base data: OK</result>'
+		// ,	StorageType = "str"
+		// ,	storagename = "= results_folder + '/t641_1_RSopen_prepare_base_data.txt'";
 
 		// JSON status (no indicators -> report verdict OK if the step completed). result_html kept as fallback.
 		parameter<string> result_json :=
@@ -79,55 +79,57 @@ container RSOpen
 		,	storagename = "= results_folder + '/t641_1_RSopen_prepare_base_data.result.json'";
 	}
 	
-	container t641_3_RSopen_Indicator_results
+	container t641_2_RSopen_Indicator_results
 	{
+		parameter<string> RunAllocation_y2050      := /Allocatie/Zichtjaren/Y2050/impl/Generate;
+	  
 		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
 		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-		parameter<string> result := 
-			'<description>RSopen results, BAU, 2050 <br><I> git revision: 55cf66, git repo: https://github.com/ObjectVision/RSopen; branch: RegressieTest_wLB </I></description>' + 
-			'<metrics>' +
-			'<br><b>BasisJaar</b>' +
-			'<br>Woningen: ' + replace(string(RegressieTestIndicatoren/Basisjaar/Aantal_kilo_Woningen),'.',',') +' kilo woningen <br>' + 
-			'Banen: ' + replace(string(RegressieTestIndicatoren/Basisjaar/Aantal_kilo_Banen),'.',',') +' kilo banen <br>' + 
-			'Pand Footprint : ' + replace(string(RegressieTestIndicatoren/Basisjaar/haPandFootprint_Totaal),'.',',') +' ha <br>' + 
-			'Objecten Verblijfsrecreatie : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Objecten_Verblijfsrecreatie)),'.',',') +' objecten<br>'  + 
-			'Vermogen Wind : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Vermogen_Wind)),'.',',') +' mega watt<br>'  + 
-			'Vermogen Zon : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Vermogen_Zon)),'.',',') +' mega watt<br>'
-			'Ha Landbouw : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Ha_Landbouw)),'.',',') +' ha <br>'
-			'<br><b>2050</b>' +
-			'<br>Woningen: ' + replace(string(RegressieTestIndicatoren/Yr2050/Aantal_kilo_Woningen),'.',',') +' kilo woningen <br>' + 
-			'Banen: ' + replace(string(RegressieTestIndicatoren/Yr2050/Aantal_kilo_Banen),'.',',') +' kilo banen <br>' + 
-			'Pand Footprint : ' + replace(string(RegressieTestIndicatoren/Yr2050/haPandFootprint_Totaal),'.',',') +' ha <br>' + 
-			'Objecten Verblijfsrecreatie : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Objecten_Verblijfsrecreatie)),'.',',') +' objecten<br>'  + 
-			'Vermogen Wind : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Vermogen_Wind)),'.',',') +' mega watt<br>'  + 
-			'Vermogen Zon : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Vermogen_Zon)),'.',',') +' mega watt <br>' +
-			'Ha Landbouw : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Ha_Landbouw)),'.',',') +' ha </metrics>'
-			+ '<result>OK</result>';
+		// parameter<string> result := 
+			// '<description>RSopen results, BAU, 2050 <br><I> git revision: 55cf66, git repo: https://github.com/ObjectVision/RSopen; branch: RegressieTest_wLB </I></description>' + 
+			// '<metrics>' +
+			// '<br><b>BasisJaar</b>' +
+			// '<br>Woningen: ' + replace(string(RegressieTestIndicatoren/Basisjaar/Aantal_kilo_Woningen),'.',',') +' kilo woningen <br>' + 
+			// 'Banen: ' + replace(string(RegressieTestIndicatoren/Basisjaar/Aantal_kilo_Banen),'.',',') +' kilo banen <br>' + 
+			// 'Pand Footprint : ' + replace(string(RegressieTestIndicatoren/Basisjaar/haPandFootprint_Totaal),'.',',') +' ha <br>' + 
+			// 'Objecten Verblijfsrecreatie : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Objecten_Verblijfsrecreatie)),'.',',') +' objecten<br>'  + 
+			// 'Vermogen Wind : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Vermogen_Wind)),'.',',') +' mega watt<br>'  + 
+			// 'Vermogen Zon : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Vermogen_Zon)),'.',',') +' mega watt<br>'
+			// 'Ha Landbouw : ' + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Ha_Landbouw)),'.',',') +' ha <br>'
+			// '<br><b>2050</b>' +
+			// '<br>Woningen: ' + replace(string(RegressieTestIndicatoren/Yr2050/Aantal_kilo_Woningen),'.',',') +' kilo woningen <br>' + 
+			// 'Banen: ' + replace(string(RegressieTestIndicatoren/Yr2050/Aantal_kilo_Banen),'.',',') +' kilo banen <br>' + 
+			// 'Pand Footprint : ' + replace(string(RegressieTestIndicatoren/Yr2050/haPandFootprint_Totaal),'.',',') +' ha <br>' + 
+			// 'Objecten Verblijfsrecreatie : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Objecten_Verblijfsrecreatie)),'.',',') +' objecten<br>'  + 
+			// 'Vermogen Wind : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Vermogen_Wind)),'.',',') +' mega watt<br>'  + 
+			// 'Vermogen Zon : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Vermogen_Zon)),'.',',') +' mega watt <br>' +
+			// 'Ha Landbouw : ' + replace(string(sum(RegressieTestIndicatoren/Yr2050/Ha_Landbouw)),'.',',') +' ha </metrics>'
+			// + '<result>OK</result>';
 
 
-		parameter<string> result_html := result
-		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t641_3_RSopen_indicator_results_test.txt'";
+		// parameter<string> result_html := result
+		// ,	StorageType = "str"
+		// ,	storagename = "= results_folder + '/t641_3_RSopen_indicator_results_test.txt'";
 
 		// JSON measurement (report judges vs references.json at 0% tol). result_html kept as a
 		// fallback until this is validated on a real t641 run; values reuse the result_html expressions.
 		parameter<string> result_json :=
-			'{"schema":2,"test":"t641_3","kind":"reference_comparison"'
+			'{"schema":2,"test":"t641_2","kind":"reference_comparison"'
 			+ ',"title":"RSopen indicator results (BAU, 2050)"'
 			+ ',"compared":"RSopen base-year / 2050 indicators vs 17.4.6 reference"'
 			+ ',"reference":{"source":"reference-file","compare":"scalar","path":"references.json:t641_3"}'
 			+ ',"metrics":['
-			+  '{"name":"Basisjaar Woningen (kilo)","unit":"","value":'             + replace(string(    RegressieTestIndicatoren/Basisjaar/Aantal_kilo_Woningen  ),',','.') + '}'
-			+ ',{"name":"Basisjaar Banen (kilo)","unit":"","value":'               + replace(string(    RegressieTestIndicatoren/Basisjaar/Aantal_kilo_Banen     ),',','.') + '}'
+			+  '{"name":"Basisjaar Woningen","unit":"","value":'             + replace(string(    RegressieTestIndicatoren/Basisjaar/Aantal_Woningen_Totaal  ),',','.') + '}'
+			+ ',{"name":"Basisjaar Banen","unit":"","value":'               + replace(string(    RegressieTestIndicatoren/Basisjaar/Aantal_Banen_Totaal     ),',','.') + '}'
 			+ ',{"name":"Basisjaar Pand Footprint (ha)","unit":"","value":'        + replace(string(    RegressieTestIndicatoren/Basisjaar/haPandFootprint_Totaal ),',','.') + '}'
 			+ ',{"name":"Basisjaar Objecten Verblijfsrecreatie","unit":"","value":'+ replace(string(sum(RegressieTestIndicatoren/Basisjaar/Objecten_Verblijfsrecreatie)),',','.') + '}'
 			+ ',{"name":"Basisjaar Vermogen Wind (MW)","unit":"","value":'         + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Vermogen_Wind)),',','.') + '}'
 			+ ',{"name":"Basisjaar Vermogen Zon (MW)","unit":"","value":'          + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Vermogen_Zon )),',','.') + '}'
 			+ ',{"name":"Basisjaar Ha Landbouw","unit":"","value":'               + replace(string(sum(RegressieTestIndicatoren/Basisjaar/Ha_Landbouw )),',','.') + '}'
-			+ ',{"name":"2050 Woningen (kilo)","unit":"","value":'                 + replace(string(    RegressieTestIndicatoren/Yr2050/Aantal_kilo_Woningen  ),',','.') + '}'
-			+ ',{"name":"2050 Banen (kilo)","unit":"","value":'                    + replace(string(    RegressieTestIndicatoren/Yr2050/Aantal_kilo_Banen     ),',','.') + '}'
+			+ ',{"name":"2050 Woningen","unit":"","value":'                 + replace(string(    RegressieTestIndicatoren/Yr2050/Aantal_Woningen_Totaal  ),',','.') + '}'
+			+ ',{"name":"2050 Banen","unit":"","value":'                    + replace(string(    RegressieTestIndicatoren/Yr2050/Aantal_Banen_Totaal     ),',','.') + '}'
 			+ ',{"name":"2050 Pand Footprint (ha)","unit":"","value":'             + replace(string(    RegressieTestIndicatoren/Yr2050/haPandFootprint_Totaal ),',','.') + '}'
 			+ ',{"name":"2050 Objecten Verblijfsrecreatie","unit":"","value":'     + replace(string(sum(RegressieTestIndicatoren/Yr2050/Objecten_Verblijfsrecreatie)),',','.') + '}'
 			+ ',{"name":"2050 Vermogen Wind (MW)","unit":"","value":'              + replace(string(sum(RegressieTestIndicatoren/Yr2050/Vermogen_Wind)),',','.') + '}'
@@ -135,18 +137,16 @@ container RSOpen
 			+ ',{"name":"2050 Ha Landbouw","unit":"","value":'                     + replace(string(sum(RegressieTestIndicatoren/Yr2050/Ha_Landbouw )),',','.') + '}'
 			+ ']}'
 		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t641_3_RSopen_indicator_indicator.result.json'";
+		,	storagename = "= results_folder + '/t641_2_RSopen_indicator.result.json'";
 	}
 	
 	container RegressieTestIndicatoren : using = "units"
 	{
 		container Basisjaar
 		{
-			parameter<Woning>          Aantal_Woningen_Totaal       := sum(Indicatoren/Basisjaar/Stand/Aantal_Woningen_Totaal);
-			parameter<float32>         Aantal_kilo_Woningen         := float32(Aantal_Woningen_Totaal) / 1000f;
+			parameter<uint32>          Aantal_Woningen_Totaal       := uint32(sum(Indicatoren/Basisjaar/Stand/Aantal_Woningen_Totaal));
 
-			parameter<Job>             Aantal_Banen_Totaal          := sum(Indicatoren/Basisjaar/Stand/Aantal_Banen_Totaal);
-			parameter<float32>         Aantal_kilo_Banen            := float32(Aantal_Banen_Totaal) / 1000f;
+			parameter<uint32>          Aantal_Banen_Totaal          := uint32(sum(Indicatoren/Basisjaar/Stand/Aantal_Banen_Totaal));
 
 			parameter<meter2>          m2PandFootprint_Totaal       := sum(Indicatoren/Basisjaar/Stand/PandFootprint_Werken);
 			parameter<float32>         haPandFootprint_Totaal       := float32(m2PandFootprint_Totaal) / 10000f;
@@ -159,11 +159,9 @@ container RSOpen
 		}
 		 container Yr2050
 		 {
-			parameter<Woning>          Aantal_Woningen_Totaal       := sum(Indicatoren/Y2050/Stand/Aantal_Woningen_Totaal);
-			parameter<float32>         Aantal_kilo_Woningen         := float32(Aantal_Woningen_Totaal) / 1000f;
+			parameter<uint32>          Aantal_Woningen_Totaal       := uint32(sum(Indicatoren/Y2050/Stand/Aantal_Woningen_Totaal));
 			
-			parameter<Job>             Aantal_Banen_Totaal          := sum(Indicatoren/Y2050/Stand/Aantal_Banen_Totaal);
-			parameter<float32>         Aantal_kilo_Banen            := float32(Aantal_Banen_Totaal) / 1000f;
+			parameter<uint32>             Aantal_Banen_Totaal          := uint32(sum(Indicatoren/Y2050/Stand/Aantal_Banen_Totaal));
 
 			parameter<meter2>          m2PandFootprint_Totaal       := sum(Indicatoren/Y2050/Stand/PandFootprint_Werken);
 			parameter<float32>         haPandFootprint_Totaal       := float32(m2PandFootprint_Totaal) / 10000f;

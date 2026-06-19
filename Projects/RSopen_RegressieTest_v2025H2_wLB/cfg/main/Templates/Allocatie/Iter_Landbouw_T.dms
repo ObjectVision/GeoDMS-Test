@@ -61,7 +61,7 @@ Template Iter_Landbouw_T
 		
 		container Claims
 		{
-			parameter<Ha> AreaalStudyGebied := area(rdc_meter/geometry[0], meter2)[ha];
+			parameter<Ha> AreaalStudyGebied := area(rdc_meter/geometry[0], meter2_f64)[ha];
 			
 			container MaxClaims := 
 				for_each_nedv(
@@ -73,12 +73,20 @@ Template Iter_Landbouw_T
 					, uint32
 				);
 			
-			container MinClaims := 
+			container MinClaims0 := 
 				for_each_nedv(
 					  Subsector/name
 					, replace('uint32(VariantData/Claims/@Z@/SectorAllocRegios/@AS@/MinClaims/'+Subsector/name+AllocRegio_StudyArea_orgrel+' / AdminDomain/NrHaPerCell)'
 							,'@Z@' , Context/ThisZichtjaar/name
 							,'@AS@', Context/ThisSectorAllocRegio/name)
+					, AllocRegio
+					, uint32
+				);
+				
+			container MinClaims := 
+				for_each_nedv(
+					  Subsector/name
+					, '(sum_uint32(Allocatie_Prep/Suitabilities/'+Subsector/name+' > 0i, AllocRegio/Per_CompactedAdminDomain)[float32] * AdminDomain/NrHaPerCell) < MinClaims0/'+Subsector/name+'[float32] ? 0 : MinClaims0/'+Subsector/name+''
 					, AllocRegio
 					, uint32
 				);
@@ -102,7 +110,8 @@ Template Iter_Landbouw_T
 		parameter<Bool> IsConversatieveBoer := /ModelParameters/Landbouw/Boervariant == BoervariantK/V/ConservatieveBoer;
 	
 		attribute<Subsector>                        Alloc_Result         (CompactedAdminDomain) := =IsConversatieveBoer ? 'const(null_b, CompactedAdminDomain, Subsector)' : 'Allocatie_Prep/Subsector/LandbouwK_rel[landuse]'; 
-		attribute<Sector/xSubsector>                per_SectorxSubsector (CompactedAdminDomain) := rlookup(Alloc_Result, Sector/xSubsector/LandbouwK_rel); // TO DO weer insschakelen, IntegrityCheck = "statusFlag";
+		// attribute<Sector/xSubsector>                per_SectorxSubsector (CompactedAdminDomain) := rlookup(Alloc_Result, Sector/xSubsector/LandbouwK_rel); // TO DO weer insschakelen, IntegrityCheck = "statusFlag";
+		attribute<Sector/xSubsector>                per_SectorxSubsector (CompactedAdminDomain) := rlookup(Alloc_Result, Sector/xSubsector/LandbouwK_rel), IntegrityCheck = "statusFlag";
 	}
 
 	attribute<Bool> IsNuGealloceerd (CompactedAdminDomain) := IsDefined(Allocatie/Alloc_Result);
