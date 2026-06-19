@@ -110,15 +110,16 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # result_html) -- not "tagname: value", so no underscored tag names leak into the
     # overview. 'result' is the verdict pill; 'description' is shown under the test name.
     indicator_part = ""
-    set_indicator_flag = False
+    # The "changed" badge marks a REFERENCE-EPOCH switch at this version (a refset was
+    # deliberately re-baselined here), NOT per-version drift -- drift that matters already
+    # shows as a red (failing) line via the status. So it is driven by _epoch_changed.
+    set_indicator_flag = bool(parsed_results.get("_epoch_changed", [False])[0])
     for indicator in parsed_results:
-        if indicator in ("result", "description", "issue"):  # verdict pill / shown under title / metadata
+        if indicator in ("result", "description", "issue", "_epoch_changed"):  # verdict pill / under title / metadata / badge flag
             continue
         value = parsed_results[indicator][0]
         status = parsed_results[indicator][1]
-        if not status:
-            set_indicator_flag = True
-        cls = "ind-line changed" if not status else "ind-line"
+        cls = "ind-line changed" if not status else "ind-line"   # red for a failing metric (vs its reference)
         indicator_part += f"<div class='{cls}'>{_add_thousand_separators(value)}</div>"
     if indicator_part:
         indicator_part = f"<div class='ind'>{indicator_part}</div>"
@@ -166,7 +167,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
 
         # indicators        
         indicator_part, indicator_flag = get_indicator_part_from_parsed_results(summary_col_row["results"][1])
-        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="indicators changed vs previous version">&#9650; changed</span>' if indicator_flag else "")
+        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="reference baseline (refset) changed at this version - not a per-version diff">&#9650; changed</span>' if indicator_flag else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
@@ -271,14 +272,22 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             summaries[row][col]["log_filename"] = f"../{log_filename}"
             status_code = experiment.result["status_code"] if "status_code" in experiment.result else 0
             prev_indicators = {}
+            prev_version = None
             prev_col = prev_col_map.get(col)
             # prev_col is always an older version => higher column index, which
             # is processed earlier (experiments run old->new here), so it is
             # already filled in `summaries` by the time we reach this column.
             if prev_col and summaries[row][prev_col]:
                 prev_indicators = summaries[row][prev_col]["results"][1]
+            # Epoch (refset-change) flag: compare to the nearest OLDER column that actually
+            # has data for THIS test -- not the flavour-prev, which may be an empty cell for a
+            # version that didn't run this test (e.g. 20.0.1 wasn't in the chain).
+            for _c in range(col + 1, len(sorted_valid_result_folders) + 1):
+                if summaries[row][_c]:
+                    prev_version = _try_parse_version(get_semantic_version_from_folder_name(sorted_valid_result_folders[_c - 1][0]))
+                    break
 
-            results = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}", experiment.file_comparison, experiment.result.get('indicators'), prev_indicators, getattr(experiment, "indicator_results_file", None))
+            results = get_regression_test_result(status_code, regression_test, f"{result_paths["results_base_folder"]}/{sorted_valid_result_folders[col-1][0]}", experiment.file_comparison, experiment.result.get('indicators'), prev_indicators, getattr(experiment, "indicator_results_file", None), prev_version)
             summaries[row][col]["status"] = results[0]
             summaries[row][col]["results"] = results
         
@@ -363,7 +372,36 @@ def _fmt_pct(dev:float) -> str:
         return f"{dev:+.3f}%"
     return ("+" if dev >= 0 else "-") + "<0.001%"
 
-def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:
+def _resolve_ref(entry, version):
+    """A reference value is either a scalar (one baseline for every version) or a
+    {threshold_version: value} map = version-dependent epochs (connect changed at
+    19.5.0 -> a new accepted baseline; t810 land-use has several epochs). Returns
+    (value, epoch_label) for the highest threshold <= the version under test, or
+    (None, None) if no epoch applies yet."""
+    if not isinstance(entry, dict):
+        return entry, REFERENCE_BUILD
+    best = None  # (threshold_version, value, threshold_str)
+    for thr, val in entry.items():
+        tv = _try_parse_version(thr)
+        if tv is None:
+            continue
+        if version is None or version >= tv:
+            if best is None or tv > best[0]:
+                best = (tv, val, thr)
+    if best is None:
+        return None, None
+    return best[1], f">={best[2]}"   # e.g. ">=19.5.0"
+
+def _version_from_result_path(path):
+    """Version under test, from a result.json path .../<folder>[/result]/<file>."""
+    d = os.path.dirname(path)
+    folder = os.path.basename(os.path.dirname(d)) if os.path.basename(d) == "result" else os.path.basename(d)
+    try:
+        return _try_parse_version(get_semantic_version_from_folder_name(folder))
+    except Exception:
+        return None
+
+def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> tuple:
     """Read a <test>.result.json MEASUREMENT (raw counts / values; GeoDMS does not judge)
     and return the (verdict_text, indicator_dict) the report expects. The verdict is computed
     HERE, so it is tunable with -report-only: a cell metric (n_diff) is judged against 0 within
@@ -384,25 +422,39 @@ def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:
     if single_total:
         lines["cells in test"] = [f"cells in test: {_fmt_num(next(iter(totals)))}", True]
 
+    version = _version_from_result_path(path)
+    epoch_changed = False  # did any metric's reference EPOCH begin at THIS version (a new refset baseline)?
+
     for m in metrics:
         name = str(m.get("name", "metric"))
         unit = m.get("unit", "")
         unit_s = f" {unit}" if unit else ""
         tol = _tol(test, name)
+        ref, epoch = _resolve_ref(refs.get(name), version)
+        if prev_version is not None and ref is not None and epoch != _resolve_ref(refs.get(name), prev_version)[1]:
+            epoch_changed = True   # this metric's reference baseline switched at this version
         if "n_diff" in m:
             n_total = m.get("n_total") or 0
             n_diff = m.get("n_diff") or 0
-            pct = (100.0 * n_diff / n_total) if n_total else 0.0
-            ok = pct <= tol
-            any_fail = any_fail or not ok
             extra = "" if (single_total or m.get("n_total") is None) else f" of {_fmt_num(m.get('n_total'))}"
-            if n_diff:
-                lines[name] = [f"{name}: {_fmt_num(n_diff)} differ{extra} ({pct:.3f}%)", ok]
+            if ref is not None:
+                # Accepted-diff baseline (version-dependent), e.g. t810 land-use: the model
+                # never matches LUISA exactly, so judge the diff-count against the accepted
+                # level for this version's epoch instead of against 0.
+                ok = n_diff == ref
+                any_fail = any_fail or not ok
+                suffix = f"(= {epoch} baseline)" if ok else f"(baseline {epoch} {_fmt_num(ref)})"
+                lines[name] = [f"{name}: {_fmt_num(n_diff)} differ{extra} {suffix}", ok]
             else:
-                lines[name] = [f"{name}: no differences{extra}", ok]
+                pct = (100.0 * n_diff / n_total) if n_total else 0.0
+                ok = pct <= tol
+                any_fail = any_fail or not ok
+                if n_diff:
+                    lines[name] = [f"{name}: {_fmt_num(n_diff)} differ{extra} ({pct:.3f}%)", ok]
+                else:
+                    lines[name] = [f"{name}: no differences{extra}", ok]
         else:  # a measured VALUE -> compare to the trusted reference value
             value = m.get("value")
-            ref = refs.get(name)
             if ref is None:
                 any_pending = True
                 lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (no reference yet)", True]
@@ -413,7 +465,7 @@ def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:
                 if value == ref:
                     lines[name] = [f"{name}: {_fmt_num(value)}{unit_s}", ok]
                 else:
-                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {REFERENCE_BUILD} {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
+                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {epoch} {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
 
     verdict = "False" if any_fail else ("reference pending" if any_pending else "OK")
     parsed = {"result": [verdict, True]}
@@ -425,12 +477,14 @@ def parse_result_json(path:str, prev_indicators:dict={}) -> tuple:
         label = f"{kind} ({metric})" if metric else kind
         parsed[f"artifact:{kind}:{metric}"] = [f"<a href='../{verdir}/{a.get('path')}'>{label}</a>", True]
 
-    for k in list(parsed):
-        if k != "result" and k in prev_indicators and parsed[k][0] != prev_indicators[k][0]:
-            parsed[k][1] = False
+    # "Gewijzigd"-vlag = de referentie-baseline (epoch) is bij DEZE versie gewisseld,
+    # NIET per-versie drift (drift die ertoe doet staat al rood via de status). Zo
+    # markeert het icoon waar een refset bewust is herijkt; latere versies in dezelfde
+    # epoch krijgen 'm niet meer.
+    parsed["_epoch_changed"] = [epoch_changed, True]
     return (verdict, parsed)
 
-def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None) -> tuple:
+def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
 
     # Did the experiment DECLARE a result indicator? If so its <result> is the
     # test's verdict and a missing file must NOT silently become a hollow "OK".
@@ -482,7 +536,7 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     json_cands = sorted(glob.glob(f"{rdir}/{regression_test}*.result.json"))
     if json_cands:
         try:
-            return parse_result_json(json_cands[0], prev_indicators)
+            return parse_result_json(json_cands[0], prev_indicators, prev_version)
         except Exception as e:
             warnings.warn(f"{regression_test}: unreadable result.json ({e}); using legacy result")
 
@@ -1001,8 +1055,8 @@ def collect_and_generate_test_results(version:str, result_paths:dict):
     webbrowser.open(final_html_file)
     return
 
-def add_exp(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, indicator_results_file=None, bin_fn=None, file_comparison:tuple=None, store_results=True) -> list:
-    exps.append(profiler.Experiment(name=name, command=cmd, experiment_folder=exp_fldr, environment_variables=env, cwd=cwd, geodms_logfile=log_fn, indicator_results_file=indicator_results_file, binary_experiment_file=bin_fn, file_comparison=file_comparison, store_results=store_results))
+def add_exp(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, indicator_results_file=None, bin_fn=None, file_comparison:tuple=None, store_results=True, pre_clean=None) -> list:
+    exps.append(profiler.Experiment(name=name, command=cmd, experiment_folder=exp_fldr, environment_variables=env, cwd=cwd, geodms_logfile=log_fn, indicator_results_file=indicator_results_file, binary_experiment_file=bin_fn, file_comparison=file_comparison, store_results=store_results, pre_clean=pre_clean))
     return exps
 
 def add_cexp(exps:list, name, cmd, exp_fldr, env=None, cwd=None, log_fn=None, bin_fn=None, file_comparison:tuple=None) -> list:

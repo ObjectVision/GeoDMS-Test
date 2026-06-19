@@ -1,4 +1,5 @@
 import os
+import shutil
 import re
 import psutil
 from datetime import datetime
@@ -18,7 +19,7 @@ import glob
 import filecmp
 
 class Experiment:
-    def __init__(self, name:str=None, command:str=None, experiment_folder:str=None, environment_variables=None, cwd=None, geodms_logfile:str=None, indicator_results_file:str=None, binary_experiment_file:str=None, file_comparison:tuple=None, store_results:bool=True):
+    def __init__(self, name:str=None, command:str=None, experiment_folder:str=None, environment_variables=None, cwd=None, geodms_logfile:str=None, indicator_results_file:str=None, binary_experiment_file:str=None, file_comparison:tuple=None, store_results:bool=True, pre_clean:list=None):
         self.name                   = name
         self.command                = command
         self.experiment_folder      = experiment_folder
@@ -29,6 +30,7 @@ class Experiment:
         self.binary_experiment_file = binary_experiment_file
         self.file_comparison=file_comparison
         self.store_results = store_results
+        self.pre_clean = pre_clean or []  # dirs/files to delete right before this experiment runs (stale output it regenerates)
         self.result = {}
 
     def __str__(self):
@@ -853,6 +855,23 @@ def RunExperiments(experiments:list[Experiment]):
         geodms_logfile = exp.geodms_logfile
         if os.path.exists(geodms_logfile): # always start with empty log
             os.remove(geodms_logfile)
+
+        # Per-step pre-clean: remove the stale output THIS step regenerates, before it
+        # runs, so a later step never reads leftovers from a previous/partial run (e.g.
+        # the indicator step reading .tif's an aborted allocation left behind). Only
+        # reached when the experiment actually runs (past the reuse-skip above), so a
+        # cached/reused result is never wiped.
+        for _p in getattr(exp, "pre_clean", None) or []:
+            if os.path.isdir(_p):
+                shutil.rmtree(_p, ignore_errors=True)
+                print(f"pre-clean: removed dir {_p}")
+            elif os.path.isfile(_p):
+                try:
+                    os.remove(_p)
+                    print(f"pre-clean: removed file {_p}")
+                except OSError as e:
+                    print(f"pre-clean: could not remove {_p}: {e}")
+
         exp_timeout = timeout_for_experiment(exp)
         exp.result["log"], start_time, status_code, profiler_status, profiler_status_detail = getPerformance(exp, timeout=exp_timeout)
         exp.result["status_code"] = status_code
