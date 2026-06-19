@@ -115,7 +115,7 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # shows as a red (failing) line via the status. So it is driven by _epoch_changed.
     set_indicator_flag = bool(parsed_results.get("_epoch_changed", [False])[0])
     for indicator in parsed_results:
-        if indicator in ("result", "description", "issue", "_epoch_changed"):  # verdict pill / under title / metadata / badge flag
+        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref"):  # verdict pill / under title / metadata / cell flags
             continue
         value = parsed_results[indicator][0]
         status = parsed_results[indicator][1]
@@ -168,6 +168,8 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         # indicators        
         indicator_part, indicator_flag = get_indicator_part_from_parsed_results(summary_col_row["results"][1])
         table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="reference baseline (refset) changed at this version - not a per-version diff">&#9650; changed</span>' if indicator_flag else "")
+        is_ref_cell = summary_col_row["results"][1].get("_is_ref", [False])[0]
+        table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version IS the reference (baseline) for this test">ref</span>' if is_ref_cell else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
@@ -230,7 +232,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)" title="copy GeoDmsRun command">command</a>'
     return f'<td class="cell @@@STATUSCLASS@@@">\
     <details class=@@@TESTCLASS@@@>\
-    <summary><span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@INDICATOR_FLAG@@@</summary>\
+    <summary>@@@REF_PILL@@@<span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@INDICATOR_FLAG@@@</summary>\
     <div class="meta">@@@STARTTIME@@@ &middot; @@@DURATION@@@</div>\
     <div class="metrics">mem @@@HIGHESTCOMMIT@@@ GB &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
     @@@INDICATORS@@@\
@@ -379,8 +381,8 @@ def _resolve_ref(entry, version):
     (value, epoch_label) for the highest threshold <= the version under test, or
     (None, None) if no epoch applies yet."""
     if not isinstance(entry, dict):
-        return entry, REFERENCE_BUILD
-    best = None  # (threshold_version, value, threshold_str)
+        return entry, REFERENCE_BUILD, REFERENCE_BUILD
+    best = None  # (threshold_version, value_entry, threshold_str)
     for thr, val in entry.items():
         tv = _try_parse_version(thr)
         if tv is None:
@@ -389,8 +391,11 @@ def _resolve_ref(entry, version):
             if best is None or tv > best[0]:
                 best = (tv, val, thr)
     if best is None:
-        return None, None
-    return best[1], f">={best[2]}"   # e.g. ">=19.5.0"
+        return None, None, None
+    val = best[1]
+    if isinstance(val, dict):   # {"v": <value>, "src": "<version>"} = the value + the build it came from
+        return val.get("v"), f">={best[2]}", val.get("src")
+    return val, f">={best[2]}", None   # bare value (no recorded source)
 
 def _version_from_result_path(path):
     """Version under test, from a result.json path .../<folder>[/result]/<file>."""
@@ -424,13 +429,16 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
 
     version = _version_from_result_path(path)
     epoch_changed = False  # did any metric's reference EPOCH begin at THIS version (a new refset baseline)?
+    is_ref = False         # is THIS version the source/baseline for any metric? (-> "ref" pill, top-right of the cell)
 
     for m in metrics:
         name = str(m.get("name", "metric"))
         unit = m.get("unit", "")
         unit_s = f" {unit}" if unit else ""
         tol = _tol(test, name)
-        ref, epoch = _resolve_ref(refs.get(name), version)
+        ref, epoch, src = _resolve_ref(refs.get(name), version)
+        if src is not None and version is not None and version == _try_parse_version(src):
+            is_ref = True   # this version's own value IS the reference for this metric/epoch
         if prev_version is not None and ref is not None and epoch != _resolve_ref(refs.get(name), prev_version)[1]:
             epoch_changed = True   # this metric's reference baseline switched at this version
         if "n_diff" in m:
@@ -465,7 +473,7 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
                 if value == ref:
                     lines[name] = [f"{name}: {_fmt_num(value)}{unit_s}", ok]
                 else:
-                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {epoch} {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
+                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
 
     verdict = "False" if any_fail else ("reference pending" if any_pending else "OK")
     parsed = {"result": [verdict, True]}
@@ -482,6 +490,7 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     # markeert het icoon waar een refset bewust is herijkt; latere versies in dezelfde
     # epoch krijgen 'm niet meer.
     parsed["_epoch_changed"] = [epoch_changed, True]
+    parsed["_is_ref"] = [is_ref, True]
     return (verdict, parsed)
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
@@ -981,6 +990,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .ind-line.changed { color:#a32d2d; font-weight:500; }\
               td.testname .testdesc { font-weight:400; font-style:italic; color:#86867e; font-size:11px; white-space:normal; max-width:300px; margin-top:3px; }\
               .flag { color:#a32d2d; font-size:11px; font-weight:500; margin-left:8px; white-space:nowrap; }\
+              .refpill { float:right; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:1px 7px; border-radius:9px; letter-spacing:.3px; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
             </style>\
