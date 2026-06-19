@@ -12,6 +12,7 @@ container regression
 		"geoJSON/write/export/mask_ettenleur;"
 		
 		"geopackage/write/single_layer/polygon;geopackage/write/multi_layer;"
+		"parquet/write/export;" // issue #1142
 		//"geoJSON/write/export"
 		"Tiff/write/export"
 		;
@@ -44,7 +45,8 @@ container regression
 			//&& EsriShape/with_index/Test/All 
 			&& gml/write/results/all  
 			&& geoJSON/write/tests/all 
-			&& geopackage/write/tests/results/all;
+			&& geopackage/write/tests/results/all
+			&& parquet/write/results/all;
 
 		parameter<string> vect_write_str := String(vect_write_all)
 		,	StorageType = "str"
@@ -1742,6 +1744,64 @@ container regression
 					&&  all(PointSet_multi_layer_polygon/test_point)  && all(PointSet_multi_layer_polygon/test_seq)  && all(PointSet_multi_layer_polygon/test_ord)  && all (PointSet_multi_layer_polygon/test_label)
 					&&  all(no_geometry/IntegerAtt) && all(no_geometry/Int64Att) && all(no_geometry/FloatAtt) && all(no_geometry/Float64Att) && all(no_geometry/StringAtt) && all(no_geometry/BoolAtt);
 				}
+			}
+		}
+	}
+	container parquet // issue #1142: writing (Geo)Parquet via gdalwrite.vect must work from the .parquet extension alone
+	{
+		container write
+		{
+			// deliberately NO StorageDriver: the ".parquet" extension alone must select the Parquet driver
+			unit<uint32> export := reference, StorageName = "%localDataProjDir%/regr_results/gdal_vect/parquet/points.parquet", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+			{
+				attribute<int32>   IntegerAtt  := reference/IntegerAtt;
+				attribute<uint32>  UIntegerAtt := reference/UIntegerAtt;
+				attribute<int64>   Int64Att    := reference/Int64Att;
+				attribute<uint64>  UInt64Att   := reference/UInt64Att;
+				attribute<float32> FloatAtt    := reference/FloatAtt;
+				attribute<float64> Float64Att  := reference/Float64Att;
+				attribute<string>  StringAtt   := reference/StringAtt;
+				attribute<bool>    BoolAtt     := reference/BoolAtt;
+			}
+			container reread
+			{
+				unit<uint32> export
+				:	StorageName     = "%localDataProjDir%/regr_results/gdal_vect/parquet/points.parquet"
+				,	StorageType     = "gdal.vect"
+				,	StorageReadOnly = "True"
+				{
+					attribute<int32>   IntegerAtt;
+					attribute<uint32>  UIntegerAtt;
+					attribute<int64>   Int64Att;
+					attribute<uint64>  UInt64Att;
+					attribute<float32> FloatAtt;
+					attribute<float64> Float64Att;
+					attribute<string>  StringAtt;
+					attribute<bool>    BoolAtt;
+				}
+			}
+			container tests
+			{
+				attribute<bool> IntegerAtt  (reference) := eq_or_both_null(union_data(reference, reread/export/IntegerAtt),  reference/IntegerAtt);
+				attribute<bool> UIntegerAtt (reference) := eq_or_both_null(union_data(reference, reread/export/UIntegerAtt), reference/UIntegerAtt);
+				attribute<bool> Int64Att    (reference) := eq_or_both_null(union_data(reference, reread/export/Int64Att),    reference/Int64Att);
+				attribute<bool> UInt64Att   (reference) := eq_or_both_null(union_data(reference, reread/export/UInt64Att),   reference/UInt64Att);
+				attribute<bool> FloatAtt    (reference) := eq_or_both_null(union_data(reference, reread/export/FloatAtt),    reference/FloatAtt);
+				attribute<bool> Float64Att  (reference) := eq_or_both_null(union_data(reference, reread/export/Float64Att),  reference/Float64Att);
+				attribute<bool> StringAtt   (reference) := eq_or_both_null(union_data(reference, reread/export/StringAtt),   reference/StringAtt);
+				attribute<bool> BoolAtt     (reference) := eq_or_both_null(union_data(reference, reread/export/BoolAtt),     reference/BoolAtt);
+			}
+			container results
+			{
+				parameter<bool> IntegerAtt  := all(tests/IntegerAtt);
+				parameter<bool> UIntegerAtt := all(tests/UIntegerAtt);
+				parameter<bool> Int64Att    := all(tests/Int64Att);
+				parameter<bool> UInt64Att   := all(tests/UInt64Att);
+				parameter<bool> FloatAtt    := all(tests/FloatAtt);
+				parameter<bool> Float64Att  := all(tests/Float64Att);
+				parameter<bool> StringAtt   := all(tests/StringAtt);
+				parameter<bool> BoolAtt     := all(tests/BoolAtt);
+				parameter<bool> all         := IntegerAtt && UIntegerAtt && Int64Att && UInt64Att && FloatAtt && Float64Att && StringAtt && BoolAtt;
 			}
 		}
 	}
