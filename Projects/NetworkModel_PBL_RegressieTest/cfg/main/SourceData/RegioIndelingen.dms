@@ -271,7 +271,7 @@ container RegioIndelingen : using = "geometries"
 		attribute<rdc>       geometry (poly)         := ='Gebiedsindelingen/y'+Regio_jaar+'/gpkg/'+replace(rjoin(Regio_jaar, string(Gebiedsindelingen_jaren/jaar), Gebiedsindelingen_jaren/Pad_Gegen_str), '@R@', 'provincie')+'/geometry';
 		attribute<string>    statcode                := ='Gebiedsindelingen/y'+Regio_jaar+'/gpkg/'+replace(rjoin(Regio_jaar, string(Gebiedsindelingen_jaren/jaar), Gebiedsindelingen_jaren/Pad_Gegen_str), '@R@', 'provincie')+'/statcode';
 		attribute<string>    statnaam                := ='Gebiedsindelingen/y'+Regio_jaar+'/gpkg/'+replace(rjoin(Regio_jaar, string(Gebiedsindelingen_jaren/jaar), Gebiedsindelingen_jaren/Pad_Gegen_str), '@R@', 'provincie')+'/statnaam';
-		attribute<string>    name                    := AsItemName(statnaam);
+		attribute<string>    name                    := replace(AsItemName(statnaam), 'Fryslân', 'Friesland');
 		attribute<string>    label                   := statnaam;
 		attribute<.>         per_rdc_100m (rdc_100m) := poly2grid(Geometry, rdc_100m);
 		attribute<uint32>    nr_Inwoners             := sum(/SourceData/Locaties/Inwoners/nr_inwoners,point_in_polygon(/SourceData/Locaties/Inwoners/centroid, geometry));
