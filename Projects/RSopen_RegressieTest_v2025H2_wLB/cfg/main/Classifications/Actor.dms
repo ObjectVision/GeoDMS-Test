@@ -13,7 +13,7 @@ container Actor
 	{
 		attribute<String> Sector_name        : ['Landbouw'];
 		attribute<String> Subsector_name     : ['Totaal'];
-		attribute<UInt32> BrushColor         : [rgb(255,0,0)];
+		attribute<UInt32> BrushColor         : [rgb(166, 242, 140)], DialogType = "BrushColor";
 		attribute<String> ref                : ['Landbouw'];
 		attribute<String> SrcRefRestricties  : ['Landbouw'];
 		attribute<String> Subsector_ref      : ['Classifications/Actor/LandbouwKlasses']; 
@@ -34,7 +34,7 @@ container Actor
 	{
 		attribute<String> Sector_name        : ['Wonen'];
 		attribute<String> Subsector_name     : ['Totaal'];
-		attribute<UInt32> BrushColor         : [rgb(255,0,0)];
+		attribute<UInt32> BrushColor         : [rgb(255,0,0)], DialogType = "BrushColor";
 		attribute<String> ref                : ['Woongebied'];
 		attribute<String> SrcRefRestricties  : ['Woongebied'];
 		attribute<String> Subsector_ref      : ['Classifications/Vastgoed/WP2xVSSH']; 
@@ -55,7 +55,7 @@ container Actor
 	{
 		attribute<String> Sector_name        : ['Werken'];
 		attribute<String> Subsector_name     : ['Totaal'];
-		attribute<UInt32> BrushColor         : [rgb(192,192,192)];
+		attribute<UInt32> BrushColor         : [rgb(192,192,192)], DialogType = "BrushColor";
 		attribute<String> ref                : ['Bedrijventerrein'];
 		attribute<String> SrcRefRestricties  : ['Bedrijventerrein'];
 		attribute<String> Subsector_ref      : ['Classifications/Actor/Jobs6']; 
@@ -81,7 +81,7 @@ container Actor
 	{
 		attribute<String> Sector_name    : ['Natuur','Infra','Water','Overig'];
 		attribute<String> Subsector_name := const('Totaal',.);
-		attribute<UInt32> BrushColor     : [rgb(103,174,0),rgb(115,76,0),rgb(151,219,242),rgb(255,255,255)];
+		attribute<UInt32> BrushColor     : [rgb(103,174,0),rgb(115,76,0),rgb(151,219,242),rgb(255,255,255)], DialogType = "BrushColor";
 	}
 	
 	unit<UInt8> VerblijfsrecreatieK : NrOfRows = 1
@@ -198,7 +198,7 @@ container Actor
 		attribute<String> StandVar_name      := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/StandVar_name', ',')+')';
 		attribute<String> StandVar_valueType := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/StandVar_valueType', ',')+')';
 		attribute<String> Subsector_ref      := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/Subsector_ref', ',')+')';
-		attribute<UInt32> BrushColor         := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/BrushColor', ',')+')';
+		attribute<UInt32> BrushColor         := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/BrushColor', ',')+')', DialogType = "BrushColor";
 		attribute<String> ValUnit_ref        := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/ValUnit_ref', ',')+')';
 		attribute<String> ValUnitDens_ref    := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/ValUnitDens_ref', ',')+')';
 		attribute<String> ValUnit_ref2       := ='union_data(., '+asList(/VariantParameters/SectorAllocRegio/Uq_Sectors/Sectorname+'K/ValUnit_ref2', ',')+')';
@@ -253,7 +253,7 @@ container Actor
 		}
 		unit<UInt8> xSubsector_uint8 := range(uint8, 0b, uint8(#xSubsector))
 		{
-			attribute<UInt32> BrushColor := union_data(.,  xSubsector/BrushColor);
+			attribute<UInt32> BrushColor := union_data(.,  xSubsector/BrushColor), DialogType = "BrushColor";
 		}
 		
 		unit<UInt32> Wonen_x_Werken := ='union_unit('+Subsector_ref[V/Wonen]+','+Subsector_ref[V/Werken]+')'

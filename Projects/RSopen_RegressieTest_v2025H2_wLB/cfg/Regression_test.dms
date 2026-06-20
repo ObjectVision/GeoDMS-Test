@@ -137,7 +137,7 @@ container RSOpen
 			+ ',{"name":"2050 Ha Landbouw","unit":"","value":'                     + replace(string(sum(RegressieTestIndicatoren/Yr2050/Ha_Landbouw )),',','.') + '}'
 			+ ']}'
 		,	StorageType = "str"
-		,	storagename = "= results_folder + '/t641_2_RSopen_indicator.result.json'";
+		,	storagename = "= results_folder + '/t641_2_RSopen_Allocatie.result.json'";
 	}
 	
 	container RegressieTestIndicatoren : using = "units"
@@ -170,7 +170,7 @@ container RSOpen
 			parameter<MW>              Vermogen_Wind                := sum(Indicatoren/Y2050/Stand/Vermogen_Wind);
 			parameter<MW>              Vermogen_Zon                 := sum(Indicatoren/Y2050/Stand/Vermogen_Zon);
 
-			parameter<Ha>              Ha_Landbouw                  := sum(Indicatoren/Y2050/Stand/Aantal_Ha_Landbouw);
+			parameter<Ha>              Ha_Landbouw                  := sum(Indicatoren/Y2050/Sector_rel == /Classifications/Actor/Sector/V/Landbouw ? Geography/AdminDomain/NrHaPerCell : 0[Ha]); 
 		}
 	}
 }

@@ -1,24 +1,10 @@
 container EuClueScanner
-:	IntegrityCheck = "GeoDmsVersion() >= 7.022"  // 7.022 needed for improved poly2grid function
-//:	IntegrityCheck = "GeoDmsVersion() >= 7.015"  // 7.015 needed for adaptations to the code-breaking new reprojections
-//:	IntegrityCheck = "GeoDmsVersion() >= 7.005"  // 7.005 needed for derivation of the platform specific %OdbcExcelDriver% placeHolder
-//:	IntegrityCheck = "GeoDmsVersion() >= 6.0309" // 6.031 required for array-based FullPathName
-//:	IntegrityCheck = "GeoDmsVersion() >= 6.0169" // required for d_alloc on checking that Suitabilities are Int32 for fixing issue 100
-//	"&& (GeoDmsVersion() < 6.0189 || GeoDmsVersion() > 6.0229)" // versions 6.018..6.022 seem to have a bug in exporting .dbf files. Is fixed in 6.023
-//:	IntegrityCheck = "GeoDmsVersion() >= 6.016"  // required for tile support of Unique operator used in the renumbering of ClaimRegions
-//:	IntegrityCheck = "GeoDmsVersion() >= 6.014"  // required for writing tiffs (as in LisFlood indicator production)
-//:	IntegrityCheck = "GeoDmsVersion() >= 6.012"  // required for reading/writing numeric arrays from/to str storage managers (for binary files).
-//:	IntegrityCheck = "GeoDmsVersion() >= 6.011"
-
-,	FreeData = "True"
 {
 	container ConfigSettings : IsHidden = "True"
-	{
-		
+	{		
 		container Overridable: Descr = "From 6.069 on only this container will be overridable with Tools->Options->ConfigSettings that sets user/machine specific overrides in the registry"
 		{
 			parameter<String> RunRegions: [ 'JrcRegion' ]; // @USERINPUT: Nuts1 or JrcRegion
-			// parameter<String> SourceDataProjDir: ['%SourceDataDir%/RegressionTests/EuClueScanner'];
 			parameter<String> SourceDataProjDir: ['%SourceDataDir%'];
 			// Central reference-files folder (per-test submap t810/, ...). full.py overrides this via
 			// GEODMS_Overridable_TestRefDir; same mechanism + default as Regression/cfg/stam.dms.
@@ -42,12 +28,19 @@ container EuClueScanner
 		container LU
 		{
 			// attribute<Classifications/LU/ViewType> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050.tif";
-			attribute<Classifications/LU/ViewType> recorded   (domainGrid) : StorageName = "%TestRefDir%/t810/Czechia_P2050.tif";
-			// calculated is ALSO persisted as a per-version .tif in the result folder, so the
-			// cell-comparison can be re-judged against a changed reference WITHOUT re-running
-			// the ~5min model (the diff-count alone lives in the result.json; the raster does not).
-			attribute<Classifications/LU/ViewType> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/ClippedLandUseVT
+			// Version-dependent reference (re-baselined to actual model output, 0% tol): 17.4.6's
+			// output is the baseline up to 20.2.1; 20.2.1 sets a new baseline from then on
+			// (20.1.0 regression #1136 is measured against the 17.4.6 baseline -> red).
+			// NB GeoDmsVersion() encodes the version as MAJOR.MMPP, so 20.2.1 = 20.0201 and the
+			// 20.1.x|20.2.x split is 20.02d (NOT 20.2d, which is 20.20.xx and wrongly catches 20.2.1).
+			attribute<Classifications/LU/ViewType> recorded   (domainGrid) : StorageName = "= GeoDmsVersion() < 20.02d ? '%TestRefDir%/t810/Czechia_P2050_v17_4_6.tif' : '%TestRefDir%/t810/Czechia_P2050_v20_2_1.tif'";
+			// Two-step (like t405/t641): the COMPUTE step runs the model and WRITES the result tif
+			// (make_calculated, gdalwrite.grid); the INDICATOR step READS it back (calculated,
+			// read-only) so the comparison has NO model dependency -> re-judge vs a changed ref by
+			// re-running only the indicator step (no ~5min model recompute).
+			attribute<Classifications/LU/ViewType> make_calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/ClippedLandUseVT
 			,	StorageName = "= results_folder + '/t810_ValLuisa_Czech_LU.tif'", StorageType = "gdalwrite.grid";
+			attribute<Classifications/LU/ViewType> calculated      (domainGrid) : StorageName = "= results_folder + '/t810_ValLuisa_Czech_LU.tif'";
 			
 			attribute<bool> test (domainGrid) := calculated == recorded;
 			// measurement vs reference: # differing cells (the report computes % + verdict)
@@ -57,9 +50,10 @@ container EuClueScanner
 		container POP
 		{
 			// attribute<Int32> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050_Qi.tif";
-			attribute<Int32> recorded   (domainGrid) : StorageName = "%TestRefDir%/t810/Czechia_P2050_Qi.tif";
-			attribute<Int32> calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi
+			attribute<Int32> recorded   (domainGrid) : StorageName = "= GeoDmsVersion() < 20.02d ? '%TestRefDir%/t810/Czechia_P2050_Qi_v17_4_6.tif' : '%TestRefDir%/t810/Czechia_P2050_Qi_v20_2_1.tif'";
+			attribute<Int32> make_calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi
 			,	StorageName = "= results_folder + '/t810_ValLuisa_Czech_Pop.tif'", StorageType = "gdalwrite.grid";
+			attribute<Int32> calculated      (domainGrid) : StorageName = "= results_folder + '/t810_ValLuisa_Czech_Pop.tif'";
 			
 			attribute<bool> test (domainGrid) := MakeDefined(calculated, int32(0)) == MakeDefined(recorded, int32(0));
 			// measurement vs reference: # differing cells (the report computes % + verdict)
@@ -69,6 +63,10 @@ container EuClueScanner
 		parameter<string> TempDir                  := '%LocalDataDir%/Regression/log';
 		parameter<string> results_folder_filename  := TempDir + '/results_folder.txt';
 		parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+
+		// COMPUTE-step target (step 1): force the model + WRITE both result tifs (read back by the
+		// indicator step via LU/calculated + POP/calculated). Scalar -> GeoDmsRun exits 0.
+		parameter<uint32> WriteResultTifs := sum(uint32(IsDefined(LU/make_calculated))) + sum(uint32(IsDefined(POP/make_calculated)));
 
 		// --- structured MEASUREMENT (raw counts; the report judges, see TEST_OUTPUT_STANDARD.md) ---
 		container m_lu  := TestResult/metric('land-use cells', 'cells', uint32(#domainGrid), LU/nr_diff);
