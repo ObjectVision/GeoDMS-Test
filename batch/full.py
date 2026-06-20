@@ -293,8 +293,8 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     regression_test_paths["AlleenEindjaar"] = "FALSE"
     # VariantDataOntkoppeld wordt bewust NIET via een env-var gezet: de config
     # is leidend (ModelParameters/VariantDataOntkoppeld := FALSE). Daardoor
-    # berekent de allocatie (t641_3) de variantdata inline en is de losse
-    # WriteVariantData-stap (voorheen t641_2) overbodig. Zie issue #22.
+    # berekent de allocatie de variantdata inline en is een aparte
+    # WriteVariantData-stap overbodig. Zie issue #22.
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t641_1 — RuimteScanner Open v2025H2: basisdata genereren (WriteBasedata).
     regression.add_exp(exps, name=f"{result_folder_name}__t641_1_RSopen_MakeBaseData", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t641_1_RSopen_MakeBaseData.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["RSopen_RegressieTestPath_v2025"]}/Regression_test.dms WriteBasedata/Generate_Run1", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t641_1_RSopen_MakeBaseData.txt", pre_clean=[f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/rsopen_regressietest_v2025h2_wlb/BaseData"])
