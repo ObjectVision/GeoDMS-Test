@@ -1005,19 +1005,19 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               td.cell.fail { background:#ffd1d1; border-left-color:#d6453d; }\
               td.cell.warn { background:#ffe4b8; border-left-color:#d98a1f; }\
               td.cell.skip { background:#ececE8; border-left-color:#b8b8b0; }\
-              summary { cursor:pointer; list-style:none; outline:none; display:flex; align-items:center; flex-wrap:wrap; row-gap:3px; } summary::-webkit-details-marker { display:none; }\
+              summary { cursor:pointer; list-style:none; outline:none; display:flex; align-items:center; flex-wrap:wrap; gap:3px 8px; } summary::-webkit-details-marker { display:none; }\
               .pill { display:inline-flex; align-items:center; font-size:11.5px; font-weight:500; padding:2px 10px; border-radius:999px; color:#fff; }\
               .pill.ok { background:#2e9e5b; } .pill.fail { background:#d6453d; } .pill.warn { background:#cf8420; } .pill.timeout { background:#3a78c2; } .pill.skip { background:#9a9a92; }\
-              .code { color:#a6a69e; font-size:11px; margin-left:7px; }\
+              .code { color:#a6a69e; font-size:11px; } .code:empty { display:none; }\
               .meta { color:#6b6b64; font-size:11.5px; margin-top:6px; white-space:nowrap; }\
               .metrics { color:#444441; font-size:12px; margin-top:3px; white-space:nowrap; font-variant-numeric:tabular-nums; }\
               .ind { margin-top:6px; padding-top:5px; border-top:1px solid #ececE6; font-size:11.5px; color:#5f5e5a; }\
               .ind-line.changed { color:#a32d2d; font-weight:500; }\
               td.testname .testdesc { font-weight:400; font-style:italic; color:#86867e; font-size:11px; white-space:normal; max-width:300px; margin-top:3px; }\
-              .flag { color:#a32d2d; font-size:11px; font-weight:500; margin-left:8px; white-space:nowrap; }\
+              .flag { color:#a32d2d; font-size:11px; font-weight:500; white-space:nowrap; }\
               .perf-warn { color:#b8860b; font-weight:600; }\
               .perf-bad { color:#a32d2d; font-weight:700; }\
-              .perfbadge { font-size:10px; font-weight:600; margin-left:6px; white-space:nowrap; }\
+              .perfbadge { font-size:10px; font-weight:600; white-space:nowrap; }\
               .refpill { margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:1px 7px; border-radius:9px; letter-spacing:.3px; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
