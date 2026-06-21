@@ -53,7 +53,7 @@ def get_status_meta(status:str) -> tuple:
     if status == "error":
         return ("error", "fail", "")
     if status in ("False", "false"):
-        return ("test failed", "fail", "")
+        return ("failed", "fail", "")
     if status.lstrip("-").isdigit():
         if int(status) < 0:
             return ("not run", "skip", "")
@@ -177,6 +177,13 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         _mcls = _perf_class(summary_col_row["highest_commit"], _min_mem, 1.10, 1.25, 0.5)  # >=0.5GB AND >=10%/25% heavier
         _mval = fmt_gb(summary_col_row["highest_commit"])
         table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="vs lightest run in this row">{_mval}</span>' if _mcls else _mval)
+        # perf badge next to the status pill: a green/OK cell can still hide a 2x-memory or much-slower run
+        _pbadge = ""
+        if _mcls:
+            _pbadge += f'<span class="perfbadge {_mcls}" title="peak memory vs the lightest run in this row">mem +{round((summary_col_row["highest_commit"]/_min_mem - 1) * 100)}%</span>'
+        if _dcls:
+            _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs the fastest run in this row">dur +{round((summary_col_row["duration"]/_min_dur - 1) * 100)}%</span>'
+        table_col_header = table_col_header.replace("@@@PERF_BADGE@@@", _pbadge)
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
         table_col_header = table_col_header.replace("@@@TOTALREAD@@@", fmt_gb(summary_col_row["total_read"]))
         table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", fmt_gb(summary_col_row["total_write"]))
@@ -250,7 +257,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)" title="copy GeoDmsRun command">command</a>'
     return f'<td class="cell @@@STATUSCLASS@@@">\
     <details class=@@@TESTCLASS@@@>\
-    <summary>@@@REF_PILL@@@<span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@INDICATOR_FLAG@@@</summary>\
+    <summary>@@@REF_PILL@@@<span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@PERF_BADGE@@@@@@INDICATOR_FLAG@@@</summary>\
     <div class="meta">@@@STARTTIME@@@ &middot; @@@DURATION@@@</div>\
     <div class="metrics">mem @@@HIGHESTCOMMIT@@@ GB &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
     @@@INDICATORS@@@\
@@ -1010,6 +1017,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .flag { color:#a32d2d; font-size:11px; font-weight:500; margin-left:8px; white-space:nowrap; }\
               .perf-warn { color:#b8860b; font-weight:600; }\
               .perf-bad { color:#a32d2d; font-weight:700; }\
+              .perfbadge { font-size:10px; font-weight:600; margin-left:6px; white-space:nowrap; }\
               .refpill { float:right; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:1px 7px; border-radius:9px; letter-spacing:.3px; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
