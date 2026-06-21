@@ -115,7 +115,7 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # shows as a red (failing) line via the status. So it is driven by _epoch_changed.
     set_indicator_flag = bool(parsed_results.get("_epoch_changed", [False])[0])
     for indicator in parsed_results:
-        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref"):  # verdict pill / under title / metadata / cell flags
+        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_ref_src"):  # verdict pill / under title / metadata / cell flags
             continue
         value = parsed_results[indicator][0]
         status = parsed_results[indicator][1]
@@ -195,7 +195,9 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         is_ref_cell = summary_col_row["results"][1].get("_is_ref", [False])[0]
         # triangle = the comparison baseline (refset) changes here; suppress it on the ref-source cell,
         # where the "ref" pill already conveys it (avoids the double marker -- e.g. t910 at the new ref).
-        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="comparison baseline (refset) changed starting at this version">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
+        _refsrc = summary_col_row["results"][1].get("_ref_src", [""])[0]
+        _flag_title = "comparison baseline (refset) changed starting at this version" + (f" -- reference captured from {_refsrc}" if _refsrc else "")
+        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", f'<span class="flag" title="{_flag_title}">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
         table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version IS the reference (baseline) for this test">ref</span>' if is_ref_cell else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
@@ -457,6 +459,7 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     version = _version_from_result_path(path)
     epoch_changed = False  # did any metric's reference EPOCH begin at THIS version (a new refset baseline)?
     is_ref = False         # is THIS version the source/baseline for any metric? (-> "ref" pill, top-right of the cell)
+    epoch_srcs = set()     # which version(s) the NEW refset was captured from when the epoch changes here (-> triangle hover)
 
     for m in metrics:
         name = str(m.get("name", "metric"))
@@ -468,6 +471,8 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
             is_ref = True   # this version's own value IS the reference for this metric/epoch
         if prev_version is not None and ref is not None and epoch != _resolve_ref(refs.get(name), prev_version)[1]:
             epoch_changed = True   # this metric's reference baseline switched at this version
+            if src:
+                epoch_srcs.add(src)   # the version this new refset was captured from (for the triangle hover)
         if "n_diff" in m:
             n_total = m.get("n_total") or 0
             n_diff = m.get("n_diff") or 0
@@ -518,6 +523,7 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     # epoch krijgen 'm niet meer.
     parsed["_epoch_changed"] = [epoch_changed, True]
     parsed["_is_ref"] = [is_ref, True]
+    parsed["_ref_src"] = [", ".join(sorted(epoch_srcs)), True]
     return (verdict, parsed)
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
