@@ -161,13 +161,12 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = regression_test_row.replace("@@@TESTNAME_RAW@@@", testname)
     regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
     regression_test_row = regression_test_row.replace("@@@TESTDESC@@@", get_test_description(testname))
-    # perf-colouring baseline: the REFERENCE build (the same baseline the indicators use),
-    # so a slower/heavier cell reads as a regression vs the reference -- not vs whichever run
-    # happened to be fastest this time (which would flag the reference build itself).
-    _refcell = next((c for c in summary_row[1:] if c and c.get("version") == REFERENCE_BUILD), None)
-    _base_dur = _refcell["duration"] if _refcell else 0
-    _base_mem = _refcell["highest_commit"] if _refcell else 0
-    _dwarn, _dbad = _dur_thresholds(_base_dur)   # duration bar slides with the reference run's length
+    # perf-colouring baseline = the oldest build of the SAME platform, so mem/time read as a
+    # regression on the cell's own platform -- never Linux-vs-Windows. Windows (.m/.c/pre-20)
+    # measures against 17.4.6; Linux (.l) against the oldest .l run (none older -> no perf badge).
+    _win_ref = next((c for c in summary_row[1:] if c and c.get("version") == REFERENCE_BUILD), None)
+    _lin_runs = [c for c in summary_row[1:] if c and c.get("flavor") == "l"]
+    _lin_ref = _lin_runs[-1] if _lin_runs else None   # columns run newest->oldest, so [-1] is the oldest .l
     for summary_col_row in summary_row[1:]:
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
@@ -179,9 +178,17 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@STATUSLABEL@@@", status_label)
         table_col_header = table_col_header.replace("@@@STATUSCLASS@@@", status_class)
         table_col_header = table_col_header.replace("@@@STATUSCODE@@@", status_code)
-        _dcls = _perf_class(summary_col_row["duration"], _base_dur, _dwarn, _dbad, 10)   # graduated %: longer ref run -> lower % flags (10s floor kills sub-floor wobble)
+        # baseline for THIS cell: same platform (Linux -> oldest .l; Windows -> 17.4.6); a cell is never its own baseline
+        _pref = _lin_ref if summary_col_row.get("flavor") == "l" else _win_ref
+        if _pref is summary_col_row:
+            _pref = None
+        _base_dur = _pref["duration"] if _pref else 0
+        _base_mem = _pref["highest_commit"] if _pref else 0
+        _dwarn, _dbad = _dur_thresholds(_base_dur)
+        _pbl = (_pref["version"] + ("." + _pref.get("flavor") if _pref.get("flavor") else "")) if _pref else ""
+        _dcls = _perf_class(summary_col_row["duration"], _base_dur, _dwarn, _dbad, 10)   # graduated %, same-platform baseline (10s floor kills sub-floor wobble)
         _dval = format_duration(summary_col_row["duration"])
-        table_col_header = table_col_header.replace("@@@DURATION@@@", f'<span class="{_dcls}" title="duration vs the {REFERENCE_BUILD} reference build">{_dval}</span>' if _dcls else _dval)
+        table_col_header = table_col_header.replace("@@@DURATION@@@", f'<span class="{_dcls}" title="duration vs {_pbl}">{_dval}</span>' if _dcls else _dval)
 
         #2025 05 21 : 12.24.32
         command = summary_col_row["command"]#.replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
@@ -196,15 +203,15 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y-%m-%d %H:%M") if start_time_value else "n/a")
-        _mcls = _perf_class(summary_col_row["highest_commit"], _base_mem, 1.10, 1.25, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=10%/25% OR >=10/32 GB heavier than the reference
+        _mcls = _perf_class(summary_col_row["highest_commit"], _base_mem, 1.10, 1.25, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=10%/25% OR >=10/32 GB heavier than the same-platform baseline
         _mval = fmt_gb(summary_col_row["highest_commit"])
-        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="peak memory vs the {REFERENCE_BUILD} reference build">{_mval}</span>' if _mcls else _mval)
+        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="peak memory vs {_pbl}">{_mval}</span>' if _mcls else _mval)
         # perf badge next to the status pill: a green/OK cell can still hide a 2x-memory or much-slower run
         _pbadge = ""
         if _mcls:
-            _pbadge += f'<span class="perfbadge {_mcls}" title="peak memory vs the {REFERENCE_BUILD} reference build">mem +{round((summary_col_row["highest_commit"]/_base_mem - 1) * 100)}%</span>'
+            _pbadge += f'<span class="perfbadge {_mcls}" title="peak memory vs {_pbl}">mem +{round((summary_col_row["highest_commit"]/_base_mem - 1) * 100)}%</span>'
         if _dcls:
-            _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs the {REFERENCE_BUILD} reference build">dur +{round((summary_col_row["duration"]/_base_dur - 1) * 100)}%</span>'
+            _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs {_pbl}">dur +{round((summary_col_row["duration"]/_base_dur - 1) * 100)}%</span>'
         table_col_header = table_col_header.replace("@@@PERF_BADGE@@@", _pbadge)
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
         table_col_header = table_col_header.replace("@@@TOTALREAD@@@", fmt_gb(summary_col_row["total_read"]))
