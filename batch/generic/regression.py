@@ -115,7 +115,7 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # shows as a red (failing) line via the status. So it is driven by _epoch_changed.
     set_indicator_flag = bool(parsed_results.get("_epoch_changed", [False])[0])
     for indicator in parsed_results:
-        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_ref_src"):  # verdict pill / under title / metadata / cell flags
+        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_epoch_hover"):  # verdict pill / under title / metadata / cell flags
             continue
         value = parsed_results[indicator][0]
         status = parsed_results[indicator][1]
@@ -125,27 +125,49 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
         indicator_part = f"<div class='ind'>{indicator_part}</div>"
     return [indicator_part, set_indicator_flag]
 
-def _perf_class(value, baseline, warn_ratio, bad_ratio, floor):
-    # Colour a duration/memory cell by how far it sits ABOVE the row's fastest/lightest run.
-    # Robust to machine noise: needs BOTH a large relative ratio AND an absolute jump >= floor,
-    # so seconds / 0.x-GB wobble on fast/light tests stays neutral (3:50-vs-4:00, 5s-vs-9s),
-    # while 1:30-vs-2:00 turns amber/red. floor is in the value's own unit (sec / GB).
-    if not baseline or not value or (value - baseline) < floor:
+def _perf_class(value, baseline, warn_ratio, bad_ratio, floor, abs_warn=None, abs_bad=None):
+    # Colour a duration/memory cell by how far it sits ABOVE the reference build's value.
+    # Needs an absolute jump >= floor first (kills sub-floor wobble: 3:50-vs-4:00, 5s-vs-9s),
+    # then flags on EITHER a large relative ratio OR a large absolute delta. The absolute arm
+    # matters on long/heavy tests: t641_2 ran +10 min (~+25%, a hair under the ratio) and a
+    # ratio-only check missed it. abs_warn/abs_bad are in the value's own unit (sec / GB).
+    if not baseline or not value:
+        return ""
+    delta = value - baseline
+    if delta < floor:
         return ""
     r = value / baseline
-    return "perf-bad" if r >= bad_ratio else ("perf-warn" if r >= warn_ratio else "")
+    if r >= bad_ratio or (abs_bad is not None and delta >= abs_bad):
+        return "perf-bad"
+    if r >= warn_ratio or (abs_warn is not None and delta >= abs_warn):
+        return "perf-warn"
+    return ""
+
+def _dur_thresholds(baseline):
+    # Graduated duration thresholds: a long run needs only a small % to read as a notable
+    # slowdown (10% of 1h = 6 min), a short run needs a large % (100% of 10s = 10s) -- the same
+    # +X% is wildly different wall-clock on a 10s vs a 1h test, so the bar slides with length.
+    # baseline is in seconds; returns (warn_ratio, bad_ratio).
+    for max_sec, warn, bad in ((60, 2.00, 3.00), (300, 1.50, 2.00), (1200, 1.30, 1.60), (3600, 1.15, 1.35)):
+        if baseline < max_sec:
+            return warn, bad
+    return 1.10, 1.25   # >= 1 hour: >=10% warn / >=25% bad
 
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     testname = summary_row[0]
     testclass = testname.replace(" ", "_")
-    regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", testname)
+    regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", get_test_code(testname))
+    regression_test_row = regression_test_row.replace("@@@TESTNAME_RAW@@@", testname)
     regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
     regression_test_row = regression_test_row.replace("@@@TESTDESC@@@", get_test_description(testname))
-    # perf-colouring baselines: the fastest / lightest run across this test's versions
-    _pcells = [c for c in summary_row[1:] if c]
-    _min_dur = min([c["duration"] for c in _pcells if c.get("duration")], default=0)
-    _min_mem = min([c["highest_commit"] for c in _pcells if c.get("highest_commit")], default=0)
+    # perf-colouring baseline: the REFERENCE build (the same baseline the indicators use),
+    # so a slower/heavier cell reads as a regression vs the reference -- not vs whichever run
+    # happened to be fastest this time (which would flag the reference build itself).
+    _refcell = next((c for c in summary_row[1:] if c and c.get("version") == REFERENCE_BUILD), None)
+    _base_dur = _refcell["duration"] if _refcell else 0
+    _base_mem = _refcell["highest_commit"] if _refcell else 0
+    _dwarn, _dbad = _dur_thresholds(_base_dur)   # duration bar slides with the reference run's length
     for summary_col_row in summary_row[1:]:
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
@@ -157,9 +179,9 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@STATUSLABEL@@@", status_label)
         table_col_header = table_col_header.replace("@@@STATUSCLASS@@@", status_class)
         table_col_header = table_col_header.replace("@@@STATUSCODE@@@", status_code)
-        _dcls = _perf_class(summary_col_row["duration"], _min_dur, 1.25, 1.5, 30)   # >=30s AND >=25%/50% slower
+        _dcls = _perf_class(summary_col_row["duration"], _base_dur, _dwarn, _dbad, 10)   # graduated %: longer ref run -> lower % flags (10s floor kills sub-floor wobble)
         _dval = format_duration(summary_col_row["duration"])
-        table_col_header = table_col_header.replace("@@@DURATION@@@", f'<span class="{_dcls}" title="vs fastest run in this row">{_dval}</span>' if _dcls else _dval)
+        table_col_header = table_col_header.replace("@@@DURATION@@@", f'<span class="{_dcls}" title="duration vs the {REFERENCE_BUILD} reference build">{_dval}</span>' if _dcls else _dval)
 
         #2025 05 21 : 12.24.32
         command = summary_col_row["command"]#.replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
@@ -174,15 +196,15 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y-%m-%d %H:%M") if start_time_value else "n/a")
-        _mcls = _perf_class(summary_col_row["highest_commit"], _min_mem, 1.10, 1.25, 0.5)  # >=0.5GB AND >=10%/25% heavier
+        _mcls = _perf_class(summary_col_row["highest_commit"], _base_mem, 1.10, 1.25, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=10%/25% OR >=10/32 GB heavier than the reference
         _mval = fmt_gb(summary_col_row["highest_commit"])
-        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="vs lightest run in this row">{_mval}</span>' if _mcls else _mval)
+        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="peak memory vs the {REFERENCE_BUILD} reference build">{_mval}</span>' if _mcls else _mval)
         # perf badge next to the status pill: a green/OK cell can still hide a 2x-memory or much-slower run
         _pbadge = ""
         if _mcls:
-            _pbadge += f'<span class="perfbadge {_mcls}" title="peak memory vs the lightest run in this row">mem +{round((summary_col_row["highest_commit"]/_min_mem - 1) * 100)}%</span>'
+            _pbadge += f'<span class="perfbadge {_mcls}" title="peak memory vs the {REFERENCE_BUILD} reference build">mem +{round((summary_col_row["highest_commit"]/_base_mem - 1) * 100)}%</span>'
         if _dcls:
-            _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs the fastest run in this row">dur +{round((summary_col_row["duration"]/_min_dur - 1) * 100)}%</span>'
+            _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs the {REFERENCE_BUILD} reference build">dur +{round((summary_col_row["duration"]/_base_dur - 1) * 100)}%</span>'
         table_col_header = table_col_header.replace("@@@PERF_BADGE@@@", _pbadge)
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
         table_col_header = table_col_header.replace("@@@TOTALREAD@@@", fmt_gb(summary_col_row["total_read"]))
@@ -195,8 +217,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         is_ref_cell = summary_col_row["results"][1].get("_is_ref", [False])[0]
         # triangle = the comparison baseline (refset) changes here; suppress it on the ref-source cell,
         # where the "ref" pill already conveys it (avoids the double marker -- e.g. t910 at the new ref).
-        _refsrc = summary_col_row["results"][1].get("_ref_src", [""])[0]
-        _flag_title = "comparison baseline (refset) changed starting at this version" + (f" -- reference captured from {_refsrc}" if _refsrc else "")
+        _flag_title = summary_col_row["results"][1].get("_epoch_hover", [""])[0] or "comparison baseline (refset) changed at this version"
         table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", f'<span class="flag" title="{_flag_title}">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
         table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version IS the reference (baseline) for this test">ref</span>' if is_ref_cell else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
@@ -206,7 +227,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     return f'<tr>{regression_test_row}</tr>\n'
 
 TEST_DESCRIPTIONS = {
-    "t010": "Operator/function test — exercises many DMS operators on the Operator config.",
+    "t010": "Operator/function test: exercises many DMS operators on the Operator config.",
     "t050": "Storage: write an ESRI shapefile (polygon) via the storage manager; round-trip.",
     "t060": "Storage: build a BAG snapshot (Utrecht) as GeoPackage; compare to reference.",
     "t100": "Network: connect PC6 points to the road network (NL/BE/DE); compare to reference.",
@@ -221,34 +242,41 @@ TEST_DESCRIPTIONS = {
     "t405_2_2": "NetworkModel PBL: indicator comparison of the no-fence run.",
     "t405_3": "NetworkModel PBL, step 2.2: tiled model run with fence.",
     "t405_3_2": "NetworkModel PBL: indicator comparison of the fenced run.",
-    "t410": "NetworkModel EU: indicator-results regression test.",
-    "t611": "LUS Demo 2023 (Land Use Scanner): compare allocation results.",
-    "t641_1": "RuimteScanner Open v2025H2: generate base data (write BaseData).",
-    "t641_1_2": "RSopen: indicator comparison of the base-data step.",
-    "t641_3": "RSopen: land-use allocation for target year 2050.",
-    "t710": "2UP global urbanisation model: indicator results.",
-    "t720": "2BURP model: indicator-results regression test.",
-    "t810": "ValLuisa / 100m DynaPop (EuClueScanner): land use & population, Czechia 2050.",
-    "t910": "Cusa2 Africa model: indicator-results regression test.",
-    "t1630": "GUI robustness: fully expand RSLight_2020 SourceData/Claims/ReadData.",
+    "t410": "NetworkModel EU: indicator results.",
+    "t611": "Land Use Scanner demo: compare allocation results.",
+    "t641_1": "RSOpen: generate base data.",
+    "t641_2": "RSOpen: land-use allocation for target year 2050.",
+    "t710": "2UP model: indicator results.",
+    "t720": "2BURP model: indicator results.",
+    "t810": "ValLuisa: land use & population, Czechia 2050.",
+    "t910": "Cusa2 Africa model: indicator results.",
+    "t1630": "GUI robustness: expand configuation with many erronous items.",
     "t1640": "GUI: value-info detail page on aggregations vs recorded reference.",
     "t1642": "GUI: statistics/value-info detail page with group-by on geometry.",
     "t1742": "Command-line @statistics on the Operator config (Arithmetics/UnTiled/add/attr).",
-    "t2000": "Hestia development: @statistics on /Jaarreeksen/hWP_asl.",
+    "t2000": "Hestia model: indicator results.",
 }
 
 def get_test_description(testname:str) -> str:
     """Short English description for a test, keyed by its leading code (t010,
     t405_3_2, ...). Returns '' when no description is defined."""
-    m = re.match(r"(t\d+(?:[ _]\d+)*)", testname, re.IGNORECASE)
+    m = re.match(r"(t\d+(?:[ _]\d+(?![A-Za-z]))*)", testname, re.IGNORECASE)
     if not m:
         return ""
     code = m.group(1).lower().replace(" ", "_")
     return TEST_DESCRIPTIONS.get(code, "")
 
+def get_test_code(testname:str) -> str:
+    """Short dotted display code for a row title: 'T641 1 RSopen MakeBaseData' -> 't641.1',
+    'T405 2 2 ...' -> 't405.2.2'. Falls back to the raw name if there is no leading code."""
+    m = re.match(r"(t\d+(?:[ _]\d+(?![A-Za-z]))*)", testname, re.IGNORECASE)
+    if not m:
+        return testname
+    return re.sub(r"[ _]+", ".", m.group(1).strip()).lower()
+
 def get_table_row_title_html_template() -> str:
     return '<td class="testname">\
-                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" title="click to expand/collapse all versions of this test">@@@TESTNAME@@@</button>\
+                <button onclick="expand_test_row(\'@@@TESTCLASS@@@\')" title="@@@TESTNAME_RAW@@@ &mdash; click to expand/collapse all versions">@@@TESTNAME@@@</button>\
                 <div class="testdesc">@@@TESTDESC@@@</div>\
             </td>\n'
 
@@ -296,6 +324,7 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
                 summaries[0][col] = get_col_header(col, sorted_valid_result_folders)
             experiment = profiler.loadExperimentFromPickleFile(None, experiment_file)
             summaries[row][col] = experiment.summary()
+            summaries[row][col]["version"] = get_semantic_version_from_folder_name(sorted_valid_result_folders[col-1][0])
             regression_test_experiments.append(experiment)
             log_filename = get_log_filename(sorted_valid_result_folders[col-1][0], regression_test)
             profile_fig_filename = get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)
@@ -457,9 +486,10 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
         lines["cells in test"] = [f"cells in test: {_fmt_num(next(iter(totals)))}", True]
 
     version = _version_from_result_path(path)
-    epoch_changed = False  # did any metric's reference EPOCH begin at THIS version (a new refset baseline)?
-    is_ref = False         # is THIS version the source/baseline for any metric? (-> "ref" pill, top-right of the cell)
-    epoch_srcs = set()     # which version(s) the NEW refset was captured from when the epoch changes here (-> triangle hover)
+    epoch_changed = False   # did any metric's reference EPOCH begin at THIS version (a new refset baseline)?
+    is_ref = False          # is THIS version the source/baseline for any metric? (-> "ref" pill, top-right of the cell)
+    epoch_srcs = set()      # refset identity now in force here (its threshold/source -- always <= this version, never newer)
+    epoch_prev_srcs = set() # refset identity the PREVIOUS shown version still used (-> triangle hover)
 
     for m in metrics:
         name = str(m.get("name", "metric"))
@@ -469,10 +499,12 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
         ref, epoch, src = _resolve_ref(refs.get(name), version)
         if src is not None and version is not None and version == _try_parse_version(src):
             is_ref = True   # this version's own value IS the reference for this metric/epoch
-        if prev_version is not None and ref is not None and epoch != _resolve_ref(refs.get(name), prev_version)[1]:
-            epoch_changed = True   # this metric's reference baseline switched at this version
-            if src:
-                epoch_srcs.add(src)   # the version this new refset was captured from (for the triangle hover)
+        if prev_version is not None and ref is not None:
+            prev_ref, prev_epoch, prev_src = _resolve_ref(refs.get(name), prev_version)
+            if epoch != prev_epoch:
+                epoch_changed = True   # this metric's reference baseline switched at this version
+                if src:      epoch_srcs.add(src)            # refset now compared against (e.g. "19.5.0")
+                if prev_src: epoch_prev_srcs.add(prev_src)  # refset the previous shown version used (e.g. "17.4.6")
         if "n_diff" in m:
             n_total = m.get("n_total") or 0
             n_diff = m.get("n_diff") or 0
@@ -523,7 +555,18 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     # epoch krijgen 'm niet meer.
     parsed["_epoch_changed"] = [epoch_changed, True]
     parsed["_is_ref"] = [is_ref, True]
-    parsed["_ref_src"] = [", ".join(sorted(epoch_srcs)), True]
+    # Triangle hover: name the refset now in force and the one the previous shown version
+    # still used, so a refset whose own version isn't a column (the >=19.5.0 connect-change
+    # baseline lives at 19.5.0, not a column) stays identifiable. We always compare against
+    # this version's refset or an OLDER one -- never a newer version.
+    _now = ", ".join(sorted(epoch_srcs))
+    _was = ", ".join(sorted(epoch_prev_srcs))
+    _hover = "comparison baseline (refset) changed at this version"
+    if _now:
+        _hover += f": now the {_now} reference"
+    if prev_version is not None and _was:
+        _hover += f"; the previous shown version ({prev_version}) used the {_was} reference"
+    parsed["_epoch_hover"] = [_hover if epoch_changed else "", True]
     return (verdict, parsed)
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
@@ -1045,24 +1088,18 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                     });\
                 }\
                 function expand_test_row(element_class_name) {\
-                    console.log("TEST");\
                     var elements = document.getElementsByClassName(element_class_name);\
                     const attribute_name = "open";\
-                    console.log(elements);\
-                    for (const sum_det_element of elements)\
-                    {\
-                        if (sum_det_element==null) {\
-                            continue; \
-                        }\
-                        const attribute = sum_det_element.getAttribute(attribute_name);\
-                        if (attribute == null) {\
-                            sum_det_element.setAttribute(attribute_name, "");\
-                            console.log("open");\
-                        }\
-                        else {\
-                            sum_det_element.removeAttribute(attribute_name);\
-                            console.log("close");\
-                        }\
+                    /* Title click expands ALL versions; it collapses only when every one is already open. A per-element toggle would FLIP a cell the user opened by hand, so the title overrides rather than flips. NB: this whole template is one line in the HTML, so a // comment would silence the rest of the script -- use block comments only. */\
+                    var all_open = true;\
+                    for (const el of elements) {\
+                        if (el == null) { continue; }\
+                        if (el.getAttribute(attribute_name) == null) { all_open = false; break; }\
+                    }\
+                    for (const el of elements) {\
+                        if (el == null) { continue; }\
+                        if (all_open) { el.removeAttribute(attribute_name); }\
+                        else { el.setAttribute(attribute_name, ""); }\
                     }\
                 }\
             </script>\
