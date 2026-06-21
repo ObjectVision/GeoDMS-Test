@@ -767,13 +767,13 @@ def _parse_num(tok:str) -> float:
         return float(tok.replace(",", "."))
     return float(tok)
 
-def _numeric_tolerant_equivalent(benchmark:str, generated:str, rel_tol:float=1e-4) -> bool:
-    """True if two TEXT files differ only in numeric values within a small
-    relative tolerance (default 1e-4 = 0.01%). The non-numeric skeleton must be
-    identical and the number count must match, so structural or large numeric
-    changes still fail -- but float noise in e.g. t2000 @statistics output does
-    not. Returns False for non-decodable (binary) files, leaving the byte
-    comparison as the verdict."""
+def _numeric_tolerant_equivalent(benchmark:str, generated:str, rel_tol:float=0.0) -> bool:
+    """True if two TEXT files differ only in numeric values within rel_tol
+    (relative). rel_tol defaults to 0.0 = EXACT: any numeric difference fails (no
+    tolerance anywhere, per project rule -- every drift must stay visible). The
+    non-numeric skeleton must be identical and the number count must match.
+    Returns False for non-decodable (binary) files, leaving the byte comparison
+    as the verdict."""
     try:
         a = _normalised_bytes(benchmark).decode("utf-8")
         b = _normalised_bytes(generated).decode("utf-8")
