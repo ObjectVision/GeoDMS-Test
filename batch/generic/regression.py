@@ -192,8 +192,10 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
 
         # indicators        
         indicator_part, indicator_flag = get_indicator_part_from_parsed_results(summary_col_row["results"][1])
-        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="reference baseline (refset) changed at this version - not a per-version diff">&#9650;</span>' if indicator_flag else "")
         is_ref_cell = summary_col_row["results"][1].get("_is_ref", [False])[0]
+        # triangle = the comparison baseline (refset) changes here; suppress it on the ref-source cell,
+        # where the "ref" pill already conveys it (avoids the double marker -- e.g. t910 at the new ref).
+        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="comparison baseline (refset) changed starting at this version">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
         table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version IS the reference (baseline) for this test">ref</span>' if is_ref_cell else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
@@ -1006,7 +1008,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               td.cell.warn { background:#ffe4b8; border-left-color:#d98a1f; }\
               td.cell.skip { background:#ececE8; border-left-color:#b8b8b0; }\
               summary { cursor:pointer; list-style:none; outline:none; display:flex; align-items:center; flex-wrap:wrap; gap:3px 8px; } summary::-webkit-details-marker { display:none; }\
-              .pill { display:inline-flex; align-items:center; font-size:11.5px; font-weight:500; padding:2px 10px; border-radius:999px; color:#fff; }\
+              .pill { display:inline-flex; align-items:center; line-height:1; font-size:11.5px; font-weight:500; padding:3px 10px; border-radius:999px; color:#fff; }\
               .pill.ok { background:#2e9e5b; } .pill.fail { background:#d6453d; } .pill.warn { background:#cf8420; } .pill.timeout { background:#3a78c2; } .pill.skip { background:#9a9a92; }\
               .code { color:#a6a69e; font-size:11px; } .code:empty { display:none; }\
               .meta { color:#6b6b64; font-size:11.5px; margin-top:6px; white-space:nowrap; }\
@@ -1018,7 +1020,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .perf-warn { color:#b8860b; font-weight:600; }\
               .perf-bad { color:#a32d2d; font-weight:700; }\
               .perfbadge { font-size:10px; font-weight:600; white-space:nowrap; }\
-              .refpill { margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:1px 7px; border-radius:9px; letter-spacing:.3px; }\
+              .refpill { display:inline-flex; align-items:center; line-height:1; margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:3px 7px; border-radius:9px; letter-spacing:.3px; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
             </style>\
