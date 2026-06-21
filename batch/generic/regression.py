@@ -192,7 +192,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
 
         # indicators        
         indicator_part, indicator_flag = get_indicator_part_from_parsed_results(summary_col_row["results"][1])
-        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="reference baseline (refset) changed at this version - not a per-version diff">&#9650; changed</span>' if indicator_flag else "")
+        table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", '<span class="flag" title="reference baseline (refset) changed at this version - not a per-version diff">&#9650;</span>' if indicator_flag else "")
         is_ref_cell = summary_col_row["results"][1].get("_is_ref", [False])[0]
         table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version IS the reference (baseline) for this test">ref</span>' if is_ref_cell else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
@@ -257,7 +257,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)" title="copy GeoDmsRun command">command</a>'
     return f'<td class="cell @@@STATUSCLASS@@@">\
     <details class=@@@TESTCLASS@@@>\
-    <summary>@@@REF_PILL@@@<span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@PERF_BADGE@@@@@@INDICATOR_FLAG@@@</summary>\
+    <summary><span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@PERF_BADGE@@@@@@INDICATOR_FLAG@@@@@@REF_PILL@@@</summary>\
     <div class="meta">@@@STARTTIME@@@ &middot; @@@DURATION@@@</div>\
     <div class="metrics">mem @@@HIGHESTCOMMIT@@@ GB &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
     @@@INDICATORS@@@\
@@ -1005,7 +1005,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               td.cell.fail { background:#ffd1d1; border-left-color:#d6453d; }\
               td.cell.warn { background:#ffe4b8; border-left-color:#d98a1f; }\
               td.cell.skip { background:#ececE8; border-left-color:#b8b8b0; }\
-              summary { cursor:pointer; list-style:none; outline:none; } summary::-webkit-details-marker { display:none; }\
+              summary { cursor:pointer; list-style:none; outline:none; display:flex; align-items:center; flex-wrap:wrap; row-gap:3px; } summary::-webkit-details-marker { display:none; }\
               .pill { display:inline-flex; align-items:center; font-size:11.5px; font-weight:500; padding:2px 10px; border-radius:999px; color:#fff; }\
               .pill.ok { background:#2e9e5b; } .pill.fail { background:#d6453d; } .pill.warn { background:#cf8420; } .pill.timeout { background:#3a78c2; } .pill.skip { background:#9a9a92; }\
               .code { color:#a6a69e; font-size:11px; margin-left:7px; }\
@@ -1018,7 +1018,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .perf-warn { color:#b8860b; font-weight:600; }\
               .perf-bad { color:#a32d2d; font-weight:700; }\
               .perfbadge { font-size:10px; font-weight:600; margin-left:6px; white-space:nowrap; }\
-              .refpill { float:right; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:1px 7px; border-radius:9px; letter-spacing:.3px; }\
+              .refpill { margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:1px 7px; border-radius:9px; letter-spacing:.3px; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
             </style>\
