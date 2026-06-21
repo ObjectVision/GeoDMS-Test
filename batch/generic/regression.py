@@ -125,6 +125,16 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
         indicator_part = f"<div class='ind'>{indicator_part}</div>"
     return [indicator_part, set_indicator_flag]
 
+def _perf_class(value, baseline, warn_ratio, bad_ratio, floor):
+    # Colour a duration/memory cell by how far it sits ABOVE the row's fastest/lightest run.
+    # Robust to machine noise: needs BOTH a large relative ratio AND an absolute jump >= floor,
+    # so seconds / 0.x-GB wobble on fast/light tests stays neutral (3:50-vs-4:00, 5s-vs-9s),
+    # while 1:30-vs-2:00 turns amber/red. floor is in the value's own unit (sec / GB).
+    if not baseline or not value or (value - baseline) < floor:
+        return ""
+    r = value / baseline
+    return "perf-bad" if r >= bad_ratio else ("perf-warn" if r >= warn_ratio else "")
+
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
     testname = summary_row[0]
@@ -132,6 +142,10 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = regression_test_row.replace("@@@TESTNAME@@@", testname)
     regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
     regression_test_row = regression_test_row.replace("@@@TESTDESC@@@", get_test_description(testname))
+    # perf-colouring baselines: the fastest / lightest run across this test's versions
+    _pcells = [c for c in summary_row[1:] if c]
+    _min_dur = min([c["duration"] for c in _pcells if c.get("duration")], default=0)
+    _min_mem = min([c["highest_commit"] for c in _pcells if c.get("highest_commit")], default=0)
     for summary_col_row in summary_row[1:]:
         if not summary_col_row:
             regression_test_row += get_empty_table_row_col_html()
@@ -143,7 +157,9 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@STATUSLABEL@@@", status_label)
         table_col_header = table_col_header.replace("@@@STATUSCLASS@@@", status_class)
         table_col_header = table_col_header.replace("@@@STATUSCODE@@@", status_code)
-        table_col_header = table_col_header.replace("@@@DURATION@@@", format_duration(summary_col_row["duration"]))
+        _dcls = _perf_class(summary_col_row["duration"], _min_dur, 1.25, 1.5, 30)   # >=30s AND >=25%/50% slower
+        _dval = format_duration(summary_col_row["duration"])
+        table_col_header = table_col_header.replace("@@@DURATION@@@", f'<span class="{_dcls}" title="vs fastest run in this row">{_dval}</span>' if _dcls else _dval)
 
         #2025 05 21 : 12.24.32
         command = summary_col_row["command"]#.replace("GeoDmsRun.exe", "GeoDmsGuiQt.exe")
@@ -158,7 +174,9 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y-%m-%d %H:%M") if start_time_value else "n/a")
-        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", fmt_gb(summary_col_row["highest_commit"]))
+        _mcls = _perf_class(summary_col_row["highest_commit"], _min_mem, 1.10, 1.25, 0.5)  # >=0.5GB AND >=10%/25% heavier
+        _mval = fmt_gb(summary_col_row["highest_commit"])
+        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="vs lightest run in this row">{_mval}</span>' if _mcls else _mval)
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
         table_col_header = table_col_header.replace("@@@TOTALREAD@@@", fmt_gb(summary_col_row["total_read"]))
         table_col_header = table_col_header.replace("@@@TOTALWRITE@@@", fmt_gb(summary_col_row["total_write"]))
@@ -990,6 +1008,8 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .ind-line.changed { color:#a32d2d; font-weight:500; }\
               td.testname .testdesc { font-weight:400; font-style:italic; color:#86867e; font-size:11px; white-space:normal; max-width:300px; margin-top:3px; }\
               .flag { color:#a32d2d; font-size:11px; font-weight:500; margin-left:8px; white-space:nowrap; }\
+              .perf-warn { color:#b8860b; font-weight:600; }\
+              .perf-bad { color:#a32d2d; font-weight:700; }\
               .refpill { float:right; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:1px 7px; border-radius:9px; letter-spacing:.3px; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
