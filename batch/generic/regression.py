@@ -219,7 +219,10 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         # where the "ref" pill already conveys it (avoids the double marker -- e.g. t910 at the new ref).
         _flag_title = summary_col_row["results"][1].get("_epoch_hover", [""])[0] or "comparison baseline (refset) changed at this version"
         table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", f'<span class="flag" title="{_flag_title}">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
-        table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version IS the reference (baseline) for this test">ref</span>' if is_ref_cell else "")
+        # The reference is captured from ONE version+flavor (Windows .m, or a pre-20 build with no
+        # flavor). Show the "ref" pill only there -- not on a sibling .l/.c build of the same version.
+        _show_pill = is_ref_cell and summary_col_row.get("flavor") not in ("l", "c")
+        table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version+flavor IS the reference (baseline) for this test">ref</span>' if _show_pill else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
@@ -325,6 +328,7 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             experiment = profiler.loadExperimentFromPickleFile(None, experiment_file)
             summaries[row][col] = experiment.summary()
             summaries[row][col]["version"] = get_semantic_version_from_folder_name(sorted_valid_result_folders[col-1][0])
+            summaries[row][col]["flavor"] = parse_folder_name(sorted_valid_result_folders[col-1][0])[3]
             regression_test_experiments.append(experiment)
             log_filename = get_log_filename(sorted_valid_result_folders[col-1][0], regression_test)
             profile_fig_filename = get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)
