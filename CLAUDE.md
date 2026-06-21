@@ -17,7 +17,7 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   ⚠️ **Substring match**: `-tests t200` also matches `t2000`. Use a precise stem
   (`t200_grid`, `t641_1_RSopen_MakeBaseData`, `t2000_hestia`).
 - **`-report-only`** — rebuild the HTML report from existing result folders; run nothing.
-- **`-linux-gui`** — also run the Qt GUI tests on `.l` (off by default; they currently crash).
+- **`-linux-gui`** — also run the Qt GUI tests on `.l` (off by default; they pass now — the `.l` executable bundles its own Qt).
 
 ## Critical rules
 
@@ -55,8 +55,9 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   `tmpFileDir` / `results_folder.txt` / `%LocalDataDir%` stay on `/mnt/c` (small, and
   written by the Windows-side python which can't reach the distro ext4 fs).
 - **Known `.l` blockers:**
-  - **GUI tests** (t1630/t1640/t1642): GeoDmsGuiQt is built against Qt 6.4, the system
-    has Qt 6.10 → it crashes. Skipped by default (pass `-linux-gui` to force).
+  - **GUI tests** (t1630/t1640/t1642): no longer a blocker — they pass on `.l` now (the
+    `.l` executable bundles its own Qt, so no system-Qt mismatch). Off by default; pass
+    `-linux-gui` to include them (verified green on 20.2.1.l).
   - **RAM-bound tests** auto-skipped on small hosts (`_HEAVY_L_MIN_HOST_GB` in
     full.py): **t2000** (Hestia, ~73 GB working set → needs ≥96 GB) and **t641**
     (RSopen, ~155 GB → needs ≥192 GB). They pass on Windows (`.m`; the OS page file

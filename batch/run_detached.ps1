@@ -15,7 +15,8 @@
     Linux (.l) runs: WSL2 must have its swap re-allocated after every Windows
     reboot. Run `wsl --shutdown` once, then a `wsl -d Ubuntu -- free -h` to boot
     it fresh so the .wslconfig swap (D:\WSL\swap.vhdx, 304 GB) is active before
-    starting. GUI tests (t1630/t1640/t1642) fail on .l (no Qt6 in WSL).
+    starting. GUI tests (t1630/t1640/t1642) pass on .l (the executable bundles its
+    own Qt); off by default, pass -LinuxGui to include them.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File batch\run_detached.ps1 -Version 20.1.0.l
