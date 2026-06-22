@@ -780,6 +780,16 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
                     ev = ev.replace(
                         f"GEODMS_DIRECTORIES_LOCALDATAPROJDIR={wsl_projdir_base}",
                         f"GEODMS_DIRECTORIES_LOCALDATAPROJDIR={ext4_projdir_base}")
+                # GUI tests (GeoDmsGuiQt) on .l: force Qt's offscreen platform plugin.
+                # Its WSLg wayland/xcb display init crashes (SIGABRT / exit 134) under the
+                # harness's new-console -> wsl launch on .l (t1630 on 20.3.0.l, reproducible
+                # 2/2). Offscreen renders to memory -- enough for the value-info/statistics/
+                # label-check comparisons -- and sidesteps the crashing display init. Set via
+                # the forwarded env (NOT an `env ...` command prefix: that shifts parts[2] off
+                # the binary and breaks profiler.py's install-root/wrapper derivation -> 127).
+                # The WSLENV names list below forwards QT_QPA_PLATFORM automatically.
+                if "GeoDmsGuiQt" in (exp.command or ""):
+                    ev = ev + ";QT_QPA_PLATFORM=offscreen"
                 # Build WSLENV listing every variable name so wsl.exe propagates
                 # them (without /p — we've already translated paths ourselves).
                 names = [pair.split('=', 1)[0].strip()
