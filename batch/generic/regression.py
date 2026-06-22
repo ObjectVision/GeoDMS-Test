@@ -145,13 +145,13 @@ def _perf_class(value, baseline, warn_ratio, bad_ratio, floor, abs_warn=None, ab
 
 def _dur_thresholds(baseline):
     # Graduated duration thresholds: a long run needs only a small % to read as a notable
-    # slowdown (10% of 1h = 6 min), a short run needs a large % (100% of 10s = 10s) -- the same
+    # slowdown (5% of 1h = 3 min), a short run needs a large % (50% of 10s = 5s) -- the same
     # +X% is wildly different wall-clock on a 10s vs a 1h test, so the bar slides with length.
     # baseline is in seconds; returns (warn_ratio, bad_ratio).
-    for max_sec, warn, bad in ((60, 2.00, 3.00), (300, 1.50, 2.00), (1200, 1.30, 1.60), (3600, 1.15, 1.35)):
+    for max_sec, warn, bad in ((60, 1.50, 2.00), (300, 1.25, 1.50), (1200, 1.15, 1.30), (3600, 1.08, 1.18)):
         if baseline < max_sec:
             return warn, bad
-    return 1.10, 1.25   # >= 1 hour: >=10% warn / >=25% bad
+    return 1.05, 1.13   # >= 1 hour: >=5% warn / >=13% bad
 
 def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = get_table_row_title_html_template()
@@ -217,7 +217,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y-%m-%d %H:%M") if start_time_value else "n/a")
-        _mcls = _perf_class(summary_col_row["highest_commit"], _base_mem, 1.10, 1.25, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=10%/25% OR >=10/32 GB heavier than the same-platform baseline
+        _mcls = _perf_class(summary_col_row["highest_commit"], _base_mem, 1.05, 1.13, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=5%/13% OR >=10/32 GB heavier than the same-platform baseline
         _mval = fmt_gb(summary_col_row["highest_commit"])
         table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="peak memory vs {_pbl}">{_mval}</span>' if _mcls else _mval)
         # perf badge next to the status pill: a green/OK cell can still hide a 2x-memory or much-slower run
