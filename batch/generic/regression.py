@@ -246,7 +246,7 @@ TEST_DESCRIPTIONS = {
     "t151": "Coordinate conversion Belgian Lambert → RD for Belgian municipalities.",
     "t200": "Grid: poly2grid of CBS land use (BBG) to a 10 m grid (NL).",
     "t300": "Read BAG XML files and parse polygon geometries.",
-    "t301": "Derive residential type from BAG pand/vbo geometry; compare to reference (1‰).",
+    "t301": "Derive residential type from BAG pand/vbo geometry; compare to reference.",
     "t405_1": "NetworkModel PBL, step 1: prepare input data.",
     "t405_2": "NetworkModel PBL, step 2.1: tiled model run without fence.",
     "t405_2_2": "NetworkModel PBL: indicator comparison of the no-fence run.",
@@ -318,9 +318,9 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
 
     if "title" in result_paths and "logo" in result_paths:
         summaries[0][0] = f"<img src='{result_paths["logo"]}' alt='TNO logo' width='150' height='75'><br>\
-                            {result_paths["title"]}<br>"
+                            {result_paths["title"]}<br><span style='font-size:0.62em;font-weight:400;color:#888'>report generated {datetime.now().strftime('%Y-%m-%d %H:%M')}</span>"
     else:
-        summaries[0][0] = "GeoDMS regression test results"
+        summaries[0][0] = f"GeoDMS test results<br><span style='font-size:0.62em;font-weight:400;color:#888'>report generated {datetime.now().strftime('%Y-%m-%d %H:%M')}</span>"
 
     # fill table with summaries
     for regression_test in regression_test_files.keys():
@@ -383,6 +383,7 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
                 succeeded += 1
         if summaries[0][col] is None:
             summaries[0][col] = get_col_header(col, sorted_valid_result_folders)
+        summaries[0][col]["coltag"] = sorted_valid_result_folders[col-1][0]  # stable column id (folder name) for the column-toggle chips
         summaries[0][col]["total_duration"] = total_duration
         summaries[0][col]["success_ratio"] = (succeeded, total_tests)
     return summaries
@@ -1083,7 +1084,13 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .refpill { display:inline-flex; align-items:center; line-height:1; margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:3px 7px; border-radius:9px; letter-spacing:.3px; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
+              .colbar { margin:0 0 14px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }\
+              .colbar .lbl { color:#86867e; font-size:11.5px; margin-right:2px; }\
+              .colchip { border:1px solid #c9c9c0; background:#eef0ef; color:#1c1c1a; font:inherit; font-size:11.5px; padding:3px 10px; border-radius:999px; cursor:pointer; }\
+              .colchip.off { background:#fbfbfa; color:#b0b0a8; text-decoration:line-through; border-style:dashed; }\
+              .colpreset { border:0; background:transparent; color:#534ab7; font:inherit; font-size:11.5px; cursor:pointer; text-decoration:underline; margin-left:2px; }\
             </style>\
+            <style id="colhide"></style>\
         </head>\
         <body>\
             <script>\
@@ -1113,7 +1120,24 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                         else { el.setAttribute(attribute_name, ""); }\
                     }\
                 }\
+                var HIDDEN_COLS = {};\
+                try { var _s = localStorage.getItem("geodms_hidden_cols"); if (_s) { HIDDEN_COLS = JSON.parse(_s); } } catch (e) {}\
+                function _apply_col_hide() {\
+                    var chips = document.getElementsByClassName("colchip"); var rules = "";\
+                    for (var i = 0; i < chips.length; i++) {\
+                        var tag = chips[i].getAttribute("data-col"); var idx = parseInt(chips[i].getAttribute("data-idx"), 10);\
+                        var off = !!HIDDEN_COLS[tag]; chips[i].classList.toggle("off", off);\
+                        if (off) { rules += "table.report tr>*:nth-child(" + (idx + 2) + "){display:none}"; }\
+                    }\
+                    var sh = document.getElementById("colhide"); if (sh) { sh.textContent = rules; }\
+                    try { localStorage.setItem("geodms_hidden_cols", JSON.stringify(HIDDEN_COLS)); } catch (e) {}\
+                }\
+                function toggle_col(t) { HIDDEN_COLS[t] = !HIDDEN_COLS[t]; _apply_col_hide(); }\
+                function show_all_cols() { HIDDEN_COLS = {}; _apply_col_hide(); }\
+                function only_flavor(fl) { var chips = document.getElementsByClassName("colchip"); for (var i = 0; i < chips.length; i++) { var t = chips[i].getAttribute("data-col"); HIDDEN_COLS[t] = (fl === "m") ? (t.endsWith("_l") || t.endsWith("_c")) : !t.endsWith("_" + fl); } _apply_col_hide(); }\
+                window.addEventListener("DOMContentLoaded", _apply_col_hide);\
             </script>\
+            @@@TOGGLE_BAR@@@\
             <table class="report">\
                 @@@TABLE_CONTENT@@@\
             </Table>\
@@ -1124,6 +1148,19 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
     #//sum_det_element.removeAttribute(attribute_name);\
     table_content = get_table_rows(result_paths, regression_test_summaries)
     result_html = result_html.replace("@@@TABLE_CONTENT@@@", table_content)
+    # Column-toggle chip bar: one chip per version column. Hiding is client-side
+    # (CSS nth-child display:none, applied via the #colhide stylesheet) and persisted
+    # in localStorage keyed by the stable folder tag -- so columns can be shown/hidden
+    # without regenerating, and the choice survives a regeneration (tags are matched
+    # back to the current columns on load).
+    _chips = ""
+    for _i, _c in enumerate(regression_test_summaries[0][1:]):
+        if not _c:
+            continue
+        _tag = _c.get("coltag", "")
+        _chips += f'<button class="colchip" data-idx="{_i}" data-col="{_tag}" onclick="toggle_col(\'{_tag}\')">{_tag.replace("_", ".")}</button>'
+    _toggle_bar = f'<div class="colbar"><span class="lbl">columns:</span>{_chips}<button class="colpreset" onclick="show_all_cols()">show all</button><button class="colpreset" onclick="only_flavor(\'l\')">only .l</button><button class="colpreset" title="msbuild Windows, incl. pre-20 (no-flavor) builds" onclick="only_flavor(\'m\')">only .m</button></div>'
+    result_html = result_html.replace("@@@TOGGLE_BAR@@@", _toggle_bar)
 
     final_html_filename = f"{result_paths['results_base_folder']}/reports/{version_range[0].replace(".","_")}___{version_range[1].replace(".","_")}.html"
     report_dir = f"{result_paths['results_base_folder']}/reports"
