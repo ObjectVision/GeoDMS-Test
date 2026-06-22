@@ -161,10 +161,13 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     regression_test_row = regression_test_row.replace("@@@TESTNAME_RAW@@@", testname)
     regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
     regression_test_row = regression_test_row.replace("@@@TESTDESC@@@", get_test_description(testname))
-    # perf-colouring baseline = the oldest build of the SAME platform, so mem/time read as a
-    # regression on the cell's own platform -- never Linux-vs-Windows. Windows (.m/.c/pre-20)
-    # measures against 17.4.6; Linux (.l) against the oldest .l run (none older -> no perf badge).
-    _win_ref = next((c for c in summary_row[1:] if c and c.get("version") == REFERENCE_BUILD), None)
+    # perf-colouring baseline = the test's REFERENCE (refset) build on the SAME platform, so mem/
+    # time read as a regression against the version the VALUES are judged against -- not a fixed
+    # 17.4.6. Windows (.m/.c/pre-20): the most recent Windows cell that is a reference source whose
+    # version is <= the cell's (never a newer refset), else 17.4.6. Linux (.l): the oldest .l run
+    # (the .m-captured refset isn't its platform). NB columns run newest->oldest.
+    _win_refcells = [c for c in summary_row[1:] if c and c.get("results") and c.get("flavor") != "l" and c["results"][1].get("_is_ref", [False])[0]]
+    _ref_fallback = next((c for c in summary_row[1:] if c and c.get("version") == REFERENCE_BUILD), None)
     _lin_runs = [c for c in summary_row[1:] if c and c.get("flavor") == "l"]
     _lin_ref = _lin_runs[-1] if _lin_runs else None   # columns run newest->oldest, so [-1] is the oldest .l
     for summary_col_row in summary_row[1:]:
@@ -178,8 +181,19 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         table_col_header = table_col_header.replace("@@@STATUSLABEL@@@", status_label)
         table_col_header = table_col_header.replace("@@@STATUSCLASS@@@", status_class)
         table_col_header = table_col_header.replace("@@@STATUSCODE@@@", status_code)
-        # baseline for THIS cell: same platform (Linux -> oldest .l; Windows -> 17.4.6); a cell is never its own baseline
-        _pref = _lin_ref if summary_col_row.get("flavor") == "l" else _win_ref
+        # baseline for THIS cell: same platform. Linux -> oldest .l. Windows -> the refset build
+        # (most recent reference source whose version <= this cell's), else 17.4.6. Never its own baseline.
+        if summary_col_row.get("flavor") == "l":
+            _pref = _lin_ref
+        else:
+            _vc = _try_parse_version(summary_col_row.get("version"))
+            _pref = _ref_fallback
+            if _vc is not None:
+                for _rc in _win_refcells:
+                    _rv = _try_parse_version(_rc.get("version"))
+                    if _rv is not None and _rv <= _vc:
+                        _pref = _rc
+                        break
         if _pref is summary_col_row:
             _pref = None
         _base_dur = _pref["duration"] if _pref else 0
