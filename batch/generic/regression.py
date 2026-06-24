@@ -1090,7 +1090,8 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .metrics { color:#444441; font-size:12px; margin-top:3px; white-space:nowrap; font-variant-numeric:tabular-nums; }\
               .ind { margin-top:6px; padding-top:5px; border-top:1px solid #ececE6; font-size:11.5px; color:#5f5e5a; }\
               .ind-line.changed { color:#a32d2d; font-weight:500; }\
-              td.testname .testdesc { font-weight:400; font-style:italic; color:#86867e; font-size:11px; white-space:normal; max-width:300px; margin-top:3px; }\
+              td.testname .testdesc { font-weight:400; font-style:italic; color:#86867e; font-size:11px; white-space:normal; max-width:300px; margin-top:3px; display:none; }\
+              tr:has(td.cell details[open]) td.testname .testdesc { display:block; }\
               .flag { color:#a32d2d; font-size:11px; font-weight:500; white-space:nowrap; }\
               .perf-warn { color:#b8860b; font-weight:600; }\
               .perf-bad { color:#a32d2d; font-weight:700; }\
