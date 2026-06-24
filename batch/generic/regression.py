@@ -115,7 +115,7 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # shows as a red (failing) line via the status. So it is driven by _epoch_changed.
     set_indicator_flag = bool(parsed_results.get("_epoch_changed", [False])[0])
     for indicator in parsed_results:
-        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_epoch_hover"):  # verdict pill / under title / metadata / cell flags
+        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_epoch_hover", "_ref_note"):  # verdict pill / under title / metadata / cell flags
             continue
         value = parsed_results[indicator][0]
         status = parsed_results[indicator][1]
@@ -239,11 +239,20 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         # triangle = the comparison baseline (refset) changes here; suppress it on the ref-source cell,
         # where the "ref" pill already conveys it (avoids the double marker -- e.g. t910 at the new ref).
         _flag_title = summary_col_row["results"][1].get("_epoch_hover", [""])[0] or "comparison baseline (refset) changed at this version"
+        _flag_title = _flag_title.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")  # hover may carry an author note (issue #32)
         table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", f'<span class="flag" title="{_flag_title}">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
         # The reference is captured from ONE version+flavor (Windows .m, or a pre-20 build with no
         # flavor). Show the "ref" pill only there -- not on a sibling .l/.c build of the same version.
         _show_pill = is_ref_cell and summary_col_row.get("flavor") not in ("l", "c")
-        table_col_header = table_col_header.replace("@@@REF_PILL@@@", '<span class="refpill" title="this version+flavor IS the reference (baseline) for this test">ref</span>' if _show_pill else "")
+        # An optional epoch "note" (references.json, issue #32) explains WHY this is the baseline;
+        # append it to the pill hover, and mark the pill so it reads as annotated (dotted, help cursor).
+        _ref_note = summary_col_row["results"][1].get("_ref_note", [""])[0]
+        _ref_title = "this version+flavor IS the reference (baseline) for this test"
+        if _ref_note:
+            _ref_title += " — " + _ref_note
+        _ref_cls = "refpill noted" if _ref_note else "refpill"
+        _ref_title = _ref_title.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        table_col_header = table_col_header.replace("@@@REF_PILL@@@", f'<span class="{_ref_cls}" title="{_ref_title}">ref</span>' if _show_pill else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
@@ -462,10 +471,12 @@ def _resolve_ref(entry, version):
     """A reference value is either a scalar (one baseline for every version) or a
     {threshold_version: value} map = version-dependent epochs (connect changed at
     19.5.0 -> a new accepted baseline; t810 land-use has several epochs). Returns
-    (value, epoch_label) for the highest threshold <= the version under test, or
-    (None, None) if no epoch applies yet."""
+    (value, epoch_label, src, note) for the highest threshold <= the version under
+    test, or (None, None, None, None) if no epoch applies yet. note is the optional
+    "note" string on the chosen epoch entry (why this baseline exists -- shown on the
+    'ref' pill / epoch hover); None when absent."""
     if not isinstance(entry, dict):
-        return entry, REFERENCE_BUILD, REFERENCE_BUILD
+        return entry, REFERENCE_BUILD, REFERENCE_BUILD, None
     best = None  # (threshold_version, value_entry, threshold_str)
     for thr, val in entry.items():
         tv = _try_parse_version(thr)
@@ -475,11 +486,11 @@ def _resolve_ref(entry, version):
             if best is None or tv > best[0]:
                 best = (tv, val, thr)
     if best is None:
-        return None, None, None
+        return None, None, None, None
     val = best[1]
-    if isinstance(val, dict):   # {"v": <value>, "src": "<version>"} = the value + the build it came from
-        return val.get("v"), f">={best[2]}", val.get("src")
-    return val, f">={best[2]}", None   # bare value (no recorded source)
+    if isinstance(val, dict):   # {"v": <value>, "src": "<version>"[, "note": ...]} = value + build it came from
+        return val.get("v"), f">={best[2]}", val.get("src"), val.get("note")
+    return val, f">={best[2]}", None, None   # bare value (no recorded source)
 
 def _version_from_result_path(path):
     """Version under test, from a result.json path .../<folder>[/result]/<file>."""
@@ -516,21 +527,25 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     is_ref = False          # is THIS version the source/baseline for any metric? (-> "ref" pill, top-right of the cell)
     epoch_srcs = set()      # refset identity now in force here (its threshold/source -- always <= this version, never newer)
     epoch_prev_srcs = set() # refset identity the PREVIOUS shown version still used (-> triangle hover)
+    ref_notes = set()       # "note" of an epoch THIS version is the source of (-> appended to the "ref" pill hover)
+    epoch_notes = set()     # "note" of an epoch that BEGINS at this version (-> appended to the triangle hover)
 
     for m in metrics:
         name = str(m.get("name", "metric"))
         unit = m.get("unit", "")
         unit_s = f" {unit}" if unit else ""
         tol = _tol(test, name)
-        ref, epoch, src = _resolve_ref(refs.get(name), version)
+        ref, epoch, src, note = _resolve_ref(refs.get(name), version)
         if src is not None and version is not None and version == _try_parse_version(src):
             is_ref = True   # this version's own value IS the reference for this metric/epoch
+            if note: ref_notes.add(note)   # why this baseline exists -> shown on the "ref" pill hover (issue #32)
         if prev_version is not None and ref is not None:
-            prev_ref, prev_epoch, prev_src = _resolve_ref(refs.get(name), prev_version)
+            prev_ref, prev_epoch, prev_src, _ = _resolve_ref(refs.get(name), prev_version)
             if epoch != prev_epoch:
                 epoch_changed = True   # this metric's reference baseline switched at this version
                 if src:      epoch_srcs.add(src)            # refset now compared against (e.g. "19.5.0")
                 if prev_src: epoch_prev_srcs.add(prev_src)  # refset the previous shown version used (e.g. "17.4.6")
+                if note:     epoch_notes.add(note)          # why the baseline switched here -> triangle hover
         if "n_diff" in m:
             n_total = m.get("n_total") or 0
             n_diff = m.get("n_diff") or 0
@@ -581,6 +596,10 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     # epoch krijgen 'm niet meer.
     parsed["_epoch_changed"] = [epoch_changed, True]
     parsed["_is_ref"] = [is_ref, True]
+    # Optional human note attached to a reference epoch (references.json "note", issue #32):
+    # WHY this baseline exists. Surfaced on the "ref" pill hover when this version is the epoch
+    # source, and appended to the triangle hover where the epoch begins.
+    parsed["_ref_note"] = ["; ".join(sorted(ref_notes)), True]
     # Triangle hover: name the refset now in force and the one the previous shown version
     # still used, so a refset whose own version isn't a column (the >=19.5.0 connect-change
     # baseline lives at 19.5.0, not a column) stays identifiable. We always compare against
@@ -592,6 +611,8 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
         _hover += f": now the {_now} reference"
     if prev_version is not None and _was:
         _hover += f"; the previous shown version ({prev_version}) used the {_was} reference"
+    if epoch_notes:
+        _hover += " — " + "; ".join(sorted(epoch_notes))
     parsed["_epoch_hover"] = [_hover if epoch_changed else "", True]
     return (verdict, parsed)
 
@@ -1097,6 +1118,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .perf-bad { color:#a32d2d; font-weight:700; }\
               .perfbadge { font-size:10px; font-weight:600; white-space:nowrap; }\
               .refpill { display:inline-flex; align-items:center; line-height:1; margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:3px 7px; border-radius:9px; letter-spacing:.3px; }\
+              .refpill.noted { cursor:help; box-shadow:0 0 0 1.5px #cfe0ef; } .refpill.noted::after { content:\"\\2009*\"; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
               .colbar { margin:0 0 14px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }\
