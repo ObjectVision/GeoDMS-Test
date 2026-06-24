@@ -29,9 +29,27 @@ import webbrowser
 import subprocess
 from datetime import datetime
 
-def get_empty_table_row_col_html() -> str:
+# Heavy tests that full.py auto-skips on the .l (Linux/WSL) flavor when the test
+# host has too little RAM (_HEAVY_L_MIN_HOST_GB): their working set exceeds host
+# RAM and swap-thrashes through WSL, while on Windows the OS page file absorbs the
+# overflow so they still pass on .m. Mirrored here so the report can explain the
+# resulting empty .l cell (keep the GB figures in sync with full.py).
+_HEAVY_L_SKIP_NOTE = {
+    "t641":  "skipped on the Linux (.l) build: RSopen working set ~155 GB exceeds this test host's RAM (needs a >=192 GB machine); runs on Windows, where the OS page file absorbs the overflow",
+    "t2000": "skipped on the Linux (.l) build: Hestia working set ~73 GB exceeds this test host's RAM (needs a >=96 GB machine); runs on Windows, where the OS page file absorbs the overflow",
+}
+
+def _esc_attr(s:str) -> str:
+    """Escape a string for use inside a double-quoted HTML attribute (title/hover)."""
+    return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+
+def get_empty_table_row_col_html(note:str=None) -> str:
     # An empty cell means the experiment was not run for that version -> show it
     # explicitly instead of a blank (e.g. GUI tests skipped on the linux flavor).
+    # An optional note (e.g. WHY a heavy test is skipped on .l, issue #32) is shown
+    # on hover and marks the pill as annotated.
+    if note:
+        return f'<td class="cell skip"><span class="pill skip noted" title="{_esc_attr(note)}">not run</span></td>\n'
     return '<td class="cell skip"><span class="pill skip">not run</span></td>\n'
 
 def get_status_meta(status:str) -> tuple:
@@ -153,7 +171,7 @@ def _dur_thresholds(baseline):
             return warn, bad
     return 1.05, 1.13   # >= 1 hour: >=5% warn / >=13% bad
 
-def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
+def get_table_regression_test_row(result_paths:dict, summary_row:list, header_row:list=None) -> str:
     regression_test_row = get_table_row_title_html_template()
     testname = summary_row[0]
     testclass = testname.replace(" ", "_")
@@ -170,9 +188,18 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
     _ref_fallback = next((c for c in summary_row[1:] if c and c.get("version") == REFERENCE_BUILD), None)
     _lin_runs = [c for c in summary_row[1:] if c and c.get("flavor") == "l"]
     _lin_ref = _lin_runs[-1] if _lin_runs else None   # columns run newest->oldest, so [-1] is the oldest .l
-    for summary_col_row in summary_row[1:]:
+    for _col, summary_col_row in enumerate(summary_row[1:], start=1):
         if not summary_col_row:
-            regression_test_row += get_empty_table_row_col_html()
+            # An empty cell = the test was not run for this version. On the .l (Linux)
+            # flavor the heavy RAM-bound tests (t641 / t2000) are auto-skipped on
+            # small hosts -- annotate WHY (issue #32). Flavor comes from the column
+            # header's coltag (folder name); the cell itself carries no data.
+            _note = None
+            _hcol = header_row[_col] if (header_row is not None and _col < len(header_row)) else None
+            _coltag = _hcol.get("coltag") if isinstance(_hcol, dict) else None
+            if _coltag and parse_folder_name(_coltag)[3] == "l":
+                _note = next((msg for tag, msg in _HEAVY_L_SKIP_NOTE.items() if tag in testname), None)
+            regression_test_row += get_empty_table_row_col_html(_note)
             continue
         table_col_header = get_table_row_col_html_template(result_paths, summary_col_row["log_filename"], summary_col_row["profile_figure_filename"])
         status = summary_col_row["status"]
@@ -239,7 +266,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         # triangle = the comparison baseline (refset) changes here; suppress it on the ref-source cell,
         # where the "ref" pill already conveys it (avoids the double marker -- e.g. t910 at the new ref).
         _flag_title = summary_col_row["results"][1].get("_epoch_hover", [""])[0] or "comparison baseline (refset) changed at this version"
-        _flag_title = _flag_title.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")  # hover may carry an author note (issue #32)
+        _flag_title = _esc_attr(_flag_title)  # hover may carry an author note (issue #32)
         table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", f'<span class="flag" title="{_flag_title}">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
         # The reference is captured from ONE version+flavor (Windows .m, or a pre-20 build with no
         # flavor). Show the "ref" pill only there -- not on a sibling .l/.c build of the same version.
@@ -251,7 +278,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list) -> str:
         if _ref_note:
             _ref_title += " — " + _ref_note
         _ref_cls = "refpill noted" if _ref_note else "refpill"
-        _ref_title = _ref_title.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        _ref_title = _esc_attr(_ref_title)
         table_col_header = table_col_header.replace("@@@REF_PILL@@@", f'<span class="{_ref_cls}" title="{_ref_title}">ref</span>' if _show_pill else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
@@ -339,11 +366,16 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
     # indicator-changed (gewijzigd) flag -- same flavor preferred, else mainline.
     prev_col_map = build_prev_col_map(sorted_valid_result_folders)
 
+    # Subtitle under the corner title: when the report was generated + the test host
+    # (the PC the runs were executed on; report is generated on that machine).
+    _subtitle = (f"<span style='font-size:0.62em;font-weight:400;color:#888'>"
+                 f"report generated {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                 f"<br>test host: {_esc_attr(get_local_machine_name())}</span>")
     if "title" in result_paths and "logo" in result_paths:
-        summaries[0][0] = f"<img src='{result_paths["logo"]}' alt='TNO logo' width='150' height='75'><br>\
-                            {result_paths["title"]}<br><span style='font-size:0.62em;font-weight:400;color:#888'>report generated {datetime.now().strftime('%Y-%m-%d %H:%M')}</span>"
+        summaries[0][0] = f"<img src='{result_paths['logo']}' alt='TNO logo' width='150' height='75'><br>\
+                            {result_paths['title']}<br>{_subtitle}"
     else:
-        summaries[0][0] = f"GeoDMS test results<br><span style='font-size:0.62em;font-weight:400;color:#888'>report generated {datetime.now().strftime('%Y-%m-%d %H:%M')}</span>"
+        summaries[0][0] = f"GeoDMS test results<br>{_subtitle}"
 
     # fill table with summaries
     for regression_test in regression_test_files.keys():
@@ -1074,11 +1106,12 @@ def get_table_header_row(summary_row:list) -> str:
 
 def get_table_rows(result_paths:dict, regression_test_summaries:list[list]) -> str:
     rows = ""    
+    header_row = regression_test_summaries[0] if regression_test_summaries else None
     for index, summary_row in enumerate(regression_test_summaries):
         if index == 0:
             rows += get_table_header_row(summary_row)
             continue
-        rows += get_table_regression_test_row(result_paths, summary_row)
+        rows += get_table_regression_test_row(result_paths, summary_row, header_row)
     return rows
 
 def render_regression_test_result_html(version_range:tuple, result_paths:dict, regression_test_summaries:dict) -> str:
@@ -1106,6 +1139,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               summary { cursor:pointer; list-style:none; outline:none; display:flex; align-items:center; flex-wrap:wrap; gap:3px 8px; } summary::-webkit-details-marker { display:none; }\
               .pill { display:inline-flex; align-items:center; line-height:1; font-size:11.5px; font-weight:500; padding:3px 10px; border-radius:999px; color:#fff; }\
               .pill.ok { background:#2e9e5b; } .pill.fail { background:#d6453d; } .pill.warn { background:#cf8420; } .pill.timeout { background:#3a78c2; } .pill.skip { background:#9a9a92; }\
+              .pill.noted { cursor:help; } .pill.noted::after { content:\"\\2009*\"; }\
               .code { color:#a6a69e; font-size:11px; } .code:empty { display:none; }\
               .meta { color:#6b6b64; font-size:11.5px; margin-top:6px; white-space:nowrap; }\
               .metrics { color:#444441; font-size:12px; margin-top:3px; white-space:nowrap; font-variant-numeric:tabular-nums; }\
