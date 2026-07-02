@@ -269,9 +269,8 @@ TEST_TIMEOUTS = {
     "t405_3_NetworkModel_PBL_metFence":                    5400,
     "t410_NetworkModel_EU":                                1500,
     "t611_Lus_demo_2023":                                  180,
-    "t641_1_RSopen_MakeBaseData":                          21600,  # ~6h (slower on .l)
-    "t641_2_RSopen_MakeVariantData":                       900,
-    "t641_3_RSopen_Allocatie":                             21600,
+    "t641_1_RSopen_MakeBaseData":                          5400,   # 90m cap (bench ~34m warm; ~57m from-scratch BaseData regen on .m)
+    "t641_2_RSopen_Allocatie":                             3600,   # 1h cap (benchmark ~20m on .m)
     "t710_2UP":                                            360,
     "t720_2BURP":                                          3600,
     "t810_ValLuisa":                                       1500,
