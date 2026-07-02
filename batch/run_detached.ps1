@@ -40,12 +40,14 @@ $out   = Join-Path $tmpDir "run_${tag}_$stamp.out"
 $err   = Join-Path $tmpDir "run_${tag}_$stamp.err"
 $pidf  = Join-Path $tmpDir "run_${tag}.pid"
 
-$pyArgs = @("full.py", "-version", $Version)
+# Pin the interpreter: bare "python" resolves via PATH (C:\Python314 on this box),
+# but the harness is maintained against 3.13 -- use the py launcher to select it.
+$pyArgs = @("-3.13", "full.py", "-version", $Version)
 if ($Tests) { $pyArgs += @("-tests", $Tests) }
 if ($NoGui) { $pyArgs += "-no-gui" }
 if ($LinuxGui) { $pyArgs += "-linux-gui" }
 
-$proc = Start-Process -FilePath "python" -ArgumentList $pyArgs -WorkingDirectory $batch `
+$proc = Start-Process -FilePath "py" -ArgumentList $pyArgs -WorkingDirectory $batch `
             -RedirectStandardOutput $out -RedirectStandardError $err -WindowStyle Hidden -PassThru
 $proc.Id | Out-File $pidf -Encoding ascii
 
