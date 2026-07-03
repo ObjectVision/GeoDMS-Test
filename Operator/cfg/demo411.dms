@@ -1,0 +1,45 @@
+// Demo config for issue #411: table view columns from different containers,
+// exported via the Export Primary Data dialog from the table's save-to-file tool.
+container demo411
+{
+	unit<uint32> Prov := range(uint32, 0, 5)
+	{
+		attribute<string> Name: ['NoordHolland','ZuidHolland','Utrecht','Gelderland','Friesland'];
+	}
+	container Population
+	{
+		attribute<uint32> Pop2020 (Prov): [2879527, 3708696, 1354834, 2085952, 649957];
+		attribute<uint32> Pop2030 (Prov): [3000000, 3800000, 1450000, 2200000, 660000];
+	}
+	container Area
+	{
+		attribute<float64> AreaKm2 (Prov): [4092.0, 3419.0, 1449.0, 5136.0, 5749.0];
+	}
+	container ReadBack // re-read of an .xml dataset exported by the Export Primary Data dialog
+	{
+		unit<uint32> ExportTable1
+		: StorageName     = "%LocalDataProjDir%/Desktops/Default/ViewData/Prov3.xml"
+		, StorageType     = "gdal.vect"
+		, StorageReadOnly = "true"
+		{
+			attribute<string> name;
+			attribute<uint32> Pop2020;
+		}
+	}
+	container ExportSettings
+	{
+		container MetaInfo
+		{
+			parameter<string> FileName := '%storageBaseName%.xml';
+			parameter<string> FileType := 'xml';
+			container Contents
+			{
+				container General
+				{
+					parameter<string> Author      := 'demo411';
+					parameter<string> Description := 'sidecar demo for issue 1124';
+				}
+			}
+		}
+	}
+}
