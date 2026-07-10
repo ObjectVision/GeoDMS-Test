@@ -357,6 +357,13 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     </details>\
     </td>\n'
 
+# Upper bound on how many version curves are overlaid in a single profile plot.
+# regression_test_experiments is ordered OLD->NEW (the version under test is
+# last), so when we have to trim for legibility we keep the tail (newest) and
+# drop the oldest -- never the newest. Generous enough that normal reports show
+# every version; only very long histories get their oldest curves dropped.
+_MAX_PLOT_VERSIONS = 15
+
 def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_valid_result_folders:list, regression_test_names:list, regression_test_files:dict) -> list[list]:
     # initialize table
     rows = len(regression_test_names)+1
@@ -417,11 +424,25 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             summaries[row][col]["status"] = results[0]
             summaries[row][col]["results"] = results
         
+        # Cap the overlaid curves, KEEPING THE NEWEST. experiments are old->new,
+        # so slice off the head (oldest) if we exceed the cap; the version under
+        # test (last element) is always retained. Announce any drop -- a silent
+        # cap would read as "all versions shown" when it isn't.
+        if len(regression_test_experiments) > _MAX_PLOT_VERSIONS:
+            _dropped = len(regression_test_experiments) - _MAX_PLOT_VERSIONS
+            print(f"[report] {regression_test}: profile plot capped to newest {_MAX_PLOT_VERSIONS} versions (dropped {_dropped} oldest)")
+            regression_test_experiments = regression_test_experiments[-_MAX_PLOT_VERSIONS:]
+
+        # ALWAYS (re)generate the current run's figure. It lives in this run's own
+        # results_folder and must include the version under test plus history. A
+        # stale cached figure -- e.g. one left by an earlier partial or `-tests`
+        # run whose bins predate this run -- must NOT suppress the new curve, so we
+        # overwrite instead of skip-if-exists (the old `if not os.path.exists`
+        # guard is exactly why 20.7.0.m went missing from its own plot). os.replace
+        # is atomic and, unlike os.rename, overwrites an existing target on Windows.
         target_visualized_experiments_filename = get_profile_figure_filename(result_paths["results_folder"], regression_test)
-        if not os.path.exists(target_visualized_experiments_filename):
-            visualized_experiments_filename = profiler.VisualizeExperiments(regression_test_experiments, show_figure=False)
-            #os.remove(target_visualized_experiments_filename)
-            os.rename(visualized_experiments_filename, target_visualized_experiments_filename)
+        visualized_experiments_filename = profiler.VisualizeExperiments(regression_test_experiments, show_figure=False)
+        os.replace(visualized_experiments_filename, target_visualized_experiments_filename)
 
     # get column total duration and success ratio
     for col in range(1, cols):
