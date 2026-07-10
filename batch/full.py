@@ -60,6 +60,11 @@ _BUILT_IN_DEFAULTS = {
     # pre-releases or drafts) plus the version under test. Set to false to
     # compare against every historical result folder again.
     "ReportOnlyReleases": True,
+    # Opt this machine into the FULL linux (.l) suite: run the heavy tests
+    # (t641/t2000) and GUI tests that full.py otherwise skips on .l by the
+    # host-RAM heuristic. Default False -> keep the filtering (protects
+    # low-memory boxes). Only read from local_settings.json / env; per-machine.
+    "RunAllLinuxTests": False,
 }
 
 def _load_local_settings() -> dict:
@@ -709,14 +714,24 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
     # to the Linux distro. Without this every linux-flavor test fails
     # at the first I/O on the cfg path or log path.
     if geodms_paths.get("GeoDmsLocalFlavor") == "linux-release":
+        # RunAllLinuxTests (local_settings.json, .gitignored): opt THIS machine into the
+        # COMPLETE linux suite -- bypass both the GUI-skip and the heavy-test host-RAM
+        # skip below. Only machines that set the flag run everything; machines without it
+        # (the default) keep the filtering, so a low-memory box (e.g. OVSRV05) stays
+        # protected. Absent / false / 0 / no -> default filtering.
+        _run_all_linux = str(_load_local_settings().get("RunAllLinuxTests", False)).strip().lower() in ("true", "1", "yes", "on")
+        if _run_all_linux:
+            print("RunAllLinuxTests=true (local_settings.json): running the FULL linux suite "
+                  "(GUI + heavy tests) on this machine; other machines keep the default filtering.")
+
         # GUI tests (GeoDmsGuiQt) historically needed Qt6, which used to be absent
         # in WSL. They don't just fail -- they hang and, when killed, wedge WSL so
         # every following test reports "sampler produced no rows" (cascade). So they
-        # are skipped on .l by default. Pass -linux-gui to run them anyway once Qt6
-        # (libqt6{core,gui,widgets,svg}6) and a WSLg display (DISPLAY/wayland) are in
-        # place; the per-test timeout + wsl --shutdown (profiler) contain a hang.
+        # are skipped on .l by default. Pass -linux-gui (or set RunAllLinuxTests) to run
+        # them anyway once Qt6 (libqt6{core,gui,widgets,svg}6) and a WSLg display
+        # (DISPLAY/wayland) are in place; the per-test timeout + wsl --shutdown contain a hang.
         gui_exps = [e for e in operator_experiments if "GeoDmsGuiQt" in (e.command or "")]
-        if gui_exps and not args.linux_gui:
+        if gui_exps and not (args.linux_gui or _run_all_linux):
             print(f"linux flavor: skipping {len(gui_exps)} GUI test(s) (GeoDmsGuiQt; pass -linux-gui to run on .l): "
                   + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
             operator_experiments = [e for e in operator_experiments if "GeoDmsGuiQt" not in (e.command or "")]
@@ -740,11 +755,12 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             _host_gb = psutil.virtual_memory().total / (1024 ** 3)
         except Exception:
             _host_gb = None
-        if _host_gb is not None:
+        if _host_gb is not None and not _run_all_linux:
             for _tag, _min_gb in _HEAVY_L_MIN_HOST_GB.items():
                 if _host_gb < _min_gb and any(_tag in e.name for e in operator_experiments):
                     print(f"linux flavor on a {_host_gb:.0f} GB host: skipping {_tag} "
-                          f"(working set > host RAM; needs a >={_min_gb} GB machine)")
+                          f"(working set > host RAM; needs a >={_min_gb} GB machine; "
+                          f"set RunAllLinuxTests=true in local_settings.json to run anyway)")
                     operator_experiments = [e for e in operator_experiments if _tag not in e.name]
 
         # %LocalDataProjDir% holds each project's writable working data (CalcCache
