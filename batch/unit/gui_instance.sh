@@ -22,9 +22,18 @@ gui_instance() {
     # RSF_ShowThousandSeparator (number formatting) — both match the Windows
     # dev environment that captured the norm files; on Linux there's no
     # registry persistence so we set them here.
+    #
+    # timeout guard: a GUI teardown deadlock (e.g. the CloseConfig/EnableAutoDelete
+    # interest-drain hang fixed in GeoDMS f9f3ee20) otherwise stalls the whole
+    # setup/test run forever — nothing further up the chain has a timeout. The
+    # scripts themselves WAIT ~20s and finish well under a minute; 300s leaves
+    # ample headroom for a cold vcpkg/WSLg start. SIGTERM first (clean exit code
+    # 124), SIGKILL 30s later if the process is too wedged to die on TERM.
+    local timeout_secs="${GEODMS_GUI_TEST_TIMEOUT:-300}"
     echo "****************"
     echo "Test: $GEODMS_GUI_QT_PATH /T$dmsscript /$f1 /$f2 /$f3 /SM /SH $dms_file"
-    "$GEODMS_GUI_QT_PATH" "/T$dmsscript" "/$f1" "/$f2" "/$f3" "/SM" "/SH" "$dms_file"
+    timeout --kill-after=30 "$timeout_secs" \
+        "$GEODMS_GUI_QT_PATH" "/T$dmsscript" "/$f1" "/$f2" "/$f3" "/SM" "/SH" "$dms_file"
     local rc=$?
     echo ""
 
@@ -33,6 +42,10 @@ gui_instance() {
             cat "$result_file"
             cat "$result_file" >> "$RESULT_FILENAME"
         fi
+    elif [[ $rc -eq 124 || $rc -eq 137 ]]; then
+        echo "TEST FAILED (TIMED OUT after ${timeout_secs}s, exit $rc)"
+        echo "$GEODMS_GUI_QT_PATH /T$dmsscript /$f1 /$f2 /$f3 $dms_file  FAILED (TIMED OUT after ${timeout_secs}s)" >> "$RESULT_FILENAME"
+        REGR_RESULT=FAILED
     else
         echo "TEST FAILED (exit $rc)"
         echo "$GEODMS_GUI_QT_PATH /T$dmsscript /$f1 /$f2 /$f3 $dms_file  FAILED (exit $rc)" >> "$RESULT_FILENAME"
