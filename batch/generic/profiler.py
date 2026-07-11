@@ -270,7 +270,7 @@ TEST_TIMEOUTS = {
     "t410_NetworkModel_EU":                                1500,
     "t611_Lus_demo_2023":                                  180,
     "t641_1_RSopen_MakeBaseData":                          5400,   # 90m cap (bench ~34m warm; ~57m from-scratch BaseData regen on .m)
-    "t641_2_RSopen_Allocatie":                             3600,   # 1h cap (benchmark ~20m on .m)
+    "t641_2_RSopen_Allocatie":                             10800,  # 3h cap (benchmark ~20m on .m; cap is a hang-guard. With the x2 linux factor -> 6h: a swap-bound .l run on a 128 GB host (~155 GB working set, RunAllLinuxTests) writes correct output but needs >2h -- it was tree-killed mid Y2040 with zero errors at the old cap)
     "t710_2UP":                                            360,
     "t720_2BURP":                                          3600,
     "t810_ValLuisa":                                       1500,
