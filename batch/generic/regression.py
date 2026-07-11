@@ -520,24 +520,40 @@ def _fmt_pct(dev:float) -> str:
         return f"{dev:+.3f}%"
     return ("+" if dev >= 0 else "-") + "<0.001%"
 
-def _resolve_ref(entry, version):
+def _resolve_ref(entry, version, flavor:str=""):
     """A reference value is either a scalar (one baseline for every version) or a
     {threshold_version: value} map = version-dependent epochs (connect changed at
-    19.5.0 -> a new accepted baseline; t810 land-use has several epochs). Returns
-    (value, epoch_label, src, note) for the highest threshold <= the version under
-    test, or (None, None, None, None) if no epoch applies yet. note is the optional
-    "note" string on the chosen epoch entry (why this baseline exists -- shown on the
-    'ref' pill / epoch hover); None when absent."""
+    19.5.0 -> a new accepted baseline; t810 land-use has several epochs). A threshold
+    may carry a flavor prefix, e.g. "l:0.0.0" = a PLATFORM baseline that applies only
+    to that flavor (t710 on Linux deterministically allocates 1 cell differently than
+    Windows; same value on every measured .l release). When the cell's flavor has any
+    applicable prefixed epoch, those take precedence over the generic (unprefixed)
+    epochs; otherwise the generic epochs apply as before. Returns (value, epoch_label,
+    src, note) for the highest applicable threshold <= the version under test, or
+    (None, None, None, None) if no epoch applies yet. note is the optional "note"
+    string on the chosen epoch entry (why this baseline exists -- shown on the 'ref'
+    pill / epoch hover); None when absent."""
     if not isinstance(entry, dict):
         return entry, REFERENCE_BUILD, REFERENCE_BUILD, None
-    best = None  # (threshold_version, value_entry, threshold_str)
-    for thr, val in entry.items():
-        tv = _try_parse_version(thr)
-        if tv is None:
-            continue
-        if version is None or version >= tv:
-            if best is None or tv > best[0]:
-                best = (tv, val, thr)
+    def _best_for(prefix):
+        best = None  # (threshold_version, value_entry, threshold_str)
+        for thr, val in entry.items():
+            if prefix:
+                if not thr.startswith(prefix):
+                    continue
+                thr_num = thr[len(prefix):]
+            else:
+                if ":" in thr:      # flavor-prefixed epoch of some OTHER flavor
+                    continue
+                thr_num = thr
+            tv = _try_parse_version(thr_num)
+            if tv is None:
+                continue
+            if version is None or version >= tv:
+                if best is None or tv > best[0]:
+                    best = (tv, val, thr_num)
+        return best
+    best = (_best_for(f"{flavor}:") if flavor else None) or _best_for("")
     if best is None:
         return None, None, None, None
     val = best[1]
@@ -553,6 +569,16 @@ def _version_from_result_path(path):
         return _try_parse_version(get_semantic_version_from_folder_name(folder))
     except Exception:
         return None
+
+def _flavor_from_result_path(path):
+    """Flavor letter (m/c/l, or '') of the run, from a result.json path -- selects
+    flavor-prefixed reference epochs ("l:0.0.0") in _resolve_ref."""
+    d = os.path.dirname(path)
+    folder = os.path.basename(os.path.dirname(d)) if os.path.basename(d) == "result" else os.path.basename(d)
+    try:
+        return parse_folder_name(folder)[3]
+    except Exception:
+        return ""
 
 def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> tuple:
     """Read a <test>.result.json MEASUREMENT (raw counts / values; GeoDMS does not judge)
@@ -576,6 +602,7 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
         lines["cells in test"] = [f"cells in test: {_fmt_num(next(iter(totals)))}", True]
 
     version = _version_from_result_path(path)
+    flavor  = _flavor_from_result_path(path)
     epoch_changed = False   # did any metric's reference EPOCH begin at THIS version (a new refset baseline)?
     is_ref = False          # is THIS version the source/baseline for any metric? (-> "ref" pill, top-right of the cell)
     epoch_srcs = set()      # refset identity now in force here (its threshold/source -- always <= this version, never newer)
@@ -588,12 +615,12 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
         unit = m.get("unit", "")
         unit_s = f" {unit}" if unit else ""
         tol = _tol(test, name)
-        ref, epoch, src, note = _resolve_ref(refs.get(name), version)
+        ref, epoch, src, note = _resolve_ref(refs.get(name), version, flavor)
         if src is not None and version is not None and version == _try_parse_version(src):
             is_ref = True   # this version's own value IS the reference for this metric/epoch
             if note: ref_notes.add(note)   # why this baseline exists -> shown on the "ref" pill hover (issue #32)
         if prev_version is not None and ref is not None:
-            prev_ref, prev_epoch, prev_src, _ = _resolve_ref(refs.get(name), prev_version)
+            prev_ref, prev_epoch, prev_src, _ = _resolve_ref(refs.get(name), prev_version, flavor)
             if epoch != prev_epoch:
                 epoch_changed = True   # this metric's reference baseline switched at this version
                 if src:      epoch_srcs.add(src)            # refset now compared against (e.g. "19.5.0")
