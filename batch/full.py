@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 import importlib
@@ -785,7 +786,15 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         # and %LocalDataDir% stay on /mnt/c: small reads, and written by this
         # (Windows) python process, which cannot write into the distro's ext4 fs.
         wsl_projdir_base  = to_wsl_path(local_machine_parameters["LocalDataDirRegression"])  # /mnt/c/LocalData/regression
-        ext4_projdir_base = "/root/regression"  # ext4 (WSL default user = root); ~950 GB free on the D:\WSL distro disk
+        # ext4 base = the WSL default user's HOME (queried once). Hardcoding "/root/regression"
+        # only worked on boxes whose WSL default user is root; on a uid-1000 box GeoDmsRun gets
+        # "MakeDir('/root/regression'): Permission denied" and every t641 sub-test fails (rc=1).
+        try:
+            _wsl_home = subprocess.run(["wsl", "--", "sh", "-c", "echo $HOME"],
+                                       capture_output=True, text=True, timeout=60).stdout.strip()
+        except Exception:
+            _wsl_home = ""
+        ext4_projdir_base = f"{_wsl_home or '/root'}/regression"  # ext4 (distro disk, ~950 GB free)
 
         for exp in operator_experiments:
             # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
