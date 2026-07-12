@@ -705,8 +705,45 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         return
 
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
-    workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3)
+
+    # Optional test-name filter for fast iteration -- applied FIRST, so every block
+    # below sees the tests that will actually run. This matters for the issue-1101
+    # BaseData cleanups: they delete fss files that only t641_1 regenerates, which is
+    # only safe when t641_1 is in the run. (Previously this filter ran last, so a
+    # `-tests t641_2` run deleted the Betas_Objecten fss it needed as input and
+    # failed 1.4h in with OpenForRead .../LockFile.fss ErrorCode 2.) The HTML report
+    # still picks up cached results for the unselected tests. We also wipe the
+    # matching .bin caches so the runner actually re-runs the targeted tests
+    # (otherwise it skips them with "results are reused").
+    if args.tests:
+        filters = [t.strip() for t in args.tests.split(",") if t.strip()]
+        filtered = [exp for exp in operator_experiments
+                    if any(f in exp.name for f in filters)]
+        if not filtered:
+            print(f"-tests filter {filters} matched 0 experiments out of "
+                  f"{len(operator_experiments)}; available names:", file=sys.stderr)
+            for exp in operator_experiments:
+                print(f"  {exp.name}", file=sys.stderr)
+            sys.exit(2)
+        print(f"-tests filter {filters} -> running {len(filtered)} of "
+              f"{len(operator_experiments)} experiments:")
+        wiped = 0
+        for exp in filtered:
+            print(f"  {exp.name}")
+            cache = f"{result_paths['results_folder']}/bin/{exp.name}.bin"
+            if os.path.exists(cache):
+                os.remove(cache)
+                wiped += 1
+        if wiped:
+            print(f"-tests: wiped {wiped} cached .bin file(s) to force re-run")
+        operator_experiments = filtered
+
+    # issue-1101 cleanup of the Windows-side projdir copy: ONLY when t641_1 runs and
+    # will re-create the affected fss fresh. Without t641_1 in the run the cleanup
+    # would just destroy the input of a later t641_2.
+    if any("t641_1" in e.name for e in operator_experiments):
+        workaround_issue_1101(local_machine_parameters["LocalDataDirRegression"])
 
     # -no-gui: drop the GeoDmsGuiQt GUI tests (t1630/t1640/t1642) on ANY flavor.
     # Older Windows builds crash GeoDmsGuiQt on the current test scripts (OS
@@ -834,13 +871,18 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         # The relocated ext4 projdir must exist before GeoDMS writes into it, and
         # the issue-1101 non-ASCII .fss cleanup (done for the /mnt/c copy by
         # workaround_issue_1101 above) must also cover the ext4 copy so repeat runs
-        # keep fresh-create semantics. Best-effort — never abort the run on this.
+        # keep fresh-create semantics. The rm -rf of the 1101 fss is gated on t641_1
+        # ACTUALLY running (operator_experiments is post -tests filter here): those
+        # files are t641_1 OUTPUT and t641_2 INPUT, so deleting them in a run without
+        # t641_1 destroys t641_2's input. Best-effort — never abort the run on this.
         if any("t641" in e.name for e in operator_experiments):
             ext4_rsopen = f"{ext4_projdir_base}/RSopen_RegressieTest_v2025"
-            stale = " ".join(f"'{ext4_projdir_base}/{rel}'" for rel in _ISSUE_1101_AFFECTED_FSS)
+            prep_cmd = f"mkdir -p '{ext4_rsopen}'"
+            if any("t641_1" in e.name for e in operator_experiments):
+                stale = " ".join(f"'{ext4_projdir_base}/{rel}'" for rel in _ISSUE_1101_AFFECTED_FSS)
+                prep_cmd += f"; rm -rf {stale}"
             try:
-                subprocess.run(["wsl", "--", "bash", "-c",
-                                f"mkdir -p '{ext4_rsopen}'; rm -rf {stale}"], check=False)
+                subprocess.run(["wsl", "--", "bash", "-c", prep_cmd], check=False)
             except OSError as e:
                 print(f"[.l projdir] could not prepare {ext4_rsopen}: {e}")
 
@@ -852,34 +894,8 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         with open(rf_path, "w") as f:
             f.write(to_wsl_path(result_paths["results_folder"] + "/result"))
 
-    # Optional test-name filter for fast iteration. The HTML report still
-    # picks up cached results for the unselected tests, so consistency with
-    # a full prior run is preserved — only the listed tests are re-executed.
-    # We also wipe the matching .bin caches so the runner actually re-runs
-    # the targeted tests (otherwise it skips them with "results are reused").
-    if args.tests:
-        filters = [t.strip() for t in args.tests.split(",") if t.strip()]
-        filtered = [exp for exp in operator_experiments
-                    if any(f in exp.name for f in filters)]
-        if not filtered:
-            print(f"-tests filter {filters} matched 0 experiments out of "
-                  f"{len(operator_experiments)}; available names:", file=sys.stderr)
-            for exp in operator_experiments:
-                print(f"  {exp.name}", file=sys.stderr)
-            sys.exit(2)
-        print(f"-tests filter {filters} -> running {len(filtered)} of "
-              f"{len(operator_experiments)} experiments:")
-        wiped = 0
-        for exp in filtered:
-            print(f"  {exp.name}")
-            cache = f"{result_paths['results_folder']}/bin/{exp.name}.bin"
-            if os.path.exists(cache):
-                os.remove(cache)
-                wiped += 1
-        if wiped:
-            print(f"-tests: wiped {wiped} cached .bin file(s) to force re-run")
-        operator_experiments = filtered
-
+    # (the -tests filter is applied right after get_experiments above, so the
+    # .l cleanup/translation blocks all see the final test selection)
     regression.run_experiments(operator_experiments)
     regression.collect_and_generate_test_results(display_version, result_paths)
 
