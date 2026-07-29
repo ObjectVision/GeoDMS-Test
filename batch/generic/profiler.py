@@ -77,7 +77,22 @@ def readLog(log_filename, filter=None):
     if not os.path.exists(log_filename):
         return ret
 
-    with open(log_filename, "r") as f:
+    # Decode explicitly, and never let one odd byte kill a multi-hour run.
+    # GeoDMS writes its log as UTF-8 (e.g. the area unit renders as "m²" =
+    # 0xC2 0xB2), but the text can carry raw high bytes straight from the data:
+    # t060's issue-#1119 area-metric deprecation warning embeds a 0xFF separator
+    # in "EPSG:28992<0xFF>wmts_layer". Without an explicit encoding this open()
+    # used the LOCALE default -- cp1252 on a Dutch/US Windows box, which happens
+    # to absorb 0xFF, but strict UTF-8 wherever the interpreter runs in UTF-8
+    # mode (PYTHONUTF8=1, -X utf8, or a UTF-8 locale). There it raised
+    # UnicodeDecodeError from getLogInfoForPlotting AFTER the test's GeoDmsRun had
+    # already succeeded, aborting the whole suite mid-run (2026-07-29: killed a
+    # 20.8.0.m run at experiment 3 of 31).
+    # utf-8 + errors="replace" is also MORE faithful than the old locale default:
+    # cp1252 mangled "m²" into "mÂ²" in the rendered report.
+    # (RunExperiments' sibling log read at ~line 515 already guarded this with
+    # errors="ignore"; this is the same defence for the plotting path.)
+    with open(log_filename, "r", encoding="utf-8", errors="replace") as f:
         date_end = 19
         while (True):
             line = f.readline()
