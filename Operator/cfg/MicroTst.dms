@@ -144,19 +144,19 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		container bbox;
 		// einde case parameters
 
-		parameter<int16> nr_rows:= int16((bbox/right - bbox/left)   / gridsize);
-		parameter<int16> nr_cols:= int16((bbox/top   - bbox/bottom) / gridsize);
+		parameter<int16> nr_cols := int16((bbox/right - bbox/left)   / gridsize);
+		parameter<int16> nr_rows := int16((bbox/top   - bbox/bottom) / gridsize);
 
 		unit<spoint> untiled_domain:=
 			range(
 				 gridset(
 					 point_rd
-					,point(float32(-gridsize), float32(gridsize), point_rd)
-					,point(bbox/top,bbox/left,point_rd)
+					,point_yx(float32(-gridsize), float32(gridsize), point_rd)
+					,point_yx(bbox/top,bbox/left,point_rd)
 					,spoint
 				)
-				,point(int16(0), int16(0))
-				,point(nr_cols,nr_rows)
+				,point_yx(int16(0), int16(0))
+				,point_yx(nr_rows, nr_cols)
 			)
 		,	DialogData = "point_rd";
 
@@ -175,10 +175,10 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			unit<uint32> shape: nrofrows = 1
 			{
-				attribute<dpoint> left_top     := const(point(157500d, 461500d, dpoint),.);
-				attribute<dpoint> right_top    := const(point(158500d, 461500d, dpoint),.);
-				attribute<dpoint> right_bottom := const(point(158500d, 460500d, dpoint),.);
-				attribute<dpoint> left_bottom  := const(point(157500d, 460500d, dpoint),.);
+				attribute<dpoint> left_top     := const(point_yx(157500d, 461500d, dpoint),.);
+				attribute<dpoint> right_top    := const(point_yx(158500d, 461500d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point_yx(158500d, 460500d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point_yx(157500d, 460500d, dpoint),.);
 			}
 
 			unit<uint32> pointset : nrofrows = 5
@@ -198,10 +198,10 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			unit<uint32> shape: nrofrows = 1
 			{
-				attribute<dpoint> left_top     := const(point(157800d, 461200d, dpoint),.);
-				attribute<dpoint> right_top    := const(point(158200d, 461200d, dpoint),.);
-				attribute<dpoint> right_bottom := const(point(158200d, 460800d, dpoint),.);
-				attribute<dpoint> left_bottom  := const(point(157800d, 460800d, dpoint),.);
+				attribute<dpoint> left_top     := const(point_yx(157800d, 461200d, dpoint),.);
+				attribute<dpoint> right_top    := const(point_yx(158200d, 461200d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point_yx(158200d, 460800d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point_yx(157800d, 460800d, dpoint),.);
 			}
 
 			unit<uint32> pointset : nrofrows = 5
@@ -219,10 +219,10 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			unit<uint32> shape: nrofrows = 1
 			{
-				attribute<dpoint> left_top     := const(point(158300d, 461450d, dpoint),.);
-				attribute<dpoint> right_top    := const(point(158400d, 461450d, dpoint),.);
-				attribute<dpoint> right_bottom := const(point(158400d, 461300d, dpoint),.);
-				attribute<dpoint> left_bottom  := const(point(158300d, 461300d, dpoint),.);
+				attribute<dpoint> left_top     := const(point_yx(158300d, 461450d, dpoint),.);
+				attribute<dpoint> right_top    := const(point_yx(158400d, 461450d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point_yx(158400d, 461300d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point_yx(158300d, 461300d, dpoint),.);
 			}
 
 			unit<uint32> pointset : nrofrows = 5
@@ -240,10 +240,10 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			unit<uint32> shape: nrofrows = 1
 			{
-				attribute<dpoint> left_top     := const(point(157950d, 461100d, dpoint),.);
-				attribute<dpoint> right_top    := const(point(158100d, 461100d, dpoint),.);
-				attribute<dpoint> right_bottom := const(point(158100d, 460900d, dpoint),.);
-				attribute<dpoint> left_bottom  := const(point(157950d, 460900d, dpoint),.);
+				attribute<dpoint> left_top     := const(point_yx(157950d, 461100d, dpoint),.);
+				attribute<dpoint> right_top    := const(point_yx(158100d, 461100d, dpoint),.);
+				attribute<dpoint> right_bottom := const(point_yx(158100d, 460900d, dpoint),.);
+				attribute<dpoint> left_bottom  := const(point_yx(157950d, 460900d, dpoint),.);
 			}
 
 			unit<uint32> pointset : nrofrows = 5
@@ -698,8 +698,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	container geometries
 	{
 		unit<fpoint> rdc_base;
-		unit<fpoint> rdc    := range(rdc_base, point(300000f,0f), point(625000f,280000f));
-		unit<ipoint> rdc_mm := gridset(rdc, point(0.001,0.001), point(0.0, 0.0), ipoint);
+		unit<fpoint> rdc    := range(rdc_base, point_yx(300000f,0f), point_xy(625000f,280000f));
+		unit<ipoint> rdc_mm := gridset(rdc, point_yx(0.001,0.001), point_yx(0.0, 0.0), ipoint);
 	}
 
 	container VisualisePointData
@@ -712,8 +712,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<float64> x :[130005.0,130025.0];
 			attribute<float64> y :[454005.0,454004.0];
 
-			attribute<geometries/rdc_mm> geometry_mm      := point(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
-			attribute<geometries/rdc_mm> geometry_mm_fout := point(Round(yFout * 1000.0), Round(xFout * 1000.0), geometries/rdc_mm);
+			attribute<geometries/rdc_mm> geometry_mm      := point_yx(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
+			attribute<geometries/rdc_mm> geometry_mm_fout := point_yx(Round(yFout * 1000.0), Round(xFout * 1000.0), geometries/rdc_mm);
 		}
 		parameter<float64> x := testdomain2/x[0];
 
@@ -721,7 +721,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			attribute<float64> x :[130005.0];
 			attribute<float64> y :[454005.0];
-			attribute<geometries/rdc_mm> geometry_mm  := point(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
+			attribute<geometries/rdc_mm> geometry_mm  := point_xy(Round(y * 1000.0), Round(x * 1000.0), geometries/rdc_mm);
 
 			attribute<geometries/rdc_mm> geometry_mm_windmolen_symbol1      := geometry_mm
 			{
@@ -752,8 +752,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			range(
 				 gridset(
 					 geometries/rdc
-					,point(-100f, 100f, geometries/rdc)
-					,point(y_max, x_min,geometries/rdc)
+					,point_yx(-100f, 100f, geometries/rdc)
+					,point_yx(y_max, x_min,geometries/rdc)
 					,spoint
 				)
 				,point(0s, 0s)
