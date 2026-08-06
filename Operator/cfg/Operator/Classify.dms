@@ -1,0 +1,275 @@
+	container Classify: Using = "/Domains;/Units;/Tolerances"
+	{
+		container srcDomain       :=  Source(DistrictDomain);
+		container srcEDomain      := ESource(EDomain);
+		container srcTiledDomain  :=  Source(DistrictTiledDomain);
+		container srcETiledDomain := ESource(ETiledDomain);
+		
+		template Source
+		{
+			// begin case parameters
+			unit<uint32> DistrictDomain;
+			// begin case parameters
+
+			unit<uint32> District := DistrictDomain
+			,	DialogType = "Map"
+			,	DialogData = "Location"
+			{
+				attribute<nrPersons> NrInhabitants:
+					[550,1025,300,200,0,null,300,2,20,55,860,1025,1025,100,750];
+				attribute<point_rd> Location := point_yx(float32(id(.)),float32(id(.)),point_rd);
+			}
+
+			unit<uint32> ClassDomain: nrofrows = 4
+			{
+				attribute<nrPersons> Classes
+				:	DialogType = "Classification"
+				,	[0,100,300,800];
+				attribute<nrPersons> UniqueValues  : [0,2,20,55];
+				attribute<nrPersons> EqualCount    : [0,55,300,860];
+				attribute<nrPersons> EqualInterval : [0,341,683,1025];
+				attribute<nrPersons> JenksFisher   : [0,200,550,860];
+				attribute<nrPersons> NonzeroJenksFisher   : [0,2,300,750];
+				
+				attribute<nrPersons> LogInterval   : [0,10,100,1000];
+			}
+
+			unit<uint8>  ClassDomainOneClass: nrofrows = 1
+			{
+				attribute<nrPersons> ok
+				:	DialogType = "Classification"
+				,	[0];
+			}
+
+		}
+		
+		template ESource
+		{
+			// begin case parameters
+			unit<uint32> DistrictDomain;
+			// begin case parameters
+
+			unit<uint32> District : nrofrows = 0
+			{
+				attribute<nrPersons> NrInhabitants: [];
+				attribute<point_rd> Location := point_yx(float32(id(.)),float32(id(.)),point_rd);
+			}
+
+			unit<uint32> ClassDomain: nrofrows = 0
+			{
+				attribute<nrPersons> Classes
+				:	DialogType = "Classification"
+				,	[];
+				attribute<nrPersons> UniqueValues  : [];
+				attribute<nrPersons> EqualCount    : [];
+				attribute<nrPersons> EqualInterval : [];
+				attribute<nrPersons> JenksFisher   : [];
+				attribute<nrPersons> LogInterval   : [];
+			}
+
+			unit<uint8>  ClassDomainOneClass: nrofrows = 0
+			{
+				attribute<nrPersons> ok
+				:	DialogType = "Classification"
+				,	[];
+			}
+		}
+
+		container UnTiled2UnTiled := Template(DistrictDomain      , ClassDomainManyClasses, srcDomain, False);
+		container Tiled2UnTiled   := Template(DistrictTiledDomain , ClassDomainManyClasses, srcTiledDomain, False);
+		
+		container EUntiled := Template(EDomain, uint8(EDomain), srcEDomain, True);
+
+		container ResultUnitTiled
+		{
+			attribute<nrPersons> att_many_classes  (point/ResultUnitTiled/dyna_point_tiled/CalcPoint) := ClassifyUniqueValues(id(point/ResultUnitTiled/dyna_point_tiled/CalcPoint), point/ResultUnitTiled/dyna_point_tiled/CalcPoint);
+		}
+
+		// To Tiled is not considedered relevant as the class units usually do not have a lot of elements
+		// It is also not testable at the moment as the TileUnit function is not implemented for uint8. 
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> DistrictDomain;
+			unit<uint8>  ClassDomainManyClasses;
+			container src;
+			parameter<bool> isEmpty;
+			// end case parameters
+
+			unit<uint32> District            := src/District;
+			unit<uint32> ClassDomain         := src/ClassDomain;
+			unit<uint8>  ClassDomainOneClass := src/ClassDomainOneClass;
+
+			container Classify: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/Classify"
+			{
+				attribute<ClassDomain> att                 (District) := classify(District/NrInhabitants, ClassDomain/Classes);
+				attribute<ClassDomain> att_okwithvalues    (District) : [2,3,2,1,0,null,2,0,0,0,3,3,3,1,2];
+				attribute<ClassDomain> att_okwithoutvalues (District) : [];
+				attribute<ClassDomain> att_ok              (District) := = isEmpty ? 'att_okwithoutvalues' : 'att_okwithvalues';
+				
+				attribute<bool>        test   (District) := eq_or_both_null(att, att_ok); 
+				parameter<bool>        test_attr         := all(test);
+			}
+			container ClassifyUniqueValues: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyUniqueValues"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyUniqueValues(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyUniqueValues(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/UniqueValues);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyUniqueValues(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container ClassifyEqualCount: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualCount"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyEqualCount(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyEqualCount(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualCount);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyEqualCount(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container ClassifyNonzeroEqualCount: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualCount"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualCount);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes                (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container ClassifyEqualInterval: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualInterval"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyEqualInterval(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyEqualInterval(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualInterval);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyEqualInterval(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,53,107,161,215,269,323,377,431,485,539,593,647,701,755,809,863,917,971,1024];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container ClassifyNonZeroEqualInterval: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyEqualInterval"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualInterval);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,53,107,161,215,269,323,377,431,485,539,593,647,701,755,809,863,917,971,1024];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container ClassifyJenksFisher: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyJenksFisher"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyJenksFisher(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyJenksFisher(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/JenksFisher);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyJenksFisher(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+
+			}
+			container ClassifyNonzeroJenksFisher 
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyNonzeroJenksFisher (District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonzeroJenksFisher (District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/NonzeroJenksFisher);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonzeroJenksFisher (District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+
+			}
+			container ClassifyLogInterval: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/Classify/ClassifyLogInterval"
+			{
+				attribute<nrPersons> att_one_class       (ClassDomainOneClass) := ClassifyLogInterval(District/NrInhabitants, ClassDomainOneClass);
+				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
+
+				attribute<nrPersons> att                 (ClassDomain) := ClassifyLogInterval(District/NrInhabitants, ClassDomain);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/LogInterval);
+
+				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyLogInterval(District/NrInhabitants, ClassDomainManyClasses);
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,5,10,20,50,100,200,500,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000];
+				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
+				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
+
+				attribute<bool>      test_many_classes   (ClassDomainManyClasses) := eq_or_both_null(att_many_classes, att_many_classes_ok);
+
+				parameter<bool>      test_attr := all(test_one_class) && all(test) && all(test_many_classes);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 7
+				{
+					attribute<string> Spec :
+					[
+						 'Classify/test_attr'
+					,	'ClassifyUniqueValues/test_attr'
+					,	'ClassifyEqualCount/test_attr'
+					,	'ClassifyNonzeroEqualCount/test_attr'
+					,	'ClassifyEqualInterval/test_attr'
+					,	'ClassifyJenksFisher/test_attr'
+					,	'ClassifyLogInterval/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

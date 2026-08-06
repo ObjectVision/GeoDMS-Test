@@ -1,0 +1,93 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container Precedence: Using = "/Domains;/Units;/Tolerances"
+	{
+		container associative
+		{
+			parameter<bool> test_param_plus    := ++4.0 == 4.0;
+			parameter<bool> test_param_plusmin := +-4.0 == -4.0;
+			parameter<bool> test_param_minplus := -+4.0 == -4.0;
+			parameter<bool> test_param_minmin  := --4.0 == 4.0;
+			parameter<bool> test_param_pow     := 4.0 ^ 2.0 ^ 3.0 == 4096.0;
+			parameter<bool> test_param_SubItem := all(eq_or_both_null(Relational/UnTiled2UnTiled!'Region'!'AvgDailyTemperature', Relational/UnTiled2UnTiled/Region/AvgDailyTemperature));
+			parameter<bool> test_param_mod     := 15 % 4 % 3 == 0;
+			parameter<bool> test_param_mul     := 5 * 3 * 2 == 30;
+			parameter<bool> test_param_div     := 625 / 5 / 25 == 5;
+			parameter<bool> test_param_add     := 5 + 3 + 2 == 10;
+			parameter<bool> test_param_sub     := 5 - 3 - 2 == 0;
+			parameter<bool> test_param_not     := !!true;
+			parameter<bool> test_param_and     := true && true && true;
+			parameter<bool> test_param_or      := true || false || false;
+			parameter<bool> test_param_iif     := false ? true : false ? false : true;
+		}
+		container combined
+		{
+			parameter<bool> test_param_AddMul          := 5 + 3 * 2 == 11;
+			parameter<bool> test_param_DivMul          := 25 / 5 * 2 == 10;
+			parameter<bool> test_param_DivSub          := 25 / 5 - 2 == 3;
+			parameter<bool> test_param_PlusPow         := +3.0 ^ 2.0  == 9.0;
+			parameter<bool> test_param_NegPow          := -3.0 ^ 2.0  == 9.0;
+			parameter<bool> test_param_SubLook         := Relational/UnTiled2UnTiled/Region!'AvgDailyTemperature'[4] == value(13, DegreesCelsius);
+			parameter<bool> test_param_LookupPow       := float64(Relational/UnTiled2UnTiled/Region/AvgDailyTemperature)[3]  ^ 2.0 == 196.0;
+			parameter<bool> test_param_LookupNrRows    :=Relational/UnTiled2UnTiled/Region/AvgDailyTemperature[#Classifications/m_4K] == value(13, DegreesCelsius);
+			parameter<bool> test_param_PowMulAdd       := 1.0 + 3.0 * 5.0 ^ 2.0  == 76.0;
+			parameter<bool> test_param_AddSubDivPowMul := 40.0 + 1.0 - 81.0 / 3.0 ^ 2.0 * 4.0 == 5.0;
+			parameter<bool> test_param_Addeq           := 40.0 + 1.0 == 41.0;
+			parameter<bool> test_param_MulNoteq        := 40.0 * 2.0 <> 100.0;
+			parameter<bool> test_param_Powlt           := 2.0 ^ 4.0 < 100.0;
+			parameter<bool> test_param_Modlteq         := 40.0 % 2.0 <= 0.0;
+			parameter<bool> test_param_Subgt           := 40.0 - 29.0 >  10.0;
+			parameter<bool> test_param_Divgteq         := 40.0 / 2.0 >= 20.0;
+			parameter<bool> test_param_NotAnd          := !true == false && true ;
+			parameter<bool> test_param_AndOr           := false || true && false == false;
+			parameter<bool> test_param_iifMulAdd       := (true ? 2 * 6 : 3 + 7) == 12;
+		}
+		container results
+		{
+			unit<uint32> Cand : nrofrows = 32
+			{
+				attribute<string> Spec :
+				[
+					 'associative/test_param_plus'
+				,	'associative/test_param_plusmin'
+				,	'associative/test_param_minplus'
+				,	'associative/test_param_minmin'
+				,	'associative/test_param_pow'
+				,	'associative/test_param_SubItem'
+				,	'associative/test_param_mul'
+				,	'associative/test_param_div'
+				,	'associative/test_param_add'
+				,	'associative/test_param_sub'
+				,	'associative/test_param_not'
+				,	'associative/test_param_and'
+				,	'associative/test_param_or'
+				,	'associative/test_param_iif'
+				,	'combined/test_param_AddMul'
+				,	'combined/test_param_DivMul'
+				,	'combined/test_param_DivSub'
+				,	'combined/test_param_PlusPow'
+				,	'combined/test_param_NegPow'
+				,	'combined/test_param_SubLook'
+				,	'combined/test_param_LookupPow'
+				,	'combined/test_param_LookupNrRows'
+				,	'combined/test_param_PowMulAdd'
+				,	'combined/test_param_Addeq'
+				,	'combined/test_param_MulNoteq'
+				,	'combined/test_param_Powlt'
+				,	'combined/test_param_Modlteq'
+				,	'combined/test_param_Subgt'
+				,	'combined/test_param_Divgteq'
+				,	'combined/test_param_NotAnd'
+				,	'combined/test_param_AndOr'
+				,	'combined/test_param_iifMulAdd'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
+		}
+	}

@@ -235,9 +235,11 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
         # nooit stil een oude testset draaien. Alleen relevant zolang versies < 18.1.0
         # in de vergelijking meedraaien.
         _pre = regression_test_paths["OperatorPath"]
-        _src = f"{regression_test_paths["TstDir"]}/Operator/cfg/Operator.dms"
-        if not os.path.exists(_pre) or (os.path.exists(_src) and os.path.getmtime(_src) > os.path.getmtime(_pre)):
-            print("operator_pre1810.dms ontbreekt of is ouder dan Operator.dms; regenereren...", file=sys.stderr)
+        _srcs = [f"{regression_test_paths["TstDir"]}/Operator/cfg/Operator.dms"] \
+              + glob.glob(f"{regression_test_paths["TstDir"]}/Operator/cfg/Operator/*.dms")
+        _newest = max((os.path.getmtime(p) for p in _srcs if os.path.exists(p)), default=0)
+        if not os.path.exists(_pre) or _newest > os.path.getmtime(_pre):
+            print("operator_pre1810 ontbreekt of is ouder dan Operator.dms(+includes); regenereren...", file=sys.stderr)
             subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "make_operator_pre1810.py")], check=True)
 
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)

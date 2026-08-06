@@ -1,0 +1,70 @@
+	container Domains: Using = "/Units"
+	{
+		unit<uint32> HDomain: nrofrows = 4;
+		unit<uint32> ADomain: nrofrows = 5;
+		unit<uint32> CDomain: nrofrows = 10;
+		unit<uint32> RDomain: nrofrows = 7;
+		unit<uint32> LDomain: nrofrows = 8;
+		unit<uint32> SDomain: nrofrows = 1;
+		unit<uint32> EDomain: nrofrows = 0;
+
+		unit<uint32> SequenceUnit: nrofrows = 2;
+
+		unit<uint32> RegionDomain:   nrofrows = 5;
+		unit<uint32> ERegionDomain:  nrofrows = 0;
+
+		unit<uint32> DistrictDomain: nrofrows = 15;
+		unit<uint32> BuildingDomain: nrofrows = 6;
+
+		unit<uint8>  ClassDomain           := Classifications/inhabitants_4K;
+		unit<uint8>  ClassDomainOneClass   :  nrofrows =  1;
+		unit<uint8>  ClassDomainManyClasses:  nrofrows = 20;
+
+		unit<uint32> RoadDomain:   nrofrows = 3;
+		unit<uint32> CityDomain:   Range = "[1, 8)";
+		unit<uint32> CountryDomain:   nrofrows = 3;
+		unit<uint32> DistrictPointsDomain: nrofrows = 177;
+
+		unit<uint32> PandPointsDomain: nrofrows = 142;
+		unit<uint32> PandDomain      : nrofrows = 21;
+
+		unit<uint32> Years: nrofrows = 3;
+
+		unit<spoint> gridcel_1km :=
+			 range(
+				gridset(
+					 point_rd
+					,point_yx(float32(-1000.0)  , float32(1000.0) , point_rd )
+					,point_yx(float32(405600), float32(111300), point_rd )
+					,spoint
+				)
+				,point_yx(int16(0), int16(0))
+				,point_yx(int16(5), int16(4))
+			);
+
+		unit<UInt32> HTiledDomain := TiledUnit(2[HDomain]);
+		unit<UInt32> ATiledDomain := TiledUnit(2[ADomain]);
+		unit<UInt32> CTiledDomain := TiledUnit(2[CDomain]);
+		unit<UInt32> RTiledDomain := TiledUnit(2[RDomain]);
+		unit<UInt32> LTiledDomain := TiledUnit(2[LDomain]);
+		unit<UInt32> ETiledDomain := TiledUnit(2[EDomain]);
+
+		unit<uint32> RegionTiledDomain         := TiledUnit(2[RegionDomain]);
+		unit<uint32> ERegionTiledDomain        := TiledUnit(2[ERegionDomain]);
+
+		unit<uint32> CountryTiledDomain        := TiledUnit(2[CountryDomain]);
+
+		unit<uint32> DistrictTiledDomain       := TiledUnit(2[DistrictDomain]);
+		unit<uint32> RoadTiledDomain           := TiledUnit(2[RoadDomain]);
+		unit<uint32> CityTiledDomain           := TiledUnit(2[CityDomain]);
+		unit<uint32> DistrictPointsTiledDomain := TiledUnit(10[DistrictPointsDomain]);
+
+		unit<uint32> PandPointsTiledDomain     := TiledUnit(10[PandPointsDomain]);
+		unit<uint32> PandTiledDomain           := TiledUnit(10[PandDomain]);
+
+		unit<uint32> UDomain1: nrofrows = 10000;
+		unit<uint32> UDomain2: nrofrows = 10000;
+
+		unit<uint32> UTiledDomain1 := TiledUnit(1000[UDomain1]);
+		unit<uint32> UTiledDomain2 := TiledUnit(1000[UDomain2]);
+	}

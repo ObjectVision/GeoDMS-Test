@@ -1,0 +1,12 @@
+	container Trackers: Using = "/Domains;/Units;/Tolerances"
+	{
+		parameter<String> NullStr := String(0/0);
+		parameter<String> T5a     := iif(true, 'x', NullStr);
+		parameter<String> T5b     := iif(false, 'x', NullStr);
+		parameter<UInt32> T5c     := iif(true,  13/4, 0/0);
+		parameter<UInt32> T5d     := iif(false, 13/4, 0/0);
+		container Results
+		{
+			parameter<Bool> Tests := T5a=='x' && ! IsDefined(T5b) && T5c==3 && !IsDefined(T5d);
+		}
+	}

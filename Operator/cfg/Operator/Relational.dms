@@ -1,0 +1,1052 @@
+	container Relational: Using = "/Domains;/Units;/Tolerances"
+	{
+		// draait alleen waar de operator bestaat (Spec-rij '...|ordererd_union_data')
+		container ordererd_union_data
+		{
+			unit<uint32> A2: nrofrows = 2 { attribute<uint32> v: [10,20]; }
+			unit<uint32> B1: nrofrows = 1 { attribute<uint32> v: [30]; }
+			unit<uint32> UU: nrofrows = 3;
+			attribute<uint32> att (UU) := ordererd_union_data(UU, A2/v, B1/v);
+			parameter<bool> test_attr := asList(string(att), ';') = '10;20;30';
+		}
+
+		container srcUnTiled2UnTiledDomain := Source(CityDomain      , RegionDomain      , CountryDomain,      RoadDomain);
+		container srcUnTiled2TiledDomain   := Source(CityDomain      , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
+		container srcTiled2UnTiledDomain   := Source(CityTiledDomain , RegionDomain      , CountryDomain,      RoadDomain);
+		container srcTiled2TiledDomain     := Source(CityTiledDomain , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
+
+		container srcEDomain               := ESource(EDomain        , EDomain           , EDomain,            Edomain);
+		container srcETiledDomain          := ESource(ETiledDomain   , ETiledDomain      , ETiledDomain,       ETiledDomain);
+
+		template Source
+		{
+			// begin case parameters
+			unit<uint32> CityDomain;
+			unit<uint32> RegionDomain;
+			unit<uint32> CountryDomain;
+			unit<uint32> RoadDomain;
+			// end case parameters
+
+			unit<uint32> Region := RegionDomain
+			{
+				attribute<Region>         RegionNr:                [0,1,2,3,4];
+				attribute<DegreesCelsius> AvgDailyTemperature:     [12,11,null,14,13];
+				attribute<RegionEK>       RegionCode:              [100,200,300,400,500];
+				attribute<uint32>         indexTemp:               [2,1,0,4,3];
+				attribute<City>           invertRegion:            [1,4,3,7,null];
+				attribute<m>              length:                  [120,1750,500,null,1499];
+				attribute<string>         year:                    ['1995','2005','2015','2025','2035'];
+				attribute<uint32>         uniqueTst:               [100,200,300,400, null];
+				attribute<uint32>         unique_with_null_tst:    [null, 100,200,300,400];
+				
+				attribute<CountryDomain>  CountryDomain_rel:       [0,0,1,1,2];
+			}
+
+			unit <uint32> City := CityDomain
+			{
+				attribute<DegreesCelsius> AvgDailyTemperature:     [12,11,null,11,14,null,14];
+				attribute<RegionEK>       RegionCode:              [100,200,300,200,400,null,400];
+				attribute<Region>         RegionNr:                [0,1,2,1,3,null,3];
+				attribute<uint32>         indexTemp:               [3,6,2,4,1,5,7];
+				attribute<uint32>         direct_indexTemp:        [2,5,1,3,0,4,6];
+				attribute<uint32>         SubIndexTemp:            [3,6,2,4,1,5,7];
+				attribute<m2>             area:                    [400,350,300,325,250,null,200];
+				
+				attribute<bool>           selection_condition    := RegionCode = 200;
+			}
+			
+			// unit<uint32> City_subitems := SubItem_PropValues(City,'name'); 
+
+			// container City_ForEachContainer := 
+				// for_each_nedv(
+					// City_subitems/name
+					// , 'City/'+City_subitems/name+'[float32]'
+					// , City
+					// , float32
+				// );
+			
+			
+
+			unit <uint32> Road := RoadDomain
+			{
+				attribute<CountryDomain>  CountryDomain_rel:       [1,0,2];
+			}
+
+			attribute<uint32> Year (RegionDomain): [1990, 2000, 2010, 2020, 2030];
+
+			unit<uint32> NoordHollandBigCities := range(BaseUnit('NHC',uint32), 0, 5)
+			{
+				attribute<string> CityNames: ['Amsterdam','Haarlem','Alkmaar','Zaanstad','Purmerend'];
+			}
+			unit<uint32> ZuidHollandBigCities := range(BaseUnit('ZHC',uint32), 0, 5)
+			{
+				attribute<string> CityNames: ['Rotterdam','DenHaag','Leiden','Dordrecht','Leiden'];
+			}
+			unit<uint32> Years := RegionDomain
+			{
+				attribute<string> Names: ['1995','2005','2015','2025','2035'];
+			}
+			unit<uint32> Years20thCentury := range(uint32, 1900, 1999);
+			unit<uint32> FirstWorldWar :=range(uint32, 1914, 1918);
+			unit<uint32> SecondWorldWar :=range(uint32, 1940, 1945);
+
+			attribute<uint32> att_large (UDomain1) := const(2,UDomain1);
+		}
+		template ESource
+		{
+			// begin case parameters
+			unit<uint32> CityDomain;
+			unit<uint32> RegionDomain;
+			unit<uint32> CountryDomain;
+			unit<uint32> RoadDomain;
+			// end case parameters
+
+			unit<uint32> Region := RegionDomain
+			{
+				attribute<Region>         RegionNr:                [];
+				attribute<DegreesCelsius> AvgDailyTemperature:     [];
+				attribute<RegionEK>       RegionCode:              [];
+				attribute<uint32>         indexTemp:               [];
+				attribute<City>           invertRegion:            [];
+				attribute<m>              length:                  [];
+				attribute<string>         year:                    [];
+				attribute<uint32>         uniqueTst:               [];
+				attribute<uint32>         unique_with_null_tst:    [];
+				attribute<CountryDomain>  CountryDomain_rel:       [];
+			}
+
+			unit <uint32> City := CityDomain
+			{
+				attribute<DegreesCelsius> AvgDailyTemperature:     [];
+				attribute<RegionEK>       RegionCode:              [];
+				attribute<Region>         RegionNr:                [];
+				attribute<uint32>         indexTemp:               [];
+				attribute<uint32>         direct_indexTemp:        [];
+				attribute<uint32>         SubIndexTemp:            [];
+				attribute<m2>             area:                    [];
+			}
+
+			unit <uint32> Road := RoadDomain
+			{
+				attribute<CountryDomain>  CountryDomain_rel:       [];
+			}
+
+			attribute<uint32> Year (RegionDomain): [];
+
+			unit<uint32> NoordHollandBigCities : nrofrows = 0
+			{
+				attribute<string> CityNames: [];
+			}
+			unit<uint32> ZuidHollandBigCities : nrofrows = 0
+			{
+				attribute<string> CityNames: [];
+			}
+			unit<uint32> Years := RegionDomain
+			{
+				attribute<string> Names: [];
+			}
+			unit<uint32> Years20thCentury : nrofrows = 0;
+			unit<uint32> FirstWorldWar    : nrofrows = 0;
+			unit<uint32> SecondWorldWar   : nrofrows = 0;
+
+			attribute<uint32> att_large (UDomain1) := const(2,UDomain1);
+		}
+
+		container UnTiled2UnTiled  := Template(srcUnTiled2UnTiledDomain/Region, srcUnTiled2UnTiledDomain/City, srcUnTiled2UnTiledDomain/Years, srcUnTiled2UnTiledDomain, False);
+		container UnTiled2Tiled    := Template(srcUnTiled2TiledDomain/Region  , srcUnTiled2TiledDomain/City  , srcUnTiled2TiledDomain/Years  , srcUnTiled2TiledDomain, False);
+		container Tiled2UnTiled    := Template(srcTiled2UnTiledDomain/Region  , srcTiled2UnTiledDomain/City  , srcTiled2UnTiledDomain/Years  , srcTiled2UnTiledDomain, False);
+		container Tiled2Tiled      := Template(srcTiled2TiledDomain/Region    , srcTiled2TiledDomain/City    , srcTiled2TiledDomain/Years    , srcTiled2TiledDomain, False);
+
+		container EunTiled         := Template(EDomain, EDomain, EDomain, srcEDomain, True);
+		container ETiled           := Template(ETiledDomain, ETiledDomain, ETiledDomain, srcETiledDomain, True);
+
+		container ResultUnitTiled
+		{
+			unit<uint32> src: nrofrows = 500000
+			{
+				attribute<ATiledDomain> ATiledDomain_rel := (float32(id(.)) / 100000f)[ATiledDomain];
+			}
+	
+			unit<uint32> unique := unique(id(src))
+			{
+				parameter<bool> test_attr := max(values) = #. - 1 && values[25001] == 25001;
+			}
+			
+			unit<uint32> combine := combine(src, ATiledDomain)
+			{
+				parameter<float32> mean_nr_1 : =mean(float32(first_rel));
+				parameter<bool> test_attr := sum(second_rel) = 5000000 && float_isNearby(mean(float32(first_rel)), 250000f, dif_all_float32) && #. == 2500000 && first_rel[2265850] == 453170 && second_rel[2265850] == 0;
+			}
+			unit<uint32> join_equal_values:= join_equal_values(src/ATiledDomain_rel , id(ATiledDomain))
+			{
+				parameter<bool> test_attr := sum(second_rel) = 1000000 && float_isNearby(mean(float32(first_rel)), 249999.5f, dif_all_float32) && #. == 500000;
+			}
+		}
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> Region;
+			unit<uint32> City;
+			unit<uint32> Years;
+			container Source;
+			parameter<bool> isEmpty;
+			// end case parameters
+
+			container id: url  = "http://www.objectvision.nl/geodms/operators-a-functions/id"
+			{
+				attribute<uint32> att  (Region) := ID(Region);
+				attribute<bool>   test (Region) := att = Source/Region/RegionNr;
+				parameter<bool>   test_attr            := all(test);
+			}
+			container mapping
+			{
+				attribute<Years>  years_rel (Region) := mapping(Region,Source/Years);
+				attribute<string> att       (Region) := Source/Years/Names[years_rel];
+				attribute<bool>   test      (Region) := att == Source/Region/year;
+				parameter<bool>   test_attr                 := all(test);
+			}
+			container mapping_count
+			{
+				attribute<uint32>                    count              (Grid/units/GridDomain3000) := mapping_count(Grid/units/GridDomain15, Grid/units/GridDomain3000, uint32);
+				attribute<uint16>                    count_uint16       (Grid/units/GridDomain3000) := mapping_count(Grid/units/GridDomain15, Grid/units/GridDomain3000, uint16);
+				attribute<Grid/units/GridDomain3000> GridDomain3000_rel (Grid/units/GridDomain15)   := mapping(Grid/units/GridDomain15,Grid/units/GridDomain3000);
+				attribute<uint32>                    pcount             (Grid/units/GridDomain3000) := pcount(GridDomain3000_rel);
+				attribute<bool>                      test1              (Grid/units/GridDomain3000) := count == pcount;
+				attribute<bool>                      test2              (Grid/units/GridDomain3000) := count_uint16 == uint16(pcount);
+				attribute<bool>                      test               (Grid/units/GridDomain3000) := test1 && test2;
+				parameter<bool>                      test_attr          := all(test);
+			}
+			container lookup_op: url  = "http://www.objectvision.nl/geodms/operators-a-functions/lookup"
+			{
+				attribute<DegreesCelsius> att  (City) := Source/Region/AvgDailyTemperature[Source/City/RegionNr];
+				attribute<bool>           test (City) := eq_or_both_null(att, Source/City/AvgDailyTemperature);
+				parameter<bool>           test_attr   := all(test);
+			}
+			container lookup: url  = "http://www.objectvision.nl/geodms/operators-a-functions/lookup"
+			{
+				attribute<DegreesCelsius> att  (City) := lookup(Source/City/RegionNr, Source/Region/AvgDailyTemperature);
+				attribute<DegreesCelsius> att2 (City) := Source/City/RegionNr->AvgDailyTemperature; // arrow operator
+				attribute<bool>           test (City) := eq_or_both_null(att, Source/City/AvgDailyTemperature);
+				parameter<bool>           test_attr := all(test);
+			}
+			container rlookup: url  = "http://www.objectvision.nl/geodms/operators-a-functions/rlookup"
+			{
+				attribute<Region> att  (City) := rlookup(Source/City/RegionCode, Source/Region/RegionCode);
+				attribute<bool>   test        (City) := eq_or_both_null(att, Source/City/RegionNr);
+				parameter<bool>   test_attr   := all(test);
+			}
+			container rjoin: url  = "http://www.objectvision.nl/geodms/operators-a-functions/rjoin"
+			{
+				attribute<DegreesCelsius> att  (City) := rjoin(Source/City/RegionCode, Source/Region/RegionCode, Source/Region/AvgDailyTemperature);
+				attribute<bool>           test (City) := eq_or_both_null(att, Source/City/AvgDailyTemperature);
+				parameter<bool>           test_attr   := all(test);
+			}
+
+			container index: url = "http://www.objectvision.nl/geodms/operators-a-functions/index"
+			{
+				attribute<City> att  (City) := index(Source/City/AvgDailyTemperature);
+				attribute<bool>        test (City) := att = Source/City/indexTemp;
+				parameter<bool> test_attr   := all(test);
+				attribute<DegreesCelsius> AvgDailyTemperature_sorted (City):= Source/City/AvgDailyTemperature[att];
+				attribute<City> ranking  (City):= rlookup(Source/City/AvgDailyTemperature, AvgDailyTemperature_sorted);
+				
+			}
+			container direct_index: url  = "http://www.objectvision.nl/geodms/operators-a-functions/direct_index"
+			{
+				attribute<uint32> att    (City) := direct_index(Source/City/AvgDailyTemperature);
+				attribute<bool>   test   (City) := att = Source/City/direct_indexTemp;
+				parameter<bool>   test_attr     := all(test);
+			}
+			/*
+			container subindex: url  = "http://www.objectvision.nl/dms/Operator/Subindex.htm"
+			{
+				attribute<City>   att  (City) := subindex(index/att, City/RegionCode[index/att], City/AvgDailyTemperature);
+				attribute<bool>   test (City) := att = City/SubIndexTemp;
+				parameter<bool>   test_attr := all(test);
+			}*/
+			container invert: url  = "http://www.objectvision.nl/geodms/operators-a-functions/invert"
+			{
+				attribute<City>   att  (Region) := invert(Source/City/RegionNr);
+				attribute<bool>   test (Region) := eq_or_both_null(att, Source/Region/invertRegion);
+				parameter<bool>   test_attr     := all(test);
+			}
+			/*
+			container invert_all: url  = "http://www.objectvision.nl/dms/Operator/invert_all.htm"
+			{
+				attribute<uint32> att       (Region) := invert_all(City/RegionCode);
+				//attribute<bool>   test      (Region) := eq_or_both_null(att, Region/invertRegion);
+				//parameter<bool>   test_attr           := all(test);
+			}*/
+			container select_with_org_rel
+			{
+				unit<uint32> s_uint32 := select_with_org_rel(Source/City/RegionCode = 200)
+				{
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint8>  u_uint8  : nrofrows = 1;
+				unit<uint16> u_uint16 : nrofrows = 1;
+				unit<uint64> u_uint64 : nrofrows = 1;
+				unit<bool>   u_bool;
+				
+				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
+				,  label = "rijksdriehoekmeting in meters";
+				
+				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<wpoint> u_wpoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),wpoint),point_yx(0w,0w),point_yx(3250w, 2700w))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<ipoint> u_ipoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),ipoint),point_yx(0i,0i),point_yx(3250i, 2700i))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<upoint> u_upoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),upoint),point_yx(0u,0u),point_yx(3250u, 2700u))
+				{
+					attribute<.> id := id(.);
+				}
+
+				unit<uint8> s_uint8 := select_with_org_rel(id(u_uint8) == 0[u_uint8])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint8];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint16> s_uint16 := select_with_org_rel(id(u_uint16) == 0[u_uint16])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint16];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint64> s_uint64 := select_with_org_rel(id(u_uint64) == 0[u_uint64])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint64];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint32> s_bool := select_with_org_rel(id(u_bool) == True)
+				{
+					attribute<bool> att  := org_rel == True;
+					parameter<bool> test := all(att);
+				}
+				
+				unit<uint32> s_spoint := select_with_org_rel(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
+					parameter<bool> test := all(att);
+				}
+				unit<uint32> s_wpoint := select_with_org_rel(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
+					parameter<bool> test := all(att);
+				}
+				unit<uint64> s_ipoint := select_with_org_rel(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
+					parameter<bool> test := all(att);
+				}
+				unit<uint64> s_upoint := select_with_org_rel(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
+					parameter<bool> test := all(att);
+				}
+				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
+			}
+			container select_uint32_with_org_rel
+			{
+				unit<uint32> s_uint32 := select_uint32_with_org_rel(Source/City/RegionCode = 200)
+				{
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint8>  u_uint8  : nrofrows = 1;
+				unit<uint16> u_uint16 : nrofrows = 1;
+				unit<uint64> u_uint64 : nrofrows = 1;
+				unit<bool>   u_bool;
+				
+				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
+				,  label = "rijksdriehoekmeting in meters";
+				
+				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<wpoint> u_wpoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),wpoint),point_yx(0w,0w),point_yx(3250w, 2700w))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<ipoint> u_ipoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),ipoint),point_yx(0i,0i),point_yx(3250i, 2700i))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<upoint> u_upoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),upoint),point_yx(0u,0u),point_yx(3250u, 2700u))
+				{
+					attribute<.> id := id(.);
+				}
+
+				unit<uint32> s_uint8 := select_uint32_with_org_rel(id(u_uint8) == 0[u_uint8])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint8];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint32> s_uint16 := select_uint32_with_org_rel(id(u_uint16) == 0[u_uint16])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint16];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint32> s_uint64 := select_uint32_with_org_rel(id(u_uint64) == 0[u_uint64])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint64];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint32> s_bool := select_uint32_with_org_rel(id(u_bool) == True)
+				{
+					attribute<bool> att  := org_rel == True;
+					parameter<bool> test := all(att);
+				}
+				
+				unit<uint32> s_spoint := select_uint32_with_org_rel(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
+					parameter<bool> test := all(att);
+				}
+				unit<uint32> s_wpoint := select_uint32_with_org_rel(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
+					parameter<bool> test := all(att);
+				}
+				unit<uint32> s_ipoint := select_uint32_with_org_rel(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
+					parameter<bool> test := all(att);
+				}
+				unit<uint32> s_upoint := select_uint32_with_org_rel(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
+					parameter<bool> test := all(att);
+				}
+				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
+			}
+			container select_uint16_with_org_rel
+			{
+				unit<uint16> s_uint32 := select_uint16_with_org_rel(Source/City/RegionCode = 200)
+				{
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint8>  u_uint8  : nrofrows = 1;
+				unit<uint16> u_uint16 : nrofrows = 1;
+				unit<uint64> u_uint64 : nrofrows = 1;
+				unit<bool>   u_bool;
+				
+				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
+				,  label = "rijksdriehoekmeting in meters";
+				
+				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<wpoint> u_wpoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),wpoint),point_yx(0w,0w),point_yx(3250w, 2700w))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<ipoint> u_ipoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),ipoint),point_yx(0i,0i),point_yx(3250i, 2700i))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<upoint> u_upoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),upoint),point_yx(0u,0u),point_yx(3250u, 2700u))
+				{
+					attribute<.> id := id(.);
+				}
+
+				unit<uint16> s_uint8 := select_uint16_with_org_rel(id(u_uint8) == 0[u_uint8])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint8];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint16> s_uint16 := select_uint16_with_org_rel(id(u_uint16) == 0[u_uint16])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint16];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint16> s_uint64 := select_uint16_with_org_rel(id(u_uint64) == 0[u_uint64])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint64];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint16> s_bool := select_uint16_with_org_rel(id(u_bool) == True)
+				{
+					attribute<bool> att  := org_rel == True;
+					parameter<bool> test := all(att);
+				}
+				
+				unit<uint16> s_spoint := select_uint16_with_org_rel(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
+					parameter<bool> test := all(att);
+				}
+				unit<uint16> s_wpoint := select_uint16_with_org_rel(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
+					parameter<bool> test := all(att);
+				}
+				unit<uint16> s_ipoint := select_uint16_with_org_rel(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
+					parameter<bool> test := all(att);
+				}
+				unit<uint16> s_upoint := select_uint16_with_org_rel(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
+					parameter<bool> test := all(att);
+				}
+				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
+			}
+			container select_uint8_with_org_rel
+			{
+				unit<uint8> s_uint32 := select_uint8_with_org_rel(Source/City/RegionCode = 200)
+				{
+					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint8>  u_uint8  : nrofrows = 1;
+				unit<uint16> u_uint16 : nrofrows = 1;
+				unit<uint64> u_uint64 : nrofrows = 1;
+				unit<bool>   u_bool;
+				
+				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
+				,  label = "rijksdriehoekmeting in meters";
+				
+				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<wpoint> u_wpoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),wpoint),point_yx(0w,0w),point_yx(3250w, 2700w))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<ipoint> u_ipoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),ipoint),point_yx(0i,0i),point_yx(3250i, 2700i))
+				{
+					attribute<.> id := id(.);
+				}
+				unit<upoint> u_upoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),upoint),point_yx(0u,0u),point_yx(3250u, 2700u))
+				{
+					attribute<.> id := id(.);
+				}
+
+				unit<uint8> s_uint8 := select_uint8_with_org_rel(id(u_uint8) == 0[u_uint8])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint8];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint8> s_uint16 := select_uint8_with_org_rel(id(u_uint16) == 0[u_uint16])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint16];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint8> s_uint64 := select_uint8_with_org_rel(id(u_uint64) == 0[u_uint64])
+				{
+					attribute<bool> att  := org_rel == 0[u_uint64];
+					parameter<bool> test := all(att);
+				}
+
+				unit<uint8> s_bool := select_uint8_with_org_rel(id(u_bool) == True)
+				{
+					attribute<bool> att  := org_rel == True;
+					parameter<bool> test := all(att);
+				}
+				
+				unit<uint8> s_spoint := select_uint8_with_org_rel(pointcol(id(u_spoint)) == 0s && pointrow(id(u_spoint)) == 0s)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0s && pointrow(org_rel) == 0s;
+					parameter<bool> test := all(att);
+				}
+				unit<uint8> s_wpoint := select_uint8_with_org_rel(pointcol(id(u_wpoint)) == 0w && pointrow(id(u_wpoint)) == 0w)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0w && pointrow(org_rel) == 0w;
+					parameter<bool> test := all(att);
+				}
+				unit<uint8> s_ipoint := select_uint8_with_org_rel(pointcol(id(u_ipoint)) == 0i && pointrow(id(u_ipoint)) == 0i)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0i && pointrow(org_rel) == 0i;
+					parameter<bool> test := all(att);
+				}
+				unit<uint8> s_upoint := select_uint8_with_org_rel(pointcol(id(u_upoint)) == 0u && pointrow(id(u_upoint)) == 0u)
+				{
+					attribute<bool> att  := pointcol(org_rel) == 0u && pointrow(org_rel) == 0u;
+					parameter<bool> test := all(att);
+				}
+				parameter<bool> test := s_uint32/test && s_uint8/test && s_uint16/test && s_uint64/test && s_bool/test && s_spoint/test && s_wpoint/test && s_ipoint/test && s_upoint/test;
+			}
+			container select_unit: url  = "http://www.objectvision.nl/geodms/operators-a-functions/select_unit"
+			{
+				unit<uint32> ZHCities := select(Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := const(200, ., uint32) = collect_by_cond(., Source/City/RegionCode = 200, Source/City/RegionCode);
+				}
+				parameter<bool> test := all(ZHCities/att);
+			}
+
+			container select_with_attr_by_org_rel
+			{
+				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
+			}
+			container select_uint32_with_attr_by_org_rel
+			{
+				unit<uint32> selection := select_uint32_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
+			}
+			container select_uint16_with_attr_by_org_rel
+			{
+				unit<uint16> selection := select_uint16_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
+			}
+			container select_uint8_with_attr_by_org_rel
+			{
+				unit<uint8> selection := select_uint8_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 9 || #select_subitems == 10);
+			}
+			
+			container select_with_attr_by_cond
+			{
+				unit<uint32> selection := select_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
+			}
+			container select_uint32_with_attr_by_cond
+			{
+				unit<uint32> selection := select_uint32_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
+			}
+			container select_uint16_with_attr_by_cond
+			{
+				unit<uint16> selection := select_uint16_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
+			}
+			container select_uint8_with_attr_by_cond
+			{
+				unit<uint8> selection := select_uint8_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> select_subitems := SubItem_PropValues(selection,'name'); 
+				parameter<bool> test := all(selection/att) && (#select_subitems == 8 || #select_subitems == 9);
+			}
+			container collect_by_cond
+			{
+				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				attribute<float32> AvgDailyTemperature (selection) := collect_by_cond(selection, Source/City/RegionCode = 200, Source/City/AvgDailyTemperature);
+				
+				parameter<bool> test := #selection == 2 ? sum(AvgDailyTemperature) == 22f : sum(AvgDailyTemperature) == 0f;
+			}
+			container collect_attr_by_org_rel
+			{
+				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				container by_org_rel := collect_attr_by_org_rel(Source/City, selection, selection/org_rel);
+				
+				unit<uint32> select_subitems := SubItem_PropValues(by_org_rel,'name'); 
+				parameter<bool> test := (#select_subitems == 7 || #select_subitems == 8) && (#selection == 0 ? sum(by_org_rel/area) == 0f : sum(by_org_rel/area) == 675f);
+			}
+			container collect_attr_by_cond
+			{
+				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				container by_cond                  := collect_attr_by_cond(Source/City, selection, Source/City/RegionCode = 200);
+				container by_cond_wrong_condition   := collect_attr_by_cond(Source/City, selection, selection/selection_condition);
+
+				unit<uint32> select_subitems := SubItem_PropValues(by_cond,'name'); 
+				unit<uint32> select_subitems_wrongcondition := SubItem_PropValues(by_cond_wrong_condition,'name'); 
+				parameter<bool> test := (#select_subitems == 7 || #select_subitems == 8) && (#selection == 0 ? sum(by_cond/area) == 0f : sum(by_cond/area) == 675f);
+				parameter<bool> test_wrongCondition := #select_subitems_wrongcondition == 0;
+			}
+			container collect_attr_by_cond_CalcRuleClickingIssue
+			{
+				unit<uint32> src := Source/City
+				{
+					attribute<DegreesCelsius> AvgDailyTemperature := Source/City/AvgDailyTemperature;
+					attribute<RegionEK>       RegionCode          := Source/City/RegionCode;
+					attribute<Region>         RegionNr            := Source/City/RegionNr;
+					attribute<uint32>         indexTemp           := Source/City/indexTemp;
+					attribute<uint32>         direct_indexTemp    := Source/City/direct_indexTemp;
+					attribute<uint32>         SubIndexTemp        := Source/City/SubIndexTemp;
+					attribute<m2>             area                := Source/City/area;
+				
+					unit<uint32> selection := select_with_attr_by_org_rel(., RegionCode = 200)
+					{
+						attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+					}
+					container by_cond    := collect_attr_by_cond(., selection, RegionCode = 200);
+				}
+
+				unit<uint32> select_subitems := SubItem_PropValues(src/by_cond,'name'); 
+				parameter<bool> test := #select_subitems == 7 && (#src/selection == 0 ? sum(src/by_cond/area) == 0f : sum(src/by_cond/area) == 675f);
+			}
+			container unique: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unique"
+			{
+				unit<uint32>      Regions       := unique(Source/City/RegionCode)
+				{
+					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+				}
+				unit<uint32>      RegionStrings       := unique(string(Source/City/RegionCode))
+				{
+					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+				}
+				parameter<bool>   test          := all(Regions/Values == Regions/att);
+			}
+			container unique_uint16
+			{
+				unit<uint16>      Regions       := unique_uint16(Source/City/RegionCode)
+				{
+					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+				}
+				parameter<bool>   test          := all(Regions/Values == Regions/att);
+			}
+			container unique_uint8
+			{
+				unit<uint8>      Regions       := unique_uint8(Source/City/RegionCode)
+				{
+					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+				}
+				parameter<bool>   test          := all(Regions/Values == Regions/att);
+			}
+			container unique_with_null
+			{
+				unit<uint32>      Regions       := unique_with_null(Source/City/RegionCode)
+				{
+					attribute<uint32> att := Source/Region/unique_with_null_tst[id(Regions)[Source/Region]];
+				}
+				parameter<bool>   test          := all(eq_or_both_null(Regions/Values, Regions/att));
+			}
+			container union: url  = "http://www.objectvision.nl/geodms/operators-a-functions/union"
+			{
+				unit<uint32>    unit_ProvCity   := union(Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames)
+				{
+					attribute<string> CityNamesWithEntries:   ['Amsterdam','Haarlem','Alkmaar','Zaanstad','Purmerend','Rotterdam','DenHaag','Leiden','Dordrecht','Leiden'];
+					attribute<string> CityNamesWithoutEntries:[];
+					attribute<string> CityNames:= = IsEmpty ? 'CityNamesWithoutEntries' : 'CityNamesWithEntries';
+				}
+				attribute<bool> test (unit_ProvCity) := unit_ProvCity/UnionData = unit_ProvCity/CityNames;
+				parameter<bool> test_attr            := all(test);
+			}
+			container union_unit: url  = "http://www.objectvision.nl/geodms/operators-a-functions/union_unit"
+			{
+				unit<uint32>    unit_ProvCity        := union_unit(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
+
+				unit<uint16>    unit_ProvCity_uint16 := union_unit_uint16(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
+				unit<uint32>    unit_ProvCity_uint32 := union_unit_uint32(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
+				unit<uint64>    unit_ProvCity_uint64 := union_unit_uint64(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
+				unit<uint8>     unit_ProvCity_uint8  := union_unit_uint8(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
+
+				parameter<bool> test_uint16 := sum(id(unit_ProvCity_uint16)) == 45w;
+				parameter<bool> test_uint32 := sum(id(unit_ProvCity_uint32)) == 45u;
+				parameter<bool> test_uint64 := sum(id(unit_ProvCity_uint64)) == 45u64;
+				parameter<bool> test_uint8  := sum(id(unit_ProvCity_uint8))  == 45b;
+
+				parameter<bool> test        := #(unit_ProvCity) > 0 
+					? nrofrows(unit_ProvCity) = 10 && test_uint16 && test_uint32 && test_uint64 && test_uint8
+					: nrofrows(unit_ProvCity) = 0;
+			}
+			
+			// /Relational/UnTiled2UnTiled/union_data/CityNames
+			container union_data: url = "http://www.objectvision.nl/geodms/operators-a-functions/union_data"
+			{
+				attribute<string> CityNamesSrcWithEntries    (union_unit/unit_ProvCity) : ['Amsterdam','Haarlem','Alkmaar','Zaanstad','Purmerend','Rotterdam','DenHaag','Leiden','Dordrecht','Leiden'];
+				attribute<string> CityNamesSrcWithoutEntries (union_unit/unit_ProvCity) : [];
+				attribute<string> CityNamesSrc               (union_unit/unit_ProvCity) := = isEmpty ? 'CityNamesSrcWithoutEntries' : 'CityNamesSrcWithEntries';
+
+				attribute<string> CityNames                  (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames);
+				attribute<string> CityNames_shouldbeerror    (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/NoordHollandBigCities/CityNames);
+				attribute<bool>   test                       (union_unit/unit_ProvCity) := CityNames == CityNamesSrc;
+				parameter<bool>   test_attr                                             := all(test);
+				attribute<string> GhosttownNames             (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity); // should emit diagnostic, see https://github.com/ObjectVision/GeoDMS/issues/534
+				
+				
+				
+			}
+			container union_data_single
+			{
+				attribute<uint32> att  (UDomain2) := union_data(UDomain2, Source/att_large);
+				attribute<bool>   test (UDomain2) := att == 2;
+				parameter<bool>   test_attr       := all(test);
+			}
+			container combine: url  = "http://www.objectvision.nl/geodms/operators-a-functions/combine"
+			{
+				unit<uint32>    unit_CityForEachYear  := combine(Source/NoordHollandBigCities, Source/Years);
+				
+				unit<uint32>    unit_two_bools        : nrofrows = 4
+				{
+					attribute<bool> A: [True,True,False, False];
+					attribute<bool> B: [True,False,True, False];
+				}
+
+				unit<uint16>    unit_CityForEachYear_uint16 := combine_uint16(Source/NoordHollandBigCities, Source/Years);
+				unit<uint32>    unit_CityForEachYear_uint32 := combine_uint32(Source/NoordHollandBigCities, Source/Years);
+				unit<uint64>    unit_CityForEachYear_uint64 := combine_uint64(Source/NoordHollandBigCities, Source/Years);
+				unit<uint8>     unit_CityForEachYear_uint8  := combine_uint8(Source/NoordHollandBigCities, Source/Years);
+
+				parameter<bool>  test_uint16 := sum(id(unit_CityForEachYear_uint16)) == 300w;
+				parameter<bool>  test_uint32 := sum(id(unit_CityForEachYear_uint32)) == 300u;
+				parameter<bool>  test_uint64 := sum(id(unit_CityForEachYear_uint64)) == 300u64;
+				parameter<bool>  test_uint8_uint16  := sum(uint16(id(unit_CityForEachYear_uint8 ))) == 300w;
+				
+				//parameter<uint8> sum_uint8  := sum(id(unit_CityForEachYear_uint8 ));
+				//parameter<bool>  test_uint8  := not(IsDefined(sum_uint8));
+				
+				parameter<bool>  test_default := sum(unit_CityForEachYear/first_rel) == 50 && sum(unit_CityForEachYear/second_rel) == 50 && unit_CityForEachYear/first_rel[14]  ==  2 && unit_CityForEachYear/second_rel[14]  ==  4;
+				
+				parameter<bool> test        := #(unit_CityForEachYear) > 0 
+					? test_default && test_uint16 && test_uint32 && test_uint64 && test_uint8_uint16
+					: nrofrows(unit_CityForEachYear) = 0;
+			}
+			container combine_data
+			{
+				attribute<combine/unit_CityForEachYear> CityForEachYear_rel (combine/unit_CityForEachYear) := 
+					combine_data(combine/unit_CityForEachYear, combine/unit_CityForEachYear/second_rel, combine/unit_CityForEachYear/first_rel);
+
+				attribute<combine/unit_CityForEachYear> att_two_bools (combine/unit_two_bools) := 
+					combine_data(combine/unit_two_bools, combine/unit_two_bools/A, combine/unit_two_bools/B);
+
+				attribute<uint32> okWithEntries    (combine/unit_CityForEachYear) : [0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24];
+				attribute<uint32> okWithoutEntries (combine/unit_CityForEachYear) : [];
+				attribute<uint32> ok               (combine/unit_CityForEachYear) := = isEmpty ? 'okWithoutEntries' : 'okWithEntries';
+
+				attribute<bool>   test_attr        (combine/unit_CityForEachYear) := CityForEachYear_rel == ok;
+				parameter<bool>   test                                     := all(test_attr);
+			}
+
+			container merge
+			{
+				container src
+				{
+					unit<float32> eur;
+					attribute<uint8> keuze       (ADomain) : [0,2,1,null,1];
+					attribute<eur>   KostenAuto  (ADomain) : [18,28,38,48,58];
+					attribute<eur>   KostenOv    (ADomain) : [15,25,35,45,55];
+					attribute<eur>   KostenFiets (ADomain) : [12,22,32,42,52];
+				}
+				attribute<src/eur> KostenTransport (ADomain) := merge(src/keuze, src/eur, src/KostenAuto, src/KostenOv, src/KostenFiets);
+				attribute<src/eur> ok              (ADomain) : [18,22,35,null,55];
+				attribute<bool>    test_attr       (ADomain) := eq_or_both_null(KostenTransport, ok);
+				parameter<bool>    test                      := all(test_attr);
+			}
+
+			container merge_empty
+			{
+				container src
+				{
+					unit<float32> eur;
+					attribute<uint8> keuze       (EDomain) : [];
+					attribute<eur>   KostenAuto  (EDomain) : [];
+					attribute<eur>   KostenOv    (EDomain) : [];
+					attribute<eur>   KostenFiets (EDomain) : [];
+				}
+				attribute<src/eur> KostenTransport (EDomain) := merge(src/keuze, src/eur, src/KostenAuto, src/KostenOv, src/KostenFiets);
+				attribute<src/eur> ok              (EDomain) : [];
+				attribute<bool>    test_attr       (EDomain) := eq_or_both_null(KostenTransport, ok);
+				parameter<bool>    test                      := all(test_attr);
+			}
+			container join_equal_values
+			{
+				unit<uint32> Region_City := join_equal_values(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				{
+					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
+					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
+					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
+					
+					attribute<uint32> nr_1_rel_empty_OK: [];
+					attribute<uint32> nr_2_rel_empty_OK: [];
+					attribute<uint32> nr_X_rel_empty_OK: [];
+
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
+
+					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
+				}
+
+				unit<uint8> Region_City_uint8 := join_equal_values_uint8(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				{
+					parameter<bool> isEmpty := #Region_City == 0;
+
+					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
+					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
+					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
+					
+					attribute<uint32> nr_1_rel_empty_OK: [];
+					attribute<uint32> nr_2_rel_empty_OK: [];
+					attribute<uint32> nr_X_rel_empty_OK: [];
+
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
+					
+					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
+				}
+
+				unit<uint16> Region_City_uint16 := join_equal_values_uint16(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				{
+					parameter<bool> isEmpty := #Region_City == 0;
+
+					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
+					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
+					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
+					
+					attribute<uint32> nr_1_rel_empty_OK: [];
+					attribute<uint32> nr_2_rel_empty_OK: [];
+					attribute<uint32> nr_X_rel_empty_OK: [];
+
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
+					
+					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
+				}
+
+				unit<uint32> Region_City_uint32 := join_equal_values_uint32(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				{
+					parameter<bool> isEmpty := #Region_City == 0;
+
+					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
+					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
+					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
+					
+					attribute<uint32> nr_1_rel_empty_OK: [];
+					attribute<uint32> nr_2_rel_empty_OK: [];
+					attribute<uint32> nr_X_rel_empty_OK: [];
+
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
+
+					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
+				}
+
+				unit<uint64> Region_City_uint64 := join_equal_values_uint64(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				{
+					parameter<bool> isEmpty := #Region_City == 0;
+
+					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
+					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
+					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
+					
+					attribute<uint32> nr_1_rel_empty_OK: [];
+					attribute<uint32> nr_2_rel_empty_OK: [];
+					attribute<uint32> nr_X_rel_empty_OK: [];
+
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
+
+					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
+				}
+
+
+
+				parameter<bool> attr_test := Region_City/attr_test && Region_City_uint8/attr_test && Region_City_uint16/attr_test && Region_City_uint32/attr_test && Region_City_uint64/attr_test;
+			}
+
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 36
+				{
+					attribute<string> Spec :
+					[
+						 'id/test_attr'
+					,	'mapping/test_attr'
+					,	'mapping_count/test_attr'
+					,	'lookup_op/test_attr'
+					,	'lookup/test_attr'
+					,	'rlookup/test_attr'
+					,	'rjoin/test_attr'
+					,	'index/test_attr'
+					,	'direct_index/test_attr'
+					,	'invert/test_attr'
+					,	'select_with_org_rel/test'
+					,	'select_uint32_with_org_rel/test'
+					,	'select_uint16_with_org_rel/test'
+					,	'select_uint8_with_org_rel/test'
+					,	'select_unit/test'
+					,	'select_with_attr_by_org_rel/test'
+					,	'select_uint8_with_attr_by_org_rel/test'
+					,	'select_uint16_with_attr_by_org_rel/test'
+					,	'select_uint32_with_attr_by_org_rel/test'
+					,	'select_with_attr_by_cond/test'
+					,	'select_uint8_with_attr_by_cond/test'
+					,	'select_uint16_with_attr_by_cond/test'
+					,	'select_uint32_with_attr_by_cond/test'
+					,	'collect_by_cond/test'
+					,	'collect_attr_by_org_rel/test'
+					,	'collect_attr_by_cond/test'
+					,	'unique/test'
+					,	'unique_with_null/test'
+					,	'union/test_attr'
+					,	'union_unit/test'
+					,	'union_data/test_attr'
+					,	'combine/test'
+					,	'combine_data/test'
+					,	'merge/test'
+					,	'merge_empty/test'
+					,	'join_equal_values/attr_test'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

@@ -1,0 +1,238 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container MetaScript: Using = "/Domains;/Units;/Tolerances"
+	{
+		unit <uint32> Region := ADomain
+		{
+			attribute<Region> RegionNr:         [0,1,2,3,4];
+			attribute<string> MetaScriptName:   ['NoordHolland','ZuidHolland','Utrecht','NoordBrabant','Gelderland'];
+			attribute<uint32> sumNrInhabitants: [550,1025,300,200,0];
+			attribute<string> RegionLabel:      ['hoofdstad: Amterdam','hoofdstad: Den Bosch','hoofdstad: Utrecht','hoofdstad: Den Haag',null];
+			attribute<string> RegionDescr:      ['Van Texel tot het Gooi','De locatie voor het carnaval','De dom is het hoogste gebouw',null,null];
+		}
+
+		unit <uint32> ERegion := EDomain
+		{
+			attribute<Region> RegionNr:         [];
+			attribute<string> MetaScriptName:   [];
+			attribute<uint32> sumNrInhabitants: [];
+			attribute<string> RegionLabel:      [];
+			attribute<string> RegionDescr:      [];
+		}
+
+		unit<uint32> PropValueSource := Region
+		{
+			parameter<uint32> label: ['ABC'];
+			attribute<uint32> sumNrInhabitants: [2,5,3,2,0];
+			unit<uint32>      domainA: nrofrows = 9;
+			unit<float64>     valuesB := baseunit('b',float64);
+		}
+
+		container for_each: url = "http://www.objectvision.nl/geodms/operators-a-functions/metascript/for_each"
+		{
+			container regions := for_each_nedvld(
+				 Region/MetaScriptName
+				,'lookup(' + String(Region/RegionNr) + ', Region/sumNrInhabitants)'
+				,void
+				,uint32
+				,Region/RegionLabel
+				,Region/RegionDescr
+			);
+			
+			container regions2 := for_each_nednvld(
+				 Region/MetaScriptName
+				,'lookup(' + String(Region/RegionNr) + ', Region/sumNrInhabitants)'
+				,Regions
+				,Region/MetaScriptName
+				,uint32
+				,Region/RegionLabel
+				,Region/RegionDescr
+			);
+
+			parameter<bool> test := regions/NoordHolland = 550 && regions/ZuidHolland = 1025 && regions/Utrecht = 300 && regions/NoordBrabant = 200 && regions/Gelderland = 0;
+		}
+
+		container for_each_empty: url = "http://www.objectvision.nl/geodms/operators-a-functions/metascript/for_each"
+		{
+			container regions := for_each_nedvld(
+				 ERegion/MetaScriptName
+				,'lookup(' + String(ERegion/RegionNr) + ', ERegion/sumNrInhabitants)'
+				,void
+				,uint32
+				,ERegion/RegionLabel
+				,ERegion/RegionDescr
+			);
+
+			parameter<bool> test := PropValue(Regions,'name') == 'Regions' ;
+		}
+
+		container for_each_read_grid: url = "http://www.objectvision.nl/geodms/operators-a-functions/metascript/for_each"
+		{
+			container griddata := for_each_ind(
+				'ndvatr'
+				,Region/MetaScriptName
+				,Grid/Tiled/GridDomain
+				,uint8
+				,'%projdir%/data/src.tif'
+				,'gdal.grid'
+				, True
+			);
+
+			parameter<bool> test := sum(griddata/NoordHolland) + sum(griddata/ZuidHolland) + sum(griddata/Utrecht) + sum(griddata/NoordBrabant) + sum(griddata/Gelderland) == 135b;
+		}
+
+		container for_each_ind
+		{
+			container regions := for_each_ind(
+				'nedvld'
+				,Region/MetaScriptName
+				,'lookup(' + String(Region/RegionNr) + ', Region/sumNrInhabitants)'
+				,void
+				,uint32
+				,Region/RegionLabel
+				,Region/RegionDescr
+			);
+
+			parameter<bool> test := regions/NoordHolland = 550 && regions/ZuidHolland = 1025 && regions/Utrecht = 300 && regions/NoordBrabant = 200 && regions/Gelderland = 0;
+		}
+
+		container for_each_ind_empty: url = "http://www.objectvision.nl/geodms/operators-a-functions/metascript/for_each"
+		{
+			container regions := for_each_ind(
+				'nedvld'
+				,ERegion/MetaScriptName
+				,'lookup(' + String(ERegion/RegionNr) + ', ERegion/sumNrInhabitants)'
+				,void
+				,uint32
+				,ERegion/RegionLabel
+				,ERegion/RegionDescr
+			);
+
+			parameter<bool> test := PropValue(Regions,'name') == 'Regions' ;
+		}
+
+		container loop := loop(LoopTemplate, uint16(5)),
+			url  = "http://www.objectvision.nl/geodms/operators-a-functions/metascript/loop"
+		{
+			parameter<bool> test := loop/lastIter/results/LoopWaarde == uint16(4);
+		}
+		Template LoopTemplate
+		{
+			parameter<uint16> NrIter;
+			container currValue;
+			container nextValue;
+			container results
+			{
+				parameter<uint16> LoopWaarde := NrIter; 
+			}
+		}
+		container SubItem_PropValues
+		{
+			unit<uint32> Name := SubItem_PropValues(PropValueSource,'name')
+			{
+				attribute<string> ok: ['label','sumnrinhabitants','domaina','valuesb'];
+				attribute<bool>   test      := lowercase(name) == ok;
+				parameter<bool>   test_attr := all(test);
+			}
+			unit<uint32> Expr := SubItem_PropValues(PropValueSource,'expr')
+			{
+				attribute<string> ok7411: [
+					'',
+					'',
+					'=''range(BaseUnit(Left(''+Quote(PropValue(., ''FullName'')+''/domainA'')+'',0),UInt32),UInt32(0),UInt32(9))''',
+					'baseunit(''b'',float64)'
+				];
+			
+				attribute<string> ok8001: [
+					'',
+					'',
+					'',
+					'baseunit(''b'',float64)'
+				];
+			
+				attribute<string> ok := =(GeoDmsVersion() < 7.9) ? 'ok7411' : 'ok8001';
+			
+				attribute<bool>   test      := lowercase(Expr) == lowercase(ok);
+				parameter<bool>   test_attr := all(test);
+			}
+			unit<uint32> PropValuesSet: nrofrows = 4;
+			unit<uint32> MultipleAttributes := SubItem_PropValues(PropValueSource,union_data(PropValuesSet, 'name', 'fullname','ValuesUnit','DomainUnit'));
+
+		}
+		container Inherited_PropValues
+		{
+			unit<uint32> Name := Inherited_PropValues(PropValueSource,'name')
+			{
+				attribute<string> ok: ['label','sumnrinhabitants','domaina','valuesb','regionnr','metascriptname','sumnrinhabitants','regionlabel','regiondescr'];
+				attribute<bool>   test      := lowercase(name) == ok;
+				parameter<bool>   test_attr := all(test);
+			}
+			unit<uint32> Expr := Inherited_PropValues(PropValueSource,'expr')
+			{
+				attribute<string> ok7411: ['','',
+				'=''range(BaseUnit(Left(''+Quote(PropValue(., ''FullName'')+''/domainA'')+'',0),UInt32),UInt32(0),UInt32(9))''',
+				'baseunit(''b'',float64)','','','','',''
+				];
+				attribute<string> ok8001: ['','',
+//				'=''range(BaseUnit(Left(''+Quote(PropValue(., ''FullName'')+''/domainA'')+'',0),UInt32),UInt32(0),UInt32(9))''',
+				'',
+				'baseunit(''b'',float64)','','','','',''
+				];
+				attribute<string> ok := =(GeoDmsVersion() < 7.9) ? 'ok7411' : 'ok8001';
+				attribute<bool>   test      := lowercase(Expr) == LowerCase(ok);
+				parameter<bool>   test_attr := all(test);
+			}
+		}
+		container SubTree_PropValues
+		{
+			unit<uint32> Name := SubTree_PropValues(MetaScript/loop/iter0,'name')
+			{
+				attribute<string> ok: ['nriter','currvalue','nextvalue','results','loopwaarde'];
+				attribute<bool>   test      := lowercase(name) == ok;
+				parameter<bool>   test_attr := all(test);
+			}
+			
+			unit<uint32> Property: nrofrows = 4
+			{
+				attribute<string> name: ['name','fullname','label','expr'];
+			}
+
+			unit<uint32> Multiple := SubTree_PropValues(MetaScript/loop/iter0, Property/name)
+			{
+				attribute<string> ok_name     : ['NrIter','currValue','nextvalue','results','loopwaarde'];
+				attribute<string> ok_fullname : ['/metascript/loop/iter0/nriter','/metascript/loop/iter0/currvalue','/metascript/loop/iter0/nextvalue','/metascript/loop/iter0/results','/metascript/loop/iter0/results/loopwaarde'];
+				attribute<string> ok_label    : ['','','','',''];
+				attribute<string> ok_expr     : ['','','','','nriter'];
+
+				attribute<bool>   test        := lowercase(name) == lowercase(ok_name) && lowercase(fullname) == lowercase(ok_fullname) && lowercase(label) == lowercase(ok_label) && lowercase(expr) == lowercase(ok_expr);
+				parameter<bool>   test_attr   := all(test);
+			}
+		}
+		container results
+		{
+			unit<uint32> Cand : nrofrows = 11
+			{
+				attribute<string> Spec :
+				[
+					 'for_each/test'
+				,	'for_each_empty/test'
+				,	'for_each_read_grid/test'
+				,	'loop/test'
+				,	'for_each_ind/test'
+				,	'for_each_ind_empty/test'
+				,	'SubItem_PropValues/Name/test_attr'
+				,	'SubItem_PropValues/Expr/test_attr'
+				,	'Inherited_PropValues/Name/test_attr'
+				,	'Inherited_PropValues/Expr/test_attr'
+				,	'SubTree_PropValues/Name/test_attr'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
+		}
+	}

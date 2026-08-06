@@ -1,0 +1,53 @@
+	container Classifications: Using = "/Domains;/Units;/Tolerances"
+	{
+		unit<uint8> m_4K: nrofrows = 4
+		{
+			attribute<m> Classes
+			:	DialogType = "Classification"
+			,	[
+					0,1000,2500,5000
+				];
+			attribute<uint32> BrushColor
+			:	DialogType = "BrushColor"
+			,	[
+					rgb(128,255,0),rgb(0,128,0),rgb(0,64,128),rgb(255,0,0)
+				];
+			attribute<string> Label
+			:	DialogType = "LabelText"
+			,	[
+					'0   - 1.000','1.000 - 2.500','2.500 - 5.000','    > 5.000'
+				];
+		}
+		unit<uint8> inhabitants_4K: nrofrows = 4
+		{
+			attribute<nrPersons> Classes
+			:	DialogType = "Classification"
+			,	[
+					0,100,300,800
+				];
+		}
+		unit<uint8> inhabitants_20K: nrofrows = 20;
+		unit<uint8> inhabitants_0K: nrofrows = 0
+		{
+			attribute<nrPersons> Classes: [];
+		}
+		unit<uint8> m_5K: nrofrows = 5
+		{
+			attribute<m> Classes
+			:	DialogType = "Classification"
+			,	[
+					0,500,1000,1500,2500
+				];
+		}
+		unit<uint8> JF_8k: nrofrows = 8
+		{
+			attribute<uint32> Classes: DialogType = "Class_Breaks",
+				 = ClassifyJenksFisher(/Aggregations/UnTiled2UnTiled/City/NrInhabitants, .);
+			
+//			attribute<uint32> RampYellowToGreen := ramp_rgb(rgb(255,255,0), rgb(0, 255, 0),.)",DialogType = "BrushColor";
+			attribute<uint32> RampWhiteToRed := ramp_rgb(rgb(255,255,255), rgb(255, 0, 0),.),DialogType = "BrushColor";
+	
+			attribute<String> Label: DialogType = "LabelText",
+			['Low','','','','','','','High'];
+		}
+	}

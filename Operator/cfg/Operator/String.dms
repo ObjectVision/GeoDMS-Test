@@ -1,0 +1,606 @@
+	container String: Using = "/Domains;/Units;/Tolerances"
+	{
+		unit<uint32> Steden_nrd: nrofrows = 9;
+		unit<uint32> Prov_nrd  : nrofrows = 3;
+		unit<uint32> Regions   : nrofrows = 4;
+
+		unit<uint32> ESteden_nrd: nrofrows = 0;
+		unit<uint32> EProv_nrd  : nrofrows = 0;
+		unit<uint32> ERegions   : nrofrows = 0;
+
+		container srcDomain        := Source(ADomain       ,Steden_nrd, Prov_nrd, Regions);
+		container srcTiledDomain   := Source(ATiledDomain  ,Steden_nrd, Prov_nrd, Regions);
+		container srcEDomain       := ESource(EDomain      ,ESteden_nrd, EProv_nrd, ERegions);
+		container srcETiledDomain  := ESource(ETiledDomain ,ESteden_nrd, EProv_nrd, ERegions);
+
+		template Source
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			unit<uint32> Steden;
+			unit<uint32> Prov;
+			unit<uint32> Reg;
+			// end case parameters
+
+			parameter<float32> ValueTostring  := float32(7.5);
+			parameter<string>  TestToQuote    := 'MetQuotes'; 
+			parameter<string>  teststring     := 'In een string past ook een zin';
+			parameter<string>  TestTrimstring := ' string   met   spaties  ';
+
+			attribute<string>  A                (Domain): ['Test','88hallo99','+)','twee woorden',' test met spatie'];
+			attribute<string>  B                (Domain): ['Test2',null,'-' ,'drie woorden string','''woord'''];
+			attribute<string>  C                (Domain): ['Test','test','88hallo99','Test met Text','Text met Test'];
+			
+			attribute<string>  repA             (Domain): ['0','1','2','3','4'];
+			attribute<uint32>  repNr            (Domain): [0,1,2,3,4];
+			attribute<uint32>  strlenA          (Domain): [4,9,2,12,16];
+			attribute<uint64>  strlen64A        (Domain): [4,9,2,12,16];
+			attribute<string>  substrA          (Domain): ['est','8ha',')','wee','tes'];
+			attribute<string>  substr2A         (Domain): ['est','8hallo99',')','wee woorden','test met spatie'];
+			attribute<string>  leftA            (Domain): ['Tes','88h','+)','twe',' te'];
+			attribute<string>  rightA           (Domain): ['est','o99','+)','den','tie'];
+
+			attribute<string>  quoteA           (Domain): ['''Test''','''88hallo99''','''+)''','''twee woorden''',''' test met spatie'''];
+			attribute<string>  dquoteA          (Domain): ['"Test"','"88hallo99"','"+)"','"twee woorden"','" test met spatie"'];
+			attribute<string>  unquoteB         (Domain): ['Test2','lege string','lege string','drie woorden string','woord'];
+			attribute<string>  undquoteA        (Domain): ['Test','88hallo99','+)','twee woorden',' test met spatie'];
+			attribute<string>  uppercaseA       (Domain): ['TEST','88HALLO99','+)','TWEE WOORDEN',' TEST MET SPATIE'];
+			attribute<string>  lowercaseA       (Domain): ['test','88hallo99','+)','twee woorden',' test met spatie'];
+			attribute<uint32>  strPosA          (Domain): [3,null,null,0,1]; 
+			attribute<uint32>  strrPosA         (Domain): [3,null,null,0,13]; 
+
+			attribute<uint32>  strCountA        (Domain): [1,0,0,1,4];
+			attribute<string>  replaceC         (Domain): ['Taart','test' ,'88hallo99','Taart met Text','Text met Taart'];
+			attribute<string>  replaceCMultiple (Domain): ['Taart','test' ,'88hallo99','Taart zonder Text','Text zonder Taart'];
+			attribute<string>  replace_valueC   (Domain): ['taart','taart','88hallo99','Test met Text' ,'Text met Test'];
+
+			attribute<string>  RepeatA          (Domain): [null,'1','22','333','4444'];
+			attribute<string>  ConAB            (Domain): ['TestTest2',null,'+)-','twee woordendrie woorden string',' test met spatie''woord'''];
+			attribute<string>  trimA            (Domain): ['Test','88hallo99','+)','twee woorden','test met spatie'];
+			attribute<string>  sumProv          (Domain): ['GroningenLeeuwardenAssenZwolle','DelfzijlDokkumEmmenEnschede','HoogezandSneekBijlenAlmelo','AppingedamHeerenveenHoogeveenKampen','HarenFranekerMeppelHengelo'];
+			attribute<string>  sortA_asc        (Domain): [' test met spatie','+)','88hallo99','Test','twee woorden'];
+			attribute<string>  sortA_desc       (Domain): ['twee woorden','Test','88hallo99','+)',' test met spatie'];
+			attribute<string>  Groningen        (Domain): ['Groningen','Delfzijl','Hoogezand','Appingedam','Haren'];
+			attribute<string>  Friesland        (Domain): ['Leeuwarden','Dokkum','Sneek','Heerenveen','Franeker'];
+			attribute<string>  Drenthe          (Domain): ['Assen','Emmen','Bijlen','Hoogeveen','Meppel'];
+			attribute<string>  Overijssel       (Domain): ['Zwolle','Enschede','Almelo','Kampen','Hengelo'];
+
+			container special_characters
+			{
+				parameter<string> A  := 'ÀÁÂÄÄÃÅ';
+				parameter<string> a_ := 'àáâäãåæ';
+				parameter<string> C  := 'Ç';
+				parameter<string> c_ := 'ç';
+				parameter<string> E  := 'ÈÉÊË'; 
+				parameter<string> e_ := 'èéêë';
+				parameter<string> I  := 'ÌÍÎÏ';
+				parameter<string> i_ := 'ìíîï';
+				parameter<string> N  := 'Ñ';
+				parameter<string> n_ := 'ñ';
+				parameter<string> O  := 'ÒÓÔÖÕØŒ';
+				parameter<string> o_ := 'òóôöõøœ';
+				parameter<string> U  := 'ÙÚÛÜ';
+				parameter<string> u_ := 'ùúûü';
+				parameter<string> Y  := 'Ý';
+				parameter<string> y_ := 'ýÿ';
+				parameter<string> OC := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // Ordinary Characters
+			}
+
+			unit<uint32> Steden_nrd := Steden
+			{
+				attribute <Prov> Provincie: [0,0,0,1,1,1,2,2,2];
+				attribute <string>   Stad: ['Groningen','Delfzijl','Winschoten','Leeuwarden','Dokkum','Bolsward','Emmen','Assen','Hoogeveen'];
+			}
+			unit<uint32> Prov_nrd := Prov
+			{
+				attribute <Prov> Prov_nr: [0,1,2];
+				attribute <string>   src_asList: ['Groningen;Delfzijl;Winschoten','Leeuwarden;Dokkum;Bolsward','Emmen;Assen;Hoogeveen'];
+				attribute <string>   src_asexprList: ['''Groningen'';''Delfzijl'';''Winschoten''','''Leeuwarden'';''Dokkum'';''Bolsward''','''Emmen'';''Assen'';''Hoogeveen'''];
+				attribute <string>   src_asItemList: ['Groningen,Delfzijl,Winschoten','Leeuwarden,Dokkum,Bolsward','Emmen,Assen,Hoogeveen'];
+			}
+			unit<uint32> Regions := Reg
+			{
+				attribute <string> regionnames: ['Groningen','Friesland','Drenthe','Overijssel'];
+			}
+			container stringOperator
+			{
+				parameter <bool> test_param := string(ValueTostring) = '7.5';
+			}
+		}
+		template ESource
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			unit<uint32> Steden;
+			unit<uint32> Prov;
+			unit<uint32> Reg;
+			// end case parameters
+
+			parameter<float32> ValueTostring  := float32(7.5);
+			parameter<string>  TestToQuote    := 'MetQuotes'; 
+			parameter<string>  teststring     := 'In een string past ook een zin';
+			parameter<string>  TestTrimstring := ' string   met   spaties  ';
+
+			attribute<string>  A                (Domain): [];
+			attribute<string>  B                (Domain): [];
+			attribute<string>  C                (Domain): [];
+			
+			attribute<string>  repA             (Domain): [];
+			attribute<uint32>  repNr            (Domain): [];
+			attribute<uint32>  strlenA          (Domain): [];
+			attribute<uint64>  strlen64A        (Domain): [];
+			attribute<string>  substrA          (Domain): [];
+			attribute<string>  substr2A         (Domain): [];
+			attribute<string>  leftA            (Domain): [];
+			attribute<string>  rightA           (Domain): [];
+
+			attribute<string>  quoteA           (Domain): [];
+			attribute<string>  dquoteA          (Domain): [];
+			attribute<string>  unquoteB         (Domain): [];
+			attribute<string>  undquoteA        (Domain): [];
+			attribute<string>  uppercaseA       (Domain): [];
+			attribute<string>  lowercaseA       (Domain): [];
+			attribute<uint32>  strPosA          (Domain): []; 
+			attribute<uint32>  strrPosA         (Domain): []; 
+
+			attribute<uint32>  strCountA        (Domain): [];
+			attribute<string>  replaceC         (Domain): [];
+			attribute<string>  replaceCMultiple (Domain): [];
+			attribute<string>  replace_valueC   (Domain): [];
+
+			attribute<string>  RepeatA          (Domain): [];
+			attribute<string>  ConAB            (Domain): [];
+			attribute<string>  trimA            (Domain): [];
+			attribute<string>  sumProv          (Domain): [];
+			attribute<string>  sortA_asc        (Domain): [];
+			attribute<string>  sortA_desc       (Domain): [];
+			attribute<string>  Groningen        (Domain): [];
+			attribute<string>  Friesland        (Domain): [];
+			attribute<string>  Drenthe          (Domain): [];
+			attribute<string>  Overijssel       (Domain): [];
+
+			container special_characters
+			{
+				parameter<string> A  := 'ÀÁÂÄÄÃÅ';
+				parameter<string> a_ := 'àáâäãåæ';
+				parameter<string> C  := 'Ç';
+				parameter<string> c_ := 'ç';
+				parameter<string> E  := 'ÈÉÊË'; 
+				parameter<string> e_ := 'èéêë';
+				parameter<string> I  := 'ÌÍÎÏ';
+				parameter<string> i_ := 'ìíîï';
+				parameter<string> N  := 'Ñ';
+				parameter<string> n_ := 'ñ';
+				parameter<string> O  := 'ÒÓÔÖÕØŒ';
+				parameter<string> o_ := 'òóôöõøœ';
+				parameter<string> U  := 'ÙÚÛÜ';
+				parameter<string> u_ := 'ùúûü';
+				parameter<string> Y  := 'Ý';
+				parameter<string> y_ := 'ýÿ';
+				parameter<string> OC := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // Ordinary Characters
+			}
+
+			unit<uint32> Steden_nrd := Steden
+			{
+				attribute <Prov>   Provincie: [];
+				attribute <string> Stad: [];
+			}
+			unit<uint32> Prov_nrd := Prov
+			{
+				attribute <Prov>   Prov_nr: [];
+				attribute <string> src_asList: [];
+				attribute <string> src_asexprList: [];
+				attribute <string> src_asItemList: [];
+			}
+			unit<uint32> Regions := Reg
+			{
+				attribute <string> regionnames: [];
+			}
+			container stringOperator
+			{
+				parameter <bool> test_param := string(ValueTostring) = '7.5';
+			}
+		}
+
+		container UnTiled  := Template(ADomain       ,Prov_nrd , srcDomain      , False);
+		container Tiled    := Template(ATiledDomain  ,Prov_nrd , srcTiledDomain , False);
+		container EUnTiled := Template(EDomain       ,EProv_nrd, srcEDomain     , True);
+		container ETiled   := Template(ETiledDomain  ,EProv_nrd, srcETiledDomain, True);
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> domain;
+			unit<uint32> prov;
+			container source;
+			parameter<bool> isEmpty;
+			// end case parameters
+
+			container concatenation: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/concatenation"
+			{
+				parameter<bool>   test_param    := source/teststring + source/teststring = 'In een string past ook een zinIn een string past ook een zin';
+				attribute<string> att  (Domain) := source/A + source/B;
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/conAB);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container strlen: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/strlen"
+			{
+				parameter<uint32> param         := strlen(source/teststring);
+				parameter<bool>   test_param    := param = 30;
+				attribute<uint32> att  (Domain) := strlen(source/A);
+				attribute<bool>   test (Domain) := att = source/strlenA;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container strlen64
+			{
+				parameter<uint64> param         := strlen64(source/teststring);
+				parameter<bool>   test_param    := param = 30u64;
+				attribute<uint64> att  (Domain) := strlen64(source/A);
+				attribute<bool>   test (Domain) := att = source/strlen64A;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container substr: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/substr"
+			{
+				parameter<string> param         := substr(source/teststring, 7, 6);
+				parameter<bool>   test_param    := param = 'string';
+				attribute<string> att  (Domain) := substr(source/A, 1, 3);
+				attribute<bool>   test (Domain) := att = source/substrA;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container left
+			{
+				parameter<string> param         := left(source/teststring, 6);
+				parameter<bool>   test_param    := param = 'In een';
+				attribute<string> att  (Domain) := left(source/A, 3);
+				attribute<bool>   test (Domain) := att = source/leftA;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container right
+			{
+				parameter<string> param         := right(source/teststring, 16);
+				parameter<bool>   test_param    := param = 'past ook een zin';
+				attribute<string> att  (Domain) := right(source/A, 3);
+				attribute<bool>   test (Domain) := att = source/rightA;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container substr2: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/substr"
+			{
+				parameter<string> param         := substr(source/teststring, 7);
+				parameter<bool>   test_param    := param = 'string past ook een zin';
+				attribute<string> att  (Domain) := substr(source/A, 1);
+				attribute<bool>   test (Domain) := att = source/substr2A;
+				parameter<bool>   test_attr     := all(test);
+			}
+
+			container quote: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/quote"
+			{
+				parameter<string> param         := quote(source/TestToQuote);
+				parameter<bool>   test_param    := iif(strlen(param) = 11, true, false);
+				attribute<string> att  (Domain) := quote(source/A);
+				attribute<bool>   test (Domain) := att = source/quoteA;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container unquote: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/unquote"
+			{
+				parameter<string> param         := unquote(quote/param);
+				parameter<bool>   test_param    := param = source/TestToQuote;
+				attribute<string> att  (Domain) := unquote(quote/att);
+				attribute<bool>   test (Domain) := att = MakeDefined(source/A, 'lege string');
+				parameter<bool>   test_attr     := all(test);
+			}
+			container dquote: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/dquote"
+			{
+				parameter<string> param         := dquote(source/TestToQuote);
+				parameter<bool>   test_param    := iif(strlen(param) = 11, true, false);
+				attribute<string> att  (Domain) := dquote(source/A);
+				attribute<bool>   test (Domain) := att = source/dquoteA;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container undquote: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/undquote"
+			{
+				parameter<string> param         := undquote(dquote/param);
+				parameter<bool>   test_param    := param = source/TestToQuote;
+				attribute<string> att  (Domain) := undquote(dquote/att);
+				attribute<bool>   test (Domain) := att = MakeDefined(source/A, 'lege string');
+				parameter<bool>   test_attr     := all(test);
+			}
+			container UpperCase: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/uppercase"
+			{
+				attribute<string> att  (Domain) := uppercase(source/A);
+				attribute<bool>   test (Domain) := att = source/uppercaseA;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container LowerCase: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/lowercase"
+			{
+				attribute<string> att  (Domain) := lowercase(source/A);
+				attribute<bool>   test (Domain) := uppercase(att) = uppercase(source/uppercaseA);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container strpos: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/strpos"
+			{
+				parameter<uint32> param         := strpos(source/teststring, 'p');
+				parameter<bool>   test_param    := param = 14;
+				attribute<uint32> att  (Domain) := strpos(source/A, 't');
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/strPosA);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container strrpos
+			{
+				parameter<uint32> param         := strrpos(source/teststring, 'e');
+				parameter<bool>   test_param    := param = 24;
+				attribute<uint32> att  (Domain) := strrpos(source/A, 't');
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/strrPosA);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container strcount: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/strcount"
+			{
+				parameter<uint32> param         := strcount(source/teststring, 'i');
+				parameter<bool>   test_param    := param = 2;
+				attribute<uint32> att  (Domain) := strcount(source/A, 't');
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/strCountA);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container replace: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/replace"
+			{
+				parameter<string> param             := replace(source/teststring, 'In', 'Bij');
+				parameter<bool>   test_param        := param = 'Bij een string past ook een zin';
+				parameter<string> paramMultiple     := replace(source/teststring, 'In', 'Bij','past','hoort','zin','quote');
+				parameter<bool>   test_paramM       := paramMultiple = 'Bij een string hoort ook een quote' && test_paramMOrderA && test_paramMOrderB;
+				parameter<bool>   test_paramMOrderA := replace(param, 'zin', 'woord','woord','functie') == 'Bij een string past ook een functie';
+				parameter<bool>   test_paramMOrderB := replace(param, 'woord', 'functie','zin','woord') == 'Bij een string past ook een woord';
+				
+				attribute<string> att  (Domain)     := replace(source/C, 'Tes','Taar');
+				attribute<bool>   test (Domain)     := eq_or_both_null(att, source/ReplaceC);
+				parameter<bool>   test_attr         := all(test);
+				
+				attribute<string> attMultiple  (Domain) := replace(source/C, 'Tes','Taar', 'met', 'zonder');
+				attribute<bool>   testMultiple (Domain) := eq_or_both_null(attMultiple, source/ReplaceCMultiple);
+				parameter<bool>   test_attrMultiple     := all(testMultiple);
+			}
+			container replace_value: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/replace_value"
+			{
+				parameter<string> param         := replace_value(source/teststring, 'In een string past ook een zin', 'Bij een string past ook een zin');
+				parameter<bool>   test_param    := param = 'Bij een string past ook een zin';
+				attribute<string> att  (Domain) := replace_value(LowerCase(source/C), 'test','taart');
+				attribute<bool>   test (Domain) := eq_or_both_null(att, LowerCase(source/replace_valueC));
+				parameter<bool>   test_attr     := all(test);
+			}
+			container repeat: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/repeat"
+			{
+				parameter<string> param         := repeat('drie',3);
+				parameter<bool>   test_param    := param = 'driedriedrie';
+				attribute<string> att  (Domain) := repeat(source/repA, source/repNr);
+				attribute<bool>   test (Domain) := MakeDefined(source/RepeatA,'') = att;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container trim: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/trim"
+			{
+				parameter<string> test_l     := ltrim(source/TestTrimstring), url = "http://www.objectvision.nl/geodms/operators-a-functions/string/ltrim";
+				parameter<string> test_r     := rtrim(source/TestTrimstring), url = "http://www.objectvision.nl/geodms/operators-a-functions/string/rtrim";
+				parameter<string> test_p     :=  trim(source/TestTrimstring);
+				parameter<bool>   test_param := test_l = 'string   met   spaties  ' && test_r = ' string   met   spaties' && test_p = 'string   met   spaties';
+
+				attribute<string> att_l (Domain) := ltrim(source/A);
+				attribute<string> att_r (Domain) := rtrim(source/A);
+				attribute<string> att   (Domain) := trim(source/A);
+				attribute<bool>   test  (Domain) := att_l = source/trimA && att_r = source/A && att = source/trimA;
+				
+				parameter<bool>   test_attr := all(test);
+			}
+			container sort_str: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/sort_str"
+			{
+				attribute<string> att_asc   (Domain) := sort_str(source/A);
+				attribute<bool>   test_asc  (Domain) := eq_or_both_null(att_asc, source/sortA_asc);
+	
+				attribute<string> att_desc  (Domain) := reverse(sort_str(source/A));
+				attribute<bool>   test_desc (Domain) := eq_or_both_null(att_desc, source/sortA_desc);
+				attribute<bool>   test      (Domain) := test_asc && test_desc;
+				parameter<bool>   test_attr          := all(test);
+			}
+			container add:
+				Using = "Source",
+				url   ="http://www.objectvision.nl/geodms/operators-a-functions/string/add_str"
+			{
+			
+				attribute<string> att_with_values     (Domain) := = IsEmpty ? 'const('''',Domain)' : 'add('+asItemList(Regions/regionnames)+')', DisableStorage = "True";
+				attribute<string> att_without_values  (Domain) :[];
+				attribute<string> att                 (Domain) := = isEmpty ? 'att_without_values' : 'att_with_values' ;
+				
+				attribute<bool>   test (Domain) := att = source/SumProv;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container asList: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/aslist"
+			{
+				parameter<string> param_att := asList(source/A, ';');
+				parameter<string> param_exp_with_values    := 'Test;88hallo99;+);twee woorden; test met spatie';
+				parameter<string> param_exp_without_values := '';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+				
+				attribute<string> att_asList (Prov) := asList(source/Steden_nrd/Stad, ';' , source/Steden_nrd/Provincie);
+				attribute<bool>   test       (Prov) := att_asList = source/Prov_nrd/src_asList;
+				parameter<bool>   test_attr             := param_att = param_exp && all(test);
+			}
+			container asExprList: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/asexprlist"
+			{
+				parameter<bool>   test_param := asExprList(source/teststring) = quote(source/teststring) && asExprList(source/ValueToString) = String(source/ValueToString);
+				parameter<string> param_att  := asExprList(source/A);
+				parameter<string> param_exp_with_values    := quote('Test') +';' + quote ('88hallo99') + ';' + quote('+)') +';'+ quote('twee woorden') +';'+quote(' test met spatie');
+				parameter<string> param_exp_without_values := '';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+
+				attribute<string> att_asexprList (Prov) := asExprList(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
+				attribute<bool>   test           (Prov) := att_asexprList = source/Prov_nrd/src_asexprList;
+				parameter<bool>   test_attr  := param_att = param_exp && all(test);
+			}
+			container asExprList_with_null
+			{
+				parameter<bool>   test_param := asExprList_with_null(source/teststring) = quote(source/teststring) && asExprList(source/ValueToString) = String(source/ValueToString);
+				parameter<string> param_att  := asExprList_with_null(source/A);
+				parameter<string> param_exp_with_values    := quote('Test') +';' + quote ('88hallo99') + ';' + quote('+)') +';'+ quote('twee woorden') +';'+quote(' test met spatie');
+				parameter<string> param_exp_without_values := '';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+
+				attribute<string> att_asexprList (Prov) := asExprList_with_null(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
+				attribute<bool>   test           (Prov) := att_asexprList = source/Prov_nrd/src_asexprList;
+				parameter<bool>   test_attr  := param_att = param_exp && all(test);
+			}
+			container asItemList: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/asitemlist"
+			{
+				parameter<bool>   test_param := asItemList(source/teststring) = source/teststring;
+				parameter<string> param_att  := asItemList(source/A);
+				parameter<string> param_exp_with_values    := 'Test' +',' + '88hallo99' + ',' + '+)' +','+ 'twee woorden'+','+' test met spatie';
+				parameter<string> param_exp_without_values := '';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+				attribute<string> att_asItemList (Prov) := asItemList(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
+				attribute<bool>   test           (Prov) := att_asItemList = source/Prov_nrd/src_asItemList;
+				parameter<bool>   test_attr  := param_att = param_exp && all(test);
+			}
+			container asItemList_with_null
+			{
+				parameter<bool>   test_param := asItemList_with_null(source/teststring) = source/teststring;
+				parameter<string> param_att  := asItemList_with_null(source/A);
+				parameter<string> param_exp_with_values    := 'Test' +',' + '88hallo99' + ',' + '+)' +','+ 'twee woorden'+','+' test met spatie';
+				parameter<string> param_exp_without_values := '';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+				attribute<string> att_asItemList (Prov) := asItemList_with_null(source/Steden_nrd/Stad, source/Steden_nrd/Provincie);
+				attribute<bool>   test           (Prov) := att_asItemList = source/Prov_nrd/src_asItemList;
+				parameter<bool>   test_attr  := param_att = param_exp && all(test);
+			}
+			container asDataString: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/asdatastring"
+			{
+				parameter<bool>   test_param        := asDatastring(source/teststring) = '[' + quote(source/teststring) +']';
+				parameter<string> param_att         := asDatastring(source/Steden_nrd/Stad);
+//				parameter<string> param_att_float :=asDatastring(Conversion/Source/FloatAtt);
+//				parameter<string> param_att_uint :=asDatastring(Conversion/Source/IntegerAtt);
+//				parameter<string> param_att_bool :=asDatastring(Conversion/Source/BoolAtt);
+//				parameter<string> param_att_string := asDatastring(Conversion/SPoint/att);
+//				parameter<string> param_att_point :=asDatastring(Conversion/SPoint/att);
+	
+				parameter<string> param_exp_with_values :=
+					'['+ 
+						  quote('Groningen') +',' + quote('Delfzijl') + ',' + quote('Winschoten') +','+ quote('Leeuwarden') +',' 
+						+ quote('Dokkum')    +',' + quote('Bolsward') + ',' + quote('Emmen')      +','+ quote('Assen')+',' 
+						+ quote('Hoogeveen') 
+					+']';
+				parameter<string> param_exp_without_values := '[]';
+				parameter<string> param_exp                := = isEmpty ? 'param_exp_without_values' : 'param_exp_with_values';
+
+				parameter<bool> test_attr := param_att == param_exp;
+			}
+			container expand: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/expand"
+			{
+				parameter<string> LocalPath  := expand(.,'%localDataProjDir%/');
+				parameter<bool>   test_param := strcount(LocalPath, '/') > 0;
+			}
+			container from_utf
+			{
+				parameter<bool> testA := from_utf(Source/special_characters/A)  == 'AAAAAAA';
+				parameter<bool> testa_:= from_utf(Source/special_characters/a_) == 'aaaaaaa';
+				parameter<bool> testC := from_utf(Source/special_characters/C)  == 'C';
+				parameter<bool> testc_:= from_utf(Source/special_characters/c_) == 'c';
+				parameter<bool> testE := from_utf(Source/special_characters/E)  == 'EEEE';
+				parameter<bool> teste_:= from_utf(Source/special_characters/e_) == 'eeee';
+				parameter<bool> testI := from_utf(Source/special_characters/I)  == 'IIII';
+				parameter<bool> testi_:= from_utf(Source/special_characters/i_) == 'iiii';
+				parameter<bool> testN := from_utf(Source/special_characters/N)  == 'N';
+				parameter<bool> testn_:= from_utf(Source/special_characters/n_) == 'n';
+				parameter<bool> testO := from_utf(Source/special_characters/O)  == 'OOOOOOO';
+				parameter<bool> testo_:= from_utf(Source/special_characters/o_) == 'ooooooo';
+				parameter<bool> testU := from_utf(Source/special_characters/U)  == 'UUUU';
+				parameter<bool> testu_:= from_utf(Source/special_characters/u_) == 'uuuu';
+				parameter<bool> testY := from_utf(Source/special_characters/Y)  == 'Y';
+				parameter<bool> testy_:= from_utf(Source/special_characters/y_) == 'yy';
+				parameter<bool> testOC:= from_utf(Source/special_characters/OC) == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+				
+				parameter<bool> test_param := 
+					   testA  && testa_ && testC  && testc_ && testE  && teste_ && testI 
+					&& testi_ && testN  && testn_ && testO  && testo_ && testU  && testu_
+					&& testY  && testy_ && testOC;
+			}
+			container AsItemName
+			{
+				parameter<string> src   := '12&e @b naam';
+				parameter<bool>   testA := AsItemName(src) == '_12_e_@b_naam';
+			}
+			container url_decode
+			{
+				parameter<string> srcOrg  := 'http://www.objectvision.nl';
+// 				parameter<string> encoded := UrlEncode(srcOrg);
+// 				parameter<string> decoded := UrlDecode(encoded);
+				parameter<string> src  := 'http%3A%2F%2Fwww.objectvision.nl';
+				parameter<string> attr := UrlDecode(src);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 57
+				{
+					attribute<string> Spec :
+					[
+						 'concatenation/test_param'
+					,	'source/stringOperator/test_param'
+					,	'strlen/test_param'
+					,	'strlen64/test_param'
+					,	'substr/test_param'
+					,	'substr2/test_param'
+					,	'left/test_param'
+					,	'right/test_param'
+					,	'quote/test_param'
+					,	'unquote/test_param'
+					,	'dquote/test_param'
+					,	'undquote/test_param'
+					,	'strpos/test_param'
+					,	'strrpos/test_param'
+					,	'strcount/test_param'
+					,	'replace/test_param'
+					,	'replace/test_paramM'
+					,	'replace_value/test_param'
+					,	'repeat/test_param'
+					,	'trim/test_param'
+					,	'asExprList/test_param'
+					,	'asExprList_with_null/test_param'
+					,	'asItemList/test_param'
+					,	'asItemList_with_null/test_param'
+					,	'asDatastring/test_param'
+					,	'expand/test_param'
+					,	'from_utf/test_param'
+					,	'AsItemName/testA'
+					,	'concatenation/test_attr'
+					,	'strlen/test_attr'
+					,	'strlen64/test_attr'
+					,	'substr/test_attr'
+					,	'substr2/test_attr'
+					,	'left/test_attr'
+					,	'right/test_attr'
+					,	'quote/test_attr'
+					,	'unquote/test_attr'
+					,	'dquote/test_attr'
+					,	'undquote/test_attr'
+					,	'uppercase/test_attr'
+					,	'lowercase/test_attr'
+					,	'strpos/test_attr'
+					,	'strrpos/test_attr'
+					,	'strcount/test_attr'
+					,	'replace/test_attr'
+					,	'replace/test_attrMultiple'
+					,	'replace_value/test_attr'
+					,	'repeat/test_attr'
+					,	'trim/test_attr'
+					,	'sort_str/test_attr'
+					,	'add/test_attr'
+					,	'asList/test_attr'
+					,	'asExprList/test_attr'
+					,	'asExprList_with_null/test_attr'
+					,	'asItemList/test_attr'
+					,	'asItemList_with_null/test_attr'
+					,	'asDatastring/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

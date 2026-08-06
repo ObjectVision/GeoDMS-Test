@@ -1,0 +1,33 @@
+	Template TestSet
+	{
+		// begin case parameters
+		unit<uint32> D;
+		attribute<string> Spec (D);
+		// end case parameters
+
+		attribute<bool>   IsAgg    (D) := left(Spec, 4) = 'AGG|';
+		attribute<string> AggPath  (D) := substr(Spec, 4);
+		attribute<bool>   HasReq   (D) := strcount(Spec, '|') > 0;
+		attribute<string> TestPath (D) := HasReq ? substr(Spec, 0, strpos(Spec, '|')) : Spec;
+		attribute<string> ReqRaw   (D) := HasReq ? substr(Spec, strpos(Spec, '|') + 1) : '';
+		attribute<string> Req1     (D) := strcount(ReqRaw, ';') > 0 ? substr(ReqRaw, 0, strpos(ReqRaw, ';')) : ReqRaw;
+		attribute<string> Req2     (D) := strcount(ReqRaw, ';') > 0 ? substr(ReqRaw, strpos(ReqRaw, ';') + 1) : '';
+		attribute<bool>   Present  (D) :=
+			   (Req1 = '' || isDefined(rlookup(lowercase(Req1), MetaInfo/OperatorList/OperatorGroups/NameLC)))
+			&& (Req2 = '' || isDefined(rlookup(lowercase(Req2), MetaInfo/OperatorList/OperatorGroups/NameLC)));
+
+		parameter<string> test_expr  := 'true'      + asList(IsAgg ? ' && ' + AggPath + '/tests'        : (Present ? ' && ' + TestPath : ''), '');
+		parameter<string> count_expr := 'uint32(0)' + asList(IsAgg ? ' + ' + AggPath + '/nrExecuted'    : (Present ? ' + uint32(1)' : ''), '');
+		parameter<string> conf_expr  := 'uint32(0)' + asList(IsAgg ? ' + ' + AggPath + '/nrConfigured'  : ' + uint32(1)', '');
+		// let op: geen lengte-aritmetiek hier -- beide ?:-takken worden eager geevalueerd
+		// en strlen-8 zou op korte leaf-specs een uint32-underflow-fout geven
+		attribute<string> AggPrefix (D) := strcount(AggPath, '/results') > 0 ? substr(AggPath, 0, strpos(AggPath, '/results')) : AggPath;
+		parameter<string> fail_expr  := '''''' + asList(
+			IsAgg ? ' + (' + AggPath + '/failing = '''' ? '''' : ''' + AggPrefix + ': ['' + ' + AggPath + '/failing + ''] '')'
+			      : (Present ? ' + (' + TestPath + ' ? '''' : ''' + TestPath + '; '')' : '')
+		, '');
+		parameter<string> skip_expr  := '''''' + asList(
+			IsAgg ? ' + (' + AggPath + '/skipped = '''' ? '''' : ''' + AggPrefix + ': ['' + ' + AggPath + '/skipped + ''] '')'
+			      : (!Present ? ' + ''' + TestPath + '[' + ReqRaw + '] ''' : '')
+		, '');
+	}

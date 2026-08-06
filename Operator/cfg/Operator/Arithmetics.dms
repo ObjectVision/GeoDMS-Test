@@ -1,0 +1,321 @@
+	container Arithmetics: Using = "/Domains;/Units;/Tolerances"
+	{
+		container srcDomain       := source(ADomain);
+		container srcEDomain      := Esource(EDomain);
+
+		container srcTiledDomain  := source(ATiledDomain);
+		container srcETileDomain  := Esource(ETiledDomain);
+
+		template source
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+
+			parameter<uint32> ParamA := 5;
+			parameter<uint32> ParamB := 7;
+			parameter<uint32> ParamC := 2;
+			parameter<int32>  ParamD := int32(5);
+
+			attribute<float32> A     (Domain): [0,1,-2,3.6,999];
+			attribute<uint8>   A1    (Domain): [0,1,200,50,222];
+			attribute<uint8>   A2    (Domain): [0,1,2,5,2];
+
+			attribute<float32> B     (Domain): [1,-1,2,1.44,111];
+			attribute<uint8>   B1    (Domain): [1,null,54,100,111];
+			
+			attribute<int32>   C     (Domain): [0,1,4,7,-5];
+			attribute<int32>   D     (Domain): [1,1,2,3,-2];
+			attribute<float32> AddABC(Domain): [1,1,4,12.04,1105];
+			attribute<uint8>   Add_or_nullAB (Domain): [1,null,254,150,null];
+			attribute<float32> AsubB (Domain): [-1,2,-4,2.16,888];
+			attribute<uint8>   Sub_or_nullAB (Domain): [null,null,146,null,111];
+			attribute<float32> mulABC(Domain): [0,-1,-16,36.288,-554445];
+			attribute<uint8>   Mul_or_nullAB (Domain): [0,null,108,null,222];
+			attribute<float32> AdivB (Domain): [0,-1,-1,2.5,9];
+			attribute<int32>   CmodD (Domain): [0,0,0,1,-1];
+			attribute<float64> CPowD (Domain): [0,1,16,343,0.04];
+			attribute<float32> NegA  (Domain): [0,-1,2,-3.6,-999];
+			attribute<float32> RevB  (Domain): [111,1.44,2,-1,1];
+			attribute<float32> AbsA  (Domain): [0,1,2,3.6,999];
+			attribute<float32> sqrA  (Domain): [0,1,4,12.96,998001];
+			attribute<float32> sqrtA (Domain): [0,1,null,1.89737,31.607];
+		}
+		template Esource
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+
+			parameter<uint32> ParamA := 5;
+			parameter<uint32> ParamB := 7;
+			parameter<uint32> ParamC := 2;
+			parameter<int32>  ParamD := int32(5);
+
+			attribute<float32> A     (Domain): [];
+			attribute<uint8>   A1    (Domain): [];
+			attribute<uint8>   A2    (Domain): [];
+
+			attribute<float32> B     (Domain): [];
+			attribute<uint8>   B1    (Domain): [];
+
+			attribute<int32>   C     (Domain): [];
+			attribute<int32>   D     (Domain): [];
+			attribute<float32> AddABC(Domain): [];
+			attribute<uint8>   Add_or_nullAB (Domain): [];
+			attribute<float32> AsubB (Domain): [];
+			attribute<uint8>   Sub_or_nullAB (Domain): [];
+			attribute<float32> mulABC(Domain): [];
+			attribute<uint8>   Mul_or_nullAB (Domain): [];
+			attribute<float32> AdivB (Domain): [];
+			attribute<int32>   CmodD (Domain): [];
+//			attribute<float64> CPowD (Domain): [];
+			attribute<float64> CPowD (Domain): [];
+			attribute<float32> NegA  (Domain): [];
+			attribute<float32> RevB  (Domain): [];
+			attribute<float32> AbsA  (Domain): [];
+			attribute<float32> sqrA  (Domain): [];
+			attribute<float32> sqrtA (Domain): [];
+		}
+
+		container UnTiled  := Template(ADomain, srcDomain);
+		container EunTiled := Template(EDomain, srcEDomain);
+		container Tiled    := Template(ATiledDomain, srcTiledDomain);
+		container ETiled   := Template(ETiledDomain, srcETileDomain);
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			container source;
+			// end case parameters
+
+			container add_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/add"
+			{
+				parameter<bool>    test_param          := source/ParamA + source/ParamB = 12;
+				attribute<float32> attr       (Domain) := source/A + source/B + float32(source/C);
+				attribute<bool>    test       (Domain) := attr = source/AddABC;
+				attribute<fpoint>  att_point  (Domain) := add(point_yx(source/A,source/B,fpoint), point_yx(source/A,source/B,fpoint));
+				attribute<bool>    test_point (Domain) := pointRow(att_point) = float32(2) * source/A && pointCol(att_point) = float32(2) * source/B;
+				parameter<bool>    test_attr           := all(test) && all(test_point);
+			}
+			container add: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/add"
+			{
+				parameter<bool>    test_param    := add(source/ParamA , source/ParamB) = 12;
+				attribute<float32> attr (Domain) := add(source/A, source/B, float32(source/C));
+				attribute<bool>    test (Domain) := attr = source/AddABC;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container add_or_null
+			{
+				parameter<uint8>   param         := add_or_null(uint8(source/ParamA * 50), uint8(source/ParamB));
+				parameter<bool>    test_param    := isNull(param);
+
+				attribute<uint8>   attr (Domain) := add_or_null(source/A1, source/B1);
+				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Add_or_nullAB);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container sub_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/sub"
+			{
+				parameter<bool>    test_param    := int32(source/ParamA) - int32(source/ParamB) = -2;
+				attribute<float32> attr (Domain) := source/A - source/B ;
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/AsubB, Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container sub: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/sub"
+			{
+				parameter<bool>    test_param    :=sub(int32(source/ParamA), int32(source/ParamB)) = -2;
+				attribute<float32> attr (Domain) := sub(source/A, source/B);
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/AsubB, Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container sub_or_null
+			{
+				parameter<uint8>   param         := sub_or_null(uint8(source/ParamA), uint8(source/ParamB));
+				parameter<bool>    test_param    := isNull(param);
+
+				attribute<uint8>    attr (Domain) := sub_or_null(source/A1, source/B1);
+				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Sub_or_nullAB);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container mul_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mul"
+			{
+				parameter<bool>    test_param    :=source/ParamA * source/ParamB = 35;
+				attribute<float32> attr (Domain) := source/A * source/B * float32(source/C);
+				attribute<bool>    test (Domain) := float_isNearby(attr, Source/mulABC, Dif_all_float32);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container mul: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mul"
+			{
+				attribute<float32> attr (Domain) := mul(source/A,source/B,float32(source/C));
+				attribute<bool>    test (Domain) := float_isNearby(attr, Source/mulABC, Dif_all_float32);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container mul_or_null
+			{
+				parameter<uint8>   param         := mul_or_null(uint8(source/ParamA * 10), uint8(source/ParamB));
+				parameter<bool>    test_param    := isNull(param);
+
+				attribute<uint8>   attr (Domain) := mul_or_null(source/A2, source/B1);
+				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Mul_or_nullAB);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container div_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/div"
+			{
+				parameter<bool>    test_param    := source/ParamA / source/ParamB = 5/7;
+				attribute<float32> attr (Domain) := source/A / source/B;
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/AdivB, Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container div: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/div"
+			{
+				parameter<bool>    test_param    := div(source/ParamA, source/ParamB) = 5/7;
+				attribute<float32> attr (Domain) := div(source/A, source/B);
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/AdivB, Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container mod_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mod"
+			{
+				parameter<bool>    test_param    := source/ParamB % source/ParamA = 2 && isNull(2 % 0); 
+				attribute<int32>   attr (Domain) := source/C % source/D;
+				attribute<bool>    test (Domain) := attr = source/CModD;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container mod: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mod"
+			{
+				parameter<bool>    test_param    := mod(source/ParamB, source/ParamA) = 2 && isNull(mod(2, 0)); 
+				attribute<int32>   attr (Domain) := mod(source/C, source/D);
+				attribute<bool>    test (Domain) := attr = source/CModD;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container pow_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/pow"
+			{
+				parameter<bool>    test_param    := float_isNearby(float64(source/ParamA) ^ float64(source/ParamC), 25.0, Dif_all_float64) ;
+				attribute<float32> attr (Domain) := float32(source/C) ^ float32(source/D);
+				// pre-#839 (GeoDmsVersion < 20.01): a^b was rewritten to exp(b*log(a)), giving Null for any base <= 0; first-class pow operator since 20.1.0 returns the sign-correct value.
+				attribute<bool>    test (Domain) := GeoDmsVersion() < 20.01d
+					? (float32(source/C) <= 0f ? isNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
+					: float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container pow: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/pow"
+			{
+				parameter<bool>    test_param    := float_isNearby(pow(float64(source/ParamA), float64(source/ParamC)), 25.0, Dif_all_float64) ;
+				attribute<float32> attr (Domain) := pow(float32(source/C), float32(source/D));
+				// pre-#839 (GeoDmsVersion < 20.01): pow(a,b) was rewritten to exp(b*log(a)), giving Null for any base <= 0; first-class pow operator since 20.1.0 returns the sign-correct value.
+				attribute<bool>    test (Domain) := GeoDmsVersion() < 20.01d
+					? (float32(source/C) <= 0f ? isNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
+					: float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container plus_op
+			{
+				parameter<bool>    test_param    := +source/ParamA = 5;
+				attribute<float32> attr (Domain) := +source/A;
+				attribute<bool>    test (Domain) := attr = source/A;
+				parameter<bool>    test_attr     := all(test);
+			}
+			/*container plus:
+				url = "http://www.objectvision.nl/Geodms/Function/plus"
+			{
+				parameter<bool>    test_param      := plus(source/ParamA) = 5;
+				attribute<float32> attr (Domain) := plus(source/A);
+				attribute<bool>    test (Domain) := attr = source/A;
+				parameter<bool>    test_attr       := all(test);
+			}*/
+			container neg_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/neg"
+			{
+				parameter<bool>    test_param    := -source/ParamA = -5;
+				attribute<float32> attr (Domain) := -source/A;
+				attribute<bool>    test (Domain) := attr = source/NegA;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container neg: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/neg"
+			{
+				parameter<bool>    test_param    := neg(source/ParamA) = -5;
+				attribute<float32> attr (Domain) := neg(source/A);
+				attribute<bool>    test (Domain) := attr = source/NegA;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container abs: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/abs",
+				Descr = " Operator only in use for signed integers and floats !"
+			{
+				parameter<bool>    test_param    := abs(source/ParamD) = int32(5);
+				attribute<float32> attr (Domain) := abs(source/A);
+				attribute<bool>    test (Domain) := attr = source/AbsA;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container sqr: url   = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/sqr"
+			{
+				parameter<bool>    test_param    := sqr(5) = 25;
+				attribute<float32> attr (Domain) := sqr(source/A);
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/sqrA, Dif_all_float32) ; 
+				parameter<bool>    test_attr     := all(test);
+			}
+			container sqrt: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/sqrt"
+			{
+				parameter<bool>    test_param    := sqrt(25) = 5.0;
+				attribute<float32> attr (Domain) := sqrt(source/A);
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/sqrtA, Dif_all_float32) ; 
+				parameter<bool>    test_attr     := all(test);
+			}
+			container ordinal
+			{
+				attribute<uint32> attr (Domain) := ordinal(uint32(source/C));
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 39
+				{
+					attribute<string> Spec :
+					[
+						 'add_op/test_param'
+					,	'add/test_param'
+					,	'add_or_null/test_param'
+					,	'sub_op/test_param'
+					,	'sub/test_param'
+					,	'sub_or_null/test_param'
+					,	'mul_op/test_param'
+					,	'mul_or_null/test_param'
+					,	'div_op/test_param'
+					,	'div/test_param'
+					,	'mod_op/test_param'
+					,	'mod/test_param'
+					,	'pow_op/test_param'
+					,	'pow/test_param'
+					,	'neg_op/test_param'
+					,	'neg/test_param'
+					,	'abs/test_param'
+					,	'sqr/test_param'
+					,	'sqrt/test_param'
+					,	'add_op/test_attr'
+					,	'add/test_attr'
+					,	'add_or_null/test_attr'
+					,	'sub_op/test_attr'
+					,	'sub/test_attr'
+					,	'sub_or_null/test_attr'
+					,	'mul_op/test_attr'
+					,	'mul/test_attr'
+					,	'mul_or_null/test_attr'
+					,	'div_op/test_attr'
+					,	'div/test_attr'
+					,	'mod_op/test_attr'
+					,	'mod/test_attr'
+					,	'pow_op/test_attr'
+					,	'pow/test_attr'
+					,	'neg_op/test_attr'
+					,	'neg/test_attr'
+					,	'abs/test_attr'
+					,	'sqr/test_attr'
+					,	'sqrt/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

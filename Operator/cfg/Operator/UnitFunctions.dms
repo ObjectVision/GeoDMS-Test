@@ -1,0 +1,298 @@
+	container UnitFunctions: Using = "/Domains;/Units;/Tolerances"
+	{
+		container UnTiled := Template(RDomain);
+		container Tiled   := Template(RTiledDomain);
+	
+		Template Template
+		{
+			unit<uint32> RDomain;
+
+			container Source
+			{
+				unit<uint32>  Region := RDomain
+				{
+					attribute<DegreesCelsius> AvgDailyTemperature: [12,11,null,14,13];
+				}
+				unit<float32> m             := baseunit('m', float32);
+				unit<float32> m2            := m * m;
+				unit<float32> ha            := 10000.0 * m2;
+				unit<float32> per_ha        := 1.0 / ha;
+	
+				unit<uint32>  nr_pers       := baseunit('persoon', uint32);
+				unit<float32> nr_pers_pha   := float32(nr_pers) * per_ha;
+	
+// 				unit<uint32> NoordHollandBigCities: nrofrows = 3
+// 				{
+// 					attribute<string> CityNames: ['Amsterdam','Haarlem','Alkmaar'];
+// 				}
+// 				unit<uint32> ZuidHollandBigCities: nrofrows = 5
+// 				{
+// 					attribute<string> CityNames: ['Rotterdam','DenHaag','Leiden','Dordrecht','Leiden'];
+// 				}
+// 				unit<uint32> Years: nrofrows = 2
+// 				{
+// 					attribute<string> Names: ['1995','2005'];
+// 				}
+			}
+			container Void
+			{
+				unit<void>      voidunit := void();
+				parameter<bool> test     := PropValue(voidunit, 'expr') = 'void()';
+			}
+			container BaseUnit
+			{
+				unit<float32> m := BaseUnit('meter', float32);
+				parameter<m> item_example := 7.0[m],
+					Descr = "Example description",
+					Label = "Example Label";
+			}
+			container metric
+			{
+				parameter<string> m2          := PropValue(source/m2, 'Metric');
+				parameter<string> ha          := PropValue(source/ha, 'Metric');
+				parameter<string> per_ha      := PropValue(source/per_ha, 'Metric');
+				parameter<string> nr_pers_pha := PropValue(source/nr_pers_pha, 'Metric');
+				parameter<bool>   test_param  := GeoDmsVersion() < 20.0004d ? (m2 == 'm^2' && ha == '10 kilo m^2' && per_ha == ' per 10 kilo m^2' && nr_pers_pha == 'persoon per 10 kilo m^2') : (m2 == 'm²' && ha == '10 kilo m²' && per_ha ==' per 10 kilo m²' && nr_pers_pha ='persoon per 10 kilo m²') ; 
+			}
+			container nrofrows_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/nrofrows"
+			{
+				parameter<bool> test := #Source/Region = 7 && #Classifications/m_4K = 4;
+			}
+			container nrofrows: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/nrofrows"
+			{
+				parameter<bool> test := nrofrows(Source/Region) = 7 && nrofrows(Classifications/m_4K) = 4;
+			}
+			container range: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/range"
+			{
+				unit<uint32> unit_regions := range(uint32, 1, 13)
+				{
+					attribute<unit_regions> id := id(unit_regions);
+				}
+				unit<spoint> unit_grid := range(spoint, point_yx(int16(10),int16(14)), point_yx(int16(15), int16(20)))
+				{
+					attribute<unit_grid> id := id(unit_grid);
+				}
+				attribute<int16> pointrow_unit_grid_test (unit_grid) := pointrow(ID(unit_grid));
+				attribute<int16> pointcol_unit_grid_test (unit_grid) := pointcol(ID(unit_grid));
+				parameter<bool> test_param :=
+					nrofrows(unit_regions)       =       12  &&
+					min(pointcol_unit_grid_test) = int16(14) &&
+					min(pointrow_unit_grid_test) = int16(10) &&
+					max(pointcol_unit_grid_test) = int16(19) &&
+					max(pointrow_unit_grid_test) = int16(14) &&
+					nrofrows(unit_grid)          =       30; 
+			}
+			container cat_range
+			{
+				unit<uint32> unit_regions := cat_range(uint32, 1, 13)
+				{
+					attribute<unit_regions> id := id(unit_regions);
+				}
+				unit<spoint> unit_grid := cat_range(spoint, point_yx(int16(10),int16(14)), point_yx(int16(15), int16(20)))
+				{
+					attribute<unit_grid> id := id(unit_grid);
+				}
+				attribute<int16> pointrow_unit_grid_test (unit_grid) := pointrow(ID(unit_grid));
+				attribute<int16> pointcol_unit_grid_test (unit_grid) := pointcol(ID(unit_grid));
+				parameter<bool> test_param :=
+					nrofrows(unit_regions)       =       12  &&
+					min(pointcol_unit_grid_test) = int16(14) &&
+					min(pointrow_unit_grid_test) = int16(10) &&
+					max(pointcol_unit_grid_test) = int16(19) &&
+					max(pointrow_unit_grid_test) = int16(14) &&
+					nrofrows(unit_grid)          =       30; 
+			}
+			container gridset: Descr ="to make a projection", url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/gridset"
+			{
+				unit<fpoint> rdc_meter := Range(point_yx(300000f, 0f), point_yx(625000f, 280000f))
+				,	DialogData = "Geografie/top100/grid/Nl/achtergrond;Geografie/RegioIndelingen/Provincie/Shapes/Polygons";
+					
+				unit<spoint> rdc_100 := 
+					gridset(
+						rdc_meter, 
+						point_yx(float32( -100.0), float32(100.0), rdc_meter), 
+						point_yx(float32(625000.0), float32(10000.0), rdc_meter), 
+						spoint
+					);
+				unit<spoint> rdc_100_domain:= range(rdc_100,point_yx(Int16(0), Int16(0)),point_yx(Int16(3250), Int16(2700)));
+				parameter<uint32> nrRows := nrofrows(rdc_100_domain); 
+				parameter<bool> test_param := nrofrows(rdc_100_domain) = 3250 * 2700; 
+			}
+			container boundaries
+			{
+				parameter<uint32> param_lb_defined := Lowerbound(RDomain),
+					url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/lowerbound";
+				parameter<uint32> param_ub_defined := Upperbound(RDomain),
+					url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/upperbound";
+	
+				parameter<bool>    test_param := param_lb_defined = 0 && param_ub_defined = 7;
+			}
+			container boundcenter: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/boundcenter"
+			{
+				parameter<uint32>   param      := boundcenter(RDomain);
+				parameter<bool>     test_param := param = 3;
+			}
+			container boundrange: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/boundrange"
+			{
+				parameter<uint32>   param      := boundrange(RDomain);
+				parameter<bool>     test_param := param = 7;
+			}
+			container unit_domain: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/domainunit"
+			{
+				unit<uint32>    RefADomain := domainUnit(source/Region/AvgDailyTemperature);
+				parameter<bool> test_param := #(RefADomain) = 7;
+			}
+			container unit_values: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/valuesunit"
+			{
+				unit<float32>   RefAValues := valuesUnit(source/Region/AvgDailyTemperature);
+				parameter<bool> test_param := PropValue(RefAValues, 'Metric') = 'celsius';
+			}
+			container unit_default: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unit/defaultunit"
+			{
+				unit<string>         unit_test  := DefaultUnit('string');
+				parameter<unit_test> param      := 'Test';
+				parameter<string>    param_unit := PropValue(param, 'ValuesUnit');
+				parameter<Bool>      test_param := param_unit = 'unit_test';
+			}
+			container projection
+			{
+				container Source
+				{
+					unit<fpoint> rdc_meter:= Range(point_yx(300000f, 0f), point_yx(625000f, 280000f));
+					unit<spoint> rdc_100 := range(
+						gridset(rdc_meter
+						,	point_yx(float32( - 100.0), float32(  100.0), rdc_meter)
+						,	point_yx(float32(625000.0), float32(10000.0), rdc_meter)
+						,	spoint)
+					,	point_yx(int16(0)   , int16(0))
+					,	point_yx(int16(3250), int16(2700))
+					);
+				}
+				container GetProjectionBase: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionbase"
+				{
+					unit<fpoint>      ProjBase := GetProjectionBase(Source/rdc_100);
+					parameter<fpoint> bcpb := boundcenter(ProjBase);
+					parameter<fpoint> bcm := boundcenter(Source/rdc_meter);
+					parameter<bool>   test     := bcpb = bcm;
+				}
+				container GetProjectionOffset: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionoffset"
+				{
+					parameter<dpoint> projOffset := GetProjectionOffset(Source/rdc_100);
+					parameter<bool>   test       := pointRow(projOffset) = 625000.0 && pointCol(projOffset) = 10000.0;
+				}
+				container GetProjectionFactor: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionfactor"
+				{
+					parameter<dpoint> projFactor := GetProjectionFactor(Source/rdc_100);
+					parameter<bool>   test       := pointRow(projFactor) = -100.0 && pointCol(projFactor) = 100.0;
+				}
+				container GridRelations
+				{
+					unit<uint32> DestDomain: nrofrows = 4
+					{
+						attribute<dpoint>         pointset: [yx(20427,69272),yx(17502,95885),yx(3188,80531),yx(12620,112190)];
+						attribute<Source/rdc_100> gridrel:  [yx(6045,592),yx(6074,858),yx(6218,705),yx(6123,1021)];
+					}
+					attribute<Source/rdc_100> pointset_GridId_before_7015 (DestDomain) := 
+						value(
+							 (DestDomain/pointset - GetProjectionOffset/projOffset) / GetProjectionFactor/projFactor
+							, Source/rdc_100
+						);
+					attribute<Source/rdc_100> pointset_GridId_7015_and_later (DestDomain) := DestDomain/pointset[Source/rdc_100];
+
+					attribute<Source/rdc_100> pointset_GridId (DestDomain) := 
+						='GeoDMSVersion() > 7.015
+							? DestDomain/pointset[Source/rdc_100]
+							: value(
+								 (DestDomain/pointset - GetProjectionOffset/projOffset) / GetProjectionFactor/projFactor
+								, Source/rdc_100
+							  )';
+
+					attribute<bool> test (DestDomain) := pointset_GridId == DestDomain/gridrel;
+					parameter<bool> test_attr         := all(test);
+				}
+			}
+			container GetMetricFactor: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getmetricfactor"
+			{
+				parameter<float64> MetricFactor := GetMetricFactor(Source/per_ha);
+				parameter<Bool>    test_param   := MetricFactor = 0.0001;
+			}
+			container TiledUnit
+			{
+				container gridunit
+				{
+					unit<spoint> gridcel_1km :=
+						 range(
+							gridset(
+								 point_rd
+								,point_yx(float32(-1.0)  , float32(1.0) , point_rd )
+								,point_yx(float32(405600), float32(111300), point_rd )
+								,spoint
+							)
+							,point_yx(int16(0), int16(0))
+							,point_yx(int16(500), int16(400))
+						);
+				}
+				unit<spoint> result := TiledUnit(point_yx(Int16(100), Int16(200), gridunit/gridcel_1km))
+				{
+					attribute<.>      nr   := id(.);
+					attribute<int16>  att  := pointRow(nr);
+					parameter<bool>   test := sum(uint32(att)) == 49900000;
+				}
+				container GetProjectionBase: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionbase"
+				{
+					unit<fpoint>      ProjBase := GetProjectionBase(result);
+					parameter<bool>   test     := boundcenter(ProjBase) = boundcenter(projection/Source/rdc_meter);
+				}
+				container GetProjectionOffset: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionoffset"
+				{
+					parameter<dpoint> projOffset := GetProjectionOffset(result);
+					parameter<bool>   test       := pointRow(projOffset) = 405600.0 && pointCol(projOffset) = 111300.0;
+				}
+				container GetProjectionFactor: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getprojectionfactor"
+				{
+					parameter<dpoint> projFactor := GetProjectionFactor(result);
+					parameter<bool>   test       := pointRow(projFactor) = -1.0 && pointCol(projFactor) = 1.0;
+				}
+				container arithmetic
+				{
+					attribute<spoint> plus      (result)               := result/nr + result/nr;
+					attribute<spoint> plus_org  (gridunit/gridcel_1km) := id(gridunit/gridcel_1km) + id(gridunit/gridcel_1km);
+					attribute<bool>   test      (result)               := rlookup(plus, plus_org[result])[result ] == result/nr;
+					parameter<bool>   test_attr                        := all(test);
+				}
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 18
+				{
+					attribute<string> Spec :
+					[
+						 'void/test'
+					,	'metric/test_param'
+					,	'nrofrows_op/test'
+					,	'nrofrows/test'
+					,	'range/test_param'
+					,	'cat_range/test_param'
+					,	'gridset/test_param'
+					,	'boundaries/test_param'
+					,	'BoundCenter/test_param'
+					,	'BoundRange/test_param'
+					,	'unit_domain/test_param'
+					,	'unit_values/test_param'
+					,	'unit_default/test_param'
+					,	'projection/GetProjectionOffset/test'
+					,	'projection/GetProjectionFactor/test'
+					,	'projection/GridRelations/test_attr'
+					,	'GetMetricFactor/test_param'
+					,	'TiledUnit/arithmetic/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

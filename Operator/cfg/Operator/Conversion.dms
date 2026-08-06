@@ -1,0 +1,987 @@
+	container Conversion: Using = "/Domains;/Units;/Tolerances"
+	{
+		// halve waarden ronden naar +oneindig (2.5 -> 3, -2.5 -> -2)
+		container rounded_convert
+		{
+			parameter<bool> test_param :=
+				   rounded_convert( 2.6d, int32) =  3i && rounded_convert(-2.6d, int32) = -3i
+				&& rounded_convert( 2.5d, int32) =  3i && rounded_convert(-2.5d, int32) = -2i
+				&& rounded_convert( 3.5d, int32) =  4i && rounded_convert(-3.5d, int32) = -3i;
+			unit<uint32> D6: nrofrows = 6
+			{
+				attribute<float64> f:        [2.6, -2.6, 2.5, -2.5, 0.5, -0.5];
+				attribute<int32>   expected: [3,   -3,   3,   -2,   1,    0];
+			}
+			attribute<int32> att (D6) := rounded_convert(D6/f, int32);
+			parameter<bool> test_attr := all(att = D6/expected);
+		}
+
+		container srcDomain       := source(ADomain);
+		container srcEDomain      := Esource(EDomain);
+		container srcTiledDomain  := source(ATiledDomain);
+		container srcETiledDomain := Esource(ETiledDomain);
+
+		template source
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+
+			unit<bool>    boolUnit;
+			unit<int32>   int32Unit;
+			unit<float64> float64Unit;
+			unit<string>  stringUnit;
+
+			parameter<bool>    BoolParam    := true;
+			parameter<uint32>  IntegerParam := 7;
+			parameter<float64> FloatParam   := -999.99;
+			parameter<string>  stringParam  := 'teststring';
+
+			attribute<int32>        IntegerAtt        (Domain): [0,1,256,-100,9999];
+			attribute<uint32>       IntegerAttHex     (Domain): [0,1,11,100,255];
+			attribute<float32>      FloatAtt          (Domain): [0,1,9999999,-2.5,99.9];
+			attribute<bool>         BoolAtt           (Domain): [0,-1,-1,0,-1];
+			attribute<string>       stringAtt         (Domain): ['Hello','Test',null,'Two words','88a'];
+			attribute<string>       bstringAtt        (Domain): ['F','Test','False','Two words','Four'];
+			attribute<bool>         BoolInteger       (Domain): [0,-1,-1,-1,-1];
+			attribute<bool>         BoolFloat         (Domain): [0,-1,-1,-1,-1];
+			attribute<bool>         BoolBool          (Domain): [0,-1,-1,0,-1];
+			attribute<bool>         Boolstring        (Domain): [0,-1,0,-1,0];
+			attribute<string>       StringInteger     (Domain): ['0','1','256','-100','9999'];
+			attribute<float32>      float32Integer    (Domain): [0,1,256,-100,9999];
+			attribute<float32>      float32Float      (Domain): [0,1,9999999,-2.5,99.9];
+			attribute<float32>      float32Bool       (Domain): [0,1,1,0,1];
+			attribute<float32>      float32string     (Domain): [null,null,null,null,88];
+			attribute<float64>      float64Integer    (Domain): [0,1,256,-100,9999];
+			attribute<float64>      float64Float      (Domain): [0,1,9999999,-2.5,99.9];
+			attribute<float64>      float64Bool       (Domain): [0,1,1,0,1];
+			attribute<float64>      float64string     (Domain): [null,null,null,null,88];
+			attribute<int64>        int64Integer      (Domain): [0,1,256,-100,9999];
+			attribute<int64>        int64Float        (Domain): [0,1,9999999,-2,99];
+			attribute<int64>        int64Bool         (Domain): [0,1,1,0,1];
+			attribute<int64>        int64string       (Domain): [null,null,null,null,88];
+			attribute<int32>        int32Integer      (Domain): [0,1,256,-100,9999];
+			attribute<int32>        int32Float        (Domain): [0,1,9999999,-2,99];
+			attribute<int32>        int32Bool         (Domain): [0,1,1,0,1];
+			attribute<int32>        int32string       (Domain): [null,null,null,null,88];
+			attribute<int16>        int16Integer      (Domain): [0,1,256,-100,9999];
+			attribute<int16>        int16Float        (Domain): [0,1,null,-2,99];
+			attribute<int16>        int16Bool         (Domain): [0,1,1,0,1];
+			attribute<int16>        int16string       (Domain): [null,null,null,null,88];
+			attribute<int8>         int8Integer       (Domain): [0,1,null,-100, null];
+			attribute<int8>         int8Float         (Domain): [0,1,null,-2,99];
+			attribute<int8>         int8Bool          (Domain): [0,1,1,0,1];
+			attribute<int8>         int8string        (Domain): [null,null,null,null,88];
+			attribute<uint64>       uint64Integer     (Domain): [0,1,256,null,9999];
+			attribute<uint64>       uint64Float       (Domain): [0,1,9999999,null,99];
+			attribute<uint64>       uint64Bool        (Domain): [0,1,1,0,1];
+			attribute<uint64>       uint64string      (Domain): [null,null,null,null,88];
+			attribute<uint32>       uint32Integer     (Domain): [0,1,256,null,9999];
+			attribute<uint32>       uint32Float       (Domain): [0,1,9999999,null,99];
+			attribute<uint32>       uint32Bool        (Domain): [0,1,1,0,1];
+			attribute<uint32>       uint32string      (Domain): [null,null,null,null,88];
+			attribute<uint16>       uint16Integer     (Domain): [0,1,256,null,9999];
+			attribute<uint16>       uint16Float       (Domain): [0,1,null,null,99];
+			attribute<uint16>       uint16Bool        (Domain): [0,1,1,0,1];
+			attribute<uint16>       uint16string      (Domain): [null,null,null,null,88];
+			attribute<uint8>        uint8Integer      (Domain): [0,1,null,null,null];
+			attribute<uint8>        uint8Float        (Domain): [0,1,null,null,99];
+			attribute<uint8>        uint8Bool         (Domain): [0,1,1,0,1];
+			attribute<uint8>        uint8string       (Domain): [null,null,null,null,88];
+			attribute<uint4>        uint4Integer      (Domain): [0, 1, 0 , 0, 0];
+			attribute<uint4>        uint4Float        (Domain): [0, 1, 0 , 0, 0];
+			attribute<uint4>        uint4Bool         (Domain): [0, 1, 1 , 0, 1];
+			attribute<uint4>        uint4string       (Domain): [0, 0, 0 , 0, 0];
+			attribute<uint2>        uint2Integer      (Domain): [0, 1, 0 , 0, 0];
+			attribute<uint2>        uint2Float        (Domain): [0, 1, 0 , 0, 0];
+			attribute<uint2>        uint2Bool         (Domain): [0, 1, 1 , 0, 1];
+			attribute<uint2>        uint2string       (Domain): [0, 0, 0 , 0, 0];
+			attribute<float32>      float32Round      (Domain): [1.49,1.5,-1.49,-1.5,-1.51];
+			attribute<int32>        int32Round        (Domain): [1,2,-1,-1,-2];
+			attribute<int64>        int64Round        (Domain): [1,2,-1,-1,-2];
+			attribute<int32>        int32RoundUp      (Domain): [2,2,-1,-1,-1];
+			attribute<int64>        int64RoundUp      (Domain): [2,2,-1,-1,-1];
+			attribute<int32>        int32RoundDown    (Domain): [1,1,-2,-2,-2];
+			attribute<int64>        int64RoundDown    (Domain): [1,1,-2,-2,-2];
+			attribute<int32>        int32RoundToZero  (Domain): [1,1,-1,-1,-1];
+			attribute<int64>        int64RoundToZero  (Domain): [1,1,-1,-1,-1];
+			attribute<int32>        ValInteger        (Domain): [0,1,256,-100,9999];
+			attribute<float64>      ValFloat          (Domain): [0,1,256,-100,9999];
+			attribute<bool>         ValBool           (Domain): [0,-1,-1,-1,-1];
+			attribute<string>       Valstring         (Domain): ['0','1','256','-100','9999'];
+			attribute<int32>        ConvertInteger    (Domain): [0,1,256,-100,9999];
+			attribute<float64>      ConvertFloat      (Domain): [0,1,256,-100,9999];
+			attribute<bool>         ConvertBool       (Domain): [0,-1,-1,-1,-1];
+			attribute<string>       Convertstring     (Domain): ['Hello','Test',null,'Two words','88a'];
+			attribute<fpoint>       valFPoint         (Domain): [yx(0,0),yx(1,1),yx(9999999,9999999),yx(-2.5,-2.5),yx(99.9,99.9)];
+			attribute<spoint>       valSPoint         (Domain): [yx(0,0),yx(1,1),null,yx(-2,-2),yx(99,99)];
+			attribute<ipoint>       valIPoint         (Domain): [yx(0,0),yx(1,1),yx(9999999,9999999),yx(-2,-2),yx(99,99)];
+			attribute<fpoint>       testFPoint        (Domain): [yx(0,0),yx(1,1),null,yx(-2,-2),yx(99,99)];
+			attribute<dpoint>       valDPoint         (Domain): [yx(0,0),yx(1,1),yx(9999999,9999999),yx(-2.5,-2.5),yx(99,99)];
+			attribute<wpoint>       valWPoint         (Domain): [yx(0,0),yx(1,1),null,null,yx(99,99)];
+			attribute<upoint>       valUPoint         (Domain): [yx(0,0),yx(1,1),yx(9999999,9999999),null,yx(99,99)];
+			attribute<SequenceUnit> SequenceNr        (Domain): [ 0,0,1,1,1];
+			attribute<uint32>       Ordinal           (Domain): [ 0,1,0,1,2];
+			attribute<string>       AsHex             (Domain): [ '00000000','00000001','0000000B','00000064','000000FF'];
+			attribute<string>       HTMLEncodeDecode  (Domain): [ '<','>','&','abcdef',' '];
+			attribute<string>       HTMLEncodeOk      (Domain): [ '&lt;','&gt;','&amp','abcdef',' '];
+			attribute<string>       UrlEncodeDecode   (Domain): [ '<','>','&','abcdef',' '];
+			attribute<string>       UrlEncodeOk       (Domain): [ '&lt;','&gt;','&amp','abcdef',' '];
+		}
+		template Esource
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+
+			unit<bool>    boolUnit;
+			unit<int32>   int32Unit;
+			unit<float64> float64Unit;
+			unit<string>  stringUnit;
+
+			parameter<bool>    BoolParam    := true;
+			parameter<uint32>  IntegerParam := 7;
+			parameter<float64> FloatParam   := -999.99;
+			parameter<string>  stringParam  := 'teststring';
+
+			attribute<int32>        IntegerAtt        (Domain): [];
+			attribute<uint32>       IntegerAttHex     (Domain): [];
+			attribute<float32>      FloatAtt          (Domain): [];
+			attribute<bool>         BoolAtt           (Domain): [];
+			attribute<string>       stringAtt         (Domain): [];
+			attribute<string>       bstringAtt        (Domain): [];
+			attribute<bool>         BoolInteger       (Domain): [];
+			attribute<bool>         BoolFloat         (Domain): [];
+			attribute<bool>         BoolBool          (Domain): [];
+			attribute<bool>         Boolstring        (Domain): [];
+			attribute<string>       StringInteger     (Domain): [];
+			attribute<float32>      float32Integer    (Domain): [];
+			attribute<float32>      float32Float      (Domain): [];
+			attribute<float32>      float32Bool       (Domain): [];
+			attribute<float32>      float32string     (Domain): [];
+			attribute<float64>      float64Integer    (Domain): [];
+			attribute<float64>      float64Float      (Domain): [];
+			attribute<float64>      float64Bool       (Domain): [];
+			attribute<float64>      float64string     (Domain): [];
+			attribute<int64>        int64Integer      (Domain): [];
+			attribute<int64>        int64Float        (Domain): [];
+			attribute<int64>        int64Bool         (Domain): [];
+			attribute<int64>        int64string       (Domain): [];
+			attribute<int32>        int32Integer      (Domain): [];
+			attribute<int32>        int32Float        (Domain): [];
+			attribute<int32>        int32Bool         (Domain): [];
+			attribute<int32>        int32string       (Domain): [];
+			attribute<int16>        int16Integer      (Domain): [];
+			attribute<int16>        int16Float        (Domain): [];
+			attribute<int16>        int16Bool         (Domain): [];
+			attribute<int16>        int16string       (Domain): [];
+			attribute<int8>         int8Integer       (Domain): [];
+			attribute<int8>         int8Float         (Domain): [];
+			attribute<int8>         int8Bool          (Domain): [];
+			attribute<int8>         int8string        (Domain): [];
+			attribute<uint64>       uint64Integer     (Domain): [];
+			attribute<uint64>       uint64Float       (Domain): [];
+			attribute<uint64>       uint64Bool        (Domain): [];
+			attribute<uint64>       uint64string      (Domain): [];
+			attribute<uint32>       uint32Integer     (Domain): [];
+			attribute<uint32>       uint32Float       (Domain): [];
+			attribute<uint32>       uint32Bool        (Domain): [];
+			attribute<uint32>       uint32string      (Domain): [];
+			attribute<uint16>       uint16Integer     (Domain): [];
+			attribute<uint16>       uint16Float       (Domain): [];
+			attribute<uint16>       uint16Bool        (Domain): [];
+			attribute<uint16>       uint16string      (Domain): [];
+			attribute<uint8>        uint8Integer      (Domain): [];
+			attribute<uint8>        uint8Float        (Domain): [];
+			attribute<uint8>        uint8Bool         (Domain): [];
+			attribute<uint8>        uint8string       (Domain): [];
+			attribute<uint4>        uint4Integer      (Domain): [];
+			attribute<uint4>        uint4Float        (Domain): [];
+			attribute<uint4>        uint4Bool         (Domain): [];
+			attribute<uint4>        uint4string       (Domain): [];
+			attribute<uint2>        uint2Integer      (Domain): [];
+			attribute<uint2>        uint2Float        (Domain): [];
+			attribute<uint2>        uint2Bool         (Domain): [];
+			attribute<uint2>        uint2string       (Domain): [];
+			attribute<float32>      float32Round      (Domain): [];
+			attribute<int32>        int32Round        (Domain): [];
+			attribute<int64>        int64Round        (Domain): [];
+			attribute<int32>        int32RoundUp      (Domain): [];
+			attribute<int64>        int64RoundUp      (Domain): [];
+			attribute<int32>        int32RoundDown    (Domain): [];
+			attribute<int64>        int64RoundDown    (Domain): [];
+			attribute<int32>        int32RoundToZero  (Domain): [];
+			attribute<int64>        int64RoundToZero  (Domain): [];
+			attribute<int32>        ValInteger        (Domain): [];
+			attribute<float64>      ValFloat          (Domain): [];
+			attribute<bool>         ValBool           (Domain): [];
+			attribute<string>       Valstring         (Domain): [];
+			attribute<int32>        ConvertInteger    (Domain): [];
+			attribute<float64>      ConvertFloat      (Domain): [];
+			attribute<bool>         ConvertBool       (Domain): [];
+			attribute<string>       Convertstring     (Domain): [];
+			attribute<fpoint>       valFPoint         (Domain): [];
+			attribute<spoint>       valSPoint         (Domain): [];
+			attribute<ipoint>       valIPoint         (Domain): [];
+			attribute<fpoint>       testFPoint        (Domain): [];
+			attribute<dpoint>       valDPoint         (Domain): [];
+			attribute<wpoint>       valWPoint         (Domain): [];
+			attribute<upoint>       valUPoint         (Domain): [];
+			attribute<SequenceUnit> SequenceNr        (Domain): [];
+			attribute<uint32>       Ordinal           (Domain): [];
+			attribute<string>       AsHex             (Domain): [];
+			attribute<string>       HTMLEncodeDecode  (Domain): [];
+			attribute<string>       HTMLEncodeOk      (Domain): [];
+			attribute<string>       UrlEncodeDecode   (Domain): [];
+			attribute<string>       UrlEncodeOk       (Domain): [];
+		}
+
+		container UnTiled  := Template(ADomain, srcDomain);
+		container EunTiled := Template(EDomain, srcEDomain);
+		container Tiled    := Template(ATiledDomain, srcTiledDomain);
+		container ETiled   := Template(ETiledDomain, srcETiledDomain);
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			container source;
+			// end case parameters
+
+			container uint2: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/uint2"
+			{
+				parameter<bool> test_param :=
+					   uint2(source/IntegerParam) == uint2(7) 
+					&& uint2(source/FloatParam)   == uint2(-999.99) 
+					&& uint2(source/BoolParam)    == uint2(1) 
+					&& uint2(source/stringParam)  == uint2(0);
+				parameter<bool> test_param_u2 := uint2(source/IntegerParam) == 7u2 && uint2(source/BoolParam) == 1u2;
+
+				attribute<uint2> att_int     (Domain) := uint2(source/IntegerAtt);
+				attribute<bool>  test_int    (Domain) := att_int = source/uint2Integer;
+				attribute<uint2> att_float   (Domain) := uint2(source/FloatAtt);
+				attribute<bool>  test_float  (Domain) := att_float = source/uint2Float;
+				attribute<uint2> att_bool    (Domain) := uint2(source/BoolAtt);
+				attribute<bool>  test_bool   (Domain) := att_bool = source/uint2Bool;
+				attribute<uint2> att_string  (Domain) := uint2(source/stringAtt);
+				attribute<bool>  test_string (Domain) := att_string = source/uint2string;
+				attribute<bool>  test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container uint4: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/uint4"
+			{
+				parameter<bool> test_param :=
+					   uint4(source/IntegerParam) = uint4(7) 
+					&& uint4(source/FloatParam)   = uint4(-999.99) 
+					&& uint4(source/BoolParam)    = uint4(1) 
+					&& uint4(source/stringParam)  = uint4(0) ;
+				parameter<bool> test_param_u4 := uint4(source/IntegerParam) == 7u4 && uint4(source/BoolParam) == 1u4;
+
+				attribute<uint4> att_int         (Domain) := uint4(source/IntegerAtt);
+				attribute<uint4> att_int_convert (Domain) := convert(source/IntegerAtt, uint4);
+				attribute<bool>  test_int        (Domain) := att_int == source/uint4Integer && att_int_convert == source/uint4Integer;
+				attribute<uint4> att_float       (Domain) := uint4(source/FloatAtt);
+				attribute<bool>  test_float      (Domain) := att_float = source/uint4Float;
+				attribute<uint4> att_bool        (Domain) := uint4(source/BoolAtt);
+				attribute<bool>  test_bool       (Domain) := att_bool = source/uint4Bool;
+				attribute<uint4> att_string      (Domain) := uint4(source/stringAtt);
+				attribute<bool>  test_string     (Domain) := att_string = source/uint4string;
+				attribute<bool>  test            (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container uint8: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/uint8"
+			{
+				parameter<bool> test_param :=
+					   uint8(source/IntegerParam) == uint8(7) 
+					&& eq_or_both_null(uint8(source/FloatParam), uint8(-999.99))
+					&& uint8(source/BoolParam) == uint8(1) 
+					&& Not(isDefined(uint8(source/stringParam)));
+				parameter<bool> test_param_b := uint8(source/IntegerParam) == 7b && uint8(source/BoolParam) == 1b;
+
+				attribute<uint8> att_int     (Domain) := uint8(source/IntegerAtt);
+				attribute<bool>  test_int    (Domain) := eq_or_both_null(att_int, source/uint8Integer);
+				attribute<uint8> att_float   (Domain) := uint8(source/FloatAtt);
+				attribute<bool>  test_float  (Domain) := eq_or_both_null(att_float, source/uint8Float);
+				attribute<uint8> att_bool    (Domain) := uint8(source/BoolAtt);
+				attribute<bool>  test_bool   (Domain) := att_bool = source/uint8Bool;
+				attribute<uint8> att_string  (Domain) := uint8(source/stringAtt);
+				attribute<bool>  test_string (Domain) := eq_or_both_null(att_string, source/uint8string);
+				attribute<bool>  test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container uint16: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/uint16"
+			{
+				parameter<bool> test_param :=
+					   uint16(source/IntegerParam) == uint16(7) 
+					&& eq_or_both_null(uint16(source/FloatParam), uint16(-999.99)) 
+					&& uint16(source/BoolParam) == uint16(1) 
+					&& Not(isDefined(uint16(source/stringParam)));
+				parameter<bool> test_param_w := uint16(source/IntegerParam) = 7w && uint16(source/BoolParam) = 1w;
+
+				attribute<uint16> att_int     (Domain) := uint16(source/IntegerAtt);
+				attribute<bool>   test_int    (Domain) := eq_or_both_null(att_int, source/uint16Integer);
+				attribute<uint16> att_float   (Domain) := uint16(source/FloatAtt);
+				attribute<bool>   test_float  (Domain) := eq_or_both_null(att_float, source/uint16Float);
+				attribute<uint16> att_bool    (Domain) := uint16(source/BoolAtt);
+				attribute<bool>   test_bool   (Domain) := att_bool = source/uint16Bool;
+				attribute<uint16> att_string  (Domain) := uint16(source/stringAtt);
+				attribute<bool>   test_string (Domain) := eq_or_both_null(att_string, source/uint16string);
+				attribute<bool>   test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container uint32: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/uint32"
+			{
+				parameter <uint32> test_afr   := uint32(float32(7) / float32(4) ); 
+				parameter <bool>   test_param :=
+					   uint32(source/IntegerParam) == uint32(7) 
+					&& eq_or_both_null(uint32(source/FloatParam), uint32(-999.99)) 
+					&& uint32(source/BoolParam) == uint32(1) 
+					&& Not(isDefined(uint32(source/stringParam)));
+				parameter <bool>   test_param_u := uint32(source/IntegerParam) = 7u && uint32(source/BoolParam) = 1u;
+
+				attribute<uint32> att_int     (Domain) := uint32(source/IntegerAtt);
+				attribute<bool>   test_int    (Domain) := eq_or_both_null(att_int, source/uint32Integer);
+				attribute<uint32> att_float   (Domain) := uint32(source/FloatAtt);
+				attribute<bool>   test_float  (Domain) := eq_or_both_null(att_float, source/uint32Float);
+				attribute<uint32> att_bool    (Domain) := uint32(source/BoolAtt);
+				attribute<bool>   test_bool   (Domain) := att_bool = source/uint32Bool;
+				attribute<uint32> att_string  (Domain) := uint32(source/stringAtt);
+				attribute<bool>   test_string (Domain) := eq_or_both_null(att_string, source/uint32string);
+				attribute<bool>  test         (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container uint64: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/uint64"
+			{
+				parameter <uint64> test_afr := uint64(float64(7) / float64(4) ); 
+				parameter <bool>   test_param := 
+					   uint64(source/IntegerParam) == uint64(7) 
+					&& eq_or_both_null(uint64(source/FloatParam), uint64(-999.99)) 
+					&& uint64(source/BoolParam) == uint64(1) 
+					&& Not(isDefined(uint64(source/stringParam)));
+				parameter <bool>   test_param_u64 := uint64(source/IntegerParam) = 7u64 && uint64(source/BoolParam) = 1u64;
+
+				attribute<uint64> att_int     (Domain) := uint64(source/IntegerAtt);
+				attribute<bool>   test_int    (Domain) := eq_or_both_null(att_int, source/uint64Integer);
+				attribute<uint64> att_float   (Domain) := uint64(source/FloatAtt);
+				attribute<bool>   test_float  (Domain) := eq_or_both_null(att_float, source/uint64Float);
+				attribute<uint64> att_bool    (Domain) := uint64(source/BoolAtt);
+				attribute<bool>   test_bool   (Domain) := att_bool = source/uint64Bool;
+				attribute<uint64> att_string  (Domain) := uint64(source/stringAtt);
+				attribute<bool>   test_string (Domain) := eq_or_both_null(att_string, source/uint64string);
+				attribute<bool>  test         (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container int8: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/int8"
+			{
+				parameter<bool> test_param :=
+					   int8(source/IntegerParam) == int8(7) 
+					&& eq_or_both_null(int8(source/FloatParam),  int8(-999.99)) 
+					&& int8(source/BoolParam) == int8(1) 
+					&& Not(isDefined(int8(source/stringParam)));
+				parameter<bool> test_param_c:= int8(source/IntegerParam) == 7c && int8(source/BoolParam) == 1c;
+
+				attribute<int8> att_int     (Domain) := int8(source/IntegerAtt);
+				attribute<bool> test_int    (Domain) := eq_or_both_null(att_int, source/int8Integer);
+				attribute<int8> att_float   (Domain) := int8(source/FloatAtt);
+				attribute<bool> test_float  (Domain) := eq_or_both_null(att_float, source/int8Float);
+				attribute<int8> att_bool    (Domain) := int8(source/BoolAtt);
+				attribute<bool> test_bool   (Domain) := att_bool = source/int8Bool;
+				attribute<int8> att_string  (Domain) := int8(source/stringAtt);
+				attribute<bool> test_string (Domain) := eq_or_both_null(att_string, source/int8string);
+				attribute<bool>  test       (Domain) :=  
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container int16: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/int16"
+			{
+				parameter<bool> test_param :=
+					   int16(source/IntegerParam) == int16(7) 
+					&& int16(source/FloatParam)   == int16(-999.99) 
+					&& int16(source/BoolParam)    == int16(1) 
+					&& Not(isDefined(int16(source/stringParam)));
+				parameter<bool> test_param_s:= int16(source/IntegerParam) == 7s && int16(source/BoolParam) == 1s;
+
+				attribute<int16> att_int     (Domain) := int16(source/IntegerAtt);
+				attribute<bool>  test_int    (Domain) := att_int = source/int16Integer;
+				attribute<int16> att_float   (Domain) := int16(source/FloatAtt);
+				attribute<bool>  test_float  (Domain) := eq_or_both_null(att_float, source/int16Float);
+				attribute<int16> att_bool    (Domain) := int16(source/BoolAtt);
+				attribute<bool>  test_bool   (Domain) := att_bool = source/int16Bool;
+				attribute<int16> att_string  (Domain) := int16(source/stringAtt);
+				attribute<bool>  test_string (Domain) := eq_or_both_null(att_string, source/int16string);
+				attribute<bool>  test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container int32: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/int32"
+			{
+				parameter<bool> test_param :=
+					   int32(source/IntegerParam) == int32(7) 
+					&& int32(source/FloatParam)   == int32(-999.99) 
+					&& int32(source/BoolParam)    == int32(1) 
+					&& Not(isDefined(int32(source/stringParam)));
+				parameter<bool>  test_param_i := int32(source/IntegerParam) == 7i && int32(source/BoolParam) == 1i;
+				attribute<int32> att_int     (Domain) := int32(source/IntegerAtt);
+				attribute<bool>  test_int    (Domain) := att_int = source/int32Integer;
+				attribute<int32> att_float   (Domain) := int32(source/FloatAtt);
+				attribute<bool>  test_float  (Domain) := att_float = source/int32Float;
+				attribute<int32> att_bool    (Domain) := int32(source/BoolAtt);
+				attribute<bool>  test_bool   (Domain) := att_bool = source/int32Bool;
+				attribute<int32> att_string  (Domain) := int32(source/stringAtt);
+				attribute<bool>  test_string (Domain) := eq_or_both_null(att_string, source/int32string);
+				attribute<bool>  test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container int64: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/int64"
+			{
+				parameter<bool> test_param :=
+					int64(source/IntegerParam) = int64(7) 
+					&& int64(source/FloatParam)= int64(-999.99) 
+					&& int64(source/BoolParam) = int64(1) 
+					&& Not(isDefined(int64(source/stringParam)));
+				parameter<bool>  test_param_i64 := int64(source/IntegerParam) == 7i64 && int64(source/BoolParam) == 1i64;
+
+				attribute<int64> att_int     (Domain) := int64(source/IntegerAtt);
+				attribute<bool>  test_int    (Domain) := eq_or_both_null(att_int, source/int64Integer);
+				attribute<int64> att_float   (Domain) := int64(source/FloatAtt);
+				attribute<bool>  test_float  (Domain) := att_float = source/int64Float;
+				attribute<int64> att_bool    (Domain) := int64(source/BoolAtt);
+				attribute<bool>  test_bool   (Domain) := att_bool = source/int64Bool;
+				attribute<int64> att_string  (Domain) := int64(source/stringAtt);
+				attribute<bool>  test_string (Domain) := eq_or_both_null(att_string, source/int64string);
+				attribute<bool>  test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container float32: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/float32"
+			{
+				parameter<bool> test_param :=
+					float32(source/IntegerParam)  == float32(7.0) 
+					&& float32(source/FloatParam) == float32(-999.99) 
+					&& float32(source/BoolParam)  == float32(1.0) 
+					&& Not(isDefined(float32(source/stringParam)));
+				parameter<bool> test_param_f :=
+					float32(source/IntegerParam)  == 7.0f 
+					&& float32(source/FloatParam) == -999.99f 
+					&& float32(source/BoolParam)  == 1.0f ;
+
+				attribute<float32> att_int     (Domain) := float32(source/IntegerAtt);
+				attribute<bool>    test_int    (Domain) := att_int = source/float32Integer;
+				attribute<float32> att_float   (Domain) := float32(source/FloatAtt);
+				attribute<bool>    test_float  (Domain) := att_float = source/float32Float;
+				attribute<float32> att_bool    (Domain) := float32(source/BoolAtt);
+				attribute<bool>    test_bool   (Domain) := att_bool = source/float32Bool;
+				attribute<float32> att_string  (Domain) := float32(source/stringAtt);
+				attribute<bool>    test_string (Domain) := eq_or_both_null(att_string, source/float32string);
+				attribute<bool>    test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container float64: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/float64"
+			// Uitlezen uit MsAccess en casten van float32 attribuut levert kleine afrondingsverschillen op, vandaar constructie met een kleine marge
+			{
+				parameter<bool> test_param :=
+					   float64(source/IntegerParam) == 7.0 
+					&& float64(source/FloatParam)   == -999.99 
+					&& float64(source/BoolParam)    == 1.0 
+					&& Not(isDefined(float64(source/stringParam)));
+				parameter<bool> test_param_d :=
+					   float64(source/IntegerParam) == 7.0d
+					&& float64(source/FloatParam)   == -999.99d
+					&& float64(source/BoolParam)    == 1.0d;
+
+				attribute<float64> att_int     (Domain) := float64(source/IntegerAtt);
+				attribute<bool>    test_int    (Domain) := att_int = source/float64Integer;
+				attribute<float64> att_float   (Domain) := float64(source/FloatAtt);
+				attribute<bool>    test_float  (Domain) := float_isNearby(att_float, source/float64Float, Dif_all_float64) ;
+				attribute<float64> att_bool    (Domain) := float64(source/BoolAtt);
+				attribute<bool>    test_bool   (Domain) := att_bool = source/float64Bool;
+				attribute<float64> att_string  (Domain) := float64(source/stringAtt);
+				attribute<bool>    test_string (Domain) := eq_or_both_null(att_string, source/float64string);
+				attribute<bool>    test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container string: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/string"
+			{
+				parameter<string> floatAsString := string(source/FloatParam);
+				parameter<bool> test_param := 
+					   string(source/IntegerParam) = '7'
+					&& float64(floatAsString)= -999.99;
+				attribute<string> att_int  (Domain) := string(source/IntegerAtt);
+				attribute<bool>   test_int (Domain) := att_int = source/StringInteger;
+				parameter<bool>   test_attr := all(test_int);
+			}
+			container bool: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/bool"
+			{
+				parameter<bool> test_param := 
+					    Bool(source/IntegerParam)
+					 && Bool(source/FloatParam)
+					 && Bool(source/BoolParam)
+					 && Bool(source/stringParam);
+				attribute<bool> att_int     (Domain) := Bool(source/IntegerAtt);
+				attribute<bool> test_int    (Domain) := att_int = source/BoolInteger;
+				attribute<bool> att_float   (Domain) := Bool(source/FloatAtt);
+				attribute<bool> test_float  (Domain) := att_float = source/BoolFloat;
+				attribute<bool> att_bool    (Domain) := Bool(source/BoolAtt);
+				attribute<bool> test_bool   (Domain) := att_bool = source/BoolBool;
+				attribute<bool> att_string  (Domain) := Bool(source/stringAtt);
+				attribute<bool> test_string (Domain) := att_string = source/Boolstring;
+				attribute<bool> test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string;
+				parameter<bool> test_attr := all(test);
+			}
+			container spoint: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/spoint"
+			{
+				attribute<spoint> att  (Domain) := spoint(source/ValFPoint);
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/ValSPoint);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container wpoint: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/wpoint"
+			{
+				attribute<wpoint> att  (Domain) := wpoint(source/ValFPoint);
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/ValWPoint);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container ipoint: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/ipoint"
+			{
+				attribute<ipoint> att  (Domain) := ipoint(source/ValFPoint);
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/ValIPoint);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container upoint: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/upoint"
+			{
+				attribute<upoint> att  (Domain) := upoint(source/ValFPoint);
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/ValUPoint);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container fpoint: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/fpoint"
+			{
+				attribute<fpoint> att  (Domain) := fpoint(spoint/att);
+				attribute<bool>   test (Domain) := eq_or_both_null(att, source/testFPoint);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container dpoint: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/dpoint"
+			{
+				attribute<dpoint> att  (Domain) := dpoint(source/ValFPoint);
+				attribute<bool>   test (Domain) := point_isNearby(att, source/ValDPoint, dif_all_float64);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container spolygon
+			{
+				attribute<fpoint> poly (SequenceUnit, polygon) := points2Sequence(Source/valFPoint, Source/SequenceNr, Source/Ordinal);
+				attribute<spoint> att  (SequenceUnit, polygon) := spolygon(poly);
+				unit<uint32> points := sequence2points(att);
+
+				container tests := 
+					for_each_nedv(
+						 'param' + string(id(ADomain))
+						,'   eq_or_both_null(PointRow(points/point[' + string(id(ADomain)) + ']), PointRow(Source/valSPoint['+ string(id(ADomain)) + '])) 
+						  && eq_or_both_null(PointCol(points/point[' + string(id(ADomain)) + ']), PointCol(Source/valSPoint['+ string(id(ADomain)) + ']))'
+						, void
+						, bool
+					);
+				parameter<bool>test_attr := =AsList('tests/param' + string(id(ADomain)),' && ');
+			}
+			container wpolygon
+			{
+				attribute<fpoint> poly (SequenceUnit, polygon) := points2Sequence(Source/valFPoint, Source/SequenceNr, Source/Ordinal);
+				attribute<wpoint> att  (SequenceUnit, polygon) := wpolygon(poly);
+				unit<uint32> points := sequence2points(att);
+
+				container tests := 
+					for_each_nedv(
+						 'param' + string(id(ADomain))
+						,'   eq_or_both_null(PointRow(points/point[' + string(id(ADomain)) + ']), PointRow(Source/valWpoint['+ string(id(ADomain)) + '])) 
+						  && eq_or_both_null(PointCol(points/point[' + string(id(ADomain)) + ']), PointCol(Source/valWpoint['+ string(id(ADomain)) + ']))'
+						, void
+						, bool
+					);
+				parameter<bool>test_attr := =AsList('tests/param' + string(id(ADomain)),' && ');
+			}
+			container ipolygon
+			{
+				attribute<fpoint> poly (SequenceUnit, polygon) := points2Sequence(Source/valFPoint, Source/SequenceNr, Source/Ordinal);
+				attribute<ipoint> att  (SequenceUnit, polygon) := ipolygon(poly);
+				unit<uint32> points := sequence2points(att);
+
+				container tests := 
+					for_each_nedv(
+						 'param' + string(id(ADomain))
+						,'   eq_or_both_null(PointRow(points/point[' + string(id(ADomain)) + ']), PointRow(Source/valIPoint['+ string(id(ADomain)) + '])) 
+						  && eq_or_both_null(PointCol(points/point[' + string(id(ADomain)) + ']), PointCol(Source/valIPoint['+ string(id(ADomain)) + ']))'
+						, void
+						, bool
+					);
+				parameter<bool>test_attr := =AsList('tests/param' + string(id(ADomain)),' && ');
+			}
+			container upolygon
+			{
+				attribute<fpoint> poly (SequenceUnit, polygon) := points2Sequence(Source/valFPoint, Source/SequenceNr, Source/Ordinal);
+				attribute<upoint> att  (SequenceUnit, polygon) := upolygon(poly);
+				unit<uint32> points := sequence2points(att);
+
+				container tests := 
+					for_each_nedv(
+						 'param' + string(id(ADomain))
+						,'   eq_or_both_null(PointRow(points/point[' + string(id(ADomain)) + ']), PointRow(Source/valUPoint['+ string(id(ADomain)) + '])) 
+						  && eq_or_both_null(PointCol(points/point[' + string(id(ADomain)) + ']), PointCol(Source/valUPoint['+ string(id(ADomain)) + ']))'
+						, void
+						, bool
+					);
+				parameter<bool>test_attr := =AsList('tests/param' + string(id(ADomain)),' && ');
+			}
+			container fpolygon
+			{
+				attribute<fpoint> att  (SequenceUnit, polygon) := fpolygon(dpolygon/att);
+				unit<uint32> points := sequence2points(att);
+
+				container tests := 
+					for_each_nedv(
+						 'param' + string(id(ADomain))
+						,'   float_isNearby(PointRow(points/point[' + string(id(ADomain)) + ']), PointRow(Source/valFPoint['+ string(id(ADomain)) + ']), dif_all_float32) 
+						  && float_isNearby(PointCol(points/point[' + string(id(ADomain)) + ']), PointCol(Source/valFPoint['+ string(id(ADomain)) + ']), dif_all_float32)'
+						, void
+						, bool
+					);
+				parameter<bool>test_attr := =AsList('tests/param' + string(id(ADomain)),' && ');
+			}
+			container dpolygon
+			{
+				attribute<fpoint> poly (SequenceUnit, polygon) := points2Sequence(Source/valFPoint, Source/SequenceNr, Source/Ordinal);
+				attribute<dpoint> att  (SequenceUnit, polygon) := dpolygon(poly);
+				unit<uint32> points := sequence2points(att);
+
+				container tests := 
+					for_each_nedv(
+						 'param' + string(id(ADomain))
+						,'   float_isNearby(PointRow(points/point[' + string(id(ADomain)) + ']), PointRow(Source/valDPoint['+ string(id(ADomain)) + ']), dif_all_float64) 
+						  && float_isNearby(PointCol(points/point[' + string(id(ADomain)) + ']), PointCol(Source/valDPoint['+ string(id(ADomain)) + ']), dif_all_float64)'
+						, void
+						, bool
+					);
+				parameter<bool>test_attr := =AsList('tests/param' + string(id(ADomain)),' && ');
+			}
+
+			container round: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/round"
+			{
+				attribute<int32> att  (Domain) := round(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int32Round;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container round_64: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/round"
+			{
+				attribute<int64> att  (Domain) := round_64(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int64Round;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container roundUp: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/roundup"
+			{
+				attribute<int32> att  (Domain) := RoundUp(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int32RoundUp;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container roundUp_64: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/roundup"
+			{
+				attribute<int64> att  (Domain) := roundUp_64(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int64RoundUp;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container roundDown: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/rounddown"
+			{
+				attribute<int32> att  (Domain) := RoundDown(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int32RoundDown;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container roundDown_64: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/rounddown"
+			{
+				attribute<int64> att  (Domain) := RoundDown_64(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int64RoundDown;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container roundToZero: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/roundtozero"
+			{
+				attribute<int32> att  (Domain) := RoundToZero(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int32RoundToZero;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container roundToZero_64: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/roundtozero"
+			{
+				attribute<int64> att  (Domain) := RoundToZero_64(source/float32Round);
+				attribute<bool>  test (Domain) := att == source/int64RoundToZero;
+				parameter<bool>  test_attr     := all(test);
+			}
+			container value: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/value"
+			{
+				parameter<bool> test_param := 
+					    Value(source/IntegerParam, source/int32Unit) = int32(7)
+					 && Value(source/FloatParam, source/int32Unit)   = int32(-999.99) 
+					 && Value(source/BoolParam, source/int32Unit)    = int32(1) 
+					 && Not(isDefined(int32(source/stringParam)));
+				attribute<int32>   att_int    (Domain) := value(source/IntegerAtt, source/int32Unit);
+				attribute<bool>    test_int   (Domain) := att_int = source/valInteger;
+				attribute<float64> att_float  (Domain) := value(source/IntegerAtt, source/float64Unit);
+				attribute<bool>    test_float (Domain) := att_float = source/valFloat;
+				attribute<bool>    att_bool   (Domain) := value(source/IntegerAtt, source/boolUnit);
+				attribute<bool>    test_bool  (Domain) := att_bool = source/valBool;
+	
+				// To be implemented, Integer to string Conversion
+				//attribute<string>  att_string  (Domain) := value(source/IntegerAtt, source/stringUnit);
+				//attribute<bool>    test_string (Domain) := att_string = source/valstring;
+				attribute<bool>  test         (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool ;
+				parameter<bool> test_attr := all(test);
+			}
+			container value_metric
+			{
+				container units
+				{
+					unit<float32> m      := BaseUnit('meter', float32);
+					unit<float32> s      := BaseUnit('seconde', float32);
+					unit<float32> ha     := 10000.0 * m * m;
+					unit<float32> per_ha := 1.0 / ha;
+				}
+				parameter<units/per_ha> paramA := value(10, units/per_ha);
+				parameter<units/per_ha> paramB := 10[units/per_ha];
+
+				parameter<string> ValuesUnitA := PropValue(paramA, 'ValuesUnit');
+				parameter<string> ValuesUnitB := PropValue(paramB, 'ValuesUnit');
+
+				parameter<float64> MetricFactorA := GetMetricFactor(ValuesUnit(paramA));
+				parameter<float64> MetricFactorB := GetMetricFactor(ValuesUnit(paramB));
+
+				parameter <bool> test_param := lowercase(ValuesUnitA) = 'units/per_ha' && lowercase(ValuesUnitB) ='units/per_ha' && MetricFactorA = 0.0001 && MetricFactorB = 0.0001;
+			}
+			container convert: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/convert"
+			{
+				unit<fpoint> LambertEA: SpatialReference = "EPSG:3035";
+				unit<fpoint> rdc: SpatialReference = "EPSG:28992";
+				
+				unit<uint32> pointset: nrofrows = 4
+				{
+					attribute<LambertEA> point_lea:
+					[
+						yx(4106297.89, 3388715.54), yx(4110362.81, 3375737.69), // Borkum - Eemshaven
+						yx(4106297.89, 3388715.54), yx(4115004.49, 3375613.75)  // Borkum - Emden
+					];
+					attribute<rdc> point := convert(point_lea, rdc);
+				}
+				
+				
+				
+				parameter <bool> test_param := 
+					   Convert(source/IntegerParam, source/int32Unit) = int32(7) 
+					&& Convert(source/FloatParam, source/int32Unit)   = int32(-999.99) 
+					&& Convert(source/BoolParam, source/int32Unit)    = int32(1) 
+					&& Not(isDefined(int32(source/stringParam)));
+				attribute<int32>   att_int     (Domain) := convert(source/IntegerAtt, source/int32Unit);
+				attribute<bool>    test_int    (Domain) := att_int = source/convertInteger;
+				attribute<float64> att_float   (Domain) := convert(source/IntegerAtt, source/float64Unit);
+				attribute<bool>    test_float  (Domain) := att_float = source/convertFloat;
+				attribute<bool>    att_bool    (Domain) := convert(source/IntegerAtt, source/boolUnit);
+				attribute<bool>    test_bool   (Domain) := att_bool = source/convertBool;
+				attribute<string>  att_string  (Domain) := convert(source/stringAtt, source/stringUnit);
+				attribute<bool>    test_string (Domain) := eq_or_both_null(att_string, source/convertstring);
+				attribute<s>       att_metric  (Domain) := convert(att_float[m], s);
+				attribute<s>       target_metric (Domain) : [0,1,256,-100,9999];
+				attribute<bool>    test_metric (Domain) := eq_or_both_null(att_metric, target_metric);
+				
+				attribute<bool>    test        (Domain) := 
+					   test_int 
+					&& test_float 
+					&& test_bool 
+					&& test_string
+					// && test_metric
+					;
+				parameter<bool> test_attr := all(test);
+			}
+			/*
+			container literal
+			{
+				parameter<bool> test_param
+					 :=    literal(source/IntegerParam) = uint32(7) "
+						   "&& literal(source/FloatParam)   = float64(-999.99)"
+						   "&& literal(source/BoolParam) "
+						   "&& literal(source/stringParam)  = 'teststring';
+				attribute<int32>   att_int      (Domain) := literal(source/IntegerAtt);
+				attribute<bool>    test_int     (Domain) := att_int = source/IntegerAtt;
+				attribute<float32> att_float    (Domain) := literal(source/FloatAtt);
+				attribute<bool>    test_float   (Domain) := att_float = source/FloatAtt;
+				attribute<bool>    att_bool     (Domain) := literal(source/BoolAtt);
+				attribute<bool>    test_bool    (Domain) := att_bool = source/BoolAtt;
+				attribute<string>  att_string   (Domain) := literal(source/stringAtt);
+				attribute<bool>    test_string  (Domain) := att_string = source/stringAtt;
+				attribute<bool>    test         (Domain) :=    test_int "
+																   "&& test_float "
+																   "&& test_bool "
+																   "&& test_string;
+				parameter<bool> test_attr                  := all(test);
+			}*/
+			container rgb: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/rgb"
+			{
+				parameter<uint8>  red        := uint8(128);
+				parameter<uint8>  green      := uint8(64);
+				parameter<uint8>  blue       := uint8(192);
+				parameter<uint32> param      := rgb(red,green,blue), DialogType = "Palette";
+				parameter<bool>   test_param := param = 12599424;
+			}
+			container AsHex: url  = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/ashex"
+			{
+				parameter<string> param         := AsHex(255);
+				parameter<bool>   test_param    := param == '000000FF';
+				attribute<string> att  (Domain) := AsHex(Source/IntegerAttHex);
+				attribute<bool>   test (Domain) := att = Source/AsHex;
+				parameter<bool>   test_attr     := all(test);
+			}
+			/*
+			container UrlEncode
+			{
+				parameter<string> param         := UrlEncode('<>&abcdef �');
+				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
+				attribute<string> att  (Domain) := UrlEncode(Source/HTMLEncodeDecode);
+				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
+				parameter<bool>   test_attr     := all(test);
+			}
+			
+			container HTMLEncode
+			{
+				parameter<string> param         := HtmlEncode('<>&abcdef �');
+				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
+				attribute<string> att  (Domain) := HTMLEncode(Source/HTMLEncodeDecode);
+				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
+				parameter<bool>   test_attr     := all(test);
+			}
+			*/
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 68
+				{
+					attribute<string> Spec :
+					[
+						 'uint2/test_param'
+					,	'uint2/test_param_u2'
+					,	'uint4/test_param'
+					,	'uint4/test_param_u4'
+					,	'uint8/test_param'
+					,	'uint8/test_param_b'
+					,	'uint16/test_param'
+					,	'uint16/test_param_w'
+					,	'uint32/test_param'
+					,	'uint32/test_param_u'
+					,	'uint64/test_param'
+					,	'uint64/test_param_u64'
+					,	'int8/test_param'
+					,	'int8/test_param_c'
+					,	'int16/test_param'
+					,	'int16/test_param_s'
+					,	'int32/test_param'
+					,	'int32/test_param_i'
+					,	'int64/test_param'
+					,	'int64/test_param_i64'
+					,	'float32/test_param'
+					,	'float32/test_param_f'
+					,	'float64/test_param'
+					,	'float64/test_param_d'
+					,	'string/test_param'
+					,	'bool/test_param'
+					,	'value/test_param'
+					,	'value_metric/test_param'
+					,	'convert/test_param'
+					,	'rgb/test_param'
+					,	'AsHex/test_param'
+					,	'uint2/test_attr'
+					,	'uint4/test_attr'
+					,	'uint8/test_attr'
+					,	'uint16/test_attr'
+					,	'uint32/test_attr'
+					,	'uint64/test_attr'
+					,	'int8/test_attr'
+					,	'int16/test_attr'
+					,	'int32/test_attr'
+					,	'int64/test_attr'
+					,	'float32/test_attr'
+					,	'float64/test_attr'
+					,	'string/test_attr'
+					,	'bool/test_attr'
+					,	'spoint/test_attr'
+					,	'wpoint/test_attr'
+					,	'ipoint/test_attr'
+					,	'upoint/test_attr'
+					,	'fpoint/test_attr'
+					,	'dpoint/test_attr'
+					,	'spolygon/test_attr'
+					,	'wpolygon/test_attr'
+					,	'ipolygon/test_attr'
+					,	'upolygon/test_attr'
+					,	'fpolygon/test_attr'
+					,	'dpolygon/test_attr'
+					,	'round/test_attr'
+					,	'round_64/test_attr'
+					,	'roundUp/test_attr'
+					,	'roundUp_64/test_attr'
+					,	'roundDown/test_attr'
+					,	'roundDown_64/test_attr'
+					,	'roundToZero/test_attr'
+					,	'roundToZero_64/test_attr'
+					,	'value/test_attr'
+					,	'convert/test_attr'
+					,	'AsHex/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

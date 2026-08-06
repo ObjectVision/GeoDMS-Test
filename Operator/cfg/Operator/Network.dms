@@ -1,0 +1,1121 @@
+	container Network: Using = "/Domains;/Units;/Tolerances"
+	{
+		container srcDomain      :=  Source(RDomain, RoadDomain, ADomain, HDomain ,LDomain);
+		container srcEDomain     := ESource(EDomain, EDomain,    EDomain, EDomain ,EDomain);
+		
+		container srcTiledDomain  := Source(RTiledDomain, RoadTiledDomain, ATiledDomain, HTiledDomain ,LTiledDomain);
+		container srcETiledDomain := ESource(ETiledDomain, ETiledDomain, ETiledDomain, ETiledDomain ,ETiledDomain);
+
+		template Source
+		{
+			// begin case parameters
+			unit<uint32> RDomain;
+			unit<uint32> RoadDomain;
+			unit<uint32> ODomain;
+			unit<uint32> DDomain;
+			unit<uint32> LDomain;
+			// end case parameters
+
+			unit<uint32> RoadCoordinates := RDomain,
+				DialogData  = "point",
+				DialogType  = "Map"
+			{
+				attribute<float32>  x: [112631,111866,111866,111924,111524,114921,114823];
+				attribute<float32>  y: [399246,398599,398599,399495,401801,401529,398584];
+				attribute<point_rd> point := point_yx(y, x, point_rd), Label = "RoadPoints";
+				attribute<road>     Sequence_rel: [0,0,1,1,1,2,2];
+				attribute<uint32>   Ordinal:    [0,1,0,1,2,0,1];
+			}
+			unit<uint32> road := RoadDomain,
+				DialogData  = "line",
+				DialogType  = "Map"
+			{
+				attribute<point_rd> line (arc) := points2sequence(RoadCoordinates/Point, RoadCoordinates/Sequence_rel, RoadCoordinates/Ordinal);
+				attribute<point_rd> node_first : [yx(399246, 112631), yx(398599, 111866), yx(401529, 114921)];
+				attribute<point_rd> node_last  : [yx(398599, 111866), yx(401801, 111524), yx(398584, 114823)];
+				
+				attribute<uint32> streetcode: [null,0,1];
+			}
+			unit<uint32> origin := ODomain
+			,	DialogData  = "location"
+			,	DialogType  = "Map"
+			{
+				attribute<float32>  x: [115135,111803,114903,111353,111741];
+				attribute<float32>  y: [401331,399476,399289,401729,398696];
+				attribute<point_rd> location := point_yx(y, x, point_rd), Label = "Origins"
+				{
+					parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(0,0,0);
+					parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(20, fontsize);
+					parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(20, m);
+				}
+				attribute<destination> service_area:        [0,1,2,3,1];
+				attribute<uint32>      connect_points:      [0,1,2,3,1];
+				//attribute<origin>      connect_neighbour: [2,4,2,3,4];
+				attribute<origin>      connect_neighbour:   [2,4,0,1,1];
+				attribute<uint32>      SpatialIndex:        [0,1,10,63,86];
+				attribute<uint32>      capacitated_connect: [2,1,2,1,1];
+			}
+			unit<uint32> destination := DDomain
+			,	DialogData  = "location"
+			,	DialogType  = "Map"
+			{
+				attribute<float32>  x: [115135,112601,114903,112156];
+				attribute<float32>  y: [401331,399138,398600,401729];
+
+				attribute<point_rd> location := point_yx(y, x, point_rd), Label = "Destinations"
+				{
+					parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(255,0,0),        DisableStorage = "True";
+					parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(30, fontsize), DisableStorage = "True";
+					parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(25, m),        DisableStorage = "True";
+				}
+				attribute<string>   destinationnr_str := string(id(destination)), DialogType = "LabelText"
+				{
+					parameter<float32> LabelSize: DialogType = "LabelSize", = float32(14);
+				}
+			}
+			unit<uint32> location := LDomain
+			,	DialogData = "location"
+			,	DialogType = "Map"
+			{
+				attribute<float32>  x: [115135,111803,114903,111353,111741,112601,114903,112156];
+				attribute<float32>  y: [401331,399476,399289,401729,398696,399138,398600,401729];
+				attribute<point_rd> location                       := point_yx(y, x, point_rd);
+				attribute<point_rd> location_with_undefined_values := id(.) == 1[.] || id(.) == 4[.]? point_yx(0f / 0f, 0f / 0f, point_rd) : location;
+
+				attribute<UInt32>   streetcode : [0,0,0,0,0,0,null,0];
+				
+				attribute<float64>  ci_dis : [220.466762,119.519942,56.5086196,180.789468,131.004833,63.0891738,79.4236098,610.39593];
+				attribute<RoadDomain> ci_arc : [2,1,2,1,1,0,2,1];
+				attribute<float32>  ci_x   : [114915,111922,114847,111531,111872,112560,114824,111555];
+				attribute<float32>  ci_y   : [401338,399468,399291,401760,398688,399186,398603,401625];
+				attribute<bool>     ci_inA : [True,True,True,True,True,True,True,True];
+				attribute<bool>     ci_inS : [True,True,True,True,True,True,True,True];
+				attribute<uint32>   ci_seg : [0,0,0,1,0,0,0,1];
+				
+				attribute<float64>  ce_dis : [3477.54413,119.519942,2986.08514,180.789468,131.004833,698.647152,79.4236098,610.39593];
+				attribute<RoadDomain> ce_arc : [1,1,1,1,1,1,2,1];
+				attribute<float32>  ce_x   : [111709,111922,111923,111531,111872,111904,114824,111555];
+				attribute<float32>  ce_y   : [400737,399468,399482,401760,398688,399183,398603,401625];
+				attribute<bool>     ce_inA : [True,True,True,True,True,True,True,True];
+				attribute<bool>     ce_inS : [True,True,True,True,True,True,True,True];
+				attribute<uint32>   ce_seg : [1,0,0,1,0,0,0,1];
+
+				attribute<float64>  cn_dis : [220.466762,710.305647,56.5086196,2792.59252,158.221364,63.0891738,79.4236098,2528.02571];
+				attribute<RoadDomain> cn_arc : [2,0,2,0,0,0,2,0];
+				attribute<float32>  cn_x   : [114915,111922,114847,112631,111872,112560,114824,111555];
+				attribute<float32>  cn_y   : [401338,399468,399291,399426,398688,399186,398603,401625];
+				attribute<bool>     cn_inA : [True,True,True,False,False,True,True,False];
+				attribute<bool>     cn_inS : [True,True,True,False,False,True,True,False];
+				attribute<uint32>   cn_seg : [0,0,0,0,0,0,0,0];
+
+			}
+			container shapefiles
+			{
+				unit<uint32> roads
+				:	StorageName = "%projDir%/data/roads.shp"
+				,	StorageType = "gdal.vect"
+				,	DialogData  = "lijn"
+				,	DialogType  = "Map"
+				,	SyncMode   =  "none"
+				{
+					attribute<fpoint> lijn(arc);
+					attribute<uint32> straatcode;
+				}
+				unit<uint32> locations
+				:	StorageName = "%projDir%/data/loc_not_con.shp"
+				,	StorageType = "gdal.vect"
+				,	DialogData  = "location"
+				,	DialogType  = "Map"
+				,	SyncMode   =  "none"
+				{
+					attribute<fpoint> location;
+					attribute<uint32> straatcode;
+					attribute<bool>   straatcode_komt_voor_in_roads := isDefined(rlookup(straatcode, roads/straatcode)), DisableStorage = "True";
+				}
+			}
+		}
+
+		template ESource
+		{
+			// begin case parameters
+			unit<uint32> RDomain;
+			unit<uint32> RoadDomain;
+			unit<uint32> ODomain;
+			unit<uint32> DDomain;
+			unit<uint32> LDomain;
+			// end case parameters
+
+			unit<uint32> RoadCoordinates := RDomain,
+				DialogData  = "point",
+				DialogType  = "Map"
+			{
+				attribute<float32>  x: [];
+				attribute<float32>  y: [];
+				attribute<point_rd> point := point_yx(y, x, point_rd), Label = "RoadPoints";
+				attribute<road>     Sequence_rel: [];
+				attribute<uint32>   Ordinal:    [];
+			}
+			unit<uint32> road := RoadDomain,
+				DialogData  = "line",
+				DialogType  = "Map"
+			{
+				attribute<point_rd> line (arc) := points2sequence(RoadCoordinates/Point, RoadCoordinates/Sequence_rel, RoadCoordinates/Ordinal);
+				attribute<point_rd> node_first : [];
+				attribute<point_rd> node_last  : [];
+				
+				attribute<uint32> streetcode: [];
+			}
+			unit<uint32> origin := ODomain
+			,	DialogData  = "location"
+			,	DialogType  = "Map"
+			{
+				attribute<float32>  x: [];
+				attribute<float32>  y: [];
+				attribute<point_rd> location := point_yx(y, x, point_rd), Label = "Origins"
+				{
+					parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(0,0,0);
+					parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(20, fontsize);
+					parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(20, m);
+				}
+				attribute<destination> service_area:        [];
+				attribute<uint32>      connect_points:      [];
+				attribute<origin>      connect_neighbour:   [];
+				attribute<uint32>      SpatialIndex:        [];
+				attribute<uint32>      capacitated_connect: [];
+			}
+			unit<uint32> destination := DDomain
+			,	DialogData  = "location"
+			,	DialogType  = "Map"
+			{
+				attribute<float32>  x: [];
+				attribute<float32>  y: [];
+
+				attribute<point_rd> location := point_yx(y, x, point_rd), Label = "Destinations"
+				{
+					parameter<color>    SymbolColor:     DialogType = "SymbolColor",      = rgb(255,0,0),        DisableStorage = "True";
+					parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(30, fontsize), DisableStorage = "True";
+					parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(25, m),        DisableStorage = "True";
+				}
+				attribute<string>   destinationnr_str := string(id(destination)), DialogType = "LabelText"
+				{
+					parameter<float32> LabelSize: DialogType = "LabelSize", = float32(14);
+				}
+			}
+			unit<uint32> location := LDomain
+			,	DialogData = "location"
+			,	DialogType = "Map"
+			{
+				attribute<float32>  x: [];
+				attribute<float32>  y: [];
+				attribute<point_rd> location                       := point_yx(y, x, point_rd);
+				attribute<point_rd> location_with_undefined_values := id(.) == 1[.] || id(.) == 4[.] ? point_yx(0f / 0f, 0f / 0f, point_rd) : location;
+
+				attribute<UInt32>   streetcode : [];
+				
+				attribute<float64>  ci_dis : [];
+				attribute<EDomain>   ci_arc : [];
+				attribute<float32>  ci_x   : [];
+				attribute<float32>  ci_y   : [];
+				attribute<bool>     ci_inA : [];
+				attribute<bool>     ci_inS : [];
+				attribute<uint32>   ci_seg : [];
+
+				attribute<float64>  ce_dis : [];
+				attribute<EDomain>   ce_arc : [];
+				attribute<float32>  ce_x   : [];
+				attribute<float32>  ce_y   : [];
+				attribute<bool>     ce_inA : [];
+				attribute<bool>     ce_inS : [];
+				attribute<uint32>   ce_seg : [];
+
+				attribute<float64>  cn_dis : [];
+				attribute<EDomain>   cn_arc : [];
+				attribute<float32>  cn_x   : [];
+				attribute<float32>  cn_y   : [];
+				attribute<bool>     cn_inA : [];
+				attribute<bool>     cn_inS : [];
+				attribute<uint32>   cn_seg : [];
+			}
+			container shapefiles
+			{
+				unit<uint32> roads: nrOfRows = 0
+				{
+					attribute<fpoint> lijn(arc)  := points2sequence(locations/location, id(locations)[roads], id(locations));
+					attribute<uint32> straatcode : [];
+				}
+				unit<uint32> locations: nrOfRows = 0
+				{
+					attribute<float32> X:[];
+					attribute<float32> Y:[];
+
+					attribute<fpoint> location   := point_yx(X,Y, fpoint);
+					attribute<uint32> straatcode : [];
+					attribute<bool>   straatcode_komt_voor_in_roads := isDefined(rlookup(straatcode, roads/straatcode)), DisableStorage = "True";
+				}
+			}
+		}
+
+		container UnTiled  := Template(RDomain,      RoadDomain,      ADomain,      HDomain      ,LDomain     , srcDomain       , False);
+		container Tiled    := Template(RTiledDomain, RoadTiledDomain, ATiledDomain, HTiledDomain ,LTiledDomain, srcTiledDomain  , False);
+		container EUnTiled := Template(EDomain,      EDomain,         EDomain,      EDomain      ,EDomain     , srcEDomain      , True);
+		container ETiled   := Template(ETiledDomain, ETiledDomain,    ETiledDomain, ETiledDomain ,ETiledDomain, srcETiledDomain , True);
+
+		container ResultUnitTiled
+		{
+			unit<uint32> connect := connect(Network/srcDomain/Road/line , point/ResultUnitTiled/dyna_point_tiled/CalcPoint/point)
+			{
+				parameter<bool> test_attr := sum(MakeDefined(arc_rel, 0)) == 3 && #. == 476870 && arc_rel[2] == 2;
+			}
+			container connect_info := connect_info(Network/srcDomain/Road/line , point/ResultUnitTiled/dyna_point_tiled/CalcPoint/point)
+			{
+				parameter<bool> test_attr := float_isNearby(mean(float32(dist)), 462516.269f, dif_all_float32) && count(ArcId) == 476867 && all(ArcID == 2[RoadDomain]);
+			}
+		}
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> RDomain;
+			unit<uint32> RoadDomain;
+			unit<uint32> ODomain;
+			unit<uint32> DDomain;
+			unit<uint32> LDomain;
+
+			container Source;
+			parameter<bool> isEmpty;
+			// end case parameters
+
+			container first_point: url = "http://www.objectvision.nl/geodms/operators-a-functions/network/first_point"
+			{
+				attribute<fpoint> att  (RoadDomain) := first_point(source/road/line);
+				attribute<bool>   test (RoadDomain) := point_isNearby(att, source/road/node_first, Dif_all_float32);
+				parameter<bool>   test_attr          := all(test);
+			}
+			container last_point: url = "http://www.objectvision.nl/geodms/operators-a-functions/network/last_point"
+			{
+				attribute<fpoint> att  (RoadDomain) := last_point(source/road/line);
+				attribute<bool>   test (RoadDomain) := point_isNearby(att, source/road/node_last, Dif_all_float32);
+				parameter<bool>   test_attr          := all(test);
+			}
+			container arc2segm: url = "http://www.objectvision.nl/geodms/operators-a-functions/network/arc2segm"
+			{
+				unit<uint32>    roadsegments := arc2segm(source/road/line);
+				parameter<bool> test_attr    := #source/road == 0 ? (nrofrows(roadsegments) == 0 && sum(roadsegments/Sequence_rel) == 0) : (nrofrows(roadsegments) == 4 && sum(roadsegments/Sequence_rel) == 4);
+			}
+			unit<uint32> connect := connect(source/road/line, source/location/location)
+			,	url  = "http://www.objectvision.nl/dms/Operator/connect.htm"
+			{
+				attribute<point_rd> geometry(arc);
+				attribute<m>        length                := arc_length(geometry,m);
+				attribute<m>        att_ok_with_values    : [92.6592,88.7168,190.762,220.466,119.523,56.5077,180.794,131.008,63.0789,79.4272,610.393,2048.6,2188.26,688.6,41.7082,782.384,909.256,18.6665,137.238];
+				attribute<m>        att_ok_without_values : [];
+				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				
+				attribute<bool>     test      := float_isNearby(sort(length), sort(att_ok), Dif_all_float32);
+				parameter<bool>     test_attr := all(test);
+				attribute<uint32>   test2 := arc_rel;
+			}
+			unit<uint32> connect_null_values := connect(source/road/line, source/location/location_with_undefined_values)
+			,	url  = "http://www.objectvision.nl/dms/Operator/connect.htm"
+			{
+				attribute<point_rd> geometry(arc);
+				attribute<m>        length                := arc_length(geometry,m);
+				attribute<m>        att_ok_with_values    : [92.6592,3059.36,190.762,220.466,56.5077,180.794,63.0789,79.4272,610.393,2048.6,688.6,41.7082,909.256,18.6665,137.238];
+				attribute<m>        att_ok_without_values : [];
+				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<bool>     test                  := float_isNearby(sort(length), sort(att_ok), Dif_all_float32);
+				parameter<bool>     test_attr             := all(test);
+			}
+			container connect_arc_length_zero
+			{
+				unit<uint32> arc : StorageName = "%projdir%/data/weg_connect_issue.shp"
+				,	StorageType = "gdal.vect"
+				,	DialogType = "Map"
+				,	DialogData = "geometry"
+				,	StorageReadOnly = "true"
+				{
+					attribute<fpoint> geometry (arc);
+				}
+				unit<uint32> point: nrofrows = 1
+				{
+					attribute<fpoint> geometry := const(point_yx(100001f, 400001f, fpoint),.);
+				}
+				unit<uint32> connected :=  connect( arc/geometry , point/geometry )
+				{
+					attribute<fpoint> geometry (arc);
+					attribute<m>      length      := arc_length(geometry, m);
+					parameter<m>      length_tot  := sum(length);
+					parameter<bool>   test        := round(length_tot)[m] == 293161[m];
+				}
+			}
+			unit<uint32> connect_eq := connect_eq(source/road/line, source/road/streetcode, source/location/location, source/location/streetcode)
+			,	url  = "http://www.objectvision.nl/dms/Operator/connect.htm"
+			{
+				attribute<point_rd> geometry(arc);
+				attribute<m>        length    := arc_length(geometry,m);
+				attribute<m>        att_ok_with_values    : [1001.92,88.7168,2927.96,3477.54,119.523,2986.08,180.794,131.008,698.646,79.4272,610.393,901.292,13.309,1273.66,41.7082,496.631,285.753,18.6665,137.238];
+				attribute<m>        att_ok_without_values : [];
+				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<bool>     test      := float_isNearby(sort(length), sort(att_ok), Dif_all_float32*10f);
+				parameter<bool>     test_attr := all(test);
+			}
+			unit<uint32> connect_ne := connect_ne(source/road/line, source/road/streetcode, source/location/location, source/location/streetcode)
+			,	url  = "http://www.objectvision.nl/dms/Operator/connect.htm"
+			{
+				attribute<point_rd> geometry(arc);
+				attribute<m>        length    := arc_length(geometry,m);
+				attribute<m>        att_ok_with_values    : [92.6592,3238.31,190.762,220.466,710.303,56.5077,2792.59,158.221,63.0789,79.4272,2528.03,2048.6,518.231,688.6,391.025,18.6665];
+				attribute<m>        att_ok_without_values : [];
+				attribute<m>        att_ok                :==  #source/road == 0 ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<bool>     test      := float_isNearby(sort(length), sort(att_ok), Dif_all_float32);
+				parameter<bool>     test_attr := all(test);
+			}
+			container connected_info := connect_info(source/Road/Line, source/location/location)
+			,	Using = "source"
+			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/connect_info"
+			{
+				attribute<point_rd> cpo(LDomain) := point_yx(source/location/ci_y, source/location/ci_x, point_rd);
+				attribute<bool>     test(LDomain):=    
+					   float_isNearby(dist, source/location/ci_dis, Dif_all_float64) && arcID == convert(source/location/ci_arc , source/Road)
+					&& point_isNearby(CutPoint, cpo,Dif_all_float32) && source/location/ci_inA == inArc 
+					&& inSegm == source/location/ci_inS && SegmID == source/location/ci_seg;
+				parameter<bool> test_attr := all(test);
+			}
+			container connected_info_eq := connect_info_eq(source/road/line, source/road/streetcode, source/location/location, source/location/streetcode), Using = "source"
+			{
+				attribute<point_rd> cpo(LDomain) := point_yx(source/location/ce_y,source/location/ce_x,point_rd);
+				attribute<bool>     testA(LDomain):= float_isNearby(dist, source/location/ce_dis, Dif_all_float64);
+				attribute<bool>     testB(LDomain):= arcID == convert(source/location/ce_arc, source/road);
+				attribute<bool>     testC(LDomain):= point_isNearby(CutPoint, cpo,Dif_all_float32);
+				attribute<bool>     testD(LDomain):= source/location/ce_inA == inArc;
+				attribute<bool>     testE(LDomain):= inSegm == source/location/ce_inS; 
+				attribute<bool>     testF(LDomain):= SegmID == source/location/ce_seg;
+					
+				attribute<bool>     test(LDomain):= testA && testB && testC && testD && testE && testF;
+				parameter<bool> test_attr := all(test);
+			}
+			container connected_info_eq_shapefile := 
+				connect_info_eq(source/shapefiles/roads/lijn, source/shapefiles/roads/straatcode, source/shapefiles/locations/location, source/shapefiles/locations/straatcode);
+
+			container connected_info_ne := connect_info_ne(source/road/line, source/road/streetcode, source/location/location, source/location/streetcode),Using = "source"
+			{
+				attribute<point_rd> cpo  (LDomain) := point_yx(source/location/cn_y,source/location/cn_x,point_rd);
+				attribute<bool>     test (LDomain):= 
+					   float_isNearby(dist, source/location/cn_dis, Dif_all_float64)    && arcID = convert(source/location/cn_arc, source/road) 
+					&& point_isNearby(CutPoint, cpo,Dif_all_float32) && source/location/cn_inA = inArc 
+					&& inSegm = source/location/cn_inS && SegmID = source/location/cn_seg;
+				parameter<bool> test_attr := all(test);
+			}
+			container connect_points
+			:	Using = "source"
+			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/connect"
+			{
+				attribute<DDomain> att  (ODomain) := connect(destination/location, origin/location);
+				attribute<bool>    test (ODomain) := att == convert(origin/connect_points, DDomain);
+				parameter<bool>    test_attr      := all(test);
+				
+				attribute<Grid/units/GridDomain3000> att_pointdomain  (Grid/units/GridDomain) := connect(Grid/units/GridDomain3000/P, Grid/units/GridDomain/P);
+				attribute<bool>                      test_pointdomain (Grid/units/GridDomain) := att_pointdomain == Grid/units/GridDomain/GridDomain3000nr;
+				parameter<bool>                      test_pointdomain_attr                    := all(test_pointdomain);
+			}
+			container connect_neighbour
+			{
+				unit<uint32>       origin        := source/origin;
+				attribute<ODomain> att  (ODomain) := connect_neighbour(origin/location);
+				attribute<bool>    test (ODomain) := att == origin/connect_neighbour;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container capacitated_connect: Using = "source"
+			{
+				attribute<float64> cap_with_values     (DDomain) :[40,90,60,40];
+				attribute<float64> cap_without_values  (DDomain) :[];
+				attribute<float64> cap  (DDomain) := = IsEmpty ? 'cap_without_values' : 'cap_with_values';
+				
+				attribute<DDomain> att  (ODomain) := capacitated_connect(destination/location, cap, origin/location, const(60D,origin));
+				attribute<bool>    test (ODomain) := att == convert(origin/capacitated_connect, DDomain);
+				parameter<bool>    test_attr     := all(test);
+			}
+
+			container connected
+			{
+				unit <uint32> LinkSet_org := arc2segm(connect/geometry)
+				,	DialogData = "segments"
+				,	DialogType = "Map"
+				{
+					attribute<bool> isConnectionToLocation := 
+						   IsDefined(
+							  rlookup(
+								  point
+								, source/location/location
+							  )
+						)
+						|| IsDefined(
+							  rlookup(
+								  nextpoint
+								, source/location/location
+							  )
+						);
+
+					attribute<point_rd> point;
+					attribute<point_rd> nextpoint;
+				}
+				unit <uint32> LinkSet_extra // bedoeld om de verbindingen die door de connect zijn gemaakt naar de locations dubbel op te nemen voor de dijkstra_directed
+				:= select_with_org_rel(LinkSet_org/isConnectionToLocation)
+				,	DialogData = "segments"
+				,	DialogType = "Map"
+				{
+					attribute<point_rd> point     := LinkSet_org/nextpoint[org_rel];
+					attribute<point_rd> nextpoint := LinkSet_org/point[org_rel];
+				}
+				
+				unit <uint32> LinkSet := Union_Unit(LinkSet_org,LinkSet_extra)
+				,	DialogData = "segments"
+				,	DialogType = "Map"
+				{
+					attribute<point_rd> point     := Union_Data(.,LinkSet_org/point    ,LinkSet_extra/point);
+					attribute<point_rd> nextpoint := Union_Data(.,LinkSet_org/nextpoint,LinkSet_extra/nextpoint);
+		
+					unit<uint32> pointset := Union(point, nextpoint)
+					{
+						attribute<point_rd> UnionData;
+						attribute<LinkSet>  ArcID  := value(ID(pointset) % nrofrows(LinkSet), LinkSet);
+						attribute<uint32>   VolgNr := ID(pointset) / nrofrows(LinkSet);
+					}
+					attribute<point_rd> segments(arc) := points2sequence(pointset/UnionData, pointset/ArcID, pointset/VolgNr);
+					attribute<m>        dist          := value(dist(point, nextpoint), m);
+				}
+				unit<uint32> NodeSet := unique(SubItem(union(LinkSet/point, LinkSet/nextpoint), 'UnionData')),
+					DialogData = "Values",
+					DialogType = "Map"
+				{
+					attribute<point_rd> Values;
+				}
+		
+				attribute<NodeSet> F1(LinkSet) := rlookup(LinkSet/point,     NodeSet/Values),IsHidden = "True";
+				attribute<NodeSet> F2(LinkSet) := rlookup(LinkSet/nextpoint, NodeSet/Values),IsHidden = "True";
+		
+				attribute<NodeSet> nr_OriginNode      (ODomain) := rlookup(source/origin/location, NodeSet/Values);
+				attribute<NodeSet> nr_DestinationNode (DDomain) := rlookup(source/destination/location, NodeSet/Values);
+
+				unit<uint32> parts := connected_parts(F1, F2)
+				,	Using = "source"
+				,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/connected_parts"
+				{
+					attribute<uint32> par_with_values    (nodeset) : [0,1,0,0,1,1,1,1,1,0,0,1,1,1,0,0,0,1,1,1,1,1];
+					attribute<uint32> par_without_values (nodeset) : [];
+					attribute<uint32> par                (nodeset) := = isEmpty ? 'par_without_values' : 'par_with_values';
+					
+					attribute<bool>   test(nodeset) := Part_rel = par;
+					parameter<bool>   test_attr     := all(test);
+				}
+				unit<uint32> strongly_connected_components := strongly_connected_components(F1, F2);
+			}
+			container dijkstra
+			:	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra"
+			,	Using = "connected"
+			{
+//				attribute<m> distance_nodeset (NodeSet) := dijkstra(LinkSet/dist, F1, F2, nr_DestinationNode)"
+				attribute<m> distance_nodeset (NodeSet) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, F1, F2, nr_DestinationNode)
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,824.535,928.425,1192.06];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+				
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
+			container impedance_table: Using = "connected"
+			{
+				attribute<m> distance_nodeset (NodeSet) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack', LinkSet/dist, F1, F2, nr_DestinationNode)
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,824.535,928.425,1192.06];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+				
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
+			container dijkstra_directed
+			:	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra"
+			,	Using = "connected"
+			{
+//				attribute<m> distance_nodeset_directed (NodeSet) := dijkstra_directed(LinkSet/dist, F1, F2, nr_DestinationNode)"
+				attribute<m> distance_nodeset_directed (NodeSet) := impedance_table('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset_directed);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,2325.58,928.425,1192.06];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
+			container impedance_table_directed: Using = "connected"
+			{
+				attribute<m> distance_nodeset_directed (NodeSet) := impedance_table('directed;startPoint(Node_rel);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode)
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset_directed);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,1962.96,2325.58,928.425,1192.06];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
+			container dijkstra_maxdist
+			:	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra"
+			,	Using = "connected"
+			{
+//				attribute<m> distance_nodeset (NodeSet) :=  dijkstra_maxdist(LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
+				attribute<m> distance_nodeset (NodeSet) :=  impedance_table('bidirectional;startPoint(Node_rel);cut(OrgZone_max_imp);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,null,824.535,928.425,null];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
+			container impedance_table_maxdist: Using = "connected"
+			{
+				attribute<m> distance_nodeset (NodeSet) :=  impedance_table('bidirectional;startPoint(Node_rel);cut(OrgZone_max_imp);node:TraceBack',LinkSet/dist, F1, F2, nr_DestinationNode, 1000[m])
+				{
+					attribute<LinkSet> TraceBack (NodeSet);
+				}
+				attribute<m>     att                   (ODomain) := lookup(nr_OriginNode, distance_nodeset);
+				attribute<m>     att_ok_with_values    (ODomain) : [0,null,824.535,928.425,null];
+				attribute<m>     att_ok_without_values (ODomain) : [];
+				attribute<m>     att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test                  (ODomain) := float_isNearby(att, att_ok, Dif_all_float32);
+
+				parameter <bool> test_attr := all(test);
+			}
+			unit<uint32> dijkstra_alt_impedance := impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+					, connected/LinkSet/dist
+					, connected/F1
+					, connected/F2
+					, connected/nr_DestinationNode
+					, connected/nr_DestinationNode
+					, connected/LinkSet/dist
+			);
+
+			unit<uint64> dijkstra_interaction := 
+				impedance_matrix_od64(
+					'bidirectional;startPoint(Node_rel);endPoint(Node_rel);'
+					'cut(OrgZone_max_imp);'
+					'interaction(v_i,w_j,dist_decay):D_i,M_ix,C_j,M_xj,Link_flow;'
+					'od:impedance,OrgZone_rel,DstZone_rel,LinkSet',
+					connected/LinkSet/dist,       connected/F1                   , connected/F2,
+					connected/nr_OriginNode,  connected/nr_DestinationNode,
+					1000f, 
+					1.0f, 1.0f, 0.0f
+				)
+			{
+				parameter <bool> test_attr := float_isNearby(sum(M_ix), sum(M_xj), Dif_all_float32);
+				attribute<float32> t_ij         := impedance < 1e+30f ? 1.0f : 0.0f;
+				attribute<float32> M_ij         := t_ij*D_i[OrgZone_rel]^-1.0f;
+				attribute<float32> M_i(ODomain) := sum(M_ij, OrgZone_rel);
+				attribute<float32> M_j(DDomain) := sum(M_ij, DstZone_rel);
+			}
+
+			unit<uint64> impedance_matrix_interaction := 
+				impedance_matrix_od64(
+					'bidirectional;startPoint(Node_rel);endPoint(Node_rel);'
+					'cut(OrgZone_max_imp);'
+					'interaction(v_i,w_j,dist_decay):D_i,M_ix,C_j,M_xj,Link_flow;'
+					'od:impedance,OrgZone_rel,DstZone_rel,LinkSet',
+					connected/LinkSet/dist,       connected/F1                   , connected/F2,
+					connected/nr_OriginNode,  connected/nr_DestinationNode,
+					1000f, 
+					1.0f, 1.0f, 0.0f
+				)
+			{
+				parameter <bool> test_attr := float_isNearby(sum(M_ix), sum(M_xj), Dif_all_float32);
+				attribute<float32> t_ij         := impedance < 1e+30f ? 1.0f : 0.0f;
+				attribute<float32> M_ij         := t_ij*D_i[OrgZone_rel]^-1.0f;
+				attribute<float32> M_i(ODomain) := sum(M_ij, OrgZone_rel);
+				attribute<float32> M_j(DDomain) := sum(M_ij, DstZone_rel);
+			}
+
+			parameter<float32> distDecay    := 0.001f;
+			parameter<float32> demand_alpha := 1.0f;
+			parameter<float32> min_imp      := 0.0f;
+			unit<uint64> dijkstra_all_interaction := 
+				impedance_matrix_od64(
+					'bidirectional;'
+					'interaction(OrgZone_min,v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;'
+					'od:impedance,OrgZone_rel,DstZone_rel,LinkSet',
+					connected/LinkSet/dist, connected/F1, connected/F2,
+					min_imp, 1.0f, 1.0f, distDecay, demand_alpha
+				)
+			{
+				attribute<float32> t_ij                   := impedance >= 1e+38f ? 0.0f : distDecay == 0.0f ? 1.0f : max_elem(impedance, min_imp)^-distDecay;
+				attribute<float32> M_ij                   := D_i[OrgZone_rel] <= 0.0f ? 0.0f : t_ij*D_i[OrgZone_rel]^(demand_alpha-1.0f);
+				attribute<float32> M_i(connected/NodeSet) := sum(M_ij, OrgZone_rel);
+				attribute<float32> M_j(connected/NodeSet) := sum(M_ij, DstZone_rel);
+			}
+
+			unit<uint64> dijkstra_all_route_count := 
+				impedance_matrix_od64(
+					'bidirectional;'
+					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
+					connected/LinkSet/dist, connected/F1, connected/F2,
+					1.0f, 1.0f, 0.0f, 1.0f
+				);
+			unit<uint64> dijkstra_all_length := 
+				impedance_matrix_od64(
+					'bidirectional;'
+					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;od:impedance',
+					connected/LinkSet/dist, connected/F1, connected/F2,
+					1.0f, 1.0f, -1.0f, 1.0f
+				);
+			unit<uint64> dijkstra_all_link_count:= 
+				impedance_matrix_od64(
+					'bidirectional;'
+					'alternative(link_imp):alt_imp;'
+					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;od:impedance',
+					connected/LinkSet/dist, connected/F1, connected/F2,
+					1.0f,
+					1.0f, 1.0f, -1.0f, 1.0f
+				);
+			container avg_length_all
+			{
+				attribute<float32> per_org (connected/NodeSet) := dijkstra_all_length/M_ix / dijkstra_all_route_count/M_ix;
+				attribute<float32> per_dst (connected/NodeSet) := dijkstra_all_length/M_xj / dijkstra_all_route_count/M_xj;
+				attribute<float32> per_link(connected/LinkSet) := dijkstra_all_length/Link_flow / dijkstra_all_route_count/Link_flow;
+			}
+			container avg_link_count_all
+			{
+				attribute<float32> per_org (connected/NodeSet) := dijkstra_all_link_count/M_ix / dijkstra_all_route_count/M_ix;
+				attribute<float32> per_dst (connected/NodeSet) := dijkstra_all_link_count/M_xj / dijkstra_all_route_count/M_xj;
+				attribute<float32> per_link(connected/LinkSet) := dijkstra_all_link_count/Link_flow / dijkstra_all_route_count/Link_flow;
+				parameter<bool> test_attr := #connected/LinkSet == 0 ? True : float_isNearby(sum(per_link), 107.17314f, Dif_all_float32);
+			}
+
+			unit<uint64> dijkstra_cut_route_count := 
+				impedance_matrix_od64(
+					'bidirectional;'
+					'cut(OrgZone_max_imp);'
+					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
+					connected/LinkSet/dist, connected/F1, connected/F2,
+					2500f,
+					1.0f, 1.0f, 0.0f, 1.0f
+				);
+			unit<uint64> dijkstra_cut_length := 
+				impedance_matrix_od64(
+					'bidirectional;'
+					'cut(OrgZone_max_imp);'
+					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow',
+					connected/LinkSet/dist, connected/F1, connected/F2,
+					2500f,
+					1.0f, 1.0f, -1.0f, 1.0f
+				);
+			unit<uint64> dijkstra_cut_link_count:= 
+				impedance_matrix_od64(
+					'bidirectional;'
+					'cut(OrgZone_max_imp);'
+					'alternative(link_imp):alt_imp;'
+					'interaction(v_i,w_j,dist_decay,OrgZone_alpha):D_i,M_ix,C_j,M_xj,Link_flow;'
+					'od:impedance',
+					connected/LinkSet/dist, connected/F1, connected/F2,
+					2500f,
+					1.0f,
+					1.0f, 1.0f, -1.0f, 1.0f
+				);
+			container avg_length_cut
+			{
+				attribute<float32> per_org (connected/NodeSet) := dijkstra_cut_length/M_ix / dijkstra_cut_route_count/M_ix;
+				attribute<float32> per_dst (connected/NodeSet) := dijkstra_cut_length/M_xj / dijkstra_cut_route_count/M_xj;
+				attribute<float32> per_link(connected/LinkSet) := dijkstra_cut_length/Link_flow / dijkstra_cut_route_count/Link_flow;
+			}
+			container avg_link_count_cut
+			{
+				attribute<float32> per_org (connected/NodeSet) := dijkstra_cut_link_count/M_ix / dijkstra_cut_route_count/M_ix;
+				attribute<float32> per_dst (connected/NodeSet) := dijkstra_cut_link_count/M_xj / dijkstra_cut_route_count/M_xj;
+				attribute<float32> per_link(connected/LinkSet) := dijkstra_cut_link_count/Link_flow / dijkstra_cut_route_count/Link_flow;
+			}
+
+			unit<uint32> dijkstra_OD :=
+			// 	dijkstra_od(
+				impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+					connected/LinkSet/dist,       connected/F1                   , connected/F2,
+					connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+					connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
+				)
+			,	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
+			{
+				attribute<m> att_ok_with_values:
+				[
+					 0   ,null   ,3037.1,null
+					,null,1962.96,null  ,2918.18     
+					,2325.58     ,null  ,824.535     ,null
+					,null,4349.73,null  ,928.425     
+					,null,1192.06,null  ,3712.05
+				];
+				attribute<m>     att_ok_without_values : [];
+				attribute<m>     att_ok                := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
+				parameter <bool> test_attr := all(test);
+			}
+
+			unit<uint32> impedance_matrix_OD :=
+				impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+					connected/LinkSet/dist,       connected/F1                   , connected/F2,
+					connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+					connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
+				)
+			,	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
+			{
+				attribute<m> att_ok_with_values:
+				[
+					 0   ,null   ,3037.1,null
+					,null,1962.96,null  ,2918.18     
+					,2325.58     ,null  ,824.535     ,null
+					,null,4349.73,null  ,928.425     
+					,null,1192.06,null  ,3712.05
+				];
+				attribute<m>     att_ok_without_values : [];
+				attribute<m>     att_ok                := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
+				parameter <bool> test_attr := all(test);
+			}
+
+			unit<uint32> dijkstra_OD_directed
+			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
+			,=
+				//	dijkstra_od_directed(
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
+					)
+			{
+				attribute<m> att_with_values:
+				[
+					 0           ,null,3037.1      ,null,null,null,null
+					,2918.18     ,null,null,824.535     ,null,null,null
+					,null,null,null,null,null,3712.05
+				];
+				attribute<m> att_ok_without_values : [];
+				
+				// WARNING: this code triggers dijkstra execution when the calculation rule for att_ok is determined; in production code, better provide the att as template parameter
+				attribute<m> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_with_values'; 
+				
+				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
+				parameter <bool> test_attr := all(test);
+			}
+
+			unit<uint32> impedance_matrix_OD_directed: =
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);od:impedance',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination)
+					)
+			{
+				attribute<m> att_with_values:
+				[
+					 0           ,null,3037.1      ,null,null,null,null
+					,2918.18     ,null,null,824.535     ,null,null,null
+					,null,null,null,null,null,3712.05
+				];
+				attribute<m> att_ok_without_values : [];
+				
+				// WARNING: this code triggers dijkstra execution when the calculation rule for att_ok is determined; in production code, better provide the att as template parameter
+				attribute<m> att_ok := = IsEmpty ? 'att_ok_without_values' : 'att_with_values'; 
+				
+				attribute <bool> test      := float_isNearby(Impedance, att_ok, Dif_all_float32);
+				parameter <bool> test_attr := all(test);
+			}
+
+			unit<uint32> dijkstra_OD_maxdist
+			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
+			,=
+//					dijkstra_OD_maxdist(
+					impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
+						const(2500,source/origin,m)
+					)
+			{
+				container with_values
+				{
+					attribute<m>        imp_ok  (..): [0,1962.96,824.535,2325.58,928.425,1192.06];
+					attribute<ODomain>  src_ok  (..): [0,1,2,2,3,4];
+					attribute<DDomain > dest_ok (..): [0,1,2,0,3,1];
+				}
+
+				container without_values
+				{
+					attribute<m>      ok        (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
+				}
+
+				attribute<bool> test := = IsEmpty
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
+					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
+					   ;
+
+				parameter<bool> test_attr := all(test);
+			}
+
+			unit<uint32> impedance_matrix_OD_maxdist :=
+					impedance_matrix('bidirectional;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
+						const(2500,source/origin,m)
+					)
+			{
+				container with_values
+				{
+					attribute<m>        imp_ok  (..): [0,1962.96,824.535,2325.58,928.425,1192.06];
+					attribute<ODomain>  src_ok  (..): [0,1,2,2,3,4];
+					attribute<DDomain > dest_ok (..): [0,1,2,0,3,1];
+				}
+
+				container without_values
+				{
+					attribute<m>      ok        (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
+				}
+
+				attribute<bool> test := = IsEmpty
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
+					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
+					   ;
+
+				parameter<bool> test_attr := all(test);
+			}
+
+			unit<uint32> dijkstra_OD_maxdist_directed
+			:	url  = "http://www.objectvision.nl/geodms/operators-a-functions/network/dijkstra-od"
+			,=
+//					dijkstra_OD_maxdist_directed(
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
+						const(5000,source/origin,m)
+					)
+			{
+				container with_values
+				{
+					attribute<m>       imp_ok  (..): [0,3037.1,2918.18,824.535,3712.05];
+					attribute<ODomain> src_ok  (..): [0,0,1,2,4];
+					attribute<DDomain> dest_ok (..): [0,2,3,2,3];
+				}
+
+				container without_values
+				{
+					attribute<m>      ok        (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
+				}
+
+				attribute<bool> test := = IsEmpty
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
+					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
+					   ;
+				parameter<bool> test_attr := all(test);
+			}
+
+			unit<uint32> impedance_matrix_OD_maxdist_directed :=
+					impedance_matrix('directed;startPoint(Node_rel,impedance,OrgZone_rel);endPoint(Node_rel,impedance,DstZone_rel);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
+						connected/LinkSet/dist,       connected/F1                   , connected/F2, 
+						connected/nr_OriginNode,      const(0, source/origin,      m), ID(source/origin),
+						connected/nr_DestinationNode, const(0, source/destination, m), ID(source/destination),
+						const(5000,source/origin,m)
+					)
+			{
+				container with_values
+				{
+					attribute<m>       imp_ok  (..): [0,3037.1,2918.18,824.535,3712.05];
+					attribute<ODomain> src_ok  (..): [0,0,1,2,4];
+					attribute<DDomain> dest_ok (..): [0,2,3,2,3];
+				}
+
+				container without_values
+				{
+					attribute<m>      ok        (..): [];
+					attribute<EDomain> ok_uint32 (..): [];
+				}
+
+				attribute<bool> test := =IsEmpty
+					   ? 'float_isNearby(Impedance, without_values/ok  ,  Dif_all_float32) && OrgZone_rel == convert(without_values/ok_uint32, source/origin)  && DstZone_rel == convert(without_values/ok_uint32, source/destination)'
+					   : 'float_isNearby(Impedance, with_values/imp_ok ,  Dif_all_float32) && OrgZone_rel == with_values/src_ok && DstZone_rel == with_values/dest_ok'
+					   ;
+				parameter<bool> test_attr := all(test);
+			}
+
+			unit<uint32> dijkstra_OD_maxtime_alt_imp :=
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+					, connected/LinkSet/dist * 1[s / m]
+					, connected/F1
+					, connected/F2
+					, connected/nr_OriginNode
+					, connected/nr_DestinationNode
+					, 1000[s]
+					, connected/LinkSet/dist
+				)
+			{
+//				attribute<float32> impedance; // issue 941
+				attribute<int32>   impedance_min := round(impedance / 60f);
+				attribute<float32> alt_imp_km    := float32(round(alt_imp / 100f)) / 10f;
+
+				attribute<s>       imp_ok        : [0, 824.535, 928.425];
+				attribute<m>       alt_imp_ok    : [0, 824.535, 928.425];
+
+				attribute<s>       imp_no_values_ok  : [];
+				attribute<m>       alt_imp_no_values_ok  : [];
+
+				attribute<bool>    test          := =isEmpty
+					? 'float_isNearby(impedance, imp_no_values_ok , Dif_all_float32) && float_isNearby(alt_imp  , alt_imp_no_values_ok,  Dif_all_float32)'
+					: 'float_isNearby(impedance, imp_ok , Dif_all_float32) && float_isNearby(alt_imp  , alt_imp_ok,  Dif_all_float32)'
+					;
+				parameter<bool> test_attr := all(test);
+			}
+
+			unit<uint32> impedance_matrix_OD_maxtime_alt_imp :=
+				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel);cut(OrgZone_max_imp);alternative(link_imp):alt_imp;od:impedance,OrgZone_rel,DstZone_rel'
+					, connected/LinkSet/dist * 1[s / m]
+					, connected/F1
+					, connected/F2
+					, connected/nr_OriginNode
+					, connected/nr_DestinationNode
+					, 1000[s]
+					, connected/LinkSet/dist
+				)
+			{
+				attribute<int32>   impedance_min := round(impedance / 60f);
+				attribute<float32> alt_imp_km    := float32(round(alt_imp / 100f)) / 10f;
+
+				attribute<s>       imp_ok        : [0, 824.535, 928.425];
+				attribute<m>       alt_imp_ok    : [0, 824.535, 928.425];
+
+				attribute<s>       imp_no_values_ok  : [];
+				attribute<m>       alt_imp_no_values_ok  : [];
+
+				attribute<bool>    test          :=  =isEmpty
+					? 'float_isNearby(impedance, imp_no_values_ok , Dif_all_float32) && float_isNearby(alt_imp  , alt_imp_no_values_ok,  Dif_all_float32)'
+					: 'float_isNearby(impedance, imp_ok , Dif_all_float32) && float_isNearby(alt_imp  , alt_imp_ok,  Dif_all_float32)'
+					;
+				parameter<bool> test_attr := all(test);
+			}
+
+			container traceback
+			:	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/trace_back"
+			,	Using = "connected"
+			{
+				unit<uint32> nr_won;
+				attribute<nr_won> att (LinkSet):
+					cdf  = "classifications/nr_wonflow_6K/Classes",
+					 = value(
+						trace_back(
+							 F1
+							,F2
+							,dijkstra/distance_nodeset/TraceBack
+							,pcount(nr_OriginNode)
+						)
+					, nr_won);
+				attribute<nr_won> att_ok_with_values    (Linkset) : [0,2,0,0,0,0,0,0,2,1,1,0,0,0,1,0,1,2,0,1,0,1,1,1,1,0,0,0];
+				attribute<nr_won> att_ok_without_values (Linkset) : [];
+				attribute<nr_won> att_ok                (Linkset) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+
+				attribute<bool>   test   (Linkset) := sort(att_ok) == sort(att);
+				parameter<bool>   test_attr        := all(test);
+			}
+			container service_area
+			:	url   = "http://www.objectvision.nl/geodms/operators-a-functions/network/service_area"
+			,	Using = "connected"
+			{
+				attribute<DDomain> nodeset (connected/NodeSet) := 
+					rlookup(
+						service_area(
+							F1, 
+							F2, 
+							dijkstra/distance_nodeset/TraceBack
+						),
+						nr_DestinationNode
+					);
+				attribute<DDomain> att                   (ODomain) := lookup(nr_OriginNode, nodeset);
+				attribute<DDomain> att_ok_with_values    (ODomain) : [0,1,2,3,1];
+				attribute<DDomain> att_ok_without_values (ODomain) : [];
+				attribute<DDomain> att_ok                (ODomain) := = IsEmpty ? 'att_ok_without_values' : 'att_ok_with_values';
+				attribute<bool>    test                  (ODomain) := att_ok == att;
+				parameter<bool>    test_attr              := all(test);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 37
+				{
+					attribute<string> Spec :
+					[
+						 'first_point/test_attr'
+					,	'last_point/test_attr'
+					,	'arc2segm/test_attr'
+					,	'connect/test_attr'
+					,	'connect_null_values/test_attr'
+					,	'connect_arc_length_zero/connected/test'
+					,	'connect_eq/test_attr'
+					,	'connect_ne/test_attr'
+					,	'connected_info/test_attr'
+					,	'connected_info_eq/test_attr'
+					,	'connected_info_ne/test_attr'
+					,	'connected/parts/test_attr'
+					,	'connect_points/test_attr'
+					,	'capacitated_connect/test_attr'
+					,	'connect_points/test_pointdomain_attr'
+					,	'UnTiled/connect_neighbour/test_attr'
+					,	'dijkstra/test_attr'
+					,	'impedance_table/test_attr'
+					,	'dijkstra_directed/test_attr'
+					,	'impedance_table_directed/test_attr'
+					,	'dijkstra_maxdist/test_attr'
+					,	'impedance_table_maxdist/test_attr'
+					,	'dijkstra_interaction/test_attr'
+					,	'impedance_matrix_interaction/test_attr'
+					,	'dijkstra_od/test_attr'
+					,	'impedance_matrix_od/test_attr'
+					,	'dijkstra_od_directed/test_attr'
+					,	'impedance_matrix_od_directed/test_attr'
+					,	'dijkstra_od_maxdist/test_attr'
+					,	'impedance_matrix_od_maxdist/test_attr'
+					,	'dijkstra_od_maxdist_directed/test_attr'
+					,	'impedance_matrix_od_maxdist_directed/test_attr'
+					,	'dijkstra_od_maxtime_alt_imp/test_attr'
+					,	'impedance_matrix_od_maxtime_alt_imp/test_attr'
+					,	'avg_link_count_all/test_attr'
+					,	'traceback/test_attr'
+					,	'service_area/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

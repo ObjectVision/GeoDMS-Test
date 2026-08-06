@@ -1,0 +1,239 @@
+	container Miscellaneous: Using = "/Domains;/Units;/Tolerances"
+	{
+		unit<float32> meter := BaseUnit('meter', float32);
+
+//		parameter<meter> errorneous_metric_spec := float32(7.0),
+//			Descr = "Example of an invalid specification of meter for a non-metric expression (since substitution would result in metric loss)";
+
+		container PropValue: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/propvalue"
+		{
+			attribute<meter> A (ADomain):= value(Arithmetics/UnTiled/Source/B, meter) + value(Arithmetics/UnTiled/Source/C, meter),
+				descr = "A is the sum of B and C"
+			{
+				parameter<string> name      := Uppercase(PropValue(A, 'name'));
+				parameter<bool>   test_name := (name) = 'A';
+			
+				parameter<string> valuesunit     := LowerCase(PropValue(A, 'ValuesUnit'));
+				// pre-18: PropValue(item,'ValuesUnit') returned the unit NAME ('meter'); from 18.x it
+				// returns the relative PATH ('../meter'). Same values unit, only the property rendering
+				// changed -> switch the expected literal by version (cf. the GeoDmsVersion() switches in this config).
+				parameter<bool>   test_valueunit := valuesunit = (GeoDmsVersion() < 18d ? 'meter' : '../meter');
+	
+				parameter<string> expr      := LowerCase(PropValue(A, 'expr'));
+				parameter<bool>   test_expr := expr == 'value(arithmetics/untiled/source/b, meter) + value(arithmetics/untiled/source/c, meter)';
+	
+				parameter<string> descr      := LowerCase(PropValue(A, 'descr'));
+				parameter<bool>   test_descr := descr == 'a is the sum of b and c';
+			}
+			parameter<bool> test := A/test_name && A/test_valueunit && A/test_expr && A/test_descr;
+		}
+		container rnd_uniform: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/rnd_uniform"
+		{
+			parameter<float32> param          := rnd_uniform(0, void,    range(float32, 0f, 1f));
+			parameter<bool>    test_param     := param >= 0f && param < 1f;
+			attribute<float32> attr (Adomain) := rnd_uniform(0, Adomain, range(float32, 0f, 1f));
+			// id;Attr
+			// 0;0.66327196
+			// 1;0.6656732
+			// 2;0.3905498
+			// 3;0.5929609
+			// 4;0.618756
+			attribute<bool>    test (Adomain) := attr >= 0f && attr < 1f;
+			parameter<bool>    test_attr      := all(test);
+		}
+		container rnd_uniform_empty: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/rnd_uniform"
+		{
+			attribute<float32> attr (EDomain) := rnd_uniform(0, EDomain, range(float32, 0f, 1f));
+			attribute<bool>    test (EDomain) := attr >= 0f && attr < 1f;
+			parameter<bool>    test_attr      := all(test);
+		}
+		container rnd_permutation: url  = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/random-permutation"
+		{
+			unit<uint32> ADomain := range(uint32, 0, 1000000);
+			attribute<Adomain> attr (Adomain) := rnd_permutation(0, Adomain);  
+			attribute<bool>    test (Adomain) := attr >= 0 && attr <= #Adomain  && Sum_uint64(attr) == Sum_uint64(id(Adomain));
+			attribute<bool>    testvalues (Adomain) := attr >= 0 && attr <= #Adomain;
+			parameter<uint64>  sum1 := Sum_uint64(attr);
+			parameter<uint64>  sum2 := Sum_uint64(id(Adomain));
+			parameter<bool>    testsum        := Sum_uint64(attr) == Sum_uint64(id(Adomain));
+			parameter<bool>    test_attr      := all(test);
+		}
+		container rnd_permutation_empty: url  = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/random-permutation"
+		{
+			attribute<EDomain> attr (EDomain) := rnd_permutation(0, EDomain);  
+			attribute<bool>    test (EDomain) := attr >= 0 && attr <= #EDomain  && Sum(attr) = Sum(id(EDomain));
+			parameter<bool>    test_attr      := all(test);
+		}
+		container subitem_op: url  = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/subitem"
+		{
+			attribute<uint32> att (Relational/UnTiled2UnTiled/unique/Regions) := Relational/UnTiled2UnTiled/unique/Regions!'Values';
+			attribute<bool>   test(Relational/UnTiled2UnTiled/unique/Regions) := eq_or_both_null(att, Relational/UnTiled2UnTiled/unique/Regions/Values);
+			parameter<bool>   test_attr                                       := all(test);
+		}
+		container subitem: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/subitem"
+		{
+			attribute<uint32> att (Relational/UnTiled2UnTiled/unique/Regions) := subitem(Relational/UnTiled2UnTiled/unique/Regions,'Values');
+			attribute<bool>   test(Relational/UnTiled2UnTiled/unique/Regions) := eq_or_both_null(att, Relational/UnTiled2UnTiled/unique/Regions/Values);
+			parameter<bool>   test_attr                                       := all(test);
+		}
+		container issue_915 {
+			template A {
+				container B {
+					unit<uint32> C;
+					parameter<C> P := 3; // the instantiated verion of this reference to C should be "C", and not "B/C"
+					container B;
+				}
+			}
+			container I := A();
+			parameter<uint32> R := I/B/P;
+			parameter<bool> test := (R == 3);
+		}
+		container diagram_mandelbrot
+		{
+			unit<uint32>        CountSet := range(uint32, uint32(0), uint32(300));
+			unit<spoint>        grid100 := Range(point_xy(-1000s, -1000s), point_xy(1001s, 1001s));
+			attribute<CountSet> x1 (grid100) := Mandelbrot(grid100, CountSet, point_yx(0.0, 0.0), point_yx(0.002, 0.002));
+		}
+		Container GeoDMSVersion: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/geodmsversion"
+		{
+			parameter<float64> version := GeoDMSVersion();
+			parameter<bool>    test    :=version >= 5.87;
+		}
+		Container GeoDMSBuildConfig: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/GeoDMSBuildConfig"
+		{
+			parameter<string> BuildConfig := GeoDMSBuildConfig();
+			parameter<bool>   test        := BuildConfig == 'Release' || BuildConfig == 'Debug';
+		}
+		Container GeoDmsPlatform: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/GeoDmsPlatform"
+		{
+			parameter<string> BuildConfig := GeoDmsPlatform();
+			// BuildConfig is now <arch>-<os>-<toolset>, e.g. "x64-windows-cmake",
+			// "x64-windows-msbuild", "x64-linux-cmake" (see rtc/dll/src/gen/General.cpp).
+			// The plain "x64-windows" / "x64-linux" / "x64-osx" forms are kept for
+			// older builds that pre-date the toolset suffix.
+			parameter<bool>   test        := BuildConfig == 'Win32' || BuildConfig == 'x64'
+			                              || BuildConfig == 'x64-windows' || BuildConfig == 'x86-windows'
+			                              || BuildConfig == 'x64-linux'   || BuildConfig == 'x64-osx'
+			                              || BuildConfig == 'x64-windows-cmake'   || BuildConfig == 'x64-windows-msbuild'
+			                              || BuildConfig == 'x86-windows-cmake'   || BuildConfig == 'x86-windows-msbuild'
+			                              || BuildConfig == 'x64-linux-cmake'     || BuildConfig == 'x64-osx-cmake';
+		}
+		Container Regex_match
+		{
+			parameter<String> TextOk          := dquote('Corop') + ';' + dquote('CoropLabel');
+			parameter<String> TextSingleQuote :=  quote('Corop') + ';' +  quote('CoropLabel');
+			parameter<String> TextComma       := dquote('Corop') + ',' + dquote('CoropLabel');
+
+			parameter<Bool>   testOk          := regex_match(TextOk         , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<Bool>   testSingleQuote := regex_match(TextSingleQuote, '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<Bool>   testCom         := regex_match(TextComma      , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+
+			parameter<bool>   test_param      := testOk && !testSingleQuote && !testCom;
+		}
+		Container Regex_search
+		{
+			parameter<String> find           := regex_search(Regex_match/TextOk,'\"[^\"]*+\"',0);
+			parameter<Bool>   test_param     := find ==  dquote('Corop');
+		}
+		Container Regex_replace
+		{
+			parameter<String> replace    := regex_replace(Regex_match/TextOk,'\"[^\"]*+\"',quote('NewLabel'));
+			parameter<Bool>   test_param := replace ==  quote('NewLabel') + ';' + quote('NewLabel');
+		}
+
+		container entropy
+		{
+			parameter<float64> entropy    := entropy(int16(1));
+			parameter<Bool>    test_param := entropy == 0d;
+
+			unit<uint32> domain : nrofrows = 5
+			{
+				attribute<int16>   att           : [0,1,2,3,4]; 
+				attribute<int16>   att_with_null : [0,1,2,3,null]; 
+
+				parameter<float64> test           := entropy(att);
+				parameter<float64> test_with_null := entropy(att_with_null);
+
+				parameter<bool>    test_attr      := float_isNearby(test, 11.6096405d, Dif_all_float64) && float_isNearby(test_with_null, 8d, Dif_all_float64);
+			}
+		}
+		
+		container average_entropy
+		{
+			parameter<float64> average_entropy    := average_entropy(int16(1));
+			parameter<Bool>    test_param := average_entropy == 0d;
+
+			unit<uint32> domain : nrofrows = 5
+			{
+				attribute<int16>   att           : [0,1,2,3,4]; 
+				attribute<int16>   att_with_null : [0,1,2,3,null]; 
+
+				parameter<float64> test           := average_entropy(att);
+				parameter<float64> test_with_null := average_entropy(att_with_null);
+
+				parameter<bool>    test_attr      := float_isNearby(test, 2.32192809d, Dif_all_float64) && float_isNearby(test_with_null, 2d, Dif_all_float64);
+			}
+		}
+
+		Container TemplateSyntax
+		{
+			Template Org
+			{
+				// begin case parameters
+				parameter<uint32> A;
+				// end case parameters
+				
+				parameter<uint32> B := A + 1;
+			}
+			Template New
+			{
+				// begin case parameters
+				parameter<uint32> A;
+				// end case parameters
+
+				parameter<uint32> B := A + 1;
+			}
+			container OrgInst := Org(3);
+			container NewInst := New(3);
+			
+			parameter<bool> test_org := OrgInst/B == 4;
+			parameter<bool> test_new := NewInst/B == 4;
+
+			parameter<bool> test_param := test_org && test_new;
+		}
+		
+		container results
+		{
+			unit<uint32> Cand : nrofrows = 18
+			{
+				attribute<string> Spec :
+				[
+					 'Propvalue/test'
+				,	'rnd_uniform/test_param'
+				,	'rnd_uniform/test_attr'
+				,	'rnd_uniform_empty/test_attr'
+				,	'rnd_permutation/test_attr'
+				,	'rnd_permutation_empty/test_attr'
+				,	'subitem_op/test_attr'
+				,	'subitem/test_attr'
+				,	'GeoDMSVersion/test'
+				,	'GeoDMSBuildConfig/test'
+				,	'GeoDmsPlatform/test'
+				,	'Regex_match/test_param'
+				,	'Regex_search/test_param'
+				,	'Regex_replace/test_param'
+				,	'issue_915/test'
+				,	'entropy/domain/test_attr'
+				,	'average_entropy/domain/test_attr'
+				,	'TemplateSyntax/test_param'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
+
+		}
+	}

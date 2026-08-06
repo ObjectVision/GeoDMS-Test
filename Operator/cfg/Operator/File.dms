@@ -1,0 +1,188 @@
+	container File: Using = "/Domains;/Units;/Tolerances"
+	{
+		container CopyFileMakeDir
+		{
+			parameter<string> dir_proj   := FullPathName(., '%projDir%');
+			parameter<string> dir_new    := dir_proj + '/test';
+			parameter<string> MakeNewDir := makeDir(dir_new);
+			parameter<string> file_org   := dir_proj + '/cfg/operator.dms';
+			parameter<string> file_new   := dir_new + '/test.dms';
+			parameter<string> CopyFile   := CopyFile(file_org, file_new)
+			,	url = "http://www.objectvision.nl/geodms/operators-a-functions/file/copyfile"; //Error if source does not exists
+
+			parameter<string> Initfile := InitFile (file_org, file_new),
+				ExplicitSuppliers = "File/CopyFileMakeDir/MakeNewDir",
+				url               = "http://www.objectvision.nl/geodms/operators-a-functions/file/initfile;//Does not copy if destination alerady exists";
+			container CreateFile := CreateFile(file_org, file_new),
+				url  = "http://www.objectvision.nl/geodms/operators-a-functions/file/createfile"; // To be added
+
+			parameter<string> fullPathName := fullPathName(dir_new,  '/test.dms');
+
+			parameter<bool> file_fullname := fullPathName(CopyFileMakeDir, dir_new + '/test.dms') = dir_new + '/test.dms',
+				url  = "http://www.objectvision.nl/dms/Operator/fullPathName.htm";
+
+			/*
+			container Calc := EXEC('calc.exe'),
+				url  = "http://www.objectvision.nl/geodms/operators-a-functions/file/exec";
+			container ExecDLL:
+				url  = "http://www.objectvision.nl/geodms/operators-a-functions/file/execdll"; // To be added
+			*/
+		}
+		container do
+		{
+			container impl
+			{
+				parameter<string> Slash           : [ '/' ];
+				parameter<string> BackSlash       : [ '\\' ];
+				parameter<string> NewLine         : [ '\n' ];
+
+				parameter<string> ComSpec         := Expand(., '%env:ComSpec%');
+				parameter<string> FileNameDirInfo:= '%LocalDataDir%/Operator/dirinfo.str';
+				parameter<string> QuotedFileNameDirInfo := DQuote(FileNameDirInfo);
+
+				parameter<string> DirCmdOrg       := Expand(., 'dir %projDir%/data/*.shp > ' + QuotedFileNameDirInfo);
+				parameter<string> DirCmd          := Replace(DirCmdOrg, Slash, BackSlash) + ' /B /S /A-D';
+
+				// Make sure %LocalDataDir%/Operator exists before `dir` redirects
+				// dirinfo.str into it. `mkdir` returns errorlevel 1 when the folder
+				// already exists; chaining with `& ` makes cmd.exe report the *last*
+				// command's exit code (the `dir`), so that benign "already exists"
+				// code never propagates back as a test failure. 2>nul hides its message.
+				parameter<string> OperatorDir       := Expand(., '%LocalDataDir%/Operator');
+				parameter<string> QuotedOperatorDir := DQuote(Replace(OperatorDir, Slash, BackSlash));
+				parameter<string> MkDirPrefix       := 'mkdir ' + QuotedOperatorDir + ' 2>nul & ';
+			}
+
+			// Run from %LocalDataDir% (assumed to exist); the mkdir prefix creates
+			// %LocalDataDir%/Operator before the dir command writes dirinfo.str there.
+			parameter<string> targetDir := Expand(., '%LocalDataDir%');
+			parameter<uint32> execDirCmdResultCode := exec_ec(impl/ComSpec, '/c ' + impl/MkDirPrefix + impl/DirCmd, targetDir);
+			parameter<string> WrittenFile := iif(execDirCmdResultCode == 0, impl/FileNameDirInfo, ''), KeepData="True";
+			parameter<string> bestand: Storagename = "=WrittenFile";
+			parameter<uint32> nr_shapefiles := strcount(bestand,impl/NewLine) ;
+			parameter<bool> test := nr_shapefiles > 0 ;
+		}
+		container ExistingFile
+		{
+			parameter<string> Exists     := lowercase(ExistingFile('NoFile', CopyFileMakeDir/file_org));
+			parameter<string> NotExists  := lowercase(ExistingFile('NoFile', CopyFileMakeDir/file_org + '___'));
+			parameter<string> ExistsResult   := lowercase(CopyFileMakeDir/file_org);
+			parameter<string> NotExistResult := lowercase(expand(.,'%ConfigDir%/NoFile'));
+			parameter<bool>   test_param := Exists == ExistsResult && NotExists == NotExistResult;
+		}
+		container currentDir: url = "http://www.objectvision.nl/geodms/operators-a-functions/file/currentdir"
+		{
+			parameter<string> param      := currentDir();
+			parameter<bool>   test_param := strcount(param,'cfg') > 0;
+		}
+		container storage_name: url  = "http://www.objectvision.nl/geodms/operators-a-functions/file/storage_name" // To be added
+		{
+			parameter<string> param      := storage_name(ReadAVLE/ReadValue/File);
+			parameter<bool>   test_param := param == CopyFileMakeDir/dir_proj +'/data/demand.ini';
+		}
+		
+		container parse_xml
+		{
+			parameter<String> XmlData
+			:	StorageType = "str"
+			,	StorageName = "%projDir%/data/standplaats.xml";
+		
+			/*	standplaats Schema, voorbeeld:
+				<bag_LVC:standplaats>
+					<bag_LVC:gerelateerdeAdressen>
+						<bag_LVC:hoofdadres>
+							<bag_LVC:identificatie>0003200000140496</bag_LVC:identificatie>
+						</bag_LVC:hoofdadres>
+					</bag_LVC:gerelateerdeAdressen>
+					<bag_LVC:identificatie>0003020000000001</bag_LVC:identificatie>
+					<bag_LVC:aanduidingRecordInactief>N</bag_LVC:aanduidingRecordInactief>
+					<bag_LVC:aanduidingRecordCorrectie>0</bag_LVC:aanduidingRecordCorrectie>
+					<bag_LVC:officieel>N</bag_LVC:officieel>
+					<bag_LVC:standplaatsStatus>Plaats aangewezen</bag_LVC:standplaatsStatus>
+					<bag_LVC:standplaatsGeometrie>
+						<gml:Polygon srsName="urn:ogc:def:crs:EPSG::28992">
+							<gml:exterior>
+								<gml:LinearRing>
+									<gml:posList srsDimension="3" count="8">
+										252475.401 593758.074 0.0 252474.344 593760.335 0.0 252455.436 593751.494 0.0 252456.378 593749.18 0.0 252457.437 593746.915 0.0 252459.131 593743.291 0.0 252478.154 593752.186 0.0 252475.401 593758.074 0.0
+									</gml:posList>
+								</gml:LinearRing>
+							</gml:exterior>
+						</gml:Polygon>
+					</bag_LVC:standplaatsGeometrie>
+					<bag_LVC:tijdvakgeldigheid>
+						<bagtype:begindatumTijdvakGeldigheid>2010072000000000</bagtype:begindatumTijdvakGeldigheid>
+					</bag_LVC:tijdvakgeldigheid>
+					<bag_LVC:inOnderzoek>N</bag_LVC:inOnderzoek>
+					<bag_LVC:bron>
+						<bagtype:documentdatum>20100720</bagtype:documentdatum>
+						<bagtype:documentnummer>FB 2010/LIG001</bagtype:documentnummer>
+					</bag_LVC:bron>
+				</bag_LVC:standplaats>
+			*/
+
+			container schema// xml attributes are here modelled as sub units of the entity related unit.
+			{
+				unit<uint32> bag_LVC_standplaats
+				{
+					attribute<string> bag_LVC_identificatie (bag_LVC_standplaats);
+					unit<uint32> bag_LVC_hoofdadres{
+						attribute<string> bag_LVC_identificatie;
+					}
+					unit<uint32> bag_LVC_nevenadres{
+						attribute<string> bag_LVC_identificatie;
+					}
+					unit<uint32> gml_Polygon { // 1-1 relationship is assumed/likely
+	//						attribute<string> srsName;
+	
+	//						unit<uint32> gml_Exterior { // 1-1 relationship is prescibed by the gml schema
+	//							unit<uint32> gml_LinearRing { // 1-1 relationship is prescibed by the gml schema
+								unit<uint32> gml_posList // 1-1 relationship is assumed/likely
+								{
+									attribute<string> srsDimension; // attribute, must only have the value 3
+									attribute<string> count;
+								}
+	//							} // </gml_LinearRing>
+	//						}
+						unit<uint32> gml_Interior {
+	//							unit<uint32> gml_LinearRing { // 1-1 relationship is prescibed by the gml schema
+								unit<uint32> gml_posList // 1-1 relationship is assumed/likely
+								{
+									attribute<string> srsDimension; // attribute, must only have the value 3
+									attribute<string> count;
+								}
+	//							} // </gml_LinearRing>
+						}
+					} // </gml_Polygon>
+					
+					// Meta velden, nog eens kijken of dit niet generiek kan
+					attribute<string> bag_LVC_standplaatsStatus (bag_LVC_standplaats);
+	
+					attribute<string> bag_LVC_aanduidingRecordInactief;
+					attribute<string> bag_LVC_aanduidingRecordCorrectie;
+					attribute<string> bag_LVC_officieel;
+					attribute<string> bag_LVC_inOnderzoek;
+					// attribute<string> bag_LVC_isIndicatie;
+	
+					attribute<string> bagtype_begindatumTijdvakGeldigheid;
+					attribute<string> bagtype_einddatumTijdvakGeldigheid;
+					attribute<string> bagtype_documentdatum;
+					attribute<string> bagtype_documentnummer;
+					
+				}
+			}
+			container ParsedXML  := parse_xml(XmlData, schema);
+			attribute<uint32> Parent_EntityTable_rel_ok (ParsedXML/bag_LVC_standplaats) := const(0, ParsedXML/bag_LVC_standplaats);
+			attribute<bool>   test_att                  (ParsedXML/bag_LVC_standplaats) := MakeDefined(ParsedXML/bag_LVC_standplaats/Parent_EntityTable_rel,0) == Parent_EntityTable_rel_ok;
+			parameter<bool>   test                                                      := all(test_att);
+		}
+
+		container results
+		{
+			parameter<bool> tests := 
+				   currentDir/test_Param
+				&& do/test
+				&& ExistingFile/test_Param
+				&& storage_name/test_param;
+		}
+	}

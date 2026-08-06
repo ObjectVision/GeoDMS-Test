@@ -1,0 +1,188 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container Rescale: Using = "/Domains;/Units;/Tolerances"
+	{
+		container srcUnTiled2UnTiled := Source(RegionDomain, CityDomain);
+		container srcUntiled2Tiled   := Source(RegionDomain,CityTiledDomain);
+		container srcTiled2UnTiled   := Source(RegionTiledDomain,CityTiledDomain);
+		container srcTiled2Tiled     := Source(RegionTiledDomain,CityTiledDomain);
+
+		container srcEUnTiled        := ESource(EDomain,EDomain);
+		container srcETiled          := ESource(ETiledDomain,ETiledDomain);
+
+		template source
+		{
+			unit<uint32> RegionDomain;
+			unit<uint32> CityDomain;
+
+			unit<uint32> Region := RegionDomain
+			{
+				attribute<uint32>  sumNrInhabitants : [550,1025,300,200,0];
+				attribute<uint32>  timestamp        : [2000,2002,2004,2006,2008];
+				attribute<float32> quantity_source  : [1500,2000,2400.3,2750,2820];
+			}
+			unit<uint32> City := CityDomain
+			{
+				attribute<DegreesCelsius> AvgDailyTemperature:    [12,11,null,11,14,null,14];
+				attribute<uint32>         LifeStyleCode:          [2,0,1,0,1,1,null];
+				attribute<uint32>         NrInhabitants:          [550,525,300,500,200,175,null];
+				attribute<string>         RegionName:             ['NoordHolland','ZuidHolland','Utrecht','ZuidHolland','NoordBrabant',null,null];
+				attribute<Region>         RegionNr:               [0,1,2,1,3,null,3];
+				attribute<m2>             area:                   [400,350,300,325,250,null,200];
+				attribute<uint32>         scalesum2NrInhabitants: [120,105,90,97,75,0,60];
+				attribute<uint32>         scalesum3NrInhabitants: [550,531,300,493,111,null,88];
+				attribute<float32>        RescaleNrInhabitants:   [10,9.4,4,8.8,1.6,1,null];
+				attribute<float32>        NormalizeNrInhabitants: [1.12572,0.964901,-0.482451,0.804084,-1.12572,-1.28654,null];
+				attribute<uint32>         yr:                     [ 2000  , 2001  ,  2002, 2003   , 2004  , 2005   ,2006];
+				attribute<float32>        quantity_interpolated:  [ 1500.0, 1750.0,  2000, 2200.15, 2400.3, 2575.15,2750];
+				attribute<uint32>         ramp:                   [0,11,23,35,46,58,70];
+				attribute<uint32>         ramp_open:              [0,10,20,30,40,50,60];
+				attribute<uint32>         ramp_rgb:               [65280,2806784,5614080,8355584,11162880,13904384,16711680];
+				attribute<uint32>         ramp_open_rgb:          [65535,65498,65462,65425,65389,65352,65316];
+			}
+		}
+		template Esource
+		{
+			unit<uint32> RegionDomain;
+			unit<uint32> CityDomain;
+
+			unit<uint32> Region := RegionDomain
+			{
+				attribute<uint32>  sumNrInhabitants : [];
+				attribute<uint32>  timestamp        : [];
+				attribute<float32> quantity_source  : [];
+			}
+			unit<uint32> City := CityDomain
+			{
+				attribute<DegreesCelsius> AvgDailyTemperature:    [];
+				attribute<uint32>         LifeStyleCode:          [];
+				attribute<uint32>         NrInhabitants:          [];
+				attribute<string>         RegionName:             [];
+				attribute<Region>         RegionNr:               [];
+				attribute<m2>             area:                   [];
+				attribute<uint32>         scalesum2NrInhabitants: [];
+				attribute<uint32>         scalesum3NrInhabitants: [];
+				attribute<float32>        RescaleNrInhabitants:   [];
+				attribute<float32>        NormalizeNrInhabitants: [];
+				attribute<uint32>         yr:                     [];
+				attribute<float32>        quantity_interpolated:  [];
+				attribute<uint32>         ramp:                   [];
+				attribute<uint32>         ramp_open:              [];
+				attribute<uint32>         ramp_rgb:               [];
+				attribute<uint32>         ramp_open_rgb:          [];
+			}
+		}
+		
+		container UnTiled2UnTiled := Template(RegionDomain,CityDomain, srcUnTiled2UnTiled);
+		container Untiled2Tiled   := Template(RegionDomain,CityTiledDomain, srcUntiled2Tiled);
+		container Tiled2UnTiled   := Template(RegionTiledDomain,CityDomain, srcTiled2UnTiled);
+		container Tiled2Tiled     := Template(RegionTiledDomain,CityTiledDomain, srcTiled2Tiled);
+		container Euntiled        := Template(EDomain,EDomain, srcEUnTiled);
+		container ETiled          := Template(ETiledDomain,ETiledDomain, srcETiled);
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> RegionDomain;
+			unit<uint32> CityDomain;
+			container src;
+			// end case parameters
+
+			unit<uint32> Region := src/Region;
+			unit<uint32> City   := src/City;
+
+			container scalesum2: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/scalesum"
+			{
+				attribute<uint32> att  (City) := uint32(scalesum(MakeDefined(City/Area, 0f), 550f));
+				attribute<bool>   test (City) := eq_or_both_null(att, City/scalesum2NrInhabitants); 
+				parameter<bool>   test_attr   := all(test);
+			}
+			container scalesum3: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/scalesum"
+			{
+				attribute<uint32>  att  (City) := uint32(scalesum(City/Area, City/RegionNr, float32(Region/sumNrInhabitants)));
+				attribute<bool>    test (City) := eq_or_both_null(att, City/scalesum3NrInhabitants); 
+				parameter<bool>    test_attr   := all(test);
+			}
+			container rescale: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/rescale"
+			{
+				// De volgende integer varianten geven geen bruikbare resultaten
+				attribute<uint32>  att1 (City) := rescale(City/NrInhabitants, 1, 10 );
+				attribute<uint32>  att5 (City) := rescale(City/NrInhabitants, 5, 10 );
+				attribute<float32> att  (City) := rescale(float32(City/NrInhabitants), float32(1), float32(10));
+				attribute<float32> att_0_1  (City) := rescale(float32(City/NrInhabitants), float32(0), float32(1));
+
+				attribute<bool>    test (City) := eq_or_both_null(att, City/RescaleNrInhabitants); 
+				parameter<bool>    test_attr   := all(test);
+			}
+			container normalize: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/normalize"
+			{
+				// De volgende integer varianten geven geen bruikbare resultaten
+				attribute<uint32>  att1 (City) := normalize(City/NrInhabitants, 1, 10 );
+				attribute<uint32>  att5 (City) := normalize(City/NrInhabitants, 5, 10 );
+				attribute<float32> att  (City) := normalize(float32(City/NrInhabitants), float32(0), float32(1));
+				attribute<bool>    test (City) := float_isNearby(att, City/NormalizeNrInhabitants, Dif_all_float32);
+				parameter<bool>    test_attr   := all(test);
+			}
+			container interpolate_linear: url  = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/rescale/interpolate_linear"
+			{
+				attribute<float32> att  (City) := interpolate_linear(City/yr, Region/timestamp, Region/quantity_source);
+				attribute<bool>    test (City) := float_isNearby(att, City/quantity_interpolated, Dif_all_float32); 
+				parameter<bool>    test_attr   := all(test);
+			}
+			container ramp
+			{
+				attribute<uint32> att (City) := ramp(0,70,City), DialogType = "BrushColor";
+				attribute<bool>   test(City) := eq_or_both_null(att, City/ramp); 
+
+				parameter<bool>   test_attr  := all(test);
+			}
+			container ramp_open
+			{
+				attribute<uint32> att  (City) := ramp_open(0,70,City), DialogType = "BrushColor";
+				attribute<bool>   test (City) := eq_or_both_null(att, City/ramp_open); 
+
+				parameter<bool>   test_attr   := all(test);
+			}
+			container ramp_rgb
+			{
+				attribute<uint32> BrushColor(City) := ramp_rgb(rgb(0,255,0), rgb(0, 0,255),City), DialogType = "BrushColor";
+				attribute<bool>   test      (City) := eq_or_both_null(BrushColor, City/ramp_rgb); 
+
+				parameter<bool>   test_attr        := all(test);
+			}
+			container ramp_open_rgb
+			{
+				attribute<uint32> BrushColor (City) := ramp_open_rgb(rgb(255,255,0), rgb(0, 255, 0),City), DialogType = "BrushColor";
+				attribute<bool>   test       (City) := eq_or_both_null(BrushColor, City/ramp_open_rgb);
+
+				parameter<bool>   test_attr         := all(test);
+			}
+
+
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 9
+				{
+					attribute<string> Spec :
+					[
+						 'scalesum2/test_attr'
+					,	'scalesum3/test_attr'
+					,	'rescale/test_attr'
+					,	'normalize/test_attr'
+					,	'interpolate_linear/test_attr'
+					,	'ramp/test_attr'
+					,	'ramp_open/test_attr'
+					,	'ramp_rgb/test_attr'
+					,	'ramp_open_rgb/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

@@ -1,0 +1,102 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container Trigonometric: Using = "/Domains;/Units;/Tolerances"
+	{
+		container srcDomain       := source(ADomain);
+		container srcTiledDomain  := source(ATiledDomain);
+
+		container srcEDomain      := Esource(EDomain);
+		container srcETiledDomain := Esource(ETiledDomain);
+
+		template source
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+
+			attribute<float64> angles     (Domain): [0,30,45,420,null];
+			attribute<float64> angles_rad (Domain):= angles * pi() / float64(180), DisableStorage = "True";
+			attribute<float64> sin        (Domain): [0,0.5,0.707107,0.866025,null];
+			attribute<float64> cos        (Domain): [1,0.866026,0.707107,0.5,null];
+			attribute<float64> tan        (Domain): [0,0.57735,1,1.732051,null];
+			attribute<float64> atan       (Domain): [0,0.52359,0.78539,1.04719,null];
+		}
+
+		template Esource
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+
+			attribute<float64> angles     (Domain): [];
+			attribute<float64> angles_rad (Domain):= angles * pi() / float64(180), DisableStorage = "True";
+			attribute<float64> sin        (Domain): [];
+			attribute<float64> cos        (Domain): [];
+			attribute<float64> tan        (Domain): [];
+			attribute<float64> atan       (Domain): [];
+		}
+
+		container UnTiled  := Template(ADomain     , srcDomain);
+		container Tiled    := Template(ATiledDomain, srcTiledDomain);
+		container EUnTiled := Template(EDomain     , srcEDomain);
+		container ETiled   := Template(ETiledDomain, srcETiledDomain);
+
+		Template Template
+		{
+			unit<uint32> Domain;
+			container source;
+
+			container sinus:
+				Using = "Source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/trigonometric/sin"
+			{
+				attribute<float64> att  (Domain) := sin(angles_rad);
+				attribute<bool>    test (Domain) := float_isNearby(att, sin, Dif_all_float64);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container cosinus:
+				Using = "Source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/trigonometric/cos"
+			{
+				attribute<float64> att  (Domain) := cos(angles_rad);
+				attribute<bool>    test (Domain) := float_isNearby(att, cos, Dif_all_float64);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container tangens:
+				Using = "Source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/trigonometric/tan"
+			{
+				attribute<float64> att  (Domain) := tan(angles_rad);
+				attribute<bool>    test (Domain) := float_isNearby(att, tan, Dif_all_float64);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container arctangens:
+				Using = "Source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/trigonometric/atan"
+			{
+				attribute<float64> att  (Domain) := atan(tangens/att);
+				attribute<bool>    test (Domain) := float_isNearby(att, atan, Dif_all_float64);
+				parameter<bool>    test_attr     := all(test);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 4
+				{
+					attribute<string> Spec :
+					[
+						 'sinus/test_attr'
+					,	'cosinus/test_attr'
+					,	'tangens/test_attr'
+					,	'arctangens/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

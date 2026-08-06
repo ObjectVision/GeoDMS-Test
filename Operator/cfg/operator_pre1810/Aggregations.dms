@@ -1,0 +1,880 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container Aggregations: Using = "/Domains;/Units;/Tolerances"
+	{
+		// draait alleen waar de operator bestaat (Spec-rij '...|as_unique_list')
+		container as_unique_list
+		{
+			unit<uint32> G: nrofrows = 2;
+			unit<uint32> L: nrofrows = 5
+			{
+				attribute<string> lbl: ['b','a','a','c','b'];
+				attribute<G>      grp: [0,0,0,1,1];
+			}
+			// per groep: gesorteerde unieke waarden, '; '-gescheiden
+			attribute<string> att (G) := as_unique_list(L/lbl, L/grp);
+			parameter<bool> test_attr := att[0] = 'a; b' && att[1] = 'b; c';
+		}
+
+		container srcDomainUU              := source(RegionDomain     , CityDomain     , CDomain);
+		container srcDomainUT              := source(RegionDomain     , CityTiledDomain, CTiledDomain);
+		container srcDomainTT              := source(RegionTiledDomain, CityTiledDomain, CTiledDomain);
+		container srcDomainTU              := source(RegionTiledDomain, CityDomain     , CDomain);
+		
+		container EsrcDomainUU             := Esource(EDomain     , EDomain     , EDomain);
+		container EsrcDomainUT             := Esource(EDomain     , ETiledDomain, ETiledDomain);
+		container EsrcDomainTT             := Esource(ETiledDomain, ETiledDomain, ETiledDomain);
+		container EsrcDomainTU             := Esource(ETiledDomain, EDomain     , EDomain);
+
+		template source
+		{
+			// begin case parameters
+			unit<uint32> RegionDomain;
+			unit<uint32> CityDomain;
+			unit<uint32> Nth_e_w_DomainUnit;
+			// end case parameters
+
+			container params
+			{
+				parameter<uint32> count              : [6];
+				parameter<uint32> minNrInhabitants   : [175]; // MAX_VALUE(UInt32) decremented by 1 in GeoDMS 6.061 to be consistent with http://wiki.objectvision.nl/index.php/Value_Types
+				parameter<string> minCityName        : ['Amsterdam'];
+				parameter<uint32> minIndex           : [6];
+				parameter<uint32> maxNrInhabitants   : [550];
+				parameter<string> maxCityName        : ['Utrecht'];
+				parameter<uint32> maxIndex           : [1];
+				parameter<uint32> firstNrInhabitants : [550];
+				parameter<string> firstCityName      : ['Amsterdam'];
+				parameter<bool>   firstisCapital     : [True] ;
+				parameter<uint32> lastNrInhabitants  : [175];
+				parameter<string> lastCityName       : ['Haarlem'];
+				parameter<bool>   lastisCapital      : [False];
+				parameter<uint32> meanNrInhabitants  : [375];
+				parameter<uint32> sumNrInhabitants   : [2250];
+				parameter<uint32> modusLifeStyleCode : [1];
+				parameter<uint32> modusNrSameValue   : [2];
+				parameter<uint32> modus_weightedLSC  : [0];
+				parameter<uint32> nth_elementNrInh   :[300];
+				parameter<uint32> nth_element_wei_v0 : [1];
+				parameter<uint32> nth_element_wei_v1 : [2];
+				parameter<uint32> nth_element_wei_v2 : [7];
+				parameter<uint32> nth_element_wei_v9 : [9];
+				parameter<uint32> rth_elementNrInh   : [400];
+				parameter<float32> varNrInhabitants  : [24166.67] ;
+				parameter<float32> sdNrInhabitants   : [155.46] ;
+				parameter<float32> corrNrInhabitants : [-0.89948];
+				parameter<float32> covNrInhabitants  : [-156.25];
+				parameter<string>  frequency_table_inhabitants:  ['175: 1; 200: 1; 300: 1; 500: 1; 525: 1; 550: 1'];
+
+			}
+
+			unit<uint32> Region := RegionDomain
+			{
+				attribute<Region>         RegionNr:                [0,1,2,3,4];
+				attribute<DegreesCelsius> AvgDailyTemperature:     [12,11,null,14,13];
+				attribute<uint32>         countNrInhabitants:      [1,2,1,1,0];
+				attribute<uint32>         pcountRegionNr:          [1,2,1,2,0];
+				attribute<uint32>         minNrInhabitants:        [550,500,300,200,4294967294]; // MAX_VALUE(UInt32) decremented by 1 in GeoDMS 6.061 to be consistent with http://wiki.objectvision.nl/index.php/Value_Types
+				attribute<string>         minCityName:             ['Amsterdam','DenHaag','Utrecht','Eindhoven','\xFF\xFF\xFF\xFF'];
+				attribute<uint32>         minIndex:                [1, 4, 3, 5, null];
+				attribute<uint32>         maxNrInhabitants:        [550,525,300,200,0];
+				attribute<uint32>         maxIndex:                [1, 2, 3, 5, null];
+				attribute<string>         maxCityName:             ['Amsterdam','Rotterdam','Utrecht','Eindhoven',null];
+				attribute<uint32>         firstNrInhabitants:      [550,525,300,200,null];
+				attribute<string>         firstCityName:           ['Amsterdam','Rotterdam','Utrecht','Eindhoven',null];
+				attribute<bool>           firstIsCapital:          [-1,0,0,0,0];
+				attribute<uint32>         lastNrInhabitants:       [550,500,300,200,null];
+				attribute<string>         lastCityName:            ['Amsterdam','DenHaag','Utrecht','Eindhoven',null];
+				attribute<bool>           lastIsCapital:           [-1,0,0,0,0];
+				attribute<float32>        meanNrInhabitants:       [550,512.5,300,200,null];
+				attribute<uint32>         rth_elemNrInhabitants:   [550,512,300, 200, null];
+				attribute<uint32>         nth_elemNrInhabitants:   [550,500,300, 200, null];
+				attribute<uint32>         nth_element_weightedNrIn:[1,3,null,null,null];
+				attribute<uint32>         sumNrInhabitants:        [550,1025,300,200,0];
+				attribute<uint32>         modusCity:               [12,11,13,null,0];
+				attribute<uint32>         modusLifeStyle:          [2,0,1,1,null];
+				attribute<uint32>         modus_weightedLifeStyle: [1,0,2,null,0];
+				attribute<float32>        sdNrInhabitants:         [0,12.5,0,0,null];
+				attribute<float32>        varNrInhabitants:        [0,156.25,0,0,null];
+				attribute<float32>        corrNrInhTemp:           [null,null,null,null,null];
+				attribute<float32>        covNrInhTemp:            [0,0,null,0,null];
+				attribute<bool>           condA:                   [-1,-1,-1,-1,-1];
+				attribute<bool>           condB:                   [-1, 0,-1, 0,-1];
+				attribute<bool>           condC:                   [ 0, 0, 0, 0, 0];
+				attribute<bool>           allInh:                  [ false, false, true, false, true ];
+				attribute<bool>           anyInh:                  [ true, true, false, false, false ];
+				attribute<string>         frequency_table_inhabitants          : ['550: 1','500: 1; 525: 1','300: 1','200: 1',''];
+				attribute<string>         frequency_table_inhabitants_with_null: ['550: 1','500: 1; 525: 1','300: 1','200: 1; <null>: 1',''];
+
+			}
+
+			unit<uint32> City := CityDomain
+			{
+				attribute<DegreesCelsius> AvgDailyTemperature:     [12,11,null,11,14,null,14];
+				attribute<uint32>         LifeStyleCode:           [2,0,1,0,1,1,null];
+				attribute<uint32>         NrInhabitants:           [550,525,300,500,200,175,null];
+				
+				attribute<bool>           isLarge                  := NrInhabitants >= 200;
+				attribute<uint32>         NrSameValueA:            [3,3,2,2,375,null,null];
+				attribute<uint32>         NrSameValueB:            [3,2,3,2,375,null,null];
+				attribute<uint32>         NrSameValueC:            [3,2,2,3,375,null,null];
+				attribute<uint32>         NrSameValueD:            [2,2,3,3,375,null,null];
+				attribute<uint32>         NrSameValueE:            [2,3,2,3,375,null,null];
+				attribute<uint32>         NrSameValueF:            [2,3,3,2,375,null,null];
+
+				attribute<uint32>         Ranking:                 [1,3,6,9,10,21,50];
+				attribute<bool>           isCapital:               [-1,0,0,0,0,0,0];
+				attribute<string>         CityName:                ['Amsterdam','Rotterdam','Utrecht','DenHaag','Eindhoven','Haarlem',null];
+				attribute<Region>         RegionNr:                [0,1,2,1,3,null,3];
+				attribute<grid/units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
+				// results
+				attribute<uint32>         CumulNrInhabitants:         [550,1075,1375,1875,2075,2250,2250];
+				attribute<uint32>         CumulNrInhabitantsPerRegion:[550,525,300,1025,200,null, 200];
+				attribute<uint32>         CumulIDRegion:              [0,0,0,1,0,null,1];
+			}
+
+			unit<uint32> nth_e_w_Domain := Nth_e_w_DomainUnit
+			{
+				attribute<UInt32>  Rank:     [ 10, 9, 8, 1, 2, 3, 7, 6, 5, 4 ];
+				attribute<float32> Weight:   [  1, 1, 1, 3, 3, 3, 2, 2, 2, 2 ];
+				attribute<Region>  RegionNr: [  1, 0, 2, 1, 3, 3, 0, 2, 1, 2 ];
+			}
+		}
+		template Esource
+		{
+			// begin case parameters
+			unit<uint32> RegionDomain;
+			unit<uint32> CityDomain;
+			unit<uint32> Nth_e_w_DomainUnit;
+			// end case parameters
+
+			container params
+			{
+				parameter<uint32> count              : [ 0 ]; // without the 0, count is initialized as null since GeoDms 8.xxx
+				parameter<uint32> minNrInhabitants   : [4294967294]; // MAX_VALUE(UInt32) decremented by 1 in GeoDMS 6.061 to be consistent with http://wiki.objectvision.nl/index.php/Value_Types
+				parameter<string> minCityName        : ['\xFF\xFF\xFF\xFF'];
+				parameter<uint32> minIndex           := 0 / 0;
+				parameter<uint32> maxNrInhabitants   : [0]; // without the 0, count is initialized as null since GeoDms 8.xxx
+				parameter<string> maxCityName        : ['']; // without the '', count is initialized as null since GeoDms 8.xxx
+				parameter<uint32> maxIndex           :=  0 / 0;
+				parameter<uint32> firstNrInhabitants :=  0 / 0;
+				parameter<string> firstCityName      :=  string(0 / 0);
+				parameter<bool>   firstisCapital     : [false] ;
+				parameter<uint32> lastNrInhabitants  :=  0 / 0;
+				parameter<string> lastCityName       :=  string(0 / 0);
+				parameter<bool>   lastisCapital      : [false];
+				parameter<uint32> meanNrInhabitants  :=  0 / 0;
+				parameter<uint32> sumNrInhabitants   : [ 0 ];
+				parameter<uint32> modusLifeStyleCode :=  0 / 0;
+				parameter<uint32> modusNrSameValue   :=  0 / 0;
+				parameter<uint32> modus_weightedLSC  :=  0 / 0;
+				parameter<uint32> nth_elementNrInh   :=  0 / 0;
+				parameter<uint32> nth_element_wei_v0 :=  0 / 0;
+				parameter<uint32> nth_element_wei_v1 :=  0 / 0;
+				parameter<uint32> nth_element_wei_v2 :=  0 / 0;
+				parameter<uint32> nth_element_wei_v9 :=  0 / 0;
+				parameter<uint32> rth_elementNrInh   :=  0 / 0;
+				parameter<float32> varNrInhabitants  : [ 0.0 ] ;
+				parameter<float32> sdNrInhabitants   : [ 0.0 ] ;
+				parameter<float32> corrNrInhabitants : [ 0.0 ];
+				parameter<float32> covNrInhabitants  : [ 0.0 ];
+				parameter<string>  frequency_table_inhabitants:  [''];
+
+			}
+
+			unit<uint32> Region := RegionDomain
+			{
+				attribute<uint32>         RegionNr:                [];
+				attribute<DegreesCelsius> AvgDailyTemperature:     [];
+				attribute<uint32>         countNrInhabitants:      [];
+				attribute<uint32>         pcountRegionNr:          [];
+				attribute<uint32>         minNrInhabitants:        []; // MAX_VALUE(UInt32) decremented by 1 in GeoDMS 6.061 to be consistent with http://wiki.objectvision.nl/index.php/Value_Types
+				attribute<string>         minCityName:             [];
+				attribute<uint32>         minIndex:                [];
+				attribute<uint32>         maxNrInhabitants:        [];
+				attribute<uint32>         maxIndex:                [];
+				attribute<string>         maxCityName:             [];
+				attribute<uint32>         firstNrInhabitants:      [];
+				attribute<string>         firstCityName:           [];
+				attribute<bool>           firstIsCapital:          [];
+				attribute<uint32>         lastNrInhabitants:       [];
+				attribute<string>         lastCityName:            [];
+				attribute<bool>           lastIsCapital:           [];
+				attribute<float32>        meanNrInhabitants:       [];
+				attribute<uint32>         rth_elemNrInhabitants:   [];
+				attribute<uint32>         nth_elemNrInhabitants:   [];
+				attribute<uint32>         nth_element_weightedNrIn:[];
+				attribute<uint32>         sumNrInhabitants:        [];
+				attribute<uint32>         modusCity:               [];
+				attribute<uint32>         modusLifeStyle:          [];
+				attribute<uint32>         modus_weightedLifeStyle: [];
+				attribute<float32>        sdNrInhabitants:         [];
+				attribute<float32>        varNrInhabitants:        [];
+				attribute<float32>        corrNrInhTemp:           [];
+				attribute<float32>        covNrInhTemp:            [];
+				attribute<bool>           condA:                   [];
+				attribute<bool>           condB:                   [];
+				attribute<bool>           condC:                   [];
+				attribute<bool>           allInh:                  [];
+				attribute<bool>           anyInh:                  [];
+				attribute<string>         frequency_table_inhabitants:[];
+				attribute<string>         frequency_table_inhabitants_with_null:[];
+
+			}
+
+			unit<uint32> City := CityDomain
+			{
+				attribute<DegreesCelsius> AvgDailyTemperature:     [];
+				attribute<uint32>         LifeStyleCode:           [];
+				attribute<uint32>         NrInhabitants:           [];
+				attribute<bool>           isLarge                  := NrInhabitants >= 200;
+				attribute<uint32>         NrSameValueA:            [];
+				attribute<uint32>         NrSameValueB:            [];
+				attribute<uint32>         NrSameValueC:            [];
+				attribute<uint32>         NrSameValueD:            [];
+				attribute<uint32>         NrSameValueE:            [];
+				attribute<uint32>         NrSameValueF:            [];
+
+				attribute<uint32>         Ranking:                 [];
+				attribute<bool>           isCapital:               [];
+				attribute<string>         CityName:                [];
+				attribute<Region>         RegionNr:                [];
+				attribute<grid/units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
+				// results
+				attribute<uint32>         CumulNrInhabitants:         [];
+				attribute<uint32>         CumulNrInhabitantsPerRegion:[];
+				attribute<uint32>         CumulIDRegion:              [];
+			}
+
+			unit<uint32> nth_e_w_Domain := Nth_e_w_DomainUnit
+			{
+				attribute<UInt32>  Rank:     [];
+				attribute<float32> Weight:   [];
+				attribute<uint32>  RegionNr: [];
+			}
+		}
+
+		container UnTiled2UnTiled  := Template(RegionDomain     , CityDomain     , CDomain     , srcDomainUU);
+		container UnTiled2Tiled    := Template(RegionTiledDomain, CityDomain     , CDomain     , srcDomainUT);
+		container Tiled2UnTiled    := Template(RegionDomain     , CityTiledDomain, CTiledDomain, srcDomainTU);
+		container Tiled2Tiled      := Template(RegionTiledDomain, CityTiledDomain, CTiledDomain, srcDomainTT);
+
+		container EUnTiled2UnTiled  := Template(EDomain         , EDomain        , EDomain      , EsrcDomainUU);
+		container EUnTiled2Tiled    := Template(ETiledDomain    , EDomain        , EDomain      , EsrcDomainUT);
+		container ETiled2UnTiled    := Template(EDomain         , ETiledDomain   , ETiledDomain , EsrcDomainTU);
+		container ETiled2Tiled      := Template(ETiledDomain    , ETiledDomain   , ETiledDomain , EsrcDomainTT);
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> RegionDomain;
+			unit<uint32> CityDomain;
+			unit<uint32> CDomain;
+			container src;
+			// end case parameters
+			
+			container Params            := src/Params;
+			unit<uint32> Region         := src/Region;
+			unit<uint32> City           := src/City;
+			unit<uint32> nth_e_w_Domain := src/nth_e_w_Domain;
+
+			container count: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/count"
+			{
+				parameter<bool>   test_param          := count(City/NrInhabitants) = params/count ;
+				attribute<uint32> att        (Region) := count(City/NrInhabitants, City/RegionNr);
+				attribute<bool>   test       (Region) := eq_or_both_null(att, Region/countNrInhabitants);
+				parameter<bool>   test_attr           := all(test);
+			}
+			container pcount: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/pcount"
+			{
+				attribute<uint32> att       (Region) := pcount(City/RegionNr);
+				attribute<bool>   test      (Region) := att = Region/pcountRegionNr;
+				parameter<bool>   test_attr          := all(test);
+			}
+			container has_any: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/has_any"
+			{
+				attribute<bool>   att       (Region) := has_any(City/RegionNr);
+				attribute<bool>   test      (Region) := att == (Region/pcountRegionNr > 0);
+				parameter<bool>   test_attr          := all(test);
+			}
+			container min: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/min"
+			{
+				parameter<bool>   test_param_uint32 := min(City/NrInhabitants) = params/minNrInhabitants ;
+				parameter<String> param_string_value:= min(MakeDefined(City/CityName, 'zzz'));
+				// pre-v20: the min-over-empty string sentinel is expected as '\xFF\xFF\xFF\xFF', which needs the \xHH escape added in GeoDMS v20 (#61ccd3a3); the computed min is correct in all versions, only the expected literal is inexpressible pre-v20. Skip just the empty-source case (count==0) on old builds.
+				parameter<bool>   test_param_string := (GeoDmsVersion() < 20d && params/count == 0) ? True : param_string_value == params/minCityName;
+				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
+	
+				attribute<uint32> att_uint32  (Region) := min(MakeDefined(City/NrInhabitants, 999999), City/RegionNr);
+				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/minNrInhabitants);
+				attribute<string> att_string  (Region) := min(MakeDefined(City/CityName, 'zzz'), City/RegionNr);
+				// pre-v20: empty-partition (pcount==0) min sentinel '\xFF\xFF\xFF\xFF' needs the \xHH escape (v20, #61ccd3a3); computed value is correct, only the expected literal is inexpressible pre-v20.
+				attribute<bool>   test_string (Region) := (GeoDmsVersion() < 20d && Region/pcountRegionNr == 0) ? True : eq_or_both_null(att_string, Region/minCityName);
+				parameter<bool>   test_attr            := all(test_uint32) && all(test_string);
+			}
+			container min_index: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
+			{
+				parameter<uint32> test := min_index(City/NrInhabitants);
+
+				parameter<bool>   test_tuint32 := eq_or_both_null(min_index(City/NrInhabitants), params/minIndex[City]);
+//NYI			parameter<bool>   test_string := min_index(City/CityName) == 'Amsterdam';
+				parameter<bool>   test_param := test_tuint32;
+	
+				attribute<City>   att_uint32          (Region) := min_index(City/NrInhabitants, City/RegionNr);
+				attribute<City>   att_uint32_gridrel  (grid/units/GridDomain) := min_index(City/NrInhabitants, City/gridnr);
+				
+				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/minIndex);
+				parameter<bool>   test_attr            := all(test_uint32);
+			}
+			container max: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
+			{
+				parameter<uint32> param_uint32_value:= max(MakeDefined(City/NrInhabitants, 0));
+				parameter<bool>   test_param_uint32 := param_uint32_value == params/maxNrInhabitants ;
+				parameter<bool>   test_param_string := max(MakeDefined(City/CityName, '')) = params/maxCityName ;
+				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
+	
+				attribute<uint32> att_uint32          (Region) := max(MakeDefined(City/NrInhabitants, 0), City/RegionNr);
+				attribute<uint32> att_uint32_gridrel  (grid/units/GridDomain) := max(City/NrInhabitants, City/gridnr);
+				
+				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/maxNrInhabitants);
+				attribute<string> att_string  (Region) := max(MakeDefined(City/CityName, ''), City/RegionNr);
+				attribute<bool>   test_string (Region) := eq_or_both_null(att_string, MakeDefined(Region/maxCityName,''));
+				parameter<bool>   test_attr            := all(test_uint32) && all(test_string);
+			}
+			container max_index: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
+			{
+				parameter<bool>   test_tuint32 := eq_or_both_null(max_index(City/NrInhabitants), params/maxIndex[City]);
+				parameter<bool>   test_param   := test_tuint32;
+	
+				attribute<City>   att_uint32          (Region) := max_index(City/NrInhabitants, City/RegionNr);
+				attribute<City>   att_bool            (Region) := max_index(City/isLarge      , City/RegionNr);
+				
+				attribute<uint32> att_uint32_gridrel  (grid/units/GridDomain) := max_index(City/NrInhabitants, City/gridnr);
+				
+				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/maxIndex);
+				parameter<bool>   test_attr            := all(test_uint32);
+			}
+			container first: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/first"
+			{
+				parameter<uint32> param_uint32 := first(City/NrInhabitants);
+				parameter<string> param_string := first(City/CityName);
+				parameter<fpoint> param_fpoly(poly) := first(/Sequence/srcDomain/district/border);
+
+
+				parameter<bool>   test_param_uint32 := eq_or_both_null(param_uint32, params/firstNrInhabitants);
+				parameter<bool>   test_param_string := eq_or_both_null(param_string, params/firstCityName);
+				parameter<bool>   test_param_bool   := first(City/isCapital)     == params/firstisCapital ;
+				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool && IsDefined(param_fpoly);
+	
+				attribute<uint32> att_uint32  (Region) := first(City/NrInhabitants, City/RegionNr);
+				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/firstNrInhabitants);
+				attribute<string> att_string  (Region) := first(City/CityName, City/RegionNr);
+				attribute<bool>   test_string (Region) := eq_or_both_null(att_string, Region/firstCityName);
+				attribute<bool>   att_bool    (Region) := first(City/isCapital, City/RegionNr);
+				attribute<bool>   test_bool   (Region) := att_bool = Region/firstisCapital;
+				parameter<bool>   test_attr            := all(test_uint32) && all(test_string) && all(test_bool);
+			}
+			container last: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/last"
+			{
+				parameter<uint32> param_uint32 := last(City/NrInhabitants);
+				parameter<string> param_string := last(City/CityName);
+
+				parameter<bool>   test_param_uint32 := eq_or_both_null(param_uint32, params/lastNrInhabitants);
+				parameter<bool>   test_param_string := eq_or_both_null(param_string, params/lastCityName);
+				parameter<bool>   test_param_bool   := last(City/isCapital)     == params/lastisCapital ;
+				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool;
+	
+				attribute<uint32> att_uint32  (Region) := last(City/NrInhabitants, City/RegionNr);
+				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/lastNrInhabitants);
+				attribute<string> att_string  (Region) := last(City/CityName, City/RegionNr);
+				attribute<bool>   test_string (Region) := eq_or_both_null(att_string, Region/lastCityName);
+				attribute<bool>   att_bool    (Region) := last(City/isCapital, City/RegionNr);
+				attribute<bool>   test_bool   (Region) := att_bool = Region/lastisCapital;
+				parameter<bool>   test_attr            := all(test_uint32) && all(test_string) && all(test_bool);
+			}
+			container mean: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/mean"
+			{
+				parameter<uint32>  param               := mean(City/NrInhabitants);
+				parameter<bool>    test_param          := eq_or_both_null(param, params/meanNrInhabitants) ;
+				
+				attribute<float32> att        (Region) := mean(float32(City/NrInhabitants), City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/meanNrInhabitants);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				parameter<uint32>  calc_value          := sum(City/NrInhabitants);
+				parameter<bool>    test_param          := eq_or_both_null(calc_value,  params/sumNrInhabitants);
+				attribute<uint32>  att        (Region) := sum(City/NrInhabitants, City/RegionNr);
+				attribute<float32> att_F32    (Region) := sum(Float32(City/NrInhabitants), City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/sumNrInhabitants);
+				attribute<bool>    test_F32   (Region) := eq_or_both_null(att_F32, Float32(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test) && all(test_F32);
+			}
+			container sum_uint64: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<uint16>  NrInhabitants_uint16(City) := uint16(City/NrInhabitants);
+				attribute<uint64>  att        (Region) := sum_uint64(NrInhabitants_uint16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, uint64(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_uint32: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<uint16>  NrInhabitants_uint16(City) := uint16(City/NrInhabitants);
+				attribute<uint32>  att        (Region) := sum_uint32(NrInhabitants_uint16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/sumNrInhabitants);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_uint16: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>   NrInhabitants_int16(City) := int16(City/NrInhabitants);
+				attribute<uint16>  att        (Region) := sum_uint16(NrInhabitants_int16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, uint16(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_uint8: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int8>    NrInhabitants_int8(City) := int8(float32(City/NrInhabitants) / 10f);
+				attribute<uint8>   att        (Region) := sum_uint8(NrInhabitants_int8, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, uint8(float32(Region/sumNrInhabitants) / 10f ));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_int64: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>  NrInhabitants_uint16(City) := int16(City/NrInhabitants);
+				attribute<int64>  att         (Region) := sum_int64(NrInhabitants_uint16, City/RegionNr);
+				attribute<bool>   test        (Region) := eq_or_both_null(att, int64(Region/sumNrInhabitants));
+				parameter<bool>   test_attr            := all(test);
+			}
+			container sum_int32: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>   NrInhabitants_uint16(City) := int16(City/NrInhabitants);
+				attribute<int32>   att        (Region) := sum_int32(NrInhabitants_uint16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, int32(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_int16: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int16>   NrInhabitants_int16(City) := int16(City/NrInhabitants);
+				attribute<int16>   att        (Region) := sum_int16(NrInhabitants_int16, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, int16(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_int8: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<int8>    NrInhabitants_int8(City) := int8(float32(City/NrInhabitants) / 10f);
+				attribute<int8>    att        (Region) := sum_int8(NrInhabitants_int8, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, int8(float32(Region/sumNrInhabitants) / 10f ));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sum_float64: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
+			{
+				attribute<float32>  NrInhabitants_float32(City) := float32(City/NrInhabitants);
+				attribute<float64> att        (Region) := sum_float64(NrInhabitants_float32, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, float64(Region/sumNrInhabitants));
+				parameter<bool>    test_attr           := all(test);
+			}
+			container cumulate: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/cumulate" // requires GeoDMS 6.061
+			{
+				attribute<uint32>  att (City)     := cumulate(City/NrInhabitants);
+				attribute<bool>    test(City)     := att == City/CumulNrInhabitants;
+				parameter<bool>    test_param     := all(test);
+				attribute<uint32>  att_reg (City) := cumulate(City/NrInhabitants, City/RegionNr);
+				attribute<bool>    test_reg(City) := eq_or_both_null(att_reg, City/CumulNrInhabitantsPerRegion);
+				parameter<bool>    test_attr      := all(test_reg);
+			}
+			container cumulate_as_id: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/cumulate" // requires GeoDMS 6.061
+			{
+				attribute<uint32>  att (City)     := cumulate(const(1,City,City));
+				attribute<uint32>  nr (City)      := id(City);
+				attribute<bool>    test(City)     := att == nr;
+				parameter<bool>    test_param     := all(test);
+				attribute<uint32>  att_reg (City) := cumulate(const(1,City,uint32), City/RegionNr)-1;
+				attribute<bool>    test_reg(City) := eq_or_both_null(att_reg, City/CumulIDRegion);
+				parameter<bool>    test_attr      := all(test_reg);
+			}
+
+			container modus: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/modus"
+			{
+				parameter<uint32>  modus_lfc           := modus(City/LifeStyleCode);
+				parameter<uint32>  modus_NrSameValueA  := modus(City/NrSameValueA);
+
+				parameter<bool>    test_param          := eq_or_both_null(modus_lfc, params/modusLifeStyleCode) && param_NrSameValueA && param_NrSameValueB && param_NrSameValueC && param_NrSameValueD && param_NrSameValueE && param_NrSameValueF;
+				parameter<bool>    param_NrSameValueA  := eq_or_both_null(modus(City/NrSameValueA), params/modusNrSameValue);
+				parameter<bool>    param_NrSameValueB  := eq_or_both_null(modus(City/NrSameValueB), params/modusNrSameValue);
+				parameter<bool>    param_NrSameValueC  := eq_or_both_null(modus(City/NrSameValueC), params/modusNrSameValue);
+				parameter<bool>    param_NrSameValueD  := eq_or_both_null(modus(City/NrSameValueD), params/modusNrSameValue);
+				parameter<bool>    param_NrSameValueE  := eq_or_both_null(modus(City/NrSameValueE), params/modusNrSameValue);
+				parameter<bool>    param_NrSameValueF  := eq_or_both_null(modus(City/NrSameValueF), params/modusNrSameValue);
+
+				attribute<uint32>  att        (Region) := modus(City/LifeStyleCode, City/RegionNr);
+				attribute<int32>   att_int32  (Region) := modus(int32(City/LifeStyleCode), City/RegionNr);
+
+				attribute<uint32> att_uint32_gridrel (grid/units/GridDomain) := modus(uint32(City/AvgDailyTemperature), City/gridnr);
+
+				attribute<uint32> modus_temp_met_data (grid/units/GridDomain) :[12,null,null,null,null,null,11,null,null,null,null,null,null,null,null,null,null,null,14,null,null,null,null,null,null];
+				
+				attribute<uint32> modus_temp          (grid/units/GridDomain) := 
+					#City == 0
+						? const( 0 / 0, grid/units/GridDomain)
+						: modus_temp_met_data;
+
+				attribute<uint16>  att_uint16 (Region) := modus(uint16(City/LifeStyleCode), City/RegionNr);
+				attribute<int16>   att_int16  (Region) := modus(int16(City/LifeStyleCode), City/RegionNr);
+				attribute<uint8>   att_uint8  (Region) := modus(uint8(City/LifeStyleCode), City/RegionNr);
+				attribute<int8>    att_int8   (Region) := modus(int8(City/LifeStyleCode), City/RegionNr);
+				attribute<uint4>   att_uint4  (Region) := modus(uint4(City/LifeStyleCode), City/RegionNr);
+				attribute<uint2>   att_uint2  (Region) := modus(uint2(City/LifeStyleCode), City/RegionNr);
+	//			attribute<string>  att_string (Region) := modus(string(City/LifeStyleCode), City/RegionNr);
+				attribute<bool>    att_bool   (Region) := modus(bool(City/LifeStyleCode), City/RegionNr);
+	
+				attribute<bool>    test         (Region)                := eq_or_both_null(att, Region/modusLifeStyle);
+				attribute<bool>    test_gridrel (grid/units/GridDomain) := eq_or_both_null(att_uint32_gridrel, modus_temp);
+
+				parameter<bool>    test_attr := all(test) && all(test_gridrel);
+			}
+			container modus_weighted: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/modus_weighted"
+			{
+				parameter<bool>    test_param          := eq_or_both_null(modus_weighted(City/LifeStyleCode, City/nrinhabitants), params/modus_weightedLSC);
+				attribute<uint32>  att        (Region) := modus_weighted(City/LifeStyleCode, City/nrinhabitants, City/RegionNr);
+				attribute<int32>   att_int32  (Region) := modus_weighted(int32(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				attribute<uint16>  att_uint16 (Region) := modus_weighted(uint16(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				attribute<int16>   att_int16  (Region) := modus_weighted(int16(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				attribute<uint8>   att_uint8  (Region) := modus_weighted(uint8(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				attribute<int8>    att_int8   (Region) := modus_weighted(int8(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				attribute<uint4>   att_uint4  (Region) := modus_weighted(uint4(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				attribute<uint2>   att_uint2  (Region) := modus_weighted(uint2(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+	//			attribute<string>  att_string (Region) := modus_weighted(string(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				attribute<bool>    att_bool   (Region) := modus_weighted(bool(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+	
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/modusLifeStyle);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container nth_element: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/nthelement"
+			{
+				parameter<bool>    test_param          := eq_or_both_null(nth_element(City/NrInhabitants, 2), params/nth_elementNrInh) ;
+				attribute<uint32>  att        (Region) := nth_element(City/NrInhabitants, const(0, Region), City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/nth_elemNrInhabitants);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container nth_element_weighted: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/nthelementweighted"
+			{
+				parameter<uint32> test_v0 := nth_element_weighted(nth_e_w_Domain/Rank, 0f, nth_e_w_Domain/Weight);
+				parameter<uint32> test_v1 := nth_element_weighted(nth_e_w_Domain/Rank, 3f,  nth_e_w_Domain/Weight);
+				parameter<uint32> test_v2 := nth_element_weighted(nth_e_w_Domain/Rank, 15f, nth_e_w_Domain/Weight);
+
+				parameter<Bool>   test_param_extra := eq_or_both_null(test_v0, params/nth_element_wei_v0) && eq_or_both_null(test_v1, params/nth_element_wei_v1) && eq_or_both_null(test_v2, params/nth_element_wei_v2) && not(IsDefined(test_v9));
+				parameter<uint32> test_v9          := nth_element_weighted(nth_e_w_Domain/Rank, 1000f, nth_e_w_Domain/Weight);
+				parameter<Bool>   test_param       := test_param_extra && eq_or_both_null(nth_element_weighted(City/Ranking, float32(1800), float32(City/nrinhabitants)), params/nth_element_wei_v9);
+	
+				attribute<uint32> att  (Region) := nth_element_weighted(City/Ranking, float32(400), float32(City/nrinhabitants),City/RegionNr);
+				attribute<bool>   test (Region) := eq_or_both_null(att, Region/nth_element_weightedNrIn);
+				parameter<bool>   test_attr     := all(test);
+			}
+			container rth_element: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/rth_element"
+			{
+				parameter<bool>    test_param          := eq_or_both_null(rth_element(City/NrInhabitants, float32(0.5)), params/rth_elementNrInh);
+				attribute<uint32>  att        (Region) := rth_element(City/NrInhabitants, const(float32(0.5), Region), City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/rth_elemNrInhabitants);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container var: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/var"
+			{
+				parameter<float32> param               := var(float32(City/NrInhabitants));
+				
+				parameter<bool>    test_param          := float_isNearby(param, params/varNrInhabitants, Dif_all_float32) || isNull(param);
+				attribute<float32> att        (Region) := var(float32(City/NrInhabitants), City/RegionNr);
+				attribute<bool>    test       (Region) := float_isNearby(att, Region/varNrInhabitants, Dif_all_float32) ;
+				parameter<bool>    test_attr           := all(test);
+			}
+			container sd: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sd"
+			{
+				parameter<float32> param               := sd(float32(City/NrInhabitants));
+
+				parameter<bool>    test_param          := float_isNearby(param, params/sdNrInhabitants, Dif_all_float32) || isNull(param);
+				attribute<float32> att        (Region) := sd(float32(City/NrInhabitants), City/RegionNr);
+				attribute<bool>    test       (Region) := float_isNearby(att, Region/sdNrInhabitants, Dif_all_float32) ;
+				parameter<bool>    test_attr           := all(test);
+			}
+			container corr: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/corr"
+			{
+				parameter<float32> param               := corr(float32(City/NrInhabitants), City/AvgDailyTemperature);
+
+				parameter<bool>    test_param          := float_isNearby(param, params/corrNrInhabitants, Dif_all_float32) || isNull(param);
+				attribute<float32> att        (Region) := corr(float32(City/NrInhabitants), float32(City/AvgDailyTemperature), City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/corrNrInhTemp);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container cov: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/cov"
+			{
+				parameter<float32> param               := cov(float32(City/NrInhabitants), City/AvgDailyTemperature);
+
+				parameter<bool>    test_param          := float_isNearby(param, params/covNrInhabitants, Dif_all_float32) || isNull(param);
+				attribute<float32> att        (Region) := cov(float32(City/NrInhabitants), float32(City/AvgDailyTemperature), City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/covNrInhTemp);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container all: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/all"
+			{
+				parameter<bool> test_param          := all(True);
+				attribute<bool> test_region(Region) := all(MakeDefined(City/NrInhabitants, 9999) < 500, City/RegionNr); // has region a city >= 500 [Inh]
+				parameter<bool> test_attr := #(Region) > 0
+					?	 all(test_region == Region/allInh)
+						&& all(Region/condA) 
+						&& not(all(Region/condB)) 
+						&& not(all(Region/condC))
+					: True;
+			}
+			container any: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/any"
+			{
+				parameter<bool> test_param := any(True);
+				attribute<bool> test_region(Region) := any(MakeDefined(City/NrInhabitants, 0) >= 500, City/RegionNr); // has region a city >= 500 [Inh]
+				parameter<bool> test_attr  := #(Region) > 0
+					?	 all(test_region ==  Region/anyInh)
+						&&     any(Region/condA) 
+						&&     any(Region/condB) 
+						&& not(any(Region/condC))
+					: True;
+			}
+			container reg_count: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			{
+				container units
+				{
+					unit<uint32> Domain: nrofrows = 10;
+					unit<uint8>  RegioA: nrofrows = 5;
+					unit<uint8>  RegioB: nrofrows = 3;
+					unit<uint8>  Class:  nrofrows = 4
+					{
+						attribute<string> label: ['class1','class2','class3','class4'];
+					}
+				}
+				container Regios
+				{
+					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+				}
+				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+	
+				container references // expected results
+				{
+					attribute<uint32> class1 (units/regioA):[1,1,0,1,0];
+					attribute<uint32> class2 (units/regioA):[2,0,1,0,0];
+					attribute<uint32> class3 (units/regioB):[0,1,1];
+					attribute<uint32> class4 (units/regioA):[1,1,0,0,0];
+				}
+				container attributes := reg_count(src, units/Class/label, Regios, refs);
+				container tests
+				{
+					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+				}
+				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
+			}
+			container reg_count_uint16: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			{
+				container units
+				{
+					unit<uint32> Domain: nrofrows = 10;
+					unit<uint8>  RegioA: nrofrows = 5;
+					unit<uint8>  RegioB: nrofrows = 3;
+					unit<uint8>  Class:  nrofrows = 4
+					{
+						attribute<string> label: ['class1','class2','class3','class4'];
+					}
+				}
+				container Regios
+				{
+					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+				}
+				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+	
+				container references // expected results
+				{
+					attribute<uint16> class1 (units/regioA):[1,1,0,1,0];
+					attribute<uint16> class2 (units/regioA):[2,0,1,0,0];
+					attribute<uint16> class3 (units/regioB):[0,1,1];
+					attribute<uint16> class4 (units/regioA):[1,1,0,0,0];
+				}
+				container attributes := reg_count_uint16(src, units/Class/label, Regios, refs);
+				container tests
+				{
+					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+				}
+				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
+			}
+			container reg_count_uint8: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			{
+				container units
+				{
+					unit<uint32> Domain: nrofrows = 10;
+					unit<uint8>  RegioA: nrofrows = 5;
+					unit<uint8>  RegioB: nrofrows = 3;
+					unit<uint8>  Class:  nrofrows = 4
+					{
+						attribute<string> label: ['class1','class2','class3','class4'];
+					}
+				}
+				container Regios
+				{
+					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+				}
+				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+	
+				container references // expected results
+				{
+					attribute<uint8> class1 (units/regioA):[1,1,0,1,0];
+					attribute<uint8> class2 (units/regioA):[2,0,1,0,0];
+					attribute<uint8> class3 (units/regioB):[0,1,1];
+					attribute<uint8> class4 (units/regioA):[1,1,0,0,0];
+				}
+				container attributes := reg_count_uint8(src, units/Class/label, Regios, refs);
+				container tests
+				{
+					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+				}
+				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
+			}
+			container reg_count_empty: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			{
+				container units
+				{
+					unit<uint32> Domain: nrofrows = 0;
+					unit<uint8>  RegioA: nrofrows = 0;
+					unit<uint8>  RegioB: nrofrows = 0;
+					unit<uint8>  Class:  nrofrows = 0
+					{
+						attribute<string> label: [];
+					}
+				}
+				container Regios
+				{
+					attribute<units/RegioA> A (units/Domain): [];
+					attribute<units/RegioB> B (units/Domain): [];
+				}
+				attribute<units/Class> src (units/Domain): []; // class-value for each domain-element
+				attribute<string>      refs(units/Class):  []; // partitioning-name for each class
+	
+				container references // expected results
+				{
+					attribute<uint32> class1 (units/regioA):[];
+					attribute<uint32> class2 (units/regioA):[];
+					attribute<uint32> class3 (units/regioB):[];
+					attribute<uint32> class4 (units/regioA):[];
+				}
+				container attributes := reg_count(src, units/Class/label, Regios, refs);
+
+				unit<uint32> reg_count_subitems:= SubItem_PropValues(attributes,'name');
+
+				parameter<bool> test_attr := #reg_count_subitems = 0;
+			}
+			container frequency_table
+			{
+				parameter<string>  param               := frequency_table(City/NrInhabitants);
+				parameter<bool>    test_param          := eq_or_both_null(param, params/frequency_table_inhabitants) ;
+				
+				attribute<string>  att        (Region) := frequency_table(City/NrInhabitants, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/frequency_table_inhabitants);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container frequency_table_with_null
+			{
+				parameter<string>  param               := frequency_table_with_null(City/NrInhabitants);
+				parameter<bool>    test_param          := eq_or_both_null(param, params/frequency_table_inhabitants) ;
+				
+				attribute<string>  att        (Region) := frequency_table_with_null(City/NrInhabitants, City/RegionNr);
+				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/frequency_table_inhabitants_with_null);
+				parameter<bool>    test_attr           := all(test);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 62
+				{
+					attribute<string> Spec :
+					[
+						 'count/test_param'
+					,	'min/test_param'
+					,	'min_index/test_param'
+					,	'max/test_param'
+					,	'max_index/test_param'
+					,	'first/test_param'
+					,	'last/test_param'
+					,	'mean/test_param'
+					,	'sum/test_param'
+					,	'modus/test_param'
+					,	'modus_weighted/test_param'
+					,	'cumulate/test_param'
+					,	'cumulate_as_id/test_param'
+					,	'nth_element/test_param'
+					,	'nth_element_weighted/test_param'
+					,	'rth_element/test_param'
+					,	'var/test_param'
+					,	'sd/test_param'
+					,	'corr/test_param'
+					,	'cov/test_param'
+					,	'all/test_param'
+					,	'any/test_param'
+					,	'frequency_table/test_param'
+					,	'frequency_table_with_null/test_param'
+					,	'count/test_attr'
+					,	'pcount/test_attr'
+					,	'has_any/test_attr'
+					,	'min/test_attr'
+					,	'min_index/test_attr'
+					,	'max/test_attr'
+					,	'max_index/test_attr'
+					,	'first/test_attr'
+					,	'last/test_attr'
+					,	'mean/test_attr'
+					,	'sum/test_attr'
+					,	'sum_uint32/test_attr'
+					,	'sum_uint16/test_attr'
+					,	'sum_uint8/test_attr'
+					,	'sum_uint64/test_attr'
+					,	'sum_int32/test_attr'
+					,	'sum_int16/test_attr'
+					,	'sum_int8/test_attr'
+					,	'sum_int64/test_attr'
+					,	'sum_float64/test_attr'
+					,	'modus/test_attr'
+					,	'modus_weighted/test_attr'
+					,	'cumulate/test_attr'
+					,	'cumulate_as_id/test_attr'
+					,	'nth_element/test_attr'
+					,	'nth_element_weighted/test_attr'
+					,	'rth_element/test_attr'
+					,	'var/test_attr'
+					,	'sd/test_attr'
+					,	'corr/test_attr'
+					,	'cov/test_attr'
+					,	'all/test_attr'
+					,	'any/test_attr'
+					,	'reg_count/test_attr'
+					,	'reg_count_uint16/test_attr'
+					,	'reg_count_uint8/test_attr'
+					,	'reg_count_empty/test_attr'
+					,	'frequency_table/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

@@ -39,6 +39,11 @@ across GeoDMS versions. Entry point: `batch/full.py`.
 
 ## Operator test (t010) — versie-afhankelijke testjes
 
+- **Bestandsindeling**: `Operator/cfg/Operator.dms` is een stam van ~100 regels met
+  `#include <Naam.dms>`-regels; de delen (één per thema/top-container) staan in
+  `Operator/cfg/Operator/`. GeoDMS resolvet includes vanuit de submap met de naam
+  van het verwijzende bestand. De pre-18.1.0-variant is een gegenereerde
+  spiegelboom (`operator_pre1810.dms` + `operator_pre1810/`).
 - `Operator/cfg/Operator.dms` selecteert testjes per GeoDMS-versie via
   `MetaInfo/OperatorList` (DocData) en het root-`Template TestSet`. Elke
   results-container heeft een `Cand`-tabel; een Spec-rij is `'pad/naar/test_bool'`
@@ -48,8 +53,11 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   in de OperatorList en mogen nooit als vereiste worden opgegeven.
 - Het indicatorbestand meldt exacte aantallen (`<size>`), falende testjes
   (`<failing>`) en overgeslagen testjes met reden (`<skipped>`); het rapport toont
-  daarnaast een dekkingsregel (operator-groepen met testje) op basis van de
-  `t010_operator_groups.txt`-dump + `t010_operator_coverage.txt` (ongeteste namen).
+  daarnaast twee dekkingsregels: gedocumenteerde operatoren (doellijst
+  `batch/generic/operator_coverage_targets.txt`, gegenereerd uit de wiki met
+  `batch/make_operator_coverage_targets.py`; doel = 100%) en het rauwe vangnet
+  over álle operator-groepen. Werklijst per versie: `t010_operator_coverage.txt`
+  in de result-map.
 - **Na elke wijziging aan `Operator.dms`: `python batch/make_operator_pre1810.py`**
   (full.py waarschuwt als de pre-18.1.0-kopie ouder is dan de bron).
 

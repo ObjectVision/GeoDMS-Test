@@ -1,0 +1,72 @@
+	container Transcendental: Using = "/Domains;/Units;/Tolerances"
+	{
+		container srcDomain  := source(ADomain);
+		container srcEDomain := Esource(EDomain);
+		container srcTiledDomain  := source(ATiledDomain);
+		container srcETiledDomain := Esource(ETiledDomain);
+		
+		template source
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case paremeters
+			attribute<float32> A    (Domain): [1,2,3.5,5,10];
+			attribute<float32> expA (Domain): [2.718282, 7.389056, 33.11545, 148.4132, 22026.46];
+			attribute<float32> logA (Domain): [0,0.6931472,1.252763,1.609438,2.302585];
+		}
+
+		template Esource
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case paremeters
+			attribute<float32> A    (Domain): [];
+			attribute<float32> expA (Domain): [];
+			attribute<float32> logA (Domain): [];
+		}
+
+		container UnTiled  := Template(ADomain, srcDomain);
+		container EunTiled := Template(EDomain, srcEDomain);
+		container Tiled    := Template(ATiledDomain, srcTiledDomain);
+		container ETiled   := Template(ETiledDomain, srcETiledDomain);
+		
+		Template Template
+		{
+			unit<uint32> Domain;
+			container source;
+
+			container exp: url = "http://www.objectvision.nl/geodms/operators-a-functions/transcendental/exp"
+			{
+				parameter<bool>    test_param    := float_isNearby(exp(float32(1.0)), float32(2.718282), Dif_all_float32) ;
+				attribute<float32> attr (Domain) := exp(source/A); 
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/expA, Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container log: url   = "http://www.objectvision.nl/geodms/operators-a-functions/transcendental/log"
+			{
+				parameter<bool>    test_param    := log(1.0) = 0.0;
+				attribute<float32> attr (Domain) := log(source/A); 
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/logA, Dif_all_float32) ;
+				parameter<bool>    test_attr     := all(test);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 4
+				{
+					attribute<string> Spec :
+					[
+						 'exp/test_param'
+					,	'log/test_param'
+					,	'exp/test_attr'
+					,	'log/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

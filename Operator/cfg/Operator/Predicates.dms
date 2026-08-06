@@ -1,0 +1,184 @@
+	container Predicates: Using = "/Domains;/Units;/Tolerances"
+	{
+		container srcDomain       := source(ADomain);
+		container srcEDomain      := Esource(EDomain);
+
+		container srcTiledDomain  := source(ATiledDomain);
+		container srcETiledDomain := Esource(ETiledDomain);
+
+		template source
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+			parameter<bool>    BoolParam        := true;
+			parameter<uint32>  IntegerParam     := 7;
+			parameter<uint32>  IntegerZeroParam := 0;
+			parameter<float64> FloatParam       := -999.99;
+			parameter<string>  stringParam      := substr('hallo',0,0);
+
+			attribute<uint8>   IntegerAtt         (Domain): [0,null,1,null, null];
+			attribute<int8>    SignedIntAtt       (Domain): [1,10,100,-59,0];
+			attribute<float32> FloatAtt           (Domain): [0,null,9999999,-2.5,99.9];
+			attribute<float32> DefFloatAtt        (Domain): [0,0,9999999,-2.5,99.9];
+			attribute<bool>    BoolAtt            (Domain): [0,-1,-1,0,-1];
+			attribute<string>  stringAtt          (Domain): ['Hello','null',null,'Two words','88a'];
+			attribute<uint8>   MakeDefineduint8   (Domain): [0,0,1,0,0];
+			attribute<float32> MakeDefinedfloat32 (Domain): [0,0,9999999,-2.5,99.9];
+			attribute<bool>    MakeDefinedBool    (Domain): [0,-1,-1,0,-1];
+			attribute<string>  MakeDefinedstring  (Domain): ['Hello','null','test','Two words','88a'];
+			attribute<bool>    isDefineduint8     (Domain): [-1,0,-1,0,0];
+			attribute<bool>    isDefinedfloat32   (Domain): [-1,0,-1,-1,-1];
+			attribute<bool>    isDefinedBool      (Domain): [-1,-1,-1,-1,-1];
+			attribute<bool>    isDefinedstring    (Domain): [-1,-1,0,-1,-1];
+			attribute<bool>    isNullUint8        (Domain): [0,-1,0,-1,-1];
+			attribute<bool>    isNullfloat32      (Domain): [0,-1,0,0,0];
+			attribute<bool>    isNullBool         (Domain): [0,0,0,0,0];
+			attribute<bool>    isNullstring       (Domain): [0,0,-1,0,0];
+			attribute<bool>    isPositiveint8     (Domain): [-1,-1,-1,0,0];
+			attribute<bool>    isPositivefloat32  (Domain): [0,0,-1,0,-1];
+			attribute<bool>    isNegativeint8     (Domain): [0,0,0,-1,0];
+			attribute<bool>    isNegativefloat32  (Domain): [0,0,0,-1,0];
+			attribute<bool>    isZeroInt8         (Domain): [0,0,0,0,-1];
+			attribute<bool>    isZerofloat32      (Domain): [-1,0,0,0,0];
+		}
+		template Esource
+		{
+			// begin case parameters
+			unit<uint32> Domain;
+			// end case parameters
+			parameter<bool>    BoolParam        := true;
+			parameter<uint32>  IntegerParam     := 7;
+			parameter<uint32>  IntegerZeroParam := 0;
+			parameter<float64> FloatParam       := -999.99;
+			parameter<string>  stringParam      := substr('hallo',0,0);
+
+			attribute<uint8>   IntegerAtt         (Domain): [];
+			attribute<int8>    SignedIntAtt       (Domain): [];
+			attribute<float32> FloatAtt           (Domain): [];
+			attribute<float32> DefFloatAtt        (Domain): [];
+			attribute<bool>    BoolAtt            (Domain): [];
+			attribute<string>  stringAtt          (Domain): [];
+			attribute<uint8>   MakeDefineduint8   (Domain): [];
+			attribute<float32> MakeDefinedfloat32 (Domain): [];
+			attribute<bool>    MakeDefinedBool    (Domain): [];
+			attribute<string>  MakeDefinedstring  (Domain): [];
+			attribute<bool>    isDefineduint8     (Domain): [];
+			attribute<bool>    isDefinedfloat32   (Domain): [];
+			attribute<bool>    isDefinedBool      (Domain): [];
+			attribute<bool>    isDefinedstring    (Domain): [];
+			attribute<bool>    isNullUint8        (Domain): [];
+			attribute<bool>    isNullfloat32      (Domain): [];
+			attribute<bool>    isNullBool         (Domain): [];
+			attribute<bool>    isNullstring       (Domain): [];
+			attribute<bool>    isPositiveint8     (Domain): [];
+			attribute<bool>    isPositivefloat32  (Domain): [];
+			attribute<bool>    isNegativeint8     (Domain): [];
+			attribute<bool>    isNegativefloat32  (Domain): [];
+			attribute<bool>    isZeroInt8         (Domain): [];
+			attribute<bool>    isZerofloat32      (Domain): [];
+		}
+
+		container UnTiled  := Template(ADomain,srcDomain);
+		container Tiled    := Template(ATiledDomain,srcTiledDomain);
+		container EUnTiled := Template(EDomain,srcEDomain);
+		container ETiled   := Template(ETiledDomain,srcETiledDomain);
+	
+		Template Template
+		{
+			unit<uint32> Domain;
+			container source;
+
+			container MakeDefined: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/makedefined"
+			{
+				attribute<uint8>   att_int     (Domain) := MakeDefined(source/IntegerAtt, uint8(0));
+				attribute<bool>    test_int    (Domain) := att_int = Source/makeDefineduint8;
+				attribute<float32> att_float   (Domain) := MakeDefined(source/FloatAtt, float32(0.0));
+				attribute<bool>    test_float  (Domain) := att_float = Source/makeDefinedfloat32;
+				attribute<string>  att_string  (Domain) := MakeDefined(source/stringAtt, 'test');
+				attribute<bool>    test_string (Domain) := att_string = Source/makeDefinedstring;
+				attribute<bool>    test        (Domain) := test_int && test_float && test_string;
+				parameter<bool>    test_attr            := all(test);
+			}
+			container IsDefined: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/isdefined"
+			{
+				parameter<bool> test_param           := isDefined(source/IntegerParam) && isDefined(source/FloatParam) && isDefined(source/stringParam);
+				attribute<bool> att_int     (Domain) := IsDefined(source/IntegerAtt);
+				attribute<bool> test_int    (Domain) := att_int = source/IsDefineduint8;
+				attribute<bool> att_float   (Domain) := IsDefined(source/FloatAtt);
+				attribute<bool> test_float  (Domain) := att_float = source/IsDefinedfloat32;
+				attribute<bool> att_string  (Domain) := IsDefined(source/stringAtt);
+				attribute<bool> test_string (Domain) := att_string = source/IsDefinedstring;
+				attribute<bool> test        (Domain) := test_int && test_float && test_string;
+				parameter<bool> test_attr            := all(test);
+			}
+			container IsNull: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/isnull"
+			{
+				parameter<bool> test_param           := isDefined(source/IntegerParam) && isDefined(source/FloatParam) && isDefined(source/stringParam);
+				attribute<bool> att_int     (Domain) := IsNull(source/IntegerAtt);
+				attribute<bool> test_int    (Domain) := att_int = source/IsNulluint8;
+				attribute<bool> att_float   (Domain) := IsNull(source/FloatAtt);
+				attribute<bool> test_float  (Domain) := att_float = source/IsNullfloat32;
+				attribute<bool> att_string  (Domain) := IsNull(source/stringAtt);
+				attribute<bool> test_string (Domain) := att_string = source/IsNullstring;
+				attribute<bool> test        (Domain) := test_int && test_float && test_string;
+				parameter<bool> test_attr            := all(test);
+			}
+			container IsPositive: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/ispositive"
+			{
+				parameter<bool> test_param          := isPositive(int32(source/IntegerParam)) && not(isPositive(source/FloatParam));
+				attribute<bool> att_int    (Domain) := isPositive(source/SignedIntAtt);
+				attribute<bool> test_int   (Domain) := att_int = source/isPositiveint8;
+				attribute<bool> att_float  (Domain) := isPositive(source/FloatAtt);
+				attribute<bool> test_float (Domain) := att_float = source/isPositivefloat32;
+				attribute<bool> test       (Domain) := test_int && test_float;
+				parameter<bool> test_attr           := all(test);
+			}
+			container IsNegative: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/isnegative"
+			{
+				parameter<bool> test_param          := not(isNegative(int32(source/IntegerParam))) && isNegative(source/FloatParam);
+				attribute<bool> att_int    (Domain) := isNegative(source/SignedIntAtt);
+				attribute<bool> test_int   (Domain) := att_int = source/isNegativeint8;
+				attribute<bool> att_float  (Domain) := isNegative(source/FloatAtt);
+				attribute<bool> test_float (Domain) := att_float = source/isNegativefloat32;
+				attribute<bool> test       (Domain) := test_int && test_float;
+				parameter<bool> test_attr           := all(test);
+			}
+			container IsZero: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/iszero"
+			{
+				parameter<bool> test_param          := isZero(int32(source/IntegerZeroParam)) && isZero(uint32(source/IntegerZeroParam));
+				attribute<bool> att_int    (Domain) := isZero(source/SignedIntAtt);
+				attribute<bool> test_int   (Domain) := att_int = source/isZeroint8;
+				attribute<bool> att_float  (Domain) := isZero(source/FloatAtt);
+				attribute<bool> test_float (Domain) := att_float = source/isZerofloat32;
+				attribute<bool> test       (Domain) := test_int && test_float;
+				parameter<bool> test_attr           := all(test);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 11
+				{
+					attribute<string> Spec :
+					[
+						 'IsDefined/test_param'
+					,	'IsNull/test_param'
+					,	'IsPositive/test_param'
+					,	'IsNegative/test_param'
+					,	'IsZero/test_param'
+					,	'MakeDefined/test_attr'
+					,	'IsDefined/test_attr'
+					,	'IsNull/test_attr'
+					,	'IsPositive/test_attr'
+					,	'IsNegative/test_attr'
+					,	'IsZero/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

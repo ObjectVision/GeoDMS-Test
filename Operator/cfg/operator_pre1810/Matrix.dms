@@ -1,0 +1,182 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container Matrix: Using = "/Domains;/Units;/Tolerances"
+	{
+		unit<fpoint> Coords;
+		unit<spoint> GridDomain :=
+			range(
+				gridset(
+					  Coords
+					, point_yx(float32(-5000.0), float32(5000)  , Coords)
+					, point_yx(float32(24900.0), float32(-100.0), Coords)
+					, SPoint
+				)
+				, point_yx(int16(0), int16(0))
+				, point_yx(int16(2), int16(2))
+			),
+			DialogType = "Map"
+		{
+			container source
+			{
+				attribute<float32> left (GridDomain):
+				[
+					1,2,
+					3,4
+				];
+				attribute<float32> right (GridDomain):
+				[
+					100,200,
+					300,400
+				];
+				attribute<float32> mul_OK (GridDomain):
+				[
+					 700,1000,
+					1500,2200
+				];
+				attribute<float32> inv_OK (GridDomain):
+				[
+					 -2,1,
+					1.5,-0.5
+				];
+				attribute<float32> var_OK (GridDomain):
+				[
+					10,14,
+					14,20
+				];
+			}
+		}
+		unit<spoint> EGridDomain :=
+			range(
+				gridset(
+					  Coords
+					, point_yx(float32(-5000.0), float32(5000)  , Coords)
+					, point_yx(float32(24900.0), float32(-100.0), Coords)
+					, SPoint
+				)
+				, point_yx(int16(0), int16(0))
+				, point_yx(int16(0), int16(0))
+			),
+			DialogType = "Map"
+		{
+			container source
+			{
+				attribute<float32> left (EGridDomain):
+				[
+				];
+				attribute<float32> right (EGridDomain):
+				[
+				];
+				attribute<float32> mul_OK (EGridDomain):
+				[
+				];
+				attribute<float32> inv_OK (EGridDomain):
+				[
+				];
+				attribute<float32> var_OK (EGridDomain):
+				[
+				];
+			}
+		}
+		unit<spoint> GridTiledDomain  := TiledUnit(Point_yx(Int16(1), Int16(1), GridDomain))
+		{
+			container source
+			{
+				attribute<float32> left (GridTiledDomain):
+				[
+					1,2,
+					3,4
+				];
+				attribute<float32> right (GridTiledDomain):
+				[
+					100,200,
+					300,400
+				];
+				attribute<float32> mul_OK (GridTiledDomain):
+				[
+					 700,1000,
+					1500,2200
+				];
+				attribute<float32> inv_OK (GridTiledDomain):
+				[
+					 -2,1,
+					1.5,-0.5
+				];
+				attribute<float32> var_OK (GridTiledDomain):
+				[
+					10,14,
+					14,20
+				];
+			}
+		}
+
+		unit<spoint> EGridTiledDomain := TiledUnit(point_yx(Int16(1), Int16(1), EGridDomain))
+		{
+			container source
+			{
+				attribute<float32> left (EGridTiledDomain):
+				[
+				];
+				attribute<float32> right (EGridTiledDomain):
+				[
+				];
+				attribute<float32> mul_OK (EGridTiledDomain):
+				[
+				];
+				attribute<float32> inv_OK (EGridTiledDomain):
+				[
+				];
+				attribute<float32> var_OK (EGridTiledDomain):
+				[
+				];
+			}
+		}
+	
+		container UnTiled  := Template(GridDomain);
+		container Tiled    := Template(GridTiledDomain);
+		container ETiled   := Template(EGridTiledDomain);
+		container EUnTiled := Template(EGridDomain);
+
+		Template Template
+		{
+			// begin case parameters
+			unit<spoint> GridDomain;
+			// end case parameters
+			container matr_mul
+			{
+				attribute<float32> att       (GridDomain) := matr_mul(GridDomain/Source/left, GridDomain/Source/right, GridDomain);
+				attribute<bool>    test      (GridDomain) := eq_or_both_null(att, GridDomain/source/mul_OK);
+				parameter<bool>    test_attr              := all(test);
+			}
+			container matr_inv
+			{
+				attribute<float32> att       (GridDomain) := matr_inv(GridDomain/Source/left);
+				attribute<bool>    test      (GridDomain) := float_isNearby(att, GridDomain/source/inv_OK, Dif_all_float32);
+				parameter<bool>    test_attr              := all(test);
+			}
+			container matr_var
+			{
+				attribute<float32> att       (GridDomain) := matr_var(GridDomain/Source/left, GridDomain);
+				attribute<bool>    test      (GridDomain) := eq_or_both_null(att, GridDomain/source/var_OK);
+				parameter<bool>    test_attr              := all(test);
+			}
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 3
+				{
+					attribute<string> Spec :
+					[
+						 'matr_mul/test_attr'
+					,	'matr_inv/test_attr'
+					,	'matr_var/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

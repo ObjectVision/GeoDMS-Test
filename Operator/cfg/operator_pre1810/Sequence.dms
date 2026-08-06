@@ -1,0 +1,2069 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container Sequence: Using = "/Domains;/Units;/Tolerances"
+	{
+		// testjes voor nieuwere sequence/geometrie-operatoren; elk draait alleen
+		// waar de operator bestaat (zie de |req in de bijbehorende Spec-rij)
+		container sequence_element_count
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			attribute<fpoint>  arcs (S2, arc) := points2sequence(Pts/pt, Pts/seq, Pts/ord);
+			attribute<uint32>  att  (S2)      := sequence_element_count(arcs);
+			parameter<bool> test_attr := all(att = uint32(3));
+		}
+		container points2arc
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			attribute<fpoint> att (S2, arc) := points2arc(Pts/pt, Pts/seq, Pts/ord);
+			parameter<bool> test_attr := AsDataString(att) = AsDataString(points2sequence(Pts/pt, Pts/seq, Pts/ord));
+		}
+		container points2multi_point
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			attribute<fpoint> att (S2, arc) := points2multi_point(Pts/pt, Pts/seq, Pts/ord);
+			parameter<bool> test_attr := AsDataString(att) = AsDataString(points2sequence(Pts/pt, Pts/seq, Pts/ord));
+		}
+		container geos_buffer
+		{
+			unit<uint32> S1g: nrofrows = 1;
+			unit<uint32> Qg: nrofrows = 5
+			{
+				attribute<int16>  x: [0,0,200,200,0];
+				attribute<int16>  y: [0,200,200,0,0];
+				attribute<S1g>    s: [0,0,0,0,0];
+				attribute<uint32> o: [0,1,2,3,4];
+				attribute<spoint> pt := point_yx(y, x, spoint);
+			}
+			unit<float64> mu64 := baseunit('gb_mu', float64);
+			attribute<spoint> sq  (S1g, polygon) := points2sequence(Qg/pt, Qg/s, Qg/o);
+			attribute<spoint> att (S1g, polygon) := geos_buffer(sq, 100.0, 16b);
+			// Minkowski-verwachting A + omtrek*r + pi*r^2 = 151416; de 16-segment-
+			// benadering + integer-afronding geven in 20.8.0 werkelijk 150320
+			attribute<bool> test (S1g) := abs(area(dpolygon(att), mu64) - 150320.0) < 1500.0;
+			parameter<bool> test_attr := all(test);
+		}
+		container geos_simplify_linestring
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float64> x:   [0,1,2,0,1,2];
+				attribute<float64> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+			}
+			unit<float64> mu := baseunit('gsl_mu', float64);
+			attribute<dpoint> lines (S2, arc) := points2sequence(Pts/pt, Pts/seq, Pts/ord);
+			// collineaire tussenpunten verdwijnen; lengte blijft gelijk. Telling via
+			// sequence2points (bestaat overal) i.p.v. sequence_element_count (20.x),
+			// zodat dit testje ook op 18.x/19.x draait.
+			attribute<dpoint> att   (S2, arc) := geos_simplify_linestring(lines, 0.5);
+			unit<uint32> att_points := sequence2points(att);
+			parameter<bool> test_attr :=
+				   #att_points = 4
+				&& all(arc_length(att, mu) = arc_length(lines, mu));
+		}
+		container outer_single_polygon
+		{
+			unit<uint32> S1o: nrofrows = 1;
+			unit<uint32> Qo: nrofrows = 5
+			{
+				attribute<float32> x: [0,0,2,2,0];
+				attribute<float32> y: [0,2,2,0,0];
+				attribute<S1o>     s: [0,0,0,0,0];
+				attribute<uint32>  o: [0,1,2,3,4];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			unit<float32> mu32 := baseunit('osp_mu', float32);
+			attribute<fpoint> sq  (S1o, polygon) := points2sequence(Qo/pt, Qo/s, Qo/o);
+			attribute<fpoint> att (S1o, polygon) := outer_single_polygon(sq);
+			// buitenring van een gatloos vierkant = het vierkant zelf (oppervlakte 4);
+			// area heeft pre-20.x verplicht een unit-argument (1-arg vorm bestaat daar niet)
+			attribute<bool>  test (S1o) := abs(area(att, mu32) - 4f) < 0.01f;
+			parameter<bool> test_attr := all(test);
+		}
+
+		container srcDomain         := source(DistrictPointsDomain, RDomain, RoadDomain, HDomain, BuildingDomain, False);
+		container srcTemplateDomain := source(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, False);
+
+		container srcEDomain        := Esource(EDomain, EDomain, EDomain, EDomain, EDomain, True);
+		container srcETiledDomain   := Esource(ETiledDomain, ETiledDomain, ETiledDomain, EDomain,EDomain, True);
+
+		template source
+		{
+			// begin case parameters
+			unit<uint32> DistrictPointsDomain;
+			unit<uint32> RDomain;
+			unit<uint32> RoadDomain;
+			unit<uint32> HDomain;
+			unit<uint32> BuildingDomain;
+			parameter<bool> isEmpty;
+			// end case parameters
+
+			unit<uint32> pointset := DistrictPointsDomain
+			,	DialogData = "point"
+			,	DialogType = "map"
+			{
+				attribute<point_rd> point:
+				[
+					 {403025,113810},{402552,113711},{402558,113646},{402428,113636},{402448,113472},{402480,113244},{402503,113057},{402570,112883},{402576,112884},{402578,112876},{402647,112740},{402697,112555},{402698,112554},{402973,112471},{402977,112473},{403544,112312},{403552,112612},{403434,112809},{403298,113032},{403171,113401},{403025,113810}
+					,{400990,113269},{400888,113291},{400886,113192},{400883,113120},{400916,112666},{400893,112424},{400817,112176},{400864,112187},{401157,112293},{401322,112404},{401494,112519},{401597,112589},{401558,112840},{401553,112888},{401288,112945},{401065,113187},{400990,113269}
+					,{401238,115099},{401047,115164},{400978,114523},{400965,114314},{400926,113796},{400919,113685},{400888,113291},{400990,113269},{401065,113187},{401288,112945},{401553,112888},{401510,113137},{401550,113377},{401602,113684},{401642,113915},{401567,114437},{401475,114991},{401462,115075},{401238,115099}
+					,{402174,113703},{402076,113691},{402076,113690},{401742,113655},{401723,113659},{401602,113684},{401510,113137},{401553,112888},{402697,112555},{402647,112740},{402578,112876},{402577,112876},{402576,112884},{402570,112883},{402503,113057},{402480,113244},{402448,113472},{402446,113472},{402428,113636},{402426,113634},{402414,113716},{402281,113770},{402174,113703}
+					,{401531,114646},{401567,114437},{401642,113915},{401602,113684},{401723,113659},{401742,113655},{402077,113690},{402076,113691},{402076,113690},{402077,113690},{402174,113703},{402281,113770},{402272,113831},{402263,113896},{402199,114330},{402194,114374},{402223,114390},{402197,114497},{402086,114462},{402049,114612},{401988,114592},{401980,114626},{401803,114574},{401790,114655},{401765,114673},{401757,114803},{401545,114739},{401567,114983},{401475,114991},{401531,114646}
+					,{402757,114546},{402404,114445},{402317,114418},{402192,114373},{402263,113896},{402281,113770},{402414,113716},{402428,113636},{402558,113646},{402552,113711},{403025,113810},{402870,114237},{402757,114546}
+					,{405282,113562},{405282,113561},{405183,113537},{404996,113582},{404923,113297},{404776,113283},{404669,113160},{404669,113068},{404576,113022},{404353,113116},{404300,112976},{404256,112989},{404154,112857},{404063,112893},{403939,112611},{403770,112450},{403792,112379},{403544,112312},{402977,112473},{402973,112471},{402698,112554},{402697,112555},{401553,112888},{401558,112840},{401597,112589},{401494,112519},{401322,112404},{401157,112293},{400943,112215},{401063,111873},{401234,111711},{401477,111716},{401653,111646},{402133,111453},{402382,111433},{402859,111567},{403372,111821},{403701,111952},{403834,112009},{403934,112040},{404010,112054},{404157,112066},{404271,112054},{404555,111996},{404649,111969},{404664,111986},{404631,112040},{404620,112098},{405013,112720},{405495,113478},{405454,113512},{405415,113601},{405353,113625},{405282,113562}
+				];
+				attribute<district> districtnr:
+				[
+					0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+					3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+					4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+					5,5,5,5,5,5,5,5,5,5,5,5,5,
+					6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
+				];
+				attribute<uint32> ordinal:
+				[
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53
+				];
+			}
+			unit<uint32> pointset_clean
+			:	nrofrows   = 172
+			,	DialogData = "point"
+			,	DialogType = "map"
+			{
+				attribute<point_rd> point:
+				[
+//						 {403025,113810},{402552,113711},{402558,113646},{402428,113636},{402448,113472},{402480,113244},{402503,113057},{402570,112883},{402576,112884},{402578,112876},{402647,112740},{402697,112555},{402698,112554},{402973,112471},{402977,112473},{403544,112312},{403552,112612},{403434,112809},{403298,113032},{403171,113401},{403025,113810}
+					 {403025,113810},{402552,113711},{402558,113646},{402428,113636},{402448,113472},{402480,113244},{402503,113057},{402570,112883},{402576,112884},{402647,112740},{402697,112555},{402698,112554},{402973,112471},{402977,112473},{403544,112312},{403552,112612},{403434,112809},{403298,113032},{403171,113401},{403025,113810}
+					,{400990,113269},{400888,113291},{400886,113192},{400883,113120},{400916,112666},{400893,112424},{400817,112176},{400864,112187},{401157,112293},{401322,112404},{401494,112519},{401597,112589},{401558,112840},{401553,112888},{401288,112945},{401065,113187},{400990,113269}
+					,{401238,115099},{401047,115164},{400978,114523},{400965,114314},{400926,113796},{400919,113685},{400888,113291},{400990,113269},{401065,113187},{401288,112945},{401553,112888},{401510,113137},{401550,113377},{401602,113684},{401642,113915},{401567,114437},{401475,114991},{401462,115075},{401238,115099}
+					,{402174,113703},{402076,113691},{402076,113690},{401742,113655},{401723,113659},{401602,113684},{401510,113137},{401553,112888},{402697,112555},{402647,112740},{402576,112884},{402570,112883},{402503,113057},{402480,113244},{402448,113472},{402428,113636},{402414,113716},{402281,113770},{402174,113703}
+					,{401531,114646},{401567,114437},{401642,113915},{401602,113684},{401723,113659},{401742,113655},{402077,113690},{402076,113691},{402076,113690},{402077,113690},{402174,113703},{402281,113770},{402272,113831},{402263,113896},{402199,114330},{402194,114374},{402223,114390},{402197,114497},{402086,114462},{402049,114612},{401988,114592},{401980,114626},{401803,114574},{401790,114655},{401765,114673},{401757,114803},{401545,114739},{401567,114983},{401475,114991},{401531,114646}
+					,{402757,114546},{402404,114445},{402317,114418},{402192,114373},{402263,113896},{402281,113770},{402414,113716},{402428,113636},{402558,113646},{402552,113711},{403025,113810},{402870,114237},{402757,114546}
+					,{405282,113562},{405282,113561},{405183,113537},{404996,113582},{404923,113297},{404776,113283},{404669,113160},{404669,113068},{404576,113022},{404353,113116},{404300,112976},{404256,112989},{404154,112857},{404063,112893},{403939,112611},{403770,112450},{403792,112379},{403544,112312},{402977,112473},{402973,112471},{402698,112554},{402697,112555},{401553,112888},{401558,112840},{401597,112589},{401494,112519},{401322,112404},{401157,112293},{400943,112215},{401063,111873},{401234,111711},{401477,111716},{401653,111646},{402133,111453},{402382,111433},{402859,111567},{403372,111821},{403701,111952},{403834,112009},{403934,112040},{404010,112054},{404157,112066},{404271,112054},{404555,111996},{404649,111969},{404664,111986},{404631,112040},{404620,112098},{405013,112720},{405495,113478},{405454,113512},{405415,113601},{405353,113625},{405282,113562}
+				];
+				attribute<district> districtnr:
+				[
+					0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+					3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+					4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+					5,5,5,5,5,5,5,5,5,5,5,5,5,
+					6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
+				];
+				attribute<uint32> ordinal:
+				[
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,
+					0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53
+				];
+			}
+			unit<uint32> district := RDomain
+			,	DialogType = "map"
+			,	DialogData = "border_clean"
+			{
+				attribute<string>   id_str                   := string(id(.))
+				{
+					parameter<float32> labelsize := 20f, DialogType = "LabelSize";
+				}
+				attribute<point_rd> border (.,polygon)       := points2sequence(pointset/point, pointset/districtnr, pointset/ordinal)
+				{
+					parameter<uint32> Brushcolor := rgb(0,255,0), DialogType = "BrushColor";
+					parameter<uint32> Pencolor   := rgb(0,0,0)  , DialogType = "PenColor";
+				}
+				attribute<point_rd> border_clean (.,polygon) := points2sequence(pointset_clean/point, pointset_clean/districtnr, pointset_clean/ordinal)
+				{
+					parameter<color> pencolor: [rgb(0,0,0)], DialogType = "pencolor";
+				}
+			
+				attribute<int16>   h                    := const(20, district, int16);
+				attribute<m>       arc_length:          [4305.7099609375,3136.7900390625,5338.419921875,4064.23999023438,4140.56982421875,2887.59008789063,12093];
+				attribute<m2>      area:                [1003100,474460,1246460,921490,620178,499970,3711010];
+				attribute<float32> first_nodeX:         [113810,113269,115099,113703,114646,114546,113562];
+				attribute<float32> first_nodeY:         [403025,400990,401238,402174,401531,402757,405282];
+				attribute<float32> last_nodeX:          [113810,113269,115099,113703,114646,114546,113562];
+				attribute<float32> last_nodeY:          [403025,400990,401238,402174,401531,402757,405282];
+				attribute<uint32>  lb_X:                [112312,112176,112888,112555,113655,113636,111433];
+				attribute<uint32>  lb_Y:                [402428,400817,400888,401510,401475,402192,400943];
+				attribute<uint32>  ub_X:                [113810,113291,115164,113770,114991,114546,113625];
+				attribute<uint32>  ub_Y:                [403552,401597,401642,402697,402281,403025,405495];
+				attribute<uint32>  cb_X:                [113061,112733,114026,113162,114323,114091,112529];
+				attribute<uint32>  cb_Y:                [402990,401207,401265,402103,401878,402608,403219];
+				attribute<uint32>  cen_X:               [113049,112704,114016,113183,114185,114086,112309];
+				attribute<uint32>  cen_Y:               [402954,401159,401268,402069,401879,402578,403083];
+				attribute<uint32>  mid_X:               [113136,112700,114029,113212,114131,114104,112036];
+				attribute<uint32>  mid_Y:               [402944,401128,401271,402083,401872,402574,402836];
+
+				attribute<region>        region_rel:       [0,1,1,1,2,2,3];
+				attribute<multipolygon>  multipolygon_rel: [0,0,1,2,0,1,3];
+			}
+			unit<uint32> region:= HDomain
+			{
+				attribute<uint32> BrushColor: [rgb(255,0,0),rgb(0,255,0),rgb(255,255,0),rgb(255,128,0)], DialogType = "BrushColor";
+			}
+			unit<uint32> multipolygon:= HDomain
+			{
+				attribute<uint32> BrushColor: [rgb(255,0,0),rgb(0,255,0),rgb(255,255,0),rgb(255,128,0)], DialogType = "BrushColor";
+			}
+
+			unit<uint32> RoadCoordinates := RDomain,
+				DialogData  = "point",
+				DialogType  = "Map"
+			{
+				attribute<float32>  x: [112631,111866,111866,111924,111524,114921,114823];
+				attribute<float32>  y: [399246,398599,398599,399495,401801,401529,398584];
+
+				attribute<float32>  x_cross: [112028,114311,111999,114325,114325, 113214,113362];
+				attribute<float32>  y_cross: [401329,401325,399434,399456,399456, 400079,398754];
+				
+				attribute<point_rd> point       := point_yx(y, x, point_rd), Label = "RoadPoints";
+				attribute<point_rd> point_cross := point_yx(y_cross, x_cross, point_rd), Label = "RoadPoints";
+
+				attribute<road>     Sequence_rel: [0,0,1,1,1,2,2];
+				attribute<uint32>   Ordinal:    [0,1,0,1,2,0,1];
+			}
+			unit<uint32> road := RoadDomain,
+				DialogData  = "line",
+				DialogType  = "Map"
+			{
+				attribute<point_rd> line       (arc) := points2sequence(RoadCoordinates/Point, RoadCoordinates/Sequence_rel, RoadCoordinates/Ordinal);
+				attribute<point_rd> line_cross (arc) := points2sequence(RoadCoordinates/point_cross, RoadCoordinates/Sequence_rel, RoadCoordinates/Ordinal);
+				
+				attribute<m>        arc_length: [1001.92, 3238.31, 2946.63];
+				attribute<point_rd> node_first: [{399246, 112631}, {398599, 111866}, {401529, 114921}];
+				attribute<point_rd> node_last:  [{398599, 111866}, {401801, 111524}, {398584, 114823}];
+			}
+
+			unit<uint32> building:= BuildingDomain,
+				DialogData  = "boundary",
+				DialogType  = "Map"
+			{
+				attribute<string>   label := string(id(.)), DialogType = "LabelText";
+				attribute<point_rd> boundary (polygon) := points2sequence(pointset/point,pointset/sequence,pointset/ordinal)
+				{
+					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)  ], DialogType = "pencolor";
+				}
+
+				unit<Uint32> pointset
+				:	nrofrows   = 30
+				,	DialogType = "Map"
+				,	DialogData = "point"
+				{
+					attribute<point_rd> point:
+					[
+						{403391,113264},{403236,113351},{403211,113580},{403354,113586},{403391,113264},
+						{402986,112949},{402979,113243},{402822,113243},{402842,112916},{402986,112949},
+						{403460,112889},{403226,112906},{403233,113049},{403487,113032},{403460,112889},
+						{403152,113727},{402959,113696},{402945,113859},{403135,113862},{403152,113727},
+						{402362,112601},{402192,112581},{402192,112767},{402406,112764},{402362,112601},
+						{402508,113567},{402477,113883},{402213,113856},{402230,113550},{402508,113567}
+					]
+					;
+					attribute<building> sequence:
+					[
+						0,0,0,0,0,
+						1,1,1,1,1,
+						2,2,2,2,2,
+						3,3,3,3,3,
+						4,4,4,4,4,
+						5,5,5,5,5
+					];
+					attribute<uint32> ordinal:
+					[
+						0,3,2,1,4,
+						0,1,2,3,4,
+						0,3,2,1,4,
+						0,3,2,1,4,
+						0,3,2,1,4,
+						0,1,2,3,4
+					];
+				}
+			}
+			unit<uint32> square: nrofrows = 1
+			{
+				attribute<ipoint> boundary_dif   (poly) := points2sequence(pointset/point_dif   ,const(0,pointset,.), id(pointset));
+				attribute<ipoint> boundary_mul   (poly) := points2sequence(pointset/point_mul   ,const(0,pointset,.), id(pointset));
+				attribute<ipoint> boundary_plus1 (poly) := points2sequence(pointset/point_plus1 ,const(0,pointset,.), id(pointset));
+				attribute<ipoint> boundary_plus2 (poly) := points2sequence(pointset/point_plus2 ,const(0,pointset,.), id(pointset));
+
+				unit<uint32> pointset: nrofrows = 5
+				{
+					attribute<ipoint> point_dif   : [{400000,110000},{406000, 110000},{406000, 116000},{400000, 116000},{400000, 110000}];
+					attribute<ipoint> point_mul   : [{400000,110000},{403000, 110000},{403000, 116000},{400000, 116000},{400000, 110000}];
+					attribute<ipoint> point_plus1 : [{400000,110000},{406000, 110000},{406000, 116000},{400000, 116000},{400000, 110000}];
+					attribute<ipoint> point_plus2 : [{410000,110000},{416000, 110000},{416000, 116000},{410000, 116000},{410000, 110000}];
+				}
+			}
+
+			container bg_simplify
+			{
+				unit<Uint32> pointset_border
+				:	nrofrows   = 56
+				,	DialogType = "Map"
+				,	DialogData = "point"
+				{
+					attribute<point_rd> point:
+					[
+					  {403025, 113810},{402428, 113636},{402503, 113057},{402698, 112554},{403544, 112312},{403552, 112612},{403025, 113810},{400990, 113269},{400888, 113291},{400817, 112176}
+					 ,{401597, 112589},{401553, 112888},{401288, 112945},{400990, 113269},{401238, 115099},{401047, 115164},{400888, 113291},{401553, 112888},{401642, 113915},{401462, 115075}
+					 ,{401238, 115099},{402174, 113703},{401602, 113684},{401553, 112888},{402697, 112555},{402414, 113716},{402174, 113703},{401531, 114646},{401602, 113684},{402281, 113770}
+					 ,{402197, 114497},{401803, 114574},{401757, 114803},{401545, 114739},{401475, 114991},{401531, 114646},{402757, 114546},{402192, 114373},{402428, 113636},{403025, 113810}
+					 ,{402757, 114546},{405282, 113562},{404996, 113582},{404669, 113068},{404353, 113116},{403792, 112379},{403544, 112312},{401553, 112888},{401597, 112589},{400943, 112215}
+					 ,{401063, 111873},{402382, 111433},{403934, 112040},{404649, 111969},{405495, 113478},{405282, 113562}
+					]
+					;
+					attribute<building> sequence:
+					[
+					  0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
+					];
+
+					attribute<uint32> ordinal:
+					[
+					  0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,1,2,3,4,5,0,1,2,3,4,5,6,7,8,0,1,2,3,4,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
+					];
+				}
+				unit<Uint32> pointset_poly
+				:	nrofrows   = 50
+				,	DialogType = "Map"
+				,	DialogData = "point"
+				{
+					attribute<point_rd> point:
+					[
+					  {403544, 112312},{403552, 112612},{403025, 113810},{402428, 113636},{402697, 112555},{403544, 112312},{400817, 112176},{401597, 112589},{401553, 112888},{400888, 113291}
+					 ,{400817, 112176},{401553, 112888},{401642, 113915},{401462, 115075},{401047, 115164},{400888, 113291},{401553, 112888},{402697, 112555},{402414, 113716},{401602, 113684}
+					 ,{401553, 112888},{402697, 112555},{402281, 113770},{402197, 114497},{401803, 114574},{401757, 114803},{401545, 114739},{401475, 114991},{401602, 113684},{402281, 113770}
+					 ,{402428, 113636},{403025, 113810},{402757, 114546},{402192, 114373},{402428, 113636},{401063, 111873},{402382, 111433},{403934, 112040},{404649, 111969},{405495, 113478}
+					 ,{405353, 113625},{404996, 113582},{404669, 113068},{404353, 113116},{403792, 112379},{403544, 112312},{401553, 112888},{401597, 112589},{400943, 112215},{401063, 111873}
+					]
+					;
+					attribute<building> sequence:
+					[
+					  0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
+					];
+
+					attribute<uint32> ordinal:
+					[
+					  0,1,2,3,4,5,0,1,2,3,4,0,1,2,3,4,5,0,1,2,3,4,0,1,2,3,4,5,6,7,0,1,2,3,4,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
+					];
+				}
+			}
+			container bg_buffer_multi_polygon
+			{
+				unit<uint32> poly := SDomain 
+				{
+					attribute<point_rd> geometry (poly):= points2Sequence(pointset_poly/point, pointset_poly/sequence, pointset_poly/ordinal);
+				}
+	
+				unit<uint32> pointset_poly :	nrofrows   = 17
+				{
+					attribute<point_rd> point:
+					[
+					  {158100, 461100},{157950, 461100},{157950, 460900},{158100, 460900},{158100, 461100} 
+					 ,{158500, 461500},{157500, 461500},{157500, 460500},{158500, 460500},{158500, 461500}
+					 ,{158200, 461200},{158200, 460800},{157800, 460800},{157800, 461200},{158200, 461200}
+					 ,{158500, 461500},{158100, 461100}
+					];
+					attribute<poly>   sequence := const(0[poly],.);
+					attribute<uint32> ordinal  := id(.);
+				}
+			}
+		}
+
+		template Esource
+		{
+			// begin case parameters
+			unit<uint32> DistrictPointsDomain;
+			unit<uint32> RDomain;
+			unit<uint32> RoadDomain;
+			unit<uint32> HDomain;
+			unit<uint32> BuildingDomain;
+			parameter<bool> isEmpty;
+			// end case parameters
+
+			unit<uint32> pointset := DistrictPointsDomain
+			,	DialogData = "point"
+			,	DialogType = "map"
+			{
+				attribute<point_rd> point:
+				[
+				];
+				attribute<district> districtnr:
+				[
+				];
+				attribute<uint32> ordinal:
+				[
+				];
+			}
+			unit<uint32> pointset_clean
+			:	nrofrows   = 0
+			,	DialogData = "point"
+			,	DialogType = "map"
+			{
+				attribute<point_rd> point:
+				[
+				];
+				attribute<district> districtnr:
+				[
+				];
+				attribute<uint32> ordinal:
+				[
+				];
+			}
+			unit<uint32> district := RDomain
+			,	DialogType = "map"
+			,	DialogData = "border_clean"
+			{
+				attribute<string>   id_str                   := string(id(.))
+				{
+					parameter<float32> labelsize := 20f, DialogType = "LabelSize";
+				}
+				attribute<point_rd> border (.,polygon)       := points2sequence(pointset/point, pointset/districtnr, pointset/ordinal);
+				attribute<point_rd> border_clean (.,polygon) := points2sequence(pointset_clean/point, pointset_clean/districtnr, pointset_clean/ordinal)
+				{
+					parameter<color> pencolor: [rgb(0,0,0)], DialogType = "pencolor";
+				}
+			
+				attribute<int16>   h                    := const(20, district, int16);
+				attribute<m>       arc_length:          [];
+				attribute<m2>      area:                [];
+				attribute<float32> first_nodeX:         [];
+				attribute<float32> first_nodeY:         [];
+				attribute<float32> last_nodeX:          [];
+				attribute<float32> last_nodeY:          [];
+				attribute<uint32>  lb_X:                [];
+				attribute<uint32>  lb_Y:                [];
+				attribute<uint32>  ub_X:                [];
+				attribute<uint32>  ub_Y:                [];
+				attribute<uint32>  cb_X:                [];
+				attribute<uint32>  cb_Y:                [];
+				attribute<uint32>  cen_X:               [];
+				attribute<uint32>  cen_Y:               [];
+				attribute<uint32>  mid_X:               [];
+				attribute<uint32>  mid_Y:               [];
+
+				attribute<region>        region_rel:       [];
+				attribute<multipolygon>  multipolygon_rel: [];
+			}
+			unit<uint32> region:= HDomain
+			{
+				attribute<uint32> BrushColor: [], DialogType = "BrushColor";
+			}
+			unit<uint32> multipolygon:= HDomain
+			{
+				attribute<uint32> BrushColor: [], DialogType = "BrushColor";
+			}
+
+			unit<uint32> RoadCoordinates := RDomain,
+				DialogData  = "point",
+				DialogType  = "Map"
+			{
+				attribute<float32>  x: [];
+				attribute<float32>  y: [];
+
+				attribute<float32>  x_cross: [];
+				attribute<float32>  y_cross: [];
+				
+				attribute<point_rd> point       := point_yx(y, x, point_rd), Label = "RoadPoints";
+				attribute<point_rd> point_cross := point_yx(y_cross, x_cross, point_rd), Label = "RoadPoints";
+
+				attribute<road>     Sequence_rel: [];
+				attribute<uint32>   Ordinal:    [];
+			}
+			unit<uint32> road := RoadDomain,
+				DialogData  = "line",
+				DialogType  = "Map"
+			{
+				attribute<point_rd> line       (arc) := points2sequence(RoadCoordinates/Point, RoadCoordinates/Sequence_rel, RoadCoordinates/Ordinal);
+				attribute<point_rd> line_cross (arc) := points2sequence(RoadCoordinates/point_cross, RoadCoordinates/Sequence_rel, RoadCoordinates/Ordinal);
+				
+				attribute<m>        arc_length: [];
+				attribute<point_rd> node_first: [];
+				attribute<point_rd> node_last:  [];
+			}
+			unit<uint32> building:= BuildingDomain,
+				DialogData  = "boundary",
+				DialogType  = "Map"
+			{
+				attribute<string>   label := string(id(.)), DialogType = "LabelText";
+				attribute<point_rd> boundary (polygon) := points2sequence(pointset/point,pointset/sequence,pointset/ordinal)
+				{
+					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)  ], DialogType = "pencolor";
+				}
+
+				unit<Uint32> pointset
+				:	nrofrows   = 30
+				,	DialogType = "Map"
+				,	DialogData = "point"
+				{
+					attribute<point_rd> point   : [ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null ];
+					attribute<building> sequence: [ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null ];
+					attribute<uint32>   ordinal : [ null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null ];
+				}
+			}
+			unit<uint32> square: nrofrows = 0
+			{
+				attribute<ipoint> boundary_dif   (poly) := points2sequence(pointset/point_dif   ,const(0,pointset,.), id(pointset));
+				attribute<ipoint> boundary_mul   (poly) := points2sequence(pointset/point_mul   ,const(0,pointset,.), id(pointset));
+				attribute<ipoint> boundary_plus1 (poly) := points2sequence(pointset/point_plus1 ,const(0,pointset,.), id(pointset));
+				attribute<ipoint> boundary_plus2 (poly) := points2sequence(pointset/point_plus2 ,const(0,pointset,.), id(pointset));
+
+				unit<uint32> pointset: nrofrows = 0
+				{
+					attribute<ipoint> point_dif   : [];
+					attribute<ipoint> point_mul   : [];
+					attribute<ipoint> point_plus1 : [];
+					attribute<ipoint> point_plus2 : [];
+				}
+			}
+			container bg_simplify
+			{
+				unit<Uint32> pointset: nrofrows = 0
+				{
+					attribute<point_rd> point:
+					[
+					]
+					;
+					attribute<building> sequence:
+					[
+					];
+
+					attribute<uint32> ordinal:
+					[
+					];
+				}
+			}
+			container bg_buffer_multi_polygon
+			{
+				unit<uint32> poly := SDomain 
+				{
+					attribute<point_rd> geometry (poly):= points2Sequence(pointset_poly/point, pointset_poly/sequence, pointset_poly/ordinal);
+				}
+	
+				unit<uint32> pointset_poly :	nrofrows   = 0
+				{
+					attribute<point_rd> point:
+					[
+					];
+					attribute<poly>   sequence := const(0[poly],.);
+					attribute<uint32> ordinal  := id(.);
+				}
+			}
+		}
+		container UnTiled := Template(DistrictPointsDomain, RDomain, RoadDomain, HDomain,BuildingDomain, SDomain, srcDomain, False)
+		{
+			container canyon: Using = "source"
+			{
+				unit<uint32> arcpoints: 
+					nrofrows = 3,
+					DialogType = "Map",
+					Dialogdata = "point" 
+				{
+					attribute<float32>   x:   [371350, 371375, 371400];
+					attribute<float32>   y:   [ 13770, 13750,   13725];
+					attribute<fpoint>    point := point_yx(y,x,fpoint);
+					attribute<arcdomain> seq: [0,0,0];
+					attribute<uint32>    ord: [0,1,2];
+				}
+				unit<uint32> arcdomain:
+					nrofrows   = 1,
+					DialogType = "Map",
+					Dialogdata = "lijn" 
+				{
+					attribute<fpoint> lijn (arc) := points2sequence(arcpoints/point, arcpoints/seq, arcpoints/ord);
+					attribute<int16>  h          := const(20, arcdomain, int16);
+				}
+				parameter<int16> minHeight       := value(5, int16);
+				parameter<m>     maxCanyonDist   := value(1000, m);
+	
+				container dyna_point
+				{
+					attribute<float32> xp        (ADomain): [371391, 371384, 371378, 371369, 371364];
+					attribute<float32> yp        (ADomain): [ 13732,  13738,  13746,  13758,  13764];
+					attribute<float32> xn        (ADomain): [371384, 371378, 371369, 371364, 371360];
+					attribute<float32> yn        (ADomain): [ 13738,  13746,  13758,  13764,  13768];
+					attribute<fpoint>  point     (ADomain) := point_yx(yp,xp,fpoint);
+					attribute<fpoint>  nextpoint (ADomain) := point_yx(yn,xn,fpoint);
+					parameter<float32> CalcDist            := float32(5);
+					unit<uint32> CalcPoint                 := dyna_point(point, nextpoint, CalcDist)
+					{
+						attribute<ADomain> seq: [0,0,1,1,2,2,2,3,3,4];
+						attribute<int16>   z:   [10,30,20,15,20,0,20,60,15, null];
+					}
+				}
+				container results := 
+					canyon(
+						dyna_point/CalcPoint/point, dyna_point/CalcPoint/z, dyna_point/CalcPoint/seq, dyna_point/point, dyna_point/nextpoint, 
+						arcdomain/lijn, arcdomain/h, 
+						minHeight, maxCanyonDist
+					)
+				{
+					attribute<float32> rrc (dyna_point/CalcPoint): DialogType = "Map", DialogData = "RLoc";
+					attribute<float32> lrc (dyna_point/CalcPoint): DialogType = "Map", DialogData = "RLoc";
+				}
+				parameter<bool> test_attr1 := point_isNearby(results/Rloc[0], point_yx(float32(13732.6), float32(371392), fpoint), Dif_all_float32);
+				parameter<bool> test_attr2 := point_isNearby(results/Rloc[3], point_yx(float32(13742.6), float32(371381), fpoint), Dif_all_float32);
+				parameter<bool> test_attr3 := isNull(results/Rloc[5]);
+				parameter<bool> test_attr4 := isNull(results/Lloc[0]);
+				parameter<bool> test_attr5 := point_isNearby(results/Lloc[3], point_yx(float32(13742.6), float32(371381), fpoint), Dif_all_float32);
+				parameter<bool> test_attr6 := point_isNearby(results/Lloc[8], point_yx(float32(13760), float32(371362), fpoint), Dif_all_float32);
+				parameter<bool> test_attr7 := point_isNearby(results/Lloc[9], point_yx(float32(13763), float32(371359), fpoint), Dif_all_float32);
+					
+				parameter<bool> test_attr := 
+					point_isNearby(results/Rloc[0], point_yx(float32(13732.6), float32(371392), fpoint), Dif_all_float32) && 
+					point_isNearby(results/Rloc[3], point_yx(float32(13742.6), float32(371381), fpoint), Dif_all_float32) && 
+					isNull(results/Rloc[5]) && 
+					isNull(results/Lloc[0]) && 
+					point_isNearby(results/Lloc[3], point_yx(float32(13742.6), float32(371381), fpoint), Dif_all_float32) && 
+					point_isNearby(results/Lloc[8], point_yx(float32(13760), float32(371362), fpoint), Dif_all_float32) && 
+					point_isNearby(results/Lloc[9], point_yx(float32(13763), float32(371359), fpoint), Dif_all_float32);
+			}
+			container canyon_empty: Using = "source"
+			{
+				unit<uint32> arcpoints: 
+					nrofrows = 0,
+					DialogType = "Map",
+					Dialogdata = "point" 
+				{
+					attribute<float32>   x:   [];
+					attribute<float32>   y:   [];
+					attribute<fpoint>    point := point_yx(y,x,fpoint);
+					attribute<arcdomain> seq: [];
+					attribute<uint32>    ord: [];
+				}
+				unit<uint32> arcdomain:
+					nrofrows   = 0,
+					DialogType = "Map",
+					Dialogdata = "lijn" 
+				{
+					attribute<fpoint> lijn (arc) := points2sequence(arcpoints/point, arcpoints/seq, arcpoints/ord);
+					attribute<int16>  h          := const(20, arcdomain, int16);
+				}
+				parameter<int16> minHeight       := value(5, int16);
+				parameter<m>     maxCanyonDist   := value(1000, m);
+	
+				container dyna_point
+				{
+					attribute<float32> xp        (EDomain): [];
+					attribute<float32> yp        (EDomain): [];
+					attribute<float32> xn        (EDomain): [];
+					attribute<float32> yn        (EDomain): [];
+					attribute<fpoint>  point     (EDomain) := point_yx(yp,xp,fpoint);
+					attribute<fpoint>  nextpoint (EDomain) := point_yx(yn,xn,fpoint);
+					parameter<float32> CalcDist            := float32(5);
+					unit<uint32> CalcPoint                 := dyna_point(point, nextpoint, CalcDist)
+					{
+						attribute<EDomain> seq: [];
+						attribute<int16>   z:   [];
+					}
+				}
+				container results := 
+					canyon(
+						dyna_point/CalcPoint/point, dyna_point/CalcPoint/z, dyna_point/CalcPoint/seq, dyna_point/point, dyna_point/nextpoint, 
+						arcdomain/lijn, arcdomain/h, 
+						minHeight, maxCanyonDist
+					)
+				{
+					attribute<float32> rrc (dyna_point/CalcPoint): DialogType = "Map", DialogData = "RLoc";
+					attribute<float32> lrc (dyna_point/CalcPoint): DialogType = "Map", DialogData = "RLoc";
+
+					attribute<float32> CRLoc (dyna_point/CalcPoint):= PointCol(RLoc);
+					attribute<float32> RRLoc (dyna_point/CalcPoint):= PointRow(RLoc);
+
+					attribute<float32> CLLoc (dyna_point/CalcPoint):= PointCol(LLoc);
+					attribute<float32> RLLoc (dyna_point/CalcPoint):= PointRow(LLoc);
+
+					attribute<float32> Ok (dyna_point/CalcPoint):[];
+
+					attribute<bool> TestCRLoc (dyna_point/CalcPoint):= CRLoc == Ok;
+					attribute<bool> TestRRLoc (dyna_point/CalcPoint):= RRLoc == Ok;
+
+					attribute<bool> TestCLLoc (dyna_point/CalcPoint):= CLLoc == Ok;
+					attribute<bool> TestRLLoc (dyna_point/CalcPoint):= RLLoc == Ok;
+				}
+
+				parameter<bool> test_attr := all(results/TestCRLoc) && all(results/TestRRLoc) && all(results/TestCLLoc) && all(results/TestRLLoc);
+			}
+		}
+
+		container EUnTiled := Template(EDomain, EDomain, EDomain, EDomain,EDomain,EDomain, srcEDomain, True);
+
+		container  Tiled := Template(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, SDomain, srcTemplateDomain, False);
+		container ETiled := Template(ETiledDomain, ETiledDomain, ETiledDomain, EDomain, EDomain, EDomain, srcETiledDomain, True);
+
+		container ResultUnitTiled
+		{
+			container make_sequence 
+			{
+				attribute<point_rd> sequence (ATiledDomain, poly) := 
+					points2sequence(Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/Point, Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/Sequence_rel, Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/Ordinal);
+			}
+			unit<uint32> sequence2points := sequence2points(make_sequence/sequence)
+			{
+				attribute<float32> x          := PointCol(point);
+				attribute<float32> y          := PointRow(point);
+				parameter<bool>    test_point := float_isNearby(mean(x), 371378.637f, Dif_all_float32) && float_isNearby(mean(y), 13745.7163f, Dif_all_float32);
+				parameter<bool>    test_attr  := test_point && #. == 476867 && sum(Sequence_rel) = 860582 && max(Ordinal) == 149999 && ordinal[270787] == 78591;
+			}
+			container make_large_polygonset
+			{
+				unit<uint32> orgdomain := point/ResultUnitTiled/dyna_point_tiled/CalcPoint;
+				unit<uint32> pointset := union_unit(orgdomain, orgdomain, orgdomain, orgdomain)
+				{
+					attribute<fpoint> point := union_data(
+						.
+						, orgdomain/point
+						, orgdomain/point + point_yx(10f, 5f, fpoint)
+						, orgdomain/point + point_yx(0f, 10f, fpoint)
+						,orgdomain/point
+					);
+					attribute<orgdomain> Sequence_rel := union_data(., id(orgdomain), id(orgdomain), id(orgdomain), id(orgdomain));
+					attribute<uint32>    Ordinal    := union_data(., const(0, orgdomain), const(1, orgdomain), const(2, orgdomain), const(3, orgdomain));
+				}
+				attribute<fpoint>  set  (polygon, orgdomain) := points2sequence(pointset/point, pointset/Sequence_rel, pointset/Ordinal);
+				
+				attribute<float32> area (orgdomain) := area(set, float32);
+				
+				unit<uint32> select_with_org_rel := select_with_org_rel(id(orgdomain) <  75000orgdomain)
+				{
+					attribute<ipoint>  set  (polygon) := ipolygon(make_large_polygonset/set[org_rel]);
+				}
+			}
+			unit<uint32>  overlay_polygon := bp_overlay_polygon(make_large_polygonset/select_with_org_rel/set, make_large_polygonset/select_with_org_rel/set[0])
+			{
+				parameter<bool>    test_attr  := #. == 75000 && max(first_rel) == 74999;
+			}
+		}
+
+		Template Template
+		{
+			// begin case parameters
+			unit<uint32> DistrictPointsDomain;
+			unit<uint32> District;
+			unit<uint32> RoadDomain;
+			unit<uint32> Region;
+			unit<uint32> Building;
+			unit<uint32> SingleDomain;
+			container source;
+			parameter<bool> isEmpty;
+			// end case parameters
+
+			container conversions
+			{
+				attribute<dpoint> roadline_dpolygon   (RoadDomain,arc) := dpolygon(Source/road/line);
+				attribute<upoint> roadline_upolygon   (RoadDomain,arc) := upolygon(Source/road/line);
+				attribute<wpoint> roadline_wpolygon   (RoadDomain,arc) := wpolygon(Source/road/line);
+				attribute<fpoint> roadline_fdpolygon  (RoadDomain,arc) := fpolygon(roadline_dpolygon);
+				attribute<fpoint> roadline_fupolygon  (RoadDomain,arc) := fpolygon(roadline_upolygon);
+				attribute<fpoint> roadline_fwpolygon  (RoadDomain,arc) := fpolygon(roadline_wpolygon);
+				attribute<bool>   test_fdpolygon      (RoadDomain)     := point_isNearby(centroid(roadline_fdpolygon), centroid(Source/road/line), Dif_all_float32);
+				attribute<bool>   test_fupolygon      (RoadDomain)     := point_isNearby(centroid(roadline_fupolygon), centroid(Source/road/line), Dif_all_float32);
+				attribute<bool>   isnull_fwpolygon    (RoadDomain)     := isNull(roadline_fwpolygon);
+				attribute<bool>   isdefined_fwpolygon (RoadDomain)     := isDefined(roadline_fwpolygon);
+				
+			}
+			unit<uint32> sequence2points := sequence2points(Source/road/line),
+				url  = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/sequence2points"
+			{
+				attribute<float32>    x:   [112631,111866,111866,111924,111524,114921,114823];
+				attribute<float32>    y:   [399246,398599,398599,399495,401801,401529,398584];
+				attribute<point_rd>   poi := point_yx(y,x,point_rd);
+				attribute<RoadDomain> seq:[0,0,1,1,1,2,2];
+				attribute<uint32>     ord:[0,1,0,1,2,0,1];
+				attribute<bool>       test      := point = poi && Sequence_rel = seq && Ordinal = ord;
+				parameter<bool>       test_attr := = isEmpty ? '#sequence2points == 0' : 'all(test)';
+			}
+			unit<uint32> sequence2points_param := Sequence2Points(Source/road/line[0]);
+
+			container points2sequence:
+				Using = "source",
+				url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/points2sequence"
+			{
+				attribute<point_rd> att    (RoadDomain, arc) := points2sequence(sequence2points/point, sequence2points/Sequence_rel, sequence2points/Ordinal);
+				attribute<point_rd> att_ps (RoadDomain, arc) := points2sequence(sequence2points/point, sequence2points/Sequence_rel);
+				attribute<bool> test       (RoadDomain)      := arc_length(att, m) == arc_length(Source/road/line, m) && lower_bound(att) = lower_bound(Source/road/line);
+				parameter<bool> test_attr              := all(test);
+			}
+
+			parameter<point_rd> points2sequence_param   (poly) := points2sequence(sequence2points_param/point);
+			parameter<point_rd> points2sequence_param_p (poly) := points2sequence_p(sequence2points_param/point);
+			parameter<point_rd> points2sequence_param_po(poly) := points2sequence_po(sequence2points_param/point, sequence2points_param/ordinal);
+
+			container arc_length:
+				Using = "source",
+				url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/arc_length"
+			{
+				attribute<m>    att  (RoadDomain) := arc_length(road/line, m);
+				attribute<bool> test (RoadDomain) := float_isNearby(att,road/arc_length, Dif_all_float32);
+				parameter<bool> test_attr   := all(test);
+			}
+			container area:
+				Using = "source",
+				url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/area"
+			{
+				attribute<m2>  att  (district) := area(district/border, m2);
+				attribute<bool> test (district) := float_isNearby(att, district/area, Dif_all_float32);
+				parameter<bool> test_attr       := all(test);
+			}
+
+			container lower_bound:
+				Using = "source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/lower_bound",
+				DialogType = "Map",
+				DialogData = "att"
+			{
+				attribute<point_rd> att  (district) := lower_bound(district/border);
+				attribute<bool>     test (district) := uint32(pointcol(att)) = district/lb_X && uint32(pointrow(att)) = district/lb_Y;
+				parameter<bool>     test_attr       := all(test);
+			}
+			container upper_bound:
+				Using = "source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/upper_bound",
+				DialogType = "Map",
+				DialogData = "att"
+			{
+				attribute<point_rd> att  (district) := upper_bound(district/border);
+				attribute<bool>     test (district) := uint32(pointcol(att)) = district/ub_X && uint32(pointrow(att)) = district/ub_Y;
+				parameter<bool>     test_attr       := all(test);
+			}
+			container center_bound:
+				Using = "source",
+				url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/center_bound",
+				DialogType = "Map",
+				DialogData = "att"
+			{
+				attribute<point_rd> att  (district) := center_bound(district/border);
+				attribute<bool>     test (district) := uint32(pointcol(att)) = district/cb_X && uint32(pointrow(att)) = district/cb_Y;
+				parameter<bool>     test_attr       := all(test);
+			}
+			container centroid:
+				Using = "source",
+				url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/centroid",
+				DialogType = "Map",
+				DialogData = "att"
+			{
+				attribute<point_rd> att  (district) := centroid(district/border);
+				attribute<bool>     test (district) := uint32(pointcol(att)) = district/cen_X && uint32(pointrow(att)) = district/cen_Y;
+				parameter<bool>     test_attr       := all(test);
+			}
+			container mid:
+				Using = "source",
+				url   = "http://www.objectvision.nl/dms/Operator/mid.htm",
+				DialogType = "Map",
+				DialogData = "att"
+			{
+				attribute<point_rd> att  (district) := mid(district/border);
+				attribute<bool>     test (district) := uint32(pointcol(att)) = district/mid_X && uint32(pointrow(att)) = district/mid_Y;
+				parameter<bool>     test_attr       := all(test);
+			}
+			container centroid_or_mid:
+				Using = "source",
+				url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/centroidormid",
+				DialogType = "Map",
+				DialogData = "att"
+			{
+				attribute<point_rd> att  (district) := centroid_or_mid(district/border);
+				attribute<uint32>   row  (district) := uint32(pointrow(att));
+				attribute<uint32>   col  (district) := uint32(pointcol(att));
+				attribute<bool>     test (district) := uint32(pointcol(att)) = district/cen_X && uint32(pointrow(att)) = district/cen_Y;
+				parameter<bool>     test_attr       := all(test);
+			}
+			unit<uint32> centroid_or_mid_complex
+			:	StorageName     = "%projdir%/data/vreemde_centroids.shp"
+			,	StorageType     = "gdal.vect"
+			,	StorageReadOnly = "True"
+			,	DialogType      = "Map"
+			,	DialogData      = "geometry"
+			{
+				attribute<fpoint> geometry    (poly);
+				
+				attribute<fpoint> centroid_or_mid := centroid_or_mid(geometry);
+				attribute<fpoint> centroid_or_mid_ok :
+				[
+					{570688, 213124},{545707, 266894},{593829, 195839},{579749, 181494},{557506, 234192},
+					{492360, 226704},{531238, 179570},{504546, 201889},{504546, 201818},{435546, 151718},
+					{423152, 192347},{463897, 224657},{479639, 129911},{513259, 108758},{504635, 127431},
+					{523538, 144358},{437711, 97081.1},{428406, 83605.5},{452393, 94601.6},{392716, 154336},
+					{420523, 167482},{505987, 167453},{445904, 159590},{444165, 235727},{549220, 249842},
+					{343412, 185136}
+				];
+
+				attribute<bool> test      := point_isNearby(centroid_or_mid, centroid_or_mid_ok, Dif_all_float32);
+				parameter<bool> test_attr := all(test);
+			}
+			container poly2grid
+			{
+				attribute<District> DistrictGrid (gridcel_1km) := poly2grid(Source/District/border, gridcel_1km);
+				
+				attribute<District> att_ok       (gridcel_1km):
+				[
+					null,null,null,null,null,6,null,null,6,0,null,null,6,3,4,null,null,1,2,2
+				];
+				attribute<bool> test      (gridcel_1km) :=  eq_or_both_null(DistrictGrid, att_ok);
+
+				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
+			}
+			container poly2allgrids
+			{
+				unit<uint32> result := poly2allgrids(Source/District/border, gridcel_1km);
+				
+				attribute<int16> result_row_ok (result) :
+				[
+				 2
+				,4
+				,4
+				,4
+				,3
+				,3
+				,1
+				,2
+				,3
+				];
+				attribute<int16> result_col_ok (result) :
+				[
+				 1
+				,1
+				,2
+				,3
+				,1
+				,2
+				,1
+				,0
+				,0
+				];
+				attribute<bool> result_ok (result) := pointRow(result/grid_rel) == result_row_ok && pointCol(result/grid_rel) == result_col_ok;
+
+				unit<uint32> resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), gridcel_1km);
+				
+				attribute<int16> resultvoid_row_ok (resultvoid) :
+				[
+				1,
+				2,
+				2,
+				3,
+				3,
+				3,
+				4,
+				4,
+				4
+				];
+				attribute<int16> resultvoid_col_ok (resultvoid) :
+				[
+				 1
+				,0
+				,1
+				,0
+				,1
+				,2
+				,1
+				,2
+				,3
+				];
+				attribute<bool> resultvoid_ok (resultvoid) := pointRow(resultvoid/grid_rel) == resultvoid_row_ok && pointCol(resultvoid/grid_rel) == resultvoid_col_ok;
+
+				unit<spoint> smaller_grid_1km := range(gridcel_1km, point_xy(1s, 2s),point_xy(4s, 4s));
+				unit<uint32> smaller_result := poly2allgrids(Source/District/border, smaller_grid_1km);
+				attribute<int16> smaller_result_row_ok (smaller_result) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_result_col_ok (smaller_result) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_result_ok (smaller_result) := pointRow(smaller_result/grid_rel) == smaller_result_row_ok && pointCol(smaller_result/grid_rel) == smaller_result_col_ok;
+
+				unit<uint32> smaller_resultvoid := poly2allgrids(bg_union_polygon(Source/District/border), smaller_grid_1km);
+				attribute<int16> smaller_resultvoid_row_ok (smaller_resultvoid) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_resultvoid_col_ok (smaller_resultvoid) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_resultvoid_ok (smaller_resultvoid) := pointRow(smaller_resultvoid/grid_rel) == smaller_resultvoid_row_ok && pointCol(smaller_resultvoid/grid_rel) == smaller_resultvoid_col_ok;
+
+				parameter<bool> test_all := all(result_ok) && all(resultvoid_ok) && all(smaller_result_ok) && all(smaller_resultvoid_ok);
+				
+				
+/*				
+				attribute<District> DistrictGrid (gridcel_1km) := 
+				
+				attribute<District> att_ok       (gridcel_1km):
+				[
+					null,null,null,null,null,6,null,null,6,0,null,null,6,3,4,null,null,1,2,2
+				];
+				attribute<bool> test      (gridcel_1km) :=  eq_or_both_null(DistrictGrid, att_ok);
+
+				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
+					*/
+			}
+			container poly2allgrids_uint64
+			{
+				unit<uint64> result := poly2allgrids_uint64(Source/District/border, gridcel_1km);
+				
+				attribute<int16> result_row_ok (result) :
+				[
+				 2
+				,4
+				,4
+				,4
+				,3
+				,3
+				,1
+				,2
+				,3
+				];
+				attribute<int16> result_col_ok (result) :
+				[
+				 1
+				,1
+				,2
+				,3
+				,1
+				,2
+				,1
+				,0
+				,0
+				];
+				attribute<bool> result_ok (result) := pointRow(result/grid_rel) == result_row_ok && pointCol(result/grid_rel) == result_col_ok;
+
+				unit<uint64> resultvoid := poly2allgrids_uint64(bg_union_polygon(Source/District/border), gridcel_1km);
+				
+				attribute<int16> resultvoid_row_ok (resultvoid) :
+				[
+				1,
+				2,
+				2,
+				3,
+				3,
+				3,
+				4,
+				4,
+				4
+				];
+				attribute<int16> resultvoid_col_ok (resultvoid) :
+				[
+				 1
+				,0
+				,1
+				,0
+				,1
+				,2
+				,1
+				,2
+				,3
+				];
+				attribute<bool> resultvoid_ok (resultvoid) := pointRow(resultvoid/grid_rel) == resultvoid_row_ok && pointCol(resultvoid/grid_rel) == resultvoid_col_ok;
+
+				unit<spoint> smaller_grid_1km := range(gridcel_1km, point_xy(1s, 2s),point_xy(4s, 4s));
+				unit<uint64> smaller_result := poly2allgrids_uint64(Source/District/border, smaller_grid_1km);
+				attribute<int16> smaller_result_row_ok (smaller_result) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_result_col_ok (smaller_result) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_result_ok (smaller_result) := pointRow(smaller_result/grid_rel) == smaller_result_row_ok && pointCol(smaller_result/grid_rel) == smaller_result_col_ok;
+
+				unit<uint64> smaller_resultvoid := poly2allgrids_uint64(bg_union_polygon(Source/District/border), smaller_grid_1km);
+				attribute<int16> smaller_resultvoid_row_ok (smaller_resultvoid) :
+				[
+				 2
+				,3
+				,3
+				];
+				attribute<int16> smaller_resultvoid_col_ok (smaller_resultvoid) :
+				[
+				 1
+				,1
+				,2
+				];
+				attribute<bool> smaller_resultvoid_ok (smaller_resultvoid) := pointRow(smaller_resultvoid/grid_rel) == smaller_resultvoid_row_ok && pointCol(smaller_resultvoid/grid_rel) == smaller_resultvoid_col_ok;
+
+				parameter<bool> test_all := all(result_ok) && all(resultvoid_ok) && all(smaller_result_ok) && all(smaller_resultvoid_ok);
+				
+				
+/*				
+				attribute<District> DistrictGrid (gridcel_1km) := 
+				
+				attribute<District> att_ok       (gridcel_1km):
+				[
+					null,null,null,null,null,6,null,null,6,0,null,null,6,3,4,null,null,1,2,2
+				];
+				attribute<bool> test      (gridcel_1km) :=  eq_or_both_null(DistrictGrid, att_ok);
+
+				parameter<bool> test_attr := #District = 0 ? all(isNull(DistrictGrid)) : all(test);
+					*/
+			}
+
+			container polygon_filtered
+			{
+				attribute<ipoint> att(District, polygon) := polygon_filtered(ipolygon(Source/District/border),100.0);
+			}
+
+			container union_polygon
+			{
+				parameter<ipoint> att(polygon) := bp_union_polygon(ipolygon(Source/District/border_clean));
+				parameter<ipoint> bp_att  (polygon) := bp_union_polygon(ipolygon(Source/District/border_clean));
+				parameter<fpoint> bg_att  (polygon) := bg_union_polygon(Source/District/border_clean);
+				parameter<fpoint> cgal_att(polygon) := cgal_union_polygon(Source/District/border_clean);
+				parameter<fpoint> geos_att(polygon) := geos_union_polygon(Source/District/border_clean);
+
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+					 {401047, 115164},{400978, 114523},{400965, 114314},{400926, 113796},{400919, 113685},{400888, 113291},{400886, 113192}
+					,{400883, 113120},{400916, 112666},{400893, 112424},{400817, 112176},{400864, 112187},{400943, 112215},{401063, 111873}
+					,{401234, 111711},{401477, 111716},{401653, 111646},{402133, 111453},{402382, 111433},{402859, 111567},{403372, 111821}
+					,{403701, 111952},{403834, 112009},{403934, 112040},{404010, 112054},{404157, 112066},{404271, 112054},{404555, 111996}
+					,{404649, 111969},{404664, 111986},{404631, 112040},{404620, 112098},{405013, 112720},{405495, 113478},{405454, 113512}
+					,{405415, 113601},{405353, 113625},{405282, 113562},{405282, 113561},{405183, 113537},{404996, 113582},{404923, 113297}
+					,{404776, 113283},{404669, 113160},{404669, 113068},{404576, 113022},{404353, 113116},{404300, 112976},{404256, 112989}
+					,{404154, 112857},{404063, 112893},{403939, 112611},{403770, 112450},{403792, 112379},{403544, 112312},{403552, 112612}
+					,{403434, 112809},{403298, 113032},{403171, 113401},{403025, 113810},{402870, 114237},{402757, 114546},{402404, 114445}
+					,{402317, 114418},{402194, 114374},{402223, 114390},{402197, 114497},{402086, 114462},{402049, 114612},{401988, 114592}
+					,{401980, 114626},{401803, 114574},{401790, 114655},{401765, 114673},{401757, 114803},{401545, 114739},{401567, 114983}
+					,{401475, 114991},{401462, 115075},{401238, 115099},{401047, 115164}
+					];
+					attribute<bool> test := point == att_ok;
+					attribute<bool> bp_test := union_data(., subitem(sequence2points(bp_att), 'point')) == att_ok;
+				}
+				parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(pointset/test) && all(pointset/bp_test)';
+			}
+			container bp_union_polygon
+			{
+				attribute<ipoint> att(polygon, region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
+				attribute<ipoint> bp_att(polygon, region) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/region_rel);
+				attribute<fpoint> bg_att(polygon, region) := bg_union_polygon(Source/District/border_clean, Source/district/region_rel);
+				
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{403025, 113810},{402552, 113711},{402558, 113646},{402428, 113636},{402448, 113472},{402480, 113244},{402503, 113057},{402570, 112883},
+						{402576, 112884},{402647, 112740},{402697, 112555},{402698, 112554},{402973, 112471},{402977, 112473},{403544, 112312},{403552, 112612},
+						{403434, 112809},{403298, 113032},{403171, 113401},{403025, 113810},{401047, 115164},{400978, 114523},{400965, 114314},{400926, 113796},
+						{400919, 113685},{400888, 113291},{400886, 113192},{400883, 113120},{400916, 112666},{400893, 112424},{400817, 112176},{400864, 112187},
+						{401157, 112293},{401322, 112404},{401494, 112519},{401597, 112589},{401558, 112840},{401553, 112888},{402697, 112555},{402647, 112740},
+						{402576, 112884},{402570, 112883},{402503, 113057},{402480, 113244},{402448, 113472},{402428, 113636},{402414, 113716},{402281, 113770},
+						{402174, 113703},{402076, 113691},{402076, 113690},{401742, 113655},{401723, 113659},{401602, 113684},{401642, 113915},{401567, 114437},
+						{401475, 114991},{401462, 115075},{401238, 115099},{401047, 115164},{401475, 114991},{401531, 114646},{401567, 114437},{401642, 113915},
+						{401602, 113684},{401723, 113659},{401742, 113655},{402077, 113690},{402174, 113703},{402281, 113770},{402414, 113716},{402428, 113636},
+						{402558, 113646},{402552, 113711},{403025, 113810},{402870, 114237},{402757, 114546},{402404, 114445},{402317, 114418},{402194, 114374},
+						{402223, 114390},{402197, 114497},{402086, 114462},{402049, 114612},{401988, 114592},{401980, 114626},{401803, 114574},{401790, 114655},
+						{401765, 114673},{401757, 114803},{401545, 114739},{401567, 114983},{401475, 114991},{405353, 113625},{405282, 113562},{405282, 113561},
+						{405183, 113537},{404996, 113582},{404923, 113297},{404776, 113283},{404669, 113160},{404669, 113068},{404576, 113022},{404353, 113116},
+						{404300, 112976},{404256, 112989},{404154, 112857},{404063, 112893},{403939, 112611},{403770, 112450},{403792, 112379},{403544, 112312},
+						{402977, 112473},{402973, 112471},{402698, 112554},{402697, 112555},{401553, 112888},{401558, 112840},{401597, 112589},{401494, 112519},
+						{401322, 112404},{401157, 112293},{400943, 112215},{401063, 111873},{401234, 111711},{401477, 111716},{401653, 111646},{402133, 111453},
+						{402382, 111433},{402859, 111567},{403372, 111821},{403701, 111952},{403834, 112009},{403934, 112040},{404010, 112054},{404157, 112066},
+						{404271, 112054},{404555, 111996},{404649, 111969},{404664, 111986},{404631, 112040},{404620, 112098},{405013, 112720},{405495, 113478},
+						{405454, 113512},{405415, 113601},{405353, 113625}
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(pointset/test)';
+			}
+			container overlay_polygon
+			{
+				attribute<ipoint> building_ipoint (polygon, building) := ipolygon(source/building/boundary);
+				attribute<ipoint> district_ipoint (polygon, district) := ipolygon(source/district/border_clean);
+				
+				unit<uint32> intersect := bp_overlay_polygon(building_ipoint, district_ipoint)
+				,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}
+				unit<uint32> bg_intersect := bg_overlay_polygon(building_ipoint, district_ipoint)
+				,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}
+				unit<uint32> cgal_intersect := cgal_overlay_polygon(building_ipoint, district_ipoint)
+				,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}
+				attribute<ipoint> district_ipoint2(poly,district) := bp_polygon(district_ipoint);
+				unit<uint32> cgal_intersect2 := cgal_overlay_polygon(building_ipoint, district_ipoint2)
+				,	DialogType = "Map"
+				,	DialogData = "geo_rd"
+				{
+					attribute<point_rd> geo_rd (polygon) := geometry[point_rd]
+					{
+						parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+						parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+					}
+					attribute<string> sorted := sort_str(string(first_rel) + '_' + string(second_rel)); //  deze sortering is ivm manis issue 587
+					
+					attribute<string> testAtt:  ['1_0','2_0','3_0','3_5','4_3','4_6','5_0','5_3','5_4','5_5'];
+					
+					attribute<bool>   test_attr := sorted == testAtt; 
+					parameter<bool>   test      := = isEmpty ? '#intersect == 0' :  'all(test_attr)';
+				}
+			}
+
+			container split
+			{
+//				attribute<ipoint> district_ipoint (polygon, district) := ipolygon(source/district/border_clean);
+				container multipolygon
+				{
+					attribute<ipoint> geometry (Region, polygon) := bp_union_polygon(ipolygon(Source/District/border_clean), Source/district/multipolygon_rel);
+					attribute<fpoint> bg_geometry (Region, polygon) := bg_union_polygon(Source/District/border_clean, Source/district/multipolygon_rel);
+					parameter<ipoint> geometry_void (polygon) := geometry[0];
+				}
+				unit<uint32> single_polygons := bp_split_polygon(multipolygon/geometry)
+				{
+					attribute<uint32> ok: [0,0,0,1,1,2,3];
+
+					attribute<bool>   test_attr := polygon_rel == ok;
+					parameter<bool>   test      := = isEmpty ? '#single_polygons == 0' : 'all(test_attr)';
+				}
+				unit<uint32> bg_single_polygons1 := bg_split_polygon(multipolygon/bg_geometry);
+				unit<uint32> bg_single_polygons2 := bg_split_union_polygon(Source/District/border_clean, Source/district/multipolygon_rel)
+				{
+					attribute<uint32> ok: [0,0,0,1,1,2,3];
+
+					attribute<bool>   test_attr := part_rel == ok;
+					parameter<bool>   test      := = isEmpty ? '#bg_single_polygons2 == 0' : 'all(test_attr)';
+				}
+			}
+			container inflate
+			{
+				attribute<ipoint> building_ipoint           (polygon, building) := ipolygon(source/building/boundary)
+				{
+					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+				attribute<ipoint> building_inflated_100     (polygon, building) := =GeoDmsVersion() <= 19.0000d 
+																						? 'polygon_inflated(building_ipoint, float64(100))' 
+																						: 'bp_polygon_inflated(building_ipoint, float64(100))'
+				{
+					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+				parameter<bool> test_attr := pointset/test_attr;
+
+				unit<uint32> pointset := sequence2points(building_inflated_100)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{403392, 113678},{403315, 113678},{403172, 113672},{403118, 113618},{403118, 113541},{403143, 113312},{403197, 113258},{403352, 113171},
+						{403429, 113171},{403483, 113225},{403483, 113302},{403446, 113624},{403392, 113678},{403017, 113335},{402940, 113335},{402860, 113335},
+						{402783, 113335},{402729, 113281},{402729, 113204},{402749, 112877},{402803, 112823},{402880, 112823},{403024, 112856},{403078, 112910},
+						{403078, 112987},{403071, 113281},{403017, 113335},{403271, 113141},{403194, 113141},{403140, 113087},{403133, 112944},{403133, 112867},
+						{403187, 112813},{403421, 112796},{403498, 112796},{403552, 112850},{403579, 112993},{403579, 113070},{403525, 113124},{403271, 113141},
+						{403173, 113954},{403096, 113954},{402906, 113951},{402852, 113897},{402852, 113820},{402866, 113657},{402920, 113603},{402997, 113603},
+						{403190, 113634},{403244, 113688},{403244, 113765},{403227, 113900},{403173, 113954},{402230, 112859},{402153, 112859},{402099, 112805},
+						{402099, 112728},{402099, 112619},{402099, 112542},{402153, 112488},{402230, 112488},{402400, 112508},{402454, 112562},{402498, 112725},
+						{402498, 112802},{402444, 112856},{402230, 112859},{402515, 113975},{402438, 113975},{402174, 113948},{402120, 113894},{402120, 113817},
+						{402137, 113511},{402191, 113457},{402268, 113457},{402546, 113474},{402600, 113528},{402600, 113605},{402569, 113921},{402515, 113975}
+					];
+					attribute<bool> test      := point == att_ok;
+					parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(test)';
+				}
+			}
+			container deflate
+			{
+				attribute<ipoint> building_ipoint           (polygon, building) := ipolygon(source/building/boundary)
+				{
+					parameter<color> brushcolor: [rgb(200,0,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+				attribute<ipoint> building_deflated_50     (polygon, building) := =GeoDmsVersion() <= 19.0000d 
+																						? 'polygon_deflated(building_ipoint, float64(50))' 
+																						: 'bp_polygon_deflated(building_ipoint, float64(50))'
+				{
+					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+
+				attribute<ipoint> building_polygon_d4D75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d4D(building_ipoint, float64(75))'
+																						: 'bp_polygon_d4D(building_ipoint, float64(75))'
+				{
+					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+				attribute<ipoint> building_polygon_d8D75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d8D(building_ipoint, float64(75))'
+																						: 'bp_polygon_d8D(building_ipoint, float64(75))'
+				{
+					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+				attribute<ipoint> building_polygon_d16D75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d16D(building_ipoint, float64(75))'
+																						: 'bp_polygon_d16D(building_ipoint, float64(75))'
+				{
+					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+				attribute<ipoint> building_polygon_d4HV75  (polygon, building) := =GeoDmsVersion() <= 19.0000d
+																						? 'polygon_d4HV(building_ipoint, float64(75))'
+																						: 'bp_polygon_d4HV(building_ipoint, float64(75))'
+				{
+					parameter<color> brushcolor: [rgb(255,255,0)], DialogType = "BrushColor";
+					parameter<color> pencolor:   [rgb(0,0,0)], DialogType = "pencolor";
+				}
+
+				parameter<bool> test_attr := 
+					   pointset/test_attr 
+					&& pointset_d4D75/test_attr && pointset_d8D75/test_attr  && pointset_d16D75/test_attr && pointset_d4HV75/test_attr;
+
+				unit<uint32> pointset := sequence2points(building_deflated_50)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{403310, 113536},{403264, 113534},{403280, 113382},{403331, 113354},{403310, 113536},{402932, 113196},{402872, 113196},{402885, 112976},
+						{402937, 112988},{402932, 113196},{403277, 112997},{403275, 112949},{403418, 112939},{403428, 112987},{403277, 112997},{403091, 113814},
+						{402996, 113812},{403001, 113752},{403097, 113767},{403091, 113814},{402238, 112719},{402238, 112634},{402321, 112644},{402341, 112717},
+						{402238, 112719},{402433, 113829},{402262, 113812},{402274, 113599},{402454, 113610},{402433, 113829}
+					];
+					attribute<bool> test      := point == att_ok;
+					parameter<bool> test_attr := = isEmpty ? '#pointset == 0' : 'all(test)';
+				}
+				unit<uint32> pointset_d4D75 := sequence2points(building_polygon_d4D75)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{402905, 113168},{402901, 113168},{402908, 113055},{402905, 113168},{403050, 113785},{403026, 113785},{403026, 113781},{403050, 113785},{402311, 112690},
+						{402267, 112690},{402267, 112664},{402305, 112669},{402311, 112690},{402410, 113801},{402291, 113789},{402300, 113629},{402426, 113636},{402410, 113801}
+					];
+					attribute<bool> test      := point == att_ok;
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d4D75 == 0' : 'all(test)';
+				}
+				unit<uint32> pointset_d8D75 := sequence2points(building_polygon_d8D75)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{402905, 113168},{402901, 113168},{402908, 113055},{402905, 113168},{403050, 113785},{403026, 113785},{403026, 113781},{403050, 113785},{402311, 112690},
+						{402267, 112690},{402267, 112664},{402305, 112669},{402311, 112690},{402410, 113801},{402291, 113789},{402300, 113629},{402426, 113636},{402410, 113801}
+					];
+					attribute<bool> test      := point == att_ok;
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d8D75 == 0' : 'all(test)';
+				}
+				unit<uint32> pointset_d16D75 := sequence2points(building_polygon_d16D75)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{402905, 113168},{402901, 113168},{402908, 113055},{402905, 113168},{403050, 113785},{403026, 113785},{403026, 113781},{403050, 113785},{402309, 112690},
+						{402267, 112690},{402267, 112664},{402303, 112669},{402309, 112690},{402410, 113801},{402291, 113789},{402300, 113629},{402426, 113636},{402410, 113801}
+					];
+					attribute<bool> test      := point == att_ok;
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d16D75 == 0' : 'all(test)';
+				}
+				unit<uint32> pointset_d4HV75 := sequence2points(building_polygon_d4HV75)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{402290, 112689},{402267, 112689},{402267, 112673},{402287, 112676},{402290, 112689},
+						{402403, 113792},{402296, 113781},{402304, 113634},{402418, 113641},{402403, 113792}
+					];
+					attribute<bool> test      := point == att_ok;
+					parameter<bool> test_attr := = isEmpty ? '#pointset_d4HV75 == 0' : 'all(test)';
+				}
+			}
+			container connectivity
+			{
+				attribute<ipoint> iborder(District, poly) := ipolygon(Source/district/border);
+				attribute<float32>  area  (District) := area(Source/district/border, float32);
+				unit<uint32> polygon_connectvity := polygon_connectivity(iborder)
+				{
+					attribute<district> F1_ok:
+					[
+						0,0,0,
+						1,1,1,
+						2,2,2,
+						3,3,3,
+						4
+					];
+					attribute<district> F2_ok:
+					[
+						3,5,6,
+						2,3,6,
+						3,4,6,
+						4,5,6,
+						5
+					];
+					attribute<float64> area := area(dpolygon(iborder[F1] * iborder[F2]), Float64);
+					attribute<bool> test      := F1 == F1_ok && F2 == F2_ok;
+					parameter<bool> test_attr :== #District == 0 ? '#polygon_connectvity == 0' : ' all(test)';
+				}
+				
+				
+				unit<uint32> arc_connectvity     := polygon_connectivity(ipolygon(Source/road/line_cross));
+			}
+			container difference
+			{
+				parameter<ipoint> att (poly) := source/square/boundary_dif [0] - union_polygon/att;
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{406000, 116000},{400000, 116000},{400000, 110000},{406000, 110000},{406000, 116000},{401047, 115164},{401238, 115099},{401462, 115075},
+						{401475, 114991},{401567, 114983},{401545, 114739},{401757, 114803},{401765, 114673},{401790, 114655},{401803, 114574},{401980, 114626},
+						{401988, 114592},{402049, 114612},{402086, 114462},{402197, 114497},{402223, 114390},{402194, 114374},{402317, 114418},{402404, 114445},
+						{402757, 114546},{402870, 114237},{403025, 113810},{403171, 113401},{403298, 113032},{403434, 112809},{403552, 112612},{403544, 112312},
+						{403792, 112379},{403770, 112450},{403939, 112611},{404063, 112893},{404154, 112857},{404256, 112989},{404300, 112976},{404353, 113116},
+						{404576, 113022},{404669, 113068},{404669, 113160},{404776, 113283},{404923, 113297},{404996, 113582},{405183, 113537},{405282, 113561},
+						{405282, 113562},{405353, 113625},{405415, 113601},{405454, 113512},{405495, 113478},{405013, 112720},{404620, 112098},{404631, 112040},
+						{404664, 111986},{404649, 111969},{404555, 111996},{404271, 112054},{404157, 112066},{404010, 112054},{403934, 112040},{403834, 112009},
+						{403701, 111952},{403372, 111821},{402859, 111567},{402382, 111433},{402133, 111453},{401653, 111646},{401477, 111716},{401234, 111711},
+						{401063, 111873},{400943, 112215},{400864, 112187},{400817, 112176},{400893, 112424},{400916, 112666},{400883, 113120},{400886, 113192},
+						{400888, 113291},{400919, 113685},{400926, 113796},{400965, 114314},{400978, 114523},{401047, 115164},{406000, 116000}
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+			}
+			container bg_difference
+			{
+				parameter<ipoint> att (poly) := bg_difference(source/square/boundary_dif [0], union_polygon/att);
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{400000, 110000},{406000, 110000},{406000, 116000},{400000, 116000},{400000, 110000},{401047, 115164},{401238, 115099},{401462, 115075},
+						{401475, 114991},{401567, 114983},{401545, 114739},{401757, 114803},{401765, 114673},{401790, 114655},{401803, 114574},{401980, 114626},
+						{401988, 114592},{402049, 114612},{402086, 114462},{402197, 114497},{402223, 114390},{402194, 114374},{402317, 114418},{402404, 114445},
+						{402757, 114546},{402870, 114237},{403025, 113810},{403171, 113401},{403298, 113032},{403434, 112809},{403552, 112612},{403544, 112312},
+						{403792, 112379},{403770, 112450},{403939, 112611},{404063, 112893},{404154, 112857},{404256, 112989},{404300, 112976},{404353, 113116},
+						{404576, 113022},{404669, 113068},{404669, 113160},{404776, 113283},{404923, 113297},{404996, 113582},{405183, 113537},{405282, 113561},
+						{405282, 113562},{405353, 113625},{405415, 113601},{405454, 113512},{405495, 113478},{405013, 112720},{404620, 112098},{404631, 112040},
+						{404664, 111986},{404649, 111969},{404555, 111996},{404271, 112054},{404157, 112066},{404010, 112054},{403934, 112040},{403834, 112009},
+						{403701, 111952},{403372, 111821},{402859, 111567},{402382, 111433},{402133, 111453},{401653, 111646},{401477, 111716},{401234, 111711},
+						{401063, 111873},{400943, 112215},{400864, 112187},{400817, 112176},{400893, 112424},{400916, 112666},{400883, 113120},{400886, 113192},
+						{400888, 113291},{400919, 113685},{400926, 113796},{400965, 114314},{400978, 114523},{401047, 115164},{400000, 110000}
+
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+			}
+			container bg_union
+			{
+				attribute<ipoint> att (Source/square, poly) := bg_union(source/square/boundary_mul, source/square/boundary_plus1);
+
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{406000, 110000},{406000, 116000},{400000, 116000},{400000, 110000},{406000, 110000}
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+			}
+
+			container bg_intersect
+			{
+				parameter<ipoint> att (poly) := bg_intersect(source/square/boundary_dif [0], union_polygon/att);
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{401047, 115164},{400978, 114523},{400965, 114314},{400926, 113796},{400919, 113685},{400888, 113291},{400886, 113192},{400883, 113120},{400916, 112666},
+						{400893, 112424},{400817, 112176},{400864, 112187},{400943, 112215},{401063, 111873},{401234, 111711},{401477, 111716},
+						{401653, 111646},{402133, 111453},{402382, 111433},{402859, 111567},{403372, 111821},{403701, 111952},{403834, 112009},{403934, 112040},{404010, 112054},
+						{404157, 112066},{404271, 112054},{404555, 111996},{404649, 111969},{404664, 111986},{404631, 112040},{404620, 112098},{405013, 112720},{405495, 113478},
+						{405454, 113512},{405415, 113601},{405353, 113625},{405282, 113562},{405282, 113561},{405183, 113537},{404996, 113582},{404923, 113297},{404776, 113283},
+						{404669, 113160},{404669, 113068},{404576, 113022},{404353, 113116},{404300, 112976},{404256, 112989},{404154, 112857},{404063, 112893},{403939, 112611},
+						{403770, 112450},{403792, 112379},{403544, 112312},{403552, 112612},{403434, 112809},{403298, 113032},{403171, 113401},{403025, 113810},{402870, 114237},
+						{402757, 114546},{402404, 114445},{402317, 114418},{402194, 114374},{402223, 114390},{402197, 114497},{402086, 114462},{402049, 114612},{401988, 114592},
+						{401980, 114626},{401803, 114574},{401790, 114655},{401765, 114673},{401757, 114803},{401545, 114739},{401567, 114983},{401475, 114991},{401462, 115075},
+						{401238, 115099},{401047, 115164}
+
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+			}
+			container bg_xor
+			{
+				parameter<ipoint> att (poly) := bg_xor(source/square/boundary_dif [0], union_polygon/att);
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{400000, 110000},{406000, 110000},{406000, 116000},{400000, 116000},{400000, 110000},{401047, 115164},{401238, 115099},
+						{401462, 115075},{401475, 114991},{401567, 114983},{401545, 114739},{401757, 114803},{401765, 114673},{401790, 114655},{401803, 114574},
+						{401980, 114626},{401988, 114592},{402049, 114612},{402086, 114462},{402197, 114497},{402223, 114390},{402194, 114374},{402317, 114418},
+						{402404, 114445},{402757, 114546},{402870, 114237},{403025, 113810},{403171, 113401},{403298, 113032},{403434, 112809},{403552, 112612},
+						{403544, 112312},{403792, 112379},{403770, 112450},{403939, 112611},{404063, 112893},{404154, 112857},{404256, 112989},{404300, 112976},
+						{404353, 113116},{404576, 113022},{404669, 113068},{404669, 113160},{404776, 113283},{404923, 113297},{404996, 113582},{405183, 113537},
+						{405282, 113561},{405282, 113562},{405353, 113625},{405415, 113601},{405454, 113512},{405495, 113478},{405013, 112720},{404620, 112098},
+						{404631, 112040},{404664, 111986},{404649, 111969},{404555, 111996},{404271, 112054},{404157, 112066},{404010, 112054},{403934, 112040},
+						{403834, 112009},{403701, 111952},{403372, 111821},{402859, 111567},{402382, 111433},{402133, 111453},{401653, 111646},{401477, 111716},
+						{401234, 111711},{401063, 111873},{400943, 112215},{400864, 112187},{400817, 112176},{400893, 112424},{400916, 112666},{400883, 113120},
+						{400886, 113192},{400888, 113291},{400919, 113685},{400926, 113796},{400965, 114314},{400978, 114523},{401047, 115164},{400000, 110000}
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+			}
+			container bg_overlay_polygon
+			{
+				unit<uint32> overlay := bg_overlay_polygon(source/building/boundary, Source/district/border_clean)
+				{
+					attribute<uint32> first_rel_ok:
+					[
+						1,2,3,5,4,5,5,3,5,4
+					];
+					attribute<uint32> second_rel_ok:
+					[
+						0,0,0,0,3,3,4,5,5,6
+					];
+					attribute<bool> test := first_rel == first_rel_ok && second_rel == second_rel_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#overlay == 0'  : 'all(overlay/test)';
+			}
+			container bp_overlay_polygon
+			{
+				unit<uint32> overlay := bp_overlay_polygon(overlay_polygon/building_ipoint, overlay_polygon/district_ipoint)
+				{
+					attribute<uint32> first_rel_ok:
+					[
+						1,2,3,5,4,5,5,3,5,4
+					];
+					attribute<uint32> second_rel_ok:
+					[
+						0,0,0,0,3,3,4,5,5,6
+					];
+
+
+					attribute<bool> test := first_rel == first_rel_ok && second_rel == second_rel_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#overlay == 0'  : 'all(overlay/test)';
+			}
+			container multiply
+			{
+				parameter<ipoint> att (poly) := source/square/boundary_mul[0] * union_polygon/att;
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						{401047, 115164},{400978, 114523},{400965, 114314},{400926, 113796},{400919, 113685},{400888, 113291},{400886, 113192},{400883, 113120},
+						{400916, 112666},{400893, 112424},{400817, 112176},{400864, 112187},{400943, 112215},{401063, 111873},{401234, 111711},{401477, 111716},
+						{401653, 111646},{402133, 111453},{402382, 111433},{402859, 111567},{403000, 111636},{403000, 113878},{402870, 114237},{402757, 114546},
+						{402404, 114445},{402317, 114418},{402194, 114374},{402223, 114390},{402197, 114497},{402086, 114462},{402049, 114612},{401988, 114592},
+						{401980, 114626},{401803, 114574},{401790, 114655},{401765, 114673},{401757, 114803},{401545, 114739},{401567, 114983},{401475, 114991},
+						{401462, 115075},{401238, 115099},{401047, 115164}
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+				
+				parameter<ipoint> mul_arc (arc) := ipolygon(Source/road/line_cross[1]) * ipolygon(Source/road/line_cross[2]);
+
+			}
+			container plus
+			{
+				parameter<ipoint> att (poly):= source/square/boundary_plus1[0] + source/square/boundary_plus2[0];
+				unit<uint32> pointset := sequence2points(att)
+				{
+					attribute<ipoint> att_ok:
+					[
+						 {406000, 116000},{400000, 116000},{400000, 110000},{406000, 110000},{406000, 116000},{416000, 116000}
+						,{410000, 116000},{410000, 110000},{416000, 110000},{416000, 116000},{406000, 116000}
+					];
+					attribute<bool> test := point == att_ok;
+				}
+				parameter<bool> test_param := = isEmpty ? '#pointset == 0'  : 'all(pointset/test)';
+			}
+			container StringToSequence
+			{
+				container source
+				{
+					parameter<string> param  := '{10: 41 9999 42 10 600 1 7 116 0 110}';
+					unit<uint32> posListUnit := range(uint32, 0, 1);
+					unit<uint32> pointSet    := range(uint32, 0, 10)
+					{
+						attribute<float64> float64: [41,9999,42,10,600,1,7,116,0,110];
+					}
+				}
+				container tests
+				{
+					parameter<uint64>  param_uint64  (poly) := Uint64Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == uint64(source/pointSet/float64);
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<uint32>  param_uint32  (poly) := Uint32Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == uint32(source/pointSet/float64);
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<uint16>  param_uint16  (poly) := Uint16Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == uint16(source/pointSet/float64);
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<uint8>   param_uint8   (poly) := Uint8Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := eq_or_both_null(union_data(source/pointSet, elements/point), uint8(source/pointSet/float64));
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<int64>   param_int64   (poly) := Int64Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int64(source/pointSet/float64);
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<int32>   param_int32   (poly) := Int32Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int32(source/pointSet/float64);
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<int16>   param_int16   (poly) := Int16Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int16(source/pointSet/float64);
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<int8>    param_int8    (poly) := Int8Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := eq_or_both_null(union_data(source/pointSet, elements/point),int8(source/pointSet/float64));
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<float64> param_float64 (poly) := Float64Seq(source/param)
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == source/pointSet/float64;
+						parameter<bool> test                     := all(att_ok);
+					}
+					parameter<float32> param_float32 (poly) := Float32Seq(source/param)	
+					{
+						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
+						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == float32(source/pointSet/float64);
+						parameter<bool> test                     := all(att_ok);
+					}
+				}
+			}
+			container bg_simplify: Using = "source"
+			{
+				container Circle
+				{
+					unit<uint32> template: nrofrows = 65
+					{
+						attribute<float64> angle := float64(id(.)) * 2d * float64(pi()) / 64d;
+						attribute<float64> x     := cos(angle);
+						attribute<float64> y     := sin(angle);
+					}
+
+					unit<uint32> shape: nrofrows = 1
+					{
+						attribute<point_rd> centre_point := const(point_yx(156000f, 461000f, point_rd),.);
+					}
+
+					parameter<m> radius   := 500[m];
+					unit<uint32> pointset := combine(shape, template)
+					{
+						attribute<point_rd> point :=
+							point_yx(
+								 pointcol(shape/centre_point[first_rel]) + radius * float32(circle/template/x[second_rel])
+								,pointrow(shape/centre_point[first_rel]) + radius * float32(circle/template/y[second_rel])
+								,point_rd
+							);
+						attribute<uint32> ordinal := #pointset - second_rel - 1;
+					}
+					attribute<point_rd> geometry     (poly, shape) := points2sequence(pointset/point, pointset/first_rel, pointset/ordinal);
+					attribute<point_rd> geometry_arc (arc, shape)  := points2sequence(pointset/point, pointset/first_rel, pointset/ordinal)
+					{
+						parameter<int16>  PenWidth      := 2s          , DialogType = "PenWidth";
+					}
+				}
+				attribute<point_rd> circle_border (Circle/shape, arc)  := bg_simplify_linestring(Circle/geometry, 50.0)
+				{
+					parameter<int16>  PenWidth      := 2s          , DialogType = "PenWidth";
+				}
+				attribute<point_rd> circle_poly   (Circle/shape, poly) := bg_simplify_polygon(Circle/geometry, 50.0);
+				
+				
+				attribute<point_rd> border  (district, arc) := bg_simplify_linestring(district/border, 100.0)
+				{
+					parameter<uint32> Brushcolor := rgb(0,255,0), DialogType = "BrushColor";
+					parameter<uint32> Pencolor   := rgb(0,0,200), DialogType = "PenColor";
+				}
+
+				attribute<point_rd> poly  (district, poly) := bg_simplify_polygon(district/border, 100.0)
+				{
+					parameter<uint32> Brushcolor := rgb(0,255,0), DialogType = "BrushColor";
+					parameter<uint32> Pencolor   := rgb(0,0,200), DialogType = "PenColor";
+				}
+
+				unit<uint32> pointset_border := sequence2points(border);
+				unit<uint32> pointset_poly := sequence2points(poly);
+
+				parameter<bool> isEmpty := #pointset_border == 0;
+
+				container tests
+				{
+					container circle
+					{
+						unit<uint32> pointset_border := sequence2points(circle_border)
+						{
+							attribute<point_rd> ok   : [{461500, 156000},{461354, 155646},{461000, 155500},{460646, 155646},{460500, 156000},{460646, 156354},{461000, 156500},{461354, 156354},{461500, 156000}];
+							attribute<bool>     test := point_isNearby(point, ok, Dif_all_float32);
+						}
+						unit<uint32> pointset_line   := sequence2points(circle_poly)
+						{
+							attribute<point_rd> ok   : [{460500, 156000},{460646, 156354},{461000, 156500},{461354, 156354},{461500, 156000},{461354, 155646},{461000, 155500},{460646, 155646},{460500, 156000}];
+							attribute<bool>     test := point_isNearby(point, ok, Dif_all_float32);
+						}
+						parameter<bool> test_attr := all(pointset_border/test) && all(pointset_line/test);
+					}
+					container border
+					{
+						attribute<bool> geometry   (pointset_border):= = isEmpty
+							? 'union_data(pointset_border, source/pointset/Point) == pointset_border/point' 
+							: 'union_data(pointset_border, source/bg_simplify/pointset_border/Point) == pointset_border/point';
+						attribute<bool> Sequence_rel (pointset_border):= =isEmpty 
+							? 'union_data(pointset_border, source/pointset/districtnr ) == pointset_border/Sequence_rel ' 
+							: 'union_data(pointset_border, source/bg_simplify/pointset_border/Point) == pointset_border/point';
+						attribute<bool> ordinal    (pointset_border):= =isEmpty 
+							? 'union_data(pointset_border, source/pointset/ordinal) == pointset_border/ordinal' 
+							: 'union_data(pointset_border, source/bg_simplify/pointset_border/Point) == pointset_border/point';
+
+						parameter<bool> test_attr := all(geometry) && all(Sequence_rel) && all(ordinal);
+					}
+					container poly
+					{
+						attribute<bool> geometry   (pointset_poly):= = isEmpty
+							? 'union_data(pointset_poly, source/pointset/Point) == pointset_poly/point' 
+							: 'union_data(pointset_poly, source/bg_simplify/pointset_poly/Point) == pointset_poly/point';
+						attribute<bool> Sequence_rel (pointset_poly):= =isEmpty 
+							? 'union_data(pointset_poly, source/pointset/districtnr ) == pointset_poly/Sequence_rel ' 
+							: 'union_data(pointset_poly, source/bg_simplify/pointset_poly/Point) == pointset_poly/point';
+						attribute<bool> ordinal    (pointset_poly):= =isEmpty 
+							? 'union_data(pointset_poly, source/pointset/ordinal) == pointset_poly/ordinal' 
+							: 'union_data(pointset_poly, source/bg_simplify/pointset_poly/Point) == pointset_poly/point';
+
+						parameter<bool> test_attr := all(geometry) && all(Sequence_rel) && all(ordinal);
+					}
+				}
+				parameter<bool> test_attr := tests/border/test_attr &&  tests/poly/test_attr;
+			}
+			container bg_buffer_multi_point: Using = "source"
+			{
+				unit<uint32> road_sel := select_with_org_rel(id(RoadDomain) < 1RoadDomain )
+				{
+					// Keep arc composition for backward compatibility: the multipoint keyword and points2multi_point
+					// only exist from GeoDMS 20.0.0 / 20.2.0, while this test must parse back to 17.x. From 20.2.0
+					// bg_buffer_multi_point logs a (non-fatal) deprecation warning on arc input; the result is identical (#1038).
+					attribute<point_rd> geometry (arc) := road/line[org_rel];
+					unit<uint32> pointset := Sequence2points(geometry);
+				}
+				attribute<point_rd>    att  (poly, road_sel) := bg_buffer_multi_point(road_sel/Geometry, 100d, 16b);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[
+					 	 {399246, 112731},{399208, 112723},{399175, 112702},{399154, 112669},{399146, 112631},{399154, 112593},{399175, 112560},{399208, 112539},{399246, 112531}
+						,{399284, 112539},{399317, 112560},{399338, 112593},{399346, 112631},{399338, 112669},{399317, 112702},{399284, 112723},{399246, 112731},{398599, 111966}
+						,{398561, 111958},{398528, 111937},{398507, 111904},{398499, 111866},{398507, 111828},{398528, 111795},{398561, 111774},{398599, 111766},{398637, 111774}
+						,{398670, 111795},{398691, 111828},{398699, 111866},{398691, 111904},{398670, 111937},{398637, 111958},{398599, 111966},{399246, 112731}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+			container bg_buffer_linestring: Using = "source"
+			{
+				attribute<point_rd>    att  (poly, RoadDomain) := bg_buffer_linestring(road/line, 100d, 16b);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[{399170, 112696},{398523, 111931},{398504, 111896},{398499, 111858},{398510, 111820},{398534, 111790},{398569, 111771},{398607, 111766},{398645, 111777},{398675, 111801},
+					 {399322, 112566},{399341, 112601},{399346, 112639},{399335, 112677},{399311, 112707},{399276, 112726},{399238, 112731},{399200, 112720},{399170, 112696},{399490, 111823},
+					 {401784, 111425},{401823, 111426},{401859, 111442},{401886, 111471},{401900, 111507},{401899, 111546},{401883, 111582},{401854, 111608},{401818, 111623},{399512, 112023},
+					 {399489, 112024},{398593, 111966},{398555, 111956},{398524, 111932},{398504, 111898},{398499, 111860},{398509, 111822},{398533, 111791},{398567, 111771},{398605, 111766},
+					 {399490, 111823},{401526, 115021},{398581, 114923},{398543, 114914},{398511, 114891},{398490, 114858},{398484, 114820},{398493, 114782},{398516, 114750},{398549, 114729},
+					 {398587, 114723},{401532, 114821},{401570, 114830},{401602, 114853},{401623, 114886},{401629, 114924},{401620, 114962},{401597, 114994},{401564, 115015},{401526, 115021}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+
+			container bg_buffer_single_polygon
+			{
+				parameter<point_rd>    src  (poly) := value(Source/square/boundary_dif[0],point_rd);
+				parameter<float32>     area        := area(src,float32);
+			
+				parameter<point_rd>    att  (poly) := bg_buffer_single_polygon(src, 10d, 16b);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[
+						{400000, 109990},{406000, 109990},{406004, 109991},{406007, 109993},{406009, 109996},
+						{406010, 110000},{406010, 116000},{406009, 116004},{406007, 116007},{406004, 116009},
+						{406000, 116010},{400000, 116010},{399996, 116009},{399993, 116007},{399991, 116004},
+						{399990, 116000},{399990, 110000},{399991, 109996},{399993, 109993},{399996, 109991},
+						{400000, 109990}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+
+			container bg_buffer_multi_polygon
+			{
+				attribute<point_rd>    src  (poly, SDomain) := Source/bg_buffer_multi_polygon/poly/geometry;
+			
+				attribute<point_rd>    att  (poly, SDomain) := bg_buffer_multi_polygon(src, 10d, 16b);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[
+						{158100, 461110},{157950, 461110},{157946, 461109},{157943, 461107},{157941, 461104},{157940, 461100},{157940, 460900},
+						{157941, 460896},{157943, 460893},{157946, 460891},{157950, 460890},{158100, 460890},{158104, 460891},{158107, 460893}, 
+						{158109, 460896},{158110, 460900},{158110, 461100},{158109, 461104},{158107, 461107},{158104, 461109},{158100, 461110}, 
+						{158500, 461510},{157500, 461510},{157496, 461509},{157493, 461507},{157491, 461504},{157490, 461500},{157490, 460500}, 
+						{157491, 460496},{157493, 460493},{157496, 460491},{157500, 460490},{158500, 460490},{158504, 460491},{158507, 460493}, 
+						{158509, 460496},{158510, 460500},{158510, 461500},{158509, 461504},{158507, 461507},{158504, 461509},{158500, 461510}, 
+						{158190, 460810},{157810, 460810},{157810, 461190},{158190, 461190},{158190, 460810},{158500, 461510},{158100, 461110}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+			container bg_outer_single_polygon
+			{
+				parameter<point_rd>    src  (poly) := value(Source/square/boundary_dif[0],point_rd);
+				parameter<float32>     area        := area(src,float32);
+			
+				parameter<point_rd>    att  (poly) := bg_outer_single_polygon(src);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[
+						{400000, 110000},
+						{406000, 110000},
+						{406000, 116000},
+						{400000, 116000},
+						{400000, 110000}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+
+			container bg_outer_multi_polygon
+			{
+				attribute<point_rd>    src  (poly, SDomain) := Source/bg_buffer_multi_polygon/poly/geometry;
+				attribute<float32>     area (SDomain)       := area(src,float32);
+			
+				attribute<point_rd>    att  (poly, SDomain) := bg_outer_multi_polygon(src);
+				unit<uint32> pointset := Sequence2points(att)
+				{
+					attribute<point_rd> ok:
+					[
+						{158500, 461500},
+						{157500, 461500},
+						{157500, 460500},
+						{158500, 460500},
+						{158500, 461500}
+					];
+					attribute<point_rd> ok_empty: [];
+					attribute<bool> test  := = isEmpty ? 'point_isNearby(point, ok_empty, Dif_all_float32)' : 'point_isNearby(point, ok, Dif_all_float32)';
+				}
+				parameter<bool> test_attr   := all(pointset/test);
+			}
+			
+			container split_multi_linestring
+			{
+				unit<uint32> poly := SDomain 
+				{
+					attribute<dpoint> geometry (poly):= points2Sequence(pointset_poly/point, pointset_poly/sequence, pointset_poly/ordinal)[dpoint];
+				}
+	
+				unit<uint32> pointset_poly : nrofrows   = 5
+				{
+					attribute<float32> row_org : [158100, 0, 158100, 0, 20000];
+					attribute<float32> col_org : [461100, 0, 461100, 0, 461100];
+
+					attribute<float32> row := row_org == 0f ? 0f / 0f : row_org;
+					attribute<float32> col := col_org == 0f ? 0f / 0f : col_org;
+
+					attribute<dpoint> point    := dpoint(point_xy(row, col));
+					attribute<poly>   sequence := const(0[poly],.);
+					attribute<uint32> ordinal  := id(.);
+				}
+
+				unit<uint32> result_domain := split_multi_linestring(poly/geometry);
+				parameter<bool> test_attr   := #result_domain = 3;
+				
+			}
+
+			container results
+			{
+				unit<uint32> Cand : nrofrows = 52
+				{
+					attribute<string> Spec :
+					[
+						 'sequence2points/test_attr'
+					,	'points2sequence/test_attr'
+					,	'arc_length/test_attr'
+					,	'area/test_attr'
+					,	'lower_bound/test_attr'
+					,	'upper_bound/test_attr'
+					,	'center_bound/test_attr'
+					,	'centroid/test_attr'
+					,	'mid/test_attr'
+					,	'centroid_or_mid/test_attr'
+					,	'centroid_or_mid_complex/test_attr'
+					,	'poly2grid/test_attr'
+					,	'union_polygon/test_attr'
+					,	'bp_union_polygon/test_attr'
+					,	'overlay_polygon/intersect/test'
+					,	'split/single_polygons/test'
+					,	'split/bg_single_polygons2/test'
+					,	'inflate/test_attr'
+					,	'deflate/test_attr'
+					,	'connectivity/polygon_connectvity/test_attr'
+					,	'difference/test_param'
+					,	'multiply/test_param'
+					,	'plus/test_param'
+					,	'StringToSequence/tests/param_uint64/test'
+					,	'StringToSequence/tests/param_uint32/test'
+					,	'StringToSequence/tests/param_uint16/test'
+					,	'StringToSequence/tests/param_uint8/test'
+					,	'StringToSequence/tests/param_int64/test'
+					,	'StringToSequence/tests/param_int32/test'
+					,	'StringToSequence/tests/param_int16/test'
+					,	'StringToSequence/tests/param_int8/test'
+					,	'StringToSequence/tests/param_float64/test'
+					,	'StringToSequence/tests/param_float32/test'
+					,	'bg_simplify/test_attr'
+					,	'bg_simplify/tests/Circle/test_attr'
+					,	'bg_buffer_multi_point/test_attr'
+					,	'bg_buffer_linestring/test_attr'
+					,	'bg_buffer_single_polygon/test_attr'
+					,	'bg_buffer_multi_polygon/test_attr'
+					,	'bg_outer_single_polygon/test_attr'
+					,	'bg_outer_multi_polygon/test_attr'
+					,	'split_multi_linestring/test_attr'
+					,	'bg_difference/test_param'
+					,	'bg_union/test_param'
+					,	'bg_xor/test_param'
+					,	'bg_intersect/test_param'
+					,	'bg_overlay_polygon/test_param'
+					,	'bp_overlay_polygon/test_param'
+					,	'overlay_polygon/intersect/test'
+					,	'overlay_polygon/bg_intersect/test'
+					,	'overlay_polygon/cgal_intersect/test'
+					,	'overlay_polygon/cgal_intersect2/test'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
+			}
+		}
+	}

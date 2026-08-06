@@ -703,11 +703,16 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
 # testje in that version; the untested names go to t010_operator_coverage.txt in
 # the same result folder. GeoDMS only MEASURES (the dump); the report judges.
 def _t010_spec_tested_ops() -> set:
-    cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Operator", "cfg", "Operator.dms")
-    try:
-        with open(cfg, "r", encoding="latin-1") as f:
-            text = f.read()
-    except OSError:
+    cfg_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Operator", "cfg")
+    files = [os.path.join(cfg_dir, "Operator.dms")] + sorted(glob.glob(os.path.join(cfg_dir, "Operator", "*.dms")))
+    text = ""
+    for fn in files:
+        try:
+            with open(fn, "r", encoding="latin-1") as f:
+                text += f.read()
+        except OSError:
+            pass
+    if not text:
         return set()
     ops = set()
     for spec_block in re.findall(r"attribute<string> Spec :\s*\[(.*?)\];", text, re.S):
@@ -722,6 +727,23 @@ def _t010_spec_tested_ops() -> set:
                 ops.add(seg[:-3] if seg.endswith("_op") else seg)
     return ops
 
+def _t010_documented_targets() -> dict:
+    """{lowercase naam: (naam, wiki-categorie)} uit operator_coverage_targets.txt
+    (gegenereerd door batch/make_operator_coverage_targets.py uit de wiki)."""
+    fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), "operator_coverage_targets.txt")
+    targets = {}
+    try:
+        with open(fn, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                name, _, category = line.partition("\t")
+                targets[name.lower()] = (name, category)
+    except OSError:
+        pass
+    return targets
+
 def _append_t010_coverage(parsed_indicators:dict, rdir:str):
     groups_fn = f"{rdir}/t010_operator_groups.txt"
     if not os.path.isfile(groups_fn):
@@ -730,13 +752,32 @@ def _append_t010_coverage(parsed_indicators:dict, rdir:str):
         groups = [g for g in f.read().split(";") if g]
     if not groups:
         return
+    groups_low = {g.lower() for g in groups}
     tested = _t010_spec_tested_ops()
-    untested = sorted(g for g in groups if g.lower() not in tested)
+    targets = _t010_documented_targets()
+
+    doc_in_version = {t for t in targets if t in groups_low}
+    doc_untested = sorted(t for t in doc_in_version if t not in tested)
+    doc_unmatched = sorted(t for t in targets if t not in groups_low)
+    other_untested = sorted(g for g in groups if g.lower() not in tested and g.lower() not in targets)
+
     with open(f"{rdir}/t010_operator_coverage.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(untested))
-    covered = len(groups) - len(untested)
+        f.write(f"# documented (wiki) operators in this version without a test ({len(doc_untested)}):\n")
+        for t in doc_untested:
+            f.write(f"{targets[t][0]}\t{targets[t][1]}\n")
+        f.write(f"\n# wiki names not matching any operator group in this version ({len(doc_unmatched)}) - curation/aliases:\n")
+        for t in doc_unmatched:
+            f.write(f"{targets[t][0]}\t{targets[t][1]}\n")
+        f.write(f"\n# undocumented operator groups without a test ({len(other_untested)}):\n")
+        f.write("\n".join(other_untested) + "\n")
+
+    if doc_in_version:
+        doc_covered = len(doc_in_version) - len(doc_untested)
+        parsed_indicators["coverage_doc"] = [
+            f"documented operators covered: {doc_covered} of {len(doc_in_version)} (see t010_operator_coverage.txt)", True]
+    covered = len(groups) - len(doc_untested) - len(other_untested)
     parsed_indicators["coverage"] = [
-        f"operator groups with a test: {covered} of {len(groups)} (untested: {len(untested)}, see t010_operator_coverage.txt)", True]
+        f"operator groups with a test: {covered} of {len(groups)}", True]
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
 

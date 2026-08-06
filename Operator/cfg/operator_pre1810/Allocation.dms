@@ -1,0 +1,393 @@
+// AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
+// Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
+// Edit Operator.dms / Operator/*.dms and re-run the script instead.
+	container Allocation: url = "http://www.objectvision.nl/geodms/operators-a-functions/allocation", Using = "/Domains;/Units;/Tolerances"
+	{
+		unit<fpoint>  TestCoords := Range(point_yx(100f, 0f), point_yx(600f, 600f));
+		unit<float32> Meter      := BaseUnit('m', float32);
+		unit<float32> Meter2     := Meter * Meter;
+		unit<float32> Ha         := 10000.0 * Meter2;
+		parameter<Float32> gridsize := 500f;
+		
+		unit<spoint> DomainGrid :=
+				range(
+				  gridset(
+					fpoint, 
+					point_yx(-gridsize, gridsize, TestCoords), 
+					point_yx(625000f, 10000f, TestCoords), 
+					SPoint
+				  ),
+				  point_yx(int16(0), int16(0))
+				, point_yx(int16(6), int16(6))
+				),
+			DialogType = "Map" 
+		{
+			parameter<meter2> NrMeter2PerCell := gridsize[meter] * gridsize[meter];
+			parameter<ha>     NrHaPerCell     := convert(NrMeter2PerCell, ha);
+		}
+
+		unit<spoint> EDomainGrid :=
+				range(
+				  gridset(
+					fpoint, 
+					point_yx(-gridsize, gridsize, TestCoords), 
+					point_yx(float32(625000.0), float32(10000.0), TestCoords), 
+					SPoint
+				  ),
+				  point_yx(int16(0), int16(0))
+				, point_yx(int16(0), int16(0))
+				),
+			DialogType = "Map"
+		{
+			parameter<meter2> NrMeter2PerCell := gridsize[meter] * gridsize[meter];
+			parameter<ha>     NrHaPerCell     := convert(NrMeter2PerCell, ha);
+		}
+
+		container source
+		{
+			unit<float32> EurM2;
+
+			attribute<lu_type> landuse (DomainGrid):
+			[
+			 2, 2, 2, 1, null, null,
+			 2, 2, 0, 0, null, 1,
+			 2, 0, 0, 1,    1, 1,
+			 2, 0, 0, 0,    1, 1,
+			 2, 0, 0, 1, null, 1,
+			 2, 2, 2, 2,    2, 2
+			];
+			unit <uint8> lu_type: nrofrows = 3
+			{
+				attribute<string>  Name:           [ 'Living', 'Working', 'Nature' ], DialogType = "LabelText";
+				attribute<string>  PartioningName: [ 'Living', 'Working', 'Nature' ];
+				attribute<lu_type> partioning := id(lu_type);
+				attribute<uint32>  BrushColor: [rgb(200,0,0),rgb(100,100,100),rgb(0,200,0)], DialogType = "BrushColor";
+			}
+			container SuitabilityMaps
+			{
+				attribute<EurM2> Living  (DomainGrid):
+				[
+				 1,  2,  5, 4,  3, -1,
+				 2,  5,  8, 9,  7, 3,
+				 4, 10, 12,13, 12, 6,
+				 5, 11, 13,14, 12, 6,
+				 4,  9,  9, 5,  3, 2,
+				 2,  2,  4, 3,  1, 1
+				];
+				attribute<EurM2> Working (DomainGrid):
+				[
+				 1, 1, 2, 3,  4, -6,
+				 2, 3, 4, 6,  8, 9,
+				 2, 4, 9,11, 12,10,
+				 1, 3, 5, 9, 10, 6,
+				 2, 4, 5, 5,  3, 2,
+				 1, 1, 2, 1,  1, 1
+				];
+				attribute<EurM2> Nature  (DomainGrid):
+				[
+				 3, 3, 3, 2, 2, -2,
+				 3, 3, 2, 2, 2, 2,
+				 3, 2, 1, 1, 1, 1,
+				 3, 2, 1, 1 ,1, 2,
+				 3, 3, 2, 1, 2, 2,
+				 3, 3, 3, 3, 3, 3
+				];
+			}
+			container regMaps
+			{
+				unit <uint8> p1: nrofrows = 1;
+				unit <uint8> p2: nrofrows = 2;
+
+				attribute<p1> p1Map (DomainGrid) := const(0, DomainGrid, p1);
+				attribute<p2> p2Map (DomainGrid) := pointRow(ID(DomainGrid)) < int16(4) ? value(0,p2) : value(1,p2);
+			}
+			container claim_sources
+			{
+				container p1
+				{
+					attribute<uint32> Nature_min (regMaps/p1) := const(12, regMaps/p1);
+					attribute<uint32> Nature_max (regMaps/p1) := const(20, regMaps/p1);
+					attribute<uint32> Living_min (regMaps/p1) := const(5, regMaps/p1);
+					attribute<uint32> Living_max (regMaps/p1) := const(9, regMaps/p1);
+				}
+				container p2
+				{
+					attribute<uint32> Working_min (regMaps/p2) : [6, 2];
+					attribute<uint32> Working_max (regMaps/p2) : [10, 4];
+				}
+			}
+			container claims_min
+			{
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_min);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min);
+			}
+			container aggr_claims_min
+			{
+				parameter<uint32> Living := sum(claims_min/Living);
+				parameter<uint32> Working:= sum(claims_min/Working);
+				parameter<uint32> Nature := sum(claims_min/Nature);
+			}
+			container claims_max
+			{
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max);
+			}
+			container claims_max2
+			{
+				attribute<uint32> Living (regMaps/p1) := claims_max/Living + claims_max/Living;
+				attribute<uint32> Nature (regMaps/p1) := claims_max/Nature + claims_max/Nature;
+			}
+			container aggr_claims_max
+			{
+				parameter<uint32> Living := sum(claims_max/Living);
+				parameter<uint32> Working:= sum(claims_max/Working);
+				parameter<uint32> Nature := sum(claims_max/Nature);
+			}
+			container regionSets
+			{
+				attribute<regMaps/p1> Nature (DomainGrid) := regMaps/p1Map;
+				attribute<regMaps/p1> Living (DomainGrid) := regMaps/p1Map;
+				attribute<regMaps/p2> Working(DomainGrid) := regMaps/p2Map;
+			}
+			unit<uint16> AtomicRegions := overlay(lu_type/PartioningName, DomainGrid, regionSets);
+
+			attribute<Bool> InRegio (DomainGrid):
+			[
+			 True, True, True,True,False,True,
+			 True, True, True,True,False,True,
+			 True, True, True,True,True,True,
+			 True, True, True,True,True,True,
+			 True, True, True,True,False,True,
+			 True, True, True,True,True,True
+			];
+			attribute<Bool> FreeLand (DomainGrid) := InRegio;
+
+			container Compacted
+			{
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
+					label = "allocation domain";
+				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
+				
+				container SuitabilityMaps
+				{
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/org_rel]  * int32(1000);
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/org_rel] * int32(1000);
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/org_rel]  * int32(1000);
+				}
+				container SuitabilityMapsDiv
+				{
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+				}
+				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/org_rel];
+			}
+			parameter<int32> treshold := int32(0);
+			container FeasibleSolution;
+		}
+		container Esource
+		{
+			unit<float32> EurM2;
+
+			attribute<lu_type> landuse (EDomainGrid):
+			[
+			];
+			unit <uint8> lu_type: nrofrows = 0
+			{
+				attribute<string>  Name:           [], DialogType = "LabelText";
+				attribute<string>  PartioningName: [];
+				attribute<lu_type> partioning := id(lu_type);
+				attribute<uint32>  BrushColor: [], DialogType = "BrushColor";
+			}
+			container SuitabilityMaps
+			{
+				attribute<EurM2> Living  (DomainGrid):
+				[
+				];
+				attribute<EurM2> Working (DomainGrid):
+				[
+				];
+				attribute<EurM2> Nature  (DomainGrid):
+				[
+				];
+			}
+			container regMaps
+			{
+				unit <uint8> p1: nrofrows = 0;
+				unit <uint8> p2: nrofrows = 0;
+
+				attribute<p1> p1Map (DomainGrid) := const(0, DomainGrid, p1);
+				attribute<p2> p2Map (DomainGrid) := pointRow(ID(DomainGrid)) < int16(4) ? value(0,p2) : value(1,p2);
+			}
+			container claim_sources
+			{
+				unit<float32> Meter := BaseUnit('m', float32);
+				unit<float32> Ha :=10000.0 * Meter * Meter;
+
+				container p1
+				{
+					attribute<Ha> Nature_min (regMaps/p1): [];
+					attribute<Ha> Nature_max (regMaps/p1): [];
+					attribute<Ha> Living_min (regMaps/p1): [];
+					attribute<Ha> Living_max (regMaps/p1): [];
+				}
+				container p2
+				{
+					attribute<Ha> Working_min (regMaps/p2): [];
+					attribute<Ha> Working_max (regMaps/p2): [];
+				}
+			}
+			parameter <float32> nrHaPerCel := value(1, claim_sources/Ha);
+			container claims_min
+			{
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_min  / nrHaPerCel);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_min / nrHaPerCel);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_min  / nrHaPerCel);
+			}
+			container claims_max
+			{
+				attribute<uint32> Living (regMaps/p1) := uint32(claim_sources/p1/Living_max  / nrHaPerCel);
+				attribute<uint32> Working(regMaps/p2) := uint32(claim_sources/p2/Working_max / nrHaPerCel);
+				attribute<uint32> Nature (regMaps/p1) := uint32(claim_sources/p1/Nature_max  / nrHaPerCel);
+			}
+			container regionSets
+			{
+				attribute<regMaps/p1> Nature (DomainGrid) := regMaps/p1Map;
+				attribute<regMaps/p1> Living (DomainGrid) := regMaps/p1Map;
+				attribute<regMaps/p2> Working(DomainGrid) := regMaps/p2Map;
+			}
+			unit<uint16> AtomicRegions := overlay(lu_type/PartioningName, DomainGrid, regionSets);
+
+			attribute<Bool> InRegio (DomainGrid):
+			[
+			];
+			attribute<Bool> FreeLand (DomainGrid) := InRegio;
+
+			container Compacted
+			{
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
+					label = "allocation domain";
+				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
+				
+				container SuitabilityMaps
+				{
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living)[ADomain/org_rel]  * int32(1000);
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working)[ADomain/org_rel] * int32(1000);
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature)[ADomain/org_rel]  * int32(1000);
+				}
+				container SuitabilityMapsDiv
+				{
+					attribute<int32> Living  (ADomain) := int32(Allocation/source/SuitabilityMaps/Living  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Working (ADomain) := int32(Allocation/source/SuitabilityMaps/Working * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+					attribute<int32> Nature  (ADomain) := int32(Allocation/source/SuitabilityMaps/Nature  * float32(1000) / float32(12.46220836))[ADomain/org_rel];
+				}
+				attribute<AtomicRegions> AtomicRegionMap(ADomain) := AtomicRegions/UnionData[ADomain/org_rel];
+			}
+			parameter<int32> treshold := int32(0);
+			container FeasibleSolution;
+		}
+		container allocate_discrete := 
+			discrete_alloc(
+				source/lu_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/lu_type/partioning,
+				source/lu_type/PartioningName,
+				source/AtomicRegions,
+				source/Compacted/AtomicRegionMap, 
+				source/claims_min, 
+				source/claims_max, 
+				source/treshold, 
+				source/FeasibleSolution
+			)
+		{
+			attribute<Source/lu_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+			parameter<bool>           test_attr              := all(test);
+		}
+		unit<uint8> p1_claimed_type := select_with_attr_by_cond(source/lu_type, ID(source/lu_type) != 1b);
+		container allocate_discrete_p1 := 
+			discrete_alloc_sp(
+				p1_claimed_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/regMaps/p1,
+				source/regMaps/p1Map[source/compacted/ADomain/org_rel], 
+				source/claims_min, 
+				source/claims_max, 
+				source/treshold
+			)
+		{
+			attribute<p1_claimed_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
+		container allocate_discrete_p2 := 
+			discrete_alloc_sp(
+				p1_claimed_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/regMaps/p1,
+				source/regMaps/p1Map[source/compacted/ADomain/org_rel], 
+				source/claims_min, 
+				source/claims_max2, 
+				source/treshold
+			)
+		{
+			attribute<p1_claimed_type> att      (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
+		container allocate_discrete_aggr := 
+			discrete_alloc_np(
+				source/lu_type/name, 
+				source/Compacted/ADomain, 
+				source/Compacted/SuitabilityMaps, 
+				source/aggr_claims_min, 
+				source/aggr_claims_max, 
+				source/treshold
+			)
+		{
+			attribute<Source/lu_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+//			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+//			parameter<bool>           test_attr              := all(test);
+		}
+		container allocate_discrete_empty := 
+			discrete_alloc(
+				Esource/lu_type/name, 
+				Esource/Compacted/ADomain, 
+				Esource/Compacted/SuitabilityMaps, 
+				Esource/lu_type/partioning,
+				Esource/lu_type/PartioningName,
+				Esource/AtomicRegions,
+				Esource/Compacted/AtomicRegionMap, 
+				Esource/claims_min, 
+				Esource/claims_max, 
+				Esource/treshold, 
+				Esource/FeasibleSolution
+			)
+		{
+			parameter<bool> test := trim(lowercase(status)) == 'no suitability maps';
+		}
+		container allocate_discrete_div_constant := 
+			discrete_alloc(
+				source/lu_type/name,
+				source/Compacted/ADomain,
+				source/Compacted/SuitabilityMapsDiv,
+				source/lu_type/partioning,
+				source/lu_type/PartioningName,
+				source/AtomicRegions,
+				source/Compacted/AtomicRegionMap,
+				source/claims_min,
+				source/claims_max,
+				source/treshold,
+				source/FeasibleSolution
+			)
+		{
+			attribute<Source/lu_type> att       (DomainGrid) := landuse[Source/Compacted/BaseGrid];
+			attribute<bool>           test      (DomainGrid) := eq_or_both_null(att, Source/landuse);
+			parameter<bool>           test_attr              := all(test);
+		}
+	}
