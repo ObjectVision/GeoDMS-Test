@@ -19,7 +19,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		parameter<bool> tests_all := tests_regression && File/results/tests;
 
 		// een rij per (sub)test; de zes historische groepen tests_r1..r6 zijn samengevoegd
-		unit<uint32> Cand : nrofrows = 107
+		unit<uint32> Cand : nrofrows = 117
 		{
 			attribute<string> Spec :
 			[
@@ -130,6 +130,17 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	'MetaInfo/results/test'
 			,	'AGG|ExplicitNullvalues/results'
 			,	'Utf8Characters/tests'
+			// fase-2: testjes voor operatoren die niet in alle geteste versies bestaan
+			,	'Aggregations/as_unique_list/test_attr|as_unique_list'
+			,	'Relational/ordererd_union_data/test_attr|ordererd_union_data'
+			,	'Conversion/rounded_convert/test_param|rounded_convert'
+			,	'Conversion/rounded_convert/test_attr|rounded_convert'
+			,	'Sequence/sequence_element_count/test_attr|sequence_element_count'
+			,	'Sequence/points2arc/test_attr|points2arc'
+			,	'Sequence/points2multi_point/test_attr|points2multi_point'
+			,	'Sequence/geos_buffer/test_attr|geos_buffer'
+			,	'Sequence/geos_simplify_linestring/test_attr|geos_simplify_linestring;sequence_element_count'
+			,	'Sequence/outer_single_polygon/test_attr|outer_single_polygon'
 			];
 		}
 		container selection := TestSet(Cand, Cand/Spec);
@@ -172,6 +183,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					(skipped_tests = '' ? '' : '<skipped>' + skipped_tests + '</skipped>');
 
 				parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test.txt'";
+
+				// dump van alle operator-groepen in deze versie; het rapport combineert
+				// dit met de Spec-rijen tot een dekkingsregel + t010_operator_coverage.txt
+				parameter<string> operator_groups := asList(MetaInfo/OperatorList/OperatorGroups/Name, ';')
+				,	StorageType = "str", Storagename = "= results_folder + '/t010_operator_groups.txt'";
 			}
 		}
 	}
@@ -2098,6 +2114,22 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Conversion: Using = "/Domains;/Units;/Tolerances"
 	{
+		// fase-2 testje; halve waarden ronden naar +oneindig (2.5 -> 3, -2.5 -> -2)
+		container rounded_convert
+		{
+			parameter<bool> test_param :=
+				   rounded_convert( 2.6d, int32) =  3i && rounded_convert(-2.6d, int32) = -3i
+				&& rounded_convert( 2.5d, int32) =  3i && rounded_convert(-2.5d, int32) = -2i
+				&& rounded_convert( 3.5d, int32) =  4i && rounded_convert(-3.5d, int32) = -3i;
+			unit<uint32> D6: nrofrows = 6
+			{
+				attribute<float64> f:        [2.6, -2.6, 2.5, -2.5, 0.5, -0.5];
+				attribute<int32>   expected: [3,   -3,   3,   -2,   1,    0];
+			}
+			attribute<int32> att (D6) := rounded_convert(D6/f, int32);
+			parameter<bool> test_attr := all(att = D6/expected);
+		}
+
 		container srcDomain       := source(ADomain);
 		container srcEDomain      := Esource(EDomain);
 		container srcTiledDomain  := source(ATiledDomain);
@@ -3069,6 +3101,20 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Aggregations: Using = "/Domains;/Units;/Tolerances"
 	{
+		// fase-2 testje; draait alleen waar de operator bestaat (Spec-rij '...|as_unique_list')
+		container as_unique_list
+		{
+			unit<uint32> G: nrofrows = 2;
+			unit<uint32> L: nrofrows = 5
+			{
+				attribute<string> lbl: ['b','a','a','c','b'];
+				attribute<G>      grp: [0,0,0,1,1];
+			}
+			// per groep: gesorteerde unieke waarden, '; '-gescheiden
+			attribute<string> att (G) := as_unique_list(L/lbl, L/grp);
+			parameter<bool> test_attr := att[0] = 'a; b' && att[1] = 'b; c';
+		}
+
 		container srcDomainUU              := source(RegionDomain     , CityDomain     , CDomain);
 		container srcDomainUT              := source(RegionDomain     , CityTiledDomain, CTiledDomain);
 		container srcDomainTT              := source(RegionTiledDomain, CityTiledDomain, CTiledDomain);
@@ -4339,6 +4385,16 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Relational: Using = "/Domains;/Units;/Tolerances"
 	{
+		// fase-2 testje; draait alleen waar de operator bestaat (Spec-rij '...|ordererd_union_data')
+		container ordererd_union_data
+		{
+			unit<uint32> A2: nrofrows = 2 { attribute<uint32> v: [10,20]; }
+			unit<uint32> B1: nrofrows = 1 { attribute<uint32> v: [30]; }
+			unit<uint32> UU: nrofrows = 3;
+			attribute<uint32> att (UU) := ordererd_union_data(UU, A2/v, B1/v);
+			parameter<bool> test_attr := asList(string(att), ';') = '10;20;30';
+		}
+
 		container srcUnTiled2UnTiledDomain := Source(CityDomain      , RegionDomain      , CountryDomain,      RoadDomain);
 		container srcUnTiled2TiledDomain   := Source(CityDomain      , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
 		container srcTiled2UnTiledDomain   := Source(CityTiledDomain , RegionDomain      , CountryDomain,      RoadDomain);
@@ -7001,6 +7057,109 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Sequence: Using = "/Domains;/Units;/Tolerances"
 	{
+		// fase-2 testjes voor nieuwe sequence/geometrie-operatoren; elk draait alleen
+		// waar de operator bestaat (zie de |req in de bijbehorende Spec-rij)
+		container sequence_element_count
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			attribute<fpoint>  arcs (S2, arc) := points2sequence(Pts/pt, Pts/seq, Pts/ord);
+			attribute<uint32>  att  (S2)      := sequence_element_count(arcs);
+			parameter<bool> test_attr := all(att = uint32(3));
+		}
+		container points2arc
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			attribute<fpoint> att (S2, arc) := points2arc(Pts/pt, Pts/seq, Pts/ord);
+			parameter<bool> test_attr := AsDataString(att) = AsDataString(points2sequence(Pts/pt, Pts/seq, Pts/ord));
+		}
+		container points2multi_point
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			attribute<fpoint> att (S2, arc) := points2multi_point(Pts/pt, Pts/seq, Pts/ord);
+			parameter<bool> test_attr := AsDataString(att) = AsDataString(points2sequence(Pts/pt, Pts/seq, Pts/ord));
+		}
+		container geos_buffer
+		{
+			unit<uint32> S1g: nrofrows = 1;
+			unit<uint32> Qg: nrofrows = 5
+			{
+				attribute<int16>  x: [0,0,200,200,0];
+				attribute<int16>  y: [0,200,200,0,0];
+				attribute<S1g>    s: [0,0,0,0,0];
+				attribute<uint32> o: [0,1,2,3,4];
+				attribute<spoint> pt := point_yx(y, x, spoint);
+			}
+			unit<float64> mu64 := baseunit('gb_mu', float64);
+			attribute<spoint> sq  (S1g, polygon) := points2sequence(Qg/pt, Qg/s, Qg/o);
+			attribute<spoint> att (S1g, polygon) := geos_buffer(sq, 100.0, 16b);
+			// Minkowski-verwachting A + omtrek*r + pi*r^2 = 151416; de 16-segment-
+			// benadering + integer-afronding geven in 20.8.0 werkelijk 150320
+			attribute<bool> test (S1g) := abs(area(dpolygon(att), mu64) - 150320.0) < 1500.0;
+			parameter<bool> test_attr := all(test);
+		}
+		container geos_simplify_linestring
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float64> x:   [0,1,2,0,1,2];
+				attribute<float64> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+			}
+			unit<float64> mu := baseunit('gsl_mu', float64);
+			attribute<dpoint> lines (S2, arc) := points2sequence(Pts/pt, Pts/seq, Pts/ord);
+			// collineaire tussenpunten verdwijnen; lengte blijft gelijk
+			attribute<dpoint> att   (S2, arc) := geos_simplify_linestring(lines, 0.5);
+			parameter<bool> test_attr :=
+				   all(sequence_element_count(att) = uint32(2))
+				&& all(arc_length(att, mu) = arc_length(lines, mu));
+		}
+		container outer_single_polygon
+		{
+			unit<uint32> S1o: nrofrows = 1;
+			unit<uint32> Qo: nrofrows = 5
+			{
+				attribute<float32> x: [0,0,2,2,0];
+				attribute<float32> y: [0,2,2,0,0];
+				attribute<S1o>     s: [0,0,0,0,0];
+				attribute<uint32>  o: [0,1,2,3,4];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			unit<float32> mu32 := baseunit('osp_mu', float32);
+			attribute<fpoint> sq  (S1o, polygon) := points2sequence(Qo/pt, Qo/s, Qo/o);
+			attribute<fpoint> att (S1o, polygon) := outer_single_polygon(sq);
+			// buitenring van een gatloos vierkant = het vierkant zelf (oppervlakte 4);
+			// area heeft pre-20.x verplicht een unit-argument (1-arg vorm bestaat daar niet)
+			attribute<bool>  test (S1o) := abs(area(att, mu32) - 4f) < 0.01f;
+			parameter<bool> test_attr := all(test);
+		}
+
 		container srcDomain         := source(DistrictPointsDomain, RDomain, RoadDomain, HDomain, BuildingDomain, False);
 		container srcTemplateDomain := source(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, False);
 

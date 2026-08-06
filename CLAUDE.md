@@ -37,6 +37,22 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   references were left untouched on purpose.)
 - **Report outcomes faithfully** — if a test failed or was skipped, say so plainly.
 
+## Operator test (t010) — versie-afhankelijke testjes
+
+- `Operator/cfg/Operator.dms` selecteert testjes per GeoDMS-versie via
+  `MetaInfo/OperatorList` (DocData) en het root-`Template TestSet`. Elke
+  results-container heeft een `Cand`-tabel; een Spec-rij is `'pad/naar/test_bool'`
+  (draait altijd), `'pad|op1[;op2]'` (draait alleen als die operator-groepen in de
+  draaiende versie bestaan — noem óók operatoren die het testje intern gebruikt),
+  of `'AGG|pad/naar/results'`. Metascript-constructies (`for_each` e.d.) staan NIET
+  in de OperatorList en mogen nooit als vereiste worden opgegeven.
+- Het indicatorbestand meldt exacte aantallen (`<size>`), falende testjes
+  (`<failing>`) en overgeslagen testjes met reden (`<skipped>`); het rapport toont
+  daarnaast een dekkingsregel (operator-groepen met testje) op basis van de
+  `t010_operator_groups.txt`-dump + `t010_operator_coverage.txt` (ongeteste namen).
+- **Na elke wijziging aan `Operator.dms`: `python batch/make_operator_pre1810.py`**
+  (full.py waarschuwt als de pre-18.1.0-kopie ouder is dan de bron).
+
 ## Linux / WSL (`.l`)
 
 - The `.l` binary is an **installed Debian package inside the WSL distro** at

@@ -696,6 +696,48 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     parsed["_epoch_hover"] = [_hover if epoch_changed else "", True]
     return (verdict, parsed)
 
+# --- t010 operator-coverage (informational) ---
+# The t010 run dumps the running version's OperatorList group names next to its
+# result (t010_operator_groups.txt). Combined with the (version-independent) Spec
+# rows in Operator/cfg/Operator.dms this shows how many operator groups have a
+# testje in that version; the untested names go to t010_operator_coverage.txt in
+# the same result folder. GeoDMS only MEASURES (the dump); the report judges.
+def _t010_spec_tested_ops() -> set:
+    cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Operator", "cfg", "Operator.dms")
+    try:
+        with open(cfg, "r", encoding="latin-1") as f:
+            text = f.read()
+    except OSError:
+        return set()
+    ops = set()
+    for spec_block in re.findall(r"attribute<string> Spec :\s*\[(.*?)\];", text, re.S):
+        for row in re.findall(r"'([^']+)'", spec_block):
+            if row.startswith("AGG|"):
+                continue
+            path, _, req = row.partition("|")
+            # expliciete vereisten tellen als getest; daarnaast heten testcontainers
+            # naar hun operator (…/<container>/test_attr), evt. met _op-suffix
+            ops.update(r.strip().lower() for r in req.split(";") if r.strip())
+            for seg in (s.lower() for s in path.split("/")[:-1]):
+                ops.add(seg[:-3] if seg.endswith("_op") else seg)
+    return ops
+
+def _append_t010_coverage(parsed_indicators:dict, rdir:str):
+    groups_fn = f"{rdir}/t010_operator_groups.txt"
+    if not os.path.isfile(groups_fn):
+        return
+    with open(groups_fn, "r", encoding="utf-8", errors="replace") as f:
+        groups = [g for g in f.read().split(";") if g]
+    if not groups:
+        return
+    tested = _t010_spec_tested_ops()
+    untested = sorted(g for g in groups if g.lower() not in tested)
+    with open(f"{rdir}/t010_operator_coverage.txt", "w", encoding="utf-8") as f:
+        f.write("\n".join(untested))
+    covered = len(groups) - len(untested)
+    parsed_indicators["coverage"] = [
+        f"operator groups with a testje: {covered} of {len(groups)} (untested: {len(untested)}, see t010_operator_coverage.txt)", True]
+
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
 
     # Did the experiment DECLARE a result indicator? If so its <result> is the
@@ -759,6 +801,8 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     
     # compare previous with current indicators for flagging differences
     parsed_indicators = parse_indicators(indicators)
+    if regression_test.startswith("t010"):
+        _append_t010_coverage(parsed_indicators, rdir)   # voor de flag-loop, zodat wijzigingen t.o.v. de vorige versie oplichten
     for indicator in parsed_indicators:
         if not indicator in prev_indicators:
             continue
