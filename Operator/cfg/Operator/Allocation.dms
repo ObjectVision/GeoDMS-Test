@@ -285,7 +285,34 @@
 			parameter<int32> treshold := int32(0);
 			container FeasibleSolution;
 		}
-		container allocate_discrete := 
+		// zelfde 11 argumenten als discrete_alloc; greedy is heuristisch, dus hier
+		// structurele checks (volledig toegewezen) i.p.v. een vaste verwachtingskaart.
+		// NIET in de Spec-tabel opgenomen: hangt op 20.8.0 in DiscrAlloc::Solve op
+		// "Progress 0/33" (zie GeoDMS issue 1171); reactiveren zodra opgelost.
+		container greedy_alloc :=
+			greedy_alloc(
+				source/lu_type/name,
+				source/Compacted/ADomain,
+				source/Compacted/SuitabilityMaps,
+				source/lu_type/partioning,
+				source/lu_type/PartioningName,
+				source/AtomicRegions,
+				source/Compacted/AtomicRegionMap,
+				source/claims_min,
+				source/claims_max,
+				source/treshold,
+				source/FeasibleSolution
+			)
+		{
+			parameter<bool> test_attr := all(IsDefined(landuse));
+		}
+		// overlay64: als overlay maar met een uint64-resultaatdomein
+		container overlay64
+		{
+			unit<uint64> AtomicRegions64 := overlay64(source/lu_type/PartioningName, DomainGrid, source/regionSets);
+			parameter<bool> test_param := #AtomicRegions64 = uint64(#source/AtomicRegions);
+		}
+		container allocate_discrete :=
 			discrete_alloc(
 				source/lu_type/name, 
 				source/Compacted/ADomain, 

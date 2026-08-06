@@ -43,6 +43,23 @@
 				&& abs(att[point_yx(3s, 3s)] - 4.2426405) < 0.0001;
 			parameter<bool> test_param := att[point_yx(0s, 0s)] = 0.0;
 		}
+		container griddist_latitude_specific
+		{
+			// vergt een grid met echte CRS: horizontale stappen schalen ~cos(breedtegraad)
+			unit<dpoint> wgs_base : SpatialReference = "EPSG:4326";
+			unit<spoint> GW := range(gridset(wgs_base, point_yx(0.1, 0.1, wgs_base), point_yx(50.0, 4.0, wgs_base), spoint), point_yx(0s, 0s), point_yx(4s, 4s));
+			attribute<float64> imp (GW) := const(1.0, GW);
+			unit<uint32> Dest: nrofrows = 1
+			{
+				attribute<GW> loc: ['{0, 0}'];
+			}
+			attribute<float64> att (GW) := griddist_latitude_specific(imp, Dest/loc);
+			// op ~50 NB: horizontale buurstap ~cos(50 gr) ~ 0.644; verticale stap 1.0
+			parameter<bool> test_attr :=
+				   att[point_yx(0s, 0s)] = 0.0
+				&& abs(att[point_yx(0s, 1s)] - 0.644) < 0.01
+				&& att[point_yx(1s, 0s)] = 1.0;
+		}
 		container griddist_zonal
 		{
 			// zonegrens tussen kolom 1 en 2 kost +10

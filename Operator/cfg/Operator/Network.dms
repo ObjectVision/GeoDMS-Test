@@ -72,6 +72,55 @@
 			parameter<bool> test_param := ndist[2] = 12.0;
 			parameter<bool> test_attr  := flow[0] = 2.0 && flow[1] = 1.0;
 		}
+		container connect_info_eq
+		{
+			// matchwaarden MOETEN uint32 zijn (enige geregistreerde instantiatie);
+			// punten koppelen alleen aan de arc met gelijke matchwaarde
+			unit<uint32> Prov2: nrofrows = 2;
+			unit<uint32> Pnt2: nrofrows = 2
+			{
+				attribute<float64> x: [1, 3];
+				attribute<float64> y: [0.5, 1.5];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+				attribute<uint32>  m: [0, 1];
+			}
+			unit<uint32> ArcPts: nrofrows = 4
+			{
+				attribute<float64> x: [0,4, 0,4];
+				attribute<float64> y: [0,0, 2,2];
+				attribute<Prov2>   s: [0,0,1,1];
+				attribute<uint32>  o: [0,1,0,1];
+			}
+			attribute<dpoint> arcs2 (Prov2, arc) := points2sequence(point_yx(ArcPts/y, ArcPts/x, dpoint), ArcPts/s, ArcPts/o);
+			attribute<uint32> arcm (Prov2): [0, 1];
+			container att := connect_info_eq(arcs2, arcm, Pnt2/pt, Pnt2/m)
+			{
+				attribute<float64> dist (Pnt2);
+			}
+			// punt 0 (m=0) naar arc y=0: 0.5; punt 1 (m=1) naar arc y=2: 0.5
+			parameter<bool> test_attr := all(att/dist = 0.5);
+		}
+		container connect_info_ne
+		{
+			container att := connect_info_ne(connect_info_eq/arcs2, connect_info_eq/arcm, connect_info_eq/Pnt2/pt, connect_info_eq/Pnt2/m)
+			{
+				attribute<float64> dist (connect_info_eq/Pnt2);
+			}
+			// nu juist naar de arc met ONgelijke matchwaarde: 1.5 resp. 1.5
+			parameter<bool> test_attr := all(att/dist = 1.5);
+		}
+		container impedance_matrix_od64
+		{
+			unit<uint32> Node3: nrofrows = 3;
+			unit<uint32> Link2: nrofrows = 2
+			{
+				attribute<Node3>   F1:  [0, 1];
+				attribute<Node3>   F2:  [1, 2];
+				attribute<float64> imp: [5, 7];
+			}
+			unit<uint64> odm64 := impedance_matrix_od64('bidirectional', Link2/imp, Link2/F1, Link2/F2);
+			parameter<bool> test_param := #odm64 = uint64(9);
+		}
 		container impedance_matrix
 		{
 			// structurele check: OD-domein = nrKnopen^2 (waardenlaag volgt later)
