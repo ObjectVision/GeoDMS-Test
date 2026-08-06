@@ -18,128 +18,126 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	{
 		parameter<bool> tests_all := tests_regression && File/results/tests;
 
-		parameter<bool> tests_regression:= tests_r1 && tests_r2 && tests_r3 && tests_r4 && tests_r5 && tests_r6;
-		
-		parameter<bool> tests_r1:= 
-			   Arithmetics/UnTiled/results/tests
-			&& Arithmetics/EunTiled/results/tests
-			&& Arithmetics/Tiled/results/tests
-			&& Arithmetics/ETiled/results/tests
-			&& Precedence/results/tests
-			&& Ordering/UnTiled/results/tests
-			&& Ordering/EunTiled/results/tests
-			&& Ordering/Tiled/results/tests
-			&& Ordering/ETiled/results/tests
-			&& Transcendental/UnTiled/results/tests
-			&& Transcendental/EunTiled/results/tests
-			&& Transcendental/Tiled/results/tests
-			&& Transcendental/ETiled/results/tests
-			&& Conversion/UnTiled/results/tests
-			&& Conversion/EunTiled/results/tests
-			&& Conversion/Tiled/results/tests
-			&& Conversion/ETiled/results/tests
-			&& Aggregations/UnTiled2Untiled/results/tests
-			&& Aggregations/UnTiled2Untiled/reg_count/test_attr
-			&& Aggregations/Tiled2Untiled/results/tests
-			&& Aggregations/UnTiled2Tiled/results/tests
-			&& Aggregations/EUnTiled2Untiled/results/tests
-			&& Aggregations/EUnTiled2Untiled/reg_count/test_attr
-			&& Aggregations/ETiled2Untiled/results/tests
-			&& Aggregations/EUnTiled2Tiled/results/tests;
-			
-		parameter<bool> tests_r2:= 
-			   Predicates/UnTiled/results/tests
-			&& Predicates/Tiled/results/tests
-			&& Predicates/EUnTiled/results/tests
-			&& Predicates/Etiled/results/tests
-			&& Logical/UnTiled/results/tests
-			&& Logical/Tiled/results/tests
-			&& Logical/EUnTiled/results/tests
-			&& Logical/Etiled/results/tests
-			&& Relational/UnTiled2UnTiled/results/tests
-			&& Relational/UnTiled2Tiled/results/tests
-			&& Relational/Tiled2UnTiled/results/tests
-			&& Relational/Tiled2Tiled/results/tests
-			&& Relational/EunTiled/results/tests
-			&& Relational/ETiled/results/tests
-			&& Relational/ResultUnitTiled/unique/test_attr
-			&& Relational/ResultUnitTiled/combine/test_attr
-			&& Relational/ResultUnitTiled/join_equal_values/test_attr;
-			
-		parameter<bool> tests_r3:= 
-			   Classify/UnTiled2UnTiled/results/tests
-			&& Classify/Tiled2UnTiled/results/tests
-			&& Classify/EunTiled/results/tests
-			&& Rescale/UnTiled2UnTiled/results/tests
-			&& Rescale/UnTiled2Tiled/results/tests
-			&& Rescale/Tiled2UnTiled/results/tests
-			&& Rescale/Tiled2Tiled/results/tests
-			&& Constants/UnTiled/results/tests
-			&& Constants/tiled/results/tests
-			&& Constants/EUnTiled/results/tests
-			&& Constants/Etiled/results/tests
-			&& Trigonometric/UnTiled/results/tests
-			&& Trigonometric/tiled/results/tests
-			&& Trigonometric/EUnTiled/results/tests
-			&& Trigonometric/Etiled/results/tests
-			&& Point/UnTiled2UnTiled/results/tests
-			&& Point/UnTiled2Tiled/results/tests
-			&& Point/Tiled2UnTiled/results/tests
-			&& Point/Tiled2Tiled/results/tests
-			&& Point/EUnTiled2UnTiled/results/tests
-			&& Point/EUnTiled2Tiled/results/tests
-			&& Point/ETiled2UnTiled/results/tests
-			&& Point/ETiled2Tiled/results/tests
-			&& Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/test_attr;
-			
-		parameter<bool> tests_r4:= 
-			   Sequence/UnTiled/canyon/test_attr
-			&& Sequence/UnTiled/canyon_empty/test_attr
-			&& Sequence/UnTiled/results/tests
-			&& Sequence/Tiled/results/tests
-			&& Sequence/EUnTiled/results/tests
-			&& Sequence/ETiled/results/tests
-			&& Sequence/ResultUnitTiled/sequence2points/test_attr
-			&& Sequence/ResultUnitTiled/overlay_polygon/test_attr
-			&& Sequence/UnTiled/poly2allgrids/test_all
-			&& Sequence/UnTiled/poly2allgrids_uint64/test_all
-			
-			;
-		parameter<bool> tests_r5:= 
-			   Network/UnTiled/results/tests
-			&& Network/Tiled/results/tests
-			&& Network/EunTiled/results/tests
-			&& Network/ETiled/results/tests
-			&& Network/ResultUnitTiled/connect/test_attr
-			&& Network/ResultUnitTiled/connect_info/test_attr
-
-			&& Grid/units/results/tests
-			&& Grid/UnTiled/results/tests
-			&& Grid/Tiled/results/tests
-			&& Grid/ETiled/results/tests
-			&& Grid/EUnTiled/results/tests
-			&& Grid/potential_with_tiles/test_attr
-			&& Matrix/UnTiled/results/tests
-			&& Matrix/Tiled/results/tests
-			&& Matrix/ETiled/results/tests
-			&& Matrix/EunTiled/results/tests;
-			
-		parameter<bool> tests_r6:= 
-			   String/UnTiled/results/tests
-			&& String/Tiled/results/tests
-			&& String/EUnTiled/results/tests
-			&& String/ETiled/results/tests
-			&& ReadAVLE/results/tests 
-			&& MetaScript/results/tests
-			&& Allocation/allocate_discrete/test_attr
-			&& Allocation/allocate_discrete_div_constant/test_attr
-			&& UnitFunctions/UnTiled/results/tests
-			&& UnitFunctions/Tiled/results/tests
-			&& Miscellaneous/results/tests
-			&& Trackers/Results/tests
-			&& MetaInfo/results/test
-			&& ExplicitNullvalues/tests
-			&& Utf8Characters/tests;
+		// een rij per (sub)test; de zes historische groepen tests_r1..r6 zijn samengevoegd
+		unit<uint32> Cand : nrofrows = 107
+		{
+			attribute<string> Spec :
+			[
+				 'AGG|Arithmetics/UnTiled/results'
+			,	'AGG|Arithmetics/EunTiled/results'
+			,	'AGG|Arithmetics/Tiled/results'
+			,	'AGG|Arithmetics/ETiled/results'
+			,	'AGG|Precedence/results'
+			,	'AGG|Ordering/UnTiled/results'
+			,	'AGG|Ordering/EunTiled/results'
+			,	'AGG|Ordering/Tiled/results'
+			,	'AGG|Ordering/ETiled/results'
+			,	'AGG|Transcendental/UnTiled/results'
+			,	'AGG|Transcendental/EunTiled/results'
+			,	'AGG|Transcendental/Tiled/results'
+			,	'AGG|Transcendental/ETiled/results'
+			,	'AGG|Conversion/UnTiled/results'
+			,	'AGG|Conversion/EunTiled/results'
+			,	'AGG|Conversion/Tiled/results'
+			,	'AGG|Conversion/ETiled/results'
+			,	'AGG|Aggregations/UnTiled2Untiled/results'
+			,	'Aggregations/UnTiled2Untiled/reg_count/test_attr'
+			,	'AGG|Aggregations/Tiled2Untiled/results'
+			,	'AGG|Aggregations/UnTiled2Tiled/results'
+			,	'AGG|Aggregations/EUnTiled2Untiled/results'
+			,	'Aggregations/EUnTiled2Untiled/reg_count/test_attr'
+			,	'AGG|Aggregations/ETiled2Untiled/results'
+			,	'AGG|Aggregations/EUnTiled2Tiled/results'
+			,	'AGG|Predicates/UnTiled/results'
+			,	'AGG|Predicates/Tiled/results'
+			,	'AGG|Predicates/EUnTiled/results'
+			,	'AGG|Predicates/Etiled/results'
+			,	'AGG|Logical/UnTiled/results'
+			,	'AGG|Logical/Tiled/results'
+			,	'AGG|Logical/EUnTiled/results'
+			,	'AGG|Logical/Etiled/results'
+			,	'AGG|Relational/UnTiled2UnTiled/results'
+			,	'AGG|Relational/UnTiled2Tiled/results'
+			,	'AGG|Relational/Tiled2UnTiled/results'
+			,	'AGG|Relational/Tiled2Tiled/results'
+			,	'AGG|Relational/EunTiled/results'
+			,	'AGG|Relational/ETiled/results'
+			,	'Relational/ResultUnitTiled/unique/test_attr'
+			,	'Relational/ResultUnitTiled/combine/test_attr'
+			,	'Relational/ResultUnitTiled/join_equal_values/test_attr'
+			,	'AGG|Classify/UnTiled2UnTiled/results'
+			,	'AGG|Classify/Tiled2UnTiled/results'
+			,	'AGG|Classify/EunTiled/results'
+			,	'AGG|Rescale/UnTiled2UnTiled/results'
+			,	'AGG|Rescale/UnTiled2Tiled/results'
+			,	'AGG|Rescale/Tiled2UnTiled/results'
+			,	'AGG|Rescale/Tiled2Tiled/results'
+			,	'AGG|Constants/UnTiled/results'
+			,	'AGG|Constants/tiled/results'
+			,	'AGG|Constants/EUnTiled/results'
+			,	'AGG|Constants/Etiled/results'
+			,	'AGG|Trigonometric/UnTiled/results'
+			,	'AGG|Trigonometric/tiled/results'
+			,	'AGG|Trigonometric/EUnTiled/results'
+			,	'AGG|Trigonometric/Etiled/results'
+			,	'AGG|Point/UnTiled2UnTiled/results'
+			,	'AGG|Point/UnTiled2Tiled/results'
+			,	'AGG|Point/Tiled2UnTiled/results'
+			,	'AGG|Point/Tiled2Tiled/results'
+			,	'AGG|Point/EUnTiled2UnTiled/results'
+			,	'AGG|Point/EUnTiled2Tiled/results'
+			,	'AGG|Point/ETiled2UnTiled/results'
+			,	'AGG|Point/ETiled2Tiled/results'
+			,	'Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/test_attr'
+			,	'Sequence/UnTiled/canyon/test_attr'
+			,	'Sequence/UnTiled/canyon_empty/test_attr'
+			,	'AGG|Sequence/UnTiled/results'
+			,	'AGG|Sequence/Tiled/results'
+			,	'AGG|Sequence/EUnTiled/results'
+			,	'AGG|Sequence/ETiled/results'
+			,	'Sequence/ResultUnitTiled/sequence2points/test_attr'
+			,	'Sequence/ResultUnitTiled/overlay_polygon/test_attr'
+			,	'Sequence/UnTiled/poly2allgrids/test_all'
+			,	'Sequence/UnTiled/poly2allgrids_uint64/test_all'
+			,	'AGG|Network/UnTiled/results'
+			,	'AGG|Network/Tiled/results'
+			,	'AGG|Network/EunTiled/results'
+			,	'AGG|Network/ETiled/results'
+			,	'Network/ResultUnitTiled/connect/test_attr'
+			,	'Network/ResultUnitTiled/connect_info/test_attr'
+			,	'Grid/units/results/tests'
+			,	'AGG|Grid/UnTiled/results'
+			,	'AGG|Grid/Tiled/results'
+			,	'AGG|Grid/ETiled/results'
+			,	'AGG|Grid/EUnTiled/results'
+			,	'Grid/potential_with_tiles/test_attr'
+			,	'AGG|Matrix/UnTiled/results'
+			,	'AGG|Matrix/Tiled/results'
+			,	'AGG|Matrix/ETiled/results'
+			,	'AGG|Matrix/EunTiled/results'
+			,	'AGG|String/UnTiled/results'
+			,	'AGG|String/Tiled/results'
+			,	'AGG|String/EUnTiled/results'
+			,	'AGG|String/ETiled/results'
+			,	'AGG|ReadAVLE/results'
+			,	'AGG|MetaScript/results'
+			,	'Allocation/allocate_discrete/test_attr'
+			,	'Allocation/allocate_discrete_div_constant/test_attr'
+			,	'AGG|UnitFunctions/UnTiled/results'
+			,	'AGG|UnitFunctions/Tiled/results'
+			,	'AGG|Miscellaneous/results'
+			,	'Trackers/Results/tests'
+			,	'MetaInfo/results/test'
+			,	'AGG|ExplicitNullvalues/results'
+			,	'Utf8Characters/tests'
+			];
+		}
+		container selection := TestSet(Cand, Cand/Spec);
+		parameter<bool>   tests_regression  := =selection/test_expr;
+		parameter<uint32> nrTestsExecuted   := =selection/count_expr;
+		parameter<uint32> nrTestsConfigured := =selection/conf_expr;
+		parameter<string> failing_tests     := =selection/fail_expr;
+		parameter<string> skipped_tests     := =selection/skip_expr;
 
 		unit<uint32> resDomain: nrofrows = 1;
 		attribute<uint32> testsExp(resDomain) :=  const(uint32(tests_all), resDomain)
@@ -152,7 +150,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 		parameter<string> unit_test_log := tests_regression
 			? ''
-			: 'Operator Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(tests_regression, 'fullname') + ' result: not OK'
+			: 'Operator Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(tests_regression, 'fullname') + ' result: not OK; failing: ' + failing_tests
 		,	StorageType = "str"
 		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/operator.txt";
 
@@ -162,113 +160,122 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<string> results_folder_filename  := '%LocalDataDir%/Regression/log/results_folder.txt';
 			parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
 
-			container Subitems
-			{
-				parameter<string> ConfigFile : StorageName = "%projdir%/cfg/operator.dms", StorageType = "str";
-				parameter<uint32> nrTests    := strcount(ConfigFile, 'test_attr') + strcount(ConfigFile, 'test_param');
-			}
+			// (Subitems/nrTests strcount-telling vervangen door exacte telling nrTestsExecuted/nrTestsConfigured)
 
 			container t010_operator_test
 			{
 				parameter<string> result := 
 					'<description>operator test</description>' + 
-					'<size>number unique tests: ' + string(Subitems/nrTests) + '</size>' + 
-					'<result>' + (tests_regression ? 'OK' : 'False') + '</result>';
+					'<size>number of tests executed: ' + string(nrTestsExecuted) + ' of ' + string(nrTestsConfigured) + ' configured</size>' + 
+					'<result>' + (tests_regression ? 'OK' : 'False') + '</result>' + 
+					(failing_tests = '' ? '' : '<failing>' + failing_tests + '</failing>') + 
+					(skipped_tests = '' ? '' : '<skipped>' + skipped_tests + '</skipped>');
 
 				parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test.txt'";
 			}
 		}
 	}
 
-	// gebruikte domain units
-	unit<uint32> HDomain: nrofrows = 4;
-	unit<uint32> ADomain: nrofrows = 5;
-	unit<uint32> CDomain: nrofrows = 10;
-	unit<uint32> RDomain: nrofrows = 7;
-	unit<uint32> LDomain: nrofrows = 8;
-	unit<uint32> SDomain: nrofrows = 1;
-	unit<uint32> EDomain: nrofrows = 0;
+	// gebruikte domain-units (aantallen-domeinen, grids en hun tiled varianten)
+	container Domains: Using = "/Units"
+	{
+		unit<uint32> HDomain: nrofrows = 4;
+		unit<uint32> ADomain: nrofrows = 5;
+		unit<uint32> CDomain: nrofrows = 10;
+		unit<uint32> RDomain: nrofrows = 7;
+		unit<uint32> LDomain: nrofrows = 8;
+		unit<uint32> SDomain: nrofrows = 1;
+		unit<uint32> EDomain: nrofrows = 0;
 
-	unit<uint32> SequenceUnit: nrofrows = 2;
+		unit<uint32> SequenceUnit: nrofrows = 2;
 
-	unit<uint32> RegionDomain:   nrofrows = 5;
-	unit<uint32> ERegionDomain:  nrofrows = 0;
-	
-	unit<uint32> DistrictDomain: nrofrows = 15;
-	unit<uint32> BuildingDomain: nrofrows = 6;
+		unit<uint32> RegionDomain:   nrofrows = 5;
+		unit<uint32> ERegionDomain:  nrofrows = 0;
 
-	unit<uint8>  ClassDomain           := Classifications/inhabitants_4K;
-	unit<uint8>  ClassDomainOneClass   :  nrofrows =  1;
-	unit<uint8>  ClassDomainManyClasses:  nrofrows = 20;
+		unit<uint32> DistrictDomain: nrofrows = 15;
+		unit<uint32> BuildingDomain: nrofrows = 6;
 
-	unit<uint32> RoadDomain:   nrofrows = 3;
-	unit<uint32> CityDomain:   Range = "[1, 8)";
-	unit<uint32> CountryDomain:   nrofrows = 3;
-	unit<uint32> DistrictPointsDomain: nrofrows = 177;
+		unit<uint8>  ClassDomain           := Classifications/inhabitants_4K;
+		unit<uint8>  ClassDomainOneClass   :  nrofrows =  1;
+		unit<uint8>  ClassDomainManyClasses:  nrofrows = 20;
 
-	unit<uint32> PandPointsDomain: nrofrows = 142;
-	unit<uint32> PandDomain      : nrofrows = 21;
+		unit<uint32> RoadDomain:   nrofrows = 3;
+		unit<uint32> CityDomain:   Range = "[1, 8)";
+		unit<uint32> CountryDomain:   nrofrows = 3;
+		unit<uint32> DistrictPointsDomain: nrofrows = 177;
 
-	unit<fpoint>  point_rd;//:= baseunit('m', fpoint);
-	unit<spoint> gridcel_1km :=
-		 range(
-			gridset(
-				 point_rd
-				,point_yx(float32(-1000.0)  , float32(1000.0) , point_rd )
-				,point_yx(float32(405600), float32(111300), point_rd )
-				,spoint
-			)
-			,point_yx(int16(0), int16(0))
-			,point_yx(int16(5), int16(4))
-		);
+		unit<uint32> PandPointsDomain: nrofrows = 142;
+		unit<uint32> PandDomain      : nrofrows = 21;
 
-	unit<UInt32> HTiledDomain := TiledUnit(2[HDomain]);
-	unit<UInt32> ATiledDomain := TiledUnit(2[ADomain]);
-	unit<UInt32> CTiledDomain := TiledUnit(2[CDomain]);
-	unit<UInt32> RTiledDomain := TiledUnit(2[RDomain]);
-	unit<UInt32> LTiledDomain := TiledUnit(2[LDomain]);
-	unit<UInt32> ETiledDomain := TiledUnit(2[EDomain]);
+		unit<uint32> Years: nrofrows = 3;
 
-	unit<uint32> RegionTiledDomain         := TiledUnit(2[RegionDomain]);
-	unit<uint32> ERegionTiledDomain        := TiledUnit(2[ERegionDomain]);
+		unit<spoint> gridcel_1km :=
+			 range(
+				gridset(
+					 point_rd
+					,point_yx(float32(-1000.0)  , float32(1000.0) , point_rd )
+					,point_yx(float32(405600), float32(111300), point_rd )
+					,spoint
+				)
+				,point_yx(int16(0), int16(0))
+				,point_yx(int16(5), int16(4))
+			);
 
-	unit<uint32> CountryTiledDomain        := TiledUnit(2[CountryDomain]);
+		unit<UInt32> HTiledDomain := TiledUnit(2[HDomain]);
+		unit<UInt32> ATiledDomain := TiledUnit(2[ADomain]);
+		unit<UInt32> CTiledDomain := TiledUnit(2[CDomain]);
+		unit<UInt32> RTiledDomain := TiledUnit(2[RDomain]);
+		unit<UInt32> LTiledDomain := TiledUnit(2[LDomain]);
+		unit<UInt32> ETiledDomain := TiledUnit(2[EDomain]);
 
-	unit<uint32> DistrictTiledDomain       := TiledUnit(2[DistrictDomain]);
-	unit<uint32> RoadTiledDomain           := TiledUnit(2[RoadDomain]);
-	unit<uint32> CityTiledDomain           := TiledUnit(2[CityDomain]);
-	unit<uint32> DistrictPointsTiledDomain := TiledUnit(10[DistrictPointsDomain]);
+		unit<uint32> RegionTiledDomain         := TiledUnit(2[RegionDomain]);
+		unit<uint32> ERegionTiledDomain        := TiledUnit(2[ERegionDomain]);
 
-	unit<uint32> PandPointsTiledDomain     := TiledUnit(10[PandPointsDomain]);
-	unit<uint32> PandTiledDomain           := TiledUnit(10[PandDomain]);
-	
-	unit<uint32> UDomain1: nrofrows = 10000;
-	unit<uint32> UDomain2: nrofrows = 10000;
+		unit<uint32> CountryTiledDomain        := TiledUnit(2[CountryDomain]);
 
-	unit<uint32> UTiledDomain1 := TiledUnit(1000[UDomain1]);
-	unit<uint32> UTiledDomain2 := TiledUnit(1000[UDomain2]);
+		unit<uint32> DistrictTiledDomain       := TiledUnit(2[DistrictDomain]);
+		unit<uint32> RoadTiledDomain           := TiledUnit(2[RoadDomain]);
+		unit<uint32> CityTiledDomain           := TiledUnit(2[CityDomain]);
+		unit<uint32> DistrictPointsTiledDomain := TiledUnit(10[DistrictPointsDomain]);
 
-	// gebruikte values units
-	unit<float32> DegreesCelsius  := Range(BaseUnit('celsius',float32), -20f, 50f);
-	unit<float32> DegreesCelsius2 := DegreesCelsius * DegreesCelsius; // used for statistical tests, (co)variance, 
-	unit<uint32>  RegionEK;
-	unit<uint32>  nrPersons;
-	unit<float32> s               := baseunit('s', float32), label = "seconde";
-	unit<uint32>  Years           :nrofrows = 3;
-	unit<float32> m               := baseunit('m', float32), label = "meter", cdf = "classifications/m_4K/classes";
-	unit<float32> m2              := m * m;
-	unit<int16>   m_int16         := int16(m);
-	unit<uint32>  color           :Range = "[0, 16777217)";
-	unit<uint32>  rgb;
-	unit<int16>   fontsize;
-	unit<int16>   size;
-	unit<int16>   index;
+		unit<uint32> PandPointsTiledDomain     := TiledUnit(10[PandPointsDomain]);
+		unit<uint32> PandTiledDomain           := TiledUnit(10[PandDomain]);
+
+		unit<uint32> UDomain1: nrofrows = 10000;
+		unit<uint32> UDomain2: nrofrows = 10000;
+
+		unit<uint32> UTiledDomain1 := TiledUnit(1000[UDomain1]);
+		unit<uint32> UTiledDomain2 := TiledUnit(1000[UDomain2]);
+	}
+
+	// gebruikte values-units
+	container Units
+	{
+		unit<fpoint>  point_rd;//:= baseunit('m', fpoint);
+
+		unit<float32> DegreesCelsius  := Range(BaseUnit('celsius',float32), -20f, 50f);
+		unit<float32> DegreesCelsius2 := DegreesCelsius * DegreesCelsius; // used for statistical tests, (co)variance,
+		unit<uint32>  RegionEK;
+		unit<uint32>  nrPersons;
+		unit<float32> s               := baseunit('s', float32), label = "seconde";
+		unit<float32> m               := baseunit('m', float32), label = "meter", cdf = "classifications/m_4K/classes";
+		unit<float32> m2              := m * m;
+		unit<int16>   m_int16         := int16(m);
+		unit<uint32>  color           :Range = "[0, 16777217)";
+		unit<uint32>  rgb;
+		unit<int16>   fontsize;
+		unit<int16>   size;
+		unit<int16>   index;
+	}
 
 	// vergelijkingsparameters voor floating point items
-	parameter <float32> Dif_all_float32   :=float32(0.99);
-	parameter <float64> Dif_all_float64   :=0.99;
-	parameter <float32> Dif_pconv_float32 := float32(1.000001);
-	parameter <float64> Dif_pconv_float64 := 1.000001;
+	container Tolerances
+	{
+		parameter <float32> Dif_all_float32   :=float32(0.99);
+		parameter <float64> Dif_all_float64   :=0.99;
+		parameter <float32> Dif_pconv_float32 := float32(1.000001);
+		parameter <float64> Dif_pconv_float64 := 1.000001;
+	}
 
 	container MetaInfo
 	{
@@ -283,6 +290,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			unit<uint32> OperatorGroups
 			{
 				attribute<string> Name;
+				attribute<string> NameLC := lowercase(Name);
 			}
 			unit<uint32> Operators
 			{
@@ -308,7 +316,51 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<bool> test := #OperatorList/OperatorArgs > 10000 && #MetaInfo/StorageManagersInfo/StorageManagers > 15;
 		}
 	}
-	container Classifications
+	// Versie-afhankelijke test-selectie (zie MetaInfo/OperatorList = DocData()):
+	// een Spec-rij is 'pad/naar/test_bool' (draait altijd), 'pad|operator1[;operator2]'
+	// (draait alleen als de genoemde operator(en) in deze GeoDMS-versie bestaan;
+	// NB: metascript-constructies zoals for_each staan NIET in de OperatorList en
+	// mogen dus nooit als vereiste worden opgegeven), of 'AGG|pad/naar/results'
+	// (telt een onderliggende results-container met tests/nrExecuted/nrConfigured mee).
+	// Paden worden letterlijk in de opgebouwde expressie gezet en resolven dus in de
+	// context van het tests-item naast de instantiatie (naamresolutie zoekt omhoog),
+	// precies zoals de oorspronkelijke &&-kettingen. Zie ook de wiki:
+	// Test-references-and-report-generation.
+	Template TestSet
+	{
+		// begin case parameters
+		unit<uint32> D;
+		attribute<string> Spec (D);
+		// end case parameters
+
+		attribute<bool>   IsAgg    (D) := left(Spec, 4) = 'AGG|';
+		attribute<string> AggPath  (D) := substr(Spec, 4);
+		attribute<bool>   HasReq   (D) := strcount(Spec, '|') > 0;
+		attribute<string> TestPath (D) := HasReq ? substr(Spec, 0, strpos(Spec, '|')) : Spec;
+		attribute<string> ReqRaw   (D) := HasReq ? substr(Spec, strpos(Spec, '|') + 1) : '';
+		attribute<string> Req1     (D) := strcount(ReqRaw, ';') > 0 ? substr(ReqRaw, 0, strpos(ReqRaw, ';')) : ReqRaw;
+		attribute<string> Req2     (D) := strcount(ReqRaw, ';') > 0 ? substr(ReqRaw, strpos(ReqRaw, ';') + 1) : '';
+		attribute<bool>   Present  (D) :=
+			   (Req1 = '' || isDefined(rlookup(lowercase(Req1), MetaInfo/OperatorList/OperatorGroups/NameLC)))
+			&& (Req2 = '' || isDefined(rlookup(lowercase(Req2), MetaInfo/OperatorList/OperatorGroups/NameLC)));
+
+		parameter<string> test_expr  := 'true'      + asList(IsAgg ? ' && ' + AggPath + '/tests'        : (Present ? ' && ' + TestPath : ''), '');
+		parameter<string> count_expr := 'uint32(0)' + asList(IsAgg ? ' + ' + AggPath + '/nrExecuted'    : (Present ? ' + uint32(1)' : ''), '');
+		parameter<string> conf_expr  := 'uint32(0)' + asList(IsAgg ? ' + ' + AggPath + '/nrConfigured'  : ' + uint32(1)', '');
+		// let op: geen lengte-aritmetiek hier -- beide ?:-takken worden eager geevalueerd
+		// en strlen-8 zou op korte leaf-specs een uint32-underflow-fout geven
+		attribute<string> AggPrefix (D) := strcount(AggPath, '/results') > 0 ? substr(AggPath, 0, strpos(AggPath, '/results')) : AggPath;
+		parameter<string> fail_expr  := '''''' + asList(
+			IsAgg ? ' + (' + AggPath + '/failing = '''' ? '''' : ''' + AggPrefix + ': ['' + ' + AggPath + '/failing + ''] '')'
+			      : (Present ? ' + (' + TestPath + ' ? '''' : ''' + TestPath + '; '')' : '')
+		, '');
+		parameter<string> skip_expr  := '''''' + asList(
+			IsAgg ? ' + (' + AggPath + '/skipped = '''' ? '''' : ''' + AggPrefix + ': ['' + ' + AggPath + '/skipped + ''] '')'
+			      : (!Present ? ' + ''' + TestPath + '[' + ReqRaw + '] ''' : '')
+		, '');
+	}
+
+	container Classifications: Using = "/Domains;/Units;/Tolerances"
 	{
 		unit<uint8> m_4K: nrofrows = 4
 		{
@@ -361,7 +413,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			['Low','','','','','','','High'];
 		}
 	}
-	container Arithmetics
+	container Arithmetics: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       := source(ADomain);
 		container srcEDomain      := Esource(EDomain);
@@ -628,48 +680,57 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params :=
-					   add_op/test_param 
-					&& add/test_param 
-					&& add_or_null/test_param 
-					&& sub_op/test_param 
-					&& sub/test_param 
-					&& sub_or_null/test_param 
-					&& mul_op/test_param 
-					&& mul_or_null/test_param 
-					&& div_op/test_param 
-					&& div/test_param 
-					&& mod_op/test_param 
-					&& mod/test_param 
-					&& pow_op/test_param 
-					&& pow/test_param 
-					&& neg_op/test_param 
-					&& neg/test_param 
-					&& abs/test_param 
-					&& sqr/test_param 
-					&& sqrt/test_param ;
-				parameter<bool> test_attrs :=
-					   add_op/test_attr 
-					&& add/test_attr 
-					&& add_or_null/test_attr 
-					&& sub_op/test_attr 
-					&& sub/test_attr 
-					&& sub_or_null/test_attr 
-					&& mul_op/test_attr 
-					&& mul/test_attr 
-					&& mul_or_null/test_attr 
-					&& div_op/test_attr 
-					&& div/test_attr 
-					&& mod_op/test_attr 
-					&& mod/test_attr 
-					&& pow_op/test_attr 
-					&& pow/test_attr 
-					&& neg_op/test_attr 
-					&& neg/test_attr 
-					&& abs/test_attr 
-					&& sqr/test_attr 
-					&& sqrt/test_attr ;
-				parameter <bool> tests := test_params && test_attrs;
+				unit<uint32> Cand : nrofrows = 39
+				{
+					attribute<string> Spec :
+					[
+						 'add_op/test_param'
+					,	'add/test_param'
+					,	'add_or_null/test_param'
+					,	'sub_op/test_param'
+					,	'sub/test_param'
+					,	'sub_or_null/test_param'
+					,	'mul_op/test_param'
+					,	'mul_or_null/test_param'
+					,	'div_op/test_param'
+					,	'div/test_param'
+					,	'mod_op/test_param'
+					,	'mod/test_param'
+					,	'pow_op/test_param'
+					,	'pow/test_param'
+					,	'neg_op/test_param'
+					,	'neg/test_param'
+					,	'abs/test_param'
+					,	'sqr/test_param'
+					,	'sqrt/test_param'
+					,	'add_op/test_attr'
+					,	'add/test_attr'
+					,	'add_or_null/test_attr'
+					,	'sub_op/test_attr'
+					,	'sub/test_attr'
+					,	'sub_or_null/test_attr'
+					,	'mul_op/test_attr'
+					,	'mul/test_attr'
+					,	'mul_or_null/test_attr'
+					,	'div_op/test_attr'
+					,	'div/test_attr'
+					,	'mod_op/test_attr'
+					,	'mod/test_attr'
+					,	'pow_op/test_attr'
+					,	'pow/test_attr'
+					,	'neg_op/test_attr'
+					,	'neg/test_attr'
+					,	'abs/test_attr'
+					,	'sqr/test_attr'
+					,	'sqrt/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
@@ -688,7 +749,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		}
 	}
 	*/
-	container Precedence
+	container Precedence: Using = "/Domains;/Units;/Tolerances"
 	{
 		container associative
 		{
@@ -732,42 +793,53 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		}
 		container results
 		{
-			parameter<bool> tests :=
-				   associative/test_param_plus 
-				&& associative/test_param_plusmin 
-				&& associative/test_param_minplus 
-				&& associative/test_param_minmin 
-				&& associative/test_param_pow 
-				&& associative/test_param_SubItem 
-				&& associative/test_param_mul 
-				&& associative/test_param_div 
-				&& associative/test_param_add 
-				&& associative/test_param_sub 
-				&& associative/test_param_not 
-				&& associative/test_param_and 
-				&& associative/test_param_or 
-				&& associative/test_param_iif 
-				&& combined/test_param_AddMul 
-				&& combined/test_param_DivMul 
-				&& combined/test_param_DivSub 
-				&& combined/test_param_PlusPow 
-				&& combined/test_param_NegPow 
-				&& combined/test_param_SubLook 
-				&& combined/test_param_LookupPow 
-				&& combined/test_param_LookupNrRows 
-				&& combined/test_param_PowMulAdd 
-				&& combined/test_param_Addeq 
-				&& combined/test_param_MulNoteq 
-				&& combined/test_param_Powlt 
-				&& combined/test_param_Modlteq 
-				&& combined/test_param_Subgt 
-				&& combined/test_param_Divgteq 
-				&& combined/test_param_NotAnd 
-				&& combined/test_param_AndOr 
-				&& combined/test_param_iifMulAdd;
+			unit<uint32> Cand : nrofrows = 32
+			{
+				attribute<string> Spec :
+				[
+					 'associative/test_param_plus'
+				,	'associative/test_param_plusmin'
+				,	'associative/test_param_minplus'
+				,	'associative/test_param_minmin'
+				,	'associative/test_param_pow'
+				,	'associative/test_param_SubItem'
+				,	'associative/test_param_mul'
+				,	'associative/test_param_div'
+				,	'associative/test_param_add'
+				,	'associative/test_param_sub'
+				,	'associative/test_param_not'
+				,	'associative/test_param_and'
+				,	'associative/test_param_or'
+				,	'associative/test_param_iif'
+				,	'combined/test_param_AddMul'
+				,	'combined/test_param_DivMul'
+				,	'combined/test_param_DivSub'
+				,	'combined/test_param_PlusPow'
+				,	'combined/test_param_NegPow'
+				,	'combined/test_param_SubLook'
+				,	'combined/test_param_LookupPow'
+				,	'combined/test_param_LookupNrRows'
+				,	'combined/test_param_PowMulAdd'
+				,	'combined/test_param_Addeq'
+				,	'combined/test_param_MulNoteq'
+				,	'combined/test_param_Powlt'
+				,	'combined/test_param_Modlteq'
+				,	'combined/test_param_Subgt'
+				,	'combined/test_param_Divgteq'
+				,	'combined/test_param_NotAnd'
+				,	'combined/test_param_AndOr'
+				,	'combined/test_param_iifMulAdd'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
 		}
 	}
-	container Ordering
+	container Ordering: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain          := source(CDomain);
 		container srcEDomain         := Esource(EDomain);
@@ -1835,119 +1907,124 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params := 
-					   eq/test_param 
-					&& eq_op/test_param 
-					&& eq_or_both_null/test_param 
-					&& lt_op/test_param 
-					&& lt/test_param 
-					&& lt_or_lhs_null/test_param 
-					&& le_op/test_param 
-					&& le/test_param 
-					&& le_or_lhs_null/test_param 
-					&& gt_op/test_param 
-					&& gt/test_param 
-					&& gt_or_rhs_null/test_param 
-					&& ge_op/test_param 
-					&& ge/test_param 
-					&& ge_or_rhs_null/test_param 
-					&& ne_op/test_param 
-					&& ne/test_param 
-					&& ne_or_one_null/test_param
-					&& argmax/test_param 
-					&& argmax_uint16/test_param
-					&& argmax_uint8/test_param
-					&& argmax_alldefined/test_param 
-					&& argmax_alldefined_uint16/test_param
-					&& argmax_alldefined_uint8/test_param
-					&& argmax_ifdefined/test_param 
-					&& argmax_ifdefined_uint16/test_param
-					&& argmax_ifdefined_uint8/test_param
-					&& argmin/test_param
-					&& argmin_uint16/test_param
-					&& argmin_uint8/test_param
-					&& argmin_alldefined/test_param 
-					&& argmin_alldefined_uint16/test_param
-					&& argmin_alldefined_uint8/test_param
-					&& argmin_ifdefined/test_param 
-					&& argmin_ifdefined_uint16/test_param
-					&& argmin_ifdefined_uint8/test_param
-					&& max_elem/test_param 
-					&& max_elem_alldefined/test_param 
-					&& max_elem_ifdefined/test_param 
-					&& min_elem/test_param 
-					&& min_elem_alldefined/test_param 
-					&& min_elem_ifdefined/test_param;
-				parameter<bool> test_attrs := 
-					   eq/test_attr 
-					&& eq_or_both_null/test_attr 
-					&& lt_op/test_attr 
-					&& lt/test_attr 
-					&& lt_or_lhs_null/test_attr 
-					&& le_op/test_attr 
-					&& le/test_attr 
-					&& le_or_lhs_null/test_attr 
-					&& gt_op/test_attr 
-					&& gt/test_attr 
-					&& gt_or_rhs_null/test_attr 
-					&& ge_op/test_attr 
-					&& ge/test_attr 
-					&& ge_or_rhs_null/test_attr 
-					&& ne_op/test_attr 
-					&& ne/test_attr 
-					&& ne_or_one_null/test_attr
-					&& argmax/test_attr
-					&& argmax_uint16/test_attr
-					&& argmax_uint8/test_attr
-					&& argmax_alldefined/test_attr
-					&& argmax_alldefined_uint16/test_attr
-					&& argmax_alldefined_uint8/test_attr
-					&& argmax_ifdefined/test_attr
-					&& argmax_ifdefined_uint16/test_attr
-					&& argmax_ifdefined_uint8/test_attr
-					&& argmin/test_attr 
-					&& argmin_uint16/test_attr 
-					&& argmin_uint8/test_attr
-					&& argmin_alldefined/test_attr 
-					&& argmin_alldefined_uint16/test_attr 
-					&& argmin_alldefined_uint8/test_attr
-					&& argmin_ifdefined/test_attr
-					&& argmin_ifdefined_uint16/test_attr
-					&& argmin_ifdefined_uint8/test_attr
-					&& max_elem/test_attr 
-					&& max_elem_alldefined/test_attr 
-					&& max_elem_ifdefined/test_attr 
-					&& min_elem/test_attr
-					&& min_elem_alldefined/test_attr 
-					&& min_elem_ifdefined/test_attr
-					&& median/test_attr
-					&& sort/test_attr 
-					&& reverse/test_attr
-					&& float_is_nearby/test_attr;
-				parameter<bool> test_case_sensitive :=
-					   eq/test_case_sensitive 
-					&& eq_or_both_null/test_case_sensitive 
-					&& lt_op/test_case_sensitive 
-					&& lt/test_case_sensitive 
-					&& lt_or_lhs_null/test_case_sensitive 
-					&& le_op/test_case_sensitive 
-					&& le/test_case_sensitive 
-					&& le_or_lhs_null/test_case_sensitive 
-					&& gt_op/test_case_sensitive 
-					&& gt/test_case_sensitive 
-					&& gt_or_rhs_null/test_case_sensitive 
-					&& ge_op/test_case_sensitive 
-					&& ge/test_case_sensitive 
-					&& ge_or_rhs_null/test_case_sensitive 
-					&& ne_or_one_null/test_case_sensitive;
-				parameter<bool> tests :=
-					   test_params 
-					&& test_attrs
-					&& test_case_sensitive;
+				unit<uint32> Cand : nrofrows = 102
+				{
+					attribute<string> Spec :
+					[
+						 'eq/test_param'
+					,	'eq_op/test_param'
+					,	'eq_or_both_null/test_param'
+					,	'lt_op/test_param'
+					,	'lt/test_param'
+					,	'lt_or_lhs_null/test_param'
+					,	'le_op/test_param'
+					,	'le/test_param'
+					,	'le_or_lhs_null/test_param'
+					,	'gt_op/test_param'
+					,	'gt/test_param'
+					,	'gt_or_rhs_null/test_param'
+					,	'ge_op/test_param'
+					,	'ge/test_param'
+					,	'ge_or_rhs_null/test_param'
+					,	'ne_op/test_param'
+					,	'ne/test_param'
+					,	'ne_or_one_null/test_param'
+					,	'argmax/test_param'
+					,	'argmax_uint16/test_param'
+					,	'argmax_uint8/test_param'
+					,	'argmax_alldefined/test_param'
+					,	'argmax_alldefined_uint16/test_param'
+					,	'argmax_alldefined_uint8/test_param'
+					,	'argmax_ifdefined/test_param'
+					,	'argmax_ifdefined_uint16/test_param'
+					,	'argmax_ifdefined_uint8/test_param'
+					,	'argmin/test_param'
+					,	'argmin_uint16/test_param'
+					,	'argmin_uint8/test_param'
+					,	'argmin_alldefined/test_param'
+					,	'argmin_alldefined_uint16/test_param'
+					,	'argmin_alldefined_uint8/test_param'
+					,	'argmin_ifdefined/test_param'
+					,	'argmin_ifdefined_uint16/test_param'
+					,	'argmin_ifdefined_uint8/test_param'
+					,	'max_elem/test_param'
+					,	'max_elem_alldefined/test_param'
+					,	'max_elem_ifdefined/test_param'
+					,	'min_elem/test_param'
+					,	'min_elem_alldefined/test_param'
+					,	'min_elem_ifdefined/test_param'
+					,	'eq/test_attr'
+					,	'eq_or_both_null/test_attr'
+					,	'lt_op/test_attr'
+					,	'lt/test_attr'
+					,	'lt_or_lhs_null/test_attr'
+					,	'le_op/test_attr'
+					,	'le/test_attr'
+					,	'le_or_lhs_null/test_attr'
+					,	'gt_op/test_attr'
+					,	'gt/test_attr'
+					,	'gt_or_rhs_null/test_attr'
+					,	'ge_op/test_attr'
+					,	'ge/test_attr'
+					,	'ge_or_rhs_null/test_attr'
+					,	'ne_op/test_attr'
+					,	'ne/test_attr'
+					,	'ne_or_one_null/test_attr'
+					,	'argmax/test_attr'
+					,	'argmax_uint16/test_attr'
+					,	'argmax_uint8/test_attr'
+					,	'argmax_alldefined/test_attr'
+					,	'argmax_alldefined_uint16/test_attr'
+					,	'argmax_alldefined_uint8/test_attr'
+					,	'argmax_ifdefined/test_attr'
+					,	'argmax_ifdefined_uint16/test_attr'
+					,	'argmax_ifdefined_uint8/test_attr'
+					,	'argmin/test_attr'
+					,	'argmin_uint16/test_attr'
+					,	'argmin_uint8/test_attr'
+					,	'argmin_alldefined/test_attr'
+					,	'argmin_alldefined_uint16/test_attr'
+					,	'argmin_alldefined_uint8/test_attr'
+					,	'argmin_ifdefined/test_attr'
+					,	'argmin_ifdefined_uint16/test_attr'
+					,	'argmin_ifdefined_uint8/test_attr'
+					,	'max_elem/test_attr'
+					,	'max_elem_alldefined/test_attr'
+					,	'max_elem_ifdefined/test_attr'
+					,	'min_elem/test_attr'
+					,	'min_elem_alldefined/test_attr'
+					,	'min_elem_ifdefined/test_attr'
+					,	'median/test_attr'
+					,	'sort/test_attr'
+					,	'reverse/test_attr'
+					,	'float_is_nearby/test_attr'
+					,	'eq/test_case_sensitive'
+					,	'eq_or_both_null/test_case_sensitive'
+					,	'lt_op/test_case_sensitive'
+					,	'lt/test_case_sensitive'
+					,	'lt_or_lhs_null/test_case_sensitive'
+					,	'le_op/test_case_sensitive'
+					,	'le/test_case_sensitive'
+					,	'le_or_lhs_null/test_case_sensitive'
+					,	'gt_op/test_case_sensitive'
+					,	'gt/test_case_sensitive'
+					,	'gt_or_rhs_null/test_case_sensitive'
+					,	'ge_op/test_case_sensitive'
+					,	'ge/test_case_sensitive'
+					,	'ge_or_rhs_null/test_case_sensitive'
+					,	'ne_or_one_null/test_case_sensitive'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Transcendental
+	container Transcendental: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain  := source(ADomain);
 		container srcEDomain := Esource(EDomain);
@@ -2000,13 +2077,26 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params := exp/test_param && log/test_param ;
-				parameter<bool> test_attrs  := exp/test_attr && log/test_attr ;
-				parameter<bool> tests       := test_params && test_attrs;
+				unit<uint32> Cand : nrofrows = 4
+				{
+					attribute<string> Spec :
+					[
+						 'exp/test_param'
+					,	'log/test_param'
+					,	'exp/test_attr'
+					,	'log/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Conversion
+	container Conversion: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       := source(ADomain);
 		container srcEDomain      := Esource(EDomain);
@@ -2894,81 +2984,90 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			*/
 			container results
 			{
-				parameter<bool> test_params := 
-					   uint2/test_param 
-					&& uint2/test_param_u2 
-					&& uint4/test_param 
-					&& uint4/test_param_u4 
-					&& uint8/test_param 
-					&& uint8/test_param_b 
-					&& uint16/test_param 
-					&& uint16/test_param_w 
-					&& uint32/test_param 
-					&& uint32/test_param_u 
-					&& uint64/test_param 
-					&& uint64/test_param_u64 
-					&& int8/test_param  
-					&& int8/test_param_c 
-					&& int16/test_param 
-					&& int16/test_param_s 
-					&& int32/test_param 
-					&& int32/test_param_i
-					&& int64/test_param 
-					&& int64/test_param_i64 
-					&& float32/test_param 
-					&& float32/test_param_f 
-					&& float64/test_param 
-					&& float64/test_param_d 
-					&& string/test_param 
-					&& bool/test_param 
-					&& value/test_param 
-					&& value_metric/test_param 
-					&& convert/test_param
-					&& rgb/test_param
-					&& AsHex/test_param;
-				parameter<bool> test_attrs := 
-					   uint2/test_attr 
-					&& uint4/test_attr 
-					&& uint8/test_attr 
-					&& uint16/test_attr 
-					&& uint32/test_attr 
-					&& uint64/test_attr 
-					&& int8/test_attr 
-					&& int16/test_attr 
-					&& int32/test_attr 
-					&& int64/test_attr 
-					&& float32/test_attr 
-					&& float64/test_attr 
-					&& string/test_attr 
-					&& bool/test_attr 
-					&& spoint/test_attr 
-					&& wpoint/test_attr 
-					&& ipoint/test_attr 
-					&& upoint/test_attr 
-					&& fpoint/test_attr 
-					&& dpoint/test_attr 
-					&& spolygon/test_attr 
-					&& wpolygon/test_attr 
-					&& ipolygon/test_attr 
-					&& upolygon/test_attr 
-					&& fpolygon/test_attr 
-					&& dpolygon/test_attr 
-					&& round/test_attr 
-					&& round_64/test_attr 
-					&& roundUp/test_attr 
-					&& roundUp_64/test_attr 
-					&& roundDown/test_attr 
-					&& roundDown_64/test_attr 
-					&& roundToZero/test_attr 
-					&& roundToZero_64/test_attr 
-					&& value/test_attr 
-					&& convert/test_attr
-					&& AsHex/test_attr;
-				parameter<bool> tests := test_params && test_attrs;
+				unit<uint32> Cand : nrofrows = 68
+				{
+					attribute<string> Spec :
+					[
+						 'uint2/test_param'
+					,	'uint2/test_param_u2'
+					,	'uint4/test_param'
+					,	'uint4/test_param_u4'
+					,	'uint8/test_param'
+					,	'uint8/test_param_b'
+					,	'uint16/test_param'
+					,	'uint16/test_param_w'
+					,	'uint32/test_param'
+					,	'uint32/test_param_u'
+					,	'uint64/test_param'
+					,	'uint64/test_param_u64'
+					,	'int8/test_param'
+					,	'int8/test_param_c'
+					,	'int16/test_param'
+					,	'int16/test_param_s'
+					,	'int32/test_param'
+					,	'int32/test_param_i'
+					,	'int64/test_param'
+					,	'int64/test_param_i64'
+					,	'float32/test_param'
+					,	'float32/test_param_f'
+					,	'float64/test_param'
+					,	'float64/test_param_d'
+					,	'string/test_param'
+					,	'bool/test_param'
+					,	'value/test_param'
+					,	'value_metric/test_param'
+					,	'convert/test_param'
+					,	'rgb/test_param'
+					,	'AsHex/test_param'
+					,	'uint2/test_attr'
+					,	'uint4/test_attr'
+					,	'uint8/test_attr'
+					,	'uint16/test_attr'
+					,	'uint32/test_attr'
+					,	'uint64/test_attr'
+					,	'int8/test_attr'
+					,	'int16/test_attr'
+					,	'int32/test_attr'
+					,	'int64/test_attr'
+					,	'float32/test_attr'
+					,	'float64/test_attr'
+					,	'string/test_attr'
+					,	'bool/test_attr'
+					,	'spoint/test_attr'
+					,	'wpoint/test_attr'
+					,	'ipoint/test_attr'
+					,	'upoint/test_attr'
+					,	'fpoint/test_attr'
+					,	'dpoint/test_attr'
+					,	'spolygon/test_attr'
+					,	'wpolygon/test_attr'
+					,	'ipolygon/test_attr'
+					,	'upolygon/test_attr'
+					,	'fpolygon/test_attr'
+					,	'dpolygon/test_attr'
+					,	'round/test_attr'
+					,	'round_64/test_attr'
+					,	'roundUp/test_attr'
+					,	'roundUp_64/test_attr'
+					,	'roundDown/test_attr'
+					,	'roundDown_64/test_attr'
+					,	'roundToZero/test_attr'
+					,	'roundToZero_64/test_attr'
+					,	'value/test_attr'
+					,	'convert/test_attr'
+					,	'AsHex/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Aggregations
+	container Aggregations: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomainUU              := source(RegionDomain     , CityDomain     , CDomain);
 		container srcDomainUT              := source(RegionDomain     , CityTiledDomain, CTiledDomain);
@@ -3754,78 +3853,84 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params := 
-					   count/test_param
-					&& min/test_param
-					&& min_index/test_param
-					&& max/test_param
-					&& max_index/test_param
-					&& first/test_param
-					&& last/test_param
-					&& mean/test_param
-					&& sum/test_param
-					&& modus/test_param
-					&& modus_weighted/test_param
-					&& cumulate/test_param
-					&& cumulate_as_id/test_param
-					&& nth_element/test_param
-					&& nth_element_weighted/test_param
-					&& rth_element/test_param
-					&& var/test_param
-					&& sd/test_param
-					&& corr/test_param
-					&& cov/test_param
-					&& all/test_param
-					&& any/test_param
-					&& frequency_table/test_param
-					&& frequency_table_with_null/test_param;
-
-				parameter<bool> test_attr := 
-					   count/test_attr
-					&& pcount/test_attr
-					&& has_any/test_attr
-					&& min/test_attr
-					&& min_index/test_attr
-					&& max/test_attr
-					&& max_index/test_attr
-					&& first/test_attr
-					&& last/test_attr
-					&& mean/test_attr
-					&& sum/test_attr
-					&& sum_uint32/test_attr
-					&& sum_uint16/test_attr
-					&& sum_uint8/test_attr
-					&& sum_uint64/test_attr
-					&& sum_int32/test_attr
-					&& sum_int16/test_attr
-					&& sum_int8/test_attr
-					&& sum_int64/test_attr
-					&& sum_float64/test_attr
-					
-					&& modus/test_attr
-					&& modus_weighted/test_attr
-					&& cumulate/test_attr
-					&& cumulate_as_id/test_attr
-					&& nth_element/test_attr
-					&& nth_element_weighted/test_attr
-					&& rth_element/test_attr
-					&& var/test_attr
-					&& sd/test_attr
-					&& corr/test_attr
-					&& cov/test_attr
-					&& all/test_attr 
-					&& any/test_attr 
-					&& reg_count/test_attr
-					&& reg_count_uint16/test_attr
-					&& reg_count_uint8/test_attr
-					&& reg_count_empty/test_attr
-					&& frequency_table/test_attr;
-
-				parameter<bool> tests := test_params && test_attr;
+				unit<uint32> Cand : nrofrows = 62
+				{
+					attribute<string> Spec :
+					[
+						 'count/test_param'
+					,	'min/test_param'
+					,	'min_index/test_param'
+					,	'max/test_param'
+					,	'max_index/test_param'
+					,	'first/test_param'
+					,	'last/test_param'
+					,	'mean/test_param'
+					,	'sum/test_param'
+					,	'modus/test_param'
+					,	'modus_weighted/test_param'
+					,	'cumulate/test_param'
+					,	'cumulate_as_id/test_param'
+					,	'nth_element/test_param'
+					,	'nth_element_weighted/test_param'
+					,	'rth_element/test_param'
+					,	'var/test_param'
+					,	'sd/test_param'
+					,	'corr/test_param'
+					,	'cov/test_param'
+					,	'all/test_param'
+					,	'any/test_param'
+					,	'frequency_table/test_param'
+					,	'frequency_table_with_null/test_param'
+					,	'count/test_attr'
+					,	'pcount/test_attr'
+					,	'has_any/test_attr'
+					,	'min/test_attr'
+					,	'min_index/test_attr'
+					,	'max/test_attr'
+					,	'max_index/test_attr'
+					,	'first/test_attr'
+					,	'last/test_attr'
+					,	'mean/test_attr'
+					,	'sum/test_attr'
+					,	'sum_uint32/test_attr'
+					,	'sum_uint16/test_attr'
+					,	'sum_uint8/test_attr'
+					,	'sum_uint64/test_attr'
+					,	'sum_int32/test_attr'
+					,	'sum_int16/test_attr'
+					,	'sum_int8/test_attr'
+					,	'sum_int64/test_attr'
+					,	'sum_float64/test_attr'
+					,	'modus/test_attr'
+					,	'modus_weighted/test_attr'
+					,	'cumulate/test_attr'
+					,	'cumulate_as_id/test_attr'
+					,	'nth_element/test_attr'
+					,	'nth_element_weighted/test_attr'
+					,	'rth_element/test_attr'
+					,	'var/test_attr'
+					,	'sd/test_attr'
+					,	'corr/test_attr'
+					,	'cov/test_attr'
+					,	'all/test_attr'
+					,	'any/test_attr'
+					,	'reg_count/test_attr'
+					,	'reg_count_uint16/test_attr'
+					,	'reg_count_uint8/test_attr'
+					,	'reg_count_empty/test_attr'
+					,	'frequency_table/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Predicates
+	container Predicates: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       := source(ADomain);
 		container srcEDomain      := Esource(EDomain);
@@ -3983,24 +4088,33 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params := 
-							   IsDefined/test_param 
-							&& IsNull/test_param 
-							&& IsPositive/test_param 
-							&& IsNegative/test_param 
-							&& IsZero/test_param;
-				parameter<bool> test_attrs := 
-							    MakeDefined/test_attr 
-							&& IsDefined/test_attr 
-							&& IsNull/test_attr 
-							&& IsPositive/test_attr 
-							&& IsNegative/test_attr 
-							&& IsZero/test_attr;
-				parameter<bool> tests := test_params && test_attrs;
+				unit<uint32> Cand : nrofrows = 11
+				{
+					attribute<string> Spec :
+					[
+						 'IsDefined/test_param'
+					,	'IsNull/test_param'
+					,	'IsPositive/test_param'
+					,	'IsNegative/test_param'
+					,	'IsZero/test_param'
+					,	'MakeDefined/test_attr'
+					,	'IsDefined/test_attr'
+					,	'IsNull/test_attr'
+					,	'IsPositive/test_attr'
+					,	'IsNegative/test_attr'
+					,	'IsZero/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Logical
+	container Logical: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       := source(ADomain);
 		container srcEDomain      := Esource(EDomain);
@@ -4185,39 +4299,45 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params := 
-					   iif_op/test_param 
-					&& iif/test_param 
-					&& and_op/test_param 
-					&& and/test_param 
-					&& or_op/test_param 
-					&& or/test_param 
-					&& not_op/test_param 
-					&& not/test_param 
-					&& bitand/test_param
-					&& bitor/test_param
-					&& complement/test_param
-					;
-	
-				parameter<bool> test_attrs :=
-					   iif_op/test_attr 
-					&& iif/test_attr 
-					&& and_op/test_attr 
-					&& and/test_attr 
-					&& or_op/test_attr 
-					&& or/test_attr 
-					&& not_op/test_attr 
-					&& not/test_attr 
-					&& bitand/test_attr
-					&& bitor/test_attr
-					&& switchcase/test_attr
-					&& complement/test_attr
-					;
-				parameter<bool> tests := test_params && test_attrs;
+				unit<uint32> Cand : nrofrows = 23
+				{
+					attribute<string> Spec :
+					[
+						 'iif_op/test_param'
+					,	'iif/test_param'
+					,	'and_op/test_param'
+					,	'and/test_param'
+					,	'or_op/test_param'
+					,	'or/test_param'
+					,	'not_op/test_param'
+					,	'not/test_param'
+					,	'bitand/test_param'
+					,	'bitor/test_param'
+					,	'complement/test_param'
+					,	'iif_op/test_attr'
+					,	'iif/test_attr'
+					,	'and_op/test_attr'
+					,	'and/test_attr'
+					,	'or_op/test_attr'
+					,	'or/test_attr'
+					,	'not_op/test_attr'
+					,	'not/test_attr'
+					,	'bitand/test_attr'
+					,	'bitor/test_attr'
+					,	'switchcase/test_attr'
+					,	'complement/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Relational
+	container Relational: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcUnTiled2UnTiledDomain := Source(CityDomain      , RegionDomain      , CountryDomain,      RoadDomain);
 		container srcUnTiled2TiledDomain   := Source(CityDomain      , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
@@ -5208,48 +5328,58 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container results
 			{
-				parameter<bool> tests := 
-				   id/test_attr 
-				&& mapping/test_attr 
-				&& mapping_count/test_attr 
-				&& lookup_op/test_attr 
-				&& lookup/test_attr 
-				&& rlookup/test_attr 
-				&& rjoin/test_attr 
-				&& index/test_attr 
-				&& direct_index/test_attr 
-				&& invert/test_attr 
-				&& select_with_org_rel/test 
-				&& select_uint32_with_org_rel/test 
-				&& select_uint16_with_org_rel/test 
-				&& select_uint8_with_org_rel/test 
-				&& select_unit/test
-				&& select_with_attr_by_org_rel/test
-				&& select_uint8_with_attr_by_org_rel/test
-				&& select_uint16_with_attr_by_org_rel/test
-				&& select_uint32_with_attr_by_org_rel/test
-				&& select_with_attr_by_cond/test
-				&& select_uint8_with_attr_by_cond/test
-				&& select_uint16_with_attr_by_cond/test
-				&& select_uint32_with_attr_by_cond/test
-				&& collect_by_cond/test
-				&& collect_attr_by_org_rel/test
-				&& collect_attr_by_cond/test
-				//&& collect_attr_by_cond/test_wrongCondition
-				&& unique/test 
-				&& unique_with_null/test
-				&& union/test_attr 
-				&& union_unit/test 
-				&& union_data/test_attr 
-				&& combine/test 
-				&& combine_data/test 
-				&& merge/test
-				&& merge_empty/test
-				&& join_equal_values/attr_test;
+				unit<uint32> Cand : nrofrows = 36
+				{
+					attribute<string> Spec :
+					[
+						 'id/test_attr'
+					,	'mapping/test_attr'
+					,	'mapping_count/test_attr'
+					,	'lookup_op/test_attr'
+					,	'lookup/test_attr'
+					,	'rlookup/test_attr'
+					,	'rjoin/test_attr'
+					,	'index/test_attr'
+					,	'direct_index/test_attr'
+					,	'invert/test_attr'
+					,	'select_with_org_rel/test'
+					,	'select_uint32_with_org_rel/test'
+					,	'select_uint16_with_org_rel/test'
+					,	'select_uint8_with_org_rel/test'
+					,	'select_unit/test'
+					,	'select_with_attr_by_org_rel/test'
+					,	'select_uint8_with_attr_by_org_rel/test'
+					,	'select_uint16_with_attr_by_org_rel/test'
+					,	'select_uint32_with_attr_by_org_rel/test'
+					,	'select_with_attr_by_cond/test'
+					,	'select_uint8_with_attr_by_cond/test'
+					,	'select_uint16_with_attr_by_cond/test'
+					,	'select_uint32_with_attr_by_cond/test'
+					,	'collect_by_cond/test'
+					,	'collect_attr_by_org_rel/test'
+					,	'collect_attr_by_cond/test'
+					,	'unique/test'
+					,	'unique_with_null/test'
+					,	'union/test_attr'
+					,	'union_unit/test'
+					,	'union_data/test_attr'
+					,	'combine/test'
+					,	'combine_data/test'
+					,	'merge/test'
+					,	'merge_empty/test'
+					,	'join_equal_values/attr_test'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Classify
+	container Classify: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       :=  Source(DistrictDomain);
 		container srcEDomain      := ESource(EDomain);
@@ -5502,18 +5632,29 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> tests := 
-					   Classify/test_attr 
-					&& ClassifyUniqueValues/test_attr 
-					&& ClassifyEqualCount/test_attr 
-					&& ClassifyNonzeroEqualCount/test_attr 
-					&& ClassifyEqualInterval/test_attr 
-					&& ClassifyJenksFisher/test_attr 
-					&& ClassifyLogInterval/test_attr ;
+				unit<uint32> Cand : nrofrows = 7
+				{
+					attribute<string> Spec :
+					[
+						 'Classify/test_attr'
+					,	'ClassifyUniqueValues/test_attr'
+					,	'ClassifyEqualCount/test_attr'
+					,	'ClassifyNonzeroEqualCount/test_attr'
+					,	'ClassifyEqualInterval/test_attr'
+					,	'ClassifyJenksFisher/test_attr'
+					,	'ClassifyLogInterval/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Rescale
+	container Rescale: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcUnTiled2UnTiled := Source(RegionDomain, CityDomain);
 		container srcUntiled2Tiled   := Source(RegionDomain,CityTiledDomain);
@@ -5674,21 +5815,31 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container results
 			{
-				parameter<bool> tests := 
-					   scalesum2/test_attr 
-					&& scalesum3/test_attr 
-					&& rescale/test_attr 
-					&& normalize/test_attr 
-					&& interpolate_linear/test_attr
-					&& ramp/test_attr
-					&& ramp_open/test_attr
-					&& ramp_rgb/test_attr
-					&& ramp_open_rgb/test_attr
-					;
+				unit<uint32> Cand : nrofrows = 9
+				{
+					attribute<string> Spec :
+					[
+						 'scalesum2/test_attr'
+					,	'scalesum3/test_attr'
+					,	'rescale/test_attr'
+					,	'normalize/test_attr'
+					,	'interpolate_linear/test_attr'
+					,	'ramp/test_attr'
+					,	'ramp_open/test_attr'
+					,	'ramp_rgb/test_attr'
+					,	'ramp_open_rgb/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Constants
+	container Constants: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       := source(ADomain);
 		container srcTiledDomain  := source(ATiledDomain);
@@ -5868,39 +6019,47 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params :=
-					   const/test_param 
-					&& const_3_arguments/test_param 
-					&& true_const/test_param 
-					&& false_const/test_param
-					&& pi/test_param
-					&& null_b/test_param
-					&& null_w/test_param
-					&& null_u/test_param
-					&& null_u64/test_param
-					&& null_c/test_param
-					&& null_s/test_param
-					&& null_i/test_param
-					&& null_i64/test_param
-					&& null_f/test_param
-					&& null_d/test_param
-					&& null_spoint/test_param
-					&& null_wpoint/test_param
-					&& null_ipoint/test_param
-					&& null_upoint/test_param
-					&& null_fpoint/test_param
-					&& null_dpoint/test_param;
-
-				parameter<bool> test_attrs := 
-					   const/test_attr 
-					&& const_3_arguments/test_attr 
-					&& true_const/test_attr 
-					&& false_const/test_attr ;
-				parameter<bool> tests := test_params && test_attrs;
+				unit<uint32> Cand : nrofrows = 25
+				{
+					attribute<string> Spec :
+					[
+						 'const/test_param'
+					,	'const_3_arguments/test_param'
+					,	'true_const/test_param'
+					,	'false_const/test_param'
+					,	'pi/test_param'
+					,	'null_b/test_param'
+					,	'null_w/test_param'
+					,	'null_u/test_param'
+					,	'null_u64/test_param'
+					,	'null_c/test_param'
+					,	'null_s/test_param'
+					,	'null_i/test_param'
+					,	'null_i64/test_param'
+					,	'null_f/test_param'
+					,	'null_d/test_param'
+					,	'null_spoint/test_param'
+					,	'null_wpoint/test_param'
+					,	'null_ipoint/test_param'
+					,	'null_upoint/test_param'
+					,	'null_fpoint/test_param'
+					,	'null_dpoint/test_param'
+					,	'const/test_attr'
+					,	'const_3_arguments/test_attr'
+					,	'true_const/test_attr'
+					,	'false_const/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Trigonometric
+	container Trigonometric: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       := source(ADomain);
 		container srcTiledDomain  := source(ATiledDomain);
@@ -5980,15 +6139,26 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> tests := 
-					   sinus/test_attr
-					&& cosinus/test_attr
-					&& tangens/test_attr
-					&& arctangens/test_attr ;
+				unit<uint32> Cand : nrofrows = 4
+				{
+					attribute<string> Spec :
+					[
+						 'sinus/test_attr'
+					,	'cosinus/test_attr'
+					,	'tangens/test_attr'
+					,	'arctangens/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Point
+	container Point: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcUnTiled2Untiled  := Source(ADomain,      HDomain,      DistrictPointsDomain,      RDomain,      PandPointsDomain      , PandDomain);
 		container srcTiled2Untiled    := Source(ATiledDomain, HDomain,      DistrictPointsTiledDomain, RDomain,      PandPointsTiledDomain , PandDomain);
@@ -6293,11 +6463,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<bool> isEmpty;
 			// begin case parameters
 
+			// test van de (per GeoDMS 19.x verwijderde) operator 'point' zelf; draait
+			// alleen op versies waar die nog bestaat (Spec-rij 'point/test_attr|point')
 			container point
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/point"
 			{
-				attribute<point_rd> att  (origin) := point_yx(origin/y, origin/x, point_rd);
+				attribute<point_rd> att  (origin) := point(origin/y, origin/x, point_rd);
 				attribute<bool>     test (origin) := point_isNearby(att, source/origin/location, Dif_all_float32);
 				parameter<bool>     test_attr     := all(test);
 			}
@@ -6321,7 +6493,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
 			{
-				attribute<float32> att  (origin) := pointRow(point/att);
+				attribute<float32> att  (origin) := pointRow(point_yx/att);
 				attribute<bool>    test (origin) := att = origin/y;
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -6329,7 +6501,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointcol"
 			{
-				attribute<float32> att  (origin) := pointCol(point/att);
+				attribute<float32> att  (origin) := pointCol(point_yx/att);
 				attribute<bool>    test (origin) := att = source/origin/x;
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -6337,7 +6509,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
 			{
-				attribute<float64> att  (origin) := Get_X(point/att);
+				attribute<float64> att  (origin) := Get_X(point_yx/att);
 				attribute<bool>    test (origin) := att = float64(origin/x);
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -6355,7 +6527,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointcol"
 			{
-				attribute<float64> att  (origin) := Get_Y(point/att);
+				attribute<float64> att  (origin) := Get_Y(point_yx/att);
 				attribute<bool>    test (origin) := att = float64(source/origin/y);
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -6779,44 +6951,55 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container results
 			{
-				parameter<bool> tests :=
-					   point/test_attr
-					&& point_xy/test_attr
-					&& point_yx/test_attr
-					&& PointRow/test_attr 
-					&& PointCol/test_attr 
-					&& get_x/test_attr 
-					&& get_y/test_attr 
-					&& get_x_griddomain/test_attr 
-					&& get_y_griddomain/test_attr 
-					&& dist/test_attr 
-					&& sqrdist/test_attr 
-					&& point_in_polygon/test_attr 
-					&& point_in_all_polygons/test_attr 
-					&& point_in_ranked_polygon/test_attr 
-					&& point_in_ranked_polygon/rank_constant/test_attr
-					&& dyna_point/CalcPoint/test_attr 
-					&& dyna_point_tiled/CalcPoint/test_attr 
-					&& dyna_point_with_ends/CalcPoint/test_attr
-					&& dyna_point_empty/CalcPoint/test_attr 
-					&& dyna_segment/CalcPoint/test_attr 
-					&& dyna_segment_empty/CalcPoint/test_attr 
-					&& dyna_segment_with_ends/CalcPoint/test_attr 
-					&& RD2LatLongWgs84/test_param
-					&& RD2LatLongWgs84/test_attr
-					&& LatLongWgs842RD/test_param
-					&& LatLongWgs842RD/test_attr
-					&& RD2LatLongGE/test_param
-					&& RD2LatLongGE/test_attr
-					&& RD2LatLongEd50/test_param
-					&& RD2LatLongEd50/test_attr
-					&& RD2LatLong/test_param
-					&& RD2LatLong/test_attr
-					&& bg_buffer_point/test_attr;
+				unit<uint32> Cand : nrofrows = 33
+				{
+					attribute<string> Spec :
+					[
+						 'point/test_attr|point'
+					,	'point_xy/test_attr'
+					,	'point_yx/test_attr'
+					,	'PointRow/test_attr'
+					,	'PointCol/test_attr'
+					,	'get_x/test_attr'
+					,	'get_y/test_attr'
+					,	'get_x_griddomain/test_attr'
+					,	'get_y_griddomain/test_attr'
+					,	'dist/test_attr'
+					,	'sqrdist/test_attr'
+					,	'point_in_polygon/test_attr'
+					,	'point_in_all_polygons/test_attr'
+					,	'point_in_ranked_polygon/test_attr'
+					,	'point_in_ranked_polygon/rank_constant/test_attr'
+					,	'dyna_point/CalcPoint/test_attr'
+					,	'dyna_point_tiled/CalcPoint/test_attr'
+					,	'dyna_point_with_ends/CalcPoint/test_attr'
+					,	'dyna_point_empty/CalcPoint/test_attr'
+					,	'dyna_segment/CalcPoint/test_attr'
+					,	'dyna_segment_empty/CalcPoint/test_attr'
+					,	'dyna_segment_with_ends/CalcPoint/test_attr'
+					,	'RD2LatLongWgs84/test_param'
+					,	'RD2LatLongWgs84/test_attr'
+					,	'LatLongWgs842RD/test_param'
+					,	'LatLongWgs842RD/test_attr'
+					,	'RD2LatLongGE/test_param'
+					,	'RD2LatLongGE/test_attr'
+					,	'RD2LatLongEd50/test_param'
+					,	'RD2LatLongEd50/test_attr'
+					,	'RD2LatLong/test_param'
+					,	'RD2LatLong/test_attr'
+					,	'bg_buffer_point/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Sequence
+	container Sequence: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain         := source(DistrictPointsDomain, RDomain, RoadDomain, HDomain, BuildingDomain, False);
 		container srcTemplateDomain := source(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, False);
@@ -6965,8 +7148,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float32>  x_cross: [112028,114311,111999,114325,114325, 113214,113362];
 				attribute<float32>  y_cross: [401329,401325,399434,399456,399456, 400079,398754];
 				
-				attribute<point_rd> point       := point_yx(y, x, /point_rd), Label = "RoadPoints";
-				attribute<point_rd> point_cross := point_yx(y_cross, x_cross, /point_rd), Label = "RoadPoints";
+				attribute<point_rd> point       := point_yx(y, x, point_rd), Label = "RoadPoints";
+				attribute<point_rd> point_cross := point_yx(y_cross, x_cross, point_rd), Label = "RoadPoints";
 
 				attribute<road>     Sequence_rel: [0,0,1,1,1,2,2];
 				attribute<uint32>   Ordinal:    [0,1,0,1,2,0,1];
@@ -7213,8 +7396,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float32>  x_cross: [];
 				attribute<float32>  y_cross: [];
 				
-				attribute<point_rd> point       := point_yx(y, x, /point_rd), Label = "RoadPoints";
-				attribute<point_rd> point_cross := point_yx(y_cross, x_cross, /point_rd), Label = "RoadPoints";
+				attribute<point_rd> point       := point_yx(y, x, point_rd), Label = "RoadPoints";
+				attribute<point_rd> point_cross := point_yx(y_cross, x_cross, point_rd), Label = "RoadPoints";
 
 				attribute<road>     Sequence_rel: [];
 				attribute<uint32>   Ordinal:    [];
@@ -7531,7 +7714,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<point_rd> att    (RoadDomain, arc) := points2sequence(sequence2points/point, sequence2points/Sequence_rel, sequence2points/Ordinal);
 				attribute<point_rd> att_ps (RoadDomain, arc) := points2sequence(sequence2points/point, sequence2points/Sequence_rel);
-				attribute<bool> test       (RoadDomain)      := arc_length(att, /m) == arc_length(Source/road/line, /m) && lower_bound(att) = lower_bound(Source/road/line);
+				attribute<bool> test       (RoadDomain)      := arc_length(att, m) == arc_length(Source/road/line, m) && lower_bound(att) = lower_bound(Source/road/line);
 				parameter<bool> test_attr              := all(test);
 			}
 
@@ -7543,7 +7726,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				Using = "source",
 				url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/arc_length"
 			{
-				attribute<m>    att  (RoadDomain) := arc_length(road/line, /m);
+				attribute<m>    att  (RoadDomain) := arc_length(road/line, m);
 				attribute<bool> test (RoadDomain) := float_isNearby(att,road/arc_length, Dif_all_float32);
 				parameter<bool> test_attr   := all(test);
 			}
@@ -7551,7 +7734,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				Using = "source",
 				url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/sequence/area"
 			{
-				attribute</m2>  att  (district) := area(district/border, /m2);
+				attribute<m2>  att  (district) := area(district/border, m2);
 				attribute<bool> test (district) := float_isNearby(att, district/area, Dif_all_float32);
 				parameter<bool> test_attr       := all(test);
 			}
@@ -8709,66 +8892,74 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container results
 			{
-				parameter<bool> tests := 
-					   sequence2points/test_attr
-					&& points2sequence/test_attr
-					&& arc_length/test_attr 
-					&& area/test_attr 
-					&& lower_bound/test_attr
-					&& upper_bound/test_attr
-					&& center_bound/test_attr
-					&& centroid/test_attr
-					&& mid/test_attr
-					&& centroid_or_mid/test_attr
-					&& centroid_or_mid_complex/test_attr
-					&& poly2grid/test_attr
-					&& union_polygon/test_attr
-					&& bp_union_polygon/test_attr
-					&& overlay_polygon/intersect/test
-					&& split/single_polygons/test
-					&& split/bg_single_polygons2/test
-					&& inflate/test_attr
-					&& deflate/test_attr
-					&& connectivity/polygon_connectvity/test_attr 
-					&& difference/test_param
-					&& multiply/test_param
-					&& plus/test_param
-					&& StringToSequence/tests/param_uint64/test
-					&& StringToSequence/tests/param_uint32/test
-					&& StringToSequence/tests/param_uint16/test
-					&& StringToSequence/tests/param_uint8/test
-					&& StringToSequence/tests/param_int64/test
-					&& StringToSequence/tests/param_int32/test
-					&& StringToSequence/tests/param_int16/test
-					&& StringToSequence/tests/param_int8/test
-					&& StringToSequence/tests/param_float64/test
-					&& StringToSequence/tests/param_float32/test
-					&& bg_simplify/test_attr
-					&& bg_simplify/tests/Circle/test_attr 
-					&& bg_buffer_multi_point/test_attr
-					&& bg_buffer_linestring/test_attr
-					&& bg_buffer_single_polygon/test_attr
-					&& bg_buffer_multi_polygon/test_attr
-					&& bg_outer_single_polygon/test_attr
-					&& bg_outer_multi_polygon/test_attr
-					&& split_multi_linestring/test_attr
-
-					&& bg_difference/test_param
-					&& bg_union/test_param
-					&& bg_xor/test_param
-					&& bg_intersect/test_param
-					&& bg_overlay_polygon/test_param
-					&& bp_overlay_polygon/test_param
-					&& overlay_polygon/intersect/test
-					&& overlay_polygon/bg_intersect/test
-					&& overlay_polygon/cgal_intersect/test
-					&& overlay_polygon/cgal_intersect2/test
-					
-					;
+				unit<uint32> Cand : nrofrows = 52
+				{
+					attribute<string> Spec :
+					[
+						 'sequence2points/test_attr'
+					,	'points2sequence/test_attr'
+					,	'arc_length/test_attr'
+					,	'area/test_attr'
+					,	'lower_bound/test_attr'
+					,	'upper_bound/test_attr'
+					,	'center_bound/test_attr'
+					,	'centroid/test_attr'
+					,	'mid/test_attr'
+					,	'centroid_or_mid/test_attr'
+					,	'centroid_or_mid_complex/test_attr'
+					,	'poly2grid/test_attr'
+					,	'union_polygon/test_attr'
+					,	'bp_union_polygon/test_attr'
+					,	'overlay_polygon/intersect/test'
+					,	'split/single_polygons/test'
+					,	'split/bg_single_polygons2/test'
+					,	'inflate/test_attr'
+					,	'deflate/test_attr'
+					,	'connectivity/polygon_connectvity/test_attr'
+					,	'difference/test_param'
+					,	'multiply/test_param'
+					,	'plus/test_param'
+					,	'StringToSequence/tests/param_uint64/test'
+					,	'StringToSequence/tests/param_uint32/test'
+					,	'StringToSequence/tests/param_uint16/test'
+					,	'StringToSequence/tests/param_uint8/test'
+					,	'StringToSequence/tests/param_int64/test'
+					,	'StringToSequence/tests/param_int32/test'
+					,	'StringToSequence/tests/param_int16/test'
+					,	'StringToSequence/tests/param_int8/test'
+					,	'StringToSequence/tests/param_float64/test'
+					,	'StringToSequence/tests/param_float32/test'
+					,	'bg_simplify/test_attr'
+					,	'bg_simplify/tests/Circle/test_attr'
+					,	'bg_buffer_multi_point/test_attr'
+					,	'bg_buffer_linestring/test_attr'
+					,	'bg_buffer_single_polygon/test_attr'
+					,	'bg_buffer_multi_polygon/test_attr'
+					,	'bg_outer_single_polygon/test_attr'
+					,	'bg_outer_multi_polygon/test_attr'
+					,	'split_multi_linestring/test_attr'
+					,	'bg_difference/test_param'
+					,	'bg_union/test_param'
+					,	'bg_xor/test_param'
+					,	'bg_intersect/test_param'
+					,	'bg_overlay_polygon/test_param'
+					,	'bp_overlay_polygon/test_param'
+					,	'overlay_polygon/intersect/test'
+					,	'overlay_polygon/bg_intersect/test'
+					,	'overlay_polygon/cgal_intersect/test'
+					,	'overlay_polygon/cgal_intersect2/test'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Network
+	container Network: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain      :=  Source(RDomain, RoadDomain, ADomain, HDomain ,LDomain);
 		container srcEDomain     := ESource(EDomain, EDomain,    EDomain, EDomain ,EDomain);
@@ -8792,7 +8983,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<float32>  x: [112631,111866,111866,111924,111524,114921,114823];
 				attribute<float32>  y: [399246,398599,398599,399495,401801,401529,398584];
-				attribute<point_rd> point := point_yx(y, x, /point_rd), Label = "RoadPoints";
+				attribute<point_rd> point := point_yx(y, x, point_rd), Label = "RoadPoints";
 				attribute<road>     Sequence_rel: [0,0,1,1,1,2,2];
 				attribute<uint32>   Ordinal:    [0,1,0,1,2,0,1];
 			}
@@ -8921,7 +9112,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			{
 				attribute<float32>  x: [];
 				attribute<float32>  y: [];
-				attribute<point_rd> point := point_yx(y, x, /point_rd), Label = "RoadPoints";
+				attribute<point_rd> point := point_yx(y, x, point_rd), Label = "RoadPoints";
 				attribute<road>     Sequence_rel: [];
 				attribute<uint32>   Ordinal:    [];
 			}
@@ -9252,7 +9443,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						attribute<uint32>   VolgNr := ID(pointset) / nrofrows(LinkSet);
 					}
 					attribute<point_rd> segments(arc) := points2sequence(pointset/UnionData, pointset/ArcID, pointset/VolgNr);
-					attribute<m>        dist          := value(dist(point, nextpoint), /m);
+					attribute<m>        dist          := value(dist(point, nextpoint), m);
 				}
 				unit<uint32> NodeSet := unique(SubItem(union(LinkSet/point, LinkSet/nextpoint), 'UnionData')),
 					DialogData = "Values",
@@ -9837,51 +10028,59 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> tests := 
-					   first_point/test_attr 
-					&& last_point/test_attr 
-					&& arc2segm/test_attr
-					&& connect/test_attr
-					&& connect_null_values/test_attr
-					&& connect_arc_length_zero/connected/test
-					&& connect_eq/test_attr
-					&& connect_ne/test_attr
-					&& connected_info/test_attr
-					&& connected_info_eq/test_attr
-					&& connected_info_ne/test_attr
-					&& connected/parts/test_attr
-					&& connect_points/test_attr 
-					&& capacitated_connect/test_attr 
-					//&& connect_neighbour/test_attr 
-					&& connect_points/test_pointdomain_attr 
-					&& UnTiled/connect_neighbour/test_attr  // Dit moet nog aangepast worden, nu wordt alleen Untiled gecontroleerd
-
-					&& dijkstra/test_attr
-					&& impedance_table/test_attr
-					&& dijkstra_directed/test_attr
-					&& impedance_table_directed/test_attr
-					&& dijkstra_maxdist/test_attr
-					&& impedance_table_maxdist/test_attr
-
-					&& dijkstra_interaction/test_attr
-					&& impedance_matrix_interaction/test_attr
-					&& dijkstra_od/test_attr
-					&& impedance_matrix_od/test_attr
-					&& dijkstra_od_directed/test_attr
-					&& impedance_matrix_od_directed/test_attr
-					&& dijkstra_od_maxdist/test_attr
-					&& impedance_matrix_od_maxdist/test_attr
-					&& dijkstra_od_maxdist_directed/test_attr
-					&& impedance_matrix_od_maxdist_directed/test_attr
-					&& dijkstra_od_maxtime_alt_imp/test_attr
-					&& impedance_matrix_od_maxtime_alt_imp/test_attr
-					&& avg_link_count_all/test_attr
-					&& traceback/test_attr
-					&& service_area/test_attr;
+				unit<uint32> Cand : nrofrows = 37
+				{
+					attribute<string> Spec :
+					[
+						 'first_point/test_attr'
+					,	'last_point/test_attr'
+					,	'arc2segm/test_attr'
+					,	'connect/test_attr'
+					,	'connect_null_values/test_attr'
+					,	'connect_arc_length_zero/connected/test'
+					,	'connect_eq/test_attr'
+					,	'connect_ne/test_attr'
+					,	'connected_info/test_attr'
+					,	'connected_info_eq/test_attr'
+					,	'connected_info_ne/test_attr'
+					,	'connected/parts/test_attr'
+					,	'connect_points/test_attr'
+					,	'capacitated_connect/test_attr'
+					,	'connect_points/test_pointdomain_attr'
+					,	'UnTiled/connect_neighbour/test_attr'
+					,	'dijkstra/test_attr'
+					,	'impedance_table/test_attr'
+					,	'dijkstra_directed/test_attr'
+					,	'impedance_table_directed/test_attr'
+					,	'dijkstra_maxdist/test_attr'
+					,	'impedance_table_maxdist/test_attr'
+					,	'dijkstra_interaction/test_attr'
+					,	'impedance_matrix_interaction/test_attr'
+					,	'dijkstra_od/test_attr'
+					,	'impedance_matrix_od/test_attr'
+					,	'dijkstra_od_directed/test_attr'
+					,	'impedance_matrix_od_directed/test_attr'
+					,	'dijkstra_od_maxdist/test_attr'
+					,	'impedance_matrix_od_maxdist/test_attr'
+					,	'dijkstra_od_maxdist_directed/test_attr'
+					,	'impedance_matrix_od_maxdist_directed/test_attr'
+					,	'dijkstra_od_maxtime_alt_imp/test_attr'
+					,	'impedance_matrix_od_maxtime_alt_imp/test_attr'
+					,	'avg_link_count_all/test_attr'
+					,	'traceback/test_attr'
+					,	'service_area/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Grid
+	container Grid: Using = "/Domains;/Units;/Tolerances"
 	{
 		container units
 		{
@@ -9935,11 +10134,11 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords>   P          := value((fpoint(id(.)) + point_yx(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(isDefined(EGridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
-					attribute<Coords>                  P                := GridDomain/P[org_rel];
+					attribute<Coords>                  P                := EGridDomain/P[org_rel];
 					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
 				}
 				//attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
@@ -10020,8 +10219,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		
 		container UnTiled  := Template(units/GridDomain,       srcDomain      , False);
 		container Tiled    := Template(units/GridTiledDomain,  srcTiledDomain , False);
-		container ETiled   := Template(units/EGridDomain,      srcEDomain     , True);
-		container EUnTiled := Template(units/EGridTiledDomain, srcETiledDomain, True);
+		container ETiled   := Template(units/EGridTiledDomain, srcETiledDomain, True);
+		container EUnTiled := Template(units/EGridDomain,      srcEDomain     , True);
 
 		template source
 		{
@@ -10393,18 +10592,29 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			container results
 			{
-				parameter<bool> tests := 
-					   district/test_grid
-					&& district_8/test_grid
-					&& diversity/test_grid 
-					&& dist2/test_grid
-					&& potential/test_grid 
-					&& proximity/test_grid 
-					&& griddist_param/test_grid 
-					&& griddist/test_grid 
-					&& overlay/test_attr
-					&& overlay32/test_attr
-					&& raster_merge/test_grid;
+				unit<uint32> Cand : nrofrows = 11
+				{
+					attribute<string> Spec :
+					[
+						 'district/test_grid'
+					,	'district_8/test_grid'
+					,	'diversity/test_grid'
+					,	'dist2/test_grid'
+					,	'potential/test_grid'
+					,	'proximity/test_grid'
+					,	'griddist_param/test_grid'
+					,	'griddist/test_grid'
+					,	'overlay/test_attr'
+					,	'overlay32/test_attr'
+					,	'raster_merge/test_grid'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 		container potential_with_tiles: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/potential"
@@ -10474,7 +10684,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<bool>  test_attr     := all(test);
 		}
 	}
-	container matrix
+	container matrix: Using = "/Domains;/Units;/Tolerances"
 	{
 		unit<fpoint> Coords;
 		unit<spoint> GridDomain :=
@@ -10607,8 +10817,8 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	
 		container UnTiled  := Template(GridDomain);
 		container Tiled    := Template(GridTiledDomain);
-		container ETiled   := Template(EGridDomain);
-		container EUnTiled := Template(EGridTiledDomain);
+		container ETiled   := Template(EGridTiledDomain);
+		container EUnTiled := Template(EGridDomain);
 
 		Template Template
 		{
@@ -10635,14 +10845,25 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> tests :=
-					   matr_mul/test_attr
-					&& matr_inv/test_attr
-					&& matr_var/test_attr;
+				unit<uint32> Cand : nrofrows = 3
+				{
+					attribute<string> Spec :
+					[
+						 'matr_mul/test_attr'
+					,	'matr_inv/test_attr'
+					,	'matr_var/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container String
+	container String: Using = "/Domains;/Units;/Tolerances"
 	{
 		unit<uint32> Steden_nrd: nrofrows = 9;
 		unit<uint32> Prov_nrd  : nrofrows = 3;
@@ -11176,71 +11397,79 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> test_params := 
-					   concatenation/test_param
-					&& source/stringOperator/test_param
-					&& strlen/test_param 
-					&& strlen64/test_param 
-					&& substr/test_param 
-					&& substr2/test_param 
-					&& left/test_param 
-					&& right/test_param 
-					&& quote/test_param  
-					&& unquote/test_param 
-					&& dquote/test_param  
-					&& undquote/test_param 
-					&& strpos/test_param 
-					&& strrpos/test_param 
-					&& strcount/test_param 
-					&& replace/test_param 
-					&& replace/test_paramM 
-					&& replace_value/test_param 
-					&& repeat/test_param 
-					&& trim/test_param
-					&& asExprList/test_param 
-					&& asExprList_with_null/test_param 
-					&& asItemList/test_param 
-					&& asItemList_with_null/test_param 
-					&& asDatastring/test_param 
-					&& expand/test_param 
-					&& from_utf/test_param
-					&& AsItemName/testA;
-
-				parameter<bool> test_attrs :=
-					   concatenation/test_attr 
-					&& strlen/test_attr  
-					&& strlen64/test_attr  
-					&& substr/test_attr 
-					&& substr2/test_attr 
-					&& left/test_attr 
-					&& right/test_attr 
-					&& quote/test_attr 
-					&& unquote/test_attr 
-					&& dquote/test_attr 
-					&& undquote/test_attr 
-					&& uppercase/test_attr 
-					&& lowercase/test_attr 
-					&& strpos/test_attr 
-					&& strrpos/test_attr 
-					&& strcount/test_attr 
-					&& replace/test_attr 
-					&& replace/test_attrMultiple
-					&& replace_value/test_attr 
-					&& repeat/test_attr 
-					&& trim/test_attr
-					&& sort_str/test_attr
-					&& add/test_attr 
-					&& asList/test_attr
-					&& asExprList/test_attr 
-					&& asExprList_with_null/test_attr 
-					&& asItemList/test_attr 
-					&& asItemList_with_null/test_attr 
-					&& asDatastring/test_attr ;
-				parameter<bool> tests := test_params && test_attrs;
+				unit<uint32> Cand : nrofrows = 57
+				{
+					attribute<string> Spec :
+					[
+						 'concatenation/test_param'
+					,	'source/stringOperator/test_param'
+					,	'strlen/test_param'
+					,	'strlen64/test_param'
+					,	'substr/test_param'
+					,	'substr2/test_param'
+					,	'left/test_param'
+					,	'right/test_param'
+					,	'quote/test_param'
+					,	'unquote/test_param'
+					,	'dquote/test_param'
+					,	'undquote/test_param'
+					,	'strpos/test_param'
+					,	'strrpos/test_param'
+					,	'strcount/test_param'
+					,	'replace/test_param'
+					,	'replace/test_paramM'
+					,	'replace_value/test_param'
+					,	'repeat/test_param'
+					,	'trim/test_param'
+					,	'asExprList/test_param'
+					,	'asExprList_with_null/test_param'
+					,	'asItemList/test_param'
+					,	'asItemList_with_null/test_param'
+					,	'asDatastring/test_param'
+					,	'expand/test_param'
+					,	'from_utf/test_param'
+					,	'AsItemName/testA'
+					,	'concatenation/test_attr'
+					,	'strlen/test_attr'
+					,	'strlen64/test_attr'
+					,	'substr/test_attr'
+					,	'substr2/test_attr'
+					,	'left/test_attr'
+					,	'right/test_attr'
+					,	'quote/test_attr'
+					,	'unquote/test_attr'
+					,	'dquote/test_attr'
+					,	'undquote/test_attr'
+					,	'uppercase/test_attr'
+					,	'lowercase/test_attr'
+					,	'strpos/test_attr'
+					,	'strrpos/test_attr'
+					,	'strcount/test_attr'
+					,	'replace/test_attr'
+					,	'replace/test_attrMultiple'
+					,	'replace_value/test_attr'
+					,	'repeat/test_attr'
+					,	'trim/test_attr'
+					,	'sort_str/test_attr'
+					,	'add/test_attr'
+					,	'asList/test_attr'
+					,	'asExprList/test_attr'
+					,	'asExprList_with_null/test_attr'
+					,	'asItemList/test_attr'
+					,	'asItemList_with_null/test_attr'
+					,	'asDatastring/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container File
+	container File: Using = "/Domains;/Units;/Tolerances"
 	{
 		container CopyFileMakeDir
 		{
@@ -11428,7 +11657,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				&& storage_name/test_param;
 		}
 	}
-	container ReadAVLE
+	container ReadAVLE: Using = "/Domains;/Units;/Tolerances"
 	{
 		container source
 		{
@@ -11495,17 +11724,27 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 		container results
 		{
-			parameter<bool> tests := 
-				   ReadValue/test_param
-				&& ReadArray/test_attr
-				&& ReadArrayII/test
-				&& ReadElems/test_attr
-				&& ReadLines/test_param
-				&& ReadLines/test_attr
-			;
+			unit<uint32> Cand : nrofrows = 6
+			{
+				attribute<string> Spec :
+				[
+					 'ReadValue/test_param'
+				,	'ReadArray/test_attr'
+				,	'ReadArrayII/test'
+				,	'ReadElems/test_attr'
+				,	'ReadLines/test_param'
+				,	'ReadLines/test_attr'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
 		}
 	}
-	container MetaScript
+	container MetaScript: Using = "/Domains;/Units;/Tolerances"
 	{
 		unit <uint32> Region := ADomain
 		{
@@ -11715,19 +11954,32 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		}
 		container results
 		{
-			parameter<bool> tests :=
-				   for_each/test 
-				&& for_each_empty/test
-				&& for_each_read_grid/test 
-				&& loop/test
-				&& for_each_ind/test
-				&& for_each_ind_empty/test
-				&& SubItem_PropValues/Name/test_attr   && SubItem_PropValues/Expr/test_attr 
-				&& Inherited_PropValues/Name/test_attr && Inherited_PropValues/Expr/test_attr 
-				&& SubTree_PropValues/Name/test_attr;
+			unit<uint32> Cand : nrofrows = 11
+			{
+				attribute<string> Spec :
+				[
+					 'for_each/test'
+				,	'for_each_empty/test'
+				,	'for_each_read_grid/test'
+				,	'loop/test'
+				,	'for_each_ind/test'
+				,	'for_each_ind_empty/test'
+				,	'SubItem_PropValues/Name/test_attr'
+				,	'SubItem_PropValues/Expr/test_attr'
+				,	'Inherited_PropValues/Name/test_attr'
+				,	'Inherited_PropValues/Expr/test_attr'
+				,	'SubTree_PropValues/Name/test_attr'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
 		}
 	}
-	container Allocation: url = "http://www.objectvision.nl/geodms/operators-a-functions/allocation"
+	container Allocation: url = "http://www.objectvision.nl/geodms/operators-a-functions/allocation", Using = "/Domains;/Units;/Tolerances"
 	{
 		unit<fpoint>  TestCoords := Range(point_yx(100f, 0f), point_yx(600f, 600f));
 		unit<float32> Meter      := BaseUnit('m', float32);
@@ -12117,7 +12369,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<bool>           test_attr              := all(test);
 		}
 	}
-	container UnitFunctions
+	container UnitFunctions: Using = "/Domains;/Units;/Tolerances"
 	{
 		container UnTiled := Template(RDomain);
 		container Tiled   := Template(RTiledDomain);
@@ -12382,30 +12634,40 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container results
 			{
-				parameter<bool> tests :=
-					   void/test
-					&& metric/test_param
-					&& nrofrows_op/test
-					&& nrofrows/test
-					&& range/test_param
-					&& cat_range/test_param
-					&& gridset/test_param
-					&& boundaries/test_param
-					&& BoundCenter/test_param
-					&& BoundRange/test_param
-					&& unit_domain/test_param
-					&& unit_values/test_param
-					&& unit_default/test_param
-//					&& projection/GetProjectionBase/test
-					&& projection/GetProjectionOffset/test
-					&& projection/GetProjectionFactor/test
-					&& projection/GridRelations/test_attr
-					&& GetMetricFactor/test_param
-					&& TiledUnit/arithmetic/test_attr;
+				unit<uint32> Cand : nrofrows = 18
+				{
+					attribute<string> Spec :
+					[
+						 'void/test'
+					,	'metric/test_param'
+					,	'nrofrows_op/test'
+					,	'nrofrows/test'
+					,	'range/test_param'
+					,	'cat_range/test_param'
+					,	'gridset/test_param'
+					,	'boundaries/test_param'
+					,	'BoundCenter/test_param'
+					,	'BoundRange/test_param'
+					,	'unit_domain/test_param'
+					,	'unit_values/test_param'
+					,	'unit_default/test_param'
+					,	'projection/GetProjectionOffset/test'
+					,	'projection/GetProjectionFactor/test'
+					,	'projection/GridRelations/test_attr'
+					,	'GetMetricFactor/test_param'
+					,	'TiledUnit/arithmetic/test_attr'
+					];
+				}
+				container selection := TestSet(Cand, Cand/Spec);
+				parameter<bool>   tests        := =selection/test_expr;
+				parameter<uint32> nrExecuted   := =selection/count_expr;
+				parameter<uint32> nrConfigured := =selection/conf_expr;
+				parameter<string> failing      := =selection/fail_expr;
+				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
 	}
-	container Miscellaneous
+	container Miscellaneous: Using = "/Domains;/Units;/Tolerances"
 	{
 		unit<float32> meter := BaseUnit('meter', float32);
 
@@ -12611,29 +12873,40 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		
 		container results
 		{
-			parameter<bool> tests := 
-				   Propvalue/test
-				&& rnd_uniform/test_param
-				&& rnd_uniform/test_attr
-				&& rnd_uniform_empty/test_attr
-				&& rnd_permutation/test_attr
-				&& rnd_permutation_empty/test_attr
-				&& subitem_op/test_attr
-				&& subitem/test_attr
-				&& GeoDMSVersion/test
-				&& GeoDMSBuildConfig/test
-				&& GeoDmsPlatform/test
-				&& Regex_match/test_param
-				&& Regex_search/test_param
-				&& Regex_replace/test_param
-				&& issue_915/test
-				&& entropy/domain/test_attr
-				&& average_entropy/domain/test_attr
-				&& TemplateSyntax/test_param;
+			unit<uint32> Cand : nrofrows = 18
+			{
+				attribute<string> Spec :
+				[
+					 'Propvalue/test'
+				,	'rnd_uniform/test_param'
+				,	'rnd_uniform/test_attr'
+				,	'rnd_uniform_empty/test_attr'
+				,	'rnd_permutation/test_attr'
+				,	'rnd_permutation_empty/test_attr'
+				,	'subitem_op/test_attr'
+				,	'subitem/test_attr'
+				,	'GeoDMSVersion/test'
+				,	'GeoDMSBuildConfig/test'
+				,	'GeoDmsPlatform/test'
+				,	'Regex_match/test_param'
+				,	'Regex_search/test_param'
+				,	'Regex_replace/test_param'
+				,	'issue_915/test'
+				,	'entropy/domain/test_attr'
+				,	'average_entropy/domain/test_attr'
+				,	'TemplateSyntax/test_param'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
 
 		}
 	}
-	container Trackers
+	container Trackers: Using = "/Domains;/Units;/Tolerances"
 	{
 		parameter<String> NullStr := String(0/0);
 		parameter<String> T5a     := iif(true, 'x', NullStr);
@@ -12646,7 +12919,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		}
 	}
 	
-	container ExplicitNullvalues
+	container ExplicitNullvalues: Using = "/Domains;/Units;/Tolerances"
 	{
 		parameter<uint8>  param_uint8  := 255b;
 		parameter<uint16> param_uint16 := 65535w;
@@ -12674,10 +12947,31 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 		parameter<bool>   test_int32 := eq_or_both_null(param_int32, 0i / 0i);
 		parameter<bool>   test_int64 := eq_or_both_null(param_int64_2, 0i64 / 0i64);
 		
-		parameter<bool>   tests      := test_uint8 && test_uint16 && test_uint32 && test_int8 && test_int16 && test_int32;
+		container results
+		{
+			unit<uint32> Cand : nrofrows = 6
+			{
+				attribute<string> Spec :
+				[
+					 'test_uint8'
+				,	'test_uint16'
+				,	'test_uint32'
+				,	'test_int8'
+				,	'test_int16'
+				,	'test_int32'
+				];
+			}
+			container selection := TestSet(Cand, Cand/Spec);
+			parameter<bool>   tests        := =selection/test_expr;
+			parameter<uint32> nrExecuted   := =selection/count_expr;
+			parameter<uint32> nrConfigured := =selection/conf_expr;
+			parameter<string> failing      := =selection/fail_expr;
+			parameter<string> skipped      := =selection/skip_expr;
+		}
+		parameter<bool> tests := results/tests;  // alias, oude pad blijft geldig
 	}
 	
-	container Utf8Characters
+	container Utf8Characters: Using = "/Domains;/Units;/Tolerances"
 	{
 		unit<float32>      €      := baseUnit('€', float32);
 		unit<float32>      euro   := baseUnit('€', float32);
