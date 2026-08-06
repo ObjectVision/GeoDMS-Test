@@ -230,13 +230,15 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     _vm = re.match(r"(\d+)\.(\d+)\.(\d+)", version)
     if _vm and tuple(int(g) for g in _vm.groups()) < (18, 1, 0):
         regression_test_paths["OperatorPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/operator_pre1810.dms"
-        # Staleness-guard: de pre-18.1.0-kopie wordt niet automatisch bijgewerkt; een
-        # vergeten regeneratie zou hier anders stil een verouderde config draaien.
+        # De pre-18.1.0-kopie is een gegenereerd artefact van Operator.dms; genereer
+        # hem automatisch (bij) als hij ontbreekt of verouderd is, zodat 17.x-runs
+        # nooit stil een oude testset draaien. Alleen relevant zolang versies < 18.1.0
+        # in de vergelijking meedraaien.
         _pre = regression_test_paths["OperatorPath"]
         _src = f"{regression_test_paths["TstDir"]}/Operator/cfg/Operator.dms"
-        if os.path.exists(_pre) and os.path.exists(_src) and os.path.getmtime(_src) > os.path.getmtime(_pre):
-            print("WARNING: operator_pre1810.dms is ouder dan Operator.dms; draai 'python batch/make_operator_pre1810.py'",
-                  file=sys.stderr)
+        if not os.path.exists(_pre) or (os.path.exists(_src) and os.path.getmtime(_src) > os.path.getmtime(_pre)):
+            print("operator_pre1810.dms ontbreekt of is ouder dan Operator.dms; regenereren...", file=sys.stderr)
+            subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "make_operator_pre1810.py")], check=True)
 
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)

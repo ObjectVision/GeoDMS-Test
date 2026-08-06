@@ -736,7 +736,7 @@ def _append_t010_coverage(parsed_indicators:dict, rdir:str):
         f.write("\n".join(untested))
     covered = len(groups) - len(untested)
     parsed_indicators["coverage"] = [
-        f"operator groups with a testje: {covered} of {len(groups)} (untested: {len(untested)}, see t010_operator_coverage.txt)", True]
+        f"operator groups with a test: {covered} of {len(groups)} (untested: {len(untested)}, see t010_operator_coverage.txt)", True]
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
 

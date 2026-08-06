@@ -130,7 +130,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	'MetaInfo/results/test'
 			,	'AGG|ExplicitNullvalues/results'
 			,	'Utf8Characters/tests'
-			// fase-2: testjes voor operatoren die niet in alle geteste versies bestaan
+			// testjes voor operatoren die niet in alle geteste versies bestaan
 			,	'Aggregations/as_unique_list/test_attr|as_unique_list'
 			,	'Relational/ordererd_union_data/test_attr|ordererd_union_data'
 			,	'Conversion/rounded_convert/test_param|rounded_convert'
@@ -429,6 +429,18 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			['Low','','','','','','','High'];
 		}
 	}
+	// Thema-containers met per operator een testcontainer. De naamgeving dateert
+	// van 2004 en wijkt deels af van de wiki-indeling "Operators and Functions"
+	// (github.com/ObjectVision/GeoDMS/wiki):
+	//   Arithmetics=Arithmetic, Aggregations=Aggregation, Constants=Constant,
+	//   UnitFunctions=Unit, Point~Geometric (geometrie staat deels ook in Sequence),
+	//   File+ReadAVLE~"File, Folder and Read", selectie-operatoren staan in
+	//   Relational (wiki: Selection). Precedence/Trackers/ExplicitNullvalues/
+	//   Utf8Characters zijn taal-/syntaxtests zonder wiki-categorie.
+	// Hernoemen naar de wiki-namen kan, maar Arithmetics en Aggregations worden
+	// extern gerefereerd (t1742-statistics resp. t1640-value_info incl. hun
+	// referentiebestanden in TestReferenceFiles) - dat vergt een bewuste
+	// her-capture van die referenties.
 	container Arithmetics: Using = "/Domains;/Units;/Tolerances"
 	{
 		container srcDomain       := source(ADomain);
@@ -2114,7 +2126,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Conversion: Using = "/Domains;/Units;/Tolerances"
 	{
-		// fase-2 testje; halve waarden ronden naar +oneindig (2.5 -> 3, -2.5 -> -2)
+		// halve waarden ronden naar +oneindig (2.5 -> 3, -2.5 -> -2)
 		container rounded_convert
 		{
 			parameter<bool> test_param :=
@@ -3101,7 +3113,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Aggregations: Using = "/Domains;/Units;/Tolerances"
 	{
-		// fase-2 testje; draait alleen waar de operator bestaat (Spec-rij '...|as_unique_list')
+		// draait alleen waar de operator bestaat (Spec-rij '...|as_unique_list')
 		container as_unique_list
 		{
 			unit<uint32> G: nrofrows = 2;
@@ -4385,7 +4397,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Relational: Using = "/Domains;/Units;/Tolerances"
 	{
-		// fase-2 testje; draait alleen waar de operator bestaat (Spec-rij '...|ordererd_union_data')
+		// draait alleen waar de operator bestaat (Spec-rij '...|ordererd_union_data')
 		container ordererd_union_data
 		{
 			unit<uint32> A2: nrofrows = 2 { attribute<uint32> v: [10,20]; }
@@ -7057,7 +7069,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	}
 	container Sequence: Using = "/Domains;/Units;/Tolerances"
 	{
-		// fase-2 testjes voor nieuwe sequence/geometrie-operatoren; elk draait alleen
+		// testjes voor nieuwere sequence/geometrie-operatoren; elk draait alleen
 		// waar de operator bestaat (zie de |req in de bijbehorende Spec-rij)
 		container sequence_element_count
 		{
@@ -10846,7 +10858,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			parameter<bool>  test_attr     := all(test);
 		}
 	}
-	container matrix: Using = "/Domains;/Units;/Tolerances"
+	container Matrix: Using = "/Domains;/Units;/Tolerances"
 	{
 		unit<fpoint> Coords;
 		unit<spoint> GridDomain :=
