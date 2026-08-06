@@ -139,7 +139,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			,	'Sequence/points2arc/test_attr|points2arc'
 			,	'Sequence/points2multi_point/test_attr|points2multi_point'
 			,	'Sequence/geos_buffer/test_attr|geos_buffer'
-			,	'Sequence/geos_simplify_linestring/test_attr|geos_simplify_linestring;sequence_element_count'
+			,	'Sequence/geos_simplify_linestring/test_attr|geos_simplify_linestring'
 			,	'Sequence/outer_single_polygon/test_attr|outer_single_polygon'
 			];
 		}
@@ -7134,10 +7134,13 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			unit<float64> mu := baseunit('gsl_mu', float64);
 			attribute<dpoint> lines (S2, arc) := points2sequence(Pts/pt, Pts/seq, Pts/ord);
-			// collineaire tussenpunten verdwijnen; lengte blijft gelijk
+			// collineaire tussenpunten verdwijnen; lengte blijft gelijk. Telling via
+			// sequence2points (bestaat overal) i.p.v. sequence_element_count (20.x),
+			// zodat dit testje ook op 18.x/19.x draait.
 			attribute<dpoint> att   (S2, arc) := geos_simplify_linestring(lines, 0.5);
+			unit<uint32> att_points := sequence2points(att);
 			parameter<bool> test_attr :=
-				   all(sequence_element_count(att) = uint32(2))
+				   #att_points = 4
 				&& all(arc_length(att, mu) = arc_length(lines, mu));
 		}
 		container outer_single_polygon
