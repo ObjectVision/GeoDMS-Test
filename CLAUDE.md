@@ -49,8 +49,10 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   results-container heeft een `Cand`-tabel; een Spec-rij is `'pad/naar/test_bool'`
   (draait altijd), `'pad|op1[;op2]'` (draait alleen als die operator-groepen in de
   draaiende versie bestaan — noem óók operatoren die het testje intern gebruikt),
-  of `'AGG|pad/naar/results'`. Metascript-constructies (`for_each` e.d.) staan NIET
-  in de OperatorList en mogen nooit als vereiste worden opgegeven.
+  of `'AGG|pad/naar/results'`. Een vereiste `>=NN` is een versie-ondergrens, voor
+  namen die in oude versies wél geregistreerd staan maar als "reserved"-stub
+  erroren (bv. `geos_buffer_point;>=18`). Metascript-constructies (`for_each` e.d.)
+  staan NIET in de OperatorList en mogen nooit als vereiste worden opgegeven.
 - Het indicatorbestand meldt exacte aantallen (`<size>`), falende testjes
   (`<failing>`) en overgeslagen testjes met reden (`<skipped>`); het rapport toont
   daarnaast twee dekkingsregels: gedocumenteerde operatoren (doellijst

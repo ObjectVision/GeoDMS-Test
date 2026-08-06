@@ -3,6 +3,60 @@
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
 	container Grid: Using = "/Domains;/Units;/Tolerances"
 	{
+		// tests voor grid-operatoren (werklijst gedocumenteerde operatoren)
+		container perimeter_src
+		{
+			unit<fpoint> gbase;
+			unit<spoint> G4 := range(gridset(gbase, point_yx(1f, 1f, gbase), point_yx(0f, 0f, gbase), spoint), point_yx(0s, 0s), point_yx(4s, 4s));
+			unit<uint32> Zone: nrofrows = 2;
+			// twee verticale zones van 2x4 cellen
+			attribute<Zone> zg (G4): [0,0,1,1, 0,0,1,1, 0,0,1,1, 0,0,1,1];
+		}
+		container perimeter
+		{
+			// zone van 2 breed x 4 hoog: 2*(2+4) = 12 randcellen-zijden
+			attribute<uint32> att (perimeter_src/Zone) := perimeter(perimeter_src/zg);
+			parameter<bool> test_attr := all(att = uint32(12));
+		}
+		container perimeter_weighted
+		{
+			// gewichten N=1 O=2 Z=3 W=4: 2*1 + 4*2 + 2*3 + 4*4 = 32 per zone
+			attribute<float64> att (perimeter_src/Zone) := perimeter_weighted(perimeter_src/zg
+				, const(1.0, perimeter_src/G4), const(2.0, perimeter_src/G4)
+				, const(3.0, perimeter_src/G4), const(4.0, perimeter_src/G4));
+			parameter<bool> test_attr := all(att = 32.0);
+		}
+		container griddist_src
+		{
+			unit<fpoint> gbase;
+			unit<spoint> G4 := range(gridset(gbase, point_yx(1f, 1f, gbase), point_yx(0f, 0f, gbase), spoint), point_yx(0s, 0s), point_yx(4s, 4s));
+			attribute<float64> imp (G4) := const(1.0, G4);
+			unit<uint32> Dest: nrofrows = 1
+			{
+				attribute<G4> loc: ['{0, 0}'];
+			}
+		}
+		container griddist_maximp
+		{
+			// uniforme impedantie 1 vanaf hoekcel: rechte stap 1, diagonaal wortel(2)
+			attribute<float64> att (griddist_src/G4) := griddist_maximp(griddist_src/imp, griddist_src/Dest/loc, 100.0);
+			parameter<bool> test_attr :=
+				   float32(att[point_yx(0s, 3s)]) = 3f
+				&& abs(att[point_yx(1s, 1s)] - 1.4142135) < 0.0001
+				&& abs(att[point_yx(3s, 3s)] - 4.2426405) < 0.0001;
+			parameter<bool> test_param := att[point_yx(0s, 0s)] = 0.0;
+		}
+		container griddist_zonal
+		{
+			// zonegrens tussen kolom 1 en 2 kost +10
+			attribute<uint16> zg16 (griddist_src/G4): [0,0,1,1, 0,0,1,1, 0,0,1,1, 0,0,1,1];
+			attribute<float64> att (griddist_src/G4) := griddist_zonal(griddist_src/imp, griddist_src/Dest/loc, zg16, 10.0);
+			parameter<bool> test_attr :=
+				   att[point_yx(0s, 1s)] = 1.0
+				&& att[point_yx(0s, 2s)] = 12.0
+				&& att[point_yx(0s, 3s)] = 13.0;
+		}
+
 		container units
 		{
 			unit<fpoint> Coords;

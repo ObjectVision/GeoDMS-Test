@@ -3,6 +3,39 @@
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
 	container File: Using = "/Domains;/Units;/Tolerances"
 	{
+		// tests voor file-operatoren die veilig in t010 kunnen draaien (schrijven
+		// uitsluitend onder %localDataProjDir%); zie de Spec-rijen op topniveau
+		container fullPathName
+		{
+			parameter<string> att := fullPathName(., '%localDataProjDir%/regr_results/fp_test.txt');
+			parameter<bool> test_param := strcount(att, 'regr_results/fp_test.txt') = 1 && strcount(att, '%') = 0;
+		}
+		container MakeDir
+		{
+			parameter<string> att := MakeDir('%localDataProjDir%/regr_results/mkdir_test');
+			parameter<bool> test_param := strcount(att, 'mkdir_test') = 1;
+		}
+		// bronbestand voor de kopieer-tests: bestaat altijd in de repo
+		container CopyFile
+		{
+			parameter<string> src_direct : StorageType = "str", StorageName = "%projdir%/cfg/Operator/config.ini";
+			parameter<string> att := CopyFile('%projdir%/cfg/Operator/config.ini', '%localDataProjDir%/regr_results/copy_dst.ini');
+			parameter<string> back : StorageType = "str", Storagename = "= att";
+			parameter<bool> test_param := back = src_direct && strlen(src_direct) > 0;
+		}
+		container CreateFile
+		{
+			parameter<string> att := CreateFile('%projdir%/cfg/Operator/config.ini', '%localDataProjDir%/regr_results/create_dst.ini');
+			parameter<string> back : StorageType = "str", Storagename = "= att";
+			parameter<bool> test_param := strlen(back) > 0 && strcount(att, 'create_dst.ini') = 1;
+		}
+		container InitFile
+		{
+			parameter<string> att := InitFile('%projdir%/cfg/Operator/config.ini', '%localDataProjDir%/regr_results/init_dst.ini');
+			parameter<string> back : StorageType = "str", Storagename = "= att";
+			parameter<bool> test_param := strlen(back) > 0 && strcount(att, 'init_dst.ini') = 1;
+		}
+
 		container CopyFileMakeDir
 		{
 			parameter<string> dir_proj   := FullPathName(., '%projDir%');

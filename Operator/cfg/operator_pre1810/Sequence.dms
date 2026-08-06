@@ -89,6 +89,170 @@
 				   #att_points = 4
 				&& all(arc_length(att, mu) = arc_length(lines, mu));
 		}
+		// gedeelde bron voor de geos_*-tests: vier losse 2x2-vierkanten (sq4, per
+		// provincie 2) en twee overlappende 4x4/4x4-vierkanten (pa/pb, overlap 8)
+		container geos_src
+		{
+			unit<uint32> S1g: nrofrows = 1;
+			unit<uint32> Prov: nrofrows = 2;
+			unit<uint32> D4: nrofrows = 4
+			{
+				attribute<Prov> prov_rel: [0,0,1,1];
+			}
+			unit<uint32> Q20: nrofrows = 20
+			{
+				attribute<float64> x: [0,0,2,2,0, 3,3,5,5,3, 6,6,8,8,6, 9,9,11,11,9];
+				attribute<float64> y: [0,2,2,0,0, 0,2,2,0,0, 0,2,2,0,0, 0,2,2,0,0];
+				attribute<D4>      s: [0,0,0,0,0, 1,1,1,1,1, 2,2,2,2,2, 3,3,3,3,3];
+				attribute<uint32>  o: [0,1,2,3,4, 0,1,2,3,4, 0,1,2,3,4, 0,1,2,3,4];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+			}
+			attribute<dpoint> sq4 (D4, polygon) := points2sequence(Q20/pt, Q20/s, Q20/o);
+			unit<uint32> QA: nrofrows = 5
+			{
+				attribute<float64> x: [0,0,4,4,0];
+				attribute<float64> y: [0,4,4,0,0];
+				attribute<S1g>     s: [0,0,0,0,0];
+				attribute<uint32>  o: [0,1,2,3,4];
+			}
+			unit<uint32> QB: nrofrows = 5
+			{
+				attribute<float64> x: [2,2,6,6,2];
+				attribute<float64> y: [0,4,4,0,0];
+				attribute<S1g>     s: [0,0,0,0,0];
+				attribute<uint32>  o: [0,1,2,3,4];
+			}
+			attribute<dpoint> pa (S1g, polygon) := points2sequence(point_yx(QA/y, QA/x, dpoint), QA/s, QA/o);
+			attribute<dpoint> pb (S1g, polygon) := points2sequence(point_yx(QB/y, QB/x, dpoint), QB/s, QB/o);
+			unit<float64> mu := baseunit('geos_mu', float64);
+		}
+		container geos_intersect
+		{
+			parameter<bool> test_param := float32(sum(area(geos_intersect(geos_src/pa, geos_src/pb), geos_src/mu))) = 8f;
+		}
+		container geos_union
+		{
+			parameter<bool> test_param := float32(sum(area(geos_union(geos_src/pa, geos_src/pb), geos_src/mu))) = 24f;
+		}
+		container geos_xor
+		{
+			parameter<bool> test_param := float32(sum(area(geos_xor(geos_src/pa, geos_src/pb), geos_src/mu))) = 16f;
+		}
+		container geos_difference
+		{
+			parameter<bool> test_param := float32(sum(area(geos_difference(geos_src/pa, geos_src/pb), geos_src/mu))) = 8f;
+		}
+		container geos_union_polygon
+		{
+			// 1-arg: alles verenigd (param); 2-arg: partitionering met ander resultaatdomein
+			parameter<dpoint> all1 (polygon) := geos_union_polygon(geos_src/sq4);
+			parameter<bool>   test_param := float32(area(all1, geos_src/mu)) = 16f;
+			attribute<dpoint> per_prov (geos_src/Prov, polygon) := geos_union_polygon(geos_src/sq4, geos_src/D4/prov_rel);
+			attribute<bool>   test (geos_src/Prov) := float32(area(per_prov, geos_src/mu)) = 8f;
+			parameter<bool>   test_attr := all(test);
+		}
+		container geos_polygon
+		{
+			parameter<bool> test_attr := float32(sum(area(geos_polygon(geos_src/sq4), geos_src/mu))) = 16f;
+		}
+		container geos_split_polygon
+		{
+			unit<uint32> parts := geos_split_polygon(geos_src/sq4);
+			parameter<bool> test_attr := #parts = 4;
+		}
+		container geos_split_union_polygon
+		{
+			unit<uint32> parts := geos_split_union_polygon(geos_src/sq4);
+			parameter<bool> test_attr := #parts = 4;
+		}
+		container geos_overlay_polygon
+		{
+			unit<uint32> ov := geos_overlay_polygon(geos_src/pa, geos_src/pb);
+			parameter<bool> test_attr := #ov = 1;
+		}
+		container geos_polygon_connectivity
+		{
+			unit<uint32> QOv: nrofrows = 10
+			{
+				attribute<float64>       x: [0,0,3,3,0, 2,2,5,5,2];
+				attribute<float64>       y: [0,2,2,0,0, 0,2,2,0,0];
+				attribute<geos_src/Prov> s: [0,0,0,0,0, 1,1,1,1,1];
+				attribute<uint32>        o: [0,1,2,3,4, 0,1,2,3,4];
+			}
+			attribute<dpoint> ovl (geos_src/Prov, polygon) := points2sequence(point_yx(QOv/y, QOv/x, dpoint), QOv/s, QOv/o);
+			unit<uint32> pairs := geos_polygon_connectivity(ovl)
+			{
+				attribute<geos_src/Prov> first_rel;
+				attribute<geos_src/Prov> second_rel;
+			}
+			parameter<bool> test_attr := #pairs = 1 && pairs/first_rel[0] = 0[geos_src/Prov] && pairs/second_rel[0] = 1[geos_src/Prov];
+		}
+		container geos_buffer_point
+		{
+			unit<uint32> P2: nrofrows = 2
+			{
+				attribute<float64> x: [0, 10];
+				attribute<float64> y: [0, 0];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+			}
+			attribute<dpoint> att (P2, polygon) := geos_buffer_point(P2/pt, 1.0, 16b);
+			// ingeschreven 16-hoek: 0.5*16*sin(22.5 gr) = 3.0615
+			attribute<bool> test (P2) := abs(area(att, geos_src/mu) - 3.0615) < 0.01;
+			parameter<bool> test_attr := all(test);
+		}
+		container geos_buffer_multi_point
+		{
+			unit<uint32> P2: nrofrows = 2
+			{
+				attribute<float64> x: [0, 10];
+				attribute<float64> y: [0, 0];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+				attribute<geos_src/S1g> s: [0, 0];
+				attribute<uint32>  o: [0, 1];
+			}
+			attribute<dpoint> mp  (geos_src/S1g, arc) := points2sequence(P2/pt, P2/s, P2/o);
+			attribute<dpoint> att (geos_src/S1g, polygon) := geos_buffer_multi_point(mp, 1.0, 16b);
+			attribute<bool> test (geos_src/S1g) := abs(area(att, geos_src/mu) - 6.1229) < 0.02;
+			parameter<bool> test_attr := all(test);
+		}
+		container geos_buffer_linestring
+		{
+			unit<uint32> P2: nrofrows = 2
+			{
+				attribute<float64> x: [0, 10];
+				attribute<float64> y: [0, 0];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+				attribute<geos_src/S1g> s: [0, 0];
+				attribute<uint32>  o: [0, 1];
+			}
+			attribute<dpoint> ls  (geos_src/S1g, arc) := points2sequence(P2/pt, P2/s, P2/o);
+			attribute<dpoint> att (geos_src/S1g, polygon) := geos_buffer_linestring(ls, 1.0, 16b);
+			// 2*10 rechthoek + cirkeluiteinden ~ 23.06
+			attribute<bool> test (geos_src/S1g) := abs(area(att, geos_src/mu) - 23.0615) < 0.05;
+			parameter<bool> test_attr := all(test);
+		}
+		container geos_buffer_multi_polygon
+		{
+			attribute<dpoint> att (geos_src/D4, polygon) := geos_buffer_multi_polygon(geos_src/sq4, 1.0, 16b);
+			// Minkowski: 4 + 8 + pi(64-hoek) ~ 15.1365
+			attribute<bool> test (geos_src/D4) := abs(area(att, geos_src/mu) - 15.1365) < 0.05;
+			parameter<bool> test_attr := all(test);
+		}
+		container geos_simplify_multi_polygon
+		{
+			attribute<dpoint> att (geos_src/D4, polygon) := geos_simplify_multi_polygon(geos_src/sq4, 0.5);
+			attribute<bool> test (geos_src/D4) := float32(area(att, geos_src/mu)) = 4f;
+			parameter<bool> test_attr := all(test);
+		}
+		container split_piped_string
+		{
+			unit<uint32> SD: nrofrows = 3;
+			unit<uint32> parts := split_piped_string(union_data(SD, 'red|green|blue', 'apple|orange', 'single'))
+			{
+				attribute<SD> org_rel;
+			}
+			parameter<bool> test_attr := #parts = 6 && asList(string(parts/org_rel), '') = '000112';
+		}
 		container outer_single_polygon
 		{
 			unit<uint32> S1o: nrofrows = 1;
@@ -2000,7 +2164,7 @@
 
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 52
+				unit<uint32> Cand : nrofrows = 55
 				{
 					attribute<string> Spec :
 					[
@@ -2016,27 +2180,30 @@
 					,	'centroid_or_mid/test_attr'
 					,	'centroid_or_mid_complex/test_attr'
 					,	'poly2grid/test_attr'
-					,	'union_polygon/test_attr'
-					,	'bp_union_polygon/test_attr'
-					,	'overlay_polygon/intersect/test'
-					,	'split/single_polygons/test'
-					,	'split/bg_single_polygons2/test'
+					,	'union_polygon/test_attr|bp_union_polygon;bg_union_polygon;cgal_union_polygon;geos_union_polygon'
+					,	'bp_union_polygon/test_attr|bp_union_polygon;bg_union_polygon'
+					,	'overlay_polygon/intersect/test|bp_overlay_polygon'
+					,	'overlay_polygon/bg_intersect/test|bg_overlay_polygon'
+					,	'overlay_polygon/cgal_intersect/test|cgal_overlay_polygon'
+					,	'overlay_polygon/cgal_intersect2/test|cgal_overlay_polygon;bp_polygon'
+					,	'split/single_polygons/test|bp_split_polygon'
+					,	'split/bg_single_polygons2/test|bg_split_polygon;bg_split_union_polygon'
 					,	'inflate/test_attr'
 					,	'deflate/test_attr'
-					,	'connectivity/polygon_connectvity/test_attr'
+					,	'connectivity/polygon_connectvity/test_attr|polygon_connectivity'
 					,	'difference/test_param'
 					,	'multiply/test_param'
 					,	'plus/test_param'
-					,	'StringToSequence/tests/param_uint64/test'
-					,	'StringToSequence/tests/param_uint32/test'
-					,	'StringToSequence/tests/param_uint16/test'
-					,	'StringToSequence/tests/param_uint8/test'
-					,	'StringToSequence/tests/param_int64/test'
-					,	'StringToSequence/tests/param_int32/test'
-					,	'StringToSequence/tests/param_int16/test'
-					,	'StringToSequence/tests/param_int8/test'
-					,	'StringToSequence/tests/param_float64/test'
-					,	'StringToSequence/tests/param_float32/test'
+					,	'StringToSequence/tests/param_uint64/test|uint64seq'
+					,	'StringToSequence/tests/param_uint32/test|uint32seq'
+					,	'StringToSequence/tests/param_uint16/test|uint16seq'
+					,	'StringToSequence/tests/param_uint8/test|uint8seq'
+					,	'StringToSequence/tests/param_int64/test|int64seq'
+					,	'StringToSequence/tests/param_int32/test|int32seq'
+					,	'StringToSequence/tests/param_int16/test|int16seq'
+					,	'StringToSequence/tests/param_int8/test|int8seq'
+					,	'StringToSequence/tests/param_float64/test|float64seq'
+					,	'StringToSequence/tests/param_float32/test|float32seq'
 					,	'bg_simplify/test_attr'
 					,	'bg_simplify/tests/Circle/test_attr'
 					,	'bg_buffer_multi_point/test_attr'

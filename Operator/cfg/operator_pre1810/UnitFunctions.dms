@@ -3,6 +3,45 @@
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
 	container UnitFunctions: Using = "/Domains;/Units;/Tolerances"
 	{
+		// tests voor unit-meta-operatoren (werklijst gedocumenteerde operatoren)
+		container BaseUnit
+		{
+			unit<float32> bu := BaseUnit('uf_bu_meter', float32);
+			parameter<bool> test_param := 1[bu] + 1[bu] = 2[bu];
+		}
+		container DomainUnit
+		{
+			unit<uint32> DU_A: nrofrows = 3 { attribute<float32> v: [1,2,3]; }
+			unit<uint32> refdom := DomainUnit(DU_A/v);
+			parameter<bool> test_param := #refdom = 3;
+		}
+		container ValuesUnit
+		{
+			unit<float32> vu := BaseUnit('uf_vu_sec', float32);
+			unit<uint32> DU_A: nrofrows = 2 { attribute<vu> v: [1,2]; }
+			unit<float32> refval := ValuesUnit(DU_A/v);
+			attribute<refval> w (DU_A) := DU_A/v;
+			parameter<bool> test_param := sum(w) = 3[refval];
+		}
+		container GetProjectionBase
+		{
+			unit<fpoint> pbase;
+			unit<spoint> grd := range(gridset(pbase, point_yx(1f, 1f, pbase), point_yx(0f, 0f, pbase), spoint), point_yx(0s, 0s), point_yx(4s, 4s));
+			unit<fpoint> back := GetProjectionBase(grd);
+			parameter<fpoint> pt := point_yx(1f, 2f, back);
+			parameter<bool> test_param := pointRow(pt) = 1f && pointCol(pt) = 2f;
+		}
+		container lowerbound
+		{
+			unit<float32> rng := range(float32, 2.0f, 7.5f);
+			parameter<bool> test_param := lowerbound(rng) = 2f;
+		}
+		container upperbound
+		{
+			unit<float32> rng := range(float32, 2.0f, 7.5f);
+			parameter<bool> test_param := upperbound(rng) = 7.5f;
+		}
+
 		container UnTiled := Template(RDomain);
 		container Tiled   := Template(RTiledDomain);
 	

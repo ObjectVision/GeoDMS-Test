@@ -13,11 +13,22 @@
 		attribute<bool>   HasReq   (D) := strcount(Spec, '|') > 0;
 		attribute<string> TestPath (D) := HasReq ? substr(Spec, 0, strpos(Spec, '|')) : Spec;
 		attribute<string> ReqRaw   (D) := HasReq ? substr(Spec, strpos(Spec, '|') + 1) : '';
+		// maximaal vier ';'-gescheiden vereisten per rij (Req1 t/m Req4)
 		attribute<string> Req1     (D) := strcount(ReqRaw, ';') > 0 ? substr(ReqRaw, 0, strpos(ReqRaw, ';')) : ReqRaw;
-		attribute<string> Req2     (D) := strcount(ReqRaw, ';') > 0 ? substr(ReqRaw, strpos(ReqRaw, ';') + 1) : '';
+		attribute<string> Rest1    (D) := strcount(ReqRaw, ';') > 0 ? substr(ReqRaw, strpos(ReqRaw, ';') + 1) : '';
+		attribute<string> Req2     (D) := strcount(Rest1, ';') > 0 ? substr(Rest1, 0, strpos(Rest1, ';')) : Rest1;
+		attribute<string> Rest2    (D) := strcount(Rest1, ';') > 0 ? substr(Rest1, strpos(Rest1, ';') + 1) : '';
+		attribute<string> Req3     (D) := strcount(Rest2, ';') > 0 ? substr(Rest2, 0, strpos(Rest2, ';')) : Rest2;
+		attribute<string> Req4     (D) := strcount(Rest2, ';') > 0 ? substr(Rest2, strpos(Rest2, ';') + 1) : '';
+		// een vereiste is een operatorgroep-naam OF een versie-ondergrens '>=NN'
+		// (voor namen die in oude versies wel geregistreerd staan maar als
+		// "reserved for future implementation"-stub erroren, zoals geos_buffer_point
+		// in 17.4.6 - aanwezigheid in de OperatorList is daar niet genoeg)
 		attribute<bool>   Present  (D) :=
-			   (Req1 = '' || isDefined(rlookup(lowercase(Req1), MetaInfo/OperatorList/OperatorGroups/NameLC)))
-			&& (Req2 = '' || isDefined(rlookup(lowercase(Req2), MetaInfo/OperatorList/OperatorGroups/NameLC)));
+			   (Req1 = '' || (left(Req1, 2) = '>=' ? GeoDmsVersion() >= float64(substr(Req1, 2)) : isDefined(rlookup(lowercase(Req1), MetaInfo/OperatorList/OperatorGroups/NameLC))))
+			&& (Req2 = '' || (left(Req2, 2) = '>=' ? GeoDmsVersion() >= float64(substr(Req2, 2)) : isDefined(rlookup(lowercase(Req2), MetaInfo/OperatorList/OperatorGroups/NameLC))))
+			&& (Req3 = '' || (left(Req3, 2) = '>=' ? GeoDmsVersion() >= float64(substr(Req3, 2)) : isDefined(rlookup(lowercase(Req3), MetaInfo/OperatorList/OperatorGroups/NameLC))))
+			&& (Req4 = '' || (left(Req4, 2) = '>=' ? GeoDmsVersion() >= float64(substr(Req4, 2)) : isDefined(rlookup(lowercase(Req4), MetaInfo/OperatorList/OperatorGroups/NameLC))));
 
 		parameter<string> test_expr  := 'true'      + asList(IsAgg ? ' && ' + AggPath + '/tests'        : (Present ? ' && ' + TestPath : ''), '');
 		parameter<string> count_expr := 'uint32(0)' + asList(IsAgg ? ' + ' + AggPath + '/nrExecuted'    : (Present ? ' + uint32(1)' : ''), '');

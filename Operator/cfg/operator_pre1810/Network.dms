@@ -3,6 +3,92 @@
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
 	container Network: Using = "/Domains;/Units;/Tolerances"
 	{
+		// tests voor grafen-operatoren (werklijst gedocumenteerde operatoren)
+		container strongly_connected_components
+		{
+			// wiki-voorbeeld: twee gerichte cykels {0,1,2} en {3,4,5}
+			unit<uint32> Node6: nrofrows = 6;
+			unit<uint32> Edge8: nrofrows = 8
+			{
+				attribute<Node6> fr: [0,1,2,3,3,4,5,5];
+				attribute<Node6> to: [1,2,0,2,4,5,4,3];
+			}
+			unit<uint32> scc := strongly_connected_components(Edge8/fr, Edge8/to);
+			parameter<bool> test_param := #scc = 2;
+		}
+		container connected_parts
+		{
+			// zelfde kantenset ongericht: alles hangt aan elkaar via kant (3,2) -> 1 component
+			unit<uint32> Node6: nrofrows = 6;
+			unit<uint32> Edge8: nrofrows = 8
+			{
+				attribute<Node6> fr: [0,1,2,3,3,4,5,5];
+				attribute<Node6> to: [1,2,0,2,4,5,4,3];
+			}
+			unit<uint32> parts := connected_parts(Edge8/fr, Edge8/to);
+			parameter<bool> test_param := #parts = 1;
+		}
+		container dist_info
+		{
+			unit<uint32> DPnt: nrofrows = 2
+			{
+				attribute<float64> x: [1, 3];
+				attribute<float64> y: [1, 1];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+				attribute<uint32>  o: [0, 1];
+			}
+			unit<uint32> DS1: nrofrows = 1;
+			attribute<DS1>    seq (DPnt): [0, 0];
+			// horizontale lijn op y=0; beide punten liggen 1 erboven -> kwadraatafstand 1
+			unit<uint32> LPnt: nrofrows = 2
+			{
+				attribute<float64> x: [0, 4];
+				attribute<float64> y: [0, 0];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+				attribute<DS1>     s: [0, 0];
+				attribute<uint32>  o: [0, 1];
+			}
+			attribute<dpoint> line (DS1, arc) := points2sequence(LPnt/pt, LPnt/s, LPnt/o);
+			attribute<float64> d2 (DPnt) := dist_info(line, DPnt/pt, 100.0);
+			parameter<bool> test_attr := all(d2 = 1.0);
+		}
+		container trace_back
+		{
+			// keten 0-1-2 met herkomst in knoop 0; capaciteit 1 per knoop:
+			// link 0-1 draagt 2 (knopen 1 en 2), link 1-2 draagt 1
+			unit<uint32> Node3: nrofrows = 3;
+			unit<uint32> Link2: nrofrows = 2
+			{
+				attribute<Node3>   F1:  [0, 1];
+				attribute<Node3>   F2:  [1, 2];
+				attribute<float64> imp: [5, 7];
+			}
+			unit<uint32> Org1: nrofrows = 1
+			{
+				attribute<Node3> node_rel: [0];
+			}
+			attribute<float64> ndist (Node3) := impedance_table('bidirectional;startPoint(Node_rel);node:TraceBack', Link2/imp, Link2/F1, Link2/F2, Org1/node_rel)
+			{
+				attribute<Link2> TraceBack (Node3);
+			}
+			attribute<float64> flow (Link2) := trace_back(Link2/F1, Link2/F2, ndist/TraceBack, const(1.0, Node3));
+			parameter<bool> test_param := ndist[2] = 12.0;
+			parameter<bool> test_attr  := flow[0] = 2.0 && flow[1] = 1.0;
+		}
+		container impedance_matrix
+		{
+			// structurele check: OD-domein = nrKnopen^2 (waardenlaag volgt later)
+			unit<uint32> Node3: nrofrows = 3;
+			unit<uint32> Link2: nrofrows = 2
+			{
+				attribute<Node3>   F1:  [0, 1];
+				attribute<Node3>   F2:  [1, 2];
+				attribute<float64> imp: [5, 7];
+			}
+			unit<uint32> odm := impedance_matrix('bidirectional', Link2/imp, Link2/F1, Link2/F2);
+			parameter<bool> test_param := #odm = 9;
+		}
+
 		container srcDomain      :=  Source(RDomain, RoadDomain, ADomain, HDomain ,LDomain);
 		container srcEDomain     := ESource(EDomain, EDomain,    EDomain, EDomain ,EDomain);
 		

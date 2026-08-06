@@ -3,6 +3,73 @@
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
 	container Relational: Using = "/Domains;/Units;/Tolerances"
 	{
+		// tests voor selectie/relatie-operatoren (werklijst gedocumenteerde operatoren)
+		container select_with_org_rel_with_attr_by_cond
+		{
+			unit<uint32> R6: nrofrows = 6
+			{
+				attribute<bool>    cond: [true,false,true,true,false,true];
+				attribute<float32> val:  [1,2,3,4,5,6];
+			}
+			unit<uint32> sel := select_with_org_rel_with_attr_by_cond(R6, R6/cond)
+			{
+				attribute<float32> val;
+				attribute<R6> org_rel;
+			}
+			parameter<bool> test_param := #sel = 4;
+			parameter<bool> test_attr  := asList(string(sel/val), ',') = '1,3,4,6' && asList(string(sel/org_rel), ',') = '0,2,3,5';
+		}
+		container recollect_by_cond
+		{
+			unit<uint32> R6: nrofrows = 6
+			{
+				attribute<bool>    cond: [true,false,true,true,false,true];
+			}
+			unit<uint32> Sub4: nrofrows = 4
+			{
+				attribute<float32> val: [1,3,4,6];
+			}
+			attribute<float32> att (R6) := recollect_by_cond(R6/cond, Sub4/val, const(0f, R6));
+			parameter<bool> test_attr := asList(string(att), ';') = '1;0;3;4;0;6';
+		}
+		container invertAll
+		{
+			unit<uint32> Person6: nrofrows = 6;
+			unit<uint32> House3: nrofrows = 3;
+			attribute<House3> hrel (Person6): [0,0,1,2,1,0];
+			attribute<Person6> inv (House3) := invertAll(hrel)
+			{
+				attribute<Person6> Next (Person6);
+			}
+			// orde-onafhankelijke semantiek: het teruggegeven lid hoort bij zijn huishouden,
+			// en elke gedefinieerde Next-verwijzing blijft binnen hetzelfde huishouden
+			attribute<bool> test (House3) := hrel[inv] = id(House3);
+			attribute<bool> testNext (Person6) := isNull(inv/Next) || hrel[MakeDefined(inv/Next, id(Person6))] = hrel;
+			parameter<bool> test_attr := all(test) && all(testNext);
+		}
+		container join_near_values
+		{
+			unit<uint32> Shop2: nrofrows = 2
+			{
+				attribute<float64> x: [0, 100];
+				attribute<float64> y: [0, 0];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+			}
+			unit<uint32> Cust3: nrofrows = 3
+			{
+				attribute<float64> x: [1, 99, 50];
+				attribute<float64> y: [0, 0, 0];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+			}
+			// klant 0 bij winkel 0, klant 1 bij winkel 1, klant 2 bij geen (maxdist 5)
+			unit<uint32> pairs := join_near_values(Cust3/pt, Shop2/pt, 5.0)
+			{
+				attribute<Cust3> first_rel;
+				attribute<Shop2> second_rel;
+			}
+			parameter<bool> test_param := #pairs = 2;
+			parameter<bool> test_attr  := asList(string(pairs/first_rel), ',') = '0,1' && asList(string(pairs/second_rel), ',') = '0,1';
+		}
 		// draait alleen waar de operator bestaat (Spec-rij '...|ordererd_union_data')
 		container ordererd_union_data
 		{
@@ -1002,7 +1069,7 @@
 
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 36
+				unit<uint32> Cand : nrofrows = 37
 				{
 					attribute<string> Spec :
 					[
@@ -1020,7 +1087,7 @@
 					,	'select_uint32_with_org_rel/test'
 					,	'select_uint16_with_org_rel/test'
 					,	'select_uint8_with_org_rel/test'
-					,	'select_unit/test'
+					,	'select_unit/test|select;collect_by_cond'
 					,	'select_with_attr_by_org_rel/test'
 					,	'select_uint8_with_attr_by_org_rel/test'
 					,	'select_uint16_with_attr_by_org_rel/test'
@@ -1042,6 +1109,7 @@
 					,	'merge/test'
 					,	'merge_empty/test'
 					,	'join_equal_values/attr_test'
+					,	'union_data_single/test_attr'
 					];
 				}
 				container selection := TestSet(Cand, Cand/Spec);

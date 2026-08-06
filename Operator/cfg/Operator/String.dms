@@ -1,5 +1,24 @@
 	container String: Using = "/Domains;/Units;/Tolerances"
 	{
+		// tests voor string-operatoren die niet in alle geteste versies bestaan
+		container ltrim
+		{
+			parameter<bool> test_param := ltrim(' a ') = 'a ' && ltrim('x y') = 'x y' && ltrim('') = '';
+		}
+		container rtrim
+		{
+			parameter<bool> test_param := rtrim(' a ') = ' a' && rtrim('x y') = 'x y' && rtrim('') = '';
+		}
+		container to_utf
+		{
+			// ASCII blijft ongewijzigd; niet-ASCII-conversie is codepage-afhankelijk
+			parameter<bool> test_param := to_utf('abc 123') = 'abc 123' && to_utf('') = '';
+		}
+		container UrlDecode
+		{
+			parameter<bool> test_param := UrlDecode('hello%20world') = 'hello world' && UrlDecode('a%3Db%26c') = 'a=b&c';
+		}
+
 		unit<uint32> Steden_nrd: nrofrows = 9;
 		unit<uint32> Prov_nrd  : nrofrows = 3;
 		unit<uint32> Regions   : nrofrows = 4;

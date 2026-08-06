@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import fnmatch
 import platform
 import importlib
 import warnings
@@ -744,7 +745,28 @@ def _t010_documented_targets() -> dict:
         pass
     return targets
 
+def _t010_exclusions() -> list:
+    """[(fnmatch-patroon lowercase, reden)] uit operator_coverage_exclusions.txt.
+    Een uitsluiting geldt alleen voor groepen ZONDER test (getest wint altijd)."""
+    fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), "operator_coverage_exclusions.txt")
+    rules = []
+    try:
+        with open(fn, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                pattern, _, reason = line.partition("\t")
+                rules.append((pattern.lower(), reason))
+    except OSError:
+        pass
+    return rules
+
 def _append_t010_coverage(parsed_indicators:dict, rdir:str):
+    """Dispositie-model (engine = leidend): elke operator-groep van de draaiende
+    versie is getest, nog-te-testen, of expliciet uitgesloten met reden. De
+    wiki-doellijst is signalering (gedocumenteerd hoort getest; in-engine-maar-
+    ongedocumenteerd = wiki-achterstand)."""
     groups_fn = f"{rdir}/t010_operator_groups.txt"
     if not os.path.isfile(groups_fn):
         return
@@ -752,32 +774,54 @@ def _append_t010_coverage(parsed_indicators:dict, rdir:str):
         groups = [g for g in f.read().split(";") if g]
     if not groups:
         return
-    groups_low = {g.lower() for g in groups}
     tested = _t010_spec_tested_ops()
     targets = _t010_documented_targets()
+    rules = _t010_exclusions()
 
-    doc_in_version = {t for t in targets if t in groups_low}
-    doc_untested = sorted(t for t in doc_in_version if t not in tested)
-    doc_unmatched = sorted(t for t in targets if t not in groups_low)
-    other_untested = sorted(g for g in groups if g.lower() not in tested and g.lower() not in targets)
+    def exclusion_reason(low):
+        for pattern, reason in rules:
+            if fnmatch.fnmatchcase(low, pattern):
+                return reason
+        return None
+
+    tested_g, excluded_g, todo_g = [], [], []
+    for g in groups:
+        low = g.lower()
+        if low in tested:
+            tested_g.append(g)
+        else:
+            reason = exclusion_reason(low)
+            (excluded_g if reason else todo_g).append((g, reason))
+    todo_doc = [g for g, _ in todo_g if g.lower() in targets]
+    todo_undoc = [g for g, _ in todo_g if g.lower() not in targets]
+    doc_excluded = [(g, r) for g, r in excluded_g if g.lower() in targets]
+    doc_unmatched = sorted(t for t in targets if t not in {g.lower() for g in groups})
 
     with open(f"{rdir}/t010_operator_coverage.txt", "w", encoding="utf-8") as f:
-        f.write(f"# documented (wiki) operators in this version without a test ({len(doc_untested)}):\n")
-        for t in doc_untested:
-            f.write(f"{targets[t][0]}\t{targets[t][1]}\n")
-        f.write(f"\n# wiki names not matching any operator group in this version ({len(doc_unmatched)}) - curation/aliases:\n")
+        f.write(f"# gedocumenteerde operatoren in deze versie zonder test ({len(todo_doc)}):\n")
+        for g in sorted(todo_doc, key=str.lower):
+            f.write(f"{g}\t{targets[g.lower()][1]}\n")
+        f.write(f"\n# ongedocumenteerde groepen zonder test ({len(todo_undoc)}) - triage: testen, uitsluiten of wiki bijwerken:\n")
+        f.write("\n".join(sorted(todo_undoc, key=str.lower)) + "\n")
+        f.write(f"\n# uitgesloten met reden ({len(excluded_g)}):\n")
+        for g, r in sorted(excluded_g, key=lambda x: x[0].lower()):
+            f.write(f"{g}\t{r}\n")
+        if doc_excluded:
+            f.write(f"\n# LET OP: gedocumenteerd maar uitgesloten ({len(doc_excluded)}) - wiki of uitsluiting aanpassen:\n")
+            for g, r in sorted(doc_excluded, key=lambda x: x[0].lower()):
+                f.write(f"{g}\t{r}\n")
+        f.write(f"\n# wiki-namen zonder DocData-groep in deze versie ({len(doc_unmatched)}) - rewrite-macro's (RewriteExpr.lsp), aliassen of verwijderd:\n")
         for t in doc_unmatched:
             f.write(f"{targets[t][0]}\t{targets[t][1]}\n")
-        f.write(f"\n# undocumented operator groups without a test ({len(other_untested)}):\n")
-        f.write("\n".join(other_untested) + "\n")
 
+    doc_in_version = [g for g in groups if g.lower() in targets]
+    doc_covered = len([g for g in doc_in_version if g.lower() in tested])
     if doc_in_version:
-        doc_covered = len(doc_in_version) - len(doc_untested)
         parsed_indicators["coverage_doc"] = [
-            f"documented operators covered: {doc_covered} of {len(doc_in_version)} (see t010_operator_coverage.txt)", True]
-    covered = len(groups) - len(doc_untested) - len(other_untested)
+            f"documented operators covered: {doc_covered} of {len(doc_in_version)}", True]
+    testable = len(groups) - len(excluded_g)
     parsed_indicators["coverage"] = [
-        f"operator groups with a test: {covered} of {len(groups)}", True]
+        f"operator groups tested: {len(tested_g)} of {testable} testable ({len(excluded_g)} excluded, see t010_operator_coverage.txt)", True]
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
 

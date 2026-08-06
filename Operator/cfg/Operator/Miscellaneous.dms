@@ -1,5 +1,21 @@
 	container Miscellaneous: Using = "/Domains;/Units;/Tolerances"
 	{
+		container Mandelbrot
+		{
+			unit<spoint> MGrid := range(spoint, point_yx(0s, 0s), point_yx(4s, 4s));
+			unit<uint32> IterR := range(uint32, 0, 16);
+			attribute<uint32> att (MGrid) := Mandelbrot(MGrid, IterR, const(point_yx(-1.0, -1.0, dpoint), void), const(point_yx(0.5, 0.5, dpoint), void));
+			// deterministische iteratietelling op een 4x4-raster (vastgelegd op 20.8.0)
+			attribute<uint32> expected (MGrid): [2,3,16,1, 4,16,16,4, 16,16,16,4, 4,16,16,4];
+			parameter<bool> test_attr := all(att = expected);
+		}
+		container PhaseContainer
+		{
+			container pc_src { parameter<uint32> x := 42; }
+			container pc := PhaseContainer(pc_src, 'operator test: PhaseContainer-fase klaar');
+			parameter<bool> test_param := pc/x = uint32(42);
+		}
+
 		unit<float32> meter := BaseUnit('meter', float32);
 
 //		parameter<meter> errorneous_metric_spec := float32(7.0),
@@ -204,7 +220,7 @@
 		
 		container results
 		{
-			unit<uint32> Cand : nrofrows = 18
+			unit<uint32> Cand : nrofrows = 20
 			{
 				attribute<string> Spec :
 				[
@@ -226,6 +242,8 @@
 				,	'entropy/domain/test_attr'
 				,	'average_entropy/domain/test_attr'
 				,	'TemplateSyntax/test_param'
+				,	'entropy/test_param'
+				,	'average_entropy/test_param'
 				];
 			}
 			container selection := TestSet(Cand, Cand/Spec);
