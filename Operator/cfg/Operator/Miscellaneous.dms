@@ -9,6 +9,13 @@
 			attribute<uint32> expected (MGrid): [2,3,16,1, 4,16,16,4, 16,16,16,4, 4,16,16,4];
 			parameter<bool> test_attr := all(att = expected);
 		}
+		container GeoDmsVersionNumbers
+		{
+			parameter<bool> test_param :=
+				   GeoDmsMajorVersionNumber() >= 17
+				&& GeoDmsMinorVersionNumber() >= 0
+				&& GeoDmsPatchNumber() >= 0;
+		}
 		container PhaseContainer
 		{
 			container pc_src { parameter<uint32> x := 42; }

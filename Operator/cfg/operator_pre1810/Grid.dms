@@ -46,6 +46,23 @@
 				&& abs(att[point_yx(3s, 3s)] - 4.2426405) < 0.0001;
 			parameter<bool> test_param := att[point_yx(0s, 0s)] = 0.0;
 		}
+		container poly2grid_untiled
+		{
+			unit<uint32> S1p: nrofrows = 1;
+			unit<uint32> Qp: nrofrows = 5
+			{
+				attribute<float64> x: [0,0,4,4,0];
+				attribute<float64> y: [0,4,4,0,0];
+				attribute<S1p>     s: [0,0,0,0,0];
+				attribute<uint32>  o: [0,1,2,3,4];
+			}
+			unit<fpoint> gbase2;
+			unit<spoint> G8 := range(gridset(gbase2, point_yx(1f, 1f, gbase2), point_yx(0f, 0f, gbase2), spoint), point_yx(0s, 0s), point_yx(8s, 8s));
+			attribute<fpoint> sqf (S1p, polygon) := fpolygon(points2sequence(point_yx(Qp/y, Qp/x, dpoint), Qp/s, Qp/o));
+			attribute<S1p> att (G8) := poly2grid_untiled(sqf, G8);
+			// 4x4-vierkant dekt 16 van de 64 cellen
+			parameter<bool> test_attr := sum(uint32(IsDefined(att))) = 16;
+		}
 		container griddist_latitude_specific
 		{
 			// vergt een grid met echte CRS: horizontale stappen schalen ~cos(breedtegraad)

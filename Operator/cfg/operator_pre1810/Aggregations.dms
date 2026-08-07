@@ -3,6 +3,20 @@
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
 	container Aggregations: Using = "/Domains;/Units;/Tolerances"
 	{
+		// getypeerde pcount-varianten (wiki: variantenlijst op de pcount-pagina)
+		container pcount_typed
+		{
+			unit<uint32> H3: nrofrows = 3;
+			unit<uint32> R6: nrofrows = 6
+			{
+				attribute<H3> rel: [0,0,1,2,1,0];
+			}
+			parameter<bool> test_param :=
+				   asList(string(pcount_uint8(R6/rel)), ';') = '3;2;1'
+				&& asList(string(pcount_uint16(R6/rel)), ';') = '3;2;1'
+				&& asList(string(pcount_uint32(R6/rel)), ';') = '3;2;1';
+		}
+
 		// draait alleen waar de operator bestaat (Spec-rij '...|as_unique_list')
 		container as_unique_list
 		{

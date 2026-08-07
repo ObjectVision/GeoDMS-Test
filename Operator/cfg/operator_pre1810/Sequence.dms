@@ -244,6 +244,169 @@
 			attribute<bool> test (geos_src/D4) := float32(area(att, geos_src/mu)) = 4f;
 			parameter<bool> test_attr := all(test);
 		}
+		// bp/bg/cgal-tegenhangers van de geos_*-tests (zelfde brondata geos_src;
+		// bp werkt op integer-polygonen, area via dpolygon-conversie)
+		container bp_src
+		{
+			attribute<ipoint> pai (geos_src/S1g, polygon) := ipolygon(geos_src/pa);
+			attribute<ipoint> pbi (geos_src/S1g, polygon) := ipolygon(geos_src/pb);
+		}
+		container bp_intersect
+		{
+			parameter<bool> test_param := float32(sum(area(dpolygon(bp_intersect(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 8f;
+		}
+		container bp_union
+		{
+			parameter<bool> test_param := float32(sum(area(dpolygon(bp_union(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 24f;
+		}
+		container bp_xor
+		{
+			parameter<bool> test_param := float32(sum(area(dpolygon(bp_xor(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 16f;
+		}
+		container bp_difference
+		{
+			parameter<bool> test_param := float32(sum(area(dpolygon(bp_difference(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 8f;
+		}
+		container bp_split_union_polygon
+		{
+			unit<uint32> parts := bp_split_union_polygon(ipolygon(geos_src/sq4));
+			parameter<bool> test_attr := #parts = 4;
+		}
+		container cgal_union
+		{
+			parameter<bool> test_param := float32(sum(area(cgal_union(geos_src/pa, geos_src/pb), geos_src/mu))) = 24f;
+		}
+		container cgal_xor
+		{
+			parameter<bool> test_param := float32(sum(area(cgal_xor(geos_src/pa, geos_src/pb), geos_src/mu))) = 16f;
+		}
+		container cgal_difference
+		{
+			parameter<bool> test_param := float32(sum(area(cgal_difference(geos_src/pa, geos_src/pb), geos_src/mu))) = 8f;
+		}
+		container cgal_polygon
+		{
+			parameter<bool> test_attr := float32(sum(area(cgal_polygon(geos_src/sq4), geos_src/mu))) = 16f;
+		}
+		container cgal_split_polygon
+		{
+			unit<uint32> parts := cgal_split_polygon(geos_src/sq4);
+			parameter<bool> test_attr := #parts = 4;
+		}
+		container cgal_split_union_polygon
+		{
+			unit<uint32> parts := cgal_split_union_polygon(geos_src/sq4);
+			parameter<bool> test_attr := #parts = 4;
+		}
+		container cgal_polygon_connectivity
+		{
+			unit<uint32> pairs := cgal_polygon_connectivity(geos_polygon_connectivity/ovl);
+			parameter<bool> test_attr := #pairs = 1;
+		}
+		container bg_polygon
+		{
+			parameter<bool> test_attr := float32(sum(area(bg_polygon(geos_src/sq4), geos_src/mu))) = 16f;
+		}
+		container bg_polygon_connectivity
+		{
+			unit<uint32> pairs := bg_polygon_connectivity(geos_polygon_connectivity/ovl);
+			parameter<bool> test_attr := #pairs = 1;
+		}
+		container bp_polygon_connectivity
+		{
+			unit<uint32> pairs := bp_polygon_connectivity(ipolygon(geos_polygon_connectivity/ovl));
+			parameter<bool> test_attr := #pairs = 1;
+		}
+		container box_connectivity
+		{
+			unit<uint32> pairs := box_connectivity(lower_bound(geos_polygon_connectivity/ovl), upper_bound(geos_polygon_connectivity/ovl));
+			parameter<bool> test_attr := #pairs = 1;
+		}
+		container bg_simplify_linestring
+		{
+			unit<uint32> P6: nrofrows = 6
+			{
+				attribute<float64> x: [0,1,2,0,1,2];
+				attribute<float64> y: [0,0,0,1,1,1];
+				attribute<geos_src/S1g> s: [0,0,0,0,0,0];
+				attribute<uint32>  o: [0,1,2,3,4,5];
+			}
+			attribute<dpoint> line (geos_src/S1g, arc) := points2sequence(point_yx(P6/y, P6/x, dpoint), P6/s, P6/o);
+			// zigzag 0,0-0,1-0,2-1,0-1,1-1,2: lengte 1+1+wortel(5)+1+1 = 6.2360680
+			parameter<bool> test_attr := abs(sum(arc_length(bg_simplify_linestring(line, 0.5), geos_src/mu)) - 6.236068) < 0.0001;
+		}
+		container bg_simplify_polygon
+		{
+			parameter<bool> test_param := float32(sum(area(bg_simplify_polygon(geos_src/pa, 0.5), geos_src/mu))) = 16f;
+		}
+		container bg_simplify_multi_polygon
+		{
+			parameter<bool> test_param := float32(sum(area(bg_simplify_multi_polygon(geos_src/pa, 0.5), geos_src/mu))) = 16f;
+		}
+		container bp_buffer_point
+		{
+			unit<uint32> P2: nrofrows = 2
+			{
+				attribute<float64> x: [0, 1000];
+				attribute<float64> y: [0, 0];
+				attribute<ipoint>  ipt := ipoint(point_yx(y, x, dpoint));
+			}
+			// ingeschreven 16-hoek r=100: 0.5*16*100^2*sin(22.5 gr) ~ 30615 per punt
+			attribute<dpoint> att (P2, polygon) := dpolygon(bp_buffer_point(P2/ipt, 100.0, 16b));
+			attribute<bool> test (P2) := abs(area(att, geos_src/mu) - 30615.0) < 700.0;
+			parameter<bool> test_attr := all(test);
+		}
+		container bp_buffer_linestring
+		{
+			unit<uint32> P2: nrofrows = 2
+			{
+				attribute<float64> x: [0, 100];
+				attribute<float64> y: [0, 0];
+				attribute<ipoint>  ipt := ipoint(point_yx(y, x, dpoint));
+				attribute<geos_src/S1g> s: [0, 0];
+				attribute<uint32>  o: [0, 1];
+			}
+			attribute<ipoint> ls (geos_src/S1g, arc) := points2sequence(P2/ipt, P2/s, P2/o);
+			// 2*100 rechthoek + eindkappen; integer-16-hoek ~ 1056 (empirisch 20.8.0)
+			parameter<bool> test_attr := abs(sum(area(dpolygon(bp_buffer_linestring(ls, 5.0, 16b)), geos_src/mu)) - 1056.0) < 40.0;
+		}
+		container cgal_buffer_multi_point
+		{
+			unit<uint32> P2: nrofrows = 2
+			{
+				attribute<float64> x: [0, 100];
+				attribute<float64> y: [0, 0];
+				attribute<dpoint>  pt := point_yx(y, x, dpoint);
+				attribute<geos_src/S1g> s: [0, 0];
+				attribute<uint32>  o: [0, 1];
+			}
+			attribute<dpoint> mp (geos_src/S1g, arc) := points2sequence(P2/pt, P2/s, P2/o);
+			// twee ingeschreven 16-hoeken r=5: 2 * 76.537 = 153.073
+			parameter<bool> test_attr := abs(sum(area(cgal_buffer_multi_point(mp, 5.0, 16b), geos_src/mu)) - 153.073) < 0.5;
+		}
+		container arc2segm_uint64
+		{
+			unit<uint32> P6: nrofrows = 6
+			{
+				attribute<float64> x: [0,1,2,0,1,2];
+				attribute<float64> y: [0,0,0,1,1,1];
+				attribute<geos_src/S1g> s: [0,0,0,0,0,0];
+				attribute<uint32>  o: [0,1,2,3,4,5];
+			}
+			attribute<dpoint> line (geos_src/S1g, arc) := points2sequence(point_yx(P6/y, P6/x, dpoint), P6/s, P6/o);
+			unit<uint64> segs := arc2segm_uint64(line);
+			parameter<bool> test_param := #segs = uint64(5);
+		}
+		container mls_length
+		{
+			// lengte van de multi-linestring: 1+1+wortel(5)+1+1 = 6.2360680
+			parameter<bool> test_param := abs(sum(mls_length(arc2segm_uint64/line, geos_src/mu)) - 6.236068) < 0.0001;
+		}
+		container points2polygon
+		{
+			attribute<dpoint> att (geos_src/S1g, polygon) := points2polygon(point_yx(geos_src/QA/y, geos_src/QA/x, dpoint), geos_src/QA/s, geos_src/QA/o);
+			parameter<bool> test_attr := float32(sum(area(att, geos_src/mu))) = 16f;
+		}
 		container split_piped_string
 		{
 			unit<uint32> SD: nrofrows = 3;
