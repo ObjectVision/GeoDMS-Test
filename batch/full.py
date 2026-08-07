@@ -248,6 +248,14 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # add experiments
     # t010 — Operator/functie-test: draait de Operator-config die vele DMS-operatoren/functies dekt.
     regression.add_exp(exps, name=f"{result_folder_name}__t010_operator_test", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result results/regression/t010_operator_test/operator_groups", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test.txt", indicator_results_file=f"{result_paths["results_folder"]}/t010_operator_test.txt")
+    # t020 — Polygonen: vergelijk de vier geometrie-families (geos/bg/bp/cgal) op
+    # synthetische, deterministische data (Polygons/cfg/compare.dms, geen SourceData
+    # nodig). Eén experiment per familie zodat het rapport rekentijden en
+    # correctheids-indicatoren (afwijking t.o.v. geos-referentie) naast elkaar zet.
+    regression_test_paths["PolygonComparePath"] = f"{regression_test_paths["TstDir"]}/Polygons/cfg/compare.dms"
+    for _fam in ("geos", "bg", "bp", "cgal"):
+        regression.add_exp(exps, name=f"{result_folder_name}__t020_polygons_{_fam}", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t020_polygons_{_fam}.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["PolygonComparePath"]} results/{_fam}/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t020_polygons_{_fam}.txt", indicator_results_file=f"{result_paths["results_folder"]}/t020_polygons_{_fam}.txt")
+
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Storage"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     # t050 — Storage: schrijf ESRI-shapefile (polygon) via de storage manager; round-trip-test.

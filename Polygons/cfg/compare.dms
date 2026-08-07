@@ -1,0 +1,215 @@
+////////////////////////////////////////////////////////////////////////////////
+// Vergelijking van de vier geometrie-families (geos / bg / bp / cgal) op
+// synthetische, deterministische data - draait zonder SourceData.
+//
+// Twee scenario's (issue 775/767/882/903-lijn):
+//   ManySmall: veel kleine polygonen (rooster met jitter, partities)
+//   FewLarge:  weinig grote polygonen (veelhoeken met veel punten, overlap)
+// Per familie een eigen results-item zodat full.py ze als aparte experimenten
+// draait en het rapport de rekentijden per familie naast elkaar zet.
+//
+// Correctheid per familie:
+//   - invarianten: A(union) <= som(A); som(A(split_union-delen)) = A(union);
+//     A(intersect)+A(xor) = A(union); idempotentie union(union)=union
+//   - referentie: |A(union_f) - A(union_geos)| / A(union_geos) (geos = referentie;
+//     geos is de aanbevolen default, zie wiki Geometric functions)
+// bp werkt op integers: coordinaten x1000 (mm-schaal), oppervlaktes /1e6.
+////////////////////////////////////////////////////////////////////////////////
+container PolygonCompare
+{
+	container Parameters
+	{
+		parameter<uint32>  nrSmallCols := 64;   // ManySmall: nrSmallCols^2 polygonen
+		parameter<uint32>  nrLarge     := 16;   // FewLarge: aantal grote polygonen
+		parameter<uint32>  nrLargePnts := 256;  // punten per grote polygoon
+		parameter<float64> relTol      := 1e-6; // tolerantie voor invarianten (float64-families)
+		parameter<float64> relTolInt   := 1e-3; // tolerantie bp (mm-afronding)
+	}
+
+	unit<dpoint> crd_base;
+	unit<float64> m2u := baseunit('pc_m2', float64);
+
+	container ManySmall
+	{
+		unit<uint32> Cols := range(uint32, 0, Parameters/nrSmallCols);
+		unit<uint32> Cells := range(uint32, 0, Parameters/nrSmallCols * Parameters/nrSmallCols)
+		{
+			attribute<float64> cx := float64(mod(id(.), Parameters/nrSmallCols)) * 10.0;
+			attribute<float64> cy := float64(id(.) / Parameters/nrSmallCols) * 10.0;
+			// deterministische jitter (rnd_uniform met vaste seed) en variabele maat
+			attribute<float64> jx := rnd_uniform(1, ., range(float64, 0.0, 3.0));
+			attribute<float64> jy := rnd_uniform(2, ., range(float64, 0.0, 3.0));
+			attribute<float64> sz := rnd_uniform(3, ., range(float64, 3.0, 7.0));
+			// 10 partities
+			attribute<Parts>   part_rel := value(mod(id(.), 10), Parts);
+		}
+		unit<uint32> Parts := range(uint32, 0, 10);
+		unit<uint32> CellPnts := range(uint32, 0, 5 * Parameters/nrSmallCols * Parameters/nrSmallCols)
+		{
+			attribute<Cells>   seq := value(id(.) / 5, Cells);
+			attribute<uint32>  ord := mod(id(.), 5);
+			// kloksgewijs vierkant met positieve oppervlakte:
+			// (x,y)-offsets per ord: (0,0) (0,s) (s,s) (s,0) (0,0)
+			attribute<float64> px := Cells/cx[seq] + Cells/jx[seq] + (ord = 2 || ord = 3 ? Cells/sz[seq] : 0.0);
+			attribute<float64> py := Cells/cy[seq] + Cells/jy[seq] + (ord = 1 || ord = 2 ? Cells/sz[seq] : 0.0);
+			attribute<dpoint>  pt   := point_yx(py, px, crd_base);
+			attribute<ipoint>  pt_i := ipoint(point_yx(py * 1000.0, px * 1000.0, crd_base));
+		}
+		attribute<dpoint> geometry   (Cells, polygon) := points2polygon(CellPnts/pt, CellPnts/seq, CellPnts/ord);
+		attribute<ipoint> geometry_i (Cells, polygon) := points2polygon(CellPnts/pt_i, CellPnts/seq, CellPnts/ord);
+		parameter<float64> sumA := sum(area(geometry, m2u));
+	}
+
+	container FewLarge
+	{
+		unit<uint32> Polys := range(uint32, 0, Parameters/nrLarge)
+		{
+			attribute<float64> cx := float64(mod(id(.), 4)) * 150.0 + 100.0;
+			attribute<float64> cy := float64(id(.) / 4) * 150.0 + 100.0;
+			attribute<float64> r  := 80.0 + rnd_uniform(4, ., range(float64, 0.0, 40.0));
+			attribute<Parts>   part_rel := value(mod(id(.), 4), Parts);
+		}
+		unit<uint32> Parts := range(uint32, 0, 4);
+		unit<uint32> PolyPnts := range(uint32, 0, (Parameters/nrLargePnts + 1) * Parameters/nrLarge)
+		{
+			attribute<Polys>   seq := value(id(.) / (Parameters/nrLargePnts + 1), Polys);
+			attribute<uint32>  ord := mod(id(.), Parameters/nrLargePnts + 1);
+			// kloksgewijze veelhoek (hoek negatief door y-daling), licht gerimpelde straal
+			attribute<float64> ang := float64(mod(ord, Parameters/nrLargePnts)) * (-6.283185307179586 / float64(Parameters/nrLargePnts));
+			attribute<float64> rr  := Polys/r[seq] * (1.0 + 0.1 * cos(ang * 8.0));
+			attribute<float64> px  := Polys/cx[seq] + rr * cos(ang);
+			attribute<float64> py  := Polys/cy[seq] + rr * sin(ang);
+			attribute<dpoint>  pt   := point_yx(py, px, crd_base);
+			attribute<ipoint>  pt_i := ipoint(point_yx(py * 1000.0, px * 1000.0, crd_base));
+		}
+		attribute<dpoint> geometry   (Polys, polygon) := points2polygon(PolyPnts/pt, PolyPnts/seq, PolyPnts/ord);
+		attribute<ipoint> geometry_i (Polys, polygon) := points2polygon(PolyPnts/pt_i, PolyPnts/seq, PolyPnts/ord);
+		parameter<float64> sumA := sum(area(geometry, m2u));
+	}
+
+	container Ops
+	{
+		Template Scenario_T
+		{
+			// begin case parameters
+			unit<uint32> Elems;
+			unit<uint32> Parts;
+			attribute<dpoint> geometry (Elems, polygon);
+			attribute<ipoint> geometry_i (Elems, polygon);
+			attribute<Parts>  part_rel (Elems);
+			parameter<float64> sumA;
+			parameter<float64> relTolF;
+			// end case parameters
+
+			container geos
+			{
+				attribute<dpoint> u_part (Parts, polygon) := geos_union_polygon(geometry, part_rel);
+				parameter<float64> uA := sum(area(u_part, m2u));
+				parameter<dpoint> u_tot (polygon) := geos_union_polygon(geometry);
+				parameter<dpoint> u_tot2 (polygon) := geos_union_polygon(u_part);
+				parameter<float64> uiA  := area(u_tot2, m2u);
+				parameter<float64> utA  := area(u_tot, m2u);
+				unit<uint32> su := geos_split_union_polygon(geometry);
+				parameter<uint32>  suN := #su;
+				parameter<bool> ok :=
+					   uA <= sumA * (1.0 + relTolF)
+					&& abs(uiA - utA) <= utA * relTolF
+					&& suN > uint32(0) && suN <= #Elems;
+			}
+			container bg
+			{
+				attribute<dpoint> u_part (Parts, polygon) := bg_union_polygon(geometry, part_rel);
+				parameter<float64> uA := sum(area(u_part, m2u));
+				parameter<dpoint> u_tot (polygon) := bg_union_polygon(geometry);
+				parameter<dpoint> u_tot2 (polygon) := bg_union_polygon(u_part);
+				parameter<float64> uiA  := area(u_tot2, m2u);
+				parameter<float64> utA  := area(u_tot, m2u);
+				unit<uint32> su := bg_split_union_polygon(geometry);
+				parameter<uint32>  suN := #su;
+				parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
+				parameter<bool> ok :=
+					   uA <= sumA * (1.0 + relTolF)
+					&& abs(uiA - utA) <= utA * relTolF
+					&& suN > uint32(0) && suN <= #Elems
+					&& devVsGeos <= relTolF * 100.0;
+			}
+			container bp
+			{
+				attribute<ipoint> u_part (Parts, polygon) := bp_union_polygon(geometry_i, part_rel);
+				parameter<float64> uA := sum(area(dpolygon(u_part), m2u)) / 1e6;
+				parameter<ipoint> u_tot (polygon) := bp_union_polygon(geometry_i);
+				parameter<ipoint> u_tot2 (polygon) := bp_union_polygon(u_part);
+				parameter<float64> uiA  := area(dpolygon(u_tot2), m2u) / 1e6;
+				parameter<float64> utA  := area(dpolygon(u_tot), m2u) / 1e6;
+				unit<uint32> su := bp_split_union_polygon(geometry_i);
+				parameter<uint32>  suN := #su;
+				parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
+				parameter<bool> ok :=
+					   uA <= sumA * (1.0 + relTolF + 1e-3)
+					&& abs(uiA - utA) <= utA * (relTolF + 1e-3)
+					&& suN > uint32(0) && suN <= #Elems
+					&& devVsGeos <= 1e-2;
+			}
+			container cgal
+			{
+				attribute<dpoint> u_part (Parts, polygon) := cgal_union_polygon(geometry, part_rel);
+				parameter<float64> uA := sum(area(u_part, m2u));
+				parameter<dpoint> u_tot (polygon) := cgal_union_polygon(geometry);
+				parameter<dpoint> u_tot2 (polygon) := cgal_union_polygon(u_part);
+				parameter<float64> uiA  := area(u_tot2, m2u);
+				parameter<float64> utA  := area(u_tot, m2u);
+				unit<uint32> su := cgal_split_union_polygon(geometry);
+				parameter<uint32>  suN := #su;
+				parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
+				parameter<bool> ok :=
+					   uA <= sumA * (1.0 + relTolF)
+					&& abs(uiA - utA) <= utA * relTolF
+					&& suN > uint32(0) && suN <= #Elems
+					&& devVsGeos <= relTolF * 100.0;
+			}
+		}
+
+		container ManySmall := Scenario_T(../ManySmall/Cells, ../ManySmall/Parts, ../ManySmall/geometry, ../ManySmall/geometry_i, ../ManySmall/Cells/part_rel, ../ManySmall/sumA, Parameters/relTol);
+		container FewLarge  := Scenario_T(../FewLarge/Polys, ../FewLarge/Parts, ../FewLarge/geometry, ../FewLarge/geometry_i, ../FewLarge/Polys/part_rel, ../FewLarge/sumA, Parameters/relTol);
+	}
+
+	container results
+	{
+		parameter<string> results_folder_filename := '%LocalDataDir%/Regression/log/results_folder.txt';
+		parameter<string> results_folder : Storagename = "= results_folder_filename", StorageType = "str";
+
+		Template FamResult_T
+		{
+			parameter<string> famName;
+			parameter<bool>   okMS;
+			parameter<bool>   okFL;
+			parameter<float64> uaMS;
+			parameter<float64> uaFL;
+			parameter<float64> devMS;
+			parameter<float64> devFL;
+			//
+			parameter<string> result :=
+				'<description>polygon compare ' + famName + '</description>'
+				+ '<union_area>ManySmall: ' + string(uaMS) + '; FewLarge: ' + string(uaFL) + '</union_area>'
+				+ '<dev_vs_geos>ManySmall: ' + string(float32(devMS)) + '; FewLarge: ' + string(float32(devFL)) + '</dev_vs_geos>'
+				+ '<result>' + (okMS && okFL ? 'OK' : 'False') + '</result>';
+		}
+
+		container geos := FamResult_T('geos', Ops/ManySmall/geos/ok, Ops/FewLarge/geos/ok, Ops/ManySmall/geos/uA, Ops/FewLarge/geos/uA, 0.0, 0.0)
+		{
+			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_geos.txt'";
+		}
+		container bg := FamResult_T('bg', Ops/ManySmall/bg/ok, Ops/FewLarge/bg/ok, Ops/ManySmall/bg/uA, Ops/FewLarge/bg/uA, Ops/ManySmall/bg/devVsGeos, Ops/FewLarge/bg/devVsGeos)
+		{
+			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_bg.txt'";
+		}
+		container bp := FamResult_T('bp', Ops/ManySmall/bp/ok, Ops/FewLarge/bp/ok, Ops/ManySmall/bp/uA, Ops/FewLarge/bp/uA, Ops/ManySmall/bp/devVsGeos, Ops/FewLarge/bp/devVsGeos)
+		{
+			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_bp.txt'";
+		}
+		container cgal := FamResult_T('cgal', Ops/ManySmall/cgal/ok, Ops/FewLarge/cgal/ok, Ops/ManySmall/cgal/uA, Ops/FewLarge/cgal/uA, Ops/ManySmall/cgal/devVsGeos, Ops/FewLarge/cgal/devVsGeos)
+		{
+			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_cgal.txt'";
+		}
+	}
+}
