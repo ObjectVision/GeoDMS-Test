@@ -3,7 +3,7 @@
 		parameter<bool> tests_all := tests_regression && File/results/tests;
 
 		// een rij per (sub)test; de zes historische groepen tests_r1..r6 zijn samengevoegd
-		unit<uint32> Cand : nrofrows = 209
+		unit<uint32> Cand : nrofrows = 212
 		{
 			attribute<string> Spec :
 			[
@@ -217,6 +217,17 @@
 			,	'Miscellaneous/GeoDmsVersionNumbers/test_param|GeoDmsMajorVersionNumber;GeoDmsMinorVersionNumber;GeoDmsPatchNumber'
 			,	'Grid/poly2grid_untiled/test_attr|poly2grid_untiled'
 			,	'Sequence/bp_split_union_polygon/test_attr|bp_split_union_polygon'
+			// GeoDMS issue #1172. De vereiste is hier 'voronoi' en niet de operator die de
+			// test zelf draait: bp_buffer_multi_point, cgal_buffer_linestring, cgal_buffer_point
+			// en triangualize staan ook in oudere versies in de OperatorList, maar leveren daar
+			// stilzwijgend een LEEG resultaat op. voronoi is toegevoegd door dezelfde wijziging
+			// die die vier repareert, dus de aanwezigheid van die naam is de exacte marker voor
+			// een build die de fixes heeft. Een '>=NN'-ondergrens zou hier niet werken: de
+			// versieheader wordt pas door de setup-scripts bijgewerkt, dus een ontwikkelbuild
+			// van 20.12 meldt zichzelf nog als 20.1101 en zou de tests overslaan.
+			,	'Sequence/ResultUnitTiled/buffers/test_attr|voronoi'
+			,	'Network/ResultUnitTiled/triangualize/test_attr|triangualize;voronoi'
+			,	'Network/ResultUnitTiled/voronoi/test_attr|voronoi'
 			];
 		}
 		container selection := TestSet(Cand, Cand/Spec);

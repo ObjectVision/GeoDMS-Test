@@ -1098,6 +1098,56 @@
 			{
 				parameter<bool>    test_attr  := #. == 75000 && max(first_rel) == 74999;
 			}
+			// GeoDMS issue #1172: three buffer variants used to run without error and always
+			// return an EMPTY result, so any expectation matching an empty set "passed":
+			//   bp_buffer_multi_point   - the disc was inserted into the boost.polygon set with
+			//                             the winding its polygon_traits declares, not the one
+			//                             bp_circle emits, so the set described the complement;
+			//   cgal_buffer_linestring  - it offset the INTERIOR straight skeleton of the point
+			//                             sequence read as a closed ring, which is a polygon
+			//                             shrink and is empty for any open polyline;
+			//   cgal_buffer_point       - registered into the bg_buffer_point group, so the name
+			//                             had no members at all.
+			// Every area below is cross-checked against a variant that always worked; the 2%
+			// tolerance absorbs the integer rounding of the disc vertices on ipoint geometry.
+			container buffers
+			{
+				unit<uint32> pointset: nrofrows = 2
+				{
+					attribute<ipoint> point: [yx(0,0), yx(0,10000)];
+				}
+				unit<uint32> geom: nrofrows = 1
+				{
+					attribute<ipoint> mp (multipoint) := points2multi_point(pointset/point, const(0[geom], pointset), id(pointset));
+					attribute<ipoint> ls (arc)        := points2sequence   (pointset/point, const(0[geom], pointset), id(pointset));
+				}
+
+				parameter<float64> mp_bp   := sum(area(dpolygon(  bp_buffer_multi_point(geom/mp, 500d, 16b)), float64));
+				parameter<float64> mp_cgal := sum(area(dpolygon(cgal_buffer_multi_point(geom/mp, 500d, 16b)), float64));
+				parameter<float64> mp_geos := sum(area(dpolygon(geos_buffer_multi_point(geom/mp, 500d, 16b)), float64));
+
+				parameter<float64> ls_bp   := sum(area(dpolygon(  bp_buffer_linestring(geom/ls, 500d, 16b)), float64));
+				parameter<float64> ls_cgal := sum(area(dpolygon(cgal_buffer_linestring(geom/ls, 500d, 16b)), float64));
+				parameter<float64> ls_geos := sum(area(dpolygon(geos_buffer_linestring(geom/ls, 500d, 16b)), float64));
+
+				parameter<float64> pt_bg   := sum(area(dpolygon(  bg_buffer_point(pointset/point, 500d, 16b)), float64));
+				parameter<float64> pt_cgal := sum(area(dpolygon(cgal_buffer_point(pointset/point, 500d, 16b)), float64));
+
+				// a 16-gon of radius 500 has area 8 * 500^2 * sin(2*pi/16) = 765366.9
+				parameter<float64> disc16      := 8d * 500d * 500d * sin(2d * 3.14159265358979d / 16d);
+				parameter<float64> mp_expected := 2d * disc16;             // two disjoint discs
+				parameter<float64> ls_expected := 10000d * 1000d + disc16; // rectangle plus one disc
+
+				parameter<bool> test_attr :=
+					   abs(mp_bp   / mp_expected - 1d) < 0.02d
+					&& abs(mp_cgal / mp_expected - 1d) < 0.02d
+					&& abs(mp_geos / mp_expected - 1d) < 0.02d
+					&& abs(ls_bp   / ls_expected - 1d) < 0.02d
+					&& abs(ls_cgal / ls_expected - 1d) < 0.02d
+					&& abs(ls_geos / ls_expected - 1d) < 0.02d
+					&& abs(pt_bg   / mp_expected - 1d) < 0.02d
+					&& abs(pt_cgal / mp_expected - 1d) < 0.02d;
+			}
 		}
 
 		Template Template

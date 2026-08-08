@@ -405,6 +405,106 @@
 			{
 				parameter<bool> test_attr := float_isNearby(mean(float32(dist)), 462516.269f, dif_all_float32) && count(ArcId) == 476867 && all(ArcID == 2[RoadDomain]);
 			}
+			// GeoDMS issue #1172: triangualize was registered and documented but never
+			// implemented, so it silently produced empty polygons. It now returns the Delaunay
+			// edge network: one row per edge, with F1/F2 relating to the point domain.
+			// With m distinct points of which h lie on the convex hull the edge count is
+			// exactly 3m - 3 - h, hence at most 3m - 6 and at least 2m - 3; a fully collinear
+			// input degenerates to a 1-dimensional triangulation with m - 1 edges.
+			// The counts below are checked per shape; the per-cell diagonal of a regular grid
+			// is an arbitrary choice between cocircular points, so only orientation-independent
+			// quantities (how many grid edges, how many diagonals) are asserted.
+			container triangualize
+			{
+				unit<uint32> square: nrofrows = 4
+				{
+					attribute<ipoint> point: [yx(0,0), yx(0,1000), yx(1000,1000), yx(1000,0)];
+				}
+				unit<uint32> square_edges := triangualize(square/point)  // m=4, h=4 -> 5 edges
+				{
+					attribute<ipoint> delta   := square/point[F2] - square/point[F1];
+					attribute<uint32> manhat  := uint32(abs(PointRow(delta)) + abs(PointCol(delta)));
+				}
+
+				unit<uint32> grid: nrofrows = 9
+				{
+					attribute<ipoint> point:
+					[
+						yx(   0,   0), yx(   0,1000), yx(   0,2000),
+						yx(1000,   0), yx(1000,1000), yx(1000,2000),
+						yx(2000,   0), yx(2000,1000), yx(2000,2000)
+					];
+				}
+				unit<uint32> grid_edges := triangualize(grid/point)      // m=9, h=8 -> 16 edges
+				{
+					attribute<ipoint> delta   := grid/point[F2] - grid/point[F1];
+					attribute<uint32> manhat  := uint32(abs(PointRow(delta)) + abs(PointCol(delta)));
+				}
+
+				unit<uint32> collinear: nrofrows = 4
+				{
+					attribute<ipoint> point: [yx(0,0), yx(0,1000), yx(0,2000), yx(0,3000)];
+				}
+				unit<uint32> collinear_edges := triangualize(collinear/point); // degenerate -> m-1 = 3
+
+				parameter<bool> test_attr :=
+					   #square_edges    == 5
+					&& #grid_edges      == 16
+					&& #collinear_edges == 3
+					&& all(uint32(square_edges/F1) < uint32(square_edges/F2))
+					&& all(uint32(grid_edges/F1)   < uint32(grid_edges/F2))
+					&& sum(uint32(square_edges/manhat == 1000)) == 4  // the 4 sides
+					&& sum(uint32(square_edges/manhat == 2000)) == 1  // one of the 2 diagonals
+					&& sum(uint32(grid_edges/manhat   == 1000)) == 12 // 6 horizontal + 6 vertical
+					&& sum(uint32(grid_edges/manhat   == 2000)) == 4; // one diagonal per cell
+			}
+			// voronoi is the dual of triangualize: one Thiessen cell per point, clipped to the
+			// range of its second argument because the cells of hull points are unbounded.
+			// The tiling invariant carries the checks: with every site inside the extent the
+			// cells partition it exactly, so the areas must sum to the extent area.
+			container voronoi
+			{
+				unit<ipoint> extent := range(ipoint, point_yx(0i, 0i), point_yx(1000i, 1000i));
+				parameter<float64> extent_area := 1000d * 1000d;
+
+				// four sites at the quadrant centres -> four 500 x 500 cells
+				unit<uint32> quadrants: nrofrows = 4
+				{
+					attribute<extent>  point : [yx(250,250), yx(250,750), yx(750,250), yx(750,750)];
+					attribute<extent>  cell (poly) := voronoi(point, extent);
+					attribute<float64> a          := area(dpolygon(cell), float64);
+				}
+
+				// collinear sites: the triangulation is 1-dimensional and has no faces at all, so a
+				// circumcentre-based dual would have nothing to work with; the slabs are 350k/300k/350k
+				unit<uint32> collinear: nrofrows = 3
+				{
+					attribute<extent>  point : [yx(500,200), yx(500,500), yx(500,800)];
+					attribute<extent>  cell (poly) := voronoi(point, extent);
+					attribute<float64> a          := area(dpolygon(cell), float64);
+				}
+
+				// a null site and a site coinciding with another: both get an EMPTY cell, and the
+				// remaining sites still tile the extent
+				unit<uint32> degenerate: nrofrows = 4
+				{
+					attribute<bool>    isnull  : [FALSE, FALSE, TRUE, FALSE];
+					attribute<extent>  defined : [yx(500,250), yx(500,750), yx(0,0), yx(500,750)];
+					attribute<extent>  point   := isnull ? null_ip[extent] : defined;
+					attribute<extent>  cell (poly) := voronoi(point, extent);
+					attribute<float64> a          := MakeDefined(area(dpolygon(cell), float64), 0d);
+				}
+
+				parameter<bool> test_attr :=
+					   abs(sum(quadrants/a)  / extent_area - 1d) < 0.001d
+					&& abs(sum(collinear/a)  / extent_area - 1d) < 0.001d
+					&& abs(sum(degenerate/a) / extent_area - 1d) < 0.001d
+					&& abs(min(quadrants/a) / 250000d - 1d) < 0.001d
+					&& abs(max(quadrants/a) / 250000d - 1d) < 0.001d
+					&& abs(min(collinear/a) / 300000d - 1d) < 0.001d
+					&& abs(max(collinear/a) / 350000d - 1d) < 0.001d
+					&& sum(uint32(degenerate/a == 0d)) == 2;
+			}
 		}
 
 		Template Template
