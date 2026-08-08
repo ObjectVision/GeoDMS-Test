@@ -1241,14 +1241,14 @@ def VisualizeExperiments(experiments, show_figure:bool=True, vgroups=_DEFAULT_VG
 
                 if exps_ds[i][2]: # allocation log was available
                     line_renderers.append(add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2])))
-                    scatter_renderers.append(add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2])))
+                    scatter_renderers.append(add_renderer(i,p.scatter('time', 'allocated', marker='triangle', size=7, fill_color=color, line_color=color, source=exps_ds[i][2])))
             else:
                 line_renderers.append(add_renderer(i,p.line('time', vgroup[0],            color=color, source=exps_ds[i][0])))
                 if ExpHasLogAvailable(exp, vgroup[0]):
                     scatter_renderers.append(add_renderer(i,p.scatter('time', vgroup[0], size=5, color=color, source=exps_ds[i][1])))
             if vgroup[0]=="vms": # allocator log only added to committed memory figure
                 line_renderers.append(add_renderer(i,p.line('time', "allocated", color=color, line_dash="4 4", source=exps_ds[i][2])))
-                scatter_renderers.append(add_renderer(i,p.triangle('time', 'allocated', size=7, fill_color=color, line_color=color, source=exps_ds[i][2])))
+                scatter_renderers.append(add_renderer(i,p.scatter('time', 'allocated', marker='triangle', size=7, fill_color=color, line_color=color, source=exps_ds[i][2])))
 
         # Hover only on the scatter log-points (they carry @text); the lines
         # (line_renderers) intentionally get no hover -- coordinates are not
