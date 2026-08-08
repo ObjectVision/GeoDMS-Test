@@ -858,7 +858,13 @@
 					,	'all/test_param'
 					,	'any/test_param'
 					,	'frequency_table/test_param'
-					,	'frequency_table_with_null/test_param'
+					// de twee frequency_table_with_null-verwachtingen beschrijven het gedrag
+					// na ObjectVision/GeoDMS#1170: de variant zonder relation sloeg nulls
+					// daarvoor over, en de variant met relation verloor de null bij het
+					// samenvoegen van tiles. De operator bestaat al sinds 16.1.1, dus alleen
+					// een aanwezigheidstoets volstaat hier niet; GeoDmsVersion() is
+					// major + minor/100 + patch/10000, waarin 20.12 exact vergelijkt
+					,	'frequency_table_with_null/test_param|frequency_table_with_null;>=20.12'
 					,	'count/test_attr'
 					,	'pcount/test_attr'
 					,	'has_any/test_attr'
@@ -897,7 +903,7 @@
 					,	'reg_count_uint8/test_attr'
 					,	'reg_count_empty/test_attr'
 					,	'frequency_table/test_attr'
-					,	'frequency_table_with_null/test_attr'
+					,	'frequency_table_with_null/test_attr|frequency_table_with_null;>=20.12'
 					];
 				}
 				container selection := TestSet(Cand, Cand/Spec);

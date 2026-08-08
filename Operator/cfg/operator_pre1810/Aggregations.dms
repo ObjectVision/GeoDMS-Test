@@ -31,6 +31,23 @@
 			parameter<bool> test_attr := att[0] = 'a; b' && att[1] = 'b; c';
 		}
 
+		// draait alleen waar de operator bestaat (Spec-rij '...|as_unique_list_with_null')
+		container as_unique_list_with_null
+		{
+			unit<uint32> G: nrofrows = 2;
+			unit<uint32> L: nrofrows = 5
+			{
+				attribute<string> lbl: ['b','a',null,'c','b'];
+				attribute<G>      grp: [0,0,0,1,1];
+			}
+			// totaal: alle unieke waarden inclusief <null>
+			parameter<string> param     := as_unique_list_with_null(L/lbl);
+			parameter<bool> test_param  := param = '<null>; a; b; c';
+			// per groep: gesorteerde unieke waarden inclusief <null>, '; '-gescheiden
+			attribute<string> att (G)   := as_unique_list_with_null(L/lbl, L/grp);
+			parameter<bool> test_attr   := att[0] = '<null>; a; b' && att[1] = 'b; c';
+		}
+
 		container srcDomainUU              := source(RegionDomain     , CityDomain     , CDomain);
 		container srcDomainUT              := source(RegionDomain     , CityTiledDomain, CTiledDomain);
 		container srcDomainTT              := source(RegionTiledDomain, CityTiledDomain, CTiledDomain);
@@ -80,6 +97,7 @@
 				parameter<float32> corrNrInhabitants : [-0.89948];
 				parameter<float32> covNrInhabitants  : [-156.25];
 				parameter<string>  frequency_table_inhabitants:  ['175: 1; 200: 1; 300: 1; 500: 1; 525: 1; 550: 1'];
+				parameter<string>  frequency_table_inhabitants_with_null: ['<null>: 1; 175: 1; 200: 1; 300: 1; 500: 1; 525: 1; 550: 1'];
 
 			}
 
@@ -119,7 +137,7 @@
 				attribute<bool>           allInh:                  [ false, false, true, false, true ];
 				attribute<bool>           anyInh:                  [ true, true, false, false, false ];
 				attribute<string>         frequency_table_inhabitants          : ['550: 1','500: 1; 525: 1','300: 1','200: 1',''];
-				attribute<string>         frequency_table_inhabitants_with_null: ['550: 1','500: 1; 525: 1','300: 1','200: 1; <null>: 1',''];
+				attribute<string>         frequency_table_inhabitants_with_null: ['550: 1','500: 1; 525: 1','300: 1','<null>: 1; 200: 1',''];
 
 			}
 
@@ -194,6 +212,7 @@
 				parameter<float32> corrNrInhabitants : [ 0.0 ];
 				parameter<float32> covNrInhabitants  : [ 0.0 ];
 				parameter<string>  frequency_table_inhabitants:  [''];
+				parameter<string>  frequency_table_inhabitants_with_null: [''];
 
 			}
 
@@ -807,7 +826,7 @@
 			container frequency_table_with_null
 			{
 				parameter<string>  param               := frequency_table_with_null(City/NrInhabitants);
-				parameter<bool>    test_param          := eq_or_both_null(param, params/frequency_table_inhabitants) ;
+				parameter<bool>    test_param          := eq_or_both_null(param, params/frequency_table_inhabitants_with_null) ;
 				
 				attribute<string>  att        (Region) := frequency_table_with_null(City/NrInhabitants, City/RegionNr);
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/frequency_table_inhabitants_with_null);
@@ -815,7 +834,7 @@
 			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 62
+				unit<uint32> Cand : nrofrows = 63
 				{
 					attribute<string> Spec :
 					[
@@ -842,7 +861,13 @@
 					,	'all/test_param'
 					,	'any/test_param'
 					,	'frequency_table/test_param'
-					,	'frequency_table_with_null/test_param'
+					// de twee frequency_table_with_null-verwachtingen beschrijven het gedrag
+					// na ObjectVision/GeoDMS#1170: de variant zonder relation sloeg nulls
+					// daarvoor over, en de variant met relation verloor de null bij het
+					// samenvoegen van tiles. De operator bestaat al sinds 16.1.1, dus alleen
+					// een aanwezigheidstoets volstaat hier niet; GeoDmsVersion() is
+					// major + minor/100 + patch/10000, waarin 20.12 exact vergelijkt
+					,	'frequency_table_with_null/test_param|frequency_table_with_null;>=20.12'
 					,	'count/test_attr'
 					,	'pcount/test_attr'
 					,	'has_any/test_attr'
@@ -881,6 +906,7 @@
 					,	'reg_count_uint8/test_attr'
 					,	'reg_count_empty/test_attr'
 					,	'frequency_table/test_attr'
+					,	'frequency_table_with_null/test_attr|frequency_table_with_null;>=20.12'
 					];
 				}
 				container selection := TestSet(Cand, Cand/Spec);
