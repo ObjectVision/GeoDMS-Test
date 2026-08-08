@@ -3,3 +3,11 @@
 # ($'\r': command not found, sourced helpers "not found"). Without this, autocrlf=true
 # rewrites them to CRLF on checkout/merge and breaks the Linux build + unit tests.
 *.sh text eol=lf
+# The pre-18.1.0 mirror is written byte-for-byte by batch/make_operator_pre1810.py, which
+# normalizes to LF so its output depends only on the CONTENT of the sources. Pin the worktree
+# form to LF as well, so what the generator writes is what git expects. Without this the files
+# follow core.autocrlf, which on Windows wants CRLF in the worktree: the generator's LF output
+# would then read as modified after every single regeneration, and a regeneration on the other
+# platform would rewrite all ~14k lines as a pure line-ending diff.
+Operator/cfg/operator_pre1810.dms text eol=lf
+Operator/cfg/operator_pre1810/** text eol=lf
