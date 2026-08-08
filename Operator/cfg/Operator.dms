@@ -114,6 +114,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			&& Network/ResultUnitTiled/connect/test_attr
 			&& Network/ResultUnitTiled/connect_info/test_attr
 			&& Network/ResultUnitTiled/triangualize/test_attr
+			&& Network/ResultUnitTiled/voronoi/test_attr
 
 			&& Grid/units/results/tests
 			&& Grid/UnTiled/results/tests
@@ -9144,6 +9145,53 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					&& sum(uint32(square_edges/manhat == 2000)) == 1  // one of the 2 diagonals
 					&& sum(uint32(grid_edges/manhat   == 1000)) == 12 // 6 horizontal + 6 vertical
 					&& sum(uint32(grid_edges/manhat   == 2000)) == 4; // one diagonal per cell
+			}
+			// voronoi is the dual of triangualize: one Thiessen cell per point, clipped to the
+			// range of its second argument because the cells of hull points are unbounded.
+			// The tiling invariant carries the checks: with every site inside the extent the
+			// cells partition it exactly, so the areas must sum to the extent area.
+			container voronoi
+			{
+				unit<ipoint> extent := range(ipoint, point_yx(0i, 0i), point_yx(1000i, 1000i));
+				parameter<float64> extent_area := 1000d * 1000d;
+
+				// four sites at the quadrant centres -> four 500 x 500 cells
+				unit<uint32> quadrants: nrofrows = 4
+				{
+					attribute<extent>  point : [yx(250,250), yx(250,750), yx(750,250), yx(750,750)];
+					attribute<extent>  cell (poly) := voronoi(point, extent);
+					attribute<float64> a          := area(dpolygon(cell), float64);
+				}
+
+				// collinear sites: the triangulation is 1-dimensional and has no faces at all, so a
+				// circumcentre-based dual would have nothing to work with; the slabs are 350k/300k/350k
+				unit<uint32> collinear: nrofrows = 3
+				{
+					attribute<extent>  point : [yx(500,200), yx(500,500), yx(500,800)];
+					attribute<extent>  cell (poly) := voronoi(point, extent);
+					attribute<float64> a          := area(dpolygon(cell), float64);
+				}
+
+				// a null site and a site coinciding with another: both get an EMPTY cell, and the
+				// remaining sites still tile the extent
+				unit<uint32> degenerate: nrofrows = 4
+				{
+					attribute<bool>    isnull  : [FALSE, FALSE, TRUE, FALSE];
+					attribute<extent>  defined : [yx(500,250), yx(500,750), yx(0,0), yx(500,750)];
+					attribute<extent>  point   := isnull ? null_ip[extent] : defined;
+					attribute<extent>  cell (poly) := voronoi(point, extent);
+					attribute<float64> a          := MakeDefined(area(dpolygon(cell), float64), 0d);
+				}
+
+				parameter<bool> test_attr :=
+					   abs(sum(quadrants/a)  / extent_area - 1d) < 0.001d
+					&& abs(sum(collinear/a)  / extent_area - 1d) < 0.001d
+					&& abs(sum(degenerate/a) / extent_area - 1d) < 0.001d
+					&& abs(min(quadrants/a) / 250000d - 1d) < 0.001d
+					&& abs(max(quadrants/a) / 250000d - 1d) < 0.001d
+					&& abs(min(collinear/a) / 300000d - 1d) < 0.001d
+					&& abs(max(collinear/a) / 350000d - 1d) < 0.001d
+					&& sum(uint32(degenerate/a == 0d)) == 2;
 			}
 		}
 
