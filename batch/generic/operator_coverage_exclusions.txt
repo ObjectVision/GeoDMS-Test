@@ -51,12 +51,9 @@ bg_buffer_polygon	verwijderd voor 20.x; geen tests voor verwijderde operatoren
 # triangualize, bp_buffer_multi_point, cgal_buffer_linestring en cgal_buffer_point stonden
 # hier uitgesloten wegens GeoDMS issue 1172 (altijd leeg resultaat); dat is gefixt in
 # 20.12.0 en ze zijn nu getest via Spec-rijen met 'voronoi' als versiepoort.
-discrete_alloc_16	alloceert 4-8 GB voor 3 typen (structuren gedimensioneerd op het uint16-typebereik, GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-discrete_alloc_sp_16	alloceert ~8 GB voor 3 typen (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-discrete_alloc_np_16	alloceert bereik-gedimensioneerd (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-greedy_alloc_16	alloceert bereik-gedimensioneerd (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-greedy_alloc_sp_16	alloceert bereik-gedimensioneerd (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-greedy_alloc_np_16	alloceert ~32 GB voor 3 typen (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-needy_alloc_16	alloceert bereik-gedimensioneerd (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-needy_alloc_sp_16	alloceert bereik-gedimensioneerd (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
-needy_alloc_np_16	alloceert ~16 GB voor 3 typen (GeoDMS issue 1175); testcontainer staat klaar, testen zodra gefixt
+# De negen *_16-allocatievarianten stonden hier uitgesloten wegens GeoDMS issue 1175
+# ("alloceert GB's, bereik-gedimensioneerd"). Die toeschrijving was fout: de huge allocs
+# in de t010-log kwamen van join_equal_values_uint8/16/32/64 (JoinEqualValues.cpp:90-93,
+# zes buffers van #waardenunit elementen), niet van de allocator. Met stack-attributie
+# (branch issue_1175) gemeten: de negen containers draaien in <1 s zonder enkele huge
+# alloc en slagen; ze staan sinds 2026-08-11 weer in de Spec.
