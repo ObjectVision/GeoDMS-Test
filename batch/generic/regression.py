@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import collections
 import fnmatch
 import platform
 import importlib
@@ -467,6 +468,34 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
         summaries[0][col]["success_ratio"] = (succeeded, total_tests)
     return summaries
 
+def _compress_skipped(parsed:dict, rdir:str, regression_test:str):
+    """De <skipped>-lijst beschrijft VERWACHT versie-afhankelijk gedrag (rijen die
+    op deze versie overslaan omdat een vereiste operator er niet bestaat) en groeide
+    met de volledige dekking tot een muur tekst die in het rapport juist de
+    informatie verdringt die er wel toe doet (falende tests, tellingen). Toon
+    daarom een samenvatting gegroepeerd op skip-reden (de vereiste tussen [..])
+    en schrijf de volledige lijst naar <test>_skipped_tests.txt in de result-map."""
+    if "skipped" not in parsed:
+        return
+    full = parsed["skipped"][0]
+    reasons = re.findall(r"\[([^\[\]]+)\]", full)  # alleen de binnenste [reden]-delen
+    if not reasons:
+        return
+    cnt = collections.Counter(reasons)
+    top = cnt.most_common()
+    parts = [f"{r} ({n}x)" if n > 1 else r for r, n in top[:10]]
+    summary = f"{sum(cnt.values())} version-dependent skips: " + ", ".join(parts)
+    if len(top) > 10:
+        summary += f", +{len(top) - 10} more reasons"
+    fn = f"{regression_test}_skipped_tests.txt"
+    summary += f" (full list: {fn})"
+    try:
+        with open(os.path.join(rdir, fn), "w", encoding="utf-8") as f:
+            f.write(full.replace(" ] ", " ]\n") + "\n")
+    except OSError:
+        pass
+    parsed["skipped"][0] = summary
+
 def parse_indicators(indicators:str) -> dict:
     # <description>operator test</description><size>number unique tests: 1356</size><result>OK</result>
     raw_html = indicators
@@ -898,6 +927,7 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     parsed_indicators = parse_indicators(indicators)
     if regression_test.startswith("t010"):
         _append_t010_coverage(parsed_indicators, rdir)   # voor de flag-loop, zodat wijzigingen t.o.v. de vorige versie oplichten
+    _compress_skipped(parsed_indicators, rdir, regression_test)  # idem: compacte vorm diffstabiel tegen de vorige versie
     for indicator in parsed_indicators:
         if not indicator in prev_indicators:
             continue
