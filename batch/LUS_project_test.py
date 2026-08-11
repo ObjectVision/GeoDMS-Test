@@ -9,6 +9,9 @@ import subprocess
 from urllib.parse import urlparse
 
 ## START INPUT PARAMETERS
+# Global configuration variables for the LUS project test.
+# These define the GeoDMS version, Git repository details, and directory paths used throughout the script.
+# Used: Yes, referenced in various functions for setting up paths and cloning the repository.
 geodms_versie           = "19.1.0"
 git_repository_url      = "https://github.com/ObjectVision/LandUseModelling.git"
 sha_1                   = "4c99494" 
@@ -17,15 +20,19 @@ localdatadir            = "C:/LocalData"
 sourcedatadir           = "E:/SourceData/RSopen"
 testdir                 = "C:/LocalData/RSOpen_test"
 
-regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
-regression_test_paths["IsProductieRun"] = "FALSE"
-regression_test_paths["RSL_VARIANT_NAME"] = "BAU"
-regression_test_paths["AlleenEindjaar"] = "FALSE"
+# regression_test_paths["VariantDataOntkoppeld"] = "FALSE"
+# regression_test_paths["IsProductieRun"] = "FALSE"
+# regression_test_paths["RSL_VARIANT_NAME"] = "BAU"
+# regression_test_paths["AlleenEindjaar"] = "FALSE"
 
 ### EIND USER PARAMETERS
 
 
 def import_module_from_path(path):
+    """
+    Imports a Python module from a given file path and injects it into the global namespace.
+    This allows dynamic loading of modules not in the standard Python path.
+    """
     module_name = os.path.splitext(os.path.basename(path))[0]  # Extract "module" from "module.py"
     spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None:
@@ -38,6 +45,10 @@ def import_module_from_path(path):
     
 
 def get_local_machine_parameters() -> dict:
+    """
+    Returns a dictionary of local machine-specific parameters for GeoDMS testing.
+    Includes paths for source data and local data directories.
+    """
     local_machine_parameters = {}
     # user adaptable
     local_machine_parameters["SourceDataDir"] = sourcedatadir
@@ -45,15 +56,22 @@ def get_local_machine_parameters() -> dict:
     local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"] = localdatadir
     return local_machine_parameters
 
-def update_result_folder_paths_with_git_repo() -> dict:
-    return
-
-def add_experiment(exps:list, exp_name:str, geodms_cmd:str, result_folder:str, result_folder_name:str, local_machine_parameters:dict, geodms_paths:dict, env_vars, regression_test_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str, local_git_repo:str=None) -> list:
+def add_experiment(exps: list, exp_name: str, geodms_cmd: str, result_folder: str, result_folder_name: str, env_vars) -> list:
+    """
+    Adds a single experiment to the experiments list with the specified parameters.
+    Constructs the experiment command and folder paths for GeoDMS regression testing.
+    Used: Yes, called within get_experiments to add the LUS demo experiment.
+    """
     # override results_folder with added local_git_repo location if applicable
     regression.add_exp(exps, name=f"{result_folder_name}__{exp_name}", cmd=geodms_cmd, exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/{exp_name}.txt")
-    exps 
+    return exps 
 
 def get_experiments(local_machine_parameters:dict, geodms_paths:dict, result_paths:dict, version:str, MT1:str, MT2:str, MT3:str, local_git_repo:str=None) -> list:
+    """
+    Generates and returns a list of experiments to run for the LUS project test.
+    Currently adds a single LUS demo experiment with GeoDMS command and environment setup.
+    Used: Yes, called in run_project_test to obtain the list of experiments to execute.
+    """
     exps = []
 
     # set environment variables
@@ -71,29 +89,17 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, result_pat
                    geodms_cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/{exp_name}.txt /{MT1} /{MT2} /{MT3} {local_git_repo}/lus_demo/cfg/demo.dms @statistics Final_Results/A1_GE_Discr",
                    result_folder=result_folder,
                    result_folder_name=result_folder_name,
-                   local_machine_parameters=local_machine_parameters,
-                   geodms_paths=geodms_paths, 
-                   env_vars=env_vars, 
-                   regression_test_paths={}, 
-                   result_paths=result_paths, 
-                   version=version, 
-                   MT1=MT1, MT2=MT2, MT3=MT3, 
-                   local_git_repo=local_git_repo)
+                   env_vars=env_vars)
     
     #regression.add_exp(exps, name=f"{result_folder_name}__A1_GE_Discr", cmd=f"{geodms_paths['GeoDmsRunPath']} /L{result_folder}/{result_folder_name}/log/A1_GE_Discr.txt /{MT1} /{MT2} /{MT3} {regression_test_paths['LUSDemo']} @statistics Final_Results/A1_GE_Discr", exp_fldr=f"{result_folder}/{result_folder_name}", env=env_vars, log_fn=f"{result_folder}/{result_folder_name}/log/A1_GE_Discr.txt")
 
     return exps
 
-def remove_local_data_dir_regression(local_data_regression_folder:str):
-    files = glob.glob(local_data_regression_folder+"/*")
-    for f in files:
-        if os.path.isfile(f):
-            os.remove(f)
-        else:
-            shutil.rmtree(f)
-    return
-
 def get_result_paths(geodms_paths:dict, version:str, MT1:str, MT2:str, MT3:str) -> dict:
+    """
+    Constructs and returns a dictionary of paths for storing test results.
+    Includes base folder, results folder, log folder, and metadata like title and logo.
+    """
     result_paths = {}
     result_paths["title"] = "RSopen test" 
     result_paths["logo"] = "https://themasites.pbl.nl/o/zelfstandig-thuis-hoge-leeftijd/pbl-logo.png" 
@@ -103,6 +109,10 @@ def get_result_paths(geodms_paths:dict, version:str, MT1:str, MT2:str, MT3:str) 
     return result_paths
 
 def get_geodms_paths(version:str) -> dict:
+    """
+    Returns a dictionary of paths and executables for the specified GeoDMS version.
+    Includes paths to GeoDMS installation, profiler, regression scripts, and executables.
+    """
     assert(version)
     geodms_profiler_env_key = f"%GeodmsProfiler%"
     geodms_profiler = os.path.expandvars(geodms_profiler_env_key)
@@ -116,6 +126,10 @@ def get_geodms_paths(version:str) -> dict:
     return geodms_paths
 
 def run_project_test(git_repo:str="latest", version:str="19.1.0", MT1="S1", MT2="S2", MT3="S3"):
+    """
+    Main function to run the LUS project regression test.
+    Parses command-line arguments, sets up paths and parameters, runs experiments, and generates test results.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-git_repo", help="Path to local git repo")
     parser.add_argument("-version", help="Geodms version ie: 17.4.6")
@@ -153,6 +167,10 @@ def run_project_test(git_repo:str="latest", version:str="19.1.0", MT1="S1", MT2=
     return
 
 def clone_gitrepo_sha1(git_repository_url: str, sha_1: str, projdir: str):
+    """
+    Clones a Git repository to a specified directory and checks out a specific commit SHA1.
+    Creates a unique directory name based on repo name and SHA1 to avoid conflicts.
+    """
     if not git_repository_url or not git_repository_url.strip():
         raise ValueError("git_repository_url must be a non-empty string")
     if not sha_1 or not sha_1.strip():
@@ -221,9 +239,12 @@ def clone_gitrepo_sha1(git_repository_url: str, sha_1: str, projdir: str):
     return str(clone_dir).replace("\\", "/")
 
 def run_project_test_from_user_input():
+    """
+    Clones the specified Git repository at the given SHA1 and runs the project test with default parameters.
+    Uses global variables for repository URL, SHA1, and project directory.
+    """
     git_repo = clone_gitrepo_sha1(git_repository_url, sha_1, projdir)
     run_project_test(git_repo=git_repo, version=geodms_versie)
 
 if __name__=="__main__":
-    #run_project_test()
     run_project_test_from_user_input()
