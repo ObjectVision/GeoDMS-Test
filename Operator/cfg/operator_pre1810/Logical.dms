@@ -172,6 +172,14 @@
 				attribute<bool>   test (Domain) := eq_or_both_null(att,source/complement);
 				parameter<bool>   test_attr     := all(test);
 			}
+			container bitxor
+			{
+				parameter<bool>  test_param    := bitxor(source/Paramtrue, source/ParamFalse);
+				attribute<uint8> att  (Domain) := bitxor(source/uint8A, source/uint8B);
+				// xor = or minus and
+				attribute<bool>  test (Domain) := eq_or_both_null(att, source/bitorAB - source/bitandAB);
+				parameter<bool>  test_attr     := all(test) && bitxor(uint32(5), uint32(3)) = uint32(6);
+			}
 			container switchcase: url  = "http://www.objectvision.nl/geodms/operators-a-functions/logical/switchcase"
 			{
 				attribute<string> att (Domain)
@@ -186,11 +194,13 @@
 			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 23
+				unit<uint32> Cand : nrofrows = 25
 				{
 					attribute<string> Spec :
 					[
 						 'iif_op/test_param'
+					,	'bitxor/test_param|bitxor'
+					,	'bitxor/test_attr|bitxor'
 					,	'iif/test_param'
 					,	'and_op/test_param'
 					,	'and/test_param'

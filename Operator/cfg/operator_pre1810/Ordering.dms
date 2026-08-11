@@ -956,6 +956,19 @@
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
 
+			// _fast-varianten: geen null-controle (null_policy::fast); op volledig
+			// gedefinieerde invoer identiek aan de basisoperator
+			container fast_variants
+			{
+				attribute<int32> A0 (DomDomain) := MakeDefined(DomSource/A, int32(0));
+				attribute<int32> B0 (DomDomain) := MakeDefined(DomSource/B, int32(0));
+				attribute<int32> C0 (DomDomain) := MakeDefined(DomSource/C, int32(0));
+				parameter<bool> test :=
+					   all(min_elem_fast(A0, B0, C0) == min_elem(A0, B0, C0))
+					&& all(max_elem_fast(A0, B0, C0) == max_elem(A0, B0, C0))
+					&& all(argmin_fast(A0, B0, C0) == argmin(A0, B0, C0))
+					&& all(argmax_fast(A0, B0, C0) == argmax(A0, B0, C0));
+			}
 			container min_elem_alldefined
 			{
 				parameter<bool>    test_param                 := min_elem_alldefined(DomSource/paramA, DomSource/paramB, DomSource/paramC) == -3.9;
@@ -1069,7 +1082,7 @@
 			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 104
+				unit<uint32> Cand : nrofrows = 105
 				{
 					attribute<string> Spec :
 					[
@@ -1113,6 +1126,7 @@
 					,	'max_elem_alldefined/test_param'
 					,	'max_elem_ifdefined/test_param'
 					,	'min_elem/test_param'
+				,	'fast_variants/test|min_elem_fast;max_elem_fast;argmin_fast;argmax_fast'
 					,	'min_elem_alldefined/test_param'
 					,	'min_elem_ifdefined/test_param'
 					,	'eq/test_attr'

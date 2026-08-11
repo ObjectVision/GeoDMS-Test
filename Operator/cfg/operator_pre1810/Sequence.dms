@@ -48,6 +48,119 @@
 			attribute<fpoint> att (S2, arc) := points2multi_point(Pts/pt, Pts/seq, Pts/ord);
 			parameter<bool> test_attr := AsDataString(att) = AsDataString(points2sequence(Pts/pt, Pts/seq, Pts/ord));
 		}
+		// suffixvormen leggen de argument-interpretatie vast: _pso = (punt, seq, ord),
+		// _ps = (punt, seq), _po = (punt, ordinaal-permutatie; een sequentie),
+		// _p = (punt; een sequentie in domeinvolgorde). Identiteitstests t.o.v. de
+		// basisvormen op dezelfde data.
+		container points2_suffix_variants
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+				attribute<uint32>  ordid := id(.);
+			}
+			parameter<bool> test_seq :=
+				   AsDataString(points2sequence_pso(Pts/pt, Pts/seq, Pts/ord)) = AsDataString(points2sequence(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2sequence_ps (Pts/pt, Pts/seq))          = AsDataString(points2sequence_pso(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2sequence_po (Pts/pt, Pts/ordid))        = AsDataString(points2sequence_p(Pts/pt));
+			parameter<bool> test_arc :=
+				   AsDataString(points2arc_pso(Pts/pt, Pts/seq, Pts/ord)) = AsDataString(points2arc(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2arc_ps (Pts/pt, Pts/seq))          = AsDataString(points2arc_pso(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2arc_po (Pts/pt, Pts/ordid))        = AsDataString(points2arc_p(Pts/pt));
+			parameter<bool> test_pol :=
+				   AsDataString(points2polygon_pso(Pts/pt, Pts/seq, Pts/ord)) = AsDataString(points2polygon(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2polygon_ps (Pts/pt, Pts/seq))          = AsDataString(points2polygon_pso(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2polygon_po (Pts/pt, Pts/ordid))        = AsDataString(points2polygon_p(Pts/pt));
+			parameter<bool> test_mp :=
+				   AsDataString(points2multi_point_pso(Pts/pt, Pts/seq, Pts/ord)) = AsDataString(points2multi_point(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2multi_point_ps (Pts/pt, Pts/seq))          = AsDataString(points2multi_point_pso(Pts/pt, Pts/seq, Pts/ord))
+				&& AsDataString(points2multi_point_po (Pts/pt, Pts/ordid))        = AsDataString(points2multi_point_p(Pts/pt));
+		}
+		// bp-varianten met morfologische nabewerking: _filtered laat kleine ringen
+		// weg (hier: niets), _inflated/_deflated groeien/krimpen met de gegeven
+		// afstand voor de setbewerking; getest op een 1000x1000-vierkant (int-schaal)
+		container bp_morph_variants
+		{
+			unit<float64> bpm_m2 := baseunit('bpm_m2', float64);
+			unit<uint32> One: nrofrows = 1;
+			unit<uint32> Q: nrofrows = 5
+			{
+				attribute<float64> px: [0,0,1000,1000,0];
+				attribute<float64> py: [0,1000,1000,0,0];
+				attribute<ipoint>  pt := ipoint(point_yx(py, px, dpoint));
+				attribute<One>     s  := const(0, ., One);
+				attribute<uint32>  o  := id(.);
+			}
+			attribute<ipoint> sq (One, polygon) := points2polygon_pso(Q/pt, Q/s, Q/o);
+			parameter<float64> aBase := sum(area(dpolygon(sq), bpm_m2));
+			parameter<bool> test_poly :=
+				   sum(area(dpolygon(bp_polygon_filtered(sq, 100.0)), bpm_m2)) = aBase
+				&& sum(area(dpolygon(bp_polygon_inflated(sq, 10.0)), bpm_m2)) > aBase
+				&& sum(area(dpolygon(bp_polygon_deflated(sq, 10.0)), bpm_m2)) < aBase
+				&& sum(area(dpolygon(bp_polygon_deflated(sq, 10.0)), bpm_m2)) > 0.9 * aBase;
+			parameter<bool> test_union :=
+				   sum(area(dpolygon(bp_union_polygon_filtered(sq, 100.0)), bpm_m2)) = aBase
+				&& sum(area(dpolygon(bp_union_polygon_inflated(sq, 10.0)), bpm_m2)) > aBase
+				&& sum(area(dpolygon(bp_union_polygon_deflated(sq, 10.0)), bpm_m2)) < aBase;
+			parameter<bool> test_split :=
+				   #bp_split_polygon_filtered(sq, 100.0) = uint32(1)
+				&& #bp_split_polygon_inflated(sq, 10.0) = uint32(1)
+				&& #bp_split_polygon_deflated(sq, 10.0) = uint32(1)
+				&& #bp_split_union_polygon_filtered(sq, 100.0) = uint32(1)
+				&& #bp_split_union_polygon_inflated(sq, 10.0) = uint32(1)
+				&& #bp_split_union_polygon_deflated(sq, 10.0) = uint32(1);
+		}
+		// splitst een numerieke sequentie op null-elementen in deelsequenties
+		container split_multi_numberstring
+		{
+			unit<uint32> S1: nrofrows = 1;
+			attribute<float64> q (S1, poly) := union_data(S1, Float64Seq('{5: 1 2 null 3 4}'));
+			unit<uint32> sp := split_multi_numberstring(q);
+			parameter<bool> test := #sp = uint32(2) && AsDataString(sp/geometry) = '[{2: 1 2},{2: 3 4}]';
+		}
+		// buitenring(en) van een multi_polygon: het gat (4..6) valt weg
+		container outer_multi_polygon
+		{
+			unit<float64> omp_m2 := baseunit('omp_m2', float64);
+			unit<uint32> One: nrofrows = 1;
+			unit<uint32> RingPts: nrofrows = 11
+			{
+				attribute<float64> px: [0,10,10,0,0, 4,4,6,6,4, 0];
+				attribute<float64> py: [0,0,10,10,0, 4,6,6,4,4, 0];
+				attribute<dpoint>  pt := point_yx(py, px, dpoint);
+				attribute<One>     s  := const(0, ., One);
+				attribute<uint32>  o  := id(.);
+			}
+			attribute<dpoint> holed (One, polygon) := points2polygon_pso(RingPts/pt, RingPts/s, RingPts/o);
+			attribute<dpoint> outr  (One, polygon) := outer_multi_polygon(holed);
+			parameter<bool> test :=
+				   abs(abs(sum(area(holed, omp_m2))) - 96.0) < 1e-9
+				&& abs(abs(sum(area(outr, omp_m2)))  - 100.0) < 1e-9;
+		}
+		// sequence2points_uint64: als sequence2points maar met een uint64-domein;
+		// zelfvoorzienend (points2sequence bestaat in alle geteste versies)
+		container sequence2points_uint64
+		{
+			unit<uint32> S2: nrofrows = 2;
+			unit<uint32> Pts: nrofrows = 6
+			{
+				attribute<float32> x:   [0,1,2,0,1,2];
+				attribute<float32> y:   [0,0,0,1,1,1];
+				attribute<S2>      seq: [0,0,0,1,1,1];
+				attribute<uint32>  ord: [0,1,2,0,1,2];
+				attribute<fpoint>  pt := point_yx(y, x, fpoint);
+			}
+			attribute<fpoint> arcs (S2, arc) := points2sequence(Pts/pt, Pts/seq, Pts/ord);
+			unit<uint64> p64 := sequence2points_uint64(arcs);
+			unit<uint32> p32 := sequence2points(arcs);
+			parameter<bool> test := uint32(#p64) = #p32
+				&& AsList(string(p64/ordinal), ';') = AsList(string(p32/ordinal), ';');
+		}
 		container geos_buffer
 		{
 			unit<uint32> S1g: nrofrows = 1;

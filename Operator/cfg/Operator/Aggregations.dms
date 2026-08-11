@@ -791,6 +791,89 @@
 				}
 				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
 			}
+			container reg_count_uint32: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			{
+				container units
+				{
+					unit<uint32> Domain: nrofrows = 10;
+					unit<uint8>  RegioA: nrofrows = 5;
+					unit<uint8>  RegioB: nrofrows = 3;
+					unit<uint8>  Class:  nrofrows = 4
+					{
+						attribute<string> label: ['class1','class2','class3','class4'];
+					}
+				}
+				container Regios
+				{
+					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+				}
+				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+
+				container references // expected results
+				{
+					attribute<uint32> class1 (units/regioA):[1,1,0,1,0];
+					attribute<uint32> class2 (units/regioA):[2,0,1,0,0];
+					attribute<uint32> class3 (units/regioB):[0,1,1];
+					attribute<uint32> class4 (units/regioA):[1,1,0,0,0];
+				}
+				container attributes := reg_count_uint32(src, units/Class/label, Regios, refs);
+				container tests
+				{
+					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+				}
+				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
+			}
+			// getypeerde varianten van count/sum/pcount/unique_count/modus_count:
+			// identiteit t.o.v. de basisoperator, alleen het resultaattype verschilt
+			container typed_variants
+			{
+				parameter<bool> test_count :=
+					   uint32(count_uint8 (City/NrInhabitants)) = count(City/NrInhabitants)
+					&& uint32(count_uint16(City/NrInhabitants)) = count(City/NrInhabitants)
+					&& uint32(count_uint32(City/NrInhabitants)) = count(City/NrInhabitants)
+					&& uint32(count_uint64(City/NrInhabitants)) = count(City/NrInhabitants);
+				attribute<uint32> defInh (City) := MakeDefined(City/NrInhabitants, uint32(0));
+				parameter<bool> test_sum_f32 :=
+					abs(sum_float32(float32(defInh)) - float32(sum(defInh))) <= 0.5f;
+				attribute<dpoint> cptd (City) := point_yx(float64(defInh), float64(id(City)), dpoint);
+				attribute<ipoint> cpti (City) := ipoint(cptd);
+				attribute<upoint> cptu (City) := upoint(cptd);
+				parameter<bool> test_sum_pt :=
+					   pointRow(sum_dpoint(cptd)) = sum(float64(defInh))
+					&& pointCol(sum_dpoint(cptd)) = sum(float64(id(City)))
+					&& pointRow(sum_ipoint(cpti)) = int32(sum(defInh))
+					&& pointRow(sum_upoint(cptu)) = sum(defInh);
+				attribute<uint64> pc64 (Region) := pcount_uint64(City/RegionNr);
+				parameter<bool> test_pcount := all(uint32(pc64) = pcount(City/RegionNr));
+				// ook unique_count werkt met een tabel over het waardebereik: uint8-invoer
+				parameter<bool> test_unique_count :=
+					   uint32(unique_count_uint8 (uint8(City/RegionNr))) = #unique(uint8(City/RegionNr))
+					&& uint32(unique_count_uint16(uint8(City/RegionNr))) = #unique(uint8(City/RegionNr))
+					&& uint32(unique_count_uint32(uint8(City/RegionNr))) = #unique(uint8(City/RegionNr))
+					&& uint32(unique_count_uint64(uint8(City/RegionNr))) = #unique(uint8(City/RegionNr));
+				// er is geen kale modus_count; referentie = aantal elementen gelijk aan de
+				// modus. LET OP: modus_count bouwt een teltabel over het volledige
+				// waardebereik van de invoer, dus die krijgt een uint8-cast (256 entries;
+				// een uint32-invoer zou 2^32 entries = 8 GB per instantie alloceren)
+				attribute<uint8> rn8 (City) := uint8(City/RegionNr);
+				parameter<uint32> mc_ref := sum(rn8 == modus(rn8) ? uint32(1) : uint32(0));
+				parameter<bool> test_modus_count :=
+					   uint32(modus_count_uint8 (rn8)) = uint32(modus_count_uint64(rn8))
+					&& uint32(modus_count_uint32(rn8)) = uint32(modus_count_uint64(rn8))
+					&& (params/count = uint32(0) || uint32(modus_count_uint64(rn8)) = mc_ref);
+				// de uint16-variant is t/m 20.13 geregistreerd als modus_count_uint17
+				// (typefout, GeoDMS issue 1173); beide rijen zijn naam-gepoort zodat de
+				// juiste vanzelf meedraait voor en na de hernoeming
+				parameter<bool> test_modus_count_u17 :=
+					params/count = uint32(0) || uint32(modus_count_uint17(rn8)) = mc_ref;
+				parameter<bool> test_modus_count_u16 :=
+					params/count = uint32(0) || uint32(modus_count_uint16(rn8)) = mc_ref;
+			}
 			container reg_count_uint8: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
 			{
 				container units
@@ -881,11 +964,20 @@
 			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 71
+				unit<uint32> Cand : nrofrows = 80
 				{
 					attribute<string> Spec :
 					[
 						 'count/test_param'
+					,	'reg_count_uint32/test_attr|reg_count_uint32'
+					,	'typed_variants/test_count|count_uint8;count_uint16;count_uint32;count_uint64'
+					,	'typed_variants/test_sum_f32|sum_float32'
+					,	'typed_variants/test_sum_pt|sum_dpoint;sum_ipoint;sum_upoint'
+					,	'typed_variants/test_pcount|pcount_uint64'
+					,	'typed_variants/test_unique_count|unique_count_uint8;unique_count_uint16;unique_count_uint32;unique_count_uint64'
+					,	'typed_variants/test_modus_count|modus_count_uint8;modus_count_uint32;modus_count_uint64'
+					,	'typed_variants/test_modus_count_u17|modus_count_uint17'
+					,	'typed_variants/test_modus_count_u16|modus_count_uint16'
 					,	'min/test_param'
 					,	'min_index/test_param'
 					,	'max/test_param'

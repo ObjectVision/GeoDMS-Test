@@ -269,7 +269,11 @@ DEFAULT_TIMEOUT = 14400  # 4h, safe fallback for tests with no determined cap
 # get extra headroom on top of the base cap before a test counts as hung.
 LINUX_TIMEOUT_FACTOR = 2
 TEST_TIMEOUTS = {
-    "t010_operator_test":                                  60,
+    # 2026-08-11: verruimd van 60 naar 600 -- de dekkingsronde bracht t010 naar
+    # ~3110 testjes (~150 s engine-tijd op 20.13); de oude cap tree-killde de run
+    # halverwege, wat eruitzag als een stille engine-crash (log midden in een regel
+    # afgebroken, geen [E])
+    "t010_operator_test":                                  600,
     "t050_Storage_Write_Shape_Polygon_Folder_Compare":     60,
     "t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare": 1500,   # ~25m
     "t100_network_connect":                                60,

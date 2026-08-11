@@ -206,9 +206,65 @@
 				parameter<bool>   test_attr   := all(test);
 			}
 		}
+		// iterate: metascript-lus; elke iteratie instantieert de template, het eerste
+		// subitem krijgt de ketting-expressie (vorige nextValue), lastValue = einde
+		container iterate_test
+		{
+			unit<uint32> iters: nrofrows = 3 { attribute<string> name := 'it' + string(id(.)); }
+			parameter<string> init := 'uint32(0)';
+			Template step
+			{
+				parameter<uint32> currValue;
+				parameter<uint32> nextValue := currValue + uint32(1);
+			}
+			container res := iterate(iters/name, step, init);
+			parameter<bool> test := res/lastValue = uint32(3);
+		}
+		// Generate/GenerateDirect: triggeren het wegschrijven van de storages onder het
+		// doel-item; de terugleesitems bewijzen dat het bestand er echt staat
+		container generate_test
+		{
+			container tgt
+			{
+				parameter<string> outp := 'gegenereerd', StorageType = "str", StorageName = "%localDataProjDir%/t010_generate_probe.txt";
+			}
+			container gen := Generate(tgt);
+			parameter<string> readback: StorageType = "str", StorageName = "%localDataProjDir%/t010_generate_probe.txt", ExplicitSuppliers = "gen";
+			parameter<bool> test := readback == 'gegenereerd';
+		}
+		container generate_direct_test
+		{
+			container tgt
+			{
+				parameter<string> outp := 'direct', StorageType = "str", StorageName = "%localDataProjDir%/t010_generate_direct_probe.txt";
+			}
+			container gen := GenerateDirect(tgt);
+			parameter<string> readback: StorageType = "str", StorageName = "%localDataProjDir%/t010_generate_direct_probe.txt", ExplicitSuppliers = "gen";
+			parameter<bool> test := readback == 'direct';
+		}
+		// IntegrityCheck is de eigenschap-gedaante van de gelijknamige operatorgroep:
+		// een falende check maakt het item onleesbaar, dus een gelezen waarde bewijst
+		// dat de check draaide en slaagde
+		container integrity_check_test
+		{
+			parameter<uint32> checked := uint32(7), IntegrityCheck = "checked > uint32(0)";
+			parameter<bool> test := checked = uint32(7);
+		}
+		// DataArray/SequenceArray zijn de gecompileerde gedaanten van [...]-dataliterals
+		// (enkelvoudig resp. sequentieel); deze literals draaien ze expliciet
+		container array_literals_test
+		{
+			unit<uint32> D3: nrofrows = 3
+			{
+				attribute<uint32> plain: [7,8,9];
+				attribute<uint32> seqs (poly): ['{2: 1 2}','{1: 3}','{2: 4 5}'];
+			}
+			parameter<bool> test := sum(D3/plain) = uint32(24)
+				&& AsDataString(D3/seqs) = '[{2: 1 2},{1: 3},{2: 4 5}]';
+		}
 		container results
 		{
-			unit<uint32> Cand : nrofrows = 12
+			unit<uint32> Cand : nrofrows = 17
 			{
 				attribute<string> Spec :
 				[
@@ -224,6 +280,11 @@
 				,	'Inherited_PropValues/Expr/test_attr'
 				,	'SubTree_PropValues/Name/test_attr'
 				,	'SubTree_PropValues/Multiple/test_attr'
+				,	'iterate_test/test|iterate'
+				,	'generate_test/test|Generate'
+				,	'generate_direct_test/test|GenerateDirect'
+				,	'integrity_check_test/test|IntegrityCheck'
+				,	'array_literals_test/test|DataArray;SequenceArray'
 				];
 			}
 			container selection := TestSet(Cand, Cand/Spec);

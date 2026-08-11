@@ -89,6 +89,141 @@
 			attribute<uint32> att (UU) := ordered_union_data(UU, A2/v, B1/v);
 			parameter<bool> test_attr := asList(string(att), ';') = '10;20;30';
 		}
+		// ---- getypeerde suffixvarianten en losse namen (dekkingsronde 2026-08-11);
+		// ---- gedeelde minidata voor de typed-clusters
+		unit<uint32> TD5: nrofrows = 5
+		{
+			attribute<uint32> v  : [3,1,4,1,5];
+			attribute<uint32> vn : [3,null,4,1,5];
+		}
+		container unique_typed
+		{
+			unit<uint8>  u8  := unique_uint8 (TD5/v);
+			unit<uint16> u16 := unique_uint16(TD5/v);
+			unit<uint32> u32 := unique_uint32(TD5/v);
+			unit<uint64> u64 := unique_uint64(TD5/v);
+			parameter<bool> test_base := uint32(#u8) = uint32(4) && uint32(#u16) = uint32(4) && uint32(#u32) = uint32(4) && uint32(#u64) = uint32(4)
+				&& asList(string(u8/values), ';') = '1;3;4;5';
+			// de _with_null-varianten houden een null-rij vooraan
+			unit<uint8>  n8  := unique_uint8_with_null (TD5/vn);
+			unit<uint16> n16 := unique_uint16_with_null(TD5/vn);
+			unit<uint32> n32 := unique_uint32_with_null(TD5/vn);
+			unit<uint64> n64 := unique_uint64_with_null(TD5/vn);
+			parameter<bool> test_null := uint32(#n8) = uint32(5) && uint32(#n16) = uint32(5) && uint32(#n32) = uint32(5) && uint32(#n64) = uint32(5)
+				&& !IsDefined(n32/values[0]);
+		}
+		container select_typed
+		{
+			unit<uint8>  s8  := select_uint8 (TD5/v > uint32(1));
+			unit<uint16> s16 := select_uint16(TD5/v > uint32(1));
+			unit<uint32> s32 := select_uint32(TD5/v > uint32(1));
+			unit<uint64> s64 := select_uint64(TD5/v > uint32(1));
+			parameter<bool> test_base := uint32(#s8) = uint32(3) && uint32(#s16) = uint32(3) && uint32(#s32) = uint32(3) && uint32(#s64) = uint32(3);
+			unit<uint8>  c8  := select_uint8_with_org_rel_with_attr_by_cond (TD5, TD5/v > uint32(1));
+			unit<uint16> c16 := select_uint16_with_org_rel_with_attr_by_cond(TD5, TD5/v > uint32(1));
+			unit<uint32> c32 := select_uint32_with_org_rel_with_attr_by_cond(TD5, TD5/v > uint32(1));
+			unit<uint64> c64 := select_uint64_with_org_rel_with_attr_by_cond(TD5, TD5/v > uint32(1));
+			parameter<bool> test_cmb := asList(string(c8/v), ';') = '3;4;5' && asList(string(c8/org_rel), ';') = '0;2;4'
+				&& uint32(#c16) = uint32(3) && uint32(#c32) = uint32(3) && uint32(#c64) = uint32(3);
+			unit<uint64> o64 := select_uint64_with_org_rel(TD5/v > uint32(1));
+			unit<uint64> a64 := select_uint64_with_attr_by_cond(TD5, TD5/v > uint32(1));
+			// by_org_rel-vorm met conditie-argument, zoals de bestaande u8/16/32-tests
+			unit<uint64> r64 := select_uint64_with_attr_by_org_rel(TD5, TD5/v > uint32(1));
+			parameter<bool> test_u64 := asList(string(o64/org_rel), ';') = '0;2;4'
+				&& asList(string(a64/v), ';') = '3;4;5'
+				&& asList(string(r64/v), ';') = '3;4;5';
+		}
+		container union_unit_typed
+		{
+			unit<uint32> P2: nrofrows = 2;
+			unit<uint8>  u8  := union_unit_uint8 (P2, P2);
+			unit<uint16> u16 := union_unit_uint16(P2, P2);
+			unit<uint32> u32 := union_unit_uint32(P2, P2);
+			unit<uint64> u64 := union_unit_uint64(P2, P2);
+			parameter<bool> test :=
+				uint32(#u8) = uint32(4) && uint32(#u16) = uint32(4) && uint32(#u32) = uint32(4) && uint32(#u64) = uint32(4);
+		}
+		container combine_typed
+		{
+			unit<uint32> P2: nrofrows = 2;
+			unit<uint8>  c8  := combine_uint8 (P2, P2);
+			unit<uint16> c16 := combine_uint16(P2, P2);
+			unit<uint32> c32 := combine_uint32(P2, P2);
+			unit<uint64> c64 := combine_uint64(P2, P2);
+			unit<uint32> cu   := combine_unit(P2, P2);
+			unit<uint8>  cu8  := combine_unit_uint8 (P2, P2);
+			unit<uint16> cu16 := combine_unit_uint16(P2, P2);
+			unit<uint32> cu32 := combine_unit_uint32(P2, P2);
+			unit<uint64> cu64 := combine_unit_uint64(P2, P2);
+			parameter<bool> test_c :=
+				   uint32(#c8) = uint32(4) && uint32(#c16) = uint32(4) && uint32(#c32) = uint32(4) && uint32(#c64) = uint32(4)
+				&& asList(string(c8/first_rel), ';') = '0;0;1;1' && asList(string(c8/second_rel), ';') = '0;1;0;1';
+			parameter<bool> test_u :=
+				   uint32(#cu) = uint32(4) && uint32(#cu8) = uint32(4) && uint32(#cu16) = uint32(4) && uint32(#cu32) = uint32(4) && uint32(#cu64) = uint32(4);
+		}
+		container join_typed
+		{
+			unit<uint32> A3: nrofrows = 3 { attribute<uint32> k: [7,8,9]; }
+			unit<uint32> B3: nrofrows = 3 { attribute<uint32> k: [8,9,9]; }
+			unit<uint8>  je8  := join_equal_values_uint8 (A3/k, B3/k);
+			unit<uint16> je16 := join_equal_values_uint16(A3/k, B3/k);
+			unit<uint32> je32 := join_equal_values_uint32(A3/k, B3/k);
+			unit<uint64> je64 := join_equal_values_uint64(A3/k, B3/k);
+			parameter<bool> test_eq := uint32(#je8) = uint32(3) && uint32(#je16) = uint32(3) && uint32(#je32) = uint32(3) && uint32(#je64) = uint32(3)
+				&& asList(string(je8/first_rel), ';') = '1;2;2' && asList(string(je8/second_rel), ';') = '0;1;2';
+			// zelfde puntdata als de join_near_values-basistest: 2 paren binnen maxdist 5
+			unit<uint32> Shop2n: nrofrows = 2
+			{
+				attribute<float64> x: [2, 97];
+				attribute<dpoint>  pt := point_yx(const(0.0, .), x, dpoint);
+			}
+			unit<uint32> Cust3n: nrofrows = 3
+			{
+				attribute<float64> x: [1, 99, 50];
+				attribute<dpoint>  pt := point_yx(const(0.0, .), x, dpoint);
+			}
+			unit<uint8>  jn8  := join_near_values_uint8 (Cust3n/pt, Shop2n/pt, 5.0);
+			unit<uint16> jn16 := join_near_values_uint16(Cust3n/pt, Shop2n/pt, 5.0);
+			unit<uint32> jn32 := join_near_values_uint32(Cust3n/pt, Shop2n/pt, 5.0);
+			unit<uint64> jn64 := join_near_values_uint64(Cust3n/pt, Shop2n/pt, 5.0);
+			parameter<bool> test_near := uint32(#jn8) = uint32(2) && uint32(#jn16) = uint32(2) && uint32(#jn32) = uint32(2) && uint32(#jn64) = uint32(2);
+		}
+		container collect_by_org_rel
+		{
+			unit<uint8> sel := select_uint8_with_org_rel(TD5/v > uint32(1));
+			attribute<uint32> att (sel) := collect_by_org_rel(sel/org_rel, TD5/v);
+			parameter<bool> test_attr := asList(string(att), ';') = '3;4;5';
+		}
+		container rlookup_with_null
+		{
+			// met een null in de doelwaarden: rlookup vindt die niet (null-invoer -> null),
+			// rlookup_with_null wijst null-invoer aan de null-rij toe
+			unit<uint32> uqn := unique_uint32_with_null(TD5/vn);
+			attribute<uint32> rlk  (TD5) := rlookup(TD5/vn, uqn/values);
+			attribute<uint32> rlkn (TD5) := rlookup_with_null(TD5/vn, uqn/values);
+			parameter<bool> test :=
+				   asList(MakeDefined(string(rlk), 'X'), ';') = '2;X;3;1;4'
+				&& asList(string(rlkn), ';') = '2;0;3;1;4';
+		}
+		container subindex_test
+		{
+			// subindex verfijnt een index: binnen runs van gelijke primaire sleutel
+			// (arg2, in arg1-volgorde) wordt op de secundaire waarden (arg3) gesorteerd
+			unit<uint32> D6: nrofrows = 6
+			{
+				attribute<uint32> v   : [30,10,20,5,25,15];
+				attribute<uint32> grp : [0,1,0,1,0,1];
+			}
+			attribute<uint32> idxg (D6) := index(D6/grp);
+			attribute<uint32> sub  (D6) := subindex(idxg, D6/grp[idxg], D6/v);
+			parameter<bool> test := asList(string(sub), ';') = '2;4;0;3;1;5';
+		}
+		container ordinal_test
+		{
+			// ordinal op een attribuut is de identiteit (ordinale waarde-doorgave)
+			attribute<uint32> att (TD5) := ordinal(TD5/v);
+			parameter<bool> test := all(att == TD5/v);
+		}
 
 		container srcUnTiled2UnTiledDomain := Source(CityDomain      , RegionDomain      , CountryDomain,      RoadDomain);
 		container srcUnTiled2TiledDomain   := Source(CityDomain      , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);

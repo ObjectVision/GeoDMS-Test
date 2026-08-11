@@ -112,6 +112,30 @@
 			// nu juist naar de arc met ONgelijke matchwaarde: 1.5 resp. 1.5
 			parameter<bool> test_attr := all(att/dist = 1.5);
 		}
+		// dist_info_eq/ne: als connect_info_eq/ne maar met alleen de afstand als
+		// resultaat (zelfde uint32-matchwaarden-eis)
+		container dist_info_eq
+		{
+			attribute<float64> de (connect_info_eq/Pnt2) := dist_info_eq(connect_info_eq/arcs2, connect_info_eq/arcm, connect_info_eq/Pnt2/pt, connect_info_eq/Pnt2/m);
+			attribute<float64> dn (connect_info_eq/Pnt2) := dist_info_ne(connect_info_eq/arcs2, connect_info_eq/arcm, connect_info_eq/Pnt2/pt, connect_info_eq/Pnt2/m);
+			parameter<bool> test := all(de = 0.5) && all(dn = 1.5);
+		}
+		// spatialIndex: quadtree-cel-id per (lb, ub)-bereik; het level-argument bepaalt
+		// de instantiatie: uint4-level -> uint32-id, uint2 -> uint8, bool -> uint4
+		container spatialIndex_test
+		{
+			unit<uint32> D5: nrofrows = 5
+			{
+				attribute<float64> vx: [3,1,4,1,5];
+				attribute<dpoint>  pt := point_yx(float64(id(.)), vx, dpoint);
+			}
+			attribute<dpoint> ub  (D5) := D5/pt + const(point_yx(1.0, 1.0, dpoint), D5);
+			attribute<uint32> six (D5) := spatialIndex(D5/pt, ub, uint4(4));
+			attribute<uint8>  si2 (D5) := spatialIndex(D5/pt, D5/pt, uint2(2));
+			parameter<bool> test :=
+				   asList(string(six), ';') = '0;1;0;255;20'
+				&& asList(string(si2), ';') = '10;7;18;15;20';
+		}
 		container impedance_matrix_od64
 		{
 			unit<uint32> Node3: nrofrows = 3;

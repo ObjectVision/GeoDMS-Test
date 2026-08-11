@@ -176,9 +176,14 @@
 				parameter<dpoint> param      := null_dp;
 				parameter<bool>   test_param := eq_or_both_null(param, null_dp);
 			}
+			container null_string
+			{
+				parameter<string> param      := null_str;
+				parameter<bool>   test_param := eq_or_both_null(param, null_str) && !IsDefined(param);
+			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 25
+				unit<uint32> Cand : nrofrows = 26
 				{
 					attribute<string> Spec :
 					[
@@ -197,12 +202,13 @@
 					,	'null_i64/test_param'
 					,	'null_f/test_param'
 					,	'null_d/test_param'
-					,	'null_spoint/test_param'
-					,	'null_wpoint/test_param'
-					,	'null_ipoint/test_param'
-					,	'null_upoint/test_param'
-					,	'null_fpoint/test_param'
-					,	'null_dpoint/test_param'
+					,	'null_spoint/test_param|null_sp'
+					,	'null_wpoint/test_param|null_wp'
+					,	'null_ipoint/test_param|null_ip'
+					,	'null_upoint/test_param|null_up'
+					,	'null_fpoint/test_param|null_fp'
+					,	'null_dpoint/test_param|null_dp'
+					,	'null_string/test_param|null_str'
 					,	'const/test_attr'
 					,	'const_3_arguments/test_attr'
 					,	'true_const/test_attr|true'

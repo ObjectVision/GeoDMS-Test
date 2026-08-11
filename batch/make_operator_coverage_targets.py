@@ -27,7 +27,9 @@ OUT = pathlib.Path(__file__).resolve().parent / "generic" / "operator_coverage_t
 
 IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 LINK = re.compile(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]")
-BULLET_NAME = re.compile(r"^\s*[-*]\s+([A-Za-z_][A-Za-z0-9_]*)\s+-\s")
+# een bullet mag meerdere kommagescheiden variantnamen dragen
+# ("- points2arc_p, points2arc_ps, ... - *beschrijving*")
+BULLET_NAME = re.compile(r"^\s*[-*]\s+([A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)*)\s+-\s")
 NOISE = {"functions", "data item", "domain unit", "values unit", "argument",
          "expression", "operators and functions", "unit",
          "point", "arc", "polygon", "points", "arcs", "polygons"}
@@ -51,9 +53,10 @@ def harvest(path, category):
     for line in text.split("\n"):
         mb = BULLET_NAME.match(line)
         if mb:
-            n = norm(mb.group(1))
-            if n:
-                targets.setdefault(n.lower(), (n, category))
+            for part in mb.group(1).split(","):
+                n = norm(part)
+                if n:
+                    targets.setdefault(n.lower(), (n, category))
         for m in LINK.finditer(line):
             for cand in (m.group(2), m.group(1)):
                 if cand is None:

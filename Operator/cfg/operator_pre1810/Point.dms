@@ -614,6 +614,23 @@
 					parameter<bool>    test_attr    := all(test);
 				}
 			}
+			// _uint64-varianten van de dyna-familie: zelfde punten, uint64-resultaatdomein
+			container dyna_uint64: Using = "source"
+			{
+				parameter<dpoint> a := point_yx(0.0, 0.0, dpoint);
+				parameter<dpoint> b := point_yx(0.0, 10.0, dpoint);
+				unit<uint64> dp64  := dyna_point_uint64(a, b, 2.5);
+				unit<uint32> dp32  := dyna_point(a, b, 2.5);
+				unit<uint64> dpe64 := dyna_point_with_ends_uint64(a, b, 2.5);
+				unit<uint32> dpe32 := dyna_point_with_ends(a, b, 2.5);
+				unit<uint64> ds64  := dyna_segment_uint64(a, b, 2.5);
+				unit<uint32> ds32  := dyna_segment(a, b, 2.5);
+				unit<uint64> dse64 := dyna_segment_with_ends_uint64(a, b, 2.5);
+				unit<uint32> dse32 := dyna_segment_with_ends(a, b, 2.5);
+				parameter<bool> test :=
+					   uint32(#dp64) = #dp32 && AsList(string(dp64/point), ';') = AsList(string(dp32/point), ';')
+					&& uint32(#dpe64) = #dpe32 && uint32(#ds64) = #ds32 && uint32(#dse64) = #dse32;
+			}
 			container RD2LatLongWgs84: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/rd2latlongwgs84"
 			{
 				parameter<dpoint> coordinate                     := point_yx(437651.878, 81897.9383, dpoint);
@@ -794,7 +811,7 @@
 
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 33
+				unit<uint32> Cand : nrofrows = 34
 				{
 					attribute<string> Spec :
 					[
@@ -820,6 +837,7 @@
 					,	'dyna_segment/CalcPoint/test_attr'
 					,	'dyna_segment_empty/CalcPoint/test_attr'
 					,	'dyna_segment_with_ends/CalcPoint/test_attr'
+				,	'dyna_uint64/test|dyna_point_uint64;dyna_point_with_ends_uint64;dyna_segment_uint64;dyna_segment_with_ends_uint64'
 					,	'RD2LatLongWgs84/test_param'
 					,	'RD2LatLongWgs84/test_attr'
 					,	'LatLongWgs842RD/test_param'

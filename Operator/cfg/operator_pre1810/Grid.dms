@@ -91,10 +91,34 @@
 				&& att[point_yx(0s, 3s)] = 13.0;
 		}
 
+		// untiled-, maximp- en zonale combinatievarianten van griddist: allemaal gelijk
+		// aan hun basisvorm op dezelfde invoer (untiled = andere tegelverwerking;
+		// maximp met ruime limiet knipt niets af; zonale grens kost alleen bij
+		// zone-overgangen). De latitude-varianten draaien op het EPSG:4326-grid.
+		container griddist_variants
+		{
+			attribute<float64> base (griddist_src/G4) := griddist(griddist_src/imp, griddist_src/Dest/loc, const(0.0, griddist_src/Dest));
+			parameter<bool> test_flat :=
+				   all(griddist_untiled(griddist_src/imp, griddist_src/Dest/loc, const(0.0, griddist_src/Dest)) == base)
+				&& all(griddist_maximp_untiled(griddist_src/imp, griddist_src/Dest/loc, 100.0) == griddist_maximp/att)
+				&& all(griddist_zonal_untiled(griddist_src/imp, griddist_src/Dest/loc, griddist_zonal/zg16, 10.0) == griddist_zonal/att)
+				&& all(griddist_zonal_maximp(griddist_src/imp, griddist_src/Dest/loc, griddist_zonal/zg16, 10.0, 100.0) == griddist_zonal/att)
+				&& all(griddist_zonal_maximp_untiled(griddist_src/imp, griddist_src/Dest/loc, griddist_zonal/zg16, 10.0, 100.0) == griddist_zonal/att);
+			attribute<uint16> zconstW (griddist_latitude_specific/GW) := const(0w, griddist_latitude_specific/GW, uint16);
+			parameter<bool> test_lat :=
+				   all(griddist_untiled_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc) == griddist_latitude_specific/att)
+				&& all(griddist_maximp_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc, 100.0) == griddist_latitude_specific/att)
+				&& all(griddist_maximp_untiled_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc, 100.0) == griddist_latitude_specific/att)
+				&& all(griddist_zonal_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc, zconstW, 10.0) == griddist_latitude_specific/att)
+				&& all(griddist_zonal_untiled_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc, zconstW, 10.0) == griddist_latitude_specific/att)
+				&& all(griddist_zonal_maximp_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc, zconstW, 10.0, 100.0) == griddist_latitude_specific/att)
+				&& all(griddist_zonal_maximp_untiled_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc, zconstW, 10.0, 100.0) == griddist_latitude_specific/att);
+		}
+
 		container units
 		{
 			unit<fpoint> Coords;
-			unit<spoint> GridDomain := 
+			unit<spoint> GridDomain :=
 				range(
 					gridset(
 						  Coords
@@ -450,6 +474,47 @@
 				parameter<bool> test_gridBool         := all(test_Bool);
 				parameter<bool> test_grid             := test_gridUInt8 && test_gridBool;
 			}
+			// getypeerde district-varianten: zelfde districten, alleen het waardetype
+			// van het districtsdomein verschilt; district_4 = expliciete 4-buren-vorm
+			container district_typed
+			{
+				unit<uint8>  d8   := district_uint8 (source/src);
+				unit<uint16> d16  := district_uint16(source/src);
+				unit<uint32> d32  := district_uint32(source/src);
+				unit<uint64> d64  := district_uint64(source/src);
+				// districtnummering is niet stabiel tussen (parallelle) berekeningen, dus
+				// vergeleken wordt het hernummerings-onafhankelijke partitieprofiel:
+				// aantal districten + kwadratensom van de districtgroottes
+				parameter<float64> prof_base  := sum(sqr(float64(pcount(district/unit_district/districts))));
+				parameter<float64> prof_base8 := sum(sqr(float64(pcount(district_8/unit_district_8/districts))));
+				parameter<uint32>  n_base  := #district/unit_district;
+				parameter<uint32>  n_base8 := #district_8/unit_district_8;
+				parameter<bool> test_typed :=
+					   uint32(#d8)  = n_base && sum(sqr(float64(pcount(d8/districts))))  = prof_base
+					&& uint32(#d16) = n_base && sum(sqr(float64(pcount(d16/districts)))) = prof_base
+					&& uint32(#d32) = n_base && sum(sqr(float64(pcount(d32/districts)))) = prof_base
+					&& uint32(#d64) = n_base && sum(sqr(float64(pcount(d64/districts)))) = prof_base;
+				unit<uint32> d4    := district_4(source/src);
+				unit<uint8>  d4_8  := district_4_uint8 (source/src);
+				unit<uint16> d4_16 := district_4_uint16(source/src);
+				unit<uint32> d4_32 := district_4_uint32(source/src);
+				unit<uint64> d4_64 := district_4_uint64(source/src);
+				parameter<bool> test_d4 :=
+					   uint32(#d4)    = n_base && sum(sqr(float64(pcount(d4/districts))))    = prof_base
+					&& uint32(#d4_8)  = n_base && sum(sqr(float64(pcount(d4_8/districts))))  = prof_base
+					&& uint32(#d4_16) = n_base && sum(sqr(float64(pcount(d4_16/districts)))) = prof_base
+					&& uint32(#d4_32) = n_base && sum(sqr(float64(pcount(d4_32/districts)))) = prof_base
+					&& uint32(#d4_64) = n_base && sum(sqr(float64(pcount(d4_64/districts)))) = prof_base;
+				unit<uint8>  d8_8  := district_8_uint8 (source/src);
+				unit<uint16> d8_16 := district_8_uint16(source/src);
+				unit<uint32> d8_32 := district_8_uint32(source/src);
+				unit<uint64> d8_64 := district_8_uint64(source/src);
+				parameter<bool> test_d8 :=
+					   uint32(#d8_8)  = n_base8 && sum(sqr(float64(pcount(d8_8/districts))))  = prof_base8
+					&& uint32(#d8_16) = n_base8 && sum(sqr(float64(pcount(d8_16/districts)))) = prof_base8
+					&& uint32(#d8_32) = n_base8 && sum(sqr(float64(pcount(d8_32/districts)))) = prof_base8
+					&& uint32(#d8_64) = n_base8 && sum(sqr(float64(pcount(d8_64/districts)))) = prof_base8;
+			}
 			container diversity: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/diversity"
 			{
 				attribute<uint8>  grid (GridDomain) := diversity(source/src, uint16(2), uint16(1));
@@ -474,6 +539,16 @@
 				attribute<bool>    test  (GridDomain) := float_isNearby(grid, source/potentialOk, Dif_all_float32) ;
 				attribute<bool>    test64(GridDomain) := float_isNearby(float32(grid64), source/potentialOk, Dif_all_float32) ;
 				parameter<bool>    test_grid         := all(test) && all(test64);
+			}
+			// backend-varianten van potential: zelfde uitkomst als de default (die zelf
+			// het snelste haalbare backend kiest). potentialPacked/potentialRawPacked
+			// zijn uitgesloten: die leveren op generieke invoer nulls/artefacten
+			container potential_variants
+			{
+				parameter<bool> test :=
+					   all(abs(potentialSlow  (float32(source/src), units/pot3Range/RelWeight) - potential/grid) <= 1e-4f)
+					&& all(abs(potentialIpps64(float32(source/src), units/pot3Range/RelWeight) - potential/grid) <= 1e-4f)
+					&& all(abs(potentialRaw64 (float32(source/src), units/pot3Range/RelWeight) - potential/grid) <= 1e-4f);
 			}
 			container proximity: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/proximity"
 			{
@@ -601,12 +676,17 @@
 
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 11
+				unit<uint32> Cand : nrofrows = 16
 				{
 					attribute<string> Spec :
 					[
 						 'district/test_grid'
 					,	'district_8/test_grid'
+					,	'district_typed/test_typed|district_uint8;district_uint16;district_uint32;district_uint64'
+					,	'district_typed/test_d4|district_4;district_4_uint8;district_4_uint16;district_4_uint32'
+					,	'district_typed/test_d4|district_4_uint64'
+					,	'district_typed/test_d8|district_8_uint8;district_8_uint16;district_8_uint32;district_8_uint64'
+					,	'potential_variants/test|potentialSlow;potentialIpps64;potentialRaw64'
 					,	'diversity/test_grid'
 					,	'dist2/test_grid'
 					,	'potential/test_grid'

@@ -111,6 +111,11 @@
 			parameter<string> param      := currentDir();
 			parameter<bool>   test_param := strcount(param,'cfg') > 0;
 		}
+		// do is een alias van expand (zelfde operatorimplementatie)
+		container do_alias
+		{
+			parameter<bool> test := lowercase(do(., '%ConfigDir%/x')) == lowercase(expand(., '%ConfigDir%/x'));
+		}
 		container storage_name: url  = "http://www.objectvision.nl/geodms/operators-a-functions/file/storage_name" // To be added
 		{
 			parameter<string> param      := storage_name(ReadAVLE/ReadValue/File);
