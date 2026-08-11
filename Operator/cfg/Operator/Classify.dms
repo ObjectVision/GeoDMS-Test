@@ -30,7 +30,10 @@
 				attribute<nrPersons> EqualInterval : [0,341,683,1025];
 				attribute<nrPersons> JenksFisher   : [0,200,550,860];
 				attribute<nrPersons> NonzeroJenksFisher   : [0,2,300,750];
-				
+				// nonzero-equal-interval: eerste klassegrens 0 (voor de nullen), daarna
+				// equal-interval over de niet-nulwaarden 2..1025 in 3 klassen (stap 341)
+				attribute<nrPersons> NonzeroEqualInterval : [0,2,343,684];
+
 				attribute<nrPersons> LogInterval   : [0,10,100,1000];
 			}
 
@@ -64,6 +67,8 @@
 				attribute<nrPersons> EqualCount    : [];
 				attribute<nrPersons> EqualInterval : [];
 				attribute<nrPersons> JenksFisher   : [];
+				attribute<nrPersons> NonzeroJenksFisher : [];
+				attribute<nrPersons> NonzeroEqualInterval : [];
 				attribute<nrPersons> LogInterval   : [];
 			}
 
@@ -185,10 +190,10 @@
 				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
 
 				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomain);
-				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualInterval);
+				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/NonzeroEqualInterval);
 
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonZeroEqualInterval(District/NrInhabitants, ClassDomainManyClasses);
-				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,53,107,161,215,269,323,377,431,485,539,593,647,701,755,809,863,917,971,1024];
+				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,55,109,163,217,271,325,378,432,486,540,594,648,701,755,809,863,917,971];
 				attribute<nrPersons> att_many_classes_okwithoutvalues (ClassDomainManyClasses) := const(0 /0 ,ClassDomainManyClasses) ;
 				attribute<nrPersons> att_many_classes_ok              (ClassDomainManyClasses) := = isEmpty ? 'att_many_classes_okwithoutvalues' : 'att_many_classes_okwithvalues';
 
@@ -251,7 +256,7 @@
 			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 7
+				unit<uint32> Cand : nrofrows = 9
 				{
 					attribute<string> Spec :
 					[
@@ -260,7 +265,9 @@
 					,	'ClassifyEqualCount/test_attr'
 					,	'ClassifyNonzeroEqualCount/test_attr'
 					,	'ClassifyEqualInterval/test_attr'
+					,	'ClassifyNonZeroEqualInterval/test_attr'
 					,	'ClassifyJenksFisher/test_attr'
+					,	'ClassifyNonzeroJenksFisher/test_attr'
 					,	'ClassifyLogInterval/test_attr'
 					];
 				}

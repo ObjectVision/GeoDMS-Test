@@ -29,7 +29,7 @@ IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 LINK = re.compile(r"\[\[([^\]|]+?)(?:\|([^\]]+?))?\]\]")
 BULLET_NAME = re.compile(r"^\s*[-*]\s+([A-Za-z_][A-Za-z0-9_]*)\s+-\s")
 NOISE = {"functions", "data item", "domain unit", "values unit", "argument",
-         "expression", "operators and functions", "unit", "subitem",
+         "expression", "operators and functions", "unit",
          "point", "arc", "polygon", "points", "arcs", "polygons"}
 
 def norm(name):
