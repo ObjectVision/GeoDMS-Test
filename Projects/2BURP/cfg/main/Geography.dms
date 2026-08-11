@@ -16,17 +16,21 @@ container Geography : using = "units"
 	Unit<dpoint> SphericalMercator      := range(SphericalMercator_base, point_yx(-16000000.0, -20000000.0),  point_yx(16000000.0, 20000000.0));
 	
 	
-	// unit<ipoint> WebMercator_grid := 
-		// gridset(
-			// SphericalMercator
-			// , point_yx(SphericalMercator/SourceRasterFactor_in_eq_m, SphericalMercator/SourceRasterFactor_in_eq_m)
-			// , point_xy(-16000000.0, -20000000.0)
-			// , ipoint
-		// )
-	// {
-		// attribute<LatLong>            ll_rel     := mapping(., LatLong);
-		// attribute<domain>             domain_rel := value(ll_rel, domain);
-	// }
+	// EPSG:3857 -> EPSG:4326 is a COORDINATE SEPARABLE transformation (issue #298): web mercator's
+	// easting is a function of the longitude alone and its northing of the latitude alone, over the
+	// same WGS 84 datum. mapping() therefore reduces this grid to one transformed x per column plus
+	// one transformed y per row instead of transforming every cell.
+	unit<ipoint> WebMercator_grid :=
+		gridset(
+			SphericalMercator
+			, point_yx(Impl/SourceRasterFactor_in_eq_m, Impl/SourceRasterFactor_in_eq_m)
+			, point_xy(-16000000.0, -20000000.0)
+			, ipoint
+		)
+	{
+		attribute<LatLong>            ll_rel     := mapping(., LatLong);
+		attribute<domain>             domain_rel := value(ll_rel, domain);
+	}
 	
 
 	unit<ipoint> Mollweide_grid_base
