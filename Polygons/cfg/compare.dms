@@ -87,6 +87,78 @@ container PolygonCompare
 		parameter<float64> sumA := sum(area(geometry, m2u));
 	}
 
+	// ---- Echte data (issues 903/775/767/882): gemeenten (weinig groot, provincie-
+	// partities) en BAG-panden Amsterdam (veel klein, tegelpartities), plus de
+	// zelfstandige issue-882-repro (twee aangrenzende grote polygonen waar de
+	// infix-union faalde). Draait alleen waar de databronnen staan; full.py voegt
+	// het t020_polygons_real-experiment alleen toe als de datamap bestaat.
+	container ConfigSettings
+	{
+		container Overridable
+		{
+			// bewust een eigen naam (geen RSo_DataDir): full.py zet globaal
+			// GEODMS_Overridable_RSo_DataDir voor andere projecten, en dat pad
+			// wijkt per machine af van deze bron
+			parameter<string> PolyDataDir := 'E:/SourceData/RuimteScanner/SD/RSOpen';
+		}
+	}
+	container RealData
+	{
+		unit<dpoint> rd    := range(dpoint, point_yx(300000.0, 0.0), point_yx(625000.0, 280000.0));
+		unit<ipoint> rd_mm := gridset(rd, point_xy(0.001, 0.001), point_xy(0.0, 0.0), ipoint);
+		// bp kan landsdekkende data niet in mm aan (25-bits coordinaatlimiet na
+		// centrering: +-77M mm > 33.5M), dus de gemeenten krijgen cm-schaal
+		unit<ipoint> rd_cm := gridset(rd, point_xy(0.01, 0.01), point_xy(0.0, 0.0), ipoint);
+
+		container Bron
+		:	StorageName     = "%PolyDataDir%/RegioIndelingen/cbsgebiedsindelingen2022.gpkg"
+		,	StorageType     = "gdal.vect"
+		,	StorageReadOnly = "True"
+		,	SyncMode        = "alltables"
+		,	DialogData      = "/RealData/rd";
+
+		container Gemeenten
+		{
+			unit<uint32> Parts := Bron/provincie_gegeneraliseerd
+			{
+				attribute<rd> geometry (poly) := Bron/provincie_gegeneraliseerd/geometry;
+			}
+			unit<uint32> Elems := Bron/gemeente_niet_gegeneraliseerd;
+			attribute<rd>     geometry   (Elems, polygon) := Bron/gemeente_niet_gegeneraliseerd/geometry;
+			attribute<ipoint> geometry_i (Elems, polygon) := geometry[rd_cm];
+			// mid-in-provincie; MakeDefined vangt een eventuele mid-buiten-alles af
+			// (zou anders elementen uit de partitie-union laten vallen)
+			attribute<Parts>  part_rel   (Elems) :=
+				MakeDefined(point_in_polygon(centroid_or_mid(geometry), Parts/geometry), value(0, Parts));
+			parameter<float64> sumA := sum(area(geometry, m2u));
+		}
+		container PandenAms
+		{
+			// Amsterdam-bbox in RD-millimeters: x 110000..135000 m, y 476000..494000 m
+			unit<uint32> pand_all
+			:	StorageName     = "%PolyDataDir%/Vastgoed/VolledigeTabel_20240708/pand.fss"
+			,	StorageReadOnly = "True"
+			{
+				attribute<rd_mm> geometry_mm (poly);
+				attribute<rd_mm> fp    := first_point(geometry_mm);
+				attribute<bool>  inAms :=
+					   PointCol(fp) >= int32(110000000) && PointCol(fp) < int32(135000000)
+					&& PointRow(fp) >= int32(476000000) && PointRow(fp) < int32(494000000);
+			}
+			unit<uint32> Elems := select_with_org_rel(pand_all/inAms);
+			attribute<rd>     geometry   (Elems, polygon) := pand_all/geometry_mm[Elems/org_rel][rd];
+			attribute<ipoint> geometry_i (Elems, polygon) := pand_all/geometry_mm[Elems/org_rel];
+			// 4x4 tegels over de bbox als partitionering
+			unit<uint32> Parts := range(uint32, 0, 16);
+			attribute<rd_mm>  fp_sel (Elems) := pand_all/fp[Elems/org_rel];
+			attribute<uint32> tx     (Elems) := min_elem(uint32(3), uint32((PointCol(fp_sel) - int32(110000000)) / int32(6250000)));
+			attribute<uint32> ty     (Elems) := min_elem(uint32(3), uint32((PointRow(fp_sel) - int32(476000000)) / int32(4500000)));
+			attribute<Parts>  part_rel (Elems) := value(ty * uint32(4) + tx, Parts);
+			parameter<float64> sumA := sum(area(geometry, m2u));
+		}
+	}
+	#include <../../main/issue_882.dms>
+
 	container Ops
 	{
 		Template Scenario_T
@@ -99,6 +171,10 @@ container PolygonCompare
 			attribute<Parts>  part_rel (Elems);
 			parameter<float64> sumA;
 			parameter<float64> relTolF;
+			// kwadraat van de integer-schaalfactor van geometry_i (1e6 voor mm, 1e4
+			// voor cm); bp heeft een 25-bits coordinaatlimiet, dus landsdekkende data
+			// past niet in mm en krijgt een grovere schaal
+			parameter<float64> intAreaDiv;
 			// end case parameters
 
 			container geos
@@ -136,11 +212,11 @@ container PolygonCompare
 			container bp
 			{
 				attribute<ipoint> u_part (Parts, polygon) := bp_union_polygon(geometry_i, part_rel);
-				parameter<float64> uA := sum(area(dpolygon(u_part), m2u)) / 1e6;
+				parameter<float64> uA := sum(area(dpolygon(u_part), m2u)) / intAreaDiv;
 				parameter<ipoint> u_tot (polygon) := bp_union_polygon(geometry_i);
 				parameter<ipoint> u_tot2 (polygon) := bp_union_polygon(u_part);
-				parameter<float64> uiA  := area(dpolygon(u_tot2), m2u) / 1e6;
-				parameter<float64> utA  := area(dpolygon(u_tot), m2u) / 1e6;
+				parameter<float64> uiA  := area(dpolygon(u_tot2), m2u) / intAreaDiv;
+				parameter<float64> utA  := area(dpolygon(u_tot), m2u) / intAreaDiv;
 				unit<uint32> su := bp_split_union_polygon(geometry_i);
 				parameter<uint32>  suN := #su;
 				parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
@@ -169,8 +245,12 @@ container PolygonCompare
 			}
 		}
 
-		container ManySmall := Scenario_T(../ManySmall/Cells, ../ManySmall/Parts, ../ManySmall/geometry, ../ManySmall/geometry_i, ../ManySmall/Cells/part_rel, ../ManySmall/sumA, Parameters/relTol);
-		container FewLarge  := Scenario_T(../FewLarge/Polys, ../FewLarge/Parts, ../FewLarge/geometry, ../FewLarge/geometry_i, ../FewLarge/Polys/part_rel, ../FewLarge/sumA, Parameters/relTol);
+		container ManySmall := Scenario_T(../ManySmall/Cells, ../ManySmall/Parts, ../ManySmall/geometry, ../ManySmall/geometry_i, ../ManySmall/Cells/part_rel, ../ManySmall/sumA, Parameters/relTol, 1e6);
+		container FewLarge  := Scenario_T(../FewLarge/Polys, ../FewLarge/Parts, ../FewLarge/geometry, ../FewLarge/geometry_i, ../FewLarge/Polys/part_rel, ../FewLarge/sumA, Parameters/relTol, 1e6);
+
+		// echte-datascenario's (alleen berekend via results/real); gemeenten in cm
+		container GemReal    := Scenario_T(../RealData/Gemeenten/Elems, ../RealData/Gemeenten/Parts, ../RealData/Gemeenten/geometry, ../RealData/Gemeenten/geometry_i, ../RealData/Gemeenten/part_rel, ../RealData/Gemeenten/sumA, Parameters/relTol, 1e4);
+		container PandenReal := Scenario_T(../RealData/PandenAms/Elems, ../RealData/PandenAms/Parts, ../RealData/PandenAms/geometry, ../RealData/PandenAms/geometry_i, ../RealData/PandenAms/part_rel, ../RealData/PandenAms/sumA, Parameters/relTol, 1e6);
 	}
 
 	// Een gezamenlijke uitslag voor de vier families: per familie een eigen tagregel
@@ -216,6 +296,63 @@ container PolygonCompare
 				+ (failing == '' ? '' : '<failing>' + failing + '</failing>')
 				+ '<result>' + (allOk ? 'OK' : 'False') + '</result>';
 			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons.txt'";
+		}
+
+		// ---- echte data: aparte indicator (t020_polygons_real.txt); zie RealData ----
+		// per familie EEN regel over beide scenario's (gemeenten + panden), plus de
+		// issue-882-repro: de infix-union (+) van twee aangrenzende grote polygonen
+		// en van twee uitgeknipte secties, vergeleken met geos over dezelfde invoer.
+		Template FamLine2_T
+		{
+			parameter<string> famName;
+			parameter<bool>   okGem;
+			parameter<bool>   okPand;
+			parameter<float64> devGem;
+			parameter<float64> devPand;
+			//
+			parameter<bool>   ok := okGem && okPand;
+			parameter<string> line :=
+				'<' + famName + '>' + (ok ? 'OK' : 'FAILS')
+				+ (famName == 'geos' ? '' : '; dev vs geos Gemeenten ' + string(float32(devGem)) + ', PandenAms ' + string(float32(devPand)))
+				+ '</' + famName + '>';
+			parameter<string> failnote :=
+				(okGem ? '' : famName + '-Gemeenten; ') + (okPand ? '' : famName + '-PandenAms; ');
+		}
+		container real
+		{
+			container geos := FamLine2_T('geos', Ops/GemReal/geos/ok, Ops/PandenReal/geos/ok, 0.0, 0.0);
+			container bg   := FamLine2_T('bg',   Ops/GemReal/bg/ok,   Ops/PandenReal/bg/ok,   Ops/GemReal/bg/devVsGeos,   Ops/PandenReal/bg/devVsGeos);
+			container bp   := FamLine2_T('bp',   Ops/GemReal/bp/ok,   Ops/PandenReal/bp/ok,   Ops/GemReal/bp/devVsGeos,   Ops/PandenReal/bp/devVsGeos);
+			container cgal := FamLine2_T('cgal', Ops/GemReal/cgal/ok, Ops/PandenReal/cgal/ok, Ops/GemReal/cgal/devVsGeos, Ops/PandenReal/cgal/devVsGeos);
+
+			container i882
+			{
+				unit<uint32> two: nrofrows = 2;
+				attribute<dpoint> geoms (two, polygon) := union_data(two, /issue_882/p1/geo0, /issue_882/p2/geo0);
+				attribute<dpoint> secs  (two, polygon) := union_data(two, /issue_882/s1, /issue_882/s2);
+				parameter<float64> aU  := area(/issue_882/union_gone, m2u);
+				parameter<float64> aG  := area(geos_union_polygon(geoms), m2u);
+				parameter<float64> aS  := area(/issue_882/section_gone, m2u);
+				parameter<float64> aSG := area(geos_union_polygon(secs), m2u);
+				parameter<bool> ok_union   := abs(aU - aG)  <= aG  * 1e-6;
+				parameter<bool> ok_section := abs(aS - aSG) <= aSG * 1e-6;
+				parameter<string> line :=
+					'<i882_union>'   + (ok_union   ? 'OK' : 'FAILS') + '; infix ' + string(float32(aU)) + ' vs geos ' + string(float32(aG))  + '</i882_union>'
+					+ '<i882_section>' + (ok_section ? 'OK' : 'FAILS') + '; infix ' + string(float32(aS)) + ' vs geos ' + string(float32(aSG)) + '</i882_section>';
+				parameter<string> failnote :=
+					(ok_union ? '' : 'i882-union; ') + (ok_section ? '' : 'i882-section; ');
+			}
+
+			parameter<uint32> nrGem  := #/RealData/Gemeenten/Elems;
+			parameter<uint32> nrPand := #/RealData/PandenAms/Elems;
+			parameter<bool>   allOk   := geos/ok && bg/ok && bp/ok && cgal/ok && i882/ok_union && i882/ok_section;
+			parameter<string> failing := geos/failnote + bg/failnote + bp/failnote + cgal/failnote + i882/failnote;
+			parameter<string> result :=
+				'<description>polygon family compare, real data (Gemeenten ' + string(nrGem) + 'x, BAG-panden Amsterdam ' + string(nrPand) + 'x, issue-882 repro)</description>'
+				+ geos/line + bg/line + bp/line + cgal/line + i882/line
+				+ (failing == '' ? '' : '<failing>' + failing + '</failing>')
+				+ '<result>' + (allOk ? 'OK' : 'False') + '</result>';
+			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_real.txt'";
 		}
 	}
 }

@@ -261,6 +261,15 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # (status, uniearealen, afwijking t.o.v. de geos-referentie) met een EN-oordeel.
     regression_test_paths["PolygonComparePath"] = f"{regression_test_paths["TstDir"]}/Polygons/cfg/compare.dms"
     regression.add_exp(exps, name=f"{result_folder_name}__t020_polygons", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t020_polygons.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["PolygonComparePath"]} results/all/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t020_polygons.txt", indicator_results_file=f"{result_paths["results_folder"]}/t020_polygons.txt")
+    # t020_real — dezelfde vergelijking op echte data (gemeenten + BAG-panden Amsterdam +
+    # issue-882-repro). Alleen toegevoegd als de databron bestaat; het pad is per machine
+    # instelbaar via de omgevingsvariabele GEODMS_Overridable_PolyDataDir (de default in
+    # compare.dms is de OVSRV08-locatie).
+    _poly_real_dir = os.environ.get("GEODMS_Overridable_PolyDataDir", "E:/SourceData/RuimteScanner/SD/RSOpen")
+    if os.path.isdir(_poly_real_dir):
+        regression.add_exp(exps, name=f"{result_folder_name}__t020_polygons_real", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t020_polygons_real.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["PolygonComparePath"]} results/real/stored_result", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t020_polygons_real.txt", indicator_results_file=f"{result_paths["results_folder"]}/t020_polygons_real.txt")
+    else:
+        print(f"t020_polygons_real overgeslagen: datamap {_poly_real_dir} niet gevonden (zet GEODMS_Overridable_PolyDataDir)")
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Storage"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)

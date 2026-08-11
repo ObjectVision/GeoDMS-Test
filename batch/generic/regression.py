@@ -290,6 +290,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
 TEST_DESCRIPTIONS = {
     "t010": "Operator/function test: exercises many DMS operators on the Operator config.",
     "t020_polygons": "Polygon family compare (geos/bg/bp/cgal): union invariants on synthetic data + deviation vs the geos reference, one line per family.",
+    "t020_polygons_real": "Polygon family compare on real data: Gemeenten (few large, province partitions), BAG-panden Amsterdam (many small, tile partitions) and the issue-882 infix-union repro, all vs the geos reference.",
     "t050": "Storage: write an ESRI shapefile (polygon) via the storage manager; round-trip.",
     "t060": "Storage: build a BAG snapshot (Utrecht) as GeoPackage; compare to reference.",
     "t100": "Network: connect PC6 points to the road network (NL/BE/DE); compare to reference.",
