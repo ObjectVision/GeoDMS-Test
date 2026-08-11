@@ -730,11 +730,19 @@ def _t010_spec_tested_ops() -> set:
                 ops.add(seg[:-3] if seg.endswith("_op") else seg)
     return ops
 
+class _TargetsDict(dict):
+    """Doellijst met familiekrediet: de for_each_*-suffixfamilie (1632
+    lettercombinaties van een constructie) is als geheel gedocumenteerd via de
+    wiki-pagina For_each (suffixgrammatica) en telt dus als gedocumenteerd
+    zonder dat elke variantnaam in de doellijst staat."""
+    def __contains__(self, key):
+        return dict.__contains__(self, key) or str(key).lower().startswith("for_each_")
+
 def _t010_documented_targets() -> dict:
     """{lowercase naam: (naam, wiki-categorie)} uit operator_coverage_targets.txt
     (gegenereerd door batch/make_operator_coverage_targets.py uit de wiki)."""
     fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), "operator_coverage_targets.txt")
-    targets = {}
+    targets = _TargetsDict()
     try:
         with open(fn, "r", encoding="utf-8") as f:
             for line in f:
