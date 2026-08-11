@@ -122,8 +122,15 @@ def format_duration(duration:int) -> str:
 
 def _add_thousand_separators(text:str) -> str:
     """Insert thousand separators into standalone integers of 4+ digits, leaving
-    decimals (dot- or comma-separated) and already-grouped numbers untouched."""
-    return re.sub(r"(?<![\d.,])(\d{4,})(?![\d.,])", lambda m: f"{int(m.group(1)):,}", text)
+    decimals (dot- or comma-separated), already-grouped numbers, #issue-nummers
+    and MARKUP untouched. Binnen tags niets aanraken: een issuenummer in een
+    href werd anders 'issues/1,176', wat GitHub naar een verkeerde pagina stuurt."""
+    def _fmt(seg):
+        # ook het gehele deel van decimale getallen groeperen (107791.59 ->
+        # 107,791.59); breukdelen zijn beschermd door de punt in de lookbehind
+        return re.sub(r"(?<![\d.,#])(\d{4,})(?![\d,])", lambda m: f"{int(m.group(1)):,}", seg)
+    parts = re.split(r"(<[^>]*>)", text)
+    return "".join(p if i % 2 else _fmt(p) for i, p in enumerate(parts))
 
 def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # Render each indicator's VALUE (the label lives in the value, set by the test's
@@ -226,7 +233,9 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
         if _pref is summary_col_row:
             _pref = None
         _base_dur = _pref["duration"] if _pref else 0
-        _base_mem = _pref["highest_commit"] if _pref else 0
+        # fysiek geheugen (rss) is de zinvolle metriek; oude cachesummaries zonder
+        # highest_rss vallen terug op de virtuele piek zodat de vergelijking blijft werken
+        _base_mem = (_pref.get("highest_rss") or _pref["highest_commit"]) if _pref else 0
         _dwarn, _dbad = _dur_thresholds(_base_dur)
         _pbl = (_pref["version"] + ("." + _pref.get("flavor") if _pref.get("flavor") else "")) if _pref else ""
         _dcls = _perf_class(summary_col_row["duration"], _base_dur, _dwarn, _dbad, 10)   # graduated %, same-platform baseline (10s floor kills sub-floor wobble)
@@ -246,13 +255,20 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y-%m-%d %H:%M") if start_time_value else "n/a")
-        _mcls = _perf_class(summary_col_row["highest_commit"], _base_mem, 1.05, 1.13, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=5%/13% OR >=10/32 GB heavier than the same-platform baseline
-        _mval = fmt_gb(summary_col_row["highest_commit"])
-        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", f'<span class="{_mcls}" title="peak memory vs {_pbl}">{_mval}</span>' if _mcls else _mval)
+        # twee geheugenmetrieken naast elkaar, elk met eigen label en eenheid:
+        # fys = piek fysiek (rss), cmt = piek committed (vms; de tegelallocator
+        # reserveert ruim, dus dit getal is structureel veel groter)
+        _cur_mem = summary_col_row.get("highest_rss") or summary_col_row["highest_commit"]
+        _mcls = _perf_class(_cur_mem, _base_mem, 1.05, 1.13, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=5%/13% OR >=10/32 GB heavier than the same-platform baseline
+        _mval = f"fys {fmt_gb(_cur_mem)} GB"
+        _mtitle = f"peak physical memory (rss) vs {_pbl}"
+        _mspan = f'<span class="{_mcls}" title="{_mtitle}">{_mval}</span>' if _mcls else f'<span title="{_mtitle}">{_mval}</span>'
+        _mspan += f' <span title="peak committed memory (vms)">&middot; cmt {fmt_gb(summary_col_row["highest_commit"])} GB</span>'
+        table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", _mspan)
         # perf badge next to the status pill: a green/OK cell can still hide a 2x-memory or much-slower run
         _pbadge = ""
         if _mcls:
-            _pbadge += f'<span class="perfbadge {_mcls}" title="peak memory vs {_pbl}">mem +{round((summary_col_row["highest_commit"]/_base_mem - 1) * 100)}%</span>'
+            _pbadge += f'<span class="perfbadge {_mcls}" title="peak physical memory vs {_pbl}">mem +{round((_cur_mem/_base_mem - 1) * 100)}%</span>'
         if _dcls:
             _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs {_pbl}">dur +{round((summary_col_row["duration"]/_base_dur - 1) * 100)}%</span>'
         table_col_header = table_col_header.replace("@@@PERF_BADGE@@@", _pbadge)
@@ -290,8 +306,7 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
 
 TEST_DESCRIPTIONS = {
     "t010": "Operator/function test: exercises many DMS operators on the Operator config.",
-    "t020_polygons": "Polygon family compare (geos/bg/bp/cgal): union invariants on synthetic data + deviation vs the geos reference, one line per family.",
-    "t020_polygons_real": "Polygon family compare on real data: Gemeenten (few large, province partitions), BAG-panden Amsterdam (many small, tile partitions) and the issue-882 infix-union repro, all vs the geos reference.",
+    "t020_polygons": "Polygon family compare (geos/bg/bp/cgal): union invariants on synthetic scenarios and on CBS/BAG data, all vs the geos reference. One verdict line per family; a FAILS names the scenario and failing invariant. Known engine issues are skipped explicitly with a link.",
     "t050": "Storage: write an ESRI shapefile (polygon) via the storage manager; round-trip.",
     "t060": "Storage: build a BAG snapshot (Utrecht) as GeoPackage; compare to reference.",
     "t100": "Network: connect PC6 points to the road network (NL/BE/DE); compare to reference.",
@@ -322,8 +337,12 @@ TEST_DESCRIPTIONS = {
 }
 
 def get_test_description(testname:str) -> str:
-    """Short English description for a test, keyed by its leading code (t010,
-    t405_3_2, ...). Returns '' when no description is defined."""
+    """Short English description for a test: first the full test name (so
+    t020_polygons and t020_polygons_real get their own text), then the leading
+    code (t010, t405_3_2, ...). Returns '' when no description is defined."""
+    full = testname.lower().replace(" ", "_")
+    if full in TEST_DESCRIPTIONS:
+        return TEST_DESCRIPTIONS[full]
     m = re.match(r"(t\d+(?:[ _]\d+(?![A-Za-z]))*)", testname, re.IGNORECASE)
     if not m:
         return ""
@@ -336,7 +355,12 @@ def get_test_code(testname:str) -> str:
     m = re.match(r"(t\d+(?:[ _]\d+(?![A-Za-z]))*)", testname, re.IGNORECASE)
     if not m:
         return testname
-    return re.sub(r"[ _]+", ".", m.group(1).strip()).lower()
+    code = re.sub(r"[ _]+", ".", m.group(1).strip()).lower()
+    # varianten van dezelfde testcode onderscheidbaar houden in de rijtitel
+    # (t020_polygons en t020_polygons_real werden allebei 't020')
+    if re.search(r"real", testname, re.IGNORECASE):
+        code += " real"
+    return code
 
 def get_table_row_title_html_template() -> str:
     return '<td class="testname">\
@@ -355,7 +379,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     <details class=@@@TESTCLASS@@@>\
     <summary><span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@PERF_BADGE@@@@@@INDICATOR_FLAG@@@@@@REF_PILL@@@</summary>\
     <div class="meta">@@@STARTTIME@@@ &middot; @@@DURATION@@@</div>\
-    <div class="metrics">mem @@@HIGHESTCOMMIT@@@ GB &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
+    <div class="metrics">@@@HIGHESTCOMMIT@@@ &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
     @@@INDICATORS@@@\
     <div class="links">{log_part} {geodms_part} {profile_part}</div>\
     </details>\
@@ -468,6 +492,43 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
         summaries[0][col]["success_ratio"] = (succeeded, total_tests)
     return summaries
 
+def _label_failing(parsed:dict):
+    """Falende tests zijn het allerbelangrijkste in de cel; het kale pad
+    ('Grid/perimeter/test_attr;') las niet als zodanig. Render ze als
+    bulletlijst met aantal, met per pad-vermelding de operatornaam voorop
+    (de containernaam voor het test-blad is per conventie de operatornaam;
+    verzameltests tonen hun verzamelnaam)."""
+    if "failing" not in parsed:
+        return
+    content = parsed["failing"][0]
+    if not content.strip() or content.startswith("FAILING"):
+        return
+    # geneste AGG-groepen 'Thema/Inst: [rij; rij2; ]' uitvouwen tot losse items
+    items = []
+    for m in re.finditer(r"([A-Za-z0-9_/-]+):\s*\[(.*?)\]", content):
+        ctx = m.group(1)
+        for row in m.group(2).split(";"):
+            row = row.strip()
+            if row:
+                items.append(f"{ctx}: {row}")
+    flat = re.sub(r"[A-Za-z0-9_/-]+:\s*\[.*?\]", "", content)
+    for tok in flat.split(";"):
+        tok = tok.strip()
+        if tok:
+            items.append(tok)
+    if not items:
+        return
+    lines = []
+    for it in items:
+        path = it.split(": ")[-1]
+        hint = ""
+        if "/" in path:  # operatorhint alleen voor pad-vermeldingen (t010-stijl)
+            segs = path.split("/")
+            leaf_i = next((i for i, s in enumerate(segs) if s.startswith("test")), len(segs))
+            hint = (segs[leaf_i - 1] if leaf_i > 0 else segs[-1]) + " &mdash; "
+        lines.append(f"&bull; {hint}{it}")
+    parsed["failing"][0] = f"FAILING ({len(items)}):<br>" + "<br>".join(lines)
+
 def _compress_skipped(parsed:dict, rdir:str, regression_test:str):
     """De <skipped>-lijst beschrijft VERWACHT versie-afhankelijk gedrag (rijen die
     op deze versie overslaan omdat een vereiste operator er niet bestaat) en groeide
@@ -494,7 +555,8 @@ def _compress_skipped(parsed:dict, rdir:str, regression_test:str):
             f.write(full.replace(" ] ", " ]\n") + "\n")
     except OSError:
         pass
-    parsed["skipped"][0] = summary
+    # <br>-prefix: witregel voor het skipblok in de rapportcel
+    parsed["skipped"][0] = "<br>" + summary
 
 def parse_indicators(indicators:str) -> dict:
     # <description>operator test</description><size>number unique tests: 1356</size><result>OK</result>
@@ -853,14 +915,12 @@ def _append_t010_coverage(parsed_indicators:dict, rdir:str):
         for t in doc_unmatched:
             f.write(f"{targets[t][0]}\t{targets[t][1]}\n")
 
-    doc_in_version = [g for g in groups if g.lower() in targets]
-    doc_covered = len([g for g in doc_in_version if g.lower() in tested])
-    if doc_in_version:
-        parsed_indicators["coverage_doc"] = [
-            f"documented operators covered: {doc_covered} of {len(doc_in_version)}", True]
-    testable = len(groups) - len(excluded_g)
-    parsed_indicators["coverage"] = [
-        f"operator groups tested: {len(tested_g)} of {testable} testable ({len(excluded_g)} excluded, see t010_operator_coverage.txt)", True]
+    # GEEN dekkingsregels in de rapportcel (feedback Jip): "X of X operator
+    # groups" beschrijft de test-OPZET (per constructie 100% zolang de dekking
+    # compleet is), niet de uitslag van deze run. De cel houdt: uitgevoerd-
+    # telling, FAILING en de skip-samenvatting. De volledige dekkings- en
+    # documentatiestand staat in t010_operator_coverage.txt (per versie) en op
+    # de wiki-werklijstpagina.
 
 def get_regression_test_result(status_code:int, regression_test:str, regression_test_folder:str, file_comparison:tuple, indicators:str=None, prev_indicators:dict={}, indicator_results_file:str=None, prev_version=None) -> tuple:
 
@@ -928,6 +988,7 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     if regression_test.startswith("t010"):
         _append_t010_coverage(parsed_indicators, rdir)   # voor de flag-loop, zodat wijzigingen t.o.v. de vorige versie oplichten
     _compress_skipped(parsed_indicators, rdir, regression_test)  # idem: compacte vorm diffstabiel tegen de vorige versie
+    _label_failing(parsed_indicators)
     for indicator in parsed_indicators:
         if not indicator in prev_indicators:
             continue

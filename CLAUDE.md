@@ -36,6 +36,26 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   land-use regression — https://github.com/ObjectVision/GeoDMS/issues/1136 — its
   references were left untouched on purpose.)
 - **Report outcomes faithfully** — if a test failed or was skipped, say so plainly.
+- **Bekende engine-issues parkeren, niet rood laten staan**: is een gebrek als
+  GeoDMS-issue geregistreerd, dan wordt de betreffende toets een expliciete
+  skip mét issueverwijzing (Spec-rij uit / skip-notitie in de indicator) —
+  longstanding issues mogen de release niet ophouden, maar blijven zichtbaar.
+  Zodra het issue gefixt is gaat de toets weer aan. Werkt een geregistreerde
+  operator niet, dan is dat een issue voor Maarten (fixen of verwijderen, zie
+  https://github.com/ObjectVision/GeoDMS/issues/1177).
+
+## Werkafspraken (Jip)
+
+- **Commits bundelen**: commit per logische mijlpaal, niet per prompt/iteratie;
+  vormgevings- en feedbackrondes samenvoegen tot één commit.
+- **GitHub-issues zonder attributievoettekst** ("Generated with Claude Code")
+  — de Co-Authored-By-regel in gitcommits blijft wel.
+- Rapportcellen tonen alleen run-uitslagen (tellingen, `FAILING (n): …`,
+  skip-samenvatting) — geen testopzet-metrieken zoals documentatiedekking;
+  die staan in `t010_operator_coverage.txt` en op de wiki-werklijst.
+- Tests klein genoeg houden om snel te draaien; opschalen is een aparte,
+  bewuste stap. Geen databeschikbaarheidschecks: ontbrekende data hoort als
+  rode cel op te vallen.
 
 ## Operator test (t010) — versie-afhankelijke testjes
 
@@ -51,17 +71,47 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   draaiende versie bestaan — noem óók operatoren die het testje intern gebruikt),
   of `'AGG|pad/naar/results'`. Een vereiste `>=NN` is een versie-ondergrens, voor
   namen die in oude versies wél geregistreerd staan maar als "reserved"-stub
-  erroren (bv. `geos_buffer_point;>=18`). Metascript-constructies (`for_each` e.d.)
-  staan NIET in de OperatorList en mogen nooit als vereiste worden opgegeven.
-- Het indicatorbestand meldt exacte aantallen (`<size>`), falende testjes
-  (`<failing>`) en overgeslagen testjes met reden (`<skipped>`); het rapport toont
-  daarnaast twee dekkingsregels: gedocumenteerde operatoren (doellijst
-  `batch/generic/operator_coverage_targets.txt`, gegenereerd uit de wiki met
-  `batch/make_operator_coverage_targets.py`; doel = 100%) en het rauwe vangnet
-  over álle operator-groepen. Werklijst per versie: `t010_operator_coverage.txt`
-  in de result-map.
+  erroren (bv. `geos_buffer_point;>=18`).
+- **Dekking is compleet** (2026-08-11): elke testbare operatorgroep heeft een test
+  én wiki-documentatie (~4778 testjes, 2276/2276 groepen op 20.8+). De
+  `for_each_*`-suffixfamilie (1632 varianten) wordt gegenereerd getest:
+  `Operator/cfg/Operator/ForEach.dms` komt uit **`batch/make_for_each_tests.py`**
+  (draaien met de `t010_operator_groups.txt`-dumps van de te dekken versies als
+  argumenten; daarna pre1810 regenereren). Uitsluitingen-met-reden staan in
+  `batch/generic/operator_coverage_exclusions.txt` — issue-geparkeerde rijen
+  (bv. de `_16`-allocaties, GeoDMS #1175) gaan weer aan zodra het issue gefixt is.
+- Rapportcel toont alleen run-uitslagen: uitgevoerd-telling, `FAILING (n)` als
+  bulletlijst met operatornaam, en de skips als één samenvattingsregel
+  gegroepeerd op reden (volledige lijst: `t010_operator_test_skipped_tests.txt`).
+  Dekkings- en documentatiestand: `t010_operator_coverage.txt` per versie
+  (doellijst `batch/generic/operator_coverage_targets.txt`, gegenereerd uit de
+  wiki met `batch/make_operator_coverage_targets.py`) en de wiki-pagina
+  Operator-coverage-worklist.
 - **Na elke wijziging aan `Operator.dms`: `python batch/make_operator_pre1810.py`**
   (full.py waarschuwt als de pre-18.1.0-kopie ouder is dan de bron).
+- `profiler.py` heeft per-test-timeoutcaps (`TEST_TIMEOUTS`); een te lage cap
+  tree-killt de run, wat eruitziet als een stille enginecrash (log midden in een
+  regel afgebroken, geen [E]). t010-cap: 600 s.
+
+## Polygonentest (t020)
+
+- **Eén test** (`Polygons/cfg/compare.dms`): geos/bg/bp/cgal vergeleken op
+  union-invarianten (som/idempotentie/splitsaantal/areaal-vs-geos), op
+  synthetische scenario's (ManySmall/FewLarge) én CBS/BAG-data (gemeenten
+  Noord-Holland, BAG-panden binnenstad Amsterdam) — bewust klein gehouden om
+  snel te draaien; opschalen is een aparte stap. geos is de referentie.
+- Databron per machine via `GEODMS_Overridable_PolyDataDir` (default =
+  OVSRV08-locatie). Geen beschikbaarheidscheck: ontbreekt de data, dan is de
+  cel rood. Op GeoDMS < 20 draait alleen het synthetische deel
+  (`results/all`): pre-20 past `area()` de gridset-projectie niet toe, wat op
+  de echte data een bp-artefact van ×1e4/1e6 geeft.
+- Cel: ankerregel met de exacte geos-arealen (versievergelijking), daarna één
+  bulletregel per familie; bekende issues zijn expliciete skips met issuelink
+  (bg-buildings: crasht, #1176; cgal-buildings-idempotentie: ~0,3%-verlies,
+  #1178). De issue-882-repro draait stil mee en meldt zich alleen bij falen.
+- **bp-schaal**: de gridset-units (rd_mm/rd_cm) dragen hun schaal zelf in
+  `area()` — geen extra deling (intAreaDiv = 1.0 voor de echte scenario's;
+  gemeenten in cm wegens de 25-bits-coordinaatlimiet van bp).
 
 ## Linux / WSL (`.l`)
 

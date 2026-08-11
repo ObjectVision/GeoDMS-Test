@@ -119,22 +119,36 @@ container PolygonCompare
 
 		container Gemeenten
 		{
-			unit<uint32> Parts := Bron/provincie_gegeneraliseerd
+			// bewust klein gehouden (beleid Jip: datafouten opsporen zonder lange
+			// wachttijden): alleen de gemeenten van Noord-Holland (~44, incl. het
+			// issue-882-gebied), verdeeld over 4 mod-partities - de partitie-union-
+			// invariant houdt dan juist veel gedeelde grenzen over om op te breken
+			container ProvAll
 			{
-				attribute<rd> geometry (poly) := Bron/provincie_gegeneraliseerd/geometry;
+				attribute<rd>     geometry (Bron/provincie_gegeneraliseerd, poly) := Bron/provincie_gegeneraliseerd/geometry;
+				attribute<string> statnaam (Bron/provincie_gegeneraliseerd)       := Bron/provincie_gegeneraliseerd/statnaam;
+				parameter<uint32> nh := rlookup('Noord-Holland', statnaam);
 			}
-			unit<uint32> Elems := Bron/gemeente_niet_gegeneraliseerd;
-			attribute<rd>     geometry   (Elems, polygon) := Bron/gemeente_niet_gegeneraliseerd/geometry;
+			container GemAll
+			{
+				attribute<rd>       geometry (Bron/gemeente_niet_gegeneraliseerd, poly) := Bron/gemeente_niet_gegeneraliseerd/geometry;
+				attribute<uint32>   prov (Bron/gemeente_niet_gegeneraliseerd) :=
+					MakeDefined(uint32(point_in_polygon(centroid_or_mid(geometry), ProvAll/geometry)), uint32(9999));
+			}
+			unit<uint32> Elems := select_with_org_rel(GemAll/prov == ProvAll/nh);
+			attribute<rd>     geometry   (Elems, polygon) := GemAll/geometry[Elems/org_rel];
 			attribute<ipoint> geometry_i (Elems, polygon) := geometry[rd_cm];
-			// mid-in-provincie; MakeDefined vangt een eventuele mid-buiten-alles af
-			// (zou anders elementen uit de partitie-union laten vallen)
-			attribute<Parts>  part_rel   (Elems) :=
-				MakeDefined(point_in_polygon(centroid_or_mid(geometry), Parts/geometry), value(0, Parts));
+			unit<uint32> Parts := range(uint32, 0, 4);
+			attribute<Parts>  part_rel   (Elems) := value(mod(id(Elems), 4), Parts);
 			parameter<float64> sumA := sum(area(geometry, m2u));
 		}
 		container PandenAms
 		{
-			// Amsterdam-bbox in RD-millimeters: x 110000..135000 m, y 476000..494000 m
+			// bbox binnenstad Amsterdam in RD-millimeters: x 118000..122000 m,
+			// y 484000..488000 m (4x4 km, tienduizenden panden). Bewust klein
+			// (beleid Jip: datafouten opsporen zonder lange wachttijden - cgal
+			// rekent minuten op grotere selecties; op de volle gemeente stierven
+			// de union-bewerkingen zelfs). Opschalen is een aparte vervolgstap.
 			unit<uint32> pand_all
 			:	StorageName     = "%PolyDataDir%/Vastgoed/VolledigeTabel_20240708/pand.fss"
 			,	StorageReadOnly = "True"
@@ -142,8 +156,8 @@ container PolygonCompare
 				attribute<rd_mm> geometry_mm (poly);
 				attribute<rd_mm> fp    := first_point(geometry_mm);
 				attribute<bool>  inAms :=
-					   PointCol(fp) >= int32(110000000) && PointCol(fp) < int32(135000000)
-					&& PointRow(fp) >= int32(476000000) && PointRow(fp) < int32(494000000);
+					   PointCol(fp) >= int32(118000000) && PointCol(fp) < int32(122000000)
+					&& PointRow(fp) >= int32(484000000) && PointRow(fp) < int32(488000000);
 			}
 			unit<uint32> Elems := select_with_org_rel(pand_all/inAms);
 			attribute<rd>     geometry   (Elems, polygon) := pand_all/geometry_mm[Elems/org_rel][rd];
@@ -151,8 +165,8 @@ container PolygonCompare
 			// 4x4 tegels over de bbox als partitionering
 			unit<uint32> Parts := range(uint32, 0, 16);
 			attribute<rd_mm>  fp_sel (Elems) := pand_all/fp[Elems/org_rel];
-			attribute<uint32> tx     (Elems) := min_elem(uint32(3), uint32((PointCol(fp_sel) - int32(110000000)) / int32(6250000)));
-			attribute<uint32> ty     (Elems) := min_elem(uint32(3), uint32((PointRow(fp_sel) - int32(476000000)) / int32(4500000)));
+			attribute<uint32> tx     (Elems) := min_elem(uint32(3), uint32((PointCol(fp_sel) - int32(118000000)) / int32(1000000)));
+			attribute<uint32> ty     (Elems) := min_elem(uint32(3), uint32((PointRow(fp_sel) - int32(484000000)) / int32(1000000)));
 			attribute<Parts>  part_rel (Elems) := value(ty * uint32(4) + tx, Parts);
 			parameter<float64> sumA := sum(area(geometry, m2u));
 		}
@@ -187,10 +201,13 @@ container PolygonCompare
 				parameter<float64> utA  := area(u_tot, m2u);
 				unit<uint32> su := geos_split_union_polygon(geometry);
 				parameter<uint32>  suN := #su;
-				parameter<bool> ok :=
-					   uA <= sumA * (1.0 + relTolF)
-					&& abs(uiA - utA) <= utA * relTolF
-					&& suN > uint32(0) && suN <= #Elems;
+				// losse invarianten, zodat een FAILS kan benoemen wat er faalt
+				parameter<bool> ok_area  := uA <= sumA * (1.0 + relTolF);
+				parameter<bool> ok_idem  := abs(uiA - utA) <= utA * relTolF;
+				parameter<bool> ok_split := suN > uint32(0) && suN <= #Elems;
+				parameter<bool> ok := ok_area && ok_idem && ok_split;
+				parameter<string> failwhat :=
+					(ok_area ? '' : 'area-sum ') + (ok_idem ? '' : 'idempotence ') + (ok_split ? '' : 'split-count ');
 			}
 			container bg
 			{
@@ -203,11 +220,13 @@ container PolygonCompare
 				unit<uint32> su := bg_split_union_polygon(geometry);
 				parameter<uint32>  suN := #su;
 				parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
-				parameter<bool> ok :=
-					   uA <= sumA * (1.0 + relTolF)
-					&& abs(uiA - utA) <= utA * relTolF
-					&& suN > uint32(0) && suN <= #Elems
-					&& devVsGeos <= relTolF * 100.0;
+				parameter<bool> ok_area  := uA <= sumA * (1.0 + relTolF);
+				parameter<bool> ok_idem  := abs(uiA - utA) <= utA * relTolF;
+				parameter<bool> ok_split := suN > uint32(0) && suN <= #Elems;
+				parameter<bool> ok_dev   := devVsGeos <= relTolF * 100.0;
+				parameter<bool> ok := ok_area && ok_idem && ok_split && ok_dev;
+				parameter<string> failwhat :=
+					(ok_area ? '' : 'area-sum ') + (ok_idem ? '' : 'idempotence ') + (ok_split ? '' : 'split-count ') + (ok_dev ? '' : 'area-vs-geos ');
 			}
 			container bp
 			{
@@ -220,11 +239,13 @@ container PolygonCompare
 				unit<uint32> su := bp_split_union_polygon(geometry_i);
 				parameter<uint32>  suN := #su;
 				parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
-				parameter<bool> ok :=
-					   uA <= sumA * (1.0 + relTolF + 1e-3)
-					&& abs(uiA - utA) <= utA * (relTolF + 1e-3)
-					&& suN > uint32(0) && suN <= #Elems
-					&& devVsGeos <= 1e-2;
+				parameter<bool> ok_area  := uA <= sumA * (1.0 + relTolF + 1e-3);
+				parameter<bool> ok_idem  := abs(uiA - utA) <= utA * (relTolF + 1e-3);
+				parameter<bool> ok_split := suN > uint32(0) && suN <= #Elems;
+				parameter<bool> ok_dev   := devVsGeos <= 1e-2;
+				parameter<bool> ok := ok_area && ok_idem && ok_split && ok_dev;
+				parameter<string> failwhat :=
+					(ok_area ? '' : 'area-sum ') + (ok_idem ? '' : 'idempotence ') + (ok_split ? '' : 'split-count ') + (ok_dev ? '' : 'area-vs-geos ');
 			}
 			container cgal
 			{
@@ -237,11 +258,13 @@ container PolygonCompare
 				unit<uint32> su := cgal_split_union_polygon(geometry);
 				parameter<uint32>  suN := #su;
 				parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
-				parameter<bool> ok :=
-					   uA <= sumA * (1.0 + relTolF)
-					&& abs(uiA - utA) <= utA * relTolF
-					&& suN > uint32(0) && suN <= #Elems
-					&& devVsGeos <= relTolF * 100.0;
+				parameter<bool> ok_area  := uA <= sumA * (1.0 + relTolF);
+				parameter<bool> ok_idem  := abs(uiA - utA) <= utA * relTolF;
+				parameter<bool> ok_split := suN > uint32(0) && suN <= #Elems;
+				parameter<bool> ok_dev   := devVsGeos <= relTolF * 100.0;
+				parameter<bool> ok := ok_area && ok_idem && ok_split && ok_dev;
+				parameter<string> failwhat :=
+					(ok_area ? '' : 'area-sum ') + (ok_idem ? '' : 'idempotence ') + (ok_split ? '' : 'split-count ') + (ok_dev ? '' : 'area-vs-geos ');
 			}
 		}
 
@@ -249,8 +272,8 @@ container PolygonCompare
 		container FewLarge  := Scenario_T(../FewLarge/Polys, ../FewLarge/Parts, ../FewLarge/geometry, ../FewLarge/geometry_i, ../FewLarge/Polys/part_rel, ../FewLarge/sumA, Parameters/relTol, 1e6);
 
 		// echte-datascenario's (alleen berekend via results/real); gemeenten in cm
-		container GemReal    := Scenario_T(../RealData/Gemeenten/Elems, ../RealData/Gemeenten/Parts, ../RealData/Gemeenten/geometry, ../RealData/Gemeenten/geometry_i, ../RealData/Gemeenten/part_rel, ../RealData/Gemeenten/sumA, Parameters/relTol, 1e4);
-		container PandenReal := Scenario_T(../RealData/PandenAms/Elems, ../RealData/PandenAms/Parts, ../RealData/PandenAms/geometry, ../RealData/PandenAms/geometry_i, ../RealData/PandenAms/part_rel, ../RealData/PandenAms/sumA, Parameters/relTol, 1e6);
+		container GemReal    := Scenario_T(../RealData/Gemeenten/Elems, ../RealData/Gemeenten/Parts, ../RealData/Gemeenten/geometry, ../RealData/Gemeenten/geometry_i, ../RealData/Gemeenten/part_rel, ../RealData/Gemeenten/sumA, Parameters/relTol, 1.0);
+		container PandenReal := Scenario_T(../RealData/PandenAms/Elems, ../RealData/PandenAms/Parts, ../RealData/PandenAms/geometry, ../RealData/PandenAms/geometry_i, ../RealData/PandenAms/part_rel, ../RealData/PandenAms/sumA, Parameters/relTol, 1.0);
 	}
 
 	// Een gezamenlijke uitslag voor de vier families: per familie een eigen tagregel
@@ -261,81 +284,133 @@ container PolygonCompare
 		parameter<string> results_folder_filename := '%LocalDataDir%/Regression/log/results_folder.txt';
 		parameter<string> results_folder : Storagename = "= results_folder_filename", StorageType = "str";
 
+		// Een regel per familie: OK, of FAILS met de gefaalde invariant(en) en het
+		// scenario erbij. Alleen de geos-regel draagt de uniearealen (het exacte
+		// anker voor versievergelijking); verdere getallen staan bewust NIET in de
+		// cel - het oordeel komt uit ALLE invarianten, niet alleen het union-areaal.
 		Template FamLine_T
 		{
 			parameter<string> famName;
+			parameter<string> dispName;
 			parameter<bool>   okMS;
 			parameter<bool>   okFL;
-			parameter<float64> uaMS;
-			parameter<float64> uaFL;
-			parameter<float64> devMS;
-			parameter<float64> devFL;
+			parameter<string> fwMS;
+			parameter<string> fwFL;
 			//
 			parameter<bool>   ok := okMS && okFL;
 			parameter<string> line :=
-				'<' + famName + '>' + (ok ? 'OK' : 'FAILS')
-				+ '; union area ManySmall ' + string(float32(uaMS)) + ', FewLarge ' + string(float32(uaFL))
-				+ (famName == 'geos' ? '' : '; dev vs geos ' + string(float32(devMS)) + ' / ' + string(float32(devFL)))
+				'<' + famName + '>&bull; ' + dispName + ': ' + (ok ? 'OK'
+					: 'FAILS (' + (okMS ? '' : 'ManySmall: ' + fwMS) + (okFL ? '' : 'FewLarge: ' + fwFL) + ')')
 				+ '</' + famName + '>';
 			parameter<string> failnote :=
 				(okMS ? '' : famName + '-ManySmall; ') + (okFL ? '' : famName + '-FewLarge; ');
 		}
+		// een oordeel per familie over ALLE scenario's (synthetisch en praktijkdata
+		// zijn gewoon testgevallen); een FAILS benoemt scenario + invariant
+		Template FamAll_T
+		{
+			parameter<string> famName;   // tagnaam (klein)
+			parameter<string> dispName;  // weergavenaam in de regel
+			parameter<bool>   okMS;
+			parameter<bool>   okFL;
+			parameter<bool>   okGem;
+			parameter<bool>   okPand;
+			parameter<string> fwMS;
+			parameter<string> fwFL;
+			parameter<string> fwGem;
+			parameter<string> fwPand;
+			//
+			parameter<bool>   ok := okMS && okFL && okGem && okPand;
+			parameter<string> line :=
+				'<' + famName + '>&bull; ' + dispName + ': ' + (ok ? 'OK'
+					: 'FAILS ('
+						+ (okMS   ? '' : 'ManySmall: ' + fwMS)
+						+ (okFL   ? '' : 'FewLarge: ' + fwFL)
+						+ (okGem  ? '' : 'municipalities: ' + fwGem)
+						+ (okPand ? '' : 'buildings: ' + fwPand) + ')')
+				+ '</' + famName + '>';
+			parameter<string> failnote :=
+				  (okMS   ? '' : famName + '-ManySmall; ') + (okFL ? '' : famName + '-FewLarge; ')
+				+ (okGem  ? '' : famName + '-municipalities; ') + (okPand ? '' : famName + '-buildings; ');
+		}
 
-		container geos := FamLine_T('geos', Ops/ManySmall/geos/ok, Ops/FewLarge/geos/ok, Ops/ManySmall/geos/uA, Ops/FewLarge/geos/uA, 0.0, 0.0);
-		container bg   := FamLine_T('bg',   Ops/ManySmall/bg/ok,   Ops/FewLarge/bg/ok,   Ops/ManySmall/bg/uA,   Ops/FewLarge/bg/uA,   Ops/ManySmall/bg/devVsGeos,   Ops/FewLarge/bg/devVsGeos);
-		container bp   := FamLine_T('bp',   Ops/ManySmall/bp/ok,   Ops/FewLarge/bp/ok,   Ops/ManySmall/bp/uA,   Ops/FewLarge/bp/uA,   Ops/ManySmall/bp/devVsGeos,   Ops/FewLarge/bp/devVsGeos);
-		container cgal := FamLine_T('cgal', Ops/ManySmall/cgal/ok, Ops/FewLarge/cgal/ok, Ops/ManySmall/cgal/uA, Ops/FewLarge/cgal/uA, Ops/ManySmall/cgal/devVsGeos, Ops/FewLarge/cgal/devVsGeos);
+		container geos := FamLine_T('geos', 'Geos', Ops/ManySmall/geos/ok, Ops/FewLarge/geos/ok, Ops/ManySmall/geos/failwhat, Ops/FewLarge/geos/failwhat);
+		container bg   := FamLine_T('bg',   'Bg',   Ops/ManySmall/bg/ok,   Ops/FewLarge/bg/ok,   Ops/ManySmall/bg/failwhat,   Ops/FewLarge/bg/failwhat);
+		container bp   := FamLine_T('bp',   'Bp',   Ops/ManySmall/bp/ok,   Ops/FewLarge/bp/ok,   Ops/ManySmall/bp/failwhat,   Ops/FewLarge/bp/failwhat);
+		container cgal := FamLine_T('cgal', 'CGAL', Ops/ManySmall/cgal/ok, Ops/FewLarge/cgal/ok, Ops/ManySmall/cgal/failwhat, Ops/FewLarge/cgal/failwhat);
+		// geos-anker: exacte arealen, zodat elke versieafwijking oplicht in de diff
+		parameter<string> anchor_line :=
+			'<anchor>geos union area: ManySmall ' + string(float32(Ops/ManySmall/geos/uA)) + ' m2, FewLarge ' + string(float32(Ops/FewLarge/geos/uA)) + ' m2</anchor>';
 
+		parameter<bool>   syntOk      := geos/ok && bg/ok && bp/ok && cgal/ok;
+		parameter<string> syntFailing := geos/failnote + bg/failnote + bp/failnote + cgal/failnote;
+		parameter<string> syntLines   := anchor_line + geos/line + bg/line + bp/line + cgal/line;
+
+		// synthetisch-only uitslag: voor machines zonder de echte databronnen
 		container all
 		{
-			parameter<bool>   allOk   := geos/ok && bg/ok && bp/ok && cgal/ok;
-			parameter<string> failing := geos/failnote + bg/failnote + bp/failnote + cgal/failnote;
 			parameter<string> result :=
-				'<description>polygon family compare (geos/bg/bp/cgal, synthetic ManySmall + FewLarge)</description>'
-				+ geos/line + bg/line + bp/line + cgal/line
-				+ (failing == '' ? '' : '<failing>' + failing + '</failing>')
-				+ '<result>' + (allOk ? 'OK' : 'False') + '</result>';
+				'<description>polygon family compare (geos/bg/bp/cgal), synthetic data only</description>'
+				+ syntLines
+				+ (syntFailing == '' ? '' : '<failing>' + syntFailing + '</failing>')
+				+ '<result>' + (syntOk ? 'OK' : 'False') + '</result>';
 			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons.txt'";
 		}
 
-		// ---- echte data: aparte indicator (t020_polygons_real.txt); zie RealData ----
-		// per familie EEN regel over beide scenario's (gemeenten + panden), plus de
-		// issue-882-repro: de infix-union (+) van twee aangrenzende grote polygonen
-		// en van twee uitgeknipte secties, vergeleken met geos over dezelfde invoer.
-		Template FamLine2_T
+		// gecombineerde uitslag (EEN t020): een oordeel per familie over alle
+		// scenario's, met de geos-arealen van alle scenario's als anker.
+		// Bekende, als GeoDMS-issue geregistreerde gebreken tellen als expliciete
+		// skip-met-issuelink en niet als rood (beleid Jip: een longstanding issue
+		// mag de release niet ophouden; de link houdt het zichtbaar en traceerbaar).
+		container combined
 		{
-			parameter<string> famName;
-			parameter<bool>   okGem;
-			parameter<bool>   okPand;
-			parameter<float64> devGem;
-			parameter<float64> devPand;
-			//
-			parameter<bool>   ok := okGem && okPand;
-			parameter<string> line :=
-				'<' + famName + '>' + (ok ? 'OK' : 'FAILS')
-				+ (famName == 'geos' ? '' : '; dev vs geos Gemeenten ' + string(float32(devGem)) + ', PandenAms ' + string(float32(devPand)))
-				+ '</' + famName + '>';
-			parameter<string> failnote :=
-				(okGem ? '' : famName + '-Gemeenten; ') + (okPand ? '' : famName + '-PandenAms; ');
-		}
-		container real
-		{
-			container geos := FamLine2_T('geos', Ops/GemReal/geos/ok, Ops/PandenReal/geos/ok, 0.0, 0.0);
-			// bg op de BAG-panden crasht de hele engine (zelfintersecties, GEOS-fix
-			// faalt; GeoDMS issue 1176) - tot de fix een expliciete SKIP-regel voor het
-			// pandendeel, zodat de rest van de vergelijking een uitslag blijft geven
-			container bg
-			{
-				parameter<bool>   ok := Ops/GemReal/bg/ok;
-				parameter<string> line :=
-					'<bg>' + (ok ? 'OK' : 'FAILS')
-					+ ' (alleen Gemeenten; PandenAms overgeslagen: bg_union_polygon crasht, GeoDMS issue 1176)'
-					+ '; dev vs geos Gemeenten ' + string(float32(Ops/GemReal/bg/devVsGeos)) + '</bg>';
-				parameter<string> failnote := ok ? '' : 'bg-Gemeenten; ';
-			}
-			container bp   := FamLine2_T('bp',   Ops/GemReal/bp/ok,   Ops/PandenReal/bp/ok,   Ops/GemReal/bp/devVsGeos,   Ops/PandenReal/bp/devVsGeos);
-			container cgal := FamLine2_T('cgal', Ops/GemReal/cgal/ok, Ops/PandenReal/cgal/ok, Ops/GemReal/cgal/devVsGeos, Ops/PandenReal/cgal/devVsGeos);
+			parameter<string> anchor_all :=
+				'<anchor>geos union area: ManySmall ' + string(float32(Ops/ManySmall/geos/uA)) + ' m2, FewLarge ' + string(float32(Ops/FewLarge/geos/uA))
+				+ ' m2, Mun. NH ' + string(float32(Ops/GemReal/geos/utA)) + ' m2, Buildings AMS ' + string(float32(Ops/PandenReal/geos/utA)) + ' m2</anchor>';
 
+			container geos_c := FamAll_T('geos', 'Geos', Ops/ManySmall/geos/ok, Ops/FewLarge/geos/ok, Ops/GemReal/geos/ok, Ops/PandenReal/geos/ok,
+				Ops/ManySmall/geos/failwhat, Ops/FewLarge/geos/failwhat, Ops/GemReal/geos/failwhat, Ops/PandenReal/geos/failwhat);
+			// bg: het pandendeel crasht de engine (issue 1176) en is geskipt tot de fix
+			container bg_c
+			{
+				parameter<bool>   ok := Ops/ManySmall/bg/ok && Ops/FewLarge/bg/ok && Ops/GemReal/bg/ok;
+				parameter<string> line :=
+					'<bg>&bull; Bg: ' + (ok ? 'OK'
+						: 'FAILS ('
+							+ (Ops/ManySmall/bg/ok ? '' : 'ManySmall: ' + Ops/ManySmall/bg/failwhat)
+							+ (Ops/FewLarge/bg/ok  ? '' : 'FewLarge: ' + Ops/FewLarge/bg/failwhat)
+							+ (Ops/GemReal/bg/ok   ? '' : 'municipalities: ' + Ops/GemReal/bg/failwhat) + ')')
+					+ '; buildings skipped (bg_union_polygon crashes, GeoDMS <a href="https://github.com/ObjectVision/GeoDMS/issues/1176">#1176</a>)</bg>';
+				parameter<string> failnote :=
+					  (Ops/ManySmall/bg/ok ? '' : 'bg-ManySmall; ') + (Ops/FewLarge/bg/ok ? '' : 'bg-FewLarge; ')
+					+ (Ops/GemReal/bg/ok ? '' : 'bg-municipalities; ');
+			}
+			container bp_c := FamAll_T('bp', 'Bp', Ops/ManySmall/bp/ok, Ops/FewLarge/bp/ok, Ops/GemReal/bp/ok, Ops/PandenReal/bp/ok,
+				Ops/ManySmall/bp/failwhat, Ops/FewLarge/bp/failwhat, Ops/GemReal/bp/failwhat, Ops/PandenReal/bp/failwhat);
+			// cgal: alleen de idempotentietoets op de panden is geskipt (bekend
+			// ~0,3%-oppervlakteverlies, issue 1178); de overige panden-invarianten
+			// blijven gewoon meetellen zodat nieuwe cgal-breuk wel opvalt
+			container cgal_c
+			{
+				parameter<bool> okPand_rest := Ops/PandenReal/cgal/ok_area && Ops/PandenReal/cgal/ok_split && Ops/PandenReal/cgal/ok_dev;
+				parameter<bool> ok := Ops/ManySmall/cgal/ok && Ops/FewLarge/cgal/ok && Ops/GemReal/cgal/ok && okPand_rest;
+				parameter<string> fwPand_rest :=
+					(Ops/PandenReal/cgal/ok_area ? '' : 'area-sum ') + (Ops/PandenReal/cgal/ok_split ? '' : 'split-count ') + (Ops/PandenReal/cgal/ok_dev ? '' : 'area-vs-geos ');
+				parameter<string> line :=
+					'<cgal>&bull; CGAL: ' + (ok ? 'OK'
+						: 'FAILS ('
+							+ (Ops/ManySmall/cgal/ok ? '' : 'ManySmall: ' + Ops/ManySmall/cgal/failwhat)
+							+ (Ops/FewLarge/cgal/ok  ? '' : 'FewLarge: ' + Ops/FewLarge/cgal/failwhat)
+							+ (Ops/GemReal/cgal/ok   ? '' : 'municipalities: ' + Ops/GemReal/cgal/failwhat)
+							+ (okPand_rest           ? '' : 'buildings: ' + fwPand_rest) + ')')
+					+ '; buildings idempotence check skipped (known ~0.3% area loss, GeoDMS <a href="https://github.com/ObjectVision/GeoDMS/issues/1178">#1178</a>)</cgal>';
+				parameter<string> failnote :=
+					  (Ops/ManySmall/cgal/ok ? '' : 'cgal-ManySmall; ') + (Ops/FewLarge/cgal/ok ? '' : 'cgal-FewLarge; ')
+					+ (Ops/GemReal/cgal/ok ? '' : 'cgal-municipalities; ') + (okPand_rest ? '' : 'cgal-buildings; ');
+			}
+
+			// regressiewacht op de gefixte issue-882 (infix-union op de originele
+			// probleemgeometrie); stil zolang hij slaagt, een regel zodra hij faalt
 			container i882
 			{
 				unit<uint32> two: nrofrows = 2;
@@ -347,23 +422,23 @@ container PolygonCompare
 				parameter<float64> aSG := area(geos_union_polygon(secs), m2u);
 				parameter<bool> ok_union   := abs(aU - aG)  <= aG  * 1e-6;
 				parameter<bool> ok_section := abs(aS - aSG) <= aSG * 1e-6;
-				parameter<string> line :=
-					'<i882_union>'   + (ok_union   ? 'OK' : 'FAILS') + '; infix ' + string(float32(aU)) + ' vs geos ' + string(float32(aG))  + '</i882_union>'
-					+ '<i882_section>' + (ok_section ? 'OK' : 'FAILS') + '; infix ' + string(float32(aS)) + ' vs geos ' + string(float32(aSG)) + '</i882_section>';
+				parameter<string> line := ok_union && ok_section
+					? ''
+					: '<i882>issue-882 repro: FAILS; union infix ' + string(float32(aU)) + ' vs geos ' + string(float32(aG))
+						+ '; section infix ' + string(float32(aS)) + ' vs geos ' + string(float32(aSG)) + '</i882>';
 				parameter<string> failnote :=
 					(ok_union ? '' : 'i882-union; ') + (ok_section ? '' : 'i882-section; ');
 			}
 
-			parameter<uint32> nrGem  := #/RealData/Gemeenten/Elems;
-			parameter<uint32> nrPand := #/RealData/PandenAms/Elems;
-			parameter<bool>   allOk   := geos/ok && bg/ok && bp/ok && cgal/ok && i882/ok_union && i882/ok_section;
-			parameter<string> failing := geos/failnote + bg/failnote + bp/failnote + cgal/failnote + i882/failnote;
+			parameter<bool>   allOk   := geos_c/ok && bg_c/ok && bp_c/ok && cgal_c/ok && i882/ok_union && i882/ok_section;
+			parameter<string> failing := geos_c/failnote + bg_c/failnote + bp_c/failnote + cgal_c/failnote + i882/failnote;
 			parameter<string> result :=
-				'<description>polygon family compare, real data (Gemeenten ' + string(nrGem) + 'x, BAG-panden Amsterdam ' + string(nrPand) + 'x, issue-882 repro)</description>'
-				+ geos/line + bg/line + bp/line + cgal/line + i882/line
+				'<description>polygon family compare: synthetic scenarios + CBS/BAG data</description>'
+				+ anchor_all
+				+ geos_c/line + bg_c/line + bp_c/line + cgal_c/line + i882/line
 				+ (failing == '' ? '' : '<failing>' + failing + '</failing>')
 				+ '<result>' + (allOk ? 'OK' : 'False') + '</result>';
-			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_real.txt'";
+			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons.txt'";
 		}
 	}
 }

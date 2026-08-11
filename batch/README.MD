@@ -46,5 +46,27 @@ In full.py:
 in generic/regression.py in function get_geodms_paths:
 - "GeoDmsProfilerPath"
 
+# Per-machine settings (local_settings.json)
+
+Copy `local_settings.json.template` to `local_settings.json` (gitignored) and
+adjust the SourceData/LocalData/Results paths and, for `-version local-*`
+dev-build runs, `ProfilerDir` (its parent = the GeoDMS source repo; the msbuild
+Release build lands in `<repo>/bin/Release/x64`). Known machines:
+
+- **OVSRV05**: SourceData `D:/SourceData`, LocalData `C:/LocalData`, results
+  `C:/LocalData/GeoDMS_Test_Results`.
+- **OVSRV08**: RegressionTests-SourceData `D:/SourceData/RegressionTests`
+  (no TestReferenceFiles on this machine, so reference-comparing tests cannot
+  verify here), LocalData `C:/LocalData`, dev repo `C:/Dev/GeoDMS_2026`;
+  the t020 polygon data lives at `E:/SourceData/RuimteScanner/SD/RSOpen`
+  (override with `GEODMS_Overridable_PolyDataDir` on other machines).
+
+# Claude / agent sessions
+
+Project instructions for Claude Code live in the repo root `CLAUDE.md`
+(committed, so they travel to every machine). Machine-independent working
+agreements (commit bundling, issue etiquette, report-cell content rules) are
+kept there as well — per-machine Claude memory only holds session context.
+
 
     

@@ -60,17 +60,21 @@ class Experiment:
             # -- still showing the real pass/fail status set by the caller --
             # instead of crashing on log['time'][0] (issue: empty report columns).
             return {"status": status, "command": self.command, "start_time": None,
-                    "end_time": None, "duration": 0, "highest_commit": 0,
+                    "end_time": None, "duration": 0, "highest_commit": 0, "highest_rss": 0,
                     "total_read": 0, "total_write": 0, "max_threads": 0}
         start_time = log['time'][0]
         end_time = log['time'][-1]
         duration = (end_time - start_time).total_seconds()
+        # vms = piek VIRTUEEL adresruimtegebruik: de GeoDMS-tegelallocator reserveert
+        # grote blokken (honderden GB's) die nooit fysiek belegd worden. rss = piek
+        # FYSIEK geheugen; dat is het getal dat er in het rapport toe doet.
         highest_commit = max(log['vms'])
+        highest_rss = max(log['rss'])
         total_read = log['total_read_bytes'][-1]
         total_write = log['total_write_bytes'][-1]
         max_threads = max(log['num_threads'])
-        
-        return {"status":status, "command":self.command, "start_time":start_time, "end_time":end_time, "duration":duration, "highest_commit":highest_commit, "total_read":total_read, "total_write":total_write, "max_threads":max_threads}
+
+        return {"status":status, "command":self.command, "start_time":start_time, "end_time":end_time, "duration":duration, "highest_commit":highest_commit, "highest_rss":highest_rss, "total_read":total_read, "total_write":total_write, "max_threads":max_threads}
 
 def readLog(log_filename, filter=None):
     ret = {"time":[], "text":[]}
