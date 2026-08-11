@@ -87,10 +87,16 @@ def _load_local_settings() -> dict:
     return settings
 
 def _read_local_geodms_version(repo_root:Path) -> str:
-    """Parse rtc/dll/src/RtcGeneratedVersion.h to get '<MAJOR>.<MINOR>.<PATCH>'."""
-    header = repo_root / "rtc" / "dll" / "src" / "RtcGeneratedVersion.h"
+    """Version '<MAJOR>.<MINOR>.<PATCH>' of a local source tree.
+    RtcVersionNumbers.h is the tracked source of truth (the C++ code includes it,
+    and CMake/GeoDmsVersion.cmd parse it). RtcGeneratedVersion.h is only a
+    build-artifact that can be stale (seen: it lagged at 20.8.0 while the tree
+    was at 20.13.0, which made a local run overwrite the 20_8_0_m results)."""
     major = minor = patch = "0"
-    if header.exists():
+    for name in ("RtcVersionNumbers.h", "RtcGeneratedVersion.h"):
+        header = repo_root / "rtc" / "dll" / "src" / name
+        if not header.exists():
+            continue
         with open(header, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -100,6 +106,7 @@ def _read_local_geodms_version(repo_root:Path) -> str:
                     minor = line.split()[-1]
                 elif line.startswith("#define DMS_VERSION_PATCH"):
                     patch = line.split()[-1]
+        break
     return f"{major}.{minor}.{patch}"
 
 def _resolve_local_build(version:str, settings:dict):

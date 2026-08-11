@@ -300,13 +300,30 @@
 					parameter<bool>   test_attr                        := all(test);
 				}
 			}
+			// CrsUnit: stempelt een SpatialReference transparant op een unit (fase 2 van
+			// de crs-metric-ontkoppeling; de engine gebruikt hem zelf in key-expressies).
+			// Naam bestaat sinds 20.13; containernaam wijkt af van de operatornaam omdat
+			// een kind-item anders de eigen parent zou aanspreken bij naamresolutie.
+			container CrsUnit_wrap
+			{
+				unit<fpoint> base := range(fpoint, point_yx(float32(0), float32(0)), point_yx(float32(10), float32(10)));
+				unit<fpoint> crs  := CrsUnit('EPSG:28992', base);
+				unit<uint32> D: nrofrows = 2
+				{
+					attribute<crs> pt := point_yx(float32(id(.)), float32(id(.)) + float32(1), crs);
+				}
+				parameter<bool> test :=
+					   PropValue(crs, 'SpatialReference') == 'EPSG:28992'
+					&& AsList(string(D/pt), '|') == '{0; 1}|{1; 2}';
+			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 18
+				unit<uint32> Cand : nrofrows = 19
 				{
 					attribute<string> Spec :
 					[
 						 'void/test'
+					,	'CrsUnit_wrap/test|CrsUnit'
 					,	'metric/test_param'
 					,	'nrofrows_op/test'
 					,	'nrofrows/test'

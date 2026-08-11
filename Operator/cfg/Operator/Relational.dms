@@ -67,13 +67,23 @@
 			parameter<bool> test_param := #pairs = 2;
 			parameter<bool> test_attr  := asList(string(pairs/first_rel), ',') = '0,1' && asList(string(pairs/second_rel), ',') = '0,1';
 		}
-		// draait alleen waar de operator bestaat (Spec-rij '...|ordererd_union_data')
+		// draait alleen waar de operator bestaat (Spec-rij '...|ordererd_union_data');
+		// in 20.13.0 is de naam hernoemd naar ordered_union_data (typo-fix), dus deze
+		// rij dekt <=20.12 en de volgende de gecorrigeerde naam vanaf 20.13
 		container ordererd_union_data
 		{
 			unit<uint32> A2: nrofrows = 2 { attribute<uint32> v: [10,20]; }
 			unit<uint32> B1: nrofrows = 1 { attribute<uint32> v: [30]; }
 			unit<uint32> UU: nrofrows = 3;
 			attribute<uint32> att (UU) := ordererd_union_data(UU, A2/v, B1/v);
+			parameter<bool> test_attr := asList(string(att), ';') = '10;20;30';
+		}
+		container ordered_union_data
+		{
+			unit<uint32> A2: nrofrows = 2 { attribute<uint32> v: [10,20]; }
+			unit<uint32> B1: nrofrows = 1 { attribute<uint32> v: [30]; }
+			unit<uint32> UU: nrofrows = 3;
+			attribute<uint32> att (UU) := ordered_union_data(UU, A2/v, B1/v);
 			parameter<bool> test_attr := asList(string(att), ';') = '10;20;30';
 		}
 

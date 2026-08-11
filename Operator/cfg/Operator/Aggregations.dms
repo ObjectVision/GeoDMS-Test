@@ -385,6 +385,56 @@
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/maxIndex);
 				parameter<bool>   test_attr            := all(test_uint32);
 			}
+			// min/max_ifdefined: als min/max maar met null-tolerantie: null zodra er geen
+			// enkele gedefinieerde waarde is. min/max_alldefined: null zodra er ook maar
+			// een null meedoet. Verwachtingen relatief aan min/max met sentinel, zodat ze
+			// voor elke data-instantie (incl. lege) kloppen. Namen bestaan sinds 20.13.
+			container min_ifdefined
+			{
+				parameter<uint32> nrDef      := sum(IsDefined(City/NrInhabitants) ? uint32(1) : uint32(0));
+				parameter<uint32> expected   := nrDef == uint32(0) ? 0/0 : min(MakeDefined(City/NrInhabitants, uint32(999999999)));
+				parameter<bool>   test_param := eq_or_both_null(min_ifdefined(City/NrInhabitants), expected);
+
+				attribute<uint32> nrDef_r    (Region) := sum(IsDefined(City/NrInhabitants) ? uint32(1) : uint32(0), City/RegionNr);
+				attribute<uint32> expected_r (Region) := nrDef_r == uint32(0) ? 0/0 : min(MakeDefined(City/NrInhabitants, uint32(999999999)), City/RegionNr);
+				attribute<bool>   test       (Region) := eq_or_both_null(min_ifdefined(City/NrInhabitants, City/RegionNr), expected_r);
+				parameter<bool>   test_attr := all(test);
+			}
+			container max_ifdefined
+			{
+				parameter<uint32> nrDef      := sum(IsDefined(City/NrInhabitants) ? uint32(1) : uint32(0));
+				parameter<uint32> expected   := nrDef == uint32(0) ? 0/0 : max(MakeDefined(City/NrInhabitants, uint32(0)));
+				parameter<bool>   test_param := eq_or_both_null(max_ifdefined(City/NrInhabitants), expected);
+
+				attribute<uint32> nrDef_r    (Region) := sum(IsDefined(City/NrInhabitants) ? uint32(1) : uint32(0), City/RegionNr);
+				attribute<uint32> expected_r (Region) := nrDef_r == uint32(0) ? 0/0 : max(MakeDefined(City/NrInhabitants, uint32(0)), City/RegionNr);
+				attribute<bool>   test       (Region) := eq_or_both_null(max_ifdefined(City/NrInhabitants, City/RegionNr), expected_r);
+				parameter<bool>   test_attr := all(test);
+			}
+			// alldefined is ook null voor LEGE verzamelingen (geen vacue min/max over
+			// nul waarden) - vandaar de extra pcount/count-voorwaarde naast allDef.
+			container min_alldefined
+			{
+				parameter<bool>   allDef     := all(IsDefined(City/NrInhabitants));
+				parameter<uint32> expected   := allDef && params/count > uint32(0) ? min(MakeDefined(City/NrInhabitants, uint32(999999999))) : 0/0;
+				parameter<bool>   test_param := eq_or_both_null(min_alldefined(City/NrInhabitants), expected);
+
+				attribute<bool>   allDef_r   (Region) := all(IsDefined(City/NrInhabitants), City/RegionNr);
+				attribute<uint32> expected_r (Region) := allDef_r && Region/pcountRegionNr > uint32(0) ? min(MakeDefined(City/NrInhabitants, uint32(999999999)), City/RegionNr) : 0/0;
+				attribute<bool>   test       (Region) := eq_or_both_null(min_alldefined(City/NrInhabitants, City/RegionNr), expected_r);
+				parameter<bool>   test_attr := all(test);
+			}
+			container max_alldefined
+			{
+				parameter<bool>   allDef     := all(IsDefined(City/NrInhabitants));
+				parameter<uint32> expected   := allDef && params/count > uint32(0) ? max(MakeDefined(City/NrInhabitants, uint32(0))) : 0/0;
+				parameter<bool>   test_param := eq_or_both_null(max_alldefined(City/NrInhabitants), expected);
+
+				attribute<bool>   allDef_r   (Region) := all(IsDefined(City/NrInhabitants), City/RegionNr);
+				attribute<uint32> expected_r (Region) := allDef_r && Region/pcountRegionNr > uint32(0) ? max(MakeDefined(City/NrInhabitants, uint32(0)), City/RegionNr) : 0/0;
+				attribute<bool>   test       (Region) := eq_or_both_null(max_alldefined(City/NrInhabitants, City/RegionNr), expected_r);
+				parameter<bool>   test_attr := all(test);
+			}
 			container first: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/first"
 			{
 				parameter<uint32> param_uint32 := first(City/NrInhabitants);
@@ -831,7 +881,7 @@
 			}
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 63
+				unit<uint32> Cand : nrofrows = 71
 				{
 					attribute<string> Spec :
 					[
@@ -840,6 +890,14 @@
 					,	'min_index/test_param'
 					,	'max/test_param'
 					,	'max_index/test_param'
+					,	'min_ifdefined/test_param|min_ifdefined'
+					,	'max_ifdefined/test_param|max_ifdefined'
+					,	'min_alldefined/test_param|min_alldefined'
+					,	'max_alldefined/test_param|max_alldefined'
+					,	'min_ifdefined/test_attr|min_ifdefined'
+					,	'max_ifdefined/test_attr|max_ifdefined'
+					,	'min_alldefined/test_attr|min_alldefined'
+					,	'max_alldefined/test_attr|max_alldefined'
 					,	'first/test_param'
 					,	'last/test_param'
 					,	'mean/test_param'
