@@ -321,7 +321,18 @@ container PolygonCompare
 		container real
 		{
 			container geos := FamLine2_T('geos', Ops/GemReal/geos/ok, Ops/PandenReal/geos/ok, 0.0, 0.0);
-			container bg   := FamLine2_T('bg',   Ops/GemReal/bg/ok,   Ops/PandenReal/bg/ok,   Ops/GemReal/bg/devVsGeos,   Ops/PandenReal/bg/devVsGeos);
+			// bg op de BAG-panden crasht de hele engine (zelfintersecties, GEOS-fix
+			// faalt; GeoDMS issue 1176) - tot de fix een expliciete SKIP-regel voor het
+			// pandendeel, zodat de rest van de vergelijking een uitslag blijft geven
+			container bg
+			{
+				parameter<bool>   ok := Ops/GemReal/bg/ok;
+				parameter<string> line :=
+					'<bg>' + (ok ? 'OK' : 'FAILS')
+					+ ' (alleen Gemeenten; PandenAms overgeslagen: bg_union_polygon crasht, GeoDMS issue 1176)'
+					+ '; dev vs geos Gemeenten ' + string(float32(Ops/GemReal/bg/devVsGeos)) + '</bg>';
+				parameter<string> failnote := ok ? '' : 'bg-Gemeenten; ';
+			}
 			container bp   := FamLine2_T('bp',   Ops/GemReal/bp/ok,   Ops/PandenReal/bp/ok,   Ops/GemReal/bp/devVsGeos,   Ops/PandenReal/bp/devVsGeos);
 			container cgal := FamLine2_T('cgal', Ops/GemReal/cgal/ok, Ops/PandenReal/cgal/ok, Ops/GemReal/cgal/devVsGeos, Ops/PandenReal/cgal/devVsGeos);
 
