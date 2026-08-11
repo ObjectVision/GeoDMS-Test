@@ -173,12 +173,15 @@ container PolygonCompare
 		container FewLarge  := Scenario_T(../FewLarge/Polys, ../FewLarge/Parts, ../FewLarge/geometry, ../FewLarge/geometry_i, ../FewLarge/Polys/part_rel, ../FewLarge/sumA, Parameters/relTol);
 	}
 
+	// Een gezamenlijke uitslag voor de vier families: per familie een eigen tagregel
+	// (status, uniearealen en afwijking t.o.v. geos), een <failing>-regel met de
+	// falende familie-scenario-combinaties, en een EN-oordeel over alles.
 	container results
 	{
 		parameter<string> results_folder_filename := '%LocalDataDir%/Regression/log/results_folder.txt';
 		parameter<string> results_folder : Storagename = "= results_folder_filename", StorageType = "str";
 
-		Template FamResult_T
+		Template FamLine_T
 		{
 			parameter<string> famName;
 			parameter<bool>   okMS;
@@ -188,28 +191,31 @@ container PolygonCompare
 			parameter<float64> devMS;
 			parameter<float64> devFL;
 			//
-			parameter<string> result :=
-				'<description>polygon compare ' + famName + '</description>'
-				+ '<union_area>ManySmall: ' + string(uaMS) + '; FewLarge: ' + string(uaFL) + '</union_area>'
-				+ '<dev_vs_geos>ManySmall: ' + string(float32(devMS)) + '; FewLarge: ' + string(float32(devFL)) + '</dev_vs_geos>'
-				+ '<result>' + (okMS && okFL ? 'OK' : 'False') + '</result>';
+			parameter<bool>   ok := okMS && okFL;
+			parameter<string> line :=
+				'<' + famName + '>' + (ok ? 'OK' : 'FAILS')
+				+ '; union area ManySmall ' + string(float32(uaMS)) + ', FewLarge ' + string(float32(uaFL))
+				+ (famName == 'geos' ? '' : '; dev vs geos ' + string(float32(devMS)) + ' / ' + string(float32(devFL)))
+				+ '</' + famName + '>';
+			parameter<string> failnote :=
+				(okMS ? '' : famName + '-ManySmall; ') + (okFL ? '' : famName + '-FewLarge; ');
 		}
 
-		container geos := FamResult_T('geos', Ops/ManySmall/geos/ok, Ops/FewLarge/geos/ok, Ops/ManySmall/geos/uA, Ops/FewLarge/geos/uA, 0.0, 0.0)
+		container geos := FamLine_T('geos', Ops/ManySmall/geos/ok, Ops/FewLarge/geos/ok, Ops/ManySmall/geos/uA, Ops/FewLarge/geos/uA, 0.0, 0.0);
+		container bg   := FamLine_T('bg',   Ops/ManySmall/bg/ok,   Ops/FewLarge/bg/ok,   Ops/ManySmall/bg/uA,   Ops/FewLarge/bg/uA,   Ops/ManySmall/bg/devVsGeos,   Ops/FewLarge/bg/devVsGeos);
+		container bp   := FamLine_T('bp',   Ops/ManySmall/bp/ok,   Ops/FewLarge/bp/ok,   Ops/ManySmall/bp/uA,   Ops/FewLarge/bp/uA,   Ops/ManySmall/bp/devVsGeos,   Ops/FewLarge/bp/devVsGeos);
+		container cgal := FamLine_T('cgal', Ops/ManySmall/cgal/ok, Ops/FewLarge/cgal/ok, Ops/ManySmall/cgal/uA, Ops/FewLarge/cgal/uA, Ops/ManySmall/cgal/devVsGeos, Ops/FewLarge/cgal/devVsGeos);
+
+		container all
 		{
-			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_geos.txt'";
-		}
-		container bg := FamResult_T('bg', Ops/ManySmall/bg/ok, Ops/FewLarge/bg/ok, Ops/ManySmall/bg/uA, Ops/FewLarge/bg/uA, Ops/ManySmall/bg/devVsGeos, Ops/FewLarge/bg/devVsGeos)
-		{
-			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_bg.txt'";
-		}
-		container bp := FamResult_T('bp', Ops/ManySmall/bp/ok, Ops/FewLarge/bp/ok, Ops/ManySmall/bp/uA, Ops/FewLarge/bp/uA, Ops/ManySmall/bp/devVsGeos, Ops/FewLarge/bp/devVsGeos)
-		{
-			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_bp.txt'";
-		}
-		container cgal := FamResult_T('cgal', Ops/ManySmall/cgal/ok, Ops/FewLarge/cgal/ok, Ops/ManySmall/cgal/uA, Ops/FewLarge/cgal/uA, Ops/ManySmall/cgal/devVsGeos, Ops/FewLarge/cgal/devVsGeos)
-		{
-			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons_cgal.txt'";
+			parameter<bool>   allOk   := geos/ok && bg/ok && bp/ok && cgal/ok;
+			parameter<string> failing := geos/failnote + bg/failnote + bp/failnote + cgal/failnote;
+			parameter<string> result :=
+				'<description>polygon family compare (geos/bg/bp/cgal, synthetic ManySmall + FewLarge)</description>'
+				+ geos/line + bg/line + bp/line + cgal/line
+				+ (failing == '' ? '' : '<failing>' + failing + '</failing>')
+				+ '<result>' + (allOk ? 'OK' : 'False') + '</result>';
+			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons.txt'";
 		}
 	}
 }
