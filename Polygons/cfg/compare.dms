@@ -407,20 +407,6 @@ container PolygonCompare
 			// in de union; op 20.13.0 en ouder blijft deze regel dus terecht rood.
 			container cgal_c := FamAll_T('cgal', 'CGAL', Ops/ManySmall/cgal/ok, Ops/FewLarge/cgal/ok, Ops/GemReal/cgal/ok, Ops/PandenReal/cgal/ok,
 				Ops/ManySmall/cgal/failwhat, Ops/FewLarge/cgal/failwhat, Ops/GemReal/cgal/failwhat, Ops/PandenReal/cgal/failwhat);
-				parameter<string> fwPand_rest :=
-					(Ops/PandenReal/cgal/ok_area ? '' : 'area-sum ') + (Ops/PandenReal/cgal/ok_split ? '' : 'split-count ') + (Ops/PandenReal/cgal/ok_dev ? '' : 'area-vs-geos ');
-				parameter<string> line :=
-					'<cgal>&bull; CGAL: ' + (ok ? 'OK'
-						: 'FAILS ('
-							+ (Ops/ManySmall/cgal/ok ? '' : 'ManySmall: ' + Ops/ManySmall/cgal/failwhat)
-							+ (Ops/FewLarge/cgal/ok  ? '' : 'FewLarge: ' + Ops/FewLarge/cgal/failwhat)
-							+ (Ops/GemReal/cgal/ok   ? '' : 'municipalities: ' + Ops/GemReal/cgal/failwhat)
-							+ (okPand_rest           ? '' : 'buildings: ' + fwPand_rest) + ')')
-					+ '; buildings idempotence check skipped (known ~0.3% area loss, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1178>#1178</a>)</cgal>';
-				parameter<string> failnote :=
-					  (Ops/ManySmall/cgal/ok ? '' : 'cgal-ManySmall; ') + (Ops/FewLarge/cgal/ok ? '' : 'cgal-FewLarge; ')
-					+ (Ops/GemReal/cgal/ok ? '' : 'cgal-municipalities; ') + (okPand_rest ? '' : 'cgal-buildings; ');
-			}
 
 			// regressiewacht op de gefixte issue-882 (infix-union op de originele
 			// probleemgeometrie); stil zolang hij slaagt, een regel zodra hij faalt
