@@ -14,8 +14,12 @@
 		}
 		container GeoDmsVersionNumbers
 		{
+			// versie-onafhankelijk: het testje toetst dat de drie versie-operatoren
+			// werken, niet welke versie draait. Een ondergrens als '>= 17' zou het
+			// testje op oudere builds simpelweg onwaar maken (en daar dus dekking
+			// kosten), terwijl de operatoren zelf prima werken.
 			parameter<bool> test_param :=
-				   GeoDmsMajorVersionNumber() >= 17
+				   GeoDmsMajorVersionNumber() > 0
 				&& GeoDmsMinorVersionNumber() >= 0
 				&& GeoDmsPatchNumber() >= 0;
 		}

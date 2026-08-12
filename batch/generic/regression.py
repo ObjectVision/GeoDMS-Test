@@ -687,6 +687,9 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     test = doc.get("test", "")
     refs = REFERENCE_VALUES.get(test, {})
     metrics = doc.get("metrics", [])
+    # "all" (default) = elke metric krijgt een regel; "on_deviation" = alleen tonen als de
+    # waarde afwijkt, voor tests die de getallen zelf al in een note presenteren
+    metrics_display = doc.get("metrics_display", "all")
 
     lines = {}
     any_fail = any_pending = False
@@ -750,9 +753,27 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
                 ok = abs(dev) <= tol
                 any_fail = any_fail or not ok
                 if value == ref:
-                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s}", ok]
+                    # "on_deviation": de test zet deze waarden zelf al in een note (t020's
+                    # ankerregel), dus een eigen regel per metric zou dubbelop zijn. Alleen
+                    # verbergen zolang de waarde exact klopt -- afwijkingen tonen altijd.
+                    if metrics_display != "on_deviation":
+                        lines[name] = [f"{name}: {_fmt_num(value)}{unit_s}", ok]
                 else:
                     lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
+
+    # Optionele presentatieregels naast de metrics: tekst die de test zelf al goed
+    # kan formuleren en die niet als getal te vangen is (t020: de per-familie-regels
+    # met hun issue-links en expliciete skips). Zonder dit zou migreren naar .json
+    # de celvorm weggooien, want een gevonden .json vervangt de legacy .txt volledig.
+    # Elk item is {"key": ..., "text": ...} of een kale string; "ok": false licht op.
+    for _i, _n in enumerate(doc.get("notes", [])):
+        if isinstance(_n, dict):
+            _key, _text, _ok = _n.get("key", f"note{_i}"), _n.get("text", ""), bool(_n.get("ok", True))
+        else:
+            _key, _text, _ok = f"note{_i}", str(_n), True
+        if _text:
+            lines[_key] = [_text, _ok]
+            any_fail = any_fail or not _ok
 
     verdict = "False" if any_fail else ("reference pending" if any_pending else "OK")
     parsed = {"result": [verdict, True]}
