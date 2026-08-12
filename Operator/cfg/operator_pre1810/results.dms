@@ -228,7 +228,13 @@
 			,	'Network/trace_back/test_param|trace_back;impedance_table'
 			,	'Network/trace_back/test_attr|trace_back;impedance_table'
 			,	'Network/impedance_matrix/test_param|impedance_matrix'
-			,	'Grid/perimeter/test_attr|perimeter'
+			// perimeter las niet-geinitialiseerd geheugen en gaf op dezelfde build per
+			// run een andere uitkomst (GeoDMS #1169, gesloten 2026-08-07). Gemeten met
+			// een standalone 4x4-grid: 20.10.0.m 6 van 10 runs fout, 19.0.0 3 van 5,
+			// 20.12.0.m en .c 0 van 10 -- de fix zit dus tussen 20.10 en 20.12. Onder
+			// 20.12 is deze toets een muntworp, niet een versie-uitspraak, dus daar
+			// overgeslagen in plaats van willekeurig rood.
+			,	'Grid/perimeter/test_attr|perimeter;>=20.12'
 			,	'Grid/perimeter_weighted/test_attr|perimeter_weighted'
 			,	'Grid/griddist_maximp/test_param|griddist_maximp'
 			,	'Grid/griddist_maximp/test_attr|griddist_maximp'
