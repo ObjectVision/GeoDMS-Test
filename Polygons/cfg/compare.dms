@@ -100,6 +100,11 @@ container PolygonCompare
 			// GEODMS_Overridable_RSo_DataDir voor andere projecten, en dat pad
 			// wijkt per machine af van deze bron
 			parameter<string> PolyDataDir := 'E:/SourceData/RuimteScanner/SD/RSOpen';
+			// BAG-snapshotmap binnen PolyDataDir/Vastgoed; de datum verschilt per
+			// machine (OVSRV08 _20240708, OVSRV05 _20250710), dus full.py zet
+			// GEODMS_Overridable_PandSnapshot op de nieuwste map met een pand.fss.
+			// Zonder deze parameter zou een puur machineverschil de test rood maken.
+			parameter<string> PandSnapshot := 'VolledigeTabel_20240708';
 		}
 	}
 	container RealData
@@ -150,7 +155,7 @@ container PolygonCompare
 			// rekent minuten op grotere selecties; op de volle gemeente stierven
 			// de union-bewerkingen zelfs). Opschalen is een aparte vervolgstap.
 			unit<uint32> pand_all
-			:	StorageName     = "%PolyDataDir%/Vastgoed/VolledigeTabel_20240708/pand.fss"
+			:	StorageName     = "%PolyDataDir%/Vastgoed/%PandSnapshot%/pand.fss"
 			,	StorageReadOnly = "True"
 			{
 				attribute<rd_mm> geometry_mm (poly);
@@ -172,6 +177,7 @@ container PolygonCompare
 		}
 	}
 	#include <../../main/issue_882.dms>
+	#include <../../../Regression/cfg/generic/TestResult.dms>
 
 	container Ops
 	{
@@ -380,7 +386,7 @@ container PolygonCompare
 							+ (Ops/ManySmall/bg/ok ? '' : 'ManySmall: ' + Ops/ManySmall/bg/failwhat)
 							+ (Ops/FewLarge/bg/ok  ? '' : 'FewLarge: ' + Ops/FewLarge/bg/failwhat)
 							+ (Ops/GemReal/bg/ok   ? '' : 'municipalities: ' + Ops/GemReal/bg/failwhat) + ')')
-					+ '; buildings skipped (bg_union_polygon crashes, GeoDMS <a href="https://github.com/ObjectVision/GeoDMS/issues/1176">#1176</a>)</bg>';
+					+ '; buildings skipped (bg_union_polygon crashes, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1176>#1176</a>)</bg>';
 				parameter<string> failnote :=
 					  (Ops/ManySmall/bg/ok ? '' : 'bg-ManySmall; ') + (Ops/FewLarge/bg/ok ? '' : 'bg-FewLarge; ')
 					+ (Ops/GemReal/bg/ok ? '' : 'bg-municipalities; ');
@@ -403,7 +409,7 @@ container PolygonCompare
 							+ (Ops/FewLarge/cgal/ok  ? '' : 'FewLarge: ' + Ops/FewLarge/cgal/failwhat)
 							+ (Ops/GemReal/cgal/ok   ? '' : 'municipalities: ' + Ops/GemReal/cgal/failwhat)
 							+ (okPand_rest           ? '' : 'buildings: ' + fwPand_rest) + ')')
-					+ '; buildings idempotence check skipped (known ~0.3% area loss, GeoDMS <a href="https://github.com/ObjectVision/GeoDMS/issues/1178">#1178</a>)</cgal>';
+					+ '; buildings idempotence check skipped (known ~0.3% area loss, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1178>#1178</a>)</cgal>';
 				parameter<string> failnote :=
 					  (Ops/ManySmall/cgal/ok ? '' : 'cgal-ManySmall; ') + (Ops/FewLarge/cgal/ok ? '' : 'cgal-FewLarge; ')
 					+ (Ops/GemReal/cgal/ok ? '' : 'cgal-municipalities; ') + (okPand_rest ? '' : 'cgal-buildings; ');
@@ -439,6 +445,49 @@ container PolygonCompare
 				+ (failing == '' ? '' : '<failing>' + failing + '</failing>')
 				+ '<result>' + (allOk ? 'OK' : 'False') + '</result>';
 			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons.txt'";
+
+			// --- structured MEASUREMENT (batch/TEST_OUTPUT_STANDARD.md) ---
+			// De geos-unie-arealen zijn de te bewaken waarden: geos is de referentie
+			// waar de andere families tegen worden afgezet, dus als die verschuiven is
+			// de hele vergelijking verschoven. Het rapport oordeelt (references.json).
+			// De per-familie-regels reizen als notes mee zodat de cel dezelfde vorm
+			// houdt: een gevonden .json vervangt de legacy .txt volledig.
+			// Alleen container combined emit JSON -- onder 20.3 draait results/all, een
+			// andere (synthetisch-only) meting die niet met deze waarden vergelijkbaar is.
+			container m_ms  := TestResult/metric_value('geos ManySmall',      'm2', string(Ops/ManySmall/geos/uA));
+			container m_fl  := TestResult/metric_value('geos FewLarge',       'm2', string(Ops/FewLarge/geos/uA));
+			container m_gem := TestResult/metric_value('geos municipalities', 'm2', string(Ops/GemReal/geos/utA));
+			container m_pnd := TestResult/metric_value('geos buildings',      'm2', string(Ops/PandenReal/geos/utA));
+
+			Template Note_T
+			{
+				parameter<string> key;
+				parameter<string> line;
+				parameter<bool>   ok;
+				// de familieregel zit in <key>...</key>; die wrapper hoort niet in de
+				// note-tekst, het rapport zet de regel zelf neer
+				parameter<string> text   := replace(replace(line, '<' + key + '>', ''), '</' + key + '>', '');
+				parameter<string> result := '{"key":"' + key + '","text":"' + text + '","ok":' + (ok ? 'true' : 'false') + '}';
+			}
+			container n_geos := Note_T('geos', geos_c/line, geos_c/ok);
+			container n_bg   := Note_T('bg',   bg_c/line,   bg_c/ok);
+			container n_bp   := Note_T('bp',   bp_c/line,   bp_c/ok);
+			container n_cgal := Note_T('cgal', cgal_c/line, cgal_c/ok);
+
+			parameter<string> anchor_text := replace(replace(anchor_all, '<anchor>', ''), '</anchor>', '');
+
+			parameter<string> result_json :=
+				'{"schema":2,"test":"t020","kind":"reference_comparison"'
+				+ ',"title":"Polygon family compare (geos/bg/bp/cgal)"'
+				+ ',"compared":"union invariants on synthetic scenarios and on CBS/BAG data"'
+				+ ',"reference":{"source":"inline","compare":"scalar"}'
+				+ ',"metrics":[' + m_ms/result + ',' + m_fl/result + ',' + m_gem/result + ',' + m_pnd/result + ']'
+				+ ',"notes":[{"key":"anchor","text":"' + anchor_text + '","ok":true}'
+				+ ',' + n_geos/result + ',' + n_bg/result + ',' + n_bp/result + ',' + n_cgal/result
+				+ (i882/line == '' ? '' : ',{"key":"i882","text":"issue-882 repro: FAILS","ok":false}')
+				+ ']}'
+			,	StorageType = "str"
+			,	Storagename = "= results_folder + '/t020_polygons.result.json'";
 		}
 	}
 }

@@ -178,6 +178,19 @@ def get_local_machine_parameters() -> dict:
     local_machine_parameters["LocalBuildDir"] = s["LocalBuildDir"]
     return local_machine_parameters
 
+def _newest_pand_snapshot(poly_data_dir:str) -> str:
+    """Naam van de BAG-snapshotmap (VolledigeTabel_<jjjjmmdd>) met een pand.fss erin.
+
+    De snapshotdatum verschilt per machine (OVSRV08 _20240708, OVSRV05 _20250710);
+    t020 controleert zichzelf (geen referentiebestanden), dus elke snapshot voldoet
+    - nieuwste wint. Welke snapshot gedraaid heeft blijft zichtbaar via het
+    pandenaantal in de indicator. pand.fss is een fss-opslagmap, geen los bestand.
+    """
+    cands = sorted(
+        (d.name for d in Path(poly_data_dir).glob("Vastgoed/VolledigeTabel_*") if (d / "pand.fss").exists()),
+        reverse=True)
+    return cands[0] if cands else "VolledigeTabel_20240708"
+
 def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths = {}
     regression_test_paths["BatchDir"] = str(os.getcwd()).replace("\\", "/")
@@ -208,6 +221,16 @@ def get_regression_test_paths(local_machine_parameters:dict) -> dict:
     regression_test_paths["Networkmodel_eu_regressietest"] = f"{regression_test_paths["projectsDir"]}/NetworkModel_EU_regressietest/cfg"
     regression_test_paths["GEODMS_Overridable_HestiaDataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/SD51"
     regression_test_paths["GEODMS_Overridable_RSo_DataDir"] = f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen"
+    # t020 leest zijn CBS/BAG-bron onder een eigen naam (PolyDataDir), zodat die per
+    # machine kan afwijken van RSo_DataDir; PandSnapshot is de BAG-snapshotmap
+    # daarbinnen. Beide zijn te overrulen met een gelijknamige env-var. Ontbrekende
+    # data hoort rood te worden, maar een andere snapshotdatum is geen datafout.
+    regression_test_paths["GEODMS_Overridable_PolyDataDir"] = os.environ.get(
+        "GEODMS_Overridable_PolyDataDir",
+        f"{local_machine_parameters["RegressionTestsAltSourceDataDir"]}/RSOpen")
+    regression_test_paths["GEODMS_Overridable_PandSnapshot"] = os.environ.get(
+        "GEODMS_Overridable_PandSnapshot",
+        _newest_pand_snapshot(regression_test_paths["GEODMS_Overridable_PolyDataDir"]))
     # Env-namen moeten exact matchen met de parameternamen in ConfigSettings/Overridable
     # van de RSopen-config (RS_Lb_DataDir, PrivDataDir) — anders valt GeoDMS terug op
     # registry-overrides (HKCU\Software\ObjectVision\<machine>\GeoDMS) of de config-default.
@@ -263,16 +286,28 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # uitslag. GEEN databeschikbaarheidscheck: ontbreekt de databron (pad
     # instelbaar via GEODMS_Overridable_PolyDataDir), dan hoort de test rood te
     # worden - een stille terugval naar synthetisch-only zou een
-    # omgevingsprobleem maskeren. Alleen op GeoDMS < 20 draait het synthetische
+    # omgevingsprobleem maskeren. Onder GeoDMS 20.3 draait alleen het synthetische
     # deel: daar past area() de gridset-projectie nog niet toe, waardoor de
     # bp-arealen op de echte data een factor 1e4/1e6 verkeerd uitkomen
     # (semantiekverschil, geen engine- of omgevingsfout).
+    #
+    # 2026-08-12: de grens stond op >= 20 maar is gemeten op 20.1.0 vs 20.3.0. Op
+    # 20.1.0 is bp/geos exact 9999.99993 bij de gemeenten (rd_cm) en 999999.949 bij
+    # de panden (rd_mm) -- de gridset-schaal in het kwadraat, dus de oude
+    # area()-semantiek. Op 20.3.0 is die ratio 0.99999999. 20.1.0 hoort dus onder de
+    # grens; de exacte invoerversie ligt in (20.1.0, 20.3.0].
+    _POLY_REAL_MIN_VERSION = (20, 3)
     regression_test_paths["PolygonComparePath"] = f"{regression_test_paths["TstDir"]}/Polygons/cfg/compare.dms"
     try:
-        _poly_real_version_ok = int(re.match(r"(\d+)", geodms_paths.get("GeoDmsDisplayVersion", version) or version).group(1)) >= 20
+        _m = re.match(r"(\d+)\.(\d+)", geodms_paths.get("GeoDmsDisplayVersion", version) or version)
+        _poly_real_version_ok = (int(_m.group(1)), int(_m.group(2))) >= _POLY_REAL_MIN_VERSION
     except (AttributeError, ValueError):
         _poly_real_version_ok = True  # local-builds zijn per definitie nieuw genoeg
-    _poly_item = "results/combined/stored_result" if _poly_real_version_ok else "results/all/stored_result"
+    # >= 20.3 schrijft ook de structured .result.json (TEST_OUTPUT_STANDARD.md); het
+    # rapport geeft die voorrang boven de legacy .txt. Onder de grens draait
+    # results/all, een andere meting, die alleen de legacy .txt schrijft.
+    _poly_item = "results/combined/stored_result results/combined/result_json" if _poly_real_version_ok \
+                 else "results/all/stored_result"
     regression.add_exp(exps, name=f"{result_folder_name}__t020_polygons", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t020_polygons.txt /{MT1} /{MT2} /{MT3} {regression_test_paths["PolygonComparePath"]} {_poly_item}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t020_polygons.txt", indicator_results_file=f"{result_paths["results_folder"]}/t020_polygons.txt")
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/Storage"

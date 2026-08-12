@@ -754,6 +754,20 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
                 else:
                     lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
 
+    # Optionele presentatieregels naast de metrics: tekst die de test zelf al goed
+    # kan formuleren en die niet als getal te vangen is (t020: de per-familie-regels
+    # met hun issue-links en expliciete skips). Zonder dit zou migreren naar .json
+    # de celvorm weggooien, want een gevonden .json vervangt de legacy .txt volledig.
+    # Elk item is {"key": ..., "text": ...} of een kale string; "ok": false licht op.
+    for _i, _n in enumerate(doc.get("notes", [])):
+        if isinstance(_n, dict):
+            _key, _text, _ok = _n.get("key", f"note{_i}"), _n.get("text", ""), bool(_n.get("ok", True))
+        else:
+            _key, _text, _ok = f"note{_i}", str(_n), True
+        if _text:
+            lines[_key] = [_text, _ok]
+            any_fail = any_fail or not _ok
+
     verdict = "False" if any_fail else ("reference pending" if any_pending else "OK")
     parsed = {"result": [verdict, True]}
     parsed.update(lines)
