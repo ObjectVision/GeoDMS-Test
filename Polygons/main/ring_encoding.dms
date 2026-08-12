@@ -1,0 +1,153 @@
+////////////////////////////////////////////////////////////////////////////////
+// Synthetische bewakers op het DMS multi-polygoon-ringformaat.
+//
+// Een dpolygon-sequence codeert een multi-polygoon als EEN puntenreeks: buitenring
+// met de klok mee, binnenringen tegen de klok in, en deelpolygonen aan elkaar
+// geregen met terugkeerpunten (bridges). Elke geometriefamilie leest dat formaat
+// met een eigen parser, en juist daar zaten de fouten uit issue 1176/1178 - niet
+// in de union zelf. Deze reeksen zijn met de hand geschreven zodat de parser
+// exact getest wordt; ze zijn klein, deterministisch en hebben GEEN SourceData
+// nodig, dus ze draaien ook op machines zonder de BAG/CBS-bronnen.
+//
+// Alleen de float64-families (geos/bg/cgal) staan hier: het gaat om het lezen van
+// de puntenreeks, en bp heeft een eigen integer-pijplijn die al door de
+// ManySmall/FewLarge/gemeenten/panden-scenario's gedekt wordt.
+////////////////////////////////////////////////////////////////////////////////
+
+container ring_encoding
+{
+	unit<dpoint> crd := range(dpoint, point_yx(-100.0, -100.0), point_yx(100.0, 100.0));
+
+	// -------------------------------------------------------------------------
+	// island_in_hole (GeoDMS issue 1178)
+	//
+	// Een vierkant van 10x10 met een gat van 6x6, en IN dat gat een los eiland van
+	// 2x2 - de vorm van een bouwblok met een schuurtje op de binnenplaats. Opgeschreven
+	// zoals de engine zelf een multi-polygoon wegschrijft:
+	//   buitenring(gesloten) gat(gesloten) buitenring[0] eiland(gesloten) buitenring[0]
+	// Oppervlak = 100 - 36 + 4 = 68.
+	//
+	// De cgal-lezer trok elk gat van de HELE verzameling af in plaats van van de
+	// polygoon waar het gat bij hoort, waardoor het eiland verdween (64 i.p.v. 68).
+	// Op de echte panden kostte dat 0,29% oppervlak in de idempotentietoets.
+	// -------------------------------------------------------------------------
+	container island_in_hole
+	{
+		unit<uint32> pnt := range(uint32, 0, 17)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy( 0.0,  0.0), point_xy( 0.0, 10.0), point_xy(10.0, 10.0), point_xy(10.0,  0.0), point_xy( 0.0,  0.0)
+			,	point_xy( 2.0,  2.0), point_xy( 8.0,  2.0), point_xy( 8.0,  8.0), point_xy( 2.0,  8.0), point_xy( 2.0,  2.0)
+			,	point_xy( 0.0,  0.0)
+			,	point_xy( 4.0,  4.0), point_xy( 4.0,  6.0), point_xy( 6.0,  6.0), point_xy( 6.0,  4.0), point_xy( 4.0,  4.0)
+			,	point_xy( 0.0,  0.0)
+			);
+		}
+		parameter<crd> geo (polygon) := points2polygon(pnt/xy);
+
+		unit<uint32> one : nrofrows = 1;
+		attribute<crd> geoms (one, polygon) := union_data(one, geo);
+
+		// het invoeroppervlak zelf (schoenveterformule over de reeks) is de referentie:
+		// de invoer is een geldige multi-polygoon, dus elke union ervan moet hem opleveren
+		parameter<float64> aIn   := area(geo, m2u);
+		parameter<float64> aGeos := area(geos_union_polygon(geoms), m2u);
+		parameter<float64> aBg   := area(bg_union_polygon(geoms), m2u);
+		parameter<float64> aCgal := area(cgal_union_polygon(geoms), m2u);
+
+		parameter<bool> ok_geos := abs(aGeos - aIn) <= aIn * 1e-6;
+		parameter<bool> ok_bg   := abs(aBg   - aIn) <= aIn * 1e-6;
+		parameter<bool> ok_cgal := abs(aCgal - aIn) <= aIn * 1e-6;
+		parameter<bool> ok := ok_geos && ok_bg && ok_cgal;
+		parameter<string> failwhat :=
+			(ok_geos ? '' : 'geos ' + string(float32(aGeos)) + ' ') + (ok_bg ? '' : 'bg ' + string(float32(aBg)) + ' ')
+			+ (ok_cgal ? '' : 'cgal ' + string(float32(aCgal)) + ' ');
+	}
+
+	// -------------------------------------------------------------------------
+	// overlapping_outers (GeoDMS issue 1176)
+	//
+	// Twee ELKAAR OVERLAPPENDE buitenringen in dezelfde reeks: ongeldige invoer, die
+	// elke familie eerst moet repareren voordat er geunieerd kan worden. Er is geen
+	// principieel juist antwoord voor ongeldige invoer, dus dit is bewust een
+	// consistentietoets: de reparatiepaden van geos en bg (beide via GEOS MakeValid)
+	// horen hetzelfde te zeggen. bg gaf hier vroeger ongeldige geometrie door aan
+	// boost::geometry, wat undefined behaviour is en de engine kon killen.
+	// -------------------------------------------------------------------------
+	container overlapping_outers
+	{
+		unit<uint32> pntA := range(uint32, 0, 11)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy( 0.0,  0.0), point_xy( 0.0, 10.0), point_xy(10.0, 10.0), point_xy(10.0,  0.0), point_xy( 0.0,  0.0)
+			,	point_xy( 5.0,  5.0), point_xy( 5.0, 15.0), point_xy(15.0, 15.0), point_xy(15.0,  5.0), point_xy( 5.0,  5.0)
+			,	point_xy( 0.0,  0.0)
+			);
+		}
+		unit<uint32> pntB := range(uint32, 0, 5)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy(20.0, 20.0), point_xy(20.0, 30.0), point_xy(30.0, 30.0), point_xy(30.0, 20.0), point_xy(20.0, 20.0)
+			);
+		}
+		parameter<crd> geoA (polygon) := points2polygon(pntA/xy);
+		parameter<crd> geoB (polygon) := points2polygon(pntB/xy);
+
+		unit<uint32> two : nrofrows = 2;
+		attribute<crd> geoms (two, polygon) := union_data(two, geoA, geoB);
+
+		parameter<float64> aGeos := area(geos_union_polygon(geoms), m2u);
+		parameter<float64> aBg   := area(bg_union_polygon(geoms), m2u);
+
+		parameter<bool> ok := abs(aBg - aGeos) <= aGeos * 1e-6;
+		parameter<string> failwhat := ok ? '' : 'bg ' + string(float32(aBg)) + ' vs geos ' + string(float32(aGeos)) + ' ';
+	}
+
+	// -------------------------------------------------------------------------
+	// infix (GeoDMS issue 882 / 1176)
+	//
+	// De infixoperatoren +, * en - op dpolygon zijn geregistreerd op dezelfde
+	// operator als geos_union / geos_intersect / geos_difference; ze horen dus per
+	// constructie hetzelfde te geven. Twee overlappende vierkanten van 10x10:
+	// 175 / 25 / 75 m2.
+	// -------------------------------------------------------------------------
+	container infix
+	{
+		parameter<crd> geoA (polygon) := ../overlapping_outers/geoB;
+		unit<uint32> pntC := range(uint32, 0, 5)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy(25.0, 25.0), point_xy(25.0, 35.0), point_xy(35.0, 35.0), point_xy(35.0, 25.0), point_xy(25.0, 25.0)
+			);
+		}
+		parameter<crd> geoC (polygon) := points2polygon(pntC/xy);
+
+		parameter<float64> aAddInfix := area(geoA + geoC, m2u);
+		parameter<float64> aAddNamed := area(geos_union(geoA, geoC), m2u);
+		parameter<float64> aMulInfix := area(geoA * geoC, m2u);
+		parameter<float64> aMulNamed := area(geos_intersect(geoA, geoC), m2u);
+		parameter<float64> aSubInfix := area(geoA - geoC, m2u);
+		parameter<float64> aSubNamed := area(geos_difference(geoA, geoC), m2u);
+
+		parameter<bool> ok_add := abs(aAddInfix - aAddNamed) <= aAddNamed * 1e-6;
+		parameter<bool> ok_mul := abs(aMulInfix - aMulNamed) <= aMulNamed * 1e-6;
+		parameter<bool> ok_sub := abs(aSubInfix - aSubNamed) <= aSubNamed * 1e-6;
+		parameter<bool> ok := ok_add && ok_mul && ok_sub;
+		parameter<string> failwhat :=
+			(ok_add ? '' : 'add ' + string(float32(aAddInfix)) + '!=' + string(float32(aAddNamed)) + ' ')
+			+ (ok_mul ? '' : 'mul ' + string(float32(aMulInfix)) + '!=' + string(float32(aMulNamed)) + ' ')
+			+ (ok_sub ? '' : 'sub ' + string(float32(aSubInfix)) + '!=' + string(float32(aSubNamed)) + ' ');
+	}
+
+	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok;
+	parameter<string> line := ok
+		? ''
+		: '<ringenc>ring encoding: FAILS ('
+			+ (island_in_hole/ok     ? '' : 'island-in-hole: ' + island_in_hole/failwhat)
+			+ (overlapping_outers/ok ? '' : 'overlapping-outers: ' + overlapping_outers/failwhat)
+			+ (infix/ok              ? '' : 'infix: ' + infix/failwhat) + ')</ringenc>';
+	parameter<string> failnote :=
+		  (island_in_hole/ok     ? '' : 'ringenc-island-in-hole; ')
+		+ (overlapping_outers/ok ? '' : 'ringenc-overlapping-outers; ')
+		+ (infix/ok              ? '' : 'ringenc-infix; ');
+}

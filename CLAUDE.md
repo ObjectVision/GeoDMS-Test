@@ -111,8 +111,21 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   de echte data een bp-artefact van ×1e4/1e6 geeft.
 - Cel: ankerregel met de exacte geos-arealen (versievergelijking), daarna één
   bulletregel per familie; bekende issues zijn expliciete skips met issuelink
-  (bg-buildings: crasht, #1176; cgal-buildings-idempotentie: ~0,3%-verlies,
-  #1178). De issue-882-repro draait stil mee en meldt zich alleen bij falen.
+  (bg-buildings, #1176: de engine-crash is weg, maar de reparatie van de invoer
+  lukt nog steeds niet, dus het item wordt bewust niet aangeroepen — de fout zou
+  anders de hele run laten falen). De cgal-idempotentieskip is vervallen met de
+  fix van #1178 en telt weer mee; op 20.13.0 en ouder is die regel dus terecht
+  rood. De issue-882-repro en `ring_encoding` draaien stil mee en melden zich
+  alleen bij falen.
+- **`Polygons/main/ring_encoding.dms`**: synthetische bewakers op het
+  multi-polygoon-RINGFORMAAT (buitenring met de klok mee, binnenringen tegen de
+  klok in, deelpolygonen geregen met terugkeerpunten). Daar zaten #1176 en #1178
+  in — in de PARSER per familie, niet in de union. Met de hand geschreven
+  puntenreeksen, geen SourceData nodig, dus ze draaien ook in `results/all`:
+  `island_in_hole` (polygoon in het gat van een andere polygoon, moet 68 m²
+  opleveren bij geos/bg/cgal), `overlapping_outers` (ongeldige invoer: geos en bg
+  moeten hetzelfde repareren) en `infix` (`+`/`*`/`-` gelijk aan
+  geos_union/intersect/difference).
 - **bp-schaal**: de gridset-units (rd_mm/rd_cm) dragen hun schaal zelf in
   `area()` — geen extra deling (intAreaDiv = 1.0 voor de echte scenario's;
   gemeenten in cm wegens de 25-bits-coordinaatlimiet van bp).
