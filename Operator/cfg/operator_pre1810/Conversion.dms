@@ -127,9 +127,9 @@
 			attribute<uint32>       Ordinal           (Domain): [ 0,1,0,1,2];
 			attribute<string>       AsHex             (Domain): [ '00000000','00000001','0000000B','00000064','000000FF'];
 			attribute<string>       HTMLEncodeDecode  (Domain): [ '<','>','&','abcdef',' '];
-			attribute<string>       HTMLEncodeOk      (Domain): [ '&lt;','&gt;','&amp','abcdef',' '];
+			attribute<string>       HTMLEncodeOk      (Domain): [ '&lt;','&gt;','&amp;','abcdef',' '];
 			attribute<string>       UrlEncodeDecode   (Domain): [ '<','>','&','abcdef',' '];
-			attribute<string>       UrlEncodeOk       (Domain): [ '&lt;','&gt;','&amp','abcdef',' '];
+			attribute<string>       UrlEncodeOk       (Domain): [ '%3C','%3E','%26','abcdef','+'];
 		}
 		template Esource
 		{
@@ -884,28 +884,51 @@
 				attribute<bool>   test (Domain) := att = Source/AsHex;
 				parameter<bool>   test_attr     := all(test);
 			}
-			/*
-			container UrlEncode
+			container UrlEncode: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/urlencode"
 			{
-				parameter<string> param         := UrlEncode('<>&abcdef �');
-				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
-				attribute<string> att  (Domain) := UrlEncode(Source/HTMLEncodeDecode);
+				parameter<string> param         := UrlEncode('<>&abcdef +%');
+				parameter<bool>   test_param    := param == '%3C%3E%26abcdef+%2B%25';
+				attribute<string> att  (Domain) := UrlEncode(Source/UrlEncodeDecode);
+				attribute<bool>   test (Domain) := att = Source/UrlEncodeOk;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container UrlDecode: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/urldecode"
+			{
+				// UrlDecode is the exact inverse of UrlEncode: '+' decodes to a space and non-ASCII
+				// bytes survive the round trip ('%C3%A9' is e-acute in UTF-8, so 2 bytes).
+				parameter<string> param         := UrlDecode('%3C%3E%26abcdef+%2B%25');
+				parameter<bool>   test_param    := param == '<>&abcdef +%'
+					&& UrlEncode(UrlDecode('%C3%A9')) == '%C3%A9'
+					&& strlen(UrlDecode('%C3%A9')) == 2;
+				attribute<string> att  (Domain) := UrlDecode(Source/UrlEncodeOk);
+				attribute<bool>   test (Domain) := att = Source/UrlEncodeDecode;
+				parameter<bool>   test_attr     := all(test);
+			}
+			container HtmlEncode: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/htmlencode"
+			{
+				// the five predefined XML/HTML entities; anything else (incl. bytes >= 0x80) is left alone
+				parameter<string> param         := HtmlEncode('<>&' + dquote('q') + quote('a'));
+				parameter<bool>   test_param    := param == '&lt;&gt;&amp;&quot;q&quot;&apos;a&apos;';
+				attribute<string> att  (Domain) := HtmlEncode(Source/HTMLEncodeDecode);
 				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
 				parameter<bool>   test_attr     := all(test);
 			}
-			
-			container HTMLEncode
+			container HtmlDecode: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/htmldecode"
 			{
-				parameter<string> param         := HtmlEncode('<>&abcdef �');
-				parameter<bool>   test_param    := param == '&lt;&gt;&amp;abcdef&copy;';
-				attribute<string> att  (Domain) := HTMLEncode(Source/HTMLEncodeDecode);
-				attribute<bool>   test (Domain) := att = Source/HTMLEncodeOk;
+				// inverse of HtmlEncode, plus numeric character references; an unknown entity is
+				// copied through verbatim rather than being an error.
+				parameter<string> param         := HtmlDecode('&lt;&gt;&amp;&quot;q&quot;&apos;a&apos;');
+				parameter<bool>   test_param    := param == '<>&' + dquote('q') + quote('a')
+					&& HtmlDecode('&#65;&#x42;') == 'AB'
+					&& HtmlDecode('&unknown;')  == '&unknown;'
+					&& HtmlDecode('&amp;lt;')   == '&lt;';
+				attribute<string> att  (Domain) := HtmlDecode(Source/HTMLEncodeOk);
+				attribute<bool>   test (Domain) := att = Source/HTMLEncodeDecode;
 				parameter<bool>   test_attr     := all(test);
 			}
-			*/
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 68
+				unit<uint32> Cand : nrofrows = 76
 				{
 					attribute<string> Spec :
 					[
@@ -940,6 +963,10 @@
 					,	'convert/test_param'
 					,	'rgb/test_param'
 					,	'AsHex/test_param'
+					,	'UrlEncode/test_param|UrlEncode;>=20.13'
+					,	'UrlDecode/test_param|UrlDecode;UrlEncode;>=20.13'
+					,	'HtmlEncode/test_param|HtmlEncode;>=20.13'
+					,	'HtmlDecode/test_param|HtmlDecode;>=20.13'
 					,	'uint2/test_attr'
 					,	'uint4/test_attr'
 					,	'uint8/test_attr'
@@ -977,6 +1004,10 @@
 					,	'value/test_attr'
 					,	'convert/test_attr'
 					,	'AsHex/test_attr'
+					,	'UrlEncode/test_attr|UrlEncode;>=20.13'
+					,	'UrlDecode/test_attr|UrlDecode;UrlEncode;>=20.13'
+					,	'HtmlEncode/test_attr|HtmlEncode;>=20.13'
+					,	'HtmlDecode/test_attr|HtmlDecode;>=20.13'
 					];
 				}
 				container selection := TestSet(Cand, Cand/Spec);
