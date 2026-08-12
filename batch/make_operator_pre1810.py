@@ -54,16 +54,38 @@ def normalize_eol(data: bytes) -> bytes:
     would be a silent content change."""
     return data.replace(b"\r\n", b"\n")
 
+STRING_LITERAL = re.compile(rb"'[^'\r\n]*'|\"[^\"\r\n]*\"")
+
+def mask_string_literals(data: bytes) -> bytes:
+    """A same-length copy with the INSIDE of every quoted string blanked out.
+
+    Only point literals are to be scanned and rewritten; text that merely
+    mentions the notation must be left alone.  Since GeoDMS 20.14.0 renders a
+    point as xy(x; y), expected-value strings spell that out -- e.g.
+    UnitFunctions/CrsUnit_wrap compares against 'xy(1; 0)|xy(2; 1)' -- and an
+    unmasked scan reads those as bare literals and aborts the run.  Offsets are
+    preserved so matches found here index straight back into the original."""
+    return STRING_LITERAL.sub(
+        lambda m: m.group(0)[:1] + b"\x00" * (len(m.group(0)) - 2) + m.group(0)[-1:], data)
+
 def transform(data: bytes, name: str):
     """Operate on raw bytes: these files contain non-ASCII bytes, so this keeps
     the encoding byte-exact and changes only the ASCII yx()/{} spelling.  Line
     endings are normalized first, so the yx() rewrite and the output both see
     LF regardless of platform."""
     data = normalize_eol(data)
-    n_xy = len(re.findall(rb"(?<![_a-zA-Z])xy\(", data))
+    masked = mask_string_literals(data)
+    n_xy = len(re.findall(rb"(?<![_a-zA-Z])xy\(", masked))
     if n_xy:
         sys.exit(f"ERROR: {n_xy} bare xy( in {name}; extend this script to emit {{x,y}}->{{y,x}} reversed first.")
-    return re.subn(rb"(?<![_a-zA-Z])yx\(([^()]+)\)", rb"{\1}", data)
+
+    # matched on `masked`, spliced from `data`, so the blanking never reaches the output
+    out, pos, n = bytearray(), 0, 0
+    for m in re.finditer(rb"(?<![_a-zA-Z])yx\(([^()]+)\)", masked):
+        out += data[pos:m.start()] + b"{" + data[m.start(1):m.end(1)] + b"}"
+        pos, n = m.end(), n + 1
+    out += data[pos:]
+    return bytes(out), n
 
 stem_bytes = SRC_STEM.read_bytes()
 part_names = re.findall(rb"#include <([^>\r\n]+)>", stem_bytes)
