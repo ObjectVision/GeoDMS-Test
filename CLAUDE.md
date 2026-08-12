@@ -36,6 +36,15 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   land-use regression — https://github.com/ObjectVision/GeoDMS/issues/1136 — its
   references were left untouched on purpose.)
 - **Report outcomes faithfully** — if a test failed or was skipped, say so plainly.
+- **Flaky ≠ versiegedrag.** `Grid/perimeter/test_attr` staat rood op vrijwel elke
+  build t/m 20.10: `perimeter()` las niet-geïnitialiseerd geheugen, dus dezelfde
+  build geeft per run een andere uitkomst (20.10.0.m 6 van 10 fout, 19.0.0 3 van
+  5; 20.12 20 van 20 goed). De groene cellen bij 19.0.0 en 20.7.0.m zijn dus
+  muntworpen, en 20.7.0.m groen naast 20.7.0.c rood is geen msbuild/cmake-
+  verschil. Gemeld en gefixt: GeoDMS #1169 (gesloten 2026-08-07, fix tussen 20.10
+  en 20.12) — geen nieuw issue aanmaken. Herhaal een meting voor je uit zo'n rij
+  een versieconclusie trekt; er kwamen ook plausibele waarden als `13,12` en
+  `11,11` voorbij.
 - **Bekende engine-issues parkeren, niet rood laten staan**: is een gebrek als
   GeoDMS-issue geregistreerd, dan wordt de betreffende toets een expliciete
   skip mét issueverwijzing (Spec-rij uit / skip-notitie in de indicator) —
@@ -56,6 +65,49 @@ across GeoDMS versions. Entry point: `batch/full.py`.
 - Tests klein genoeg houden om snel te draaien; opschalen is een aparte,
   bewuste stap. Geen databeschikbaarheidschecks: ontbrekende data hoort als
   rode cel op te vallen.
+
+## Meerdere machines tegelijk in deze repo
+
+Er wordt vanaf meerdere PC's (OVSRV05/OVSRV08/OVSRV10) tegelijk aan deze repo
+gewerkt, vaak in dezelfde bestanden. Twee regels die dat werkbaar houden:
+
+- **Controleer na elke pull/merge op verlies.** Een merge kan een conflict
+  "oplossen" door één kant te houden, waarmee bewuste wijzigingen van de andere
+  kant stil verdwijnen. Draai `git diff <binnengekomen-commit> HEAD -- <bestand>`
+  en loop de `-`-regels langs: wat daar staat, bedoelde de ander en heb jij niet.
+  Zet per regel in de commitboodschap of het verlies opzettelijk is, anders
+  herhaalt de volgende sessie de discussie. Op 2026-08-12 verdween zo de
+  cgal-un-skip uit `compare.dms` terwijl het gróótste deel van hetzelfde commit
+  (`ring_encoding.dms` + de include) wél overleefde — een half toegepast commit
+  ziet er bij oppervlakkige controle uit als een toegepast commit.
+- **Machinespecifieke paden nooit hardcoderen**, altijd een overridable parameter
+  met een env-var in `full.py`; anders blijft elke machine het van de ander
+  terugdraaien. Zo verschilt de BAG-snapshot per machine (OVSRV08
+  `VolledigeTabel_20240708`, OVSRV05 `_20250710`) — vandaar `%PandSnapshot%`.
+- **Regenereer de pre-1810-spiegelboom** na elke wijziging in
+  `Operator/cfg/Operator/`: `python batch/make_operator_pre1810.py`, en kijk of
+  er een diff uit komt. Bij een merge wordt dat makkelijk vergeten.
+
+## Testjes nooit vooruit op de engine aanzetten
+
+De suite draait tegen **geïnstalleerde releases**, niet tegen de
+engine-werkkopie. Een testje aanzetten waarvan de fix nog op een branch staat,
+geeft geen rood vinkje maar een stille storing — zet er meteen een
+versie-ondergrens `;>=<releaseversie>` op, dan activeert hij zichzelf zodra die
+build er is. Twee vormen, beide waargenomen op 2026-08-12:
+
+- **Geregistreerd maar niet geïmplementeerd** (reserved stub, bv. `UrlEncode`,
+  GeoDMS #1177): harde parsefout die de héle indicator tegenhoudt, dus alle
+  versies houden hun oude uitslag — in het rapport niet te onderscheiden van "er
+  is niets veranderd". Een `|operator`-eis helpt hier niet: de naam ís
+  geregistreerd. Hiervoor bestaat `;>=NN`.
+- **Werkt, maar onbetaalbaar** (de `*_16`-allocatierijen, GeoDMS #1175): geen
+  foutmelding, maar t010 liep naar 86 GB op een 64 GB-machine (was 2,6 GB).
+
+Diagnose: vers `log/<test>.txt` naast een oude `result/<test>.txt` betekent dat
+de run is gevallen, niet dat er niets veranderde. Onderscheid rood van stil — een
+falende toets mag rood staan (zichtbaar), een gekilld proces of parsefout niet
+(geen uitslag). Gate alleen het tweede.
 
 ## Operator test (t010) — versie-afhankelijke testjes
 
