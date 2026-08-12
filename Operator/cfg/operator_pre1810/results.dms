@@ -6,7 +6,7 @@
 		parameter<bool> tests_all := tests_regression && File/results/tests;
 
 		// een rij per (sub)test; de zes historische groepen tests_r1..r6 zijn samengevoegd
-		unit<uint32> Cand : nrofrows = 266
+		unit<uint32> Cand : nrofrows = 276
 		{
 			attribute<string> Spec :
 			[
@@ -115,9 +115,16 @@
 			,	'Allocation/greedy_alloc_aggr/test_attr|greedy_alloc_np;discrete_alloc;>=20.12'
 			,	'Allocation/needy_alloc/test_attr|needy_alloc;discrete_alloc'
 			,	'Allocation/needy_alloc_aggr/test_attr|needy_alloc_np;discrete_alloc'
-			// de *_16-varianten alloceren 8-32 GB voor 3 typen (bereik-gedimensioneerd,
-			// GeoDMS issue 1175); hun testcontainers staan klaar in Allocation.dms en
-			// de rijen komen terug zodra dat gefixt is
+			// *_16-varianten: uint16-typenset (zie Allocation.dms)
+			,	'Allocation/allocate_discrete_16/test_attr|discrete_alloc_16'
+			,	'Allocation/allocate_discrete_p1_16/test_attr|discrete_alloc_sp_16'
+			,	'Allocation/allocate_discrete_aggr_16/test_attr|discrete_alloc_np_16;discrete_alloc_16'
+			,	'Allocation/greedy_alloc_16/test_attr|greedy_alloc_16;discrete_alloc_16;>=20.12'
+			,	'Allocation/greedy_alloc_sp_16/test_attr|greedy_alloc_sp_16;>=20.12'
+			,	'Allocation/greedy_alloc_np_16/test_attr|greedy_alloc_np_16;>=20.12'
+			,	'Allocation/needy_alloc_16/test_attr|needy_alloc_16;discrete_alloc_16'
+			,	'Allocation/needy_alloc_sp_16/test_attr|needy_alloc_sp_16'
+			,	'Allocation/needy_alloc_np_16/test_attr|needy_alloc_np_16'
 			,	'Allocation/allocate_discrete_p1/test_attr|discrete_alloc_sp'
 			,	'Allocation/allocate_discrete_p2/test_attr|discrete_alloc_sp'
 			,	'Allocation/allocate_discrete_aggr/test_attr|discrete_alloc_np;discrete_alloc'
@@ -146,6 +153,7 @@
 			,	'Relational/combine_typed/test_u|combine_unit;combine_unit_uint8;combine_unit_uint16;combine_unit_uint32'
 			,	'Relational/combine_typed/test_u|combine_unit_uint64'
 			,	'Relational/join_typed/test_eq|join_equal_values_uint8;join_equal_values_uint16;join_equal_values_uint32;join_equal_values_uint64'
+			,	'Relational/join_typed/test_eq_paths|join_equal_values_uint32'
 			,	'Relational/join_typed/test_near|join_near_values_uint8;join_near_values_uint16;join_near_values_uint32;join_near_values_uint64'
 			,	'Relational/collect_by_org_rel/test_attr|collect_by_org_rel'
 			,	'Relational/rlookup_with_null/test|rlookup_with_null'

@@ -171,6 +171,20 @@
 			unit<uint64> je64 := join_equal_values_uint64(A3/k, B3/k);
 			parameter<bool> test_eq := uint32(#je8) = uint32(3) && uint32(#je16) = uint32(3) && uint32(#je32) = uint32(3) && uint32(#je64) = uint32(3)
 				&& asList(string(je8/first_rel), ';') = '1;2;2' && asList(string(je8/second_rel), ';') = '0;1;2';
+			// join_equal_values kiest zijn x-index op de omvang van de waardenunit: A3/k en B3/k
+			// zijn kale uint32-attributen (waardenunit = het hele typebereik, 2^32-2) en nemen dus
+			// de index over de voorkomende waarden; K10 hieronder is een begrensde waardenunit en
+			// neemt het directe slotarray. Zelfde data, zelfde uitkomst - inclusief rijvolgorde -
+			// is de invariant die beide paden aan elkaar vastlegt (GeoDMS issue 1175).
+			unit<uint32> K10: nrofrows = 10;
+			unit<uint32> A3d: nrofrows = 3 { attribute<K10> k: [7,8,9]; }
+			unit<uint32> B3d: nrofrows = 3 { attribute<K10> k: [8,9,9]; }
+			unit<uint32> jeDense := join_equal_values(A3d/k, B3d/k);
+			parameter<bool> test_eq_paths :=
+				   uint32(#jeDense) = uint32(#je32)
+				&& asList(string(jeDense/first_rel ), ';') = asList(string(je32/first_rel ), ';')
+				&& asList(string(jeDense/second_rel), ';') = asList(string(je32/second_rel), ';')
+				&& asList(string(jeDense/X_rel     ), ';') = asList(string(je32/X_rel     ), ';');
 			// zelfde puntdata als de join_near_values-basistest: 2 paren binnen maxdist 5
 			unit<uint32> Shop2n: nrofrows = 2
 			{

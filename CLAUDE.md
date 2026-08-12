@@ -78,8 +78,12 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   `Operator/cfg/Operator/ForEach.dms` komt uit **`batch/make_for_each_tests.py`**
   (draaien met de `t010_operator_groups.txt`-dumps van de te dekken versies als
   argumenten; daarna pre1810 regenereren). Uitsluitingen-met-reden staan in
-  `batch/generic/operator_coverage_exclusions.txt` — issue-geparkeerde rijen
-  (bv. de `_16`-allocaties, GeoDMS #1175) gaan weer aan zodra het issue gefixt is.
+  `batch/generic/operator_coverage_exclusions.txt` — issue-geparkeerde rijen gaan
+  weer aan zodra het issue gefixt is. **Toeschrijven op basis van co-timing in de
+  log is onbetrouwbaar**: de negen `*_16`-allocatievarianten stonden geparkeerd als
+  GeoDMS #1175 ("alloceert GB's"), maar de huge allocs bleken van
+  `join_equal_values_uint8/16/32/64` te komen (stack-attributie, branch
+  `issue_1175`); die rijen staan sinds 2026-08-11 weer aan.
 - Rapportcel toont alleen run-uitslagen: uitgevoerd-telling, `FAILING (n)` als
   bulletlijst met operatornaam, en de skips als één samenvattingsregel
   gegroepeerd op reden (volledige lijst: `t010_operator_test_skipped_tests.txt`).
