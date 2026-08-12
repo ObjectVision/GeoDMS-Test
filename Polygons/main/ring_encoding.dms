@@ -58,7 +58,12 @@ container ring_encoding
 		parameter<bool> ok_geos := abs(aGeos - aIn) <= aIn * 1e-6;
 		parameter<bool> ok_bg   := abs(aBg   - aIn) <= aIn * 1e-6;
 		parameter<bool> ok_cgal := abs(aCgal - aIn) <= aIn * 1e-6;
-		parameter<bool> ok := ok_geos && ok_bg && ok_cgal;
+		// De cgal-tak is GeoDMS #1178: de lezer trok elk gat van de hele verzameling af
+		// in plaats van van de polygoon waar het gat bij hoort, waardoor een eiland in
+		// een gat verdween. Gefixt vanaf 20.13; daaronder een expliciete skip met
+		// issueverwijzing in plaats van rood. geos en bg blijven wel bewaakt.
+		parameter<bool> cgalIdemFixed := GeoDmsVersion() >= 20.13;
+		parameter<bool> ok := ok_geos && ok_bg && (cgalIdemFixed ? ok_cgal : true);
 		parameter<string> failwhat :=
 			(ok_geos ? '' : 'geos ' + string(float32(aGeos)) + ' ') + (ok_bg ? '' : 'bg ' + string(float32(aBg)) + ' ')
 			+ (ok_cgal ? '' : 'cgal ' + string(float32(aCgal)) + ' ');
@@ -141,7 +146,8 @@ container ring_encoding
 
 	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok;
 	parameter<string> line := ok
-		? ''
+		? (island_in_hole/cgalIdemFixed ? ''
+			: '<ringenc>ring encoding: cgal island-in-hole skipped (known ~0.3% area loss, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1178>#1178</a>)</ringenc>')
 		: '<ringenc>ring encoding: FAILS ('
 			+ (island_in_hole/ok     ? '' : 'island-in-hole: ' + island_in_hole/failwhat)
 			+ (overlapping_outers/ok ? '' : 'overlapping-outers: ' + overlapping_outers/failwhat)
