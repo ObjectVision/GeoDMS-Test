@@ -277,7 +277,12 @@ TEST_TIMEOUTS = {
     # ~3110 testjes (~150 s engine-tijd op 20.13); de oude cap tree-killde de run
     # halverwege, wat eruitzag als een stille engine-crash (log midden in een regel
     # afgebroken, geen [E])
-    "t010_operator_test":                                  600,
+    # 2026-08-11 (later): opnieuw geraakt, zelfde beeld. De for_each-familie (1632
+    # varianten) + bp-kernelsuffixen brachten t010 naar ~4778 testjes, en oude
+    # engines zijn trager: 17.4.6/18.1.2/19.0.0 liepen alle drie tegen de 600 s.
+    # Nu 3600 s -- ruim boven de traagste meting, en een echte hang blijft zichtbaar
+    # doordat de indicator dan ontbreekt en het log midden in een regel stopt.
+    "t010_operator_test":                                  3600,
     "t050_Storage_Write_Shape_Polygon_Folder_Compare":     60,
     "t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare": 1500,   # ~25m
     "t100_network_connect":                                60,
