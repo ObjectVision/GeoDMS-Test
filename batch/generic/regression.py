@@ -687,6 +687,9 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     test = doc.get("test", "")
     refs = REFERENCE_VALUES.get(test, {})
     metrics = doc.get("metrics", [])
+    # "all" (default) = elke metric krijgt een regel; "on_deviation" = alleen tonen als de
+    # waarde afwijkt, voor tests die de getallen zelf al in een note presenteren
+    metrics_display = doc.get("metrics_display", "all")
 
     lines = {}
     any_fail = any_pending = False
@@ -750,7 +753,11 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
                 ok = abs(dev) <= tol
                 any_fail = any_fail or not ok
                 if value == ref:
-                    lines[name] = [f"{name}: {_fmt_num(value)}{unit_s}", ok]
+                    # "on_deviation": de test zet deze waarden zelf al in een note (t020's
+                    # ankerregel), dus een eigen regel per metric zou dubbelop zijn. Alleen
+                    # verbergen zolang de waarde exact klopt -- afwijkingen tonen altijd.
+                    if metrics_display != "on_deviation":
+                        lines[name] = [f"{name}: {_fmt_num(value)}{unit_s}", ok]
                 else:
                     lines[name] = [f"{name}: {_fmt_num(value)}{unit_s} (ref {_fmt_num(ref)}, {_fmt_pct(dev)})", ok]
 

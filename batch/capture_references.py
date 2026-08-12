@@ -49,7 +49,11 @@ def _dump(doc, path):
         if not isinstance(val, dict):
             parts.append(f"  {json.dumps(key)}: {json.dumps(val, ensure_ascii=False)}")
             continue
-        rows = [f"    {json.dumps(m, ensure_ascii=False)}: {json.dumps(v, ensure_ascii=False)}"
+        # inner epoch map padded as "{ ... }" to match the file's established style, so a
+        # promote produces a diff of only the lines that really changed
+        rows = [f"    {json.dumps(m, ensure_ascii=False)}: "
+                + ("{ " + json.dumps(v, ensure_ascii=False)[1:-1] + " }" if isinstance(v, dict) and v
+                   else json.dumps(v, ensure_ascii=False))
                 for m, v in val.items()]
         parts.append(f"  {json.dumps(key)}: {{\n" + ",\n".join(rows) + "\n  }")
     text = "{\n" + ",\n".join(parts) + "\n}\n"
@@ -80,8 +84,10 @@ def main() -> None:
     if not files:
         sys.exit(f"no *.result.json found in {args.results_folder}")
 
-    if not re.match(r"^\d+(\.\d+)*$", args.epoch):
-        sys.exit(f"--epoch must be a version threshold like 20.3.0 (got {args.epoch!r})")
+    # a threshold may carry a flavor prefix ("l:20.3.0") = a PLATFORM baseline that applies
+    # only to cells of that flavor and then wins over the unprefixed epochs
+    if not re.match(r"^([a-z]+:)?\d+(\.\d+)*$", args.epoch):
+        sys.exit(f"--epoch must be a version threshold like 20.3.0 or l:20.3.0 (got {args.epoch!r})")
     build = args.build or os.path.basename(args.results_folder.rstrip("/\\"))
 
     doc = _load(args.out)
