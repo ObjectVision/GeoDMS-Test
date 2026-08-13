@@ -597,6 +597,11 @@ REFERENCE_VALUES = {k: v for k, v in _REFERENCE_DOC.items() if not k.startswith(
 # meeste lezers willen zien; iedereen kan ze met een klik weer aanzetten en die
 # keuze wordt in localStorage bewaard. Namen die in een reeks niet voorkomen worden
 # genegeerd, dus een nog niet gedraaide versie mag hier vast in staan.
+#
+# De standaard blijft leidend tot een lezer zelf een chip aanklikt: het laden van de
+# pagina schrijft niets weg (_apply_col_hide(false)). Zou het dat wel doen, dan legde
+# de eerste opening deze lijst vast als persoonlijke keuze en bereikte een latere
+# wijziging hier die lezer nooit meer -- relevant zodra 20.13 uit deze lijst gaat.
 DEFAULT_HIDDEN_COLUMNS = [
     "16_0_5",                                   # oudste referentiebuild
     "20_13_0_m", "20_13_0_c", "20_13_0_l",      # nog geen uitgebrachte release
@@ -1506,7 +1511,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                    Zodra iemand zelf een chip aanklikt (ook "show all", dat slaat {} op)\
                    wint die keuze, en blijft hij staan over hergeneraties heen. */\
                 if (HIDDEN_COLS === null) { HIDDEN_COLS = @@@DEFAULT_HIDDEN@@@; }\
-                function _apply_col_hide() {\
+                function _apply_col_hide(persist) {\
                     var chips = document.getElementsByClassName("colchip"); var rules = "";\
                     for (var i = 0; i < chips.length; i++) {\
                         var tag = chips[i].getAttribute("data-col"); var idx = parseInt(chips[i].getAttribute("data-idx"), 10);\
@@ -1514,12 +1519,12 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                         if (off) { rules += "table.report tr>*:nth-child(" + (idx + 2) + "){display:none}"; }\
                     }\
                     var sh = document.getElementById("colhide"); if (sh) { sh.textContent = rules; }\
-                    try { localStorage.setItem("geodms_hidden_cols", JSON.stringify(HIDDEN_COLS)); } catch (e) {}\
+                    if (persist) { try { localStorage.setItem("geodms_hidden_cols", JSON.stringify(HIDDEN_COLS)); } catch (e) {} }\
                 }\
-                function toggle_col(t) { HIDDEN_COLS[t] = !HIDDEN_COLS[t]; _apply_col_hide(); }\
-                function show_all_cols() { HIDDEN_COLS = {}; _apply_col_hide(); }\
-                function only_flavor(fl) { var chips = document.getElementsByClassName("colchip"); for (var i = 0; i < chips.length; i++) { var t = chips[i].getAttribute("data-col"); HIDDEN_COLS[t] = (fl === "m") ? (t.endsWith("_l") || t.endsWith("_c")) : !t.endsWith("_" + fl); } _apply_col_hide(); }\
-                window.addEventListener("DOMContentLoaded", _apply_col_hide);\
+                function toggle_col(t) { HIDDEN_COLS[t] = !HIDDEN_COLS[t]; _apply_col_hide(true); }\
+                function show_all_cols() { HIDDEN_COLS = {}; _apply_col_hide(true); }\
+                function only_flavor(fl) { var chips = document.getElementsByClassName("colchip"); for (var i = 0; i < chips.length; i++) { var t = chips[i].getAttribute("data-col"); HIDDEN_COLS[t] = (fl === "m") ? (t.endsWith("_l") || t.endsWith("_c")) : !t.endsWith("_" + fl); } _apply_col_hide(true); }\
+                window.addEventListener("DOMContentLoaded", function () { _apply_col_hide(false); });\
             </script>\
             @@@TOGGLE_BAR@@@\
             <table class="report">\
