@@ -381,9 +381,16 @@ container StorageManagerTest
 
 		container GeoReference
 		{
-			parameter<bool> test := 
-				PropValue(Grid_uint32, 'Projection') = '{-40.5, 40.5}*m+{384000, 216000}' &&
-				PropValue(Palette/Grid, 'Projection') = '{-40.5, 40.5}*m+{384000, 216000}';
+			// GeoDMS 20.14.0 renders points as xy(x; y) instead of the implicit {row, col}, so the
+			// same projection reads x-then-y from that version on: {-40.5, 40.5} is xy(40.5; -40.5).
+			// Both spellings are green, each for the versions that produce it.
+			parameter<bool>   xyTagged := GeoDmsVersion() >= 20.14;
+			parameter<string> expected := xyTagged
+				? 'xy(40.5; -40.5)*m+xy(216000; 384000)'
+				: '{-40.5, 40.5}*m+{384000, 216000}';
+			parameter<bool> test :=
+				PropValue(Grid_uint32, 'Projection') = expected &&
+				PropValue(Palette/Grid, 'Projection') = expected;
 		}
 	}
 	container EsriShape
