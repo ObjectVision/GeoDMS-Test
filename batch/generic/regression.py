@@ -592,6 +592,16 @@ _REFERENCE_DOC   = _load_reference_doc()
 REFERENCE_BUILD  = _REFERENCE_DOC.get("_captured_from", "reference")
 REFERENCE_VALUES = {k: v for k, v in _REFERENCE_DOC.items() if not k.startswith("_")}
 
+# Kolommen die het rapport standaard uitgevinkt toont, met de mapnaam als tag
+# (16_0_5, 20_13_0_m, ...). Bedoeld om de default-weergave te beperken tot wat de
+# meeste lezers willen zien; iedereen kan ze met een klik weer aanzetten en die
+# keuze wordt in localStorage bewaard. Namen die in een reeks niet voorkomen worden
+# genegeerd, dus een nog niet gedraaide versie mag hier vast in staan.
+DEFAULT_HIDDEN_COLUMNS = [
+    "16_0_5",                                   # oudste referentiebuild
+    "20_13_0_m", "20_13_0_c", "20_13_0_l",      # nog geen uitgebrachte release
+]
+
 # Optional per test+metric tolerance override (percent); default 0.0 = exact match.
 TOLERANCES = {}
 
@@ -1490,8 +1500,12 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                         else { el.setAttribute(attribute_name, ""); }\
                     }\
                 }\
-                var HIDDEN_COLS = {};\
+                var HIDDEN_COLS = null;\
                 try { var _s = localStorage.getItem("geodms_hidden_cols"); if (_s) { HIDDEN_COLS = JSON.parse(_s); } } catch (e) {}\
+                /* Geen eigen keuze opgeslagen -> de standaard uit DEFAULT_HIDDEN_COLUMNS.\
+                   Zodra iemand zelf een chip aanklikt (ook "show all", dat slaat {} op)\
+                   wint die keuze, en blijft hij staan over hergeneraties heen. */\
+                if (HIDDEN_COLS === null) { HIDDEN_COLS = @@@DEFAULT_HIDDEN@@@; }\
                 function _apply_col_hide() {\
                     var chips = document.getElementsByClassName("colchip"); var rules = "";\
                     for (var i = 0; i < chips.length; i++) {\
@@ -1531,6 +1545,13 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
         _chips += f'<button class="colchip" data-idx="{_i}" data-col="{_tag}" onclick="toggle_col(\'{_tag}\')">{_tag.replace("_", ".")}</button>'
     _toggle_bar = f'<div class="colbar"><span class="lbl">columns:</span>{_chips}<button class="colpreset" onclick="show_all_cols()">show all</button><button class="colpreset" onclick="only_flavor(\'l\')">only .l</button><button class="colpreset" title="msbuild Windows, incl. pre-20 (no-flavor) builds" onclick="only_flavor(\'m\')">only .m</button></div>'
     result_html = result_html.replace("@@@TOGGLE_BAR@@@", _toggle_bar)
+    # Kolommen die standaard uitgevinkt openen (DEFAULT_HIDDEN_COLUMNS): alleen voor
+    # wie nog geen eigen keuze heeft opgeslagen. Een tag die in deze reeks niet
+    # voorkomt wordt genegeerd, dus de lijst mag versies noemen die er (nog) niet zijn.
+    _present = {c.get("coltag", "") for c in regression_test_summaries[0][1:] if c}
+    result_html = result_html.replace(
+        "@@@DEFAULT_HIDDEN@@@",
+        json.dumps({t: True for t in DEFAULT_HIDDEN_COLUMNS if t in _present}))
 
     final_html_filename = f"{result_paths['results_base_folder']}/reports/{version_range[0].replace(".","_")}___{version_range[1].replace(".","_")}.html"
     report_dir = f"{result_paths['results_base_folder']}/reports"
