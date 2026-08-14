@@ -109,6 +109,37 @@ de run is gevallen, niet dat er niets veranderde. Onderscheid rood van stil — 
 falende toets mag rood staan (zichtbaar), een gekilld proces of parsefout niet
 (geen uitslag). Gate alleen het tweede.
 
+## Aanpassen aan nieuwe syntax: houd oudere versies groen
+
+Spiegelbeeld van de regel hierboven. De suite draait tegen **meerdere
+geïnstalleerde releases tegelijk**, dus een verwachting die je aanpast aan nieuwe
+engine-uitvoer — een andere notatie, een hernoemde eigenschap, een gewijzigde
+rendering — maakt daarmee élke oudere versie in het rapport rood, terwijl daar
+niets mis is. De cel hoort alleen rood te worden als het resultaat zélf fout is.
+
+Verplaats de verwachting daarom niet, maar maak hem **versie-afhankelijk**: laat
+`GeoDmsVersion()` in een meta-scriptconditie de spelling kiezen die bij de
+draaiende versie hoort, zoals de `idemFixed`-vlaggen bij de cgal-invarianten in
+t020. Voorbeeld uit `Storage/cfg/regression.dms` (`Tiff/GeoReference`), na de
+xy(x; y)-notatie van 20.14.0:
+
+```
+parameter<bool>   xyTagged := GeoDmsVersion() >= 20.14;
+parameter<string> expected := xyTagged
+	? 'xy(40.5; -40.5)*m+xy(216000; 384000)'  // 20.14.0+ : getagd, x eerst
+	: '{-40.5, 40.5}*m+{384000, 216000}';     // ouder    : ongetagd {row, col}
+```
+
+**Controleer beide takken**, niet alleen de build onder handen: draai het testje
+ook tegen een geïnstalleerde oudere release
+(`%ProgramFiles%\ObjectVision\GeoDms<versie>`). Een oude tak die je niet gedraaid
+hebt, is een aanname.
+
+Pas als terugwaartse compatibiliteit echt niet kan — de oude versie kán het
+resultaat niet produceren — vervalt de oude tak; zet er dan een versie-ondergrens
+op zoals hierboven beschreven, zodat oudere versies **overslaan** in plaats van
+rood staan.
+
 ## Operator test (t010) — versie-afhankelijke testjes
 
 - **Bestandsindeling**: `Operator/cfg/Operator.dms` is een stam van ~100 regels met
