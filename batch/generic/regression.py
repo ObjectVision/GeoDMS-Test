@@ -297,7 +297,21 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
             _ref_title += " — " + _ref_note
         _ref_cls = "refpill noted" if _ref_note else "refpill"
         _ref_title = _esc_attr(_ref_title)
-        table_col_header = table_col_header.replace("@@@REF_PILL@@@", f'<span class="{_ref_cls}" title="{_ref_title}">ref</span>' if _show_pill else "")
+        # Tests zonder referentiewaarde (t010, t050, t060, t151, t405.1, t641.1, de
+        # GUI-tests, t1742) krijgen nooit een "ref"-pil, terwijl hun mem/dur-badges wel
+        # degelijk tegen REFERENCE_BUILD worden gerekend -- die basislijn was dus
+        # onzichtbaar. Markeer hem apart: "perf", want alleen tijd en geheugen worden
+        # hier vergeleken, niet de uitkomst.
+        _is_perf_base = (not _win_refcells) and (summary_col_row is _ref_fallback)
+        _perf_title = _esc_attr(
+            "timing/memory baseline for this test — no reference value is recorded, "
+            "so only duration and memory are compared against this version")
+        _pill = ""
+        if _show_pill:
+            _pill = f'<span class="{_ref_cls}" title="{_ref_title}">ref</span>'
+        elif _is_perf_base:
+            _pill = f'<span class="refpill perfref" title="{_perf_title}">perf</span>'
+        table_col_header = table_col_header.replace("@@@REF_PILL@@@", _pill)
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
@@ -1467,6 +1481,8 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .perfbadge { font-size:10px; font-weight:600; white-space:nowrap; }\
               .refpill { display:inline-flex; align-items:center; line-height:1; margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:3px 7px; border-radius:9px; letter-spacing:.3px; }\
               .refpill.noted { cursor:help; box-shadow:0 0 0 1.5px #cfe0ef; } .refpill.noted::after { content:\"\\2009*\"; }\
+              /* alleen tijd/geheugen-basislijn, geen referentiewaarde: doffer dan de echte ref-pil */\
+              .refpill.perfref { background:#8fa9bd; cursor:help; }\
               .links { margin-top:7px; font-size:11px; } .links a { color:#9a9a92; text-decoration:none; margin-right:9px; }\
               .links a:hover { color:#534ab7; text-decoration:underline; }\
               .colbar { margin:0 0 14px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }\
