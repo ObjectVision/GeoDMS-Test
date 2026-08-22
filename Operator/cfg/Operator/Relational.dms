@@ -959,6 +959,77 @@
 				unit<uint32> select_subitems := SubItem_PropValues(src/by_cond,'name'); 
 				parameter<bool> test := #select_subitems == 7 && (#src/selection == 0 ? sum(src/by_cond/area) == 0f : sum(src/by_cond/area) == 675f);
 			}
+			// #337 -- select_spec / collect_spec: the configuration comes from the first
+			// argument, so combinations without a name of their own stay reachable.
+			container select_spec_equivalence
+			{
+				// the spec form must reproduce the named operator exactly
+				unit<uint32> named := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> spec := select_spec('use_org_rel;attr', Source/City, Source/City/RegionCode = 200)
+				{
+					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
+				}
+				unit<uint32> n_named := SubItem_PropValues(named,'name');
+				unit<uint32> n_spec  := SubItem_PropValues(spec,'name');
+				parameter<bool> test := all(named/att) && all(spec/att) && #n_named == #n_spec && #named == #spec;
+			}
+			container select_spec_ref_in_template
+			{
+				// inStops is a template case parameter: bound by an ArgCalc, it gets no
+				// sub-items of its own, so the attributes of the unit it is bound to are
+				// reachable only through the referred-item chain. Without 'ref' nothing is
+				// collected and the call only warns.
+				Template SelectFromParam
+				{
+					// begin case parameters
+					unit<uint32> inStops;
+					// end case parameters
+					unit<uint32> sel   := select_spec('use_org_rel;attr;ref', inStops, inStops/RegionCode = 200);
+					unit<uint32> n_sel := SubItem_PropValues(sel,'name');
+				}
+				container viaParam := SelectFromParam(Source/City);
+
+				unit<uint32> direct   := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
+				unit<uint32> n_direct := SubItem_PropValues(direct,'name');
+
+				// collecting through the case parameter finds what collecting straight
+				// from the container finds.
+				parameter<bool> test := #viaParam/n_sel == #n_direct && #viaParam/sel == #direct;
+			}
+			container select_spec_sub
+			{
+				// 'sub' mirrors a sub-container into the result. A sub-container attribute
+				// needs its domain spelled out, as it is not a direct child of the unit.
+				unit<uint32> src := Source/City
+				{
+					attribute<RegionEK> RegionCode := Source/City/RegionCode;
+					container nested
+					{
+						attribute<m2> area (src) := Source/City/area;
+					}
+				}
+				unit<uint32> sel   := select_spec('use_org_rel;attr;sub', src, src/RegionCode = 200);
+				unit<uint32> names := SubItem_PropValues(sel,'name');
+
+				// RegionCode plus nested (plus org_rel): staying under 4 is what proves the
+				// referred-item chain was NOT followed -- 'ref' would add Source/City's own.
+				parameter<bool> test := #names <= 3 && (#sel == 0 ? sum(sel/nested/area) == 0f : sum(sel/nested/area) == 675f);
+			}
+			container collect_spec_ref
+			{
+				// the collect family mirrors the select family: same words, same rules.
+				unit<uint32> src := Source/City;   // a reference: no sub-items of its own
+				unit<uint32> sel := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
+				container by_ref := collect_spec('by_org_rel;ref', src, sel, sel/org_rel);
+
+				unit<uint32> names := SubItem_PropValues(by_ref,'name');
+				// plain collect_attr_by_org_rel would find nothing on src; 'ref' reaches
+				// Source/City's attributes through the chain.
+				parameter<bool> test := #names >= 7 && (#sel == 0 ? sum(by_ref/area) == 0f : sum(by_ref/area) == 675f);
+			}
 			container unique: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unique"
 			{
 				unit<uint32>      Regions       := unique(Source/City/RegionCode)
@@ -1225,7 +1296,7 @@
 
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 37
+				unit<uint32> Cand : nrofrows = 41
 				{
 					attribute<string> Spec :
 					[
@@ -1266,6 +1337,10 @@
 					,	'merge_empty/test'
 					,	'join_equal_values/attr_test'
 					,	'union_data_single/test_attr'
+				,	'select_spec_equivalence/test|>=20.17'
+				,	'select_spec_ref_in_template/test|>=20.17'
+				,	'select_spec_sub/test|>=20.17'
+				,	'collect_spec_ref/test|>=20.17'
 					];
 				}
 				container selection := TestSet(Cand, Cand/Spec);
