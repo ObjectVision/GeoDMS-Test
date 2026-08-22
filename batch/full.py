@@ -773,6 +773,21 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             "renderer, to refresh the report without re-running the suite."
         ),
     )
+    parser.add_argument(
+        "-resume",
+        action="store_true",
+        help=(
+            "Continue an interrupted round instead of restarting it: keep this "
+            "round's intermediates (both the per-run /mnt/c root and the .l ext4 "
+            "projdir) instead of wiping them at round start. Tests whose .bin is "
+            "already stored are skipped as always, but the store_results=False "
+            "indicator steps always re-run -- and they read back what their "
+            "(skipped) compute step wrote. Without -resume those inputs are gone "
+            "and every one of them has to recompute the model first. Only pass it "
+            "when continuing the SAME version: a fresh round must wipe, or it "
+            "silently measures the previous round's leftovers."
+        ),
+    )
     args = parser.parse_args()
     
     if args.version:
@@ -802,9 +817,13 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         base_local_data_dir = local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]
         run_id = regression.get_result_folder_name(display_version, geodms_paths, MT1, MT2, MT3)
         # wipe BEFORE re-rooting, so the mkdir of the new root's log dir survives
-        # -report-only touches no intermediates, so it must not wipe them either.
-        if not args.report_only:
+        # -report-only touches no intermediates, so it must not wipe them either,
+        # and neither may -resume: continuing a round means keeping what it computed.
+        if not args.report_only and not args.resume:
             clean_run_intermediates(f"{base_local_data_dir.rstrip("/")}/runs/{run_id}", base_local_data_dir)
+        elif args.resume:
+            print(f"[clean] -resume: keeping the intermediates of "
+                  f"{base_local_data_dir.rstrip("/")}/runs/{run_id}")
         run_root = isolate_local_data_dir_per_run(local_machine_parameters, run_id)
         print(f"[intermediates] this round computes into {run_root} (result history stays in ResultsBaseDir)")
 
@@ -970,6 +989,19 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         except Exception:
             _wsl_home = ""
         ext4_projdir_base = f"{_wsl_home or '/root'}/regression"  # ext4 (distro disk, ~950 GB free)
+
+        # Round-start cleanup of the ext4 projdir. main() wipes this round's
+        # /mnt/c per-run root, but the t641 relocation above puts GBs of RSopen
+        # BaseData INSIDE the distro, where that wipe cannot reach -- without
+        # this, a new .l round silently reuses the previous round's BaseData.
+        if args.resume:
+            print(f"[clean] -resume: keeping the ext4 intermediates in {ext4_projdir_base}")
+        elif not args.report_only and ext4_projdir_base.endswith("/regression"):
+            print(f"[clean] removing ext4 intermediates of the previous round: {ext4_projdir_base}")
+            try:
+                subprocess.run(["wsl", "--", "rm", "-rf", ext4_projdir_base], timeout=900)
+            except Exception as e:
+                print(f"[clean] could not remove {ext4_projdir_base}: {e}")
 
         for exp in operator_experiments:
             # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
