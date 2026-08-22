@@ -1030,6 +1030,37 @@
 				// Source/City's attributes through the chain.
 				parameter<bool> test := #names >= 7 && (#sel == 0 ? sum(by_ref/area) == 0f : sum(by_ref/area) == 675f);
 			}
+			container collect_spec_by_cond
+			{
+				// the by_cond path through the spec form must match the named operator
+				unit<uint32> sel := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
+				container named := collect_attr_by_cond(Source/City, sel, Source/City/RegionCode = 200);
+				container spec  := collect_spec('by_cond', Source/City, sel, Source/City/RegionCode = 200);
+
+				unit<uint32> n_named := SubItem_PropValues(named,'name');
+				unit<uint32> n_spec  := SubItem_PropValues(spec,'name');
+				parameter<bool> test := #n_named == #n_spec && (#sel == 0 ? sum(spec/area) == 0f : sum(spec/area) == 675f);
+			}
+			container collect_spec_sub
+			{
+				// 'sub' mirrors a sub-container into the collected result; the nested
+				// member's calculation rule has to resolve one level deeper than a direct one.
+				unit<uint32> src := Source/City
+				{
+					attribute<RegionEK> RegionCode := Source/City/RegionCode;
+					container nested
+					{
+						attribute<m2> area (src) := Source/City/area;
+					}
+				}
+				unit<uint32> sel    := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
+				container    by_sub := collect_spec('by_org_rel;sub', src, sel, sel/org_rel);
+
+				unit<uint32> names := SubItem_PropValues(by_sub,'name');
+				// RegionCode plus nested: staying at 2 proves the referred-item chain was
+				// NOT followed -- 'ref' would add Source/City's own attributes as well.
+				parameter<bool> test := #names <= 2 && (#sel == 0 ? sum(by_sub/nested/area) == 0f : sum(by_sub/nested/area) == 675f);
+			}
 			container unique: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unique"
 			{
 				unit<uint32>      Regions       := unique(Source/City/RegionCode)
@@ -1296,7 +1327,7 @@
 
 			container results
 			{
-				unit<uint32> Cand : nrofrows = 41
+				unit<uint32> Cand : nrofrows = 43
 				{
 					attribute<string> Spec :
 					[
@@ -1341,6 +1372,8 @@
 				,	'select_spec_ref_in_template/test|>=20.17'
 				,	'select_spec_sub/test|>=20.17'
 				,	'collect_spec_ref/test|>=20.17'
+				,	'collect_spec_by_cond/test|>=20.17'
+				,	'collect_spec_sub/test|>=20.17'
 					];
 				}
 				container selection := TestSet(Cand, Cand/Spec);
