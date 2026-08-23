@@ -724,19 +724,14 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         "-sp",
         action="store_true",
         help=(
-            "Run GeoDmsRun with /SP (PerformanceLogging). OFF by default since "
-            "2026-08-23: nothing in this harness reads /SP-only output, while the "
-            "per-operation estimate and report it enables cost real time. On "
-            "t010_operator_test -- tens of thousands of tiny operations, so a "
-            "per-operation overhead is the whole cost -- that is 70k of the log's "
-            "74k lines and 5s to 15s of the wall time, i.e. the timing column ends "
-            "up measuring a configuration no user runs (GeoDMS issue #1203). The "
-            "allocator series the report plots comes from the 'Reserved in Blocks' "
-            "line, which GeoDMS emits unconditionally, so the report is unchanged. "
-            "Pass -sp for a calibration run, or to exercise EstimateOperPerformance "
-            "and ReportOperPerformance -- the code path whose accessor-contract "
-            "defects were GeoDMS #1181. NB timings from a -sp run are NOT comparable "
-            "with the default ones and land in the same result folder."
+            "Run GeoDmsRun with /SP (PerformanceLogging, GeoDMS 20.16.0 and later). "
+            "Off by default. Turned on, GeoDMS measures and reports the cost and "
+            "footprint of each operation under the 'performance' message category -- "
+            "every operator run, scheduled calculation and storage read -- plus the "
+            "memory diagnostics on the same gate: the huge-allocation lines, the "
+            "periodic live-memory census and the end-of-run allocation histogram. "
+            "All of it goes to the log, and nothing in this harness reads it, while "
+            "it costs real time on the operation-dense tests (GeoDMS issue #1203)."
         ),
     )
     parser.add_argument(
@@ -825,8 +820,8 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
 
     print(version, MT1, MT2, MT3, "/SP" if args.sp else "(no /SP)")
     if args.sp:
-        print("-sp: PerformanceLogging ON -- per-operation estimate + report; timings are "
-              "not comparable with default runs (GeoDMS #1203)")
+        print("-sp: PerformanceLogging ON -- per-operation cost/footprint and the memory "
+              "diagnostics are written to the log")
 
     local_machine_parameters = get_local_machine_parameters()
     geodms_paths = get_geodms_paths(version)
