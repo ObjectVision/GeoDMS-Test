@@ -11,12 +11,53 @@ import shlex
 import argparse
 import csv
 import sys
+import traceback
 from bokeh import plotting
 from bokeh.models import HoverTool, PanTool, ResetTool, WheelZoomTool, CheckboxGroup, CheckboxButtonGroup, CustomJS, Legend, LegendItem, Label, ColumnDataSource, Div, InlineStyleSheet
 from bokeh.layouts import row, column
 from bokeh.palettes import Category10, Category20, Category20b, Category20c
 import glob
 import filecmp
+
+
+def _harden_stdio():
+    """Make stdout/stderr survive any character, whatever the environment says.
+
+    A multi-hour regression run must never die because a log line it merely
+    ECHOES cannot be encoded. Two ways that happened here:
+
+    * redirected output defaults to the locale codec with errors="strict"
+      (cp1252 on this box), so one non-cp1252 character in a GeoDMS log line
+      raises UnicodeEncodeError out of an innocent print();
+    * a shim that sets the handler in a cmd one-liner --
+      `set PYTHONIOENCODING=cp1252:replace && python full.py ...` -- silently
+      passes the TRAILING SPACE into the value, so every encode raises
+      `LookupError: unknown error handler name 'replace '`. That killed the
+      20.15.1.l run on 2026-08-17 at 03:04 inside readLogAllocator's print,
+      after 17 tests and 2.5 hours, with t641_1 already successfully run.
+
+    So: unless the stream already carries a handler that CANNOT raise, switch it
+    to backslashreplace -- lossy in the console only, never fatal, and the escaped
+    characters stay readable in the log. That also covers "surrogateescape", the
+    default on some hosts, which still raises on an ordinary character the codec
+    does not know.
+    """
+    never_raises = {"replace", "backslashreplace", "xmlcharrefreplace", "namereplace", "ignore"}
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:  # not a TextIOWrapper (pytest capture, pipes in some hosts)
+            continue
+        handler = getattr(stream, "errors", None)
+        if handler in never_raises:
+            continue
+        try:
+            reconfigure(errors="backslashreplace")
+        except Exception as e:  # last resort: say so, but keep running
+            print(f"could not harden stdio error handler ({handler!r}): {e!r}")
+
+
+_harden_stdio()
+
 
 class Experiment:
     def __init__(self, name:str=None, command:str=None, experiment_folder:str=None, environment_variables=None, cwd=None, geodms_logfile:str=None, indicator_results_file:str=None, binary_experiment_file:str=None, file_comparison:tuple=None, store_results:bool=True, pre_clean:list=None):
@@ -642,6 +683,14 @@ def getLogInfoForPlotting(log, log_fn, param):
     rlog_compact = getCompactClosestLogForRLog(log, geodms_log, param)
     return rlog_compact
 
+def _empty_plot_series():
+    """The shape getCompactClosestLogForRLog returns, with no points in it.
+
+    Fallback for a series that could not be derived (see the post-processing
+    guard in RunExperiments): the report code can still subscript ["x"]/["y"]/
+    ["text"] and simply draws nothing for that experiment."""
+    return {"inds":{}, "x":[], "y":[], "text":[], "num_text_lines":[], "IsEnded":{}}
+
 def getSvnVersion(exp):
     if exp.svn[0]:
         svn_id = subprocess.run("svn info --show-item last-changed-revision", cwd=exp.svn[0], capture_output=True).stdout.decode("utf-8")
@@ -930,25 +979,55 @@ def RunExperiments(experiments:list[Experiment]):
             with open(exp.indicator_results_file) as f:
                 exp.result["indicators"] = f.read()
 
+        # --- post-processing ------------------------------------------------------
+        # Everything below only DERIVES report material from a test that has ALREADY
+        # run: it reads the log the test wrote, and pickles the result. A raise here
+        # therefore throws away work that succeeded -- and, because the .bin is
+        # written last, throws away every hour of it. That is not hypothetical: on
+        # 2026-08-17 a bad PYTHONIOENCODING handler made readLogAllocator's echo
+        # raise, killing the 20.15.1.l run after 17 green tests and 2.5 hours with
+        # t641_1 (70 min) freshly finished and nothing wrong in GeoDMS.
+        # So each step is isolated: it reports its failure, records it on the
+        # experiment, and the suite carries on.
+        post_errors = []
+
+        def _post_step(what, fn, fallback=None):
+            try:
+                return fn()
+            except Exception as e:
+                post_errors.append(f"{what}: {e!r}")
+                print(f"[postprocess] {exp.name}: {what} failed: {e!r}; "
+                      f"continuing with the rest of the suite")
+                traceback.print_exc()
+                return fallback
+
+        #  "read_bytes" / "write_bytes" stay out (per-sample deltas, not plotted).
+        plot_series = ("cpu_percent", "cpu_curr_time", "memory_percent", "num_threads",
+                       "rss", "vms", "total_read_bytes", "total_write_bytes")
         if os.path.exists(geodms_logfile):
-            exp.result["cpu_percent"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "cpu_percent")
-            exp.result["cpu_curr_time"]     = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "cpu_curr_time")
-            exp.result["memory_percent"]    = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "memory_percent")
-            exp.result["num_threads"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "num_threads")
-            exp.result["rss"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "rss")
-            exp.result["vms"]               = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "vms")
-            #exp.result["read_bytes"]        = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "read_bytes")
-            #exp.result["write_bytes"]       = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "write_bytes")
-            exp.result["total_read_bytes"]  = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_read_bytes")
-            exp.result["total_write_bytes"] = getLogInfoForPlotting(exp.result["log"], geodms_logfile, "total_write_bytes")
+            # All series in ONE step: they parse the same log, so they fail together --
+            # and a partial set would feed the report's shared ColumnDataSource columns
+            # of unequal length.
+            exp.result.update(_post_step(
+                "plot series",
+                lambda: {k: getLogInfoForPlotting(exp.result["log"], geodms_logfile, k)
+                         for k in plot_series},
+                fallback={k: _empty_plot_series() for k in plot_series}))
 
         # Get allocator state from log
-        log_alloc = readLogAllocator(geodms_logfile, start_time) # temporarily disable allocator logging
-        exp.result["log_alloc"] = None
-        if log_alloc:
-            exp.result["log_alloc"] = log_alloc
+        exp.result["log_alloc"] = _post_step(
+            "allocator trace", lambda: readLogAllocator(geodms_logfile, start_time))
+
+        if post_errors:
+            # Keep the defect ON the result: the report then shows a test that ran,
+            # with a named gap, instead of a silently empty graph.
+            exp.result["postprocess_errors"] = post_errors
+
         if exp.store_results:
-            storeExperimentToPickleFile(exp)
+            # Store even after a post-processing failure. The .bin is what lets a
+            # resumed run SKIP this (often hour-long) test; without it the resume
+            # re-runs it straight back into the same deterministic defect.
+            _post_step("store result", lambda: storeExperimentToPickleFile(exp))
 
     print(f"Experiments profiling completed\n")
     return experiments
