@@ -535,13 +535,13 @@ def isolate_local_data_dir_per_run(local_machine_parameters:dict, run_id:str) ->
     """Re-root LocalDataDir at <LocalDataDir>/runs/<run_id> for this round.
 
     Every intermediate a run produces hangs off LocalDataDir: the harness-driven
-    `regression/<project>` trees (GEODMS_DIRECTORIES_LOCALDATAPROJDIR), the
+    `regression/<project>` trees (GEODMS_DIRECTORIES_LOCALDATAPROJDIR) and the
     config-written project dirs (NetworkModel_PBL_Regressietest,
-    rsopen_regressietest_v2025h2_wlb, ...) and the CalcCache. Sharing them
-    between flavours/versions means a later round silently reuses results the
-    previous one computed -- a .l round then reports on .m-computed data and a
-    genuine flavour regression can pass unnoticed. Per-run roots make each round
-    compute its own intermediates.
+    rsopen_regressietest_v2025h2_wlb, ...). Sharing them between flavours or
+    versions means a later round silently reuses results the previous one
+    computed -- a .l round then reports on .m-computed data and a genuine
+    flavour regression can pass unnoticed. Per-run roots make each round compute
+    its own intermediates.
 
     NOT affected: the result/report history, which lives under ResultsBaseDir
     (a separate setting) and must survive across rounds for the comparison
@@ -996,8 +996,8 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
                           f"set RunAllLinuxTests=true in local_settings.json to run anyway)")
                     operator_experiments = [e for e in operator_experiments if _tag not in e.name]
 
-        # %LocalDataProjDir% holds each project's writable working data (CalcCache
-        # + generated BaseData). For t641 (RSopen) that is GBs of libtiff TIFs;
+        # %LocalDataProjDir% holds each project's writable working data (the
+        # generated BaseData). For t641 (RSopen) that is GBs of libtiff TIFs;
         # on .l it resolves to /mnt/c/... (drvfs), where large sequential strip
         # writes sporadically fail ("gdal Failure: TIFFAppendToStrip: Write error
         # at scanline N" — a drvfs/9p write-reliability limit, not disk-full) and
