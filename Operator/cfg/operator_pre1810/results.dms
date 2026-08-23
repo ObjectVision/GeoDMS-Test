@@ -6,7 +6,7 @@
 		parameter<bool> tests_all := tests_regression && File/results/tests;
 
 		// een rij per (sub)test; de zes historische groepen tests_r1..r6 zijn samengevoegd
-		unit<uint32> Cand : nrofrows = 276
+		unit<uint32> Cand : nrofrows = 278
 		{
 			attribute<string> Spec :
 			[
@@ -161,6 +161,11 @@
 			,	'Relational/ordinal_test/test|ordinal'
 			,	'Conversion/rounded_convert/test_param|rounded_convert'
 			,	'Conversion/rounded_convert/test_attr|rounded_convert'
+			// waarde-type-casts behouden de ValueComposition van hun argument
+			// (GeoDMS #1038-vervolg, gefixt in 20.15.1); twee rijen omdat TestSet
+			// maximaal vier ';'-vereisten per rij verwerkt
+			,	'Conversion/cast_value_composition/test_attr|spolygon;ipolygon;fpolygon;>=20.15'
+			,	'Conversion/cast_value_composition/test_attr|wpolygon;upolygon;dpolygon;>=20.15'
 			,	'Sequence/sequence_element_count/test_attr|sequence_element_count'
 			,	'Sequence/points2arc/test_attr|points2arc'
 			,	'Sequence/points2multi_point/test_attr|points2multi_point'

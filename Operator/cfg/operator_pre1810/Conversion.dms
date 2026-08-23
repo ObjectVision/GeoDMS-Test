@@ -19,6 +19,55 @@
 			parameter<bool> test_attr := all(att = D6/expected);
 		}
 
+		// GeoDMS #1038-vervolg (gefixt in 20.15.1): de waarde-type-casts
+		// spolygon/wpolygon/ipolygon/upolygon/fpolygon/dpolygon leverden voor een
+		// (poly)- of (multipoint)-argument een resultaat met compositie 'arc'
+		// (Sequence) af; sindsdien erven ze, net als convert() en de blokhaak-cast
+		// sinds #1038, de ValueComposition van hun argument. Een declared (poly) op
+		// zo'n cast-attribuut werd door de berekende 'arc' overschreven, dus een
+		// configuratie kon er niet omheen werken.
+		container cast_value_composition
+		{
+			unit<float64> cvc_m2 := baseunit('cvc_m2', float64);
+			unit<fpoint>  cast_target;
+			unit<uint32> One: nrofrows = 1;
+			unit<uint32> Q: nrofrows = 5
+			{
+				attribute<float64> px: [0,0,4,4,0];
+				attribute<float64> py: [0,4,4,0,0];
+				attribute<ipoint>  pt := ipoint(point_yx(py, px, dpoint));
+				attribute<One>     s  := const(0, ., One);
+				attribute<uint32>  o  := id(.);
+			}
+			attribute<ipoint> sq   (One, polygon)    := points2polygon_pso(Q/pt, Q/s, Q/o);
+			attribute<ipoint> lijn (One, arc)        := points2sequence_pso(Q/pt, Q/s, Q/o);
+			attribute<ipoint> mp   (One, multipoint) := points2multi_point_pso(Q/pt, Q/s, Q/o);
+
+			attribute<spoint> sq_s (One, polygon) := spolygon(sq);
+			attribute<wpoint> sq_w (One, polygon) := wpolygon(sq);
+			attribute<ipoint> sq_i (One, polygon) := ipolygon(sq);
+			attribute<upoint> sq_u (One, polygon) := upolygon(sq);
+			attribute<fpoint> sq_f (One, polygon) := fpolygon(sq);
+			attribute<dpoint> sq_d (One, polygon) := dpolygon(sq);
+
+			attribute<fpoint> sq_conv (One, polygon)    := sq[cast_target]; // de blokhaak-cast: sinds #1038 al composition-behoudend
+			attribute<fpoint> lijn_f  (One, arc)        := fpolygon(lijn);  // arc blijft arc
+			attribute<fpoint> mp_f    (One, multipoint) := fpolygon(mp);    // multipoint blijft multipoint
+
+			parameter<bool> test_attr :=
+				   PropValue(sq,      'ValueComposition') = 'poly'
+				&& PropValue(sq_s,    'ValueComposition') = 'poly'
+				&& PropValue(sq_w,    'ValueComposition') = 'poly'
+				&& PropValue(sq_i,    'ValueComposition') = 'poly'
+				&& PropValue(sq_u,    'ValueComposition') = 'poly'
+				&& PropValue(sq_f,    'ValueComposition') = 'poly'
+				&& PropValue(sq_d,    'ValueComposition') = 'poly'
+				&& PropValue(sq_conv, 'ValueComposition') = 'poly'
+				&& PropValue(lijn_f,  'ValueComposition') = 'arc'
+				&& PropValue(mp_f,    'ValueComposition') = 'multipoint'
+				&& sum(area(dpolygon(sq_f), cvc_m2)) = sum(area(dpolygon(sq), cvc_m2));
+		}
+
 		container srcDomain       := source(ADomain);
 		container srcEDomain      := Esource(EDomain);
 		container srcTiledDomain  := source(ATiledDomain);
