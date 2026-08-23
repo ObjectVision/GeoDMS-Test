@@ -18,6 +18,11 @@ across GeoDMS versions. Entry point: `batch/full.py`.
   (`t200_grid`, `t641_1_RSopen_MakeBaseData`, `t2000_hestia`).
 - **`-report-only`** — rebuild the HTML report from existing result folders; run nothing.
 - **`-linux-gui`** — also run the Qt GUI tests on `.l` (off by default; they pass now — the `.l` executable bundles its own Qt).
+- **`-no-gui`** — skip the GUI tests (t1630/t1640/t1642) on *any* flavour; for older builds whose GUI binary crashes.
+- **`-resume`** — continue an interrupted round: keep this round's intermediates instead of wiping them at round start. Same version only.
+- **`-all-versions`** — show every historical result folder as a report column, not just full releases.
+- **`-sp`** — run with `/SP` (PerformanceLogging). **Off by default since 2026-08-23** (GeoDMS #1203): it cost 5-15s and 70k log lines on t010 and nothing here reads its output. Calibration runs only — its timings are not comparable with default ones and land in the same result folder.
+- `python full.py -h` is the authoritative option list; each help string says why the default is what it is.
 
 ## Critical rules
 
