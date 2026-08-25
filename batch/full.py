@@ -814,9 +814,18 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
     if args.MT3:
         MT3 = args.MT3
 
-    # "/SP " or "": interpolated straight into each experiment's command line, so an
-    # off run carries no switch at all rather than an empty argument.
-    SP = "/SP " if args.sp else ""
+    # "/SP " or "/CP ". The off arm passes /CP rather than nothing on purpose.
+    # PerformanceLogging is a per-machine registry DWORD under
+    # HKCU\Software\ObjectVision\<ComputerName>\GeoDMS, which the GUI exposes as a
+    # setting; /SP and /CP only override it for the session (SetPerformanceLogging
+    # goes through RTC_SetCachedDWord, which updates the in-memory cache and never
+    # writes the hive). So omitting the switch inherits whatever that machine has,
+    # and on a machine where it is 1 the suite would silently pay the per-operation
+    # estimate and report again and produce timings not comparable with any other
+    # machine's. /CP pins it off for the run. Verified 2026-08-23 on OVSRV10, three
+    # arms of t010: no switch -> 0 [performance] lines (its registry value is 0),
+    # /SP -> 70,403, /CP -> 0.
+    SP = "/SP " if args.sp else "/CP "
 
     print(version, MT1, MT2, MT3, "/SP" if args.sp else "(no /SP)")
     if args.sp:
