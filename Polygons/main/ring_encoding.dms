@@ -144,16 +144,144 @@ container ring_encoding
 			+ (ok_sub ? '' : 'sub ' + string(float32(aSubInfix)) + '!=' + string(float32(aSubNamed)) + ' ');
 	}
 
-	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok;
+
+	// -------------------------------------------------------------------------
+	// winding_order (GeoDMS issue 302)
+	//
+	// De ringvolgorde-operatoren, op dezelfde vorm als island_in_hole hierboven: een
+	// buitenring van 10x10, een gat van 6x6 en een eiland van 2x2 in dat gat, samen
+	// 68 m2, maar met telkens een andere ring omgedraaid.
+	//
+	// Waarom area(g) < 0 hier niet volstaat: area telt de HELE reeks als een getekend
+	// totaal op, dus alleen een feature waarvan ALLE ringen omgedraaid zijn wordt
+	// negatief. Draait er maar een om, dan wordt het totaal juist te GROOT
+	// (100 + 36 + 4 = 140) en glipt het door de test heen. Precies dat geval hield
+	// jipclaassens in issue 302 over in de BAG rond Amsterdam, na partitioned_union_polygon.
+	//
+	// De lezers leiden de rol van een ring af uit zijn ORIENTATIE; fix_winding_order
+	// leidt hem af uit de NESTING en past daarna pas de conventie toe. Alleen dat
+	// repareert een half omgedraaid feature.
+	// -------------------------------------------------------------------------
+	container winding_order
+	{
+		// goed: buitenring met de klok mee, gat tegen de klok in, eiland met de klok mee
+		unit<uint32> pOk := range(uint32, 0, 17)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy( 0.0,  0.0), point_xy( 0.0, 10.0), point_xy(10.0, 10.0), point_xy(10.0,  0.0), point_xy( 0.0,  0.0)
+			,	point_xy( 2.0,  2.0), point_xy( 8.0,  2.0), point_xy( 8.0,  8.0), point_xy( 2.0,  8.0), point_xy( 2.0,  2.0)
+			,	point_xy( 0.0,  0.0)
+			,	point_xy( 4.0,  4.0), point_xy( 4.0,  6.0), point_xy( 6.0,  6.0), point_xy( 6.0,  4.0), point_xy( 4.0,  4.0)
+			,	point_xy( 0.0,  0.0)
+			);
+		}
+		// alleen het GAT omgedraaid: 100 + 36 + 4 = 140, dus niet negatief
+		unit<uint32> pMixed := range(uint32, 0, 17)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy( 0.0,  0.0), point_xy( 0.0, 10.0), point_xy(10.0, 10.0), point_xy(10.0,  0.0), point_xy( 0.0,  0.0)
+			,	point_xy( 2.0,  2.0), point_xy( 2.0,  8.0), point_xy( 8.0,  8.0), point_xy( 8.0,  2.0), point_xy( 2.0,  2.0)
+			,	point_xy( 0.0,  0.0)
+			,	point_xy( 4.0,  4.0), point_xy( 4.0,  6.0), point_xy( 6.0,  6.0), point_xy( 6.0,  4.0), point_xy( 4.0,  4.0)
+			,	point_xy( 0.0,  0.0)
+			);
+		}
+		// alleen het EILAND omgedraaid: 100 - 36 - 4 = 60. Pint de pariteitsregel op diepte 2.
+		unit<uint32> pIsland := range(uint32, 0, 17)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy( 0.0,  0.0), point_xy( 0.0, 10.0), point_xy(10.0, 10.0), point_xy(10.0,  0.0), point_xy( 0.0,  0.0)
+			,	point_xy( 2.0,  2.0), point_xy( 8.0,  2.0), point_xy( 8.0,  8.0), point_xy( 2.0,  8.0), point_xy( 2.0,  2.0)
+			,	point_xy( 0.0,  0.0)
+			,	point_xy( 4.0,  4.0), point_xy( 6.0,  4.0), point_xy( 6.0,  6.0), point_xy( 4.0,  6.0), point_xy( 4.0,  4.0)
+			,	point_xy( 0.0,  0.0)
+			);
+		}
+		// een strik: een zichzelf snijdende ring, kruising in (5,5). Het getekende
+		// oppervlak is exact 0, dus er valt geen enkele orientatie uit af te lezen.
+		// De twee lobben zijn samen 50 m2, en dat komt er pas uit na fix_polygon.
+		unit<uint32> pBow := range(uint32, 0, 5)
+		{
+			attribute<crd> xy := union_data(.
+			,	point_xy( 0.0,  0.0), point_xy(10.0, 10.0), point_xy(10.0,  0.0), point_xy( 0.0, 10.0), point_xy( 0.0,  0.0)
+			);
+		}
+
+		parameter<crd> gOk     (polygon) := points2polygon(pOk/xy);
+		parameter<crd> gAllRev (polygon) := reverse_polygon(gOk);
+		parameter<crd> gMixed  (polygon) := points2polygon(pMixed/xy);
+		parameter<crd> gIsland (polygon) := points2polygon(pIsland/xy);
+		parameter<crd> gBow    (polygon) := points2polygon(pBow/xy);
+
+		parameter<float64> aIn := area(gOk, m2u);
+
+		// reverse_polygon draait elke RING om en laat de reeksindeling staan. Een omkering
+		// van de hele reeks - wat de sequence2points/reverse/points2sequence-workaround uit
+		// issue 302 doet - zou de ringstructuur slopen en deze heen-en-weertoets laten zakken.
+		unit<uint32> sOk   := sequence2points(gOk)                      { attribute<string> s := string(point); }
+		unit<uint32> sBack := sequence2points(reverse_polygon(gAllRev)) { attribute<string> s := string(point); }
+		parameter<bool> ok_roundtrip := AsDataString(sBack/s) == AsDataString(sOk/s);
+		parameter<bool> ok_negate    := area(gAllRev, m2u) == -aIn;
+
+		// fix_winding_order leidt de ringrollen af uit de nesting, dus alle vier de
+		// varianten moeten op het oppervlak van de schone vorm uitkomen.
+		parameter<float64> fOk     := area(fix_winding_order(gOk),     m2u);
+		parameter<float64> fAllRev := area(fix_winding_order(gAllRev), m2u);
+		parameter<float64> fMixed  := area(fix_winding_order(gMixed),  m2u);
+		parameter<float64> fIsland := area(fix_winding_order(gIsland), m2u);
+
+		parameter<bool> ok_fix :=
+			   abs(fOk     - aIn) <= aIn * 1e-6
+			&& abs(fAllRev - aIn) <= aIn * 1e-6
+			&& abs(fMixed  - aIn) <= aIn * 1e-6
+			&& abs(fIsland - aIn) <= aIn * 1e-6;
+
+		// het half omgedraaide geval is juist te GROOT, niet negatief: de oude toets mist hem
+		parameter<bool> ok_area_blind := area(gMixed, m2u) > aIn;
+
+		// has_correct_winding keurt alleen de schone vorm goed
+		parameter<bool> ok_predicate :=
+			   has_correct_winding(gOk)
+			&& !has_correct_winding(gAllRev)
+			&& !has_correct_winding(gMixed)
+			&& !has_correct_winding(gIsland)
+			&& !has_correct_winding(gBow);
+
+		// fix_polygon repareert de strik tot twee lobben van 25 m2; fix_winding_order
+		// raakt hem niet aan, want daarvoor moeten er coordinaten verschuiven.
+		parameter<float64> fBow    := area(fix_polygon(gBow), m2u);
+		parameter<float64> wBow    := area(fix_winding_order(gBow), m2u);
+		parameter<bool> ok_bowtie  := abs(fBow - 50.0) <= 1e-6 && wBow == 0.0;
+
+		// N.B. geos_polygon leest de ringrollen uit de orientatie en gaat op gAllRev de
+		// mist in: de CCW-buitenring wordt overgeslagen terwijl isFirstRing waar blijft,
+		// waardoor het gat tot buitenring gepromoveerd wordt en area 32 geeft (36 - 4) in
+		// plaats van 68. Dat is een aparte kwestie in geos_create_polygons, buiten de scope
+		// van issue 302; hier bewust GEEN assertie op, want die zou omvallen zodra het
+		// gerepareerd wordt. fix_polygon omzeilt de lezer en geeft wel 68.
+
+		parameter<bool> ok := ok_roundtrip && ok_negate && ok_fix && ok_area_blind && ok_predicate && ok_bowtie;
+		parameter<string> failwhat :=
+			  (ok_roundtrip  ? '' : 'roundtrip ')
+			+ (ok_negate     ? '' : 'negate ')
+			+ (ok_fix        ? '' : 'fix ' + string(float32(fOk)) + '/' + string(float32(fAllRev)) + '/' + string(float32(fMixed)) + '/' + string(float32(fIsland)) + ' ')
+			+ (ok_area_blind ? '' : 'area-blind ')
+			+ (ok_predicate  ? '' : 'predicate ')
+			+ (ok_bowtie     ? '' : 'bowtie ' + string(float32(fBow)) + '/' + string(float32(wBow)) + ' ');
+	}
+
+	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok && winding_order/ok;
 	parameter<string> line := ok
 		? (island_in_hole/cgalIdemFixed ? ''
 			: '<ringenc>ring encoding: cgal island-in-hole skipped (known ~0.3% area loss, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1178>#1178</a>)</ringenc>')
 		: '<ringenc>ring encoding: FAILS ('
 			+ (island_in_hole/ok     ? '' : 'island-in-hole: ' + island_in_hole/failwhat)
 			+ (overlapping_outers/ok ? '' : 'overlapping-outers: ' + overlapping_outers/failwhat)
-			+ (infix/ok              ? '' : 'infix: ' + infix/failwhat) + ')</ringenc>';
+			+ (infix/ok              ? '' : 'infix: ' + infix/failwhat)
+			+ (winding_order/ok      ? '' : 'winding-order: ' + winding_order/failwhat) + ')</ringenc>';
 	parameter<string> failnote :=
 		  (island_in_hole/ok     ? '' : 'ringenc-island-in-hole; ')
 		+ (overlapping_outers/ok ? '' : 'ringenc-overlapping-outers; ')
-		+ (infix/ok              ? '' : 'ringenc-infix; ');
+		+ (infix/ok              ? '' : 'ringenc-infix; ')
+		+ (winding_order/ok      ? '' : 'ringenc-winding-order; ');
 }
