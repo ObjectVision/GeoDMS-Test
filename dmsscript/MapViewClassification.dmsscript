@@ -15,8 +15,11 @@ SEND 3 2 273 19
 WAIT 500
 
 // Send cmd 4 (WM_COPYDATA->MdiChild) => ActiveDataView.ActiveControl.PopupMenu."Edit Palette"
-// code 1 (activates popup menu on active control) and menu item list {12}: Edit Palette
-SEND 4 2 1 12
+// code 1 activates the popup menu on the active control. A quoted element names a menu item by the
+// left part of its caption instead of by its position, so entries added or removed above it do not
+// silently make this fire something else; a name that matches nothing, or matches more than one
+// item, is reported as an error.
+SEND 4 2 1 "Edit Palette"
 WAIT 1000
 
 CascadeSubWindows // mdi_area->cascadeSubWindows()
@@ -38,17 +41,19 @@ WAIT 1000
 SEND 3 3 256 13 0
 WAIT 1000
 
-// activate popup menus on active control of MdiChild
-// menu item list {1 2} Classify hoek->Equal Count)
-SEND 4 3 1 1 2
+// activate popup menus on active control of MdiChild.
+// Note this is "Equal Counts non-zero", not the "Equal Count" that the old comment on index {1 2}
+// claimed: naming the item is what made the difference visible.
+SEND 4 3 1 "Classify" "Equal Counts non-zero"
 WAIT 1000
 
 // activate the sub-object with sequence {6 1 1 3}: EditPalette/TableView/ScrollPort/TableHeader/3rdColum
 SEND 4 5 0 6 1 1 3
 WAIT 1000
 
-// menu item list {7}. Copy Palette
-SEND 4 2 1 7
+// Index {7} was documented here as "Copy Palette", an item that no longer exists; the position has
+// been firing Remove classBreaks instead. Named now, so the script says what it actually does.
+SEND 4 2 1 "Remove classBreaks"
 WAIT 1000
 
 WAIT 5000

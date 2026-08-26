@@ -1,8 +1,8 @@
 // Issue #734: build a classification in one view and apply it in another.
 //
-// Menu indices used here (LayerControl popup): 12 = Edit Palette, 13 = Copy Classbreaks,
-// 14 = Paste Classbreaks. In the palette editor popup: 1 = Classify submenu,
-// 2 = Copy Classbreaks, 3 = Paste Classbreaks.
+// Menu items are addressed by the left part of their caption rather than by position, so that
+// entries added or removed above them cannot silently make this script fire something else.
+// A name that matches nothing, or that matches more than one item, is reported as an error.
 //
 // Run with MicroTst.dms. Expected in the log:
 //   - one "ts <n> is caused by ClassBreaks_ApplyToItems" per in-place paste (one epoch tick),
@@ -20,23 +20,23 @@ ActivateItem "/BackGroundLayer/district/hoek"
 DefaultView
 WAIT 8000
 
-SEND 4 2 1 13
+SEND 4 2 1 "Copy Classbreaks"
 WAIT 1500
 
-SEND 4 2 1 14
+SEND 4 2 1 "Paste Classbreaks"
 WAIT 3000
 
-SEND 4 2 1 13
+SEND 4 2 1 "Copy Classbreaks"
 WAIT 1500
 
 // ---------------------------------------------------------------- the palette editor route
-SEND 4 2 1 12
+SEND 4 2 1 "Edit Palette"
 WAIT 3000
 
-SEND 4 2 1 3
+SEND 4 2 1 "Paste Classbreaks"
 WAIT 3000
 
-SEND 4 2 1 2
+SEND 4 2 1 "Copy Classbreaks"
 WAIT 1500
 
 // ---------------------------------------------------------------- config classification
@@ -46,18 +46,18 @@ ActivateItem "/BackGroundLayer/district/hoek_centroid"
 DefaultView
 WAIT 8000
 
-SEND 4 2 1 14
+SEND 4 2 1 "Paste Classbreaks"
 WAIT 3000
 
 // Copying and pasting hoek_centroid onto itself does fit uint32: the configured items must stay
 // untouched and the layer must be re-themed onto a freshly generated, editable classification.
-SEND 4 2 1 13
+SEND 4 2 1 "Copy Classbreaks"
 WAIT 1500
 
-SEND 4 2 1 14
+SEND 4 2 1 "Paste Classbreaks"
 WAIT 4000
 
-SEND 4 2 1 13
+SEND 4 2 1 "Copy Classbreaks"
 WAIT 1500
 
 SEND 1 3 16 0 0
