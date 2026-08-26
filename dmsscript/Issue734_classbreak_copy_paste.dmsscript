@@ -1,0 +1,63 @@
+// Issue #734: build a classification in one view and apply it in another.
+//
+// Menu indices used here (LayerControl popup): 12 = Edit Palette, 13 = Copy Classbreaks,
+// 14 = Paste Classbreaks. In the palette editor popup: 1 = Classify submenu,
+// 2 = Copy Classbreaks, 3 = Paste Classbreaks.
+//
+// Run with MicroTst.dms. Expected in the log:
+//   - one "ts <n> is caused by ClassBreaks_ApplyToItems" per in-place paste (one epoch tick),
+//   - one "ts <n> is caused by ClassBreaks_ApplyToLayer" for the regenerating paste,
+//   - "PasteClassBreaks: the classification of hoek_centroid is configured or calculated and
+//      was left unchanged; a new one was generated for this view",
+//   - "Cannot paste class break -300 into class breaks of type uint32" when the int32 breaks of
+//      hoek are pasted onto the uint32 hoek_centroid,
+//   - no other errors.
+
+// ---------------------------------------------------------------- generated classification
+// hoek has no cdf, so the map view generates its class attributes under /Desktops/...:
+// pasting must overwrite them in place and round-trip losslessly.
+ActivateItem "/BackGroundLayer/district/hoek"
+DefaultView
+WAIT 8000
+
+SEND 4 2 1 13
+WAIT 1500
+
+SEND 4 2 1 14
+WAIT 3000
+
+SEND 4 2 1 13
+WAIT 1500
+
+// ---------------------------------------------------------------- the palette editor route
+SEND 4 2 1 12
+WAIT 3000
+
+SEND 4 2 1 3
+WAIT 3000
+
+SEND 4 2 1 2
+WAIT 1500
+
+// ---------------------------------------------------------------- config classification
+// hoek_centroid has cdf = "hoek_classes/classBreaks", which is configured and shared. Pasting
+// the int32 breaks of hoek must be refused on the value type before anything is created.
+ActivateItem "/BackGroundLayer/district/hoek_centroid"
+DefaultView
+WAIT 8000
+
+SEND 4 2 1 14
+WAIT 3000
+
+// Copying and pasting hoek_centroid onto itself does fit uint32: the configured items must stay
+// untouched and the layer must be re-themed onto a freshly generated, editable classification.
+SEND 4 2 1 13
+WAIT 1500
+
+SEND 4 2 1 14
+WAIT 4000
+
+SEND 4 2 1 13
+WAIT 1500
+
+SEND 1 3 16 0 0
