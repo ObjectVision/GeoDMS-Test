@@ -1,0 +1,24 @@
+// Issue #634 negative test: copy-on-write is for the legend and the palette editor only.
+// A plain table view on the same calculated attributes must still refuse the edit: no copy is
+// made, nothing is written, and the log carries no "Edit: ... (issue #634)" line.
+ActivateItem "/Issue634/calc_classes"
+DefaultView
+WAIT 6000
+
+// TableView/ScrollPort/TableControl/column 1 = classBreaks, calculated
+SEND 4 4 0 2 1 1
+WAIT 1000
+SEND 3 3 258 55 0  // WM_CHAR, 55='7'
+WAIT 800
+SEND 3 3 256 13 0  // VK_RETURN
+WAIT 2000
+
+// column 3 = Label, calculated
+SEND 4 4 0 2 1 3
+WAIT 1000
+SEND 3 3 258 90 0  // WM_CHAR, 90='Z'
+WAIT 800
+SEND 3 3 256 13 0
+WAIT 2000
+
+SEND 1 3 16 0 0

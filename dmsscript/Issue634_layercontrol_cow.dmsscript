@@ -1,0 +1,70 @@
+// Issue #634: edit data in the layer control that a calculation rule configures.
+//
+// Run with MicroTst.dms. /Issue634/hoek_calc is themed on /Issue634/calc_classes, whose
+// classBreaks, BrushColor and Label are all genuinely calculated, so each edit below has to copy
+// its attribute before it can write. hoek_classes/PenColor cannot serve for this: it is a plain
+// reference and resolves through to the editable data block hoek_classes/BrushColor.
+//
+// Expected in the log:
+//   - the "Execute" lines named in the comments below (a shifted menu index shows up as a wrong
+//     caption rather than as a silent no-op),
+//   - one "Edit: /Issue634/calc_classes/<attr> is configured or calculated ... was created for
+//     this desktop and is edited instead (issue #634)" per attribute, and never twice for the
+//     same one, naming a copy under /Desktops/Default/ViewData/Issue634/calc_classes/,
+//   - no errors.
+//
+// Sub-object indices are 1-based; a 0 ends the path. In the palette editor,
+//   {6,1,1,N} is the header caption of column N,
+//   {6,2,1,N} is column N itself, which is what keyboard input needs:
+//   1 = BrushColor, 2 = Label, 3 = classBreaks, 4 = area, 5 = count.
+// Level-0 menu of a column reached that way: 6 = Change Color, 7 = Change Pen Color,
+//   10 = Classify, 11 = Copy Classbreaks, 12 = Paste Classbreaks. Reached through the header
+//   caption instead, the menu also carries Ramp Colors and every index is one higher.
+
+ActivateItem "/Issue634/hoek_calc"
+DefaultView
+WAIT 8000
+
+// LayerControl popup: 12 = Edit Palette, as in MapViewClassification.dmsscript
+SEND 4 2 1 12
+WAIT 4000
+
+// ---------------------------------------------------------------- the colour
+// Change Color -> Set to transparent: a colour edit that needs no modal colour dialogue.
+SEND 4 5 0 6 2 1 1
+WAIT 1000
+SEND 4 3 1 6 2
+WAIT 3000
+
+// ---------------------------------------------------------------- the label
+// TextEditController starts an in-cell edit on the first WM_CHAR when it is not already editing.
+SEND 4 5 0 6 2 1 2
+WAIT 1000
+SEND 3 3 258 88 0  // 258=WM_CHAR, 88='X'
+WAIT 800
+SEND 3 3 256 13 0  // 256=WM_KEYDOWN, 13=VK_RETURN: commit
+WAIT 3000
+
+// ---------------------------------------------------------------- the class break
+SEND 4 5 0 6 2 1 3
+WAIT 1000
+SEND 3 3 258 50 0  // WM_CHAR, 50='2'
+WAIT 800
+SEND 3 3 256 13 0  // VK_RETURN
+WAIT 3000
+
+// ---------------------------------------------------------------- the copy is reused
+// The same colour edit again must NOT report a second copy: the first one is edited further.
+SEND 4 5 0 6 2 1 1
+WAIT 1000
+SEND 4 3 1 6 2
+WAIT 3000
+
+// ---------------------------------------------------------------- inspect the result
+// Copy Classbreaks (#734) puts the edited breaks, colours and labels on the clipboard, so a
+// run can be inspected by hand: class 0 must read 2;rgb(0,0,0);"X" against the configured
+// 0;rgb(0,0,255);"calc class 0".
+SEND 4 2 1 11
+WAIT 1500
+
+SEND 1 3 16 0 0

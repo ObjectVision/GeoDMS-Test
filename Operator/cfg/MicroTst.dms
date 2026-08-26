@@ -2857,4 +2857,31 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<unit_unknown> B;
 		}
 	}
+
+	// Issue #634: a classification whose class breaks, colours and labels are all genuinely
+	// calculated, so that editing a legend cell has to copy them instead of writing them.
+	// hoek_classes/PenColor cannot serve for this: it is a plain reference, which resolves
+	// through to the editable data block hoek_classes/BrushColor and is written directly.
+	container Issue634
+	{
+		unit<uint8> calc_classes: nrofrows = 4
+		{
+			attribute<uint32> classBreaks := uint32(id(.)), DialogType = "Classification";
+			attribute<uint32> BrushColor  := rgb(uint32(id(.)) * 60, 0, 255 - uint32(id(.)) * 60), DialogType = "BrushColor";
+			attribute<string> Label       := 'calc class ' + string(id(.));
+		}
+
+		// Its own geometry, so that the aspect lookup lands on calc_classes/BrushColor. Themed on
+		// BackGroundLayer/district/border instead, the BrushColor and PenColor parameters that
+		// border carries would occupy the legend's colour slots and the class palette would never
+		// be reached.
+		attribute<uint32> hoek_calc (BackGroundLayer/district)
+		:	expr = "BackGroundLayer/district/hoek2 + 0"
+		,	cdf  = "calc_classes/classBreaks"
+		{
+			attribute<BackGroundLayer/point_rd> geometry (BackGroundLayer/district, polygon)
+			:	expr = "points2polygon(BackGroundLayer/source/pointset/point, BackGroundLayer/source/pointset/districtnr, BackGroundLayer/source/pointset/ordinal)"
+			,	DialogType = "feature";
+		}
+	}
 }
