@@ -4,7 +4,11 @@ ActivateItem "/BackGroundLayer/district/hoek"
 DefaultView
 WAIT 1000
 
-WAIT 3000 // let classBreaks compute, WMS tiles download, and MapControl::UpdateView populate LayerControl
+// let classBreaks compute, WMS tiles download, and MapControl::UpdateView populate the layer
+// control. This has to be generous: WmCopyData silently returns when there is no active
+// QDmsViewArea yet, so a SEND that arrives too early is dropped without a trace and the run still
+// exits 0, having tested nothing.
+WAIT 5000
 
 // Copy MapView viewport to clipboard/file while MapView is still the active DataView
 // WM_COMMAND (273) with wParam=18 triggers TB_Copy (Copy Viewport Contents to Clipboard)
@@ -20,7 +24,8 @@ WAIT 500
 // silently make this fire something else; a name that matches nothing, or matches more than one
 // item, is reported as an error.
 SEND 4 2 1 "Edit Palette"
-WAIT 1000
+// the palette editor is created through PostGuiOper, so it is not up on return
+WAIT 3000
 
 CascadeSubWindows // mdi_area->cascadeSubWindows()
 WAIT 1000
