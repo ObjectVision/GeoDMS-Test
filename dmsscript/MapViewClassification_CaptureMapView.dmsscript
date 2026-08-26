@@ -4,7 +4,10 @@ ActivateItem "/BackGroundLayer/district/hoek"
 DefaultView
 WAIT 1000
 
-WAIT 100 // let MapControl::UpdateView go first in order to populate the layer control
+// let classBreaks compute, WMS tiles download, and MapControl::UpdateView populate the layer
+// control. 100 ms was not enough: the layer control was often not populated yet, so every SEND
+// below was dropped -- WmCopyData silently returns when there is no active QDmsViewArea.
+WAIT 5000
 
 // Send cmd 4 (WM_COPYDATA->MdiChild) => ActiveDataView.ActiveControl.PopupMenu."Edit Palette"
 // code 1 activates the popup menu on the active control. A quoted element names a menu item by the
@@ -12,7 +15,8 @@ WAIT 100 // let MapControl::UpdateView go first in order to populate the layer c
 // silently make this fire something else; a name that matches nothing, or matches more than one
 // item, is reported as an error.
 SEND 4 2 1 "Edit Palette"
-WAIT 1000
+// the palette editor is created through PostGuiOper, so it is not up on return
+WAIT 3000
 
 CascadeSubWindows // mdi_area->cascadeSubWindows()
 WAIT 1000
@@ -34,10 +38,12 @@ SEND 3 3 256 13 0
 WAIT 1000
 
 // activate popup menus on active control of MdiChild.
-// Note this is "Equal Counts non-zero", not the "Equal Count" that the old comment on index {1 2}
-// claimed: naming the item is what made the difference visible.
-SEND 4 3 1 "Classify" "Equal Counts non-zero"
-WAIT 1000
+// JenksFisher non-zero on purpose: it is the classification that runs on worker threads
+// (CreateNonzeroJenksFisherBreakAttr), so the captured map view exercises that path rather than
+// the trivial Equal Counts one. What the old numeric {1 2} fired here had drifted anyway.
+SEND 4 3 1 "Classify" "JenksFisher non-zero"
+// JenksFisher runs on worker threads; let it finish before the palette is read out
+WAIT 5000
 
 // activate the sub-object with sequence {6 1 1 3}: EditPalette/TableView/ScrollPort/TableHeader/3rdColum
 SEND 4 5 0 6 1 1 3
