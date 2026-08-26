@@ -947,11 +947,20 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<float32> result := call_g/result;
 	}
 	
-	
-	container call := f(3f);
-	
-	container ref := call;
-	
+	container ns_g {
+		parameter<float32> a := 4f;
+		function g(parameter<float32> x) -> parameter<float32>
+		{
+			container call_f := f(x*a);
+			parameter<float32> result := call_f/result;
+		}
+	}
+	container impl
+	{
+	   container invisible;
+	   container call := instantiate ns_g/g(3f);
+	}
+	container ref := impl/call;
 	parameter<float32> refres := subitem(ref, 'result');
 	parameter<bool> Boolean := or(false, true);
 	
@@ -960,8 +969,6 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	{
 		parameter<Float64> x: expr = "value('33.9', Float64)";
 	}
-	container issue_1075 := BackGroundLayer/district/hoek/xxxxx/yyyyy + 3;
-	container issue_1075b := BackGroundLayer/district/hoek/xxxxx/yyyyy;
 	
 	container UndefTest {
 		parameter<Float32> Undef: Expr = "Float32( 0 / 0 )";
