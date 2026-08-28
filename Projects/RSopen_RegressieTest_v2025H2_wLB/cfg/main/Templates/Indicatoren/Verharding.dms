@@ -1,12 +1,12 @@
 container Verharding
 {
-	unit<UInt32> Regio := SourceData/RegioIndelingen/Provincie;
+	unit<uint32> Regio := SourceData/RegioIndelingen/Provincie;
 	
 	container Wonen
 	{
-		unit<UInt8>       OP := Impl/StandVar/OP;
+		unit<uint8>       OP := Impl/StandVar/OP;
 		attribute<OP>     OP_rel (AdminDomain) := Stand/OP_rel;
-		attribute<Bool>   AllocatieHeeftPlaatsgevonden (AdminDomain) := IsDefined(OP_rel);
+		attribute<bool>   AllocatieHeeftPlaatsgevonden (AdminDomain) := IsDefined(OP_rel);
 		attribute<meter2> Verhard (AdminDomain) := = 'VariantParameters/Ontwikkelpakketten/'+VariantParameters/VariantK/OntwikkelPakketVariant[/Variant_rel]+'/InNettoBuurt/Verhard[OP_rel] * AdminDomain/NrHaPerCell[float32]';
 		
 		parameter <m2_ha> Per_NL := sum(Verhard) / (sum_uint32(AllocatieHeeftPlaatsgevonden)[float32] * AdminDomain/NrHaPerCell);
@@ -16,7 +16,7 @@ container Verharding
 	
 	container Werken
 	{
-		attribute<Bool> AllocatieHeeftPlaatsgevonden (AdminDomain) := Impl/StandVar/Subsector/Sector_rel[Stand/SubSector_rel] == /Classifications/Actor/Sector/V/Werken;
+		attribute<bool> AllocatieHeeftPlaatsgevonden (AdminDomain) := Impl/StandVar/Subsector/Sector_rel[Stand/SubSector_rel] == /Classifications/Actor/Sector/V/Werken;
 		// attribute<meter2> Verhard                    (AdminDomain) := = 'Stand/m2PandFootprint_Totaal + (AdminDomain/NrHaPerCell[meter2] - Stand/m2PandFootprint_Totaal) * VariantParameters/FractiesGroenInWerken/'+Variant_name+'/Verhard / float32(AllocatieHeeftPlaatsgevonden)';
 		
 		// parameter <m2_ha> Per_NL := sum(Verhard) / (sum_uint32(AllocatieHeeftPlaatsgevonden)[float32] * AdminDomain/NrHaPerCell);

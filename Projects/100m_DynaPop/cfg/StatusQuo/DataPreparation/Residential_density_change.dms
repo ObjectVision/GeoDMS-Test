@@ -8,20 +8,20 @@ Container Residential_density_change
 	container TableChopper 
 	{
 		// see http://www.objectvision.nl/geodms/configuration-examples/tablechopper
-		parameter<String> File: StorageName = "%SourceDataProjDir%/LUISA/urban_demand_files/residential_density_change_variables.csv", StorageType = "str"; 
-		parameter<String> HeaderLine: Expr = "ReadLines(File, void, 0)";
-		 parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine, '[^,]++(,[^,]++)*+')";
+		parameter<string> File: StorageName = "%SourceDataProjDir%/LUISA/urban_demand_files/residential_density_change_variables.csv", StorageType = "str"; 
+		parameter<string> HeaderLine: Expr = "ReadLines(File, void, 0)";
+		 parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine, '[^,]++(,[^,]++)*+')";
 		unit<uint32>  Field: Expr = "range(uint32, 0, strcount(HeaderLine, ','))", IntegrityCheck = "HeaderOK"
 		{
-			attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, string, strpos(HeaderLine, ',')+1)";
+			attribute<string> Name: Expr = "ReadArray(HeaderLine, Field, string, strpos(HeaderLine, ',')+1)";
 //			attribute<UInt16> Year: Expr = "uppercase(substr(Name,0,3)) = 'POP' ? UInt16(substr(Name, strlen(Name)-4, 4)) : Uint16(0 / 0)";
 		}
-		unit<UInt32> BodyDomain: Expr = "Range(UInt32, 0, strcount(File, '\n')-1)"
+		unit<uint32> BodyDomain: Expr = "Range(UInt32, 0, strcount(File, '\n')-1)"
 		{
 			attribute<string> Line: Expr = "ReadLines(File, BodyDomain, HeaderLine/ReadPos)";
-			attribute<Bool> LinesAreNuts3CodeAndIntegers(BodyDomain): expr = "regex_match(Line, '[A-Z][A-Z]([A-Z]|[0-9])?+([A-Z]|[0-9])?+(,([0-9]++))*+')";
+			attribute<bool> LinesAreNuts3CodeAndIntegers(BodyDomain): expr = "regex_match(Line, '[A-Z][A-Z]([A-Z]|[0-9])?+([A-Z]|[0-9])?+(,([0-9]++))*+')";
 			
-			attribute<String> Nuts3Code: Expr = "ReadElems(Line, string, const(0, BodyDomain))";//, IntegrityCheck = "LinesAreNuts3CodeAndIntegers";
+			attribute<string> Nuts3Code: Expr = "ReadElems(Line, string, const(0, BodyDomain))";//, IntegrityCheck = "LinesAreNuts3CodeAndIntegers";
 			attribute<Zones> Nuts3: Expr = "rlookup(Nuts3Code, Zones/ZoneId)";
 			container Data: Expr = 
 				"for_each_nedv("

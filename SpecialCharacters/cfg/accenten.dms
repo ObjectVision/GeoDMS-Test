@@ -17,9 +17,9 @@ container accenten
 			:	StorageType = "str"
 			,	StorageName = "%projDir%/data/accents.csv";
 			parameter<string> HeaderLine := readLines(FileData, void, 0);
-			unit<uint32> Field := Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)
+			unit<uint32> Field := Range(uint32, 0, strcount(HeaderLine, FieldSeparator)+1)
 			{
-				attribute<string> Name := ReadArray(HeaderLine, Field, String, 0);
+				attribute<string> Name := ReadArray(HeaderLine, Field, string, 0);
 			}
 			attribute<string> BodyLines(Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
 
@@ -61,22 +61,22 @@ container accenten
 		container TableComposer
 		{
 			unit<uint32> context:= src/gdal/src;
-			parameter<String> Fieldlist      := 'basis;nr1;nr2;nr3;nr4;nr5;nr6;nr7;nr8';
-			parameter<String> FieldSeperator := ';';
-			parameter<String> FileName       := '%LocalDataProjDir%/accents.csv';
+			parameter<string> Fieldlist      := 'basis;nr1;nr2;nr3;nr4;nr5;nr6;nr7;nr8';
+			parameter<string> FieldSeperator := ';';
+			parameter<string> FileName       := '%LocalDataProjDir%/accents.csv';
 
 			unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
 			{
 				attribute<string> Name := ReadArray(FieldList,.,string,0);
 			}
 			parameter<string> NewLine := '\n';
-			parameter<String> Header  := FieldList;
-			attribute<String> Body (context) :=
+			parameter<string> Header  := FieldList;
+			attribute<string> Body (context) :=
 				= AsList(
 					+'String(context/'+Field/Name+')',' + '+Quote(FieldSeperator)+' +'
 				);
 		
-			parameter<String> Result:= Header + NewLine + AsList(Body, NewLine)
+			parameter<string> Result:= Header + NewLine + AsList(Body, NewLine)
 			,	StorageName = "=FileName"
 			,	StorageType = "str";
 		}

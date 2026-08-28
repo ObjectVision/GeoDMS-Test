@@ -12,9 +12,9 @@
 template resample
 {
 	// template parameters	
-	parameter<String> NameFile;
+	parameter<string> NameFile;
 	// end case parameters
-	parameter<String> OnlyNameFile:=right(NameFile, 47);
+	parameter<string> OnlyNameFile:=right(NameFile, 47);
 	
 	unit<dpoint> WorldMollweide := /Input/WorldMollweide;
 
@@ -45,17 +45,17 @@ template resample
 			attribute<.> per_gtopo_sub(Input/gtopo_sub) := mapping(Input/gtopo_sub, .);
 			attribute<uint64> nr_sub := pcount(per_gtopo_sub);
 
-			attribute<Float32> var_per_gtopo_30 (Input/gtopo) := mean(URBANCENTREGRIDCELL30[per_gtopo_sub],           Input/gtopo_sub/gtopo_rel);
-			attribute<Float32> var_per_gtopo_23 (Input/gtopo) := mean(DENSEURBANCLUSTERGRIDCELL23[per_gtopo_sub],     Input/gtopo_sub/gtopo_rel);
-			attribute<Float32> var_per_gtopo_22 (Input/gtopo) := mean(SEMIDENSEURBANCLUSTERGRIDCELL22[per_gtopo_sub], Input/gtopo_sub/gtopo_rel);
-			attribute<Float32> var_per_gtopo_21 (Input/gtopo) := mean(SUBURBANORPERIURBANGRIDCELL21[per_gtopo_sub],   Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_30 (Input/gtopo) := mean(URBANCENTREGRIDCELL30[per_gtopo_sub],           Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_23 (Input/gtopo) := mean(DENSEURBANCLUSTERGRIDCELL23[per_gtopo_sub],     Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_22 (Input/gtopo) := mean(SEMIDENSEURBANCLUSTERGRIDCELL22[per_gtopo_sub], Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_21 (Input/gtopo) := mean(SUBURBANORPERIURBANGRIDCELL21[per_gtopo_sub],   Input/gtopo_sub/gtopo_rel);
 
-			attribute<Float32> var_per_gtopo_13 (Input/gtopo) := mean(RURALCLUSTERGRIDCELL13[per_gtopo_sub],          Input/gtopo_sub/gtopo_rel);
-			attribute<Float32> var_per_gtopo_12 (Input/gtopo) := mean(LOWDENSITYRURALGRIDCELL12[per_gtopo_sub],       Input/gtopo_sub/gtopo_rel);
-			attribute<Float32> var_per_gtopo_11 (Input/gtopo) := mean(VERYLOWDENSITYRURALGRIDCELL11[per_gtopo_sub],   Input/gtopo_sub/gtopo_rel);
-			attribute<Float32> var_per_gtopo_10 (Input/gtopo) := mean(WATERGRIDCELL10[per_gtopo_sub],                 Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_13 (Input/gtopo) := mean(RURALCLUSTERGRIDCELL13[per_gtopo_sub],          Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_12 (Input/gtopo) := mean(LOWDENSITYRURALGRIDCELL12[per_gtopo_sub],       Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_11 (Input/gtopo) := mean(VERYLOWDENSITYRURALGRIDCELL11[per_gtopo_sub],   Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo_10 (Input/gtopo) := mean(WATERGRIDCELL10[per_gtopo_sub],                 Input/gtopo_sub/gtopo_rel);
 
-			attribute<Float32> var_per_gtopo (Input/gtopo)    := mean(UrbanGridCell[per_gtopo_sub],                    Input/gtopo_sub/gtopo_rel);
+			attribute<float32> var_per_gtopo (Input/gtopo)    := mean(UrbanGridCell[per_gtopo_sub],                    Input/gtopo_sub/gtopo_rel);
 
 			attribute<bool>    urban (Input/gtopo)         := var_per_gtopo >0f ? 1[bool] : 0[bool],	StorageName = "='%LocalDataProjDir%/Results/'+OnlyNameFile+'_21_22_23_30_WGS84.tif'";
 			

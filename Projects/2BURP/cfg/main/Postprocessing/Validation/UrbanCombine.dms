@@ -15,7 +15,7 @@ container UrbanCombine : using = "geography"
 
 	template entropy_reduction_calculation_T 
 	{
-		unit<UInt32> sample_set;
+		unit<uint32> sample_set;
 		
 		unit<uint8> P;
 		attribute<P> part_rel(sample_set);
@@ -51,75 +51,75 @@ container UrbanCombine : using = "geography"
 		attribute<uint32> nr_BadPredictedAbandonment (P):= part_value_combi/count[combine_data(part_value_combi, 6, ID(P))]; // U->U modelled as R
 		attribute<uint32> nr_RemainingUrban          (P):= part_value_combi/count[combine_data(part_value_combi, 7, ID(P))]; // U->U modelled as U
 		
-		attribute<Float64> nr_RuralRural(P) := Float64(nr_RemainingRural           + nr_BadPredictedUrbanisation);
-		attribute<Float64> nr_RuralUrban(P) := Float64(nr_UrbanisationNotPredicted + nr_GoodPredicedUrbanisation);
-		attribute<Float64> nr_UrbanRural(P) := Float64(nr_GoodPredictedAbandonment + nr_NonPredicedAbandonment);
-		attribute<Float64> nr_UrbanUrban(P) := Float64(nr_BadPredictedAbandonment  + nr_RemainingUrban);
+		attribute<float64> nr_RuralRural(P) := float64(nr_RemainingRural           + nr_BadPredictedUrbanisation);
+		attribute<float64> nr_RuralUrban(P) := float64(nr_UrbanisationNotPredicted + nr_GoodPredicedUrbanisation);
+		attribute<float64> nr_UrbanRural(P) := float64(nr_GoodPredictedAbandonment + nr_NonPredicedAbandonment);
+		attribute<float64> nr_UrbanUrban(P) := float64(nr_BadPredictedAbandonment  + nr_RemainingUrban);
 		
-		attribute<Float64> nr_PastRural(P) := nr_RuralRural + nr_RuralUrban;
-		attribute<Float64> nr_PastUrban(P) := nr_UrbanRural + nr_UrbanUrban;
+		attribute<float64> nr_PastRural(P) := nr_RuralRural + nr_RuralUrban;
+		attribute<float64> nr_PastUrban(P) := nr_UrbanRural + nr_UrbanUrban;
 		
-		attribute<Float64> nr_CurrRural(P) := nr_RuralRural + nr_UrbanRural;
-		attribute<Float64> nr_CurrUrban(P) := nr_RuralUrban + nr_UrbanUrban;
+		attribute<float64> nr_CurrRural(P) := nr_RuralRural + nr_UrbanRural;
+		attribute<float64> nr_CurrUrban(P) := nr_RuralUrban + nr_UrbanUrban;
 		
-		attribute<Float64> nr_Cells(P) := Float64(pcount(part_rel)), IntegrityCheck = "(nr_PastRural + nr_PastUrban == nr_Cells) && (nr_CurrRural + nr_CurrUrban == nr_Cells)";
+		attribute<float64> nr_Cells(P) := float64(pcount(part_rel)), IntegrityCheck = "(nr_PastRural + nr_PastUrban == nr_Cells) && (nr_CurrRural + nr_CurrUrban == nr_Cells)";
 		
-		attribute<Float64> prc_PastRural(P) := (nr_PastRural / nr_Cells) * 100d;
-		attribute<Float64> prc_PastUrban(P) := (nr_PastUrban / nr_Cells) * 100d;
+		attribute<float64> prc_PastRural(P) := (nr_PastRural / nr_Cells) * 100d;
+		attribute<float64> prc_PastUrban(P) := (nr_PastUrban / nr_Cells) * 100d;
 	
-		attribute<Float64> prc_CurrRural(P) := (nr_CurrRural / nr_Cells) * 100d;
-		attribute<Float64> prc_CurrUrban(P) := (nr_CurrUrban / nr_Cells) * 100d;
+		attribute<float64> prc_CurrRural(P) := (nr_CurrRural / nr_Cells) * 100d;
+		attribute<float64> prc_CurrUrban(P) := (nr_CurrUrban / nr_Cells) * 100d;
 		
-		attribute<Float64> prc_DifCurrPastRural(P) := prc_CurrRural - prc_PastRural;
-		attribute<Float64> prc_DifCurrPastUrban(P) := prc_CurrUrban - prc_PastUrban;
+		attribute<float64> prc_DifCurrPastRural(P) := prc_CurrRural - prc_PastRural;
+		attribute<float64> prc_DifCurrPastUrban(P) := prc_CurrUrban - prc_PastUrban;
 	
 		container withoutModel 
 		{
-			attribute<Float64> org_Entropy(P) := -(plogp(nr_CurrRural / nr_Cells) + plogp(nr_CurrUrban / nr_Cells));// https://en.wikipedia.org/wiki/Information_theory#Entropy_of_an_information_source
-			attribute<Float64> org_Entropy_given_past(P) := // https://en.wikipedia.org/wiki/Information_theory#Conditional_entropy_(equivocation)
+			attribute<float64> org_Entropy(P) := -(plogp(nr_CurrRural / nr_Cells) + plogp(nr_CurrUrban / nr_Cells));// https://en.wikipedia.org/wiki/Information_theory#Entropy_of_an_information_source
+			attribute<float64> org_Entropy_given_past(P) := // https://en.wikipedia.org/wiki/Information_theory#Conditional_entropy_(equivocation)
 				-(	(nr_PastRural / nr_Cells)*(plogp(nr_RuralRural / nr_PastRural) + plogp(nr_RuralUrban / nr_PastRural)) 
 				+	(nr_PastUrban / nr_Cells)*(plogp(nr_UrbanRural / nr_PastUrban) + plogp(nr_UrbanUrban / nr_PastUrban))
 				);
-			attribute<Float64> information_value_past  (P) := org_Entropy - org_Entropy_given_past;
+			attribute<float64> information_value_past  (P) := org_Entropy - org_Entropy_given_past;
 		}
 		
 		container PastRural 
 		{
-			attribute<Float64> nr_PredRural(P) := Float64(nr_RemainingRural           + nr_UrbanisationNotPredicted);
-			attribute<Float64> nr_PredUrban(P) := Float64(nr_BadPredictedUrbanisation + nr_GoodPredicedUrbanisation);
-			attribute<Float64> org_Entropy(P) := -(plogp(nr_RuralRural / nr_PastRural) + plogp(nr_RuralUrban / nr_PastRural));// https://en.wikipedia.org/wiki/Information_theory#Entropy_of_an_information_source
-			attribute<Float64> org_Entropy_given_modelresult(P) := // https://en.wikipedia.org/wiki/Information_theory#Conditional_entropy_(equivocation)
-				-(	(nr_PredRural / nr_PastRural)*(plogp(Float64(nr_RemainingRural          ) / nr_PredRural) + plogp(Float64(nr_UrbanisationNotPredicted) / nr_PredRural)) 
-				+	(nr_PredUrban / nr_PastRural)*(plogp(Float64(nr_BadPredictedUrbanisation) / nr_PredUrban) + plogp(Float64(nr_GoodPredicedUrbanisation) / nr_PredUrban))
+			attribute<float64> nr_PredRural(P) := float64(nr_RemainingRural           + nr_UrbanisationNotPredicted);
+			attribute<float64> nr_PredUrban(P) := float64(nr_BadPredictedUrbanisation + nr_GoodPredicedUrbanisation);
+			attribute<float64> org_Entropy(P) := -(plogp(nr_RuralRural / nr_PastRural) + plogp(nr_RuralUrban / nr_PastRural));// https://en.wikipedia.org/wiki/Information_theory#Entropy_of_an_information_source
+			attribute<float64> org_Entropy_given_modelresult(P) := // https://en.wikipedia.org/wiki/Information_theory#Conditional_entropy_(equivocation)
+				-(	(nr_PredRural / nr_PastRural)*(plogp(float64(nr_RemainingRural          ) / nr_PredRural) + plogp(float64(nr_UrbanisationNotPredicted) / nr_PredRural)) 
+				+	(nr_PredUrban / nr_PastRural)*(plogp(float64(nr_BadPredictedUrbanisation) / nr_PredUrban) + plogp(float64(nr_GoodPredicedUrbanisation) / nr_PredUrban))
 				);
 			
-			attribute<Float64> information_value_past  (P) := org_Entropy - org_Entropy_given_modelresult;
+			attribute<float64> information_value_past  (P) := org_Entropy - org_Entropy_given_modelresult;
 		}
 		
 		container PastUrban 
 		{
-			attribute<Float64> nr_PredRural(P) := Float64(nr_GoodPredictedAbandonment + nr_BadPredictedAbandonment);
-			attribute<Float64> nr_PredUrban(P) := Float64(nr_NonPredicedAbandonment   + nr_RemainingUrban);
-			attribute<Float64> org_Entropy (P) := -(plogp(nr_UrbanRural / nr_PastUrban) + plogp(nr_UrbanUrban / nr_PastUrban));// https://en.wikipedia.org/wiki/Information_theory#Entropy_of_an_information_source
-			attribute<Float64> org_Entropy_given_modelresult(P) := // https://en.wikipedia.org/wiki/Information_theory#Conditional_entropy_(equivocation)
-				-(	(nr_PredRural / nr_PastUrban)*(plogp(Float64(nr_GoodPredictedAbandonment) / nr_PredRural) + plogp(Float64(nr_BadPredictedAbandonment) / nr_PredRural)) 
-				+	(nr_PredUrban / nr_PastUrban)*(plogp(Float64(nr_NonPredicedAbandonment  ) / nr_PredUrban) + plogp(Float64(nr_RemainingUrban         ) / nr_PredUrban))
+			attribute<float64> nr_PredRural(P) := float64(nr_GoodPredictedAbandonment + nr_BadPredictedAbandonment);
+			attribute<float64> nr_PredUrban(P) := float64(nr_NonPredicedAbandonment   + nr_RemainingUrban);
+			attribute<float64> org_Entropy (P) := -(plogp(nr_UrbanRural / nr_PastUrban) + plogp(nr_UrbanUrban / nr_PastUrban));// https://en.wikipedia.org/wiki/Information_theory#Entropy_of_an_information_source
+			attribute<float64> org_Entropy_given_modelresult(P) := // https://en.wikipedia.org/wiki/Information_theory#Conditional_entropy_(equivocation)
+				-(	(nr_PredRural / nr_PastUrban)*(plogp(float64(nr_GoodPredictedAbandonment) / nr_PredRural) + plogp(float64(nr_BadPredictedAbandonment) / nr_PredRural)) 
+				+	(nr_PredUrban / nr_PastUrban)*(plogp(float64(nr_NonPredicedAbandonment  ) / nr_PredUrban) + plogp(float64(nr_RemainingUrban         ) / nr_PredUrban))
 				);
 			
-			attribute<Float64> information_value_past  (P) := org_Entropy - org_Entropy_given_modelresult;
+			attribute<float64> information_value_past  (P) := org_Entropy - org_Entropy_given_modelresult;
 		}
 		
-		attribute<Float64> org_Entropy           (P) := withoutModel/org_Entropy;
-		attribute<Float64> org_Entropy_given_past(P) := (nr_PastRural * PastRural/org_Entropy + nr_PastUrban * PastUrban/org_Entropy) / nr_Cells;
-		attribute<Float64> org_Entropy_given_modelresult(P) := (nr_PastRural * PastRural/org_Entropy_given_modelresult + nr_PastUrban * PastUrban/org_Entropy_given_modelresult) / nr_Cells;
+		attribute<float64> org_Entropy           (P) := withoutModel/org_Entropy;
+		attribute<float64> org_Entropy_given_past(P) := (nr_PastRural * PastRural/org_Entropy + nr_PastUrban * PastUrban/org_Entropy) / nr_Cells;
+		attribute<float64> org_Entropy_given_modelresult(P) := (nr_PastRural * PastRural/org_Entropy_given_modelresult + nr_PastUrban * PastUrban/org_Entropy_given_modelresult) / nr_Cells;
 		
 		container information_value 
 		{
-			attribute<Float64> past  (P) := org_Entropy - org_Entropy_given_past;
-			attribute<Float64> model (P) := org_Entropy_given_past - org_Entropy_given_modelresult;
+			attribute<float64> past  (P) := org_Entropy - org_Entropy_given_past;
+			attribute<float64> model (P) := org_Entropy_given_past - org_Entropy_given_modelresult;
 			
-			attribute<Float64> indicator1(P) := model / past;
-			attribute<Float64> indicator2(P) := model / org_Entropy_given_past; // reduction of entropy related to original entropy without model, 0.0 is worthless projection, 1.0 is perfect projection.
+			attribute<float64> indicator1(P) := model / past;
+			attribute<float64> indicator2(P) := model / org_Entropy_given_past; // reduction of entropy related to original entropy without model, 0.0 is worthless projection, 1.0 is perfect projection.
 		}
 	}
 }

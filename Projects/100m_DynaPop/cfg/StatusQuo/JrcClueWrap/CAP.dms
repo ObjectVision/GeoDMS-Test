@@ -16,7 +16,7 @@ container CAP: IntegrityCheck = "GeoDmsVersion() >= 7.021"
 //	    attribute<JrcFactorData/ShapeData/coastalZones> cz_grid (domain_grid): expr = "poly2grid(JrcFactorData/ShapeData/coastalZones/Geometry, Geography/Lambert100mGrid)", FreeData = "True";
 		attribute<bool> buff_ndaMap (domain_grid) : 			Expr = "JrcFactorData/TiffData/NDAs/NDA", DisableStorage = "True";
 		attribute<bool> riparianAreaMap  	(domain_grid):  	Expr = "JrcFactorData/TiffData/RiparianAreas/RiparianAreas", DisableStorage = "True";
-		attribute<Int16> erosionRiskMap     (domain_grid):  	Expr = "JrcFactorData/TiffData/erosionRisk/erosionRisk ", DisableStorage = "True";
+		attribute<int16> erosionRiskMap     (domain_grid):  	Expr = "JrcFactorData/TiffData/erosionRisk/erosionRisk ", DisableStorage = "True";
 		attribute<bool> Natura2000		    (domain_grid): 	    Expr = "JrcFactorData/TiffData/Natura2000/Natura2000", DisableStorage = "True";
 
 		//GAECS
@@ -30,7 +30,7 @@ container CAP: IntegrityCheck = "GeoDmsVersion() >= 7.021"
             , DisableStorage = "True";
 		                                                                    
 		 //NECR                                                                  
-		 attribute<UInt32> NECR_Map   (domain_grid): expr = "UInt32(JrcFactorData/TiffData/SuitabilityMapNECR/ReadData < int8(100) ? uint32(JrcFactorData/TiffData/SuitabilityMapNECR/ReadData): uint32(0))" , DisableStorage = "True"; 
+		 attribute<uint32> NECR_Map   (domain_grid): expr = "UInt32(JrcFactorData/TiffData/SuitabilityMapNECR/ReadData < int8(100) ? uint32(JrcFactorData/TiffData/SuitabilityMapNECR/ReadData): uint32(0))" , DisableStorage = "True"; 
 		 attribute<uint8> IsPeatlands (domain_grid): expr = "JrcFactorData/TiffData/Peatlands/IsPeatlands" , DisableStorage = "True";                                                                    
 		 attribute<uint8> salinity    (domain_grid): expr = "JrcFactorData/TiffData/salinity" , DisableStorage = "True";  
 		 attribute<uint16> Erodibility(domain_grid): expr = "JrcFactorData/TiffData/Erodibility" , DisableStorage = "True";
@@ -192,6 +192,6 @@ container CAP: IntegrityCheck = "GeoDmsVersion() >= 7.021"
 		attribute<int8> read_LocSpecsNecr (domain_grid): StorageReadOnly = "True",
 			StorageName = "%LocalDataDir%/100m/LocSpecsNecr.tif";
 			
-		parameter<String> Generate: Expr = "'Ready'", ExplicitSuppliers = "written_LocSpecsAra;written_LocSpecsPC;written_LocSpecsPast;written_LocSpecsFor;written_LocSpecsNECR";
+		parameter<string> Generate: Expr = "'Ready'", ExplicitSuppliers = "written_LocSpecsAra;written_LocSpecsPC;written_LocSpecsPast;written_LocSpecsFor;written_LocSpecsNECR";
 	}
 }

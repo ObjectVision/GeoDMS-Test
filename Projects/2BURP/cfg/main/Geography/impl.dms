@@ -113,15 +113,15 @@ container Impl
 	{
 		attribute<Person> InitialPopGrid         (domain) := ='SourceData/Population/PerYear/'+ModelParameters/StartYear+'[Person]';
 		// attribute<Person> InitialPopGrid1990     (domain) := CompactedDomain/ISCD ? SourceData/Population/PerYear/Y1990[Person] : null_d[Person];
-		attribute<Bool>   InStudyArea            (domain) := poly2grid(LatLong/geometry, domain);
-		attribute<Bool>   HasPop                 (domain) := InitialPopGrid > 0[Person];
-		attribute<Bool>   HasBuiltup             (domain) := ='IsDefined(Countries/per_domain) ? (SourceData/Builtup/Total/'+ModelParameters/StartYear+' > 0[m2]) : false';
-		attribute<Bool>	  InBU_5kmClip           (domain) := ='IsDefined(Countries/per_domain) && (SourceData/Builtup/Total_sums_5km/'+ModelParameters/StartYear+' > 0[m2])';
+		attribute<bool>   InStudyArea            (domain) := poly2grid(LatLong/geometry, domain);
+		attribute<bool>   HasPop                 (domain) := InitialPopGrid > 0[Person];
+		attribute<bool>   HasBuiltup             (domain) := ='IsDefined(Countries/per_domain) ? (SourceData/Builtup/Total/'+ModelParameters/StartYear+' > 0[m2]) : false';
+		attribute<bool>	  InBU_5kmClip           (domain) := ='IsDefined(Countries/per_domain) && (SourceData/Builtup/Total_sums_5km/'+ModelParameters/StartYear+' > 0[m2])';
 
 		attribute<bool>   IsNotLake              (domain) := not(Physical/Water/Inland_Water/Read_per_grid);
 		attribute<bool>   IsNotIce               (domain) := not(Physical/SnowIceCover/ReadData);
 		attribute<bool>   HasLand				 (domain) := SourceData/Physical/Water/AllWater/HasLand_Read;
-		attribute<Bool>   FreeLand               (domain) := InStudyArea                                // is it within the study area (e.g. country border)
+		attribute<bool>   FreeLand               (domain) := InStudyArea                                // is it within the study area (e.g. country border)
 																&& InBU_5kmClip                         // within certain distance from bu-area.
 																&& (HasLand || HasBuiltup || HasPop)	// needs to contain some land, or built-up, or population
 																//&& (IsNotLake || HasBuiltup || HasPop)  // it is not a lake, unless there is builtup or population in a cell categorised as a lake

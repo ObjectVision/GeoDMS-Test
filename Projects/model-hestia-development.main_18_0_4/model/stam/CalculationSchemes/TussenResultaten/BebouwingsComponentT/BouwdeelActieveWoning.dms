@@ -42,7 +42,7 @@ unit<uint32> BouwdeelActieveWoning := select_with_org_rel(BO/Activatie/BouwdeelA
 		// hoeveel besparing in verlies
 		
 		// xx_N1 behoeft geen afweging, geen besparing noch kosten.
-		attribute<Float64> BesparingsFactor(classifications/IsolatieMaatregel) := 
+		attribute<float64> BesparingsFactor(classifications/IsolatieMaatregel) := 
 			classifications/Bouwdeel/Verlies[classifications/IsolatieMaatregel/bouwdeel_rel] // hoeveel relatief belang 
 		*	MakeDefined(classifications/IsolatieMaatregel/R_RV / value(100, Percent), 0.0);
 		
@@ -128,7 +128,7 @@ unit<uint32> BouwdeelActieveWoning := select_with_org_rel(BO/Activatie/BouwdeelA
 				?	replace('uint16(AmbitieBerekening/KiesBouwdelen/@BD/NewIsolatieNiveau_rel) * classifications/Bouwdeel/V/@BD->IsolatieCodeSubFactor2', '@BD', classifications/Bouwdeel/name)
 				:	string(0/0)
 				)+')', ishidden = "True";
-		attribute<uint32> IsolatieCode := UInt32(IsolatieCode1)+3125*UInt32(IsolatieCode2), ishidden = "True";
+		attribute<uint32> IsolatieCode := uint32(IsolatieCode1)+3125*uint32(IsolatieCode2), ishidden = "True";
 
 		attribute<UniekIsolatieCode> UniekIsolatieCode_rel := rlookup(IsolatieCode, UniekIsolatieCode/values), ishidden = "True";
 		attribute<UICxBAW> UICxBAW_code := point_yx(BouwdeelActieveWoning_rel, UniekIsolatieCode_rel, UICxBAW), ishidden = "True";
@@ -136,7 +136,7 @@ unit<uint32> BouwdeelActieveWoning := select_with_org_rel(BO/Activatie/BouwdeelA
 		attribute<UniekAmbitie> UniekAmbitie_rel := rlookup(UICxBAW_code, UniekAmbitie/values), ishidden = "True";
 	}
 	unit<uint32> UniekIsolatieCode:= unique(AmbitieBerekening/IsolatieCode), ishidden = "True";
-	unit<UPoint> UICxBAW : ishidden = "True";
+	unit<upoint> UICxBAW : ishidden = "True";
 	
 	unit<uint32> UniekAmbitie := unique(AmbitieBerekening/UICxBAW_code)
 	{

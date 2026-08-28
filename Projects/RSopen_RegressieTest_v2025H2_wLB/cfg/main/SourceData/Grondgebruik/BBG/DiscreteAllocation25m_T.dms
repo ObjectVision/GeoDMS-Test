@@ -1,18 +1,18 @@
 Template DiscreteAllocation25m_T
 {
 	//
-	parameter<UInt32> Year;
+	parameter<uint32> Year;
 	//
 	
 	attribute <Grondgebruik/CBSKlasse> Result_discrete (rdc_25m) := Allocation/LandUse_rel[invert(Input/Compacted/ADomain/org_rel)], StorageName = "='%LocalDataProjDir%/BaseData/Grondgebruik/BBG/BBG'+string(Year)+'_25m_allocation_'+/ModelParameters/StudyArea+'.tif'";
 	
 	container Input
 	{
-		unit<UInt32> AggRegio := Geography/RegioIndelingen/COROP;
+		unit<uint32> AggRegio := Geography/RegioIndelingen/COROP;
 		
 		container Compacted
 		{
-			unit<UInt32> ADomain := select_with_org_rel(IsDefined(AggRegio/per_rdc_25m))
+			unit<uint32> ADomain := select_with_org_rel(IsDefined(AggRegio/per_rdc_25m))
 			, DialogType = "Map"
 			, DialogData = "BaseGrid";
 			attribute<ADomain> BaseGrid (rdc_25m) := invert(ADomain/org_rel);
@@ -41,7 +41,7 @@ Template DiscreteAllocation25m_T
 					, uint32
 				)
 			{
-				attribute<UInt32> Totaal (AggRegio) := = 'add('+asItemList(Grondgebruik/CBSKlasse/name)+')';
+				attribute<uint32> Totaal (AggRegio) := = 'add('+asItemList(Grondgebruik/CBSKlasse/name)+')';
 			}
 			
 			container MinClaims := 
@@ -56,11 +56,11 @@ Template DiscreteAllocation25m_T
 	
 	container Allocation
 	{
-		unit<UInt8> Partitioning: NrOfRows = 1
+		unit<uint8> Partitioning: NrOfRows = 1
 		{ 
-			attribute<String> name   : ['id'];
+			attribute<string> name   : ['id'];
 		}
-		parameter<Int32> threshold := int32(0);
+		parameter<int32> threshold := int32(0);
 		
 		container FeasibleSolution;
 		

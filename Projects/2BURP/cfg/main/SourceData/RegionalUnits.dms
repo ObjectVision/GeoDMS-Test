@@ -37,7 +37,7 @@ container RegionalUnits
 		attribute<mainland>          mainland_rel               := rlookup(const(1u,.), mainland/values);
 		attribute<.>                 per_domain              (domain) := poly2grid(geometry_LL , domain);
 		
-		container V := for_each_nedv(AsItemName(Label), String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(AsItemName(Label), string(ID(.))+'[..]', void, .);
 	}
 
 	
@@ -49,7 +49,7 @@ container RegionalUnits
 		attribute<.>        per_grid     (domain) := poly2grid(geometry , domain);
 		attribute<World>    World_rel             := const(0[WOrld],.);
 		
-		container V := for_each_nedv(AsItemName(name), String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(AsItemName(name), string(ID(.))+'[..]', void, .);
 		
 		
 		container GetPerContinentGeometry := 
@@ -83,7 +83,7 @@ container RegionalUnits
 		attribute<string>     Label           := const('World',.);
 		attribute<LatLong>    geometry (poly) := bp_union_polygon(Continents/geometry[LatLong_ip], continents/World_rel)[LatLong];
 		
-		container V := for_each_nedv(AsItemName(Label), String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(AsItemName(Label), string(ID(.))+'[..]', void, .);
 	}
 	
 

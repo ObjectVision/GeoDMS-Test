@@ -1,6 +1,6 @@
 container MateriaalStromen
 {
-	unit<UInt8> MaterialIntensity_Historical
+	unit<uint8> MaterialIntensity_Historical
 	: StorageName = "%RSo_DataDir%/Vastgoed/MateriaalStromen/Metabolic_MI_Data_20230720_Historical.csv"
 	, StorageType = "gdal.vect"
 	, StorageReadOnly = "TRUE"
@@ -10,7 +10,7 @@ container MateriaalStromen
 		attribute<BuildingTypes>  BT_rel       := rlookup(BuildingType, BuildingTypes/Label_nl);
 		attribute<BouwjaarCohort> BJCohort_rel := rlookup(Cohort, BouwjaarCohort/Label_lookup);
 		attribute<BT_BC>          BT_BC_rel    := rlookup(BuildingTypes/name[BT_rel] + '_' + BouwjaarCohort/name[BJCohort_rel], BT_BC/name);
-		attribute<String>         BT_BC_name   := BT_BC/name[BT_BC_rel];
+		attribute<string>         BT_BC_name   := BT_BC/name[BT_BC_rel];
 		
 		container Per_BT_BC := 
 			for_each_nedv(
@@ -21,7 +21,7 @@ container MateriaalStromen
 			);
 	}
 	
-	unit<UInt8> MaterialIntensity_Scenarios 
+	unit<uint8> MaterialIntensity_Scenarios 
 	: StorageName = "%RSo_DataDir%/Vastgoed/MateriaalStromen/Metabolic_MI_Data_20230720_Scenarios.csv"
 	, StorageType = "gdal.vect"
 	, StorageReadOnly = "TRUE"
@@ -33,7 +33,7 @@ container MateriaalStromen
 		attribute<BT_Sc>         BT_Sc_rel  := rlookup(BuildingTypes/name[BT_rel] + '_' + Scenarios/name[Sc_rel], BT_Sc/name);
 	}
 	
-	unit<UInt8> Conventioneel := select_with_attr_by_cond(MaterialIntensity_Scenarios,MaterialIntensity_Scenarios/Sc_rel == Classifications/MateriaalStromen/Scenarios/v/Conventioneel)
+	unit<uint8> Conventioneel := select_with_attr_by_cond(MaterialIntensity_Scenarios,MaterialIntensity_Scenarios/Sc_rel == Classifications/MateriaalStromen/Scenarios/v/Conventioneel)
 	, using = "Classifications/MateriaalStromen"
 	{
 		container Per_MIBT := 
@@ -45,7 +45,7 @@ container MateriaalStromen
 			);
 	}
 	
-	unit<UInt8> Biobased := select_with_attr_by_cond(MaterialIntensity_Scenarios,MaterialIntensity_Scenarios/Sc_rel == Classifications/MateriaalStromen/Scenarios/v/Biobased)
+	unit<uint8> Biobased := select_with_attr_by_cond(MaterialIntensity_Scenarios,MaterialIntensity_Scenarios/Sc_rel == Classifications/MateriaalStromen/Scenarios/v/Biobased)
 	, using = "Classifications/MateriaalStromen"
 	{
 		container Per_MIBT := 
@@ -57,7 +57,7 @@ container MateriaalStromen
 			);
 	}
 	
-	unit<UInt8> Circulair := select_with_attr_by_cond(MaterialIntensity_Scenarios,MaterialIntensity_Scenarios/Sc_rel == Classifications/MateriaalStromen/Scenarios/v/Circulair)
+	unit<uint8> Circulair := select_with_attr_by_cond(MaterialIntensity_Scenarios,MaterialIntensity_Scenarios/Sc_rel == Classifications/MateriaalStromen/Scenarios/v/Circulair)
 	, using = "Classifications/MateriaalStromen"
 	{
 		container Per_MIBT := 

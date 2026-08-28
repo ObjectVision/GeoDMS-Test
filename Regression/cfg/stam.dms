@@ -17,13 +17,13 @@ container Regression:	FreeData = "True"
 	{
 		container Overridable
 		{
-			parameter<String> RegressionDataDir   := '%sourceDataDir%';
+			parameter<string> RegressionDataDir   := '%sourceDataDir%';
 			// Centrale map met referentiebestanden, per test een submap (t100/, t301/, ...).
 			// full.py overschrijft dit via GEODMS_Overridable_TestRefDir.
-			parameter<String> TestRefDir          := '%sourceDataDir%/TestReferenceFiles';
+			parameter<string> TestRefDir          := '%sourceDataDir%/TestReferenceFiles';
 		}
 		
-		parameter<String> DataDir := '%RSLDataDir%';
+		parameter<string> DataDir := '%RSLDataDir%';
 	}
 	parameter<string> NewLine         : [ '\n' ];
 	parameter<string> Slash           : [ '/' ];
@@ -145,7 +145,7 @@ container Regression:	FreeData = "True"
 		// the reference; to regenerate on purpose, set RegenerateReference to True for that one run.
 		unit<uint32> Make_BAG_type_woonpand_rel: StorageName = "%TestRefDir%/t301/type_woonpand_rel_ok.fss"
 		{
-			parameter<bool> RegenerateReference := False; // set True only to deliberately rebuild the t301 reference
+			parameter<bool> RegenerateReference := false; // set True only to deliberately rebuild the t301 reference
 			// Gate the domain too, not just the attributes: targeting an attribute first materializes
 			// the domain, which would otherwise restamp domain.dmsdata in the live reference.
 			unit<uint32> domain := results/t301_BAG_ResidentialType/pand_snapshot, IntegrityCheck = "RegenerateReference";

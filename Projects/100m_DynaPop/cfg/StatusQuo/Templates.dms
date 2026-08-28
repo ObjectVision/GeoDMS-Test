@@ -92,8 +92,8 @@ Container Templates {
 				 ,'\"[^\"]*+\"(;\"[^\"]*+\")*+'
 			  );
 				
-		unit<uint32> Field:= Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)
-		{attribute<string> Name := ReadArray(HeaderLine, Field, String, 0);}
+		unit<uint32> Field:= Range(uint32, 0, strcount(HeaderLine, FieldSeparator)+1)
+		{attribute<string> Name := ReadArray(HeaderLine, Field, string, 0);}
 				
 		attribute<string> BodyLines(Domain) := readLines(FileData, Domain, HeaderLine/ReadPos); //,  IntegrityCheck = "HeaderOK";
 		attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain) := 
@@ -117,12 +117,12 @@ Container Templates {
 	Template TableComposer_uint32
 	{
 	   unit<uint32> context:= ExportDomain;
-	   parameter<String> FileName       := '%LocalDataProjDir%/dist.csv';
+	   parameter<string> FileName       := '%LocalDataProjDir%/dist.csv';
 	   // ExportDomain is a domain unit 
 	   // with two attributes as subitems configured: id & Dist
-	   parameter<String> Fieldlist      := 'id;Dist';
+	   parameter<string> Fieldlist      := 'id;Dist';
 	   parameter<string> ValRef			:= 'context';
-	   parameter<String> FieldSeparator := ';';
+	   parameter<string> FieldSeparator := ';';
 	   
 
 	   unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
@@ -130,13 +130,13 @@ Container Templates {
 		  attribute<string> Name := ReadArray(FieldList,.,string,0);
 	   }
 	   parameter<string> NewLine := '\n';
-	   parameter<String> Header  := FieldList;
-	   attribute<String> Body (context) :=
+	   parameter<string> Header  := FieldList;
+	   attribute<string> Body (context) :=
 		  =AsList(
 			 +'String('+ValRef+'/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +'
 		  );
 	  
-	   parameter<String> Result:= Header + NewLine + AsList(Body, NewLine)
+	   parameter<string> Result:= Header + NewLine + AsList(Body, NewLine)
 	   ,  StorageName = "=FileName"
 	   ,  StorageType = "str";
 	}
@@ -144,24 +144,24 @@ Container Templates {
 	{
 	   unit<uint64> context:= ExportDomain;
 	   container RefFields;
-	   parameter<String> FileName       := '%LocalDataProjDir%/dist.csv';
+	   parameter<string> FileName       := '%LocalDataProjDir%/dist.csv';
 	   // ExportDomain is a domain unit 
 	   // with two attributes as subitems configured: id & Dist
-	   parameter<String> Fieldlist      := 'id;Dist';
-	   parameter<String> FieldSeparator := ';';
+	   parameter<string> Fieldlist      := 'id;Dist';
+	   parameter<string> FieldSeparator := ';';
 
 	   unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
 	   {
 		  attribute<string> Name := ReadArray(FieldList,.,string,0);
 	   }
 	   parameter<string> NewLine := '\n';
-	   parameter<String> Header  := FieldList;
-	   attribute<String> Body (context) :=
+	   parameter<string> Header  := FieldList;
+	   attribute<string> Body (context) :=
 		  =AsList(
 			 +'String(RefFields/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +'
 		  );
 	  
-	   parameter<String> Result:= Header + NewLine + AsList(Body, NewLine)
+	   parameter<string> Result:= Header + NewLine + AsList(Body, NewLine)
 	   ,  StorageName = "=FileName"
 	   ,  StorageType = "str";
 	}

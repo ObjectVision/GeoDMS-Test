@@ -12,7 +12,7 @@ container Infrastructure
 {
 	container Road
 	{
-		parameter<String> Generate_RoadFSS := 'Ready',
+		parameter<string> Generate_RoadFSS := 'Ready',
 		ExplicitSuppliers = "MakeFSS/geometry";
 	
 		//GRIP4_AttributeDescription.xlsx field-description: RoadType
@@ -70,9 +70,9 @@ container Infrastructure
 			attribute<Input/LatLong> Geometry (arc);
 			unit<uint32> RoadpointSet := sequence2point_yxs(geometry)
 			{
-				attribute<Float64> lat_deg  := pointrow(point_yx);
-				attribute<Float64> long_deg := pointcol(point_yx);
-				attribute<Float64> lat_rad  := lat_deg * ( pi() / 180.0);
+				attribute<float64> lat_deg  := pointrow(point_yx);
+				attribute<float64> long_deg := pointcol(point_yx);
+				attribute<float64> lat_rad  := lat_deg * ( pi() / 180.0);
 //				attribute<float64> sinlat   := sin(lat_rad);
 				attribute<float64> mercator_y_rad := log(tan(0.25 * pi() + 0.5 * lat_rad));
 				attribute<float64> mercator_y_deg := mercator_y_rad * (180.0 / pi());
@@ -95,9 +95,9 @@ container Infrastructure
 			attribute<Input/LatLong> Geometry (arc);
 			unit<uint32> RoadpointSet := sequence2point_yxs(geometry)
 			{
-				attribute<Float64> lat_deg  := pointrow(point_yx);
-				attribute<Float64> long_deg := pointcol(point_yx);
-				attribute<Float64> lat_rad  := lat_deg * ( pi() / 180.0);
+				attribute<float64> lat_deg  := pointrow(point_yx);
+				attribute<float64> long_deg := pointcol(point_yx);
+				attribute<float64> lat_rad  := lat_deg * ( pi() / 180.0);
 //				attribute<float64> sinlat   := sin(lat_rad);
 				attribute<float64> mercator_y_rad := log(tan(0.25 * pi() + 0.5 * lat_rad));
 				attribute<float64> mercator_y_deg := mercator_y_rad * (180.0 / pi());
@@ -113,11 +113,11 @@ container Infrastructure
 			parameter<float64>               PenWorldWidth := 0.00001[float64],  DialogType = "PenWorldWidth";
 		}
 
-		attribute<Float32> Location2Road123_mer(Input/CompactedDomain)   := dist_info(Roads123/geometry_mer, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
+		attribute<float32> Location2Road123_mer(Input/CompactedDomain)   := dist_info(Roads123/geometry_mer, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
 		attribute<km>      Location2Road123_km(Input/CompactedDomain)    := (Location2Road123_mer * Input/lengthdegree * Input/CompactedDomain/lat_factor);
 		attribute<km>      Location2Road123_km_gtopo_export (input/gtopo):= Location2Road123_km[Input/CompactedDomain/BaseGrid], StorageName = "%LocalDataProjDir%/Socioeconomic/Infrastructure/roads/GRIP4/Location2Road123_km.tif";
 
-		attribute<Float32> Location2Road45_mer(Input/CompactedDomain)   := dist_info(Roads45/geometry_mer, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
+		attribute<float32> Location2Road45_mer(Input/CompactedDomain)   := dist_info(Roads45/geometry_mer, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
 		attribute<km>      Location2Road45_km(Input/CompactedDomain)    := Location2Road45_mer * Input/lengthdegree * Input/CompactedDomain/lat_factor;
 		attribute<km>      Location2Road45_km_gtopo_export (input/gtopo):= Location2Road45_km[Input/CompactedDomain/BaseGrid], StorageName = "%LocalDataProjDir%/Socioeconomic/Infrastructure/roads/GRIP4/Location2Road45_km.tif";
 

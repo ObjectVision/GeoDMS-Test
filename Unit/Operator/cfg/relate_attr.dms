@@ -26,7 +26,7 @@ container Classifications: KeepData = "True"
 			
 			unit<uint32> Elements := Range(uint32, 0, nrAttr*#.)
 			{
-				attribute<String> Text:
+				attribute<string> Text:
 				[
 					// Nr, hoofdtrede,                    , subtrede,           , subsubtrede,           fractie, argg,fullnamesubtrede
 					// '1', 'Huidig'                         ,'zonnepark'          ,'zonnepark'           ,'null'  ,'zon op land (nog)verwaarloosbaar','',
@@ -51,18 +51,18 @@ container Classifications: KeepData = "True"
 			}
 			
 			attribute<uint32> id := id(.);
-			attribute<uint8> hoofdtredeNr := value(Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], uint8);
-			attribute<string> hoofdtrede        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-			attribute<string> subtrede          := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
-			attribute<string> subsubtrede       := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)]; //noodzakelijk omdat er verschillende fracties geoperationaliseerd moeten worden
-			attribute<float32> fractie    := value(Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)], float32); // Jip, wat is de bron hiervan?
-			attribute<string> arg               := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)];
-			attribute<string> fullnamesubtrede  := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)];
+			attribute<uint8> hoofdtredeNr := value(Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)], uint8);
+			attribute<string> hoofdtrede        := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+			attribute<string> subtrede          := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
+			attribute<string> subsubtrede       := Elements/Text[value(uint32(ID(.))* nrAttr + 3, Elements)]; //noodzakelijk omdat er verschillende fracties geoperationaliseerd moeten worden
+			attribute<float32> fractie    := value(Elements/Text[value(uint32(ID(.))* nrAttr + 4, Elements)], float32); // Jip, wat is de bron hiervan?
+			attribute<string> arg               := Elements/Text[value(uint32(ID(.))* nrAttr + 5, Elements)];
+			attribute<string> fullnamesubtrede  := Elements/Text[value(uint32(ID(.))* nrAttr + 6, Elements)];
 			attribute<string> name := subsubtrede, DialogType = "LabelText";
 			attribute<bool> TeAlloceren: [false, true, true, true, false, true, true, true, true, true, true];
 			attribute<bool> DoetHetNiet: [false, false, true, true, false, true, true, false, false, false, false];
 			
-			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+			container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 			// container V2 := for_each_nedv(subsubtrede, String(ID(.))+'[..]', void, .);
 		}
 	}

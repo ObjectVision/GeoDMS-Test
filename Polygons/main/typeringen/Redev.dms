@@ -24,9 +24,9 @@ container Redev: isHidden = "True", using = "eenheden"
 	
 	unit<uint32> UrbanCores_list : NrOfRows = 64
 	{
-		attribute<string>       code              := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
-		attribute<string>       Region            := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-		attribute<string>       Agglomeration     := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+		attribute<string>       code              := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)];
+		attribute<string>       Region            := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+		attribute<string>       Agglomeration     := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
 		attribute<string>       GM_CODE           := 'GM'+code;
 		attribute<uint32>        Region_rel        := rlookup(Region, Region_uq/values);
 		attribute<uint32>        Agglomeration_rel := rlookup(Agglomeration, Agglomeration_uq/values);
@@ -126,7 +126,7 @@ container Redev: isHidden = "True", using = "eenheden"
 		attribute<bool>   IsRedeveloped := name != 'Onveranderd_Woon' && name != 'Onveranderd_NietWoon' && name != 'Onveranderd_Mixed';
 		attribute<bool>   IsNieuwbouw   := name == 'SN_Woon_Woon' || name == 'SN_NietWoon_Woon' || name == 'SN_Mixed_Woon' || name == 'Nieuwbouw_Wonen_OpOnbebouwd' || name == 'Nieuwbouw_Mixed_OpOnbebouwd' || name == 'Nieuwbouw_Wonen_OpBebouwd' || name == 'Nieuwbouw_Mixed_OpBebouwd';
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> Woon_NietWoon : nrofrows = 2
@@ -135,17 +135,17 @@ container Redev: isHidden = "True", using = "eenheden"
 		attribute<string> name_short : ['W','NW'];
 		attribute<string> Label    := name, DialogType = "LabelText";
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> RedevMainTypes : nrofrows = 6
 	{
 		attribute<string> name         :  ['Sloop','Nieuwbouw', 'Toevoeging', 'Onttrekking','Transformatie','Onveranderd'];
 		attribute<string> Label        := name, DialogType = "LabelText";
-		attribute<bool>   IsNegative   : [TRUE, FALSE, FALSE, TRUE, FALSE, FALSE];
-		attribute<bool>   IsPositive   : [FALSE, TRUE, TRUE, FALSE, TRUE, FALSE];
+		attribute<bool>   IsNegative   : [true, false, false, true, false, false];
+		attribute<bool>   IsPositive   : [false, true, true, false, true, false];
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> RedevSub_Types := combine_uint8(Woon_NietWoon, RedevMainTypes)
@@ -153,8 +153,8 @@ container Redev: isHidden = "True", using = "eenheden"
 		attribute<string> WoonNietWoon := Woon_NietWoon/name[first_rel];
 		attribute<string> WoonNietWoon_short := Woon_NietWoon/name_short[first_rel];
 		attribute<string> MainTypes    := RedevMainTypes/name[second_rel];
-		attribute<bool>   IsNegative   := MainTypes == 'Onveranderd' ? FALSE : WoonNietWoon == 'NietWoon' && MainTypes == 'Transformatie' ? TRUE : WoonNietWoon == 'NietWoon' ? FALSE : RedevMainTypes/IsNegative[second_rel];
-		attribute<bool>   IsPositive   := MainTypes == 'Onveranderd' ? FALSE : WoonNietWoon == 'NietWoon' ? FALSE : RedevMainTypes/IsPositive[second_rel];
+		attribute<bool>   IsNegative   := MainTypes == 'Onveranderd' ? false : WoonNietWoon == 'NietWoon' && MainTypes == 'Transformatie' ? true : WoonNietWoon == 'NietWoon' ? false : RedevMainTypes/IsNegative[second_rel];
+		attribute<bool>   IsPositive   := MainTypes == 'Onveranderd' ? false : WoonNietWoon == 'NietWoon' ? false : RedevMainTypes/IsPositive[second_rel];
 		attribute<string> Sub_Types    := MainTypes + '_' + WoonNietWoon;
 		attribute<string> Label        := Sub_Types, DialogType = "LabelText";
 		
@@ -170,18 +170,18 @@ container Redev: isHidden = "True", using = "eenheden"
 	{
 		attribute<string> name    : ['Sloop_Mixed','Nieuwbouw_Mixed','Toevoeging_Mixed','Onttrekking_Mixed','Onveranderd_Mixed'];
 		attribute<string> Main    : ['Sloop','Nieuwbouw','Toevoeging','Onttrekking','Onveranderd'];
-		attribute<bool>   IsNegative   : [TRUE, FALSE, FALSE, TRUE, FALSE];
-		attribute<bool>   IsPositive   : [FALSE, TRUE, TRUE, FALSE, FALSE];
+		attribute<bool>   IsNegative   : [true, false, false, true, false];
+		attribute<bool>   IsPositive   : [false, true, true, false, false];
 		attribute<string> Label   := name, DialogType = "LabelText";
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	unit<uint8> Redev_Extra : nrofrows = 3
 	{
 		attribute<string> name : ['Gemengd','Dubieus', 'Unclassified'];
 		attribute<string> Label   := name, DialogType = "LabelText";
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> RedevSub_Types_wMixed := union_unit_uint8(RedevSub_Types, RedevSubMixed_Types)
@@ -207,6 +207,6 @@ container Redev: isHidden = "True", using = "eenheden"
 		attribute<string>   name         := union_data(., NoData_uint8/name, RedevSub_Types_wMixed/name);
 		attribute<string>   Label        := union_data(., NoData_uint8/Label, RedevSub_Types_wMixed/Label), DialogType = "LabelText";
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 }

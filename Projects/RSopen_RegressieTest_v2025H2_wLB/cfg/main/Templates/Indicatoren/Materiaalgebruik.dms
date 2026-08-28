@@ -1,6 +1,6 @@
 container Materiaalgebruik : using = "Classifications/MateriaalStromen"
 {
-	unit<UInt8> OP := CaseClassifications/StandVar/OP;
+	unit<uint8> OP := CaseClassifications/StandVar/OP;
 	
 	container Stock_Basisjaar_per_Materiaal_perAdminDomain :=
 		for_each_nedv(
@@ -77,7 +77,7 @@ container Materiaalgebruik : using = "Classifications/MateriaalStromen"
 			, kg
 		);
 	
-	unit<UInt32> Flow_plus_perProv := 
+	unit<uint32> Flow_plus_perProv := 
 		for_each_nedv(
 			Materialen/name
 			, 'sum(Flow_plus_per_Materiaal_perAdminDomain/'+Materialen/name+', Geography/RegioIndelingen/Provincie/Per_AdminDomain)'
@@ -85,7 +85,7 @@ container Materiaalgebruik : using = "Classifications/MateriaalStromen"
 			, kg
 		), StorageName = "='%LocalDataProjDir%/Export/Materialen/Flow_plus_perProv_'+zichtjaar+'.csv'", StorageType = "gdalwrite.vect";
 	
-	unit<UInt32> Flow_min_perProv := 
+	unit<uint32> Flow_min_perProv := 
 		for_each_nedv(
 			Materialen/name
 			, 'sum(Flow_min_per_Materiaal_perAdminDomain/'+Materialen/name+', Geography/RegioIndelingen/Provincie/Per_AdminDomain)'

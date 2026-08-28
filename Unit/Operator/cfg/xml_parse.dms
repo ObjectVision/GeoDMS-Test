@@ -163,7 +163,7 @@ container xml_parse
 				attribute<rdc_mm> result(poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
 			}
 			attribute<rdc_mm> result(poly,Exterior) := impl/count == 0 ? ExtGeometry : impl/result;
-			attribute<Int32>  area  (Exterior)      := area(result, Int32); // DEBUG
+			attribute<int32>  area  (Exterior)      := area(result, int32); // DEBUG
 		}
 		Template posListProcessor {
 			// begin case parameters
@@ -176,7 +176,7 @@ container xml_parse
 	//			attribute<string>  count              := parsedXMLsrc/gml_posList/count;
 				attribute<string>  values             := _ValuesTable/Values[value_rel];
 				attribute<string>  str_sequence       := '{'+string(uint32(count) * uint32(srsDimension)) + ':' + values + '}', IntegrityCheck = "srsDimension == '2' || srsDimension == '3'";
-				attribute<Float64> f64_sequence(poly) := Float64Seq(str_sequence);
+				attribute<float64> f64_sequence(poly) := float64seq(str_sequence);
 	
 				unit<uint32> posListUnit := range(uint32, 0, #posList) // trick to avoid coordinates/sequence_rel having an untraceable values unit.
 				{
@@ -232,7 +232,7 @@ container xml_parse
 				}
 			}
 			attribute<rdc_mm> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
-			attribute<Int32>  area   (parent)      := area(result, Int32); // DEBUG
+			attribute<int32>  area   (parent)      := area(result, int32); // DEBUG
 		}
 
 		Template one2one_union {

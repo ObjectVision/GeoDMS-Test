@@ -128,30 +128,30 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<point_rd> location                       := point(y, x, point_rd);
 				attribute<point_rd> location_with_undefined_values := id(.) == 1 || id(.) == 4 ? point(0f / 0f, 0f / 0f, point_rd) : location;
 
-				attribute<UInt32>   streetcode : [0,0,0,0,0,0,null,0];
+				attribute<uint32>   streetcode : [0,0,0,0,0,0,null,0];
 				
 				attribute<float64>  ci_dis : [220.466762,119.519942,56.5086196,180.789468,131.004833,63.0891738,79.4236098,610.39593];
 				attribute<uint32>   ci_arc : [2,1,2,1,1,0,2,1];
 				attribute<float32>  ci_x   : [114915,111922,114847,111531,111872,112560,114824,111555];
 				attribute<float32>  ci_y   : [401338,399468,399291,401760,398688,399186,398603,401625];
-				attribute<bool>     ci_inA : [True,True,True,True,True,True,True,True];
-				attribute<bool>     ci_inS : [True,True,True,True,True,True,True,True];
+				attribute<bool>     ci_inA : [true,true,true,true,true,true,true,true];
+				attribute<bool>     ci_inS : [true,true,true,true,true,true,true,true];
 				attribute<uint32>   ci_seg : [0,0,0,1,0,0,0,1];
 				
 				attribute<float64>  ce_dis : [3477.54413,119.519942,2986.08514,180.789468,131.004833,698.647152,79.4236098,610.39593];
 				attribute<uint32>   ce_arc : [1,1,1,1,1,1,2,1];
 				attribute<float32>  ce_x   : [111709,111922,111923,111531,111872,111904,114824,111555];
 				attribute<float32>  ce_y   : [400737,399468,399482,401760,398688,399183,398603,401625];
-				attribute<bool>     ce_inA : [True,True,True,True,True,True,True,True];
-				attribute<bool>     ce_inS : [True,True,True,True,True,True,True,True];
+				attribute<bool>     ce_inA : [true,true,true,true,true,true,true,true];
+				attribute<bool>     ce_inS : [true,true,true,true,true,true,true,true];
 				attribute<uint32>   ce_seg : [1,0,0,1,0,0,0,1];
 
 				attribute<float64>  cn_dis : [220.466762,710.305647,56.5086196,2792.59252,158.221364,63.0891738,79.4236098,2528.02571];
 				attribute<uint32>   cn_arc : [2,0,2,0,0,0,2,0];
 				attribute<float32>  cn_x   : [114915,111922,114847,112631,111872,112560,114824,111555];
 				attribute<float32>  cn_y   : [401338,399468,399291,399426,398688,399186,398603,401625];
-				attribute<bool>     cn_inA : [True,True,True,False,False,True,True,False];
-				attribute<bool>     cn_inS : [True,True,True,False,False,True,True,False];
+				attribute<bool>     cn_inA : [true,true,true,false,false,true,true,false];
+				attribute<bool>     cn_inS : [true,true,true,false,false,true,true,false];
 				attribute<uint32>   cn_seg : [0,0,0,0,0,0,0,0];
 
 			}
@@ -571,7 +571,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						  Coords
 						, point(float32(-5000.0), float32(5000)  , Coords)
 						, point(float32(24900.0), float32(-100.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point(int16(0), int16(0))
 					, point(int16(5), int16(5))
@@ -628,7 +628,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 						  Coords
 						, point(float32(-3000.0), float32(3000)  , Coords)
 						, point(float32(24000.0), float32(-500.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point(int16(0), int16(0))
 					, point(int16(8), int16(8))
@@ -638,9 +638,9 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords> P  := value((fpoint(id(.)) + point(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<Coords> P0 := value(fpoint(id(.))  * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<Coords> P2 := convert(id(.), coords);
-				attribute<FPoint> P3 := FPoint(id(.));
+				attribute<fpoint> P3 := fpoint(id(.));
 				attribute<Coords> P4 := convert(P3, coords);
-				attribute<SPoint> P5 := spoint(P3);
+				attribute<spoint> P5 := spoint(P3);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
 				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))

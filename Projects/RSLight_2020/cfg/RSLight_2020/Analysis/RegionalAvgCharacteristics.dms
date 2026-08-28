@@ -141,17 +141,17 @@ container RegionalAvgCharacteristics // opschonen
 		attribute<float32> Per_buurt (Buurt) := = 
 			'count(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/buurt_rel) >= 4 
 				? mean(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/buurt_rel)[float32]
-				: (0/0)[Float32]';
+				: (0/0)[float32]';
 			
 		attribute<float32> Per_wijk (Wijk) := =
 			'count(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/wijk_rel) >= 4 
 				? mean(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/wijk_rel)[float32]
-				: (0/0)[Float32]';
+				: (0/0)[float32]';
 			
 		attribute<float32> Per_gemeente2019 (Gemeente2019) := =
 			'count(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/gem_rel) >= 4 
 				? mean(SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/' +HouseChar+ ', SourceData/Vastgoed/NVM/Types/' +WP+ '/select_with_org_rel/gem_rel)[float32]
-				: (0/0)[Float32]';
+				: (0/0)[float32]';
 			
 		attribute<float32> grid (rdc_100m) := = 'max_elem(Per_buurt[Buurt/per_rdc_100m], Per_wijk[Wijk/per_rdc_100m], Per_gemeente2019[Gemeente2019/per_rdc_100m])' //per_rdc_100m. Een hogere resolutie is gezien het aggregatieniveau van onderliggende analyse zinloos
 			, StorageName = "='%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_regiokarakteristieken_' +HouseTypeHouseChar+ '.fss'";
@@ -170,22 +170,22 @@ container RegionalAvgCharacteristics // opschonen
 		attribute<float32> Per_buurt (Buurt) := = 
 			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/buurt_rel) >= 4 
 				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/buurt_rel)[float32]
-				: (0/0)[Float32]';
+				: (0/0)[float32]';
 			
 		attribute<float32> Per_wijk (Wijk) := =
 			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/wijk_rel) >= 4 
 				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/wijk_rel)[float32]
-				: (0/0)[Float32]';
+				: (0/0)[float32]';
 			
 		attribute<float32> Per_gemeente2019 (Gemeente2019) := =
 			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/gem_rel) >= 4 
 				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/gem_rel)[float32]
-				: (0/0)[Float32]';
+				: (0/0)[float32]';
 				
 		attribute<float32> Per_provincie (Provincie) := =
 			'count(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/prov_rel) >= 4 
 				? mean(SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/' +SectorChar+ ', SourceData/Vastgoed/NVM/Types_werken/' +AllocSector+ '/select_with_org_rel/prov_rel)[float32]
-				: (0/0)[Float32]';
+				: (0/0)[float32]';
 			
 		attribute<float32> grid (rdc_100m) := = 'max_elem(Per_buurt[Buurt/per_rdc_100m], Per_wijk[Wijk/per_rdc_100m], Per_gemeente2019[Gemeente2019/per_rdc_100m], Per_provincie[Provincie/per_rdc_100m])' //per_rdc_100m. Een hogere resolutie is gezien het aggregatieniveau van onderliggende analyse zinloos
 			, StorageName = "='%RSLDataDir%/Vastgoed/NVM_Regiokarakteristieken/NVM_regiokarakteristieken_' +AllocSectorSectorChar+ '.fss'";

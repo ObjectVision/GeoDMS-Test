@@ -74,10 +74,10 @@
 				parameter<uint32> maxIndex           : [1];
 				parameter<uint32> firstNrInhabitants : [550];
 				parameter<string> firstCityName      : ['Amsterdam'];
-				parameter<bool>   firstisCapital     : [True] ;
+				parameter<bool>   firstisCapital     : [true] ;
 				parameter<uint32> lastNrInhabitants  : [175];
 				parameter<string> lastCityName       : ['Haarlem'];
-				parameter<bool>   lastisCapital      : [False];
+				parameter<bool>   lastisCapital      : [false];
 				parameter<uint32> meanNrInhabitants  : [375];
 				parameter<uint32> sumNrInhabitants   : [2250];
 				parameter<uint32> modusLifeStyleCode : [1];
@@ -165,7 +165,7 @@
 
 			unit<uint32> nth_e_w_Domain := Nth_e_w_DomainUnit
 			{
-				attribute<UInt32>  Rank:     [ 10, 9, 8, 1, 2, 3, 7, 6, 5, 4 ];
+				attribute<uint32>  Rank:     [ 10, 9, 8, 1, 2, 3, 7, 6, 5, 4 ];
 				attribute<float32> Weight:   [  1, 1, 1, 3, 3, 3, 2, 2, 2, 2 ];
 				attribute<Region>  RegionNr: [  1, 0, 2, 1, 3, 3, 0, 2, 1, 2 ];
 			}
@@ -279,7 +279,7 @@
 
 			unit<uint32> nth_e_w_Domain := Nth_e_w_DomainUnit
 			{
-				attribute<UInt32>  Rank:     [];
+				attribute<uint32>  Rank:     [];
 				attribute<float32> Weight:   [];
 				attribute<uint32>  RegionNr: [];
 			}
@@ -331,16 +331,16 @@
 			container min: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/min"
 			{
 				parameter<bool>   test_param_uint32 := min(City/NrInhabitants) = params/minNrInhabitants ;
-				parameter<String> param_string_value:= min(MakeDefined(City/CityName, 'zzz'));
+				parameter<string> param_string_value:= min(MakeDefined(City/CityName, 'zzz'));
 				// pre-v20: the min-over-empty string sentinel is expected as '\xFF\xFF\xFF\xFF', which needs the \xHH escape added in GeoDMS v20 (#61ccd3a3); the computed min is correct in all versions, only the expected literal is inexpressible pre-v20. Skip just the empty-source case (count==0) on old builds.
-				parameter<bool>   test_param_string := (GeoDmsVersion() < 20d && params/count == 0) ? True : param_string_value == params/minCityName;
+				parameter<bool>   test_param_string := (GeoDmsVersion() < 20d && params/count == 0) ? true : param_string_value == params/minCityName;
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
 	
 				attribute<uint32> att_uint32  (Region) := min(MakeDefined(City/NrInhabitants, 999999), City/RegionNr);
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/minNrInhabitants);
 				attribute<string> att_string  (Region) := min(MakeDefined(City/CityName, 'zzz'), City/RegionNr);
 				// pre-v20: empty-partition (pcount==0) min sentinel '\xFF\xFF\xFF\xFF' needs the \xHH escape (v20, #61ccd3a3); computed value is correct, only the expected literal is inexpressible pre-v20.
-				attribute<bool>   test_string (Region) := (GeoDmsVersion() < 20d && Region/pcountRegionNr == 0) ? True : eq_or_both_null(att_string, Region/minCityName);
+				attribute<bool>   test_string (Region) := (GeoDmsVersion() < 20d && Region/pcountRegionNr == 0) ? true : eq_or_both_null(att_string, Region/minCityName);
 				parameter<bool>   test_attr            := all(test_uint32) && all(test_string);
 			}
 			container min_index: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/max"
@@ -487,9 +487,9 @@
 				parameter<uint32>  calc_value          := sum(City/NrInhabitants);
 				parameter<bool>    test_param          := eq_or_both_null(calc_value,  params/sumNrInhabitants);
 				attribute<uint32>  att        (Region) := sum(City/NrInhabitants, City/RegionNr);
-				attribute<float32> att_F32    (Region) := sum(Float32(City/NrInhabitants), City/RegionNr);
+				attribute<float32> att_F32    (Region) := sum(float32(City/NrInhabitants), City/RegionNr);
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/sumNrInhabitants);
-				attribute<bool>    test_F32   (Region) := eq_or_both_null(att_F32, Float32(Region/sumNrInhabitants));
+				attribute<bool>    test_F32   (Region) := eq_or_both_null(att_F32, float32(Region/sumNrInhabitants));
 				parameter<bool>    test_attr           := all(test) && all(test_F32);
 			}
 			container sum_uint64: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/sum"
@@ -644,9 +644,9 @@
 				parameter<uint32> test_v1 := nth_element_weighted(nth_e_w_Domain/Rank, 3f,  nth_e_w_Domain/Weight);
 				parameter<uint32> test_v2 := nth_element_weighted(nth_e_w_Domain/Rank, 15f, nth_e_w_Domain/Weight);
 
-				parameter<Bool>   test_param_extra := eq_or_both_null(test_v0, params/nth_element_wei_v0) && eq_or_both_null(test_v1, params/nth_element_wei_v1) && eq_or_both_null(test_v2, params/nth_element_wei_v2) && not(IsDefined(test_v9));
+				parameter<bool>   test_param_extra := eq_or_both_null(test_v0, params/nth_element_wei_v0) && eq_or_both_null(test_v1, params/nth_element_wei_v1) && eq_or_both_null(test_v2, params/nth_element_wei_v2) && not(IsDefined(test_v9));
 				parameter<uint32> test_v9          := nth_element_weighted(nth_e_w_Domain/Rank, 1000f, nth_e_w_Domain/Weight);
-				parameter<Bool>   test_param       := test_param_extra && eq_or_both_null(nth_element_weighted(City/Ranking, float32(1800), float32(City/nrinhabitants)), params/nth_element_wei_v9);
+				parameter<bool>   test_param       := test_param_extra && eq_or_both_null(nth_element_weighted(City/Ranking, float32(1800), float32(City/nrinhabitants)), params/nth_element_wei_v9);
 	
 				attribute<uint32> att  (Region) := nth_element_weighted(City/Ranking, float32(400), float32(City/nrinhabitants),City/RegionNr);
 				attribute<bool>   test (Region) := eq_or_both_null(att, Region/nth_element_weightedNrIn);
@@ -697,25 +697,25 @@
 			}
 			container all: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/all"
 			{
-				parameter<bool> test_param          := all(True);
+				parameter<bool> test_param          := all(true);
 				attribute<bool> test_region(Region) := all(MakeDefined(City/NrInhabitants, 9999) < 500, City/RegionNr); // has region a city >= 500 [Inh]
 				parameter<bool> test_attr := #(Region) > 0
 					?	 all(test_region == Region/allInh)
 						&& all(Region/condA) 
 						&& not(all(Region/condB)) 
 						&& not(all(Region/condC))
-					: True;
+					: true;
 			}
 			container any: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/any"
 			{
-				parameter<bool> test_param := any(True);
+				parameter<bool> test_param := any(true);
 				attribute<bool> test_region(Region) := any(MakeDefined(City/NrInhabitants, 0) >= 500, City/RegionNr); // has region a city >= 500 [Inh]
 				parameter<bool> test_attr  := #(Region) > 0
 					?	 all(test_region ==  Region/anyInh)
 						&&     any(Region/condA) 
 						&&     any(Region/condB) 
 						&& not(any(Region/condC))
-					: True;
+					: true;
 			}
 			container reg_count: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
 			{

@@ -22,8 +22,8 @@ container StorageManagerTest
 	container ConfigSettings
 	{
 		// driver name is different on x64, after installing new x64 drivers (incl related SP1), see http://www.mantis.objectvision.nl/view.php?id=249
-		parameter<String> OdbcExcelDriver := (GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'; 
-		parameter<String> OdbcTxtDriver   := (GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'; 
+		parameter<string> OdbcExcelDriver := (GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'; 
+		parameter<string> OdbcTxtDriver   := (GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'; 
 	}
 	
 	container Parameters
@@ -59,7 +59,7 @@ container StorageManagerTest
 			&& TableChoppers/semicolon_seperated/results/all 
 			&& TableChoppers/comma_seperated/results/all  ;
 
-		parameter<string> read_str := String(read)
+		parameter<string> read_str := string(read)
 		,	StorageType = "str"
 		,	storagename = "%localDataProjDir%/regr_results/read_regr.txt";
 		
@@ -88,10 +88,10 @@ container StorageManagerTest
 
 		attribute<float32> FloatAtt        : [0,1,9999999,-2.5,99.9];
 		attribute<float32> FloatAttNull    : [null,1,9999999,-2.5,99.9];
-		attribute<float64> Float64Att      := Float64(FloatAtt);
+		attribute<float64> Float64Att      := float64(FloatAtt);
 		attribute<fpoint>  FPointAtt       := point(FloatAtt, FloatAtt, fpoint);
 
-		attribute<bool>    BoolAtt         : [False, True, True, False, True];
+		attribute<bool>    BoolAtt         : [false, true, true, false, true];
 		attribute<string>  StringAtt       : ['Hello','Test',null,'Two words','88a'];
 		attribute<string>  StringAttEmpty  : ['Hello','Test','','','88a'];
 		attribute<string>  StringAttNull   : ['Hello','Test',null, null,'88a'];
@@ -234,7 +234,7 @@ container StorageManagerTest
 		container Tests
 		{
 			parameter<bool> StringParam       := eq_or_both_null(FileSet/StringParam, reference/StringAttNoNull[0]);
-			attribute<Bool> UInt8Array (Five) := FileSet/UInt8Array == union_data(Five, UInt8(72), UInt8(69+32), UInt8(76+32), UInt8(76+32), UInt8(79+32));
+			attribute<bool> UInt8Array (Five) := FileSet/UInt8Array == union_data(Five, uint8(72), uint8(69+32), uint8(76+32), uint8(76+32), uint8(79+32));
 		}
 		container results
 		{
@@ -330,7 +330,7 @@ container StorageManagerTest
 		{
 			attribute<bool> test_uint32  (Grid_uint32)  := eq_or_both_null(Grid_uint32/GridData,  GridReference/GridData_uint32);
 			attribute<bool> test_uint8   (Grid_uint8)   := eq_or_both_null(Grid_uint8/GridData ,  union_data(Grid_uint8,   GridReference/GridData_uint8));
-			attribute<bool> test_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, Float32(0 / 0)), union_data(Grid_float32, GridReference/GridData_float32));
+			attribute<bool> test_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, float32(0 / 0)), union_data(Grid_float32, GridReference/GridData_float32));
 			attribute<bool> test_bool    (Grid_bool)    := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
 
 			attribute<bool> test_sel     (gridsel)      := Grid_uint32/ReadData == reference/ReadData_uint32;
@@ -411,7 +411,7 @@ container StorageManagerTest
 				attribute<float32>        x        (PointSet) : [115135,111803,114903,111353,111741];
 				attribute<float32>        y        (PointSet) : [401331,399476,399289,401729,398696];
 				attribute<units/point_rd> location (PointSet) := point_yx(y, x, units/point_rd);
-				attribute<string>         name     (PointSet) := 'point_' + String(id(PointSet));
+				attribute<string>         name     (PointSet) := 'point_' + string(id(PointSet));
 				attribute<bool>           test     (PointSet) := PointSet/location == location && PointSet/name == reference/name;
 			}
 			container Results
@@ -686,7 +686,7 @@ container StorageManagerTest
 		parameter<uint32> MakeCfs : = uint32(make/att_str[0]) + make/att_int[0] + uint32(make/att_float[0]) + uint32(pointCol(make/att_point[0]));
 		container result
 		{
-			parameter<string> tests_log := String(all)
+			parameter<string> tests_log := string(all)
 			,	StorageType = "str"
 			,	storagename = "%localDataProjDir%/regr_results/cfs.txt";
 
@@ -724,7 +724,7 @@ container StorageManagerTest
 	{
 		container result
 		{
-			parameter<string> tests_log := String(all)
+			parameter<string> tests_log := string(all)
 			,	StorageType = "str"
 			,	storagename = "%localDataProjDir%/regr_results/fss.txt";
 			parameter<bool>    all      := str && int && float && point;
@@ -769,8 +769,8 @@ container StorageManagerTest
 		Template TableChopperT
 		{
 			// begin case parameters
-			parameter<String> FileName;
-			parameter<String> FieldSeparator;
+			parameter<string> FileName;
+			parameter<string> FieldSeparator;
 			// einde case parameters
 
 			parameter<uint32> nrRows         := strcount(FileData,FieldSeparator) / 8;
@@ -779,11 +779,11 @@ container StorageManagerTest
 			parameter<string> FileData: StorageType = "str", StorageName = "=FileName", StorageReadOnly="True";
 			parameter<string> HeaderLine := readLines(FileData, void, 0);
 
-			unit<UInt32> Field := Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)
+			unit<uint32> Field := Range(uint32, 0, strcount(HeaderLine, FieldSeparator)+1)
 			{
-				attribute<String> Name := ReadArray(HeaderLine, Field, String, 0);
+				attribute<string> Name := ReadArray(HeaderLine, Field, string, 0);
 			}
-			attribute<String> BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
+			attribute<string> BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
 
 			container Data := for_each_nedv(Field/Name, 'ReadElems(BodyLines, string, '+MakeDefined(Field/Name[sub_or_null(ID(Field), 1)]+'/ReadPos','const(0, Domain)')+')', Domain, string)
 			{
@@ -857,7 +857,7 @@ container StorageManagerTest
 		
 		attribute<string> Body (context):= =AsList(+'String(context/' +Field/Name +')',' + ' + quote(FieldSeperator) +' +');
 
-		parameter<String> Result := Header + NewLine + Metric + NewLine + AsList(Body,NewLine)
+		parameter<string> Result := Header + NewLine + Metric + NewLine + AsList(Body,NewLine)
 		,	StorageName = "=FileName"
 		,	StorageType = "str";
 	}

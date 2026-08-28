@@ -17,7 +17,7 @@ container Templates : isHidden = "True", Using = "Geography;Classifications"
 		parameter<ggEndogenous> ggEndogenousID;
 		unit<uint32>            Adomain;
 		///
-		parameter<String>       ggName                   := lookup(ggEndogenousID, ggEndogenous/Name);
+		parameter<string>       ggName                   := lookup(ggEndogenousID, ggEndogenous/Name);
 		attribute<Ha>           nrHaPerCell (ADomain)    := ='demand_factor * adjusted_demands/'+ggName, Descr = "Mcj = Bc * Aj * exp(betaFactor*Scj): see formula (3'''')";
 		unit<uint32>            RegioUnit                := Additional_Claims/RegioUnit;
 		attribute<claimHa>      nrHaPerRegio (RegioUnit) := ='sum (nrHaPerCell, CaseData/Compacted/RegioGrids/'+ggName+')', Descr = "Tj= sum ( Mcj (* intensity))";
@@ -60,13 +60,13 @@ container Templates : isHidden = "True", Using = "Geography;Classifications"
 		container allocated_land := 
 			for_each_ne(
 				ggEndogenous/Name
-				, '_Iter_AllocatedLand('+String(id(ggEndogenous))+ '[uint8], Adomain)' 
+				, '_Iter_AllocatedLand('+string(id(ggEndogenous))+ '[uint8], Adomain)' 
 			);
 
 		parameter<claimHa>  TotalDeviation := ='sqrt(add('+asItemList('sum(allocated_land/'+ggEndogenous/Name+'/SqrDev)')+'))', Descr = "Sum of distances between claimed and allocated sums of ha per region";
 		parameter <claimHa> AllocatedAggr  := ='add('+asItemList('allocated_land/'+ggEndogenous/Name+'/nrHaAggr')+')';
 
-		parameter<Bool> stop := TotalDeviation < value(12000.0, Ha), Descr = "Stop iteration if the average deviation of the claims is less than 10 square km";
+		parameter<bool> stop := TotalDeviation < value(12000.0, Ha), Descr = "Stop iteration if the average deviation of the claims is less than 10 square km";
 
 		container nextValue :=
 			for_each_nedv(

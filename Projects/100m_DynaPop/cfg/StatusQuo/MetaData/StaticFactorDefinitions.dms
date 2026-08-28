@@ -27,9 +27,9 @@ container StaticFactorDefinitions
 	// internal set of actual factors, @USERINPUT: keep NrOfRows in sync with the actual nr of model classes
 	{
 		parameter<uint32> nrAttr: Expr = "8", isHidden = "True";
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, nrAttr*#OrgStaticFactors)", isHidden = "True"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, nrAttr*#OrgStaticFactors)", isHidden = "True"
 		{
-			attribute<String> Text: // @USERINPUT
+			attribute<string> Text: // @USERINPUT
 			[
 				//ID //Name         				,Descr                                                                                         ,ValuesUnit      ,cdf          ,url                    ,Is100m ,Coverage
 				'65','slope_100'            		,'Slope in 6 classes'                                                                         ,'SlopeClass'    ,null         ,''                     ,'TRUE ','EU27'
@@ -76,9 +76,9 @@ container StaticFactorDefinitions
 
 		//attribute<String> FileName:    Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  1, Elements)]"; irrelevant (hardcoded)
 		//attribute<String> EuFileName:  Expr = "IsDefined(FileName) ? 'DRIVERS/'+Name : FileName";
-		attribute<String> Name:        Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  1, Elements)]";
+		attribute<string> Name:        Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  1, Elements)]";
 		attribute<string> UniqueName:  Expr = "IsNull(rlookup(Name, DynamicFactors/Name)) ? Name : 'Static_' + Name";
-		attribute<String> Descr:       Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  2, Elements)]";
+		attribute<string> Descr:       Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  2, Elements)]";
 		attribute<string> ValuesUnit:  Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  3, Elements)]";
 		attribute<string> cdf:         Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  4, Elements)]";
 		attribute<string> url:         Expr = "     Elements/Text[value(UInt32(ID(.))* nrAttr +  5, Elements)]";
@@ -87,7 +87,7 @@ container StaticFactorDefinitions
 		attribute<string> url2:        Expr ="'%sourcedataprojdir%/DRIVERS/doc/'+MakeDefined(url, name)+'.pdf'";
 		attribute<string> Label:       Expr = "Name";
 		attribute<bool>   Is100m:      Expr = " bool(Elements/Text[value((UInt32(ID(.))* nrAttr) +  6, Elements)])";
-		attribute<String> Coverage:    Expr = "      Elements/Text[value((UInt32(ID(.))* nrAttr) +  7, Elements)]";
+		attribute<string> Coverage:    Expr = "      Elements/Text[value((UInt32(ID(.))* nrAttr) +  7, Elements)]";
 	}
 
 }

@@ -3,8 +3,8 @@ container Accessibility: using = "Units"
 	
 	unit<wpoint> domain_grid: expr = "Geography/Lambert100mGrid";
 	
-	unit<Float32> ImpedanceUnit: Expr ="min";
-	unit<Float32> ImpedanceDensityUnit: Expr = "ImpedanceUnit / m";
+	unit<float32> ImpedanceUnit: Expr ="min";
+	unit<float32> ImpedanceDensityUnit: Expr = "ImpedanceUnit / m";
 	
 	unit<uint32>  ObservedYears: nrOfRows = 2 {attribute<uint32> Year: [2006, 2030];}
 	
@@ -22,7 +22,7 @@ container Accessibility: using = "Units"
 			,	StorageReadOnly = "True"
 		{
 			attribute<Geography/LambertEA> Geometry;
-			attribute<String>    Name;
+			attribute<string>    Name;
 			
 			attribute<float32> Attraction := const(1[float32], .);
 			attribute<ImpedanceUnit> SrcImp:= const(0[ImpedanceUnit], .);
@@ -34,7 +34,7 @@ container Accessibility: using = "Units"
 			,	StorageReadOnly = "True"
 		{
 			attribute<Geography/LambertEA> Geometry;
-			attribute<String>    Name;
+			attribute<string>    Name;
 			
 			attribute<float32> Attraction := const(1[float32], .);
 			attribute<ImpedanceUnit> SrcImp:= const(0[ImpedanceUnit], .);
@@ -46,7 +46,7 @@ container Accessibility: using = "Units"
 			,	StorageReadOnly = "True"
 		{
 			attribute<Geography/LambertEA> Geometry;
-			attribute<Float32>  Attraction:= const(1.0f, .);
+			attribute<float32>  Attraction:= const(1.0f, .);
 			attribute<bool>     Foreign   := const(false, .);
 			attribute<ImpedanceUnit> SrcImp:= const(0[ImpedanceUnit], .);		}
 		
@@ -265,7 +265,7 @@ container Accessibility: using = "Units"
 		unit<Uint32> 	od_pairs: 	expr = "od_pairs_2006";
 		container 		od_aggr:	expr = "od_aggr_2006";
 		
-		unit<UInt32> od_pairs_2006 := 
+		unit<uint32> od_pairs_2006 := 
 				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel,impedance);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
 					ConnectedRoads/y2006/Impedance[ImpedanceUnit], ConnectedRoads/F1, ConnectedRoads/F2,
 					rlookup(SrcSet/Geometry , NodeSet/Values),
@@ -284,7 +284,7 @@ container Accessibility: using = "Units"
 			attribute<float32> DisEfficiency        := float32(Impedance) / float32(IdealImpedance);
 			attribute<float32> WeightedDisefficiency:= DisEfficiency * Pj_now[i];
 		}
-		unit<UInt32> od_pairs_2030  :=
+		unit<uint32> od_pairs_2030  :=
 				impedance_matrix('bidirectional;startPoint(Node_rel);endPoint(Node_rel,impedance);cut(OrgZone_max_imp);od:impedance,OrgZone_rel,DstZone_rel',
 					ConnectedRoads/y2030/Impedance[ImpedanceUnit], ConnectedRoads/F1, ConnectedRoads/F2,
 					rlookup(SrcSet/Geometry , NodeSet/Values),
@@ -307,16 +307,16 @@ container Accessibility: using = "Units"
 			
 		}
 		container od_aggr_2006 {
-			attribute<Float32> PerDstPnt_grav150(DstSet): 	Expr = "sum(od_pairs_2006/Grav, od_pairs_2006/j)";
-			attribute<Float32> Dom_grav150		(DstSet): 	Expr = "sum(float32(Domestic[od_pairs_2006/i]) 	* od_pairs_2006/Grav, od_pairs_2006/j)";
-			attribute<Float32> For_grav150		(DstSet): 	Expr = "sum(float32(!Domestic[od_pairs_2006/i]) 	* od_pairs_2006/Grav, od_pairs_2006/j)";
+			attribute<float32> PerDstPnt_grav150(DstSet): 	Expr = "sum(od_pairs_2006/Grav, od_pairs_2006/j)";
+			attribute<float32> Dom_grav150		(DstSet): 	Expr = "sum(float32(Domestic[od_pairs_2006/i]) 	* od_pairs_2006/Grav, od_pairs_2006/j)";
+			attribute<float32> For_grav150		(DstSet): 	Expr = "sum(float32(!Domestic[od_pairs_2006/i]) 	* od_pairs_2006/Grav, od_pairs_2006/j)";
 			attribute<float32> NetworkEfficiency(DstSet):	Expr = "sum(od_pairs_2006/WeightedDisefficiency, od_pairs_2006/j) / sum(Pj_now)";
 			attribute<float32> DailyAccess		(DstSet): 	Expr = "sum(float32(od_pairs_2006/Impedance <= daily_accessibility_minutes) * Pj_now[od_pairs_2006/i], od_pairs_2006/j) / float32(1000 * 1000)";
 		}
 		container od_aggr_2030 {
-			attribute<Float32> PerDstPnt_grav150(DstSet): 	Expr = "sum(od_pairs_2030/Grav, od_pairs_2030/j)";
-			attribute<Float32> Dom_grav150		(DstSet): 	Expr = "sum(float32(Domestic[od_pairs_2030/i]) 	* od_pairs_2030/Grav, od_pairs_2030/j)";
-			attribute<Float32> For_grav150		(DstSet): 	Expr = "sum(float32(!Domestic[od_pairs_2030/i]) 	* od_pairs_2030/Grav, od_pairs_2030/j)";
+			attribute<float32> PerDstPnt_grav150(DstSet): 	Expr = "sum(od_pairs_2030/Grav, od_pairs_2030/j)";
+			attribute<float32> Dom_grav150		(DstSet): 	Expr = "sum(float32(Domestic[od_pairs_2030/i]) 	* od_pairs_2030/Grav, od_pairs_2030/j)";
+			attribute<float32> For_grav150		(DstSet): 	Expr = "sum(float32(!Domestic[od_pairs_2030/i]) 	* od_pairs_2030/Grav, od_pairs_2030/j)";
 			attribute<float32> NetworkEfficiency(DstSet):	Expr = "sum(od_pairs_2030/WeightedDisefficiency, od_pairs_2030/j) / sum(Pj_future)";
 			attribute<float32> DailyAccess		(DstSet): 	Expr = "sum(float32(od_pairs_2030/Impedance <= daily_accessibility_minutes) * Pj_future[od_pairs_2030/i], od_pairs_2030/j) / float32(1000 * 1000)";
 		}

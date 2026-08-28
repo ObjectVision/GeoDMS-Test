@@ -48,7 +48,7 @@ container Physical : using = "geography;classifications"
 			attribute<TRI_Classes> TRI_K_rel      (CompactedDomainSub) := Classify(TRI_sqr_CD, TRI_Classes/ClassBreaks_sqr);
 			
 			attribute<uint16>      Calc_TRI_mean_30ss_ui16 (CompactedDomain) := sum_uint16(TRI_K_rel +1b, CompactedDomainSub/CompactedDomain_rel);
-			attribute<float32>     Calc_TRI_mean_30ss      (CompactedDomain) := Calc_TRI_mean_30ss_ui16[Float32] * 0.01f;
+			attribute<float32>     Calc_TRI_mean_30ss      (CompactedDomain) := Calc_TRI_mean_30ss_ui16[float32] * 0.01f;
 			
 			attribute<float32>     Write_TRI_mean_30ss   (domain) := Calc_TRI_mean_30ss[CompactedDomain/BaseGrid], StorageName = "='%ToBURPDataDir%/physical/TRI_mean_from_3ss_to_30ss/'+ModelParameters/StudyArea+'.tif'";
 			attribute<float32>     TRI_mean_30ss         (domain) : StorageName     = "= PropValue(Write_TRI_mean_30ss, 'storagename')", StorageType = "gdal.grid", StorageReadOnly = "True", LazyCalculated = "True";
@@ -65,7 +65,7 @@ container Physical : using = "geography;classifications"
 			attribute<float32> ClassBreaks_org   : [0, 81, 117, 162, 240, 498, 959];
 			attribute<int32>   ClassBreaks_sqr   := int32(sqr(ClassBreaks_org));
 			
-			container V := for_each_nedv(AsItemName(label), String(ID(.))+'[..]', void, .);
+			container V := for_each_nedv(AsItemName(label), string(ID(.))+'[..]', void, .);
  		}
 		
 		container Read_PerContinentFiles :=
@@ -158,13 +158,13 @@ container Physical : using = "geography;classifications"
 			{
 				attribute<SphericalMercator> geometry_mer (poly) := org_rel->Geometry[SphericalMercator];
 			}
-			attribute<Float32> sqr_dist                    (CompactedDomain) := Sqr(250000[meter] / CompactedDomain/lat_factor);
+			attribute<float32> sqr_dist                    (CompactedDomain) := Sqr(250000[meter] / CompactedDomain/lat_factor);
 			
-			attribute<Float32> Location2AllInland_distInfo   (CompactedDomain) := dist_info(Inland_Water/Geometry[SphericalMercator], CompactedDomain/Geometry_mer, sqr_dist);
+			attribute<float32> Location2AllInland_distInfo   (CompactedDomain) := dist_info(Inland_Water/Geometry[SphericalMercator], CompactedDomain/Geometry_mer, sqr_dist);
 			attribute<km>      Location2AllInland_km         (CompactedDomain) := (Location2AllInland_distInfo * CompactedDomain/lat_factor)[meter] * 0.001[km / meter];
 			attribute<km>      Location2AllInland_km_domain_export    (domain) := min_elem(Location2AllInland_km[CompactedDomain/BaseGrid], 250[km]), StorageName = "= '%ToBURPDataDir%/Physical/water/'+ModelParameters/StudyArea+'/Location2AnyInland_km.tif'", StorageType = "tif";
 			
-			attribute<Float32> Location2LargeInland_distInfo (CompactedDomain) := dist_info(large_inland_water/geometry_mer, CompactedDomain/Geometry_mer, sqr_dist);
+			attribute<float32> Location2LargeInland_distInfo (CompactedDomain) := dist_info(large_inland_water/geometry_mer, CompactedDomain/Geometry_mer, sqr_dist);
 			attribute<km>      Location2LargeInland_km       (CompactedDomain) := (Location2LargeInland_distInfo * CompactedDomain/lat_factor)[meter] * 0.001[km / meter];
 			attribute<km>      Location2LargeInland_km_domain_export  (domain) := min_elem(Location2LargeInland_km[CompactedDomain/BaseGrid], 250[km]), StorageName = "= '%ToBURPDataDir%/Physical/water/'+ModelParameters/StudyArea+'/Location2LargeInland_km.tif'", StorageType = "tif";
 			

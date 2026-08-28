@@ -8,13 +8,13 @@ container CombineRangeAndExprTest
 
 	parameter<bool> test1 := Value(LB_DC, float32) != value(LB_DC2, float32);
 
-	unit<float32> RangedDegreesCelsius  := Range(BaseUnit('celsius',float32), Float32(-20), Float32(50));
+	unit<float32> RangedDegreesCelsius  := Range(BaseUnit('celsius',float32), float32(-20), float32(50));
 	unit<float32> RangedDegreesCelsius2 := DegreesCelsius * DegreesCelsius; // used for statistical tests, (co)variance, 
 
 	parameter<RangedDegreesCelsius > LB_RDC : expr = "LowerBound(RangedDegreesCelsius )";
 	parameter<RangedDegreesCelsius2> LB_RDC2: expr = "LowerBound(RangedDegreesCelsius2)";
 
-	parameter<bool> test2 := Value(LB_RDC , float32) == Float32(-20);
+	parameter<bool> test2 := Value(LB_RDC , float32) == float32(-20);
 	parameter<bool> test3 := Value(LB_RDC2, float32) == value(LB_DC2, float32);
 	parameter<bool> test  := test1 && test2 && test3;
 

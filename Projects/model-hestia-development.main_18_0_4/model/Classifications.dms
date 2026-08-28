@@ -850,7 +850,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 	{
 		attribute<string> name: ['geen', 'laag', 'midden', 'hoog', 'extreem'];
 		attribute<string> label := name, DialogType = "LabelText";
-		attribute<Float64> BesparingsFactor : [ 0.005, 0.01, 0.5, 1.5, 3.0 ];
+		attribute<float64> BesparingsFactor : [ 0.005, 0.01, 0.5, 1.5, 3.0 ];
 		
 		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}
@@ -860,7 +860,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 		attribute<IsolatieAmbitie> IsolatieAmbitie_rel := org_rel;
 		attribute<string> name  := IsolatieAmbitie/name[IsolatieAmbitie_rel];
 		attribute<string> label := IsolatieAmbitie/label[IsolatieAmbitie_rel];
-		attribute<Float64> BesparingsFactor := IsolatieAmbitie/BesparingsFactor[IsolatieAmbitie_rel];
+		attribute<float64> BesparingsFactor := IsolatieAmbitie/BesparingsFactor[IsolatieAmbitie_rel];
 		
 		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}
@@ -1106,7 +1106,7 @@ container Classifications: Using = "Units", KeepData = "True", IsHidden = "True"
 			attribute<GebouwOptie> GebouwOptie_rel := second_rel;
 			attribute<string>      label           := Product/name[Product_rel] + '.' + GebouwOptie/name[GebouwOptie_rel];
 			attribute<Installatie> Installatie_rel := ='union_data(., '+AsItemList('PerProduct/'+Product/name)+')';
-			attribute<xInstallatie> xInstallatie_code := point(UInt16(xProduct/GebouwOptie_rel), UInt16(xProduct/Installatie_rel), xInstallatie);
+			attribute<xInstallatie> xInstallatie_code := point(uint16(xProduct/GebouwOptie_rel), uint16(xProduct/Installatie_rel), xInstallatie);
 			attribute<uInstallatie> uInstallatie_rel := rlookup(xInstallatie_code, uInstallatie/Values);
 		}
 

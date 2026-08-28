@@ -97,8 +97,8 @@ container Urban
 	{
 		attribute<int16>  dc:    [1975,1990,2000,2014];
 		attribute<int16>  dc2:   [1975,1990,2000,2015];
-		attribute<String> name:= 'y'+String(dc);
-		attribute<String> name2:='y'+String(dc2);
+		attribute<string> name:= 'y'+string(dc);
+		attribute<string> name2:='y'+string(dc2);
 	}
 
 	//these items are used for the modelling
@@ -108,7 +108,7 @@ container Urban
 			  ,'BuiltUpPresenceJRC_Read/'+ Jaartal/name + '> 50b'
 			,  Input/gtopo
 			,  bool
-			,  'Urban area 50percent in past year ' + String(Jaartal/dc)
+			,  'Urban area 50percent in past year ' + string(Jaartal/dc)
 		);
 		
 	container BuiltUpBoolJRC_50prc_km2: =
@@ -117,7 +117,7 @@ container Urban
 			 ,'value(BuiltUpBoolJRC_50prc/'+ Jaartal/name + ',float32)*/Input/gtopo/area'
 			,  Input/gtopo
 			,  Units/km2
-			,  'Urban area in km2' + String(Jaartal/dc)
+			,  'Urban area in km2' + string(Jaartal/dc)
 		);
 
 	container NotBuiltUpBoolJRC_50prc: =
@@ -126,7 +126,7 @@ container Urban
 			  ,'!BuiltUpBoolJRC_50prc/'+ Jaartal/name
 			,  Input/gtopo
 			,  bool
-			,  'Not Urban area 50percent in past year ' + String(Jaartal/dc)
+			,  'Not Urban area 50percent in past year ' + string(Jaartal/dc)
 		);
 
 	container Urban_km2: =
@@ -135,7 +135,7 @@ container Urban
 			  ,'BuiltUpBoolJRC_50prc/'+ Jaartal/name + '[float32] * Input/gtopo/area'
 			,  Input/gtopo
 			,  Units/km2
-			,  'Urban km2 in past year ' + String(Jaartal/dc)
+			,  'Urban km2 in past year ' + string(Jaartal/dc)
 		);
 
 	container BuiltUpSum: =
@@ -144,7 +144,7 @@ container Urban
 			 ,'sum(value(BuiltUpBoolJRC_50prc/'+ Jaartal/name + ',uint32), Input/administrative/Countries/Country_grid)'
 			,  Input/administrative/Countries/Country 
 			,  uint32
-			,  'Sum Urban area ' + String(Jaartal/dc)
+			,  'Sum Urban area ' + string(Jaartal/dc)
 		);
 
 	container BuiltUpSum_km2: =
@@ -153,7 +153,7 @@ container Urban
 			 ,'sum(value(BuiltUpBoolJRC_50prc_km2/'+ Jaartal/name + ',Units/km2), Input/administrative/Countries/Country_grid)'
 			,  Input/administrative/Countries/Country 
 			,  Units/km2
-			,  'Sum Urban area in km2 ' + String(Jaartal/dc)
+			,  'Sum Urban area in km2 ' + string(Jaartal/dc)
 		);
 
 	container BuiltUpSum_km2_1990: =
@@ -162,6 +162,6 @@ container Urban
 			 ,'BuiltUpSum_km2/Y1990'
 			,  Input/administrative/Countries/Country 
 			,  Units/km2
-			,  'Sum Urban area in km2 ' + String(Jaartal/dc)
+			,  'Sum Urban area in km2 ' + string(Jaartal/dc)
 		);
 }

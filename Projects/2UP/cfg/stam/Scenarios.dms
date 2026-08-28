@@ -202,7 +202,7 @@ container Scenarios: using = "units", url="%MondiaalDataDir%/SSP/SSP Database.mh
 						// Extra weight to high population density places: OFF because already in NeighbourhoodEnrichtment/Or represented by current urban land
 						attribute<float32> UrbanPopPot(CompactedDomain) :=
 							potential(
-								(CurrState/Pop*Float32(CurrState/IsUrban))[CompactedDomain/BaseGrid]
+								(CurrState/Pop*float32(CurrState/IsUrban))[CompactedDomain/BaseGrid]
 							,	/Input/Geography/Distmatrices/Impl/pot10km/potrange/RelWeightSqrt
 							)	[CompactedDomain/org_rel];
 	
@@ -261,18 +261,18 @@ container Scenarios: using = "units", url="%MondiaalDataDir%/SSP/SSP Database.mh
 
 				#include <DistanceBuildUp.dms>
 
-				attribute<float32> IsUrbanF32(CompactedDomain) := Float32(IsUrban);
+				attribute<float32> IsUrbanF32(CompactedDomain) := float32(IsUrban);
 			}
 
 			attribute<km2>     Urban_km2       (CompactedDomain) := landuse_allocation/IsUrbanF32*CompactedDomain/Area;
 
 			attribute<km2>     Urban_Alloc     (ClaimRegion) := sum(landuse_allocation/IsUrbanF32*CompactedDomain/Area, region_rel);
-			attribute<km2>     Urban_2010      (ClaimRegion) := sum(Float32(InitialState/IsUrban)*CompactedDomain/Area, region_rel);
+			attribute<km2>     Urban_2010      (ClaimRegion) := sum(float32(InitialState/IsUrban)*CompactedDomain/Area, region_rel);
 			attribute<float32> UrbanCells_Alloc(ClaimRegion) := sum(landuse_allocation/IsUrbanF32, region_rel);
-			attribute<float32> UrbanCells_2010 (ClaimRegion) := sum(Float32(InitialState/IsUrban), region_rel);
+			attribute<float32> UrbanCells_2010 (ClaimRegion) := sum(float32(InitialState/IsUrban), region_rel);
 
-			attribute<Float32> GrowPot  (CompactedDomain) := max_elem(Float32(landuse_allocation/CompactedSuitabilities/Urban), 0f), FreeData = "False";
-			attribute<Float32> ShrinkPot(CompactedDomain) := max_elem(max(GrowPot, Region_rel)[Region_rel] - GrowPot, 0f);
+			attribute<float32> GrowPot  (CompactedDomain) := max_elem(float32(landuse_allocation/CompactedSuitabilities/Urban), 0f), FreeData = "False";
+			attribute<float32> ShrinkPot(CompactedDomain) := max_elem(max(GrowPot, Region_rel)[Region_rel] - GrowPot, 0f);
 
 			attribute<float32> MaxSqr(CompactedDomain):= 
 				potential(Sqr(CurrState/Pop / CompactedDomain/Area)[CompactedDomain/BaseGrid] * landuse_allocation/IsUrbanF32[CompactedDomain/BaseGrid], /Input/Geography/Distmatrices/Impl/pot10km/potrange/Conal)[CompactedDomain/org_rel]
@@ -303,8 +303,8 @@ container Scenarios: using = "units", url="%MondiaalDataDir%/SSP/SSP Database.mh
 				attribute<Person> ExtraPop(ClaimRegion) := ExpUrbanPop - sum(CurrPop * landuse_allocation/IsUrbanF32, Region_rel), FreeData = "False";
 				attribute<bool>   Abandonment(CompactedDomain) :=  (ExtraPop<0f)[Region_rel];
 
-				attribute<Person> DeltaUp  (CompactedDomain) := scalesum(GrowPot   * CompactedDomain/Area * landuse_allocation/IsUrbanF32 * Float32(maximum_population > CurrPop ), Region_rel, ExtraPop);
-				attribute<Person> DeltaDn  (CompactedDomain) := scalesum(ShrinkPot * CompactedDomain/Area * landuse_allocation/IsUrbanF32 * Float32(CurrPop > 0f  ), Region_rel, ExtraPop);
+				attribute<Person> DeltaUp  (CompactedDomain) := scalesum(GrowPot   * CompactedDomain/Area * landuse_allocation/IsUrbanF32 * float32(maximum_population > CurrPop ), Region_rel, ExtraPop);
+				attribute<Person> DeltaDn  (CompactedDomain) := scalesum(ShrinkPot * CompactedDomain/Area * landuse_allocation/IsUrbanF32 * float32(CurrPop > 0f  ), Region_rel, ExtraPop);
 				attribute<Person> Delta    (CompactedDomain) := Abandonment ? DeltaDn : DeltaUp;
 
 				attribute<Person> NextPop  (CompactedDomain) := CurrPop + makedefined(median(0f, Delta, float32(!Abandonment) * maximum_population - CurrPop),0f), FreeData = "False";
@@ -383,13 +383,13 @@ container Scenarios: using = "units", url="%MondiaalDataDir%/SSP/SSP Database.mh
 			attribute<float32> UrbanShare(ClaimRegion)     := PopUrban / (PopUrban + PopRural);
 			
 			attribute<Person> MissingUrban(ClaimRegion) := ExpUrbanPop - sum(NewState/Pop * landuse_allocation/IsUrbanF32           , Region_rel);
-			attribute<Person> MissingRural(ClaimRegion) := ExpRuralPop - sum(NewState/Pop * Float32(not(landuse_allocation/IsUrban)), Region_rel);
+			attribute<Person> MissingRural(ClaimRegion) := ExpRuralPop - sum(NewState/Pop * float32(not(landuse_allocation/IsUrban)), Region_rel);
 
 			container PerCell {
 				attribute<float32> Alloc_UrbanCells (CompactedDomain) := landuse_allocation/IsUrbanF32;
-				attribute<float32> UrbanPopCells    (CompactedDomain) := Float32(UrbanPop > 0f);
+				attribute<float32> UrbanPopCells    (CompactedDomain) := float32(UrbanPop > 0f);
 				attribute<float32> MissingUrbanCells(CompactedDomain) := Alloc_UrbanCells - UrbanPopCells;
-				attribute<float32> UrbanArea_Growth (CompactedDomain) := Alloc_UrbanCells - Float32(InitialState/IsUrban);
+				attribute<float32> UrbanArea_Growth (CompactedDomain) := Alloc_UrbanCells - float32(InitialState/IsUrban);
 			}
 			container PerClaimRegion {
 				attribute<float32> Alloc_UrbanCells (Claimregion) := sum(PerCell/Alloc_UrbanCells, Region_rel);

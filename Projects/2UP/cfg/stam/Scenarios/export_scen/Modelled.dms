@@ -17,7 +17,7 @@ container Modelled
 				'-9999f'
 			')'
 			, Input/gtopo
-			,Float32
+			,float32
 		);
 
 	//-9999 ignored in this classification
@@ -40,15 +40,15 @@ container Modelled
 	template PaletteDataPop
 	{
 		// template parameters
-		parameter<String> PopItemName;
-		parameter<String> ProjectionDateYr;
+		parameter<string> PopItemName;
+		parameter<string> ProjectionDateYr;
 		// end case parameters
 	
 		attribute<Classifications/PopClass> Pop_Classification (Input/gtopo)
 		:	StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+ProjectionDateYr+'_tpop_classification.tif'"
 		,	Expr              = "='MakeDefined('+PopItemName+'[uint8],/Input/administrative/Countries/IsCountryNotCD ? 13b : 0b)'"
 		{
-				attribute<UInt32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
+				attribute<uint32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
 		}
 	}
 
@@ -59,7 +59,7 @@ container Modelled
 			'-9999f'
 		')'
 		, Input/gtopo
-		,Float32
+		,float32
 		,'%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+string(ProjectionDate/Yr)+'_upop.tif'
 	);
 
@@ -79,7 +79,7 @@ container Modelled
 			'-9999f'
 		')'
 		, Input/gtopo
-		,Float32
+		,float32
 		,'%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+string(ProjectionDate/Yr)+'_rpop.tif'
 	);
 
@@ -112,15 +112,15 @@ container Modelled
 	template PaletteDataIsUrban
 	{
 		// template parameters
-		parameter<String> IsUrbanItemName;
-		parameter<String> ProjectionDateYr;
+		parameter<string> IsUrbanItemName;
+		parameter<string> ProjectionDateYr;
 		// end case parameters
 	
 		attribute<Classifications/Urb/IsUrbClassSea> IsUrban_Classification (Input/gtopo)
 		:	StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+ProjectionDateYr+'_urb_classification.tif'"
 		,	Expr              = "= IsUrbanItemName+'[uint8]'"
 		{
-				attribute<UInt32> PaletteData(Classifications/Urb/IsUrbClassSea): = Classifications/Urb/IsUrbClassSea/BrushColor[uint32];
+				attribute<uint32> PaletteData(Classifications/Urb/IsUrbClassSea): = Classifications/Urb/IsUrbClassSea/BrushColor[uint32];
 		}
 	}
 
@@ -141,7 +141,7 @@ container Modelled
 		for_each_nedva(ProjectionDate/name,
 			'lookup(CompactedDomain/BaseGrid, Projectiondates/'+ProjectionDate/name+'/Urban_km2)'
 			, Input/gtopo
-			,Float32
+			,float32
 			,'%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+string(ProjectionDate/Yr)+'_urbkm2.tif'
 		);
 
@@ -151,7 +151,7 @@ container Modelled
 			ProjectionDate/name,
 			'lookup(CompactedDomain/BaseGrid, Projectiondates/'+ProjectionDate/name+'/NewState/Builtuparea)'
 			, Input/gtopo
-			,Float32
+			,float32
 			// ,'%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+string(ProjectionDate/Yr)+'_bua_fraction.tif'
 			// , 'tif'
 		);
@@ -172,7 +172,7 @@ container Modelled
 				'-9999f'
 			')'
 			, Input/gtopo
-			,Float32
+			,float32
 			,'%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+string(ProjectionDate/Yr)+'_popd.tif'
 			,'tif'	
 		);
@@ -195,15 +195,15 @@ container Modelled
 	template PaletteDataPopDensity
 	{
 		// template parameters
-		parameter<String> PopDensityItemName;
-		parameter<String> ProjectionDateYr;
+		parameter<string> PopDensityItemName;
+		parameter<string> ProjectionDateYr;
 		// end case parameters
 	
 		attribute<Classifications/PopClass> PopDensity_Classification (Input/gtopo)
 		:	StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+ProjectionDateYr+'_popd_classification.tif'"
 		,	Expr              = "=PopDensityItemName+'[uint8]'"
 		{
-				attribute<UInt32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
+				attribute<uint32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
 		}
 	}
 
@@ -241,15 +241,15 @@ container Modelled
 	template PaletteDataSMOD
 	{
 		// template parameters
-		parameter<String> SMODItemName;
-		parameter<String> ProjectionDateYr;
+		parameter<string> SMODItemName;
+		parameter<string> ProjectionDateYr;
 		// end case parameters
 	
 		attribute<Classifications/Settlement_Model_L2_nomenclature_export> SMOD (Input/gtopo)
 		:	StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_'+Scenario+'_'+ProjectionDateYr+'_smod.tif'"
 		,	Expr              = "='MakeDefined(!Input/administrative/Countries/IsCountryWorld/IsCountryWorld_bool ? 0b : (!Input/administrative/Countries/IsClaimCountry ? 1b : '+SMODItemName+'[uint8]),10b)'"
 		{
-				attribute<UInt32> PaletteData(/Classifications/Settlement_Model_L2_nomenclature_export): = /Classifications/Settlement_Model_L2_nomenclature_export/BrushColor[uint32];
+				attribute<uint32> PaletteData(/Classifications/Settlement_Model_L2_nomenclature_export): = /Classifications/Settlement_Model_L2_nomenclature_export/BrushColor[uint32];
 		}
 	}
 }

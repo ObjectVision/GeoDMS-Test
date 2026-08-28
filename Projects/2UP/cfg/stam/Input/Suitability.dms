@@ -17,7 +17,7 @@ container Suitability : using = "Units"
 		,	StorageType     = "gdal.vect"
 		,	StorageReadOnly = "True"
 		{
-			attribute<Float32> RelOccurence := Float32(Probability), IntegrityCheck = "!IsDefined(strpos(Probability, ','))";
+			attribute<float32> RelOccurence := float32(Probability), IntegrityCheck = "!IsDefined(strpos(Probability, ','))";
 			attribute<string>  name         := 'TRI'+string(TRI);
 			
 			container V := for_each_nedv(name, 'value('+string(ID(.))+',..)', void, .);
@@ -42,7 +42,7 @@ container Suitability : using = "Units"
 		,   StorageType     = "gdal.vect"
 		,	StorageReadOnly = "True"
 		{
-			attribute<Float32> RelOccurence := Float32(Probability), IntegrityCheck = "!IsDefined(strpos(Probability, ','))";
+			attribute<float32> RelOccurence := float32(Probability), IntegrityCheck = "!IsDefined(strpos(Probability, ','))";
 		}
 	
 		attribute<float32> Weight (Input/gtopo) := MakeDefined(lookup(Input/Socioeconomic/TravelTime/TravelTimeGRIP/ReadData, Class/RelOccurence), 0.0f);
@@ -62,7 +62,7 @@ container Suitability : using = "Units"
 
 	container Coast
 	{
-		attribute<Bool> InRegion (Input/gtopo): = IsDefined(Input/administrative/Countries/ClaimCountry_grid);
+		attribute<bool> InRegion (Input/gtopo): = IsDefined(Input/administrative/Countries/ClaimCountry_grid);
 
 		attribute<float32> buffer_25km (Input/gtopo):
 			= !InRegion ? 0f : potential(float32(Input/Physical/Coast/Coastline/ReadData), float32(/Input/Geography/Distmatrices/Impl/pot25km/potrange/buffer));

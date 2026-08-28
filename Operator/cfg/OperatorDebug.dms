@@ -83,7 +83,7 @@ DEBUG*/
 		attribute<uint32> testsExp(resDomain) :=  const(uint32(tests_all), resDomain)
 		,	StorageName = "regr_res.dbf"; 
 
-		parameter<string> tests_log := String(tests_all)
+		parameter<string> tests_log := string(tests_all)
 		,	StorageType = "str"
 		,	storagename = "%localDataProjDir%/regr_results/operator.txt";
 
@@ -177,11 +177,11 @@ DEBUG*/
 			,point(int16(5), int16(4))
 		);
 
-	unit<UInt32> HTiledDomain := TiledUnit(2[HDomain]);
-	unit<UInt32> ATiledDomain := TiledUnit(2[ADomain]);
-	unit<UInt32> CTiledDomain := TiledUnit(2[CDomain]);
-	unit<UInt32> RTiledDomain := TiledUnit(2[RDomain]);
-	unit<UInt32> LTiledDomain := TiledUnit(2[LDomain]);
+	unit<uint32> HTiledDomain := TiledUnit(2[HDomain]);
+	unit<uint32> ATiledDomain := TiledUnit(2[ADomain]);
+	unit<uint32> CTiledDomain := TiledUnit(2[CDomain]);
+	unit<uint32> RTiledDomain := TiledUnit(2[RDomain]);
+	unit<uint32> LTiledDomain := TiledUnit(2[LDomain]);
 
 	unit<uint32> RegionTiledDomain         := TiledUnit(2[RegionDomain]);
 	unit<uint32> DistrictTiledDomain       := TiledUnit(2[DistrictDomain]);
@@ -300,7 +300,7 @@ DEBUG*/
 //			attribute<uint32> RampYellowToGreen := ramp_rgb(rgb(255,255,0), rgb(0, 255, 0),.)",DialogType = "BrushColor";
 			attribute<uint32> RampWhiteToRed := ramp_rgb(rgb(255,255,255), rgb(255, 0, 0),.),DialogType = "BrushColor";
 	
-			attribute<String> Label: DialogType = "LabelText",
+			attribute<string> Label: DialogType = "LabelText",
 			['Low','','','','','','','High'];
 		}
 	}
@@ -1422,17 +1422,17 @@ DEBUG*/
 			container bool: url = "http://www.objectvision.nl/geodms/operators-a-functions/conversion/bool"
 			{
 				parameter<bool> test_param := 
-					    Bool(source/IntegerParam)
-					 && Bool(source/FloatParam)
-					 && Bool(source/BoolParam)
-					 && Bool(source/stringParam);
-				attribute<bool> att_int     (Domain) := Bool(source/IntegerAtt);
+					    bool(source/IntegerParam)
+					 && bool(source/FloatParam)
+					 && bool(source/BoolParam)
+					 && bool(source/stringParam);
+				attribute<bool> att_int     (Domain) := bool(source/IntegerAtt);
 				attribute<bool> test_int    (Domain) := att_int = source/BoolInteger;
-				attribute<bool> att_float   (Domain) := Bool(source/FloatAtt);
+				attribute<bool> att_float   (Domain) := bool(source/FloatAtt);
 				attribute<bool> test_float  (Domain) := att_float = source/BoolFloat;
-				attribute<bool> att_bool    (Domain) := Bool(source/BoolAtt);
+				attribute<bool> att_bool    (Domain) := bool(source/BoolAtt);
 				attribute<bool> test_bool   (Domain) := att_bool = source/BoolBool;
-				attribute<bool> att_string  (Domain) := Bool(source/stringAtt);
+				attribute<bool> att_string  (Domain) := bool(source/stringAtt);
 				attribute<bool> test_string (Domain) := att_string = source/Boolstring;
 				attribute<bool> test        (Domain) := 
 					   test_int 
@@ -1889,7 +1889,7 @@ DEBUG*/
 			}
 			unit<uint32> nth_e_w_Domain := CDomain
 			{
-				attribute<UInt32>  Rank:     [ 10, 9, 8, 1, 2, 3, 7, 6, 5, 4 ];
+				attribute<uint32>  Rank:     [ 10, 9, 8, 1, 2, 3, 7, 6, 5, 4 ];
 				attribute<float32> Weight:   [  1, 1, 1, 3, 3, 3, 2, 2, 2, 2 ];
 				attribute<Region>  RegionNr: [  1, 0, 2, 1, 3, 3, 0, 2, 1, 2 ];
 			}
@@ -1962,7 +1962,7 @@ DEBUG*/
 			{
 				parameter<bool>   test_param_uint32 := first(City/NrInhabitants) = 550 ;
 				parameter<bool>   test_param_string := first(City/CityName) = 'Amsterdam' ;
-				parameter<bool>   test_param_bool   := first(City/isCapital) = True ;
+				parameter<bool>   test_param_bool   := first(City/isCapital) = true ;
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool;
 	
 				attribute<uint32> att_uint32  (Region) := first(City/NrInhabitants, City/RegionNr);
@@ -1977,7 +1977,7 @@ DEBUG*/
 			{
 				parameter<bool>   test_param_uint32 := last(City/NrInhabitants) = 175 ;
 				parameter<bool>   test_param_string := last(City/CityName) = 'Haarlem' ;
-				parameter<bool>   test_param_bool   := last(City/isCapital) = False ;
+				parameter<bool>   test_param_bool   := last(City/isCapital) = false ;
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string && test_param_bool;
 	
 				attribute<uint32> att_uint32  (Region) := last(City/NrInhabitants, City/RegionNr);
@@ -2083,9 +2083,9 @@ DEBUG*/
 				parameter<uint32> test_v1 := nth_element_weighted(nth_e_w_Domain/Rank, 3f,  nth_e_w_Domain/Weight);
 				parameter<uint32> test_v2 := nth_element_weighted(nth_e_w_Domain/Rank, 15f, nth_e_w_Domain/Weight);
 
-				parameter<Bool> test_param_extra := test_v0 == 1 && test_v1 == 2 && test_v2 == 7 && not(IsDefined(test_v9));
+				parameter<bool> test_param_extra := test_v0 == 1 && test_v1 == 2 && test_v2 == 7 && not(IsDefined(test_v9));
 				parameter<uint32> test_v9        := nth_element_weighted(nth_e_w_Domain/Rank, 1000f, nth_e_w_Domain/Weight);
-				parameter<Bool> test_param       := test_param_extra && nth_element_weighted(City/Ranking, float32(1800), float32(City/nrinhabitants)) = 9;
+				parameter<bool> test_param       := test_param_extra && nth_element_weighted(City/Ranking, float32(1800), float32(City/nrinhabitants)) = 9;
 	
 				attribute<uint32> att  (Region) := nth_element_weighted(City/Ranking, float32(400), float32(City/nrinhabitants),City/RegionNr);
 				attribute<bool>   test (Region) := eq_or_both_null(att, Region/nth_element_weightedNrIn);
@@ -2136,7 +2136,7 @@ DEBUG*/
 					attribute<bool> B (ADomain): [-1, 0,-1, 0,-1];
 					attribute<bool> C (ADomain): [ 0, 0, 0, 0, 0];
 				}
-				parameter<bool> test_param          := all(True);
+				parameter<bool> test_param          := all(true);
 				attribute<bool> test_region(Region) := all(City/NrInhabitants < 500, City/RegionNr); // has region a city >= 500 [Inh]
 				attribute<bool> test_region_norm(Region): [ false, false, true, false, true ];
 				parameter<bool> test_attr := 
@@ -2148,7 +2148,7 @@ DEBUG*/
 			container any: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/any"
 			{
 				container source := all/source;
-				parameter<bool> test_param := any(True);
+				parameter<bool> test_param := any(true);
 				attribute<bool> test_region(Region) := any(City/NrInhabitants >= 500, City/RegionNr); // has region a city >= 500 [Inh]
 				attribute<bool> test_region_norm(Region): [ true, true, false, false, false ];
 				parameter<bool> test_attr  := 
@@ -4422,7 +4422,7 @@ DEBUG*/
 						4,5,6,
 						5
 					];
-					attribute<float64> area := area(dpolygon(iborder[F1] * iborder[F2]), Float64);
+					attribute<float64> area := area(dpolygon(iborder[F1] * iborder[F2]), float64);
 					attribute<bool> test      := F1 == F1_ok && F2 == F2_ok;
 					parameter<bool> test_attr := all(test);
 				}
@@ -4557,37 +4557,37 @@ DEBUG*/
 						attribute<bool> att_ok (source/pointSet) := eq_or_both_null(union_data(source/pointSet, elements/point), uint8(source/pointSet/float64));
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int64>   param_int64   (poly) := Int64Seq(source/param)
+					parameter<int64>   param_int64   (poly) := int64seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int64(source/pointSet/float64);
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int32>   param_int32   (poly) := Int32Seq(source/param)
+					parameter<int32>   param_int32   (poly) := int32seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int32(source/pointSet/float64);
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int16>   param_int16   (poly) := Int16Seq(source/param)
+					parameter<int16>   param_int16   (poly) := int16seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int16(source/pointSet/float64);
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int8>    param_int8    (poly) := Int8Seq(source/param)
+					parameter<int8>    param_int8    (poly) := int8seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := eq_or_both_null(union_data(source/pointSet, elements/point),int8(source/pointSet/float64));
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<float64> param_float64 (poly) := Float64Seq(source/param)
+					parameter<float64> param_float64 (poly) := float64seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == source/pointSet/float64;
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<float32> param_float32 (poly) := Float32Seq(source/param)	
+					parameter<float32> param_float32 (poly) := float32seq(source/param)	
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == float32(source/pointSet/float64);
@@ -4713,7 +4713,7 @@ DEBUG*/
 					attribute<point_rd> location                       := point(y, x, point_rd);
 					attribute<point_rd> location_with_undefined_values := id(.) == 1 || id(.) == 4 ? point(0f / 0f, 0f / 0f, point_rd) : location;
 
-					attribute<UInt32>   streetcode : [0,0,0,0,0,0,null,0];
+					attribute<uint32>   streetcode : [0,0,0,0,0,0,null,0];
 				}
 				container shapefiles
 				{
@@ -4824,8 +4824,8 @@ DEBUG*/
 				attribute<float32>  x   (location): [114915,111922,114847,111531,111872,112560,114824,111555];
 				attribute<float32>  y   (location): [401338,399468,399291,401760,398688,399186,398603,401625];
 				attribute<point_rd> cpo(location) := point(y,x,point_rd);
-				attribute<bool>     inA (location): [True,True,True,True,True,True,True,True];
-				attribute<bool>     inS (location): [True,True,True,True,True,True,True,True];
+				attribute<bool>     inA (location): [true,true,true,true,true,true,true,true];
+				attribute<bool>     inS (location): [true,true,true,true,true,true,true,true];
 				attribute<uint32>   seg (location): [0,0,0,1,0,0,0,1];
 				attribute<bool>     test(location):=    
 					   float_isNearby(dist, dis, Dif_all_float64)    && arcID = arc 
@@ -4840,8 +4840,8 @@ DEBUG*/
 				attribute<float32>  x   (location): [111709,111922,111923,111531,111872,111904,114824,111555];
 				attribute<float32>  y   (location): [400737,399468,399482,401760,398688,399183,398603,401625];
 				attribute<point_rd> cpo(location) := point(y,x,point_rd);
-				attribute<bool>     inA (location): [True,True,True,True,True,True,True,True];
-				attribute<bool>     inS (location): [True,True,True,True,True,True,True,True];
+				attribute<bool>     inA (location): [true,true,true,true,true,true,true,true];
+				attribute<bool>     inS (location): [true,true,true,true,true,true,true,true];
 				attribute<uint32>   seg (location): [1,0,0,1,0,0,0,1];
 				attribute<bool>     test(location):= 
 					   float_isNearby(dist, dis, Dif_all_float64)    && arcID = arc 
@@ -4859,8 +4859,8 @@ DEBUG*/
 				attribute<float32>  x   (location): [114915,111922,114847,112631,111872,112560,114824,111555];
 				attribute<float32>  y   (location): [401338,399468,399291,399426,398688,399186,398603,401625];
 				attribute<point_rd> cpo(location) := point(y,x,point_rd);
-				attribute<bool>     inA (location): [True,True,True,False,False,True,True,False];
-				attribute<bool>     inS (location): [True,True,True,False,False,True,True,False];
+				attribute<bool>     inA (location): [true,true,true,false,false,true,true,false];
+				attribute<bool>     inS (location): [true,true,true,false,false,true,true,false];
 				attribute<uint32>   seg (location): [0,0,0,0,0,0,0,0];
 				attribute<bool>     test(location):= 
 					   float_isNearby(dist, dis, Dif_all_float64)    && arcID = arc 
@@ -5328,7 +5328,7 @@ DEBUG*/
 						  Coords
 						, point(float32(-5000.0), float32(5000)  , Coords)
 						, point(float32(24900.0), float32(-100.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point(int16(0), int16(0))
 					, point(int16(5), int16(5))
@@ -5349,7 +5349,7 @@ DEBUG*/
 				attribute<GridDomain3000>          GridDomain3000nr         := rlookup(GridDomain3000PointSetnr, GridDomain3000/PointSetNr);
 			}
 
-			unit<spoint> GridTiledDomain := TiledUnit(Point(Int16(2), Int16(2), GridDomain));
+			unit<spoint> GridTiledDomain := TiledUnit(Point(int16(2), int16(2), GridDomain));
 
 			unit<spoint> GridDomain3000 := 
 				range(
@@ -5357,7 +5357,7 @@ DEBUG*/
 						  Coords
 						, point(float32(-3000.0), float32(3000)  , Coords)
 						, point(float32(24000.0), float32(-500.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point(int16(0), int16(0))
 					, point(int16(8), int16(8))
@@ -5367,9 +5367,9 @@ DEBUG*/
 				attribute<Coords> P  := value((fpoint(id(.)) + point(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<Coords> P0 := value(fpoint(id(.))  * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<Coords> P2 := convert(id(.), coords);
-				attribute<FPoint> P3 := FPoint(id(.));
+				attribute<fpoint> P3 := fpoint(id(.));
 				attribute<Coords> P4 := convert(P3, coords);
-				attribute<SPoint> P5 := spoint(P3);
+				attribute<spoint> P5 := spoint(P3);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
 				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))
@@ -5388,7 +5388,7 @@ DEBUG*/
 						  Coords
 						, point(float32(-15.0), float32(15)  , Coords)
 						, point(float32(24000.0), float32(-500.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point(int16(0), int16(0))
 					, point(int16(1600), int16(1600))
@@ -5606,7 +5606,7 @@ DEBUG*/
 					5, 6, 3, 2, 2,
 					2, 2, 1, 1, 1
 				];
-				parameter<GridDomain> pointset_gridid   := point(Int16(0), Int16(4), GridDomain);
+				parameter<GridDomain> pointset_gridid   := point(int16(0), int16(4), GridDomain);
 				attribute<float64>    dist (GridDomain) := griddist(grid, pointset_gridid, 0.0);
 				attribute<bool>       test (GridDomain) := float_isNearby(float32(dist), source/dist_paramOk, Dif_all_float32) ;
 				parameter<bool>       test_grid         := all(test); // Referentie DMS 5.81
@@ -5729,14 +5729,14 @@ DEBUG*/
 					  Coords
 					, point(float32(-5000.0), float32(5000)  , Coords)
 					, point(float32(24900.0), float32(-100.0), Coords)
-					, SPoint
+					, spoint
 				)
 				, point(int16(0), int16(0))
 				, point(int16(2), int16(2))
 			),
 			DialogType = "Map";
 
-		unit<spoint> GridTiledDomain := TiledUnit(Point(Int16(1), Int16(1), GridDomain));
+		unit<spoint> GridTiledDomain := TiledUnit(Point(int16(1), int16(1), GridDomain));
 
 		container UnTiled := Template(GridDomain);
 		container Tiled   := Template(GridTiledDomain);
@@ -5811,7 +5811,7 @@ DEBUG*/
 
 		Template Template
 		{
-			unit<UInt32> Domain;
+			unit<uint32> Domain;
 			
 			container Source
 			{
@@ -6097,7 +6097,7 @@ DEBUG*/
 			}
 			container asExprList: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/asexprlist"
 			{
-				parameter<bool>   test_param := asExprList(source/teststring) = quote(source/teststring) && asExprList(source/ValueToString) = String(source/ValueToString);
+				parameter<bool>   test_param := asExprList(source/teststring) = quote(source/teststring) && asExprList(source/ValueToString) = string(source/ValueToString);
 				parameter<string> param_att  := asExprList(source/A);
 				parameter<string> param_exp  := quote('Test') +';' + quote ('88hallo99') + ';' + quote('+)') +';'+ quote('twee woorden') +';'+quote(' test met spatie');
 				attribute<string> att_asexprList (Prov_nrd) := asExprList(Steden_nrd/Stad, Steden_nrd/Provincie);
@@ -6319,7 +6319,7 @@ DEBUG*/
 		}
 		container ReadArray: url = "http://www.objectvision.nl/geodms/operators-a-functions/file/readarray"
 		{
-			Attribute<String>  Row1  (HDomain) := ReadArray(ReadValue/File, HDomain, String, 0);
+			Attribute<string>  Row1  (HDomain) := ReadArray(ReadValue/File, HDomain, string, 0);
 			Attribute<float64> Row2  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row1/ReadPos);
 			Attribute<float64> Row3  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row2/ReadPos);
 			Attribute<float64> Row4  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row3/ReadPos);
@@ -6337,7 +6337,7 @@ DEBUG*/
 			
 			unit<uint32> coordset := range(uint32, 0, 1203)
 			{
-				Attribute<String> row := ReadArray(coordparam, coordset, string, 0);
+				Attribute<string> row := ReadArray(coordparam, coordset, string, 0);
 			}
 			parameter<bool> test := coordset/row[1200] = '252332.881' && coordset/row[1201] = '592127.146' && coordset/row[1202] = '0.0';
 		}
@@ -6346,21 +6346,21 @@ DEBUG*/
 		{
 			attribute<uint32> FirstColum (ReadLines/BodyDomain) := ReadElems(ReadLines/Body, ReadLines/BodyDomain, const( 0, ReadLines/BodyDomain));
 			attribute<uint32> LastCoumn  (ReadLines/BodyDomain) := ReadElems(ReadLines/Body, ReadLines/BodyDomain, const(32, ReadLines/BodyDomain));
-			attribute<Bool>   test       (ReadLines/BodyDomain) := FirstColum = Source/ReadElem1 && LastCoumn = Source/ReadElem2;
+			attribute<bool>   test       (ReadLines/BodyDomain) := FirstColum = Source/ReadElem1 && LastCoumn = Source/ReadElem2;
 			parameter<bool>   test_attr                         := all(test);
 		}
 		container ReadLines: url = "http://www.objectvision.nl/geodms/operators-a-functions/file/readline"
 		{
 			unit<uint32>      BodyDomain:         nrOfRows = 6;
-			parameter<String> Header             := ReadLines(ReadValue/File, void, 0);
-			parameter<Bool>   test_param         := Header = '6\t9.02\tTest\tTrue';
-			Attribute<String> Body  (BodyDomain) := ReadLines(ReadValue/File, BodyDomain, Header/ReadPos);
+			parameter<string> Header             := ReadLines(ReadValue/File, void, 0);
+			parameter<bool>   test_param         := Header = '6\t9.02\tTest\tTrue';
+			Attribute<string> Body  (BodyDomain) := ReadLines(ReadValue/File, BodyDomain, Header/ReadPos);
 			Parameter<bool>   test_attr
 				 := substr(Body[0], 0, 5) = '25000' && substr(Body[0], strlen(Body[0]) - 3, 3) = '70\t' && substr(Body[5], 0, 5) = '50000' && substr(Body[5], strlen(Body[5]) - 3, 3) = '80\t';
 		}
 		container parse_xml
 		{
-			parameter<String> XmlData
+			parameter<string> XmlData
 			:	StorageType = "str"
 			,	StorageName = "%projDir%/data/standplaats.xml";
 		
@@ -6495,7 +6495,7 @@ DEBUG*/
 		{
 			container regions := for_each_nedvld(
 				 Region/MetaScriptName
-				,'lookup(' + String(Region/RegionNr) + ', Region/sumNrInhabitants)'
+				,'lookup(' + string(Region/RegionNr) + ', Region/sumNrInhabitants)'
 				,void
 				,uint32
 				,Region/RegionLabel
@@ -6514,7 +6514,7 @@ DEBUG*/
 				,uint8
 				,'%projdir%/data/src.tif'
 				,'gdal.grid'
-				, True
+				, true
 			);
 
 			parameter<bool> test := sum(griddata/NoordHolland) + sum(griddata/ZuidHolland) + sum(griddata/Utrecht) + sum(griddata/NoordBrabant) + sum(griddata/Gelderland) == 135b;
@@ -6525,7 +6525,7 @@ DEBUG*/
 			container regions := for_each_ind(
 				'nedvld'
 				,Region/MetaScriptName
-				,'lookup(' + String(Region/RegionNr) + ', Region/sumNrInhabitants)'
+				,'lookup(' + string(Region/RegionNr) + ', Region/sumNrInhabitants)'
 				,void
 				,uint32
 				,Region/RegionLabel
@@ -6629,7 +6629,7 @@ DEBUG*/
 					fpoint, 
 					point(float32(  -500.0), float32(  500.0), TestCoords), 
 					point(float32(625000.0), float32(10000.0), TestCoords), 
-					SPoint
+					spoint
 				  ),
 				  point(int16(0), int16(0))
 				, point(int16(6), int16(6))
@@ -6733,20 +6733,20 @@ DEBUG*/
 			}
 			unit<uint16> AtomicRegions := overlay(lu_type/PartioningName, DomainGrid, regionSets);
 
-			attribute<Bool> InRegio (DomainGrid):
+			attribute<bool> InRegio (DomainGrid):
 			[
-			 True, True, True,True,False,True,
-			 True, True, True,True,False,True,
-			 True, True, True,True,True,True,
-			 True, True, True,True,True,True,
-			 True, True, True,True,False,True,
-			 True, True, True,True,True,True
+			 true, true, true,true,false,true,
+			 true, true, true,true,false,true,
+			 true, true, true,true,true,true,
+			 true, true, true,true,true,true,
+			 true, true, true,true,false,true,
+			 true, true, true,true,true,true
 			];
-			attribute<Bool> FreeLand (DomainGrid) := InRegio;
+			attribute<bool> FreeLand (DomainGrid) := InRegio;
 
 			container Compacted
 			{
-				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = true),
 					label = "allocation domain";
 				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
 				
@@ -6902,7 +6902,7 @@ DEBUG*/
 						point(float32(625000.0), float32(10000.0), rdc_meter), 
 						spoint
 					);
-				unit<spoint> rdc_100_domain:= range(rdc_100,point(Int16(0), Int16(0)),point(Int16(3250), Int16(2700)));
+				unit<spoint> rdc_100_domain:= range(rdc_100,point(int16(0), int16(0)),point(int16(3250), int16(2700)));
 				parameter<bool> test_param := nrofrows(rdc_100_domain) = 3250 * 2700; 
 			}
 			container boundaries
@@ -6939,7 +6939,7 @@ DEBUG*/
 				unit<string>         unit_test  := DefaultUnit('string');
 				parameter<unit_test> param      := 'Test';
 				parameter<string>    param_unit := PropValue(param, 'ValuesUnit');
-				parameter<Bool>      test_param := param_unit = 'unit_test';
+				parameter<bool>      test_param := param_unit = 'unit_test';
 			}
 			container projection
 			{
@@ -7002,7 +7002,7 @@ DEBUG*/
 			container GetMetricFactor: url = "http://www.objectvision.nl/geodms/operators-a-functions/unit/getmetricfactor"
 			{
 				parameter<float64> MetricFactor := GetMetricFactor(Source/per_ha);
-				parameter<Bool>    test_param   := MetricFactor = 0.0001;
+				parameter<bool>    test_param   := MetricFactor = 0.0001;
 			}
 			container TiledUnit
 			{
@@ -7020,7 +7020,7 @@ DEBUG*/
 							,point(int16(500), int16(400))
 						);
 				}
-				unit<spoint> result := TiledUnit(Point(Int16(100), Int16(200), gridunit/gridcel_1km))
+				unit<spoint> result := TiledUnit(Point(int16(100), int16(200), gridunit/gridcel_1km))
 				{
 					attribute<.>      nr   := id(.);
 					attribute<int16>  att  := pointRow(nr);
@@ -7172,25 +7172,25 @@ DEBUG*/
 		}
 		Container Regex_match
 		{
-			parameter<String> TextOk          := dquote('Corop') + ';' + dquote('CoropLabel');
-			parameter<String> TextSingleQuote :=  quote('Corop') + ';' +  quote('CoropLabel');
-			parameter<String> TextComma       := dquote('Corop') + ',' + dquote('CoropLabel');
+			parameter<string> TextOk          := dquote('Corop') + ';' + dquote('CoropLabel');
+			parameter<string> TextSingleQuote :=  quote('Corop') + ';' +  quote('CoropLabel');
+			parameter<string> TextComma       := dquote('Corop') + ',' + dquote('CoropLabel');
 
-			parameter<Bool>   testOk          := regex_match(TextOk         , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
-			parameter<Bool>   testSingleQuote := regex_match(TextSingleQuote, '\"[^\"]*+\"(;\"[^\"]*+\")*+');
-			parameter<Bool>   testCom         := regex_match(TextComma      , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<bool>   testOk          := regex_match(TextOk         , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<bool>   testSingleQuote := regex_match(TextSingleQuote, '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<bool>   testCom         := regex_match(TextComma      , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
 
 			parameter<bool>   test_param      := testOk && !testSingleQuote && !testCom;
 		}
 		Container Regex_search
 		{
-			parameter<String> find           := regex_search(Regex_match/TextOk,'\"[^\"]*+\"',0);
-			parameter<Bool>   test_param     := find ==  dquote('Corop');
+			parameter<string> find           := regex_search(Regex_match/TextOk,'\"[^\"]*+\"',0);
+			parameter<bool>   test_param     := find ==  dquote('Corop');
 		}
 		Container Regex_replace
 		{
-			parameter<String> replace    := regex_replace(Regex_match/TextOk,'\"[^\"]*+\"',quote('NewLabel'));
-			parameter<Bool>   test_param := replace ==  quote('NewLabel') + ';' + quote('NewLabel');
+			parameter<string> replace    := regex_replace(Regex_match/TextOk,'\"[^\"]*+\"',quote('NewLabel'));
+			parameter<bool>   test_param := replace ==  quote('NewLabel') + ';' + quote('NewLabel');
 		}
 
 		Container TemplateSyntax
@@ -7243,14 +7243,14 @@ DEBUG*/
 	}
 	container Trackers
 	{
-		parameter<String> NullStr := String(0/0);
-		parameter<String> T5a     := iif(true, 'x', NullStr);
-		parameter<String> T5b     := iif(false, 'x', NullStr);
-		parameter<UInt32> T5c     := iif(true,  13/4, 0/0);
-		parameter<UInt32> T5d     := iif(false, 13/4, 0/0);
+		parameter<string> NullStr := string(0/0);
+		parameter<string> T5a     := iif(true, 'x', NullStr);
+		parameter<string> T5b     := iif(false, 'x', NullStr);
+		parameter<uint32> T5c     := iif(true,  13/4, 0/0);
+		parameter<uint32> T5d     := iif(false, 13/4, 0/0);
 		container Results
 		{
-			parameter<Bool> Tests := T5a=='x' && ! IsDefined(T5b) && T5c==3 && !IsDefined(T5d);
+			parameter<bool> Tests := T5a=='x' && ! IsDefined(T5b) && T5c==3 && !IsDefined(T5d);
 		}
 	}
 }

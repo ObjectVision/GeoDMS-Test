@@ -4,26 +4,26 @@ container EuClueScanner
 	{		
 		container Overridable: Descr = "From 6.069 on only this container will be overridable with Tools->Options->ConfigSettings that sets user/machine specific overrides in the registry"
 		{
-			parameter<String> RunRegions: [ 'JrcRegion' ]; // @USERINPUT: Nuts1 or JrcRegion
-			parameter<String> SourceDataProjDir: ['%SourceDataDir%'];
+			parameter<string> RunRegions: [ 'JrcRegion' ]; // @USERINPUT: Nuts1 or JrcRegion
+			parameter<string> SourceDataProjDir: ['%SourceDataDir%'];
 			// Central reference-files folder (per-test submap t810/, ...). full.py overrides this via
 			// GEODMS_Overridable_TestRefDir; same mechanism + default as Regression/cfg/stam.dms.
-			parameter<String> TestRefDir:        ['%SourceDataDir%/TestReferenceFiles'];
+			parameter<string> TestRefDir:        ['%SourceDataDir%/TestReferenceFiles'];
 		}
 		
 		// driver name is different on x64, after installing new x64 drivers (incl related SP1), see http://www.mantis.objectvision.nl/view.php?id=249
-		parameter<String> OdbcExcelDriver: Expr = "(GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'"; 
-		parameter<String> OdbcTxtDriver:   Expr = "(GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'"; 
+		parameter<string> OdbcExcelDriver: Expr = "(GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'"; 
+		parameter<string> OdbcTxtDriver:   Expr = "(GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'"; 
 		
 		container Tools
 		{
-			parameter<Int32> NrGroups: [ 1 ]; // 1 for Zoom tools; 2 for additional selection tools; and 3 for addtional edit tools.
+			parameter<int32> NrGroups: [ 1 ]; // 1 for Zoom tools; 2 for additional selection tools; and 3 for addtional edit tools.
 		}
 	}
 	
 	container t810_ValLuisa_Czech_LU_POP
 	{
-		unit<WPoint> domainGrid := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/domainGrid;
+		unit<wpoint> domainGrid := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/domainGrid;
 
 		container LU
 		{
@@ -50,10 +50,10 @@ container EuClueScanner
 		container POP
 		{
 			// attribute<Int32> recorded   (domainGrid) : StorageName = "%SourceDataProjDir%/refResults.7325/P2050_Qi.tif";
-			attribute<Int32> recorded   (domainGrid) : StorageName = "= GeoDmsVersion() < 20.02d ? '%TestRefDir%/t810/Czechia_P2050_Qi_v17_4_6.tif' : '%TestRefDir%/t810/Czechia_P2050_Qi_v20_2_1.tif'";
-			attribute<Int32> make_calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi
+			attribute<int32> recorded   (domainGrid) : StorageName = "= GeoDmsVersion() < 20.02d ? '%TestRefDir%/t810/Czechia_P2050_Qi_v17_4_6.tif' : '%TestRefDir%/t810/Czechia_P2050_Qi_v20_2_1.tif'";
+			attribute<int32> make_calculated (domainGrid) := Runs/Czechia/TimeSteps/P2050/ResultingState/OutputGeneration/Clipped_Qi
 			,	StorageName = "= results_folder + '/t810_ValLuisa_Czech_Pop.tif'", StorageType = "gdalwrite.grid";
-			attribute<Int32> calculated      (domainGrid) : StorageName = "= results_folder + '/t810_ValLuisa_Czech_Pop.tif'";
+			attribute<int32> calculated      (domainGrid) : StorageName = "= results_folder + '/t810_ValLuisa_Czech_Pop.tif'";
 			
 			attribute<bool> test (domainGrid) := MakeDefined(calculated, int32(0)) == MakeDefined(recorded, int32(0));
 			// measurement vs reference: # differing cells (the report computes % + verdict)
@@ -131,9 +131,9 @@ container EuClueScanner
 		parameter<string> LandUseDirname: 		Expr = "GenerateContainer/MozaikLandUse/impl/DirName"; // decoupled mozaiking from indicator calculations 
 		parameter<string> PopulationDirname:	Expr = "GenerateContainer/MozaikPopulation/impl/DirName"; // decoupled mozaiking from indicator calculations 
 		
-		unit<UInt16> Periods: Expr = "Parameters/PeriodSet/result";
-		unit<UInt16> Lustrum:   Expr = "Periods/Lustrum";
-		unit<UInt16> Decennium: Expr = "Periods/Decennium";
+		unit<uint16> Periods: Expr = "Parameters/PeriodSet/result";
+		unit<uint16> Lustrum:   Expr = "Periods/Lustrum";
+		unit<uint16> Decennium: Expr = "Periods/Decennium";
 		
 		container LandUseGridPerYearVT: Expr = 
 			"for_each_ndva("
@@ -142,7 +142,7 @@ container EuClueScanner
 				"Classifications/LU/ViewType, "
 				"LandUseDirname+'/LandUseVT_'+Periods/YearStr+'.tif'"
 			")";
-		unit<UInt32> domain: Expr = "='select_with_org_rel(IsDefined(LandUseGridperYearVT/'+First(Periods/Name)+'))'"
+		unit<uint32> domain: Expr = "='select_with_org_rel(IsDefined(LandUseGridperYearVT/'+First(Periods/Name)+'))'"
 			,	DialogType = "Map"
 			,	DialogData = "BasisGrid"
 		{

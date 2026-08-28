@@ -244,30 +244,30 @@
 				attribute<point_rd> location                       := point_yx(y, x, point_rd);
 				attribute<point_rd> location_with_undefined_values := id(.) == 1[.] || id(.) == 4[.]? point_yx(0f / 0f, 0f / 0f, point_rd) : location;
 
-				attribute<UInt32>   streetcode : [0,0,0,0,0,0,null,0];
+				attribute<uint32>   streetcode : [0,0,0,0,0,0,null,0];
 				
 				attribute<float64>  ci_dis : [220.466762,119.519942,56.5086196,180.789468,131.004833,63.0891738,79.4236098,610.39593];
 				attribute<RoadDomain> ci_arc : [2,1,2,1,1,0,2,1];
 				attribute<float32>  ci_x   : [114915,111922,114847,111531,111872,112560,114824,111555];
 				attribute<float32>  ci_y   : [401338,399468,399291,401760,398688,399186,398603,401625];
-				attribute<bool>     ci_inA : [True,True,True,True,True,True,True,True];
-				attribute<bool>     ci_inS : [True,True,True,True,True,True,True,True];
+				attribute<bool>     ci_inA : [true,true,true,true,true,true,true,true];
+				attribute<bool>     ci_inS : [true,true,true,true,true,true,true,true];
 				attribute<uint32>   ci_seg : [0,0,0,1,0,0,0,1];
 				
 				attribute<float64>  ce_dis : [3477.54413,119.519942,2986.08514,180.789468,131.004833,698.647152,79.4236098,610.39593];
 				attribute<RoadDomain> ce_arc : [1,1,1,1,1,1,2,1];
 				attribute<float32>  ce_x   : [111709,111922,111923,111531,111872,111904,114824,111555];
 				attribute<float32>  ce_y   : [400737,399468,399482,401760,398688,399183,398603,401625];
-				attribute<bool>     ce_inA : [True,True,True,True,True,True,True,True];
-				attribute<bool>     ce_inS : [True,True,True,True,True,True,True,True];
+				attribute<bool>     ce_inA : [true,true,true,true,true,true,true,true];
+				attribute<bool>     ce_inS : [true,true,true,true,true,true,true,true];
 				attribute<uint32>   ce_seg : [1,0,0,1,0,0,0,1];
 
 				attribute<float64>  cn_dis : [220.466762,710.305647,56.5086196,2792.59252,158.221364,63.0891738,79.4236098,2528.02571];
 				attribute<RoadDomain> cn_arc : [2,0,2,0,0,0,2,0];
 				attribute<float32>  cn_x   : [114915,111922,114847,112631,111872,112560,114824,111555];
 				attribute<float32>  cn_y   : [401338,399468,399291,399426,398688,399186,398603,401625];
-				attribute<bool>     cn_inA : [True,True,True,False,False,True,True,False];
-				attribute<bool>     cn_inS : [True,True,True,False,False,True,True,False];
+				attribute<bool>     cn_inA : [true,true,true,false,false,true,true,false];
+				attribute<bool>     cn_inS : [true,true,true,false,false,true,true,false];
 				attribute<uint32>   cn_seg : [0,0,0,0,0,0,0,0];
 
 			}
@@ -372,7 +372,7 @@
 				attribute<point_rd> location                       := point_yx(y, x, point_rd);
 				attribute<point_rd> location_with_undefined_values := id(.) == 1[.] || id(.) == 4[.] ? point_yx(0f / 0f, 0f / 0f, point_rd) : location;
 
-				attribute<UInt32>   streetcode : [];
+				attribute<uint32>   streetcode : [];
 				
 				attribute<float64>  ci_dis : [];
 				attribute<EDomain>   ci_arc : [];
@@ -417,10 +417,10 @@
 			}
 		}
 
-		container UnTiled  := Template(RDomain,      RoadDomain,      ADomain,      HDomain      ,LDomain     , srcDomain       , False);
-		container Tiled    := Template(RTiledDomain, RoadTiledDomain, ATiledDomain, HTiledDomain ,LTiledDomain, srcTiledDomain  , False);
-		container EUnTiled := Template(EDomain,      EDomain,         EDomain,      EDomain      ,EDomain     , srcEDomain      , True);
-		container ETiled   := Template(ETiledDomain, ETiledDomain,    ETiledDomain, ETiledDomain ,ETiledDomain, srcETiledDomain , True);
+		container UnTiled  := Template(RDomain,      RoadDomain,      ADomain,      HDomain      ,LDomain     , srcDomain       , false);
+		container Tiled    := Template(RTiledDomain, RoadTiledDomain, ATiledDomain, HTiledDomain ,LTiledDomain, srcTiledDomain  , false);
+		container EUnTiled := Template(EDomain,      EDomain,         EDomain,      EDomain      ,EDomain     , srcEDomain      , true);
+		container ETiled   := Template(ETiledDomain, ETiledDomain,    ETiledDomain, ETiledDomain ,ETiledDomain, srcETiledDomain , true);
 
 		container ResultUnitTiled
 		{
@@ -515,7 +515,7 @@
 				// remaining sites still tile the extent
 				unit<uint32> degenerate: nrofrows = 4
 				{
-					attribute<bool>    isnull  : [FALSE, FALSE, TRUE, FALSE];
+					attribute<bool>    isnull  : [false, false, true, false];
 					attribute<extent>  defined : [{500,250}, {500,750}, {0,0}, {500,750}];
 					attribute<extent>  point   := isnull ? null_ip[extent] : defined;
 					attribute<extent>  cell (poly) := voronoi(point, extent);
@@ -970,7 +970,7 @@
 				attribute<float32> per_org (connected/NodeSet) := dijkstra_all_link_count/M_ix / dijkstra_all_route_count/M_ix;
 				attribute<float32> per_dst (connected/NodeSet) := dijkstra_all_link_count/M_xj / dijkstra_all_route_count/M_xj;
 				attribute<float32> per_link(connected/LinkSet) := dijkstra_all_link_count/Link_flow / dijkstra_all_route_count/Link_flow;
-				parameter<bool> test_attr := #connected/LinkSet == 0 ? True : float_isNearby(sum(per_link), 107.17314f, Dif_all_float32);
+				parameter<bool> test_attr := #connected/LinkSet == 0 ? true : float_isNearby(sum(per_link), 107.17314f, Dif_all_float32);
 			}
 
 			unit<uint64> dijkstra_cut_route_count := 

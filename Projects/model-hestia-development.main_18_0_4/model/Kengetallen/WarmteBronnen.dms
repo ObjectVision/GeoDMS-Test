@@ -14,13 +14,13 @@ container WarmteBronnen : IsHidden = "True"
 {
 	container prijzen := EnergiePrijzen
 	{
-		attribute<AardGas/Table>       aardgas_tabel_rel (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, UInt16(AardGas/Table/jaar));
+		attribute<AardGas/Table>       aardgas_tabel_rel (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, uint16(AardGas/Table/jaar));
 		attribute<Eur_GJ>              K_Gas             (classifications/RekenJaar) := AardGas/results/GrootGebruik/eindgebruik_excl[aardgas_tabel_rel];
 		attribute<Eur_GJ>              Km_Gas            (classifications/RekenJaar) := AardGas/results/GrootGebruik/Maatschappelijk [aardgas_tabel_rel];
-		attribute<Elektriciteit/Table> elek_tabel_rel    (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, UInt16(Elektriciteit/Table/jaar));
+		attribute<Elektriciteit/Table> elek_tabel_rel    (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, uint16(Elektriciteit/Table/jaar));
 		attribute<Eur_GJ>              K_e               (classifications/RekenJaar) := prijzen/Elektriciteit/results/GrootGebruik/CommodityPrice [elek_tabel_rel];
 		attribute<Eur_GJ>              Km_e              (classifications/RekenJaar) := prijzen/Elektriciteit/results/GrootGebruik/Maatschappelijk[elek_tabel_rel];
-		attribute<Overig/Table>        overig_tabel_rel  (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, UInt16(Overig/Table/jaar));
+		attribute<Overig/Table>        overig_tabel_rel  (classifications/RekenJaar) := rlookup(classifications/RekenJaar/values, uint16(Overig/Table/jaar));
 		attribute<Eur_GJ>              K_biomassa        (classifications/RekenJaar) := Overig/Results/BioBron[overig_tabel_rel];
 		attribute<Eur_GJ>              Km_biomassa       (classifications/RekenJaar) := K_biomassa;
 		attribute<Eur_GJ>              K_kolen           (classifications/RekenJaar) := Overig/Results/Kolen_excl[overig_tabel_rel] + Overig/Results/Kolen_CO2 [overig_tabel_rel];

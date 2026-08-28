@@ -48,7 +48,7 @@ container ReadFiles
 		container SrcAttributes_strings := 
 			for_each_nedv(
 				SrcAttribute/name
-				, 'substr(SrcDomain/FullLine,' + String(SrcAttribute/StartPos) +',' + String(SrcAttribute/Length) + ')'
+				, 'substr(SrcDomain/FullLine,' + string(SrcAttribute/StartPos) +',' + string(SrcAttribute/Length) + ')'
 				, SrcDomain 
 				, string
 			)
@@ -90,7 +90,7 @@ container ReadFiles
 				, '%ProjDir%/Data/UnlinkedData/Tigris/'+Scenario+'_'+FileName_bare+'_'+string(Jaar)+'_'+SrcAttribute/name+'.fss'
 			);
 			
-		parameter<String> Generate_Attributes := 'Ready',
+		parameter<string> Generate_Attributes := 'Ready',
 			ExplicitSuppliers = "=AsList('MakeAttributes/' +SrcAttribute/name,';')";
 
 		container Attributes := 
@@ -112,14 +112,14 @@ container ReadFiles
 	template MetaInfo
 	{
 		//
-		parameter<String> FileName;
+		parameter<string> FileName;
 		//
 		unit<uint32> FileData:
 			StorageName = "=FileName",
 			StorageType = "gdal.vect",
 			StorageReadOnly = "True";
 			
-		parameter<String> FileNameFSS := substr(FileName, 0, strlen(FileName) - 3) + 'fss';
+		parameter<string> FileNameFSS := substr(FileName, 0, strlen(FileName) - 3) + 'fss';
 
 		unit<uint32> MakeFileDataFSS := FileData
 		, StorageName = "=FileNameFSS"
@@ -150,25 +150,25 @@ container ReadFiles
 		container Per_uint32: IsTemplate = "True"
 		{
 			// Start template parameters
-			parameter<String> Src;
+			parameter<string> Src;
 			unit <uint32>     Unit;
 			parameter<string> FieldSeparator;
 			// End template parameters
 						
-			parameter<String> FileName:   Expr = "Src";
-			parameter<String> FileData:
+			parameter<string> FileName:   Expr = "Src";
+			parameter<string> FileData:
 				StorageType = "str"
 			,	StorageName = "=FileName";
 			
-			parameter<String> HeaderLine: Expr = "readLines(FileData, void, 0)";
-			parameter<Bool>   HeaderOK:   Expr = "regex_match(HeaderLine, '\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			parameter<string> HeaderLine: Expr = "readLines(FileData, void, 0)";
+			parameter<bool>   HeaderOK:   Expr = "regex_match(HeaderLine, '\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			
-			unit<UInt32> Field: Expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			unit<uint32> Field: Expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
 			{
-				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+				attribute<string> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			}
-			attribute<String> BodyLines(Unit): Expr = "readLines(FileData, Unit, HeaderLine/ReadPos)"; //, IntegrityCheck = "HeaderOK";
-			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Unit): Expr = "regex_match(BodyLines, '(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			attribute<string> BodyLines(Unit): Expr = "readLines(FileData, Unit, HeaderLine/ReadPos)"; //, IntegrityCheck = "HeaderOK";
+			attribute<bool> LinesAreSignedIntegerStringOrEmpy (Unit): Expr = "regex_match(BodyLines, '(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			
 			container Data: Expr =
 				"for_each_nedv("

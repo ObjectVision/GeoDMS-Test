@@ -26,7 +26,7 @@
 		}
 		container ReadArray: url = "http://www.objectvision.nl/geodms/operators-a-functions/file/readarray"
 		{
-			Attribute<String>  Row1  (HDomain) := ReadArray(ReadValue/File, HDomain, String, 0);
+			Attribute<string>  Row1  (HDomain) := ReadArray(ReadValue/File, HDomain, string, 0);
 			Attribute<float64> Row2  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row1/ReadPos);
 			Attribute<float64> Row3  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row2/ReadPos);
 			Attribute<float64> Row4  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row3/ReadPos);
@@ -44,7 +44,7 @@
 			
 			unit<uint32> coordset := range(uint32, 0, 1203)
 			{
-				Attribute<String> row := ReadArray(coordparam, coordset, string, 0);
+				Attribute<string> row := ReadArray(coordparam, coordset, string, 0);
 			}
 			parameter<bool> test := coordset/row[1200] = '252332.881' && coordset/row[1201] = '592127.146' && coordset/row[1202] = '0.0';
 		}
@@ -53,15 +53,15 @@
 		{
 			attribute<uint32> FirstColum (ReadLines/BodyDomain) := ReadElems(ReadLines/Body, ReadLines/BodyDomain, const( 0, ReadLines/BodyDomain));
 			attribute<uint32> LastCoumn  (ReadLines/BodyDomain) := ReadElems(ReadLines/Body, ReadLines/BodyDomain, const(32, ReadLines/BodyDomain));
-			attribute<Bool>   test       (ReadLines/BodyDomain) := FirstColum = Source/ReadElem1 && LastCoumn = Source/ReadElem2;
+			attribute<bool>   test       (ReadLines/BodyDomain) := FirstColum = Source/ReadElem1 && LastCoumn = Source/ReadElem2;
 			parameter<bool>   test_attr                         := all(test);
 		}
 		container ReadLines: url = "http://www.objectvision.nl/geodms/operators-a-functions/file/readline"
 		{
 			unit<uint32>      BodyDomain:         nrOfRows = 6;
-			parameter<String> Header             := ReadLines(ReadValue/File, void, 0);
-			parameter<Bool>   test_param         := Header = '6\t9.02\tTest\tTrue';
-			Attribute<String> Body  (BodyDomain) := ReadLines(ReadValue/File, BodyDomain, Header/ReadPos);
+			parameter<string> Header             := ReadLines(ReadValue/File, void, 0);
+			parameter<bool>   test_param         := Header = '6\t9.02\tTest\tTrue';
+			Attribute<string> Body  (BodyDomain) := ReadLines(ReadValue/File, BodyDomain, Header/ReadPos);
 			Parameter<bool>   test_attr
 				 := substr(Body[0], 0, 5) = '25000' && substr(Body[0], strlen(Body[0]) - 3, 3) = '70\t' && substr(Body[5], 0, 5) = '50000' && substr(Body[5], strlen(Body[5]) - 3, 3) = '80\t';
 		}

@@ -10,7 +10,7 @@ container Classifications : using = "units"
 	{
 		attribute<string> name : ['Africa','Asia','Australia_Oceania','Europe','North_America','South_America'];
 		attribute<string> label := name;
-		container V := for_each_nedv(AsItemName(name), String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(AsItemName(name), string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint32> Iter : nrofrows = 8
@@ -36,7 +36,7 @@ container Classifications : using = "units"
 		attribute<string> Label : ['Urban centre','Dense urban cluster','Semi-dense urban cluster','Suburban grid cell','Rural cluster','Low density rural grid cell','Very low density grid cell'];
 		attribute<uint32> BrushColor: [rgb(255,0,0),rgb(115,35,0),rgb(168,112,0),rgb(255,255,0),rgb(55,86,35),rgb(171,205,102),rgb(205,245,122)];
 		attribute<string> name  := AsItemName(label);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	unit<uint32> Accessibility_Variants : nrofrows = 3, Descr = "Accessibility definitions used for endogenous accessibility grid-based calculations" 
 	{
@@ -56,7 +56,7 @@ container Classifications : using = "units"
 	{
 		attribute<string>         label                      := string(id(.));
 		attribute<BU_DensityBins> DensityBins_rel            := Classify(id(.), BU_DensityBins/LB);
-		attribute<Float32>        Moving_up_probability_data : 
+		attribute<float32>        Moving_up_probability_data : 
 		[ 
 			0.024179 ,0.557334 ,0.833489 ,0.9228637,0.9508959,
 			0.9647802,0.9698947,0.9700665,0.9718882,0.9717724,
@@ -75,7 +75,7 @@ container Classifications : using = "units"
 			null,null,null,null,null,null,null,null,null,null,
 			null,null,null,null,null,null,null,null,null,null
 		];
-		attribute<Float32>        Moving_up_probability      := MakeDefined(Moving_up_probability_data, 0f);
+		attribute<float32>        Moving_up_probability      := MakeDefined(Moving_up_probability_data, 0f);
 		attribute<uint32>         BrushColor                 := BU_DensityBins/BrushColor[DensityBins_rel];
 	}
 	

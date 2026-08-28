@@ -28,8 +28,8 @@ container Templates: Using = "Units;Classifications;geometries;Classifications/T
 		{
 			attribute<BaseProjection>                  geometry                       := union_data(.,orgLocations, destLocations);
 			attribute<spoint>                          as_spoint                      := union_data(.,OrgLocations_spoint, destLocations_spoint);
-			attribute<bool>                            IsOrg                          := union_data(.,const(TRUE , OrgDomain), const(FALSE,DestDomain));
-			attribute<bool>                            IsDest                         := union_data(.,const(FALSE, OrgDomain), const(TRUE ,DestDomain));
+			attribute<bool>                            IsOrg                          := union_data(.,const(true , OrgDomain), const(false,DestDomain));
+			attribute<bool>                            IsDest                         := union_data(.,const(false, OrgDomain), const(true ,DestDomain));
 			attribute<uint32>                          Population                     := union_data(.,OrgDomain/Population, DestDomain/Population);
 		}
 		
@@ -74,7 +74,7 @@ container Templates: Using = "Units;Classifications;geometries;Classifications/T
 				attribute<BaseProjection>     geometry (arc) := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks/geometry);
 				attribute<bool>               IsOneDirection := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks/IsOneDirection);
 				attribute<km_hr>              KPH            := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks/KPH);
-				attribute<Bool >              Connectable    := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks/Connectable);
+				attribute<bool >              Connectable    := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks/Connectable);
 			}
 			
 			unit<uint32> Roads := arc2segm(Road_linestrings/geometry)
@@ -108,7 +108,7 @@ container Templates: Using = "Units;Classifications;geometries;Classifications/T
 				attribute<bool>            IsOD_connection_road := !IsDefined(arc_rel);
 				attribute<km>              LengthKm             := convert(dist(first_point, last_point)[m], km);
 				attribute<min_f>           Minutes              := MakeDefined(convert((LengthKm / KPH), min_f), 0.0001[min_f]);
-				attribute<s_f>             impedance            := convert(minutes, s_f) + Float64(CorrectImpedanceForCrossroads/impedance_Start + CorrectImpedanceForCrossroads/impedance_End);
+				attribute<s_f>             impedance            := convert(minutes, s_f) + float64(CorrectImpedanceForCrossroads/impedance_Start + CorrectImpedanceForCrossroads/impedance_End);
 				attribute<NodeSet>         F1                   := rlookup(first_point, NodeSet/Values); //node from the OD towards the network
 				attribute<NodeSet>         F2                   := rlookup(last_point,  NodeSet/Values); //network node to which the the OD is connected 
  
@@ -224,7 +224,7 @@ container Templates: Using = "Units;Classifications;geometries;Classifications/T
 				
 				container store 
 				{
-					parameter<bool>    store                    :=  True, explicitsuppliers = "Export";
+					parameter<bool>    store                    :=  true, explicitsuppliers = "Export";
 				}
 			}
 			
@@ -338,7 +338,7 @@ container Templates: Using = "Units;Classifications;geometries;Classifications/T
 					attribute<bool>                            Links_InsideJFS_IsOneDirection     := all(LinksInsideJunctionFreeSection/IsOneDirection, LinksInsideJunctionFreeSection/JunctionFreeSection_rel);
 					
 					attribute<bool>                            IsOneDirection                     := First_ConnectorLink_IsOneDirection && Last_ConnectorLink_IsOneDirection && Links_InsideJFS_IsOneDirection;
-					attribute<bool>                            IsOD_connection_road               := const(FALSE,.);
+					attribute<bool>                            IsOD_connection_road               := const(false,.);
 					
 					//For visualisation
 					// attribute<BaseProjection_ip>                  FirstPoint                     := NodeSet/Geometry[F1];

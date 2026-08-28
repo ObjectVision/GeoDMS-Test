@@ -9,11 +9,11 @@
 // Function: Classification of Land Use and Land Cover (LULC) Corine
 
 container LULC {
-	unit<UInt8> Corine: Expr = "Range(uint8, UInt8(0), UInt8(51))"
+	unit<uint8> Corine: Expr = "Range(uint8, UInt8(0), UInt8(51))"
 	{
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, 9*#Corine)"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, 9*#Corine)"
 		{
-			attribute<String> Text: [
+			attribute<string> Text: [
 			//	'Grid_Code', 'Class', 'Label', 'CLC1', 'CLC2', 'CLC3B','R', 'G', 'B'
 			'0', '1111', 'Urban fabric dense (>50% built-up)', '111', '11', '1', '140', '0', '0', 
 			'1', '1121', 'Urban fabric medium density (30-50% built-up)', '112', '11', '1', '220', '0', '0',
@@ -71,12 +71,12 @@ container LULC {
 
 		attribute<Corine>    Grid_code: Expr = "value(Elements/Text[value(UInt32(ID(.))*9, Elements)], Corine)";
 
-		attribute<UInt32> R: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*9+6, Elements)])";
-		attribute<UInt32> G: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*9+7, Elements)])";
-		attribute<UInt32> B: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*9+8, Elements)])";
-		attribute<UInt32> BrushColor: Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
+		attribute<uint32> R: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*9+6, Elements)])";
+		attribute<uint32> G: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*9+7, Elements)])";
+		attribute<uint32> B: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*9+8, Elements)])";
+		attribute<uint32> BrushColor: Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
 
-		attribute<String> Label:     Expr = "Elements/Text[value(UInt32(ID(.))*9+2, Elements)]";
+		attribute<string> Label:     Expr = "Elements/Text[value(UInt32(ID(.))*9+2, Elements)]";
 
 	}
 }

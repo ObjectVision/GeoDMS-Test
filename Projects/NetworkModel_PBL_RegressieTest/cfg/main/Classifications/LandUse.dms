@@ -5,7 +5,7 @@ container LandUse
 		parameter<uint32> nrAttr := 10;
 		unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 		{
-			attribute<String> Text:
+			attribute<string> Text:
 			[
 				// BBG_EK, Label                         , r  , g   , b   , 10k rel, onbebouwbaar, pot, 'gg_10k_anders_rel', 'BBG'
 				' 0','NoData',                           '255','255','255', '0', '1','0','0' , '0',
@@ -50,18 +50,18 @@ container LandUse
 			]; 
 		}
 		attribute<uint8>        id              := id(.);
-		attribute<uint8>        bbg_ek          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)][uint8];
-		attribute<string>       label           := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)], DialogType = "LabelText";
-		attribute<uint8>        r               := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)][uint8];
-		attribute<uint8>        g               := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)][uint8];
-		attribute<uint8>        b               := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)][uint8];
+		attribute<uint8>        bbg_ek          := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)][uint8];
+		attribute<string>       label           := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)], DialogType = "LabelText";
+		attribute<uint8>        r               := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)][uint8];
+		attribute<uint8>        g               := Elements/Text[value(uint32(ID(.))* nrAttr + 3, Elements)][uint8];
+		attribute<uint8>        b               := Elements/Text[value(uint32(ID(.))* nrAttr + 4, Elements)][uint8];
 		
 		attribute<string>       name            := replace(label, ' ', '_', '/', '_', '-', '_');
 		attribute<uint32>       BrushColor      := rgb(r, g, b), DialogType = "BrushColor";
 		attribute<uint32>       PenColor        := BrushColor, DialogType = "PenColor";
 		parameter<int16>        PenWidth        := 0[int16], DialogType = "penWidth";
 		attribute<uint32>       SymbolColor     := BrushColor, DialogType = "SymbolColor";
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 
 }

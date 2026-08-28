@@ -1,6 +1,6 @@
 container ShapeData
 {
-	unit<UInt32> lfa :
+	unit<uint32> lfa :
 		StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/lfa.shp" ,
 		StorageType = "gdal.vect" ,
 		StorageReadOnly = "True" ,
@@ -19,15 +19,15 @@ container ShapeData
 		attribute<bool> art20_totally: Expr = "LFA_comb2 = 'NNT'";
 		attribute<bool> art20_partially: Expr = "LFA_comb2 = 'NNP' || LFA_comb2 ='NPP' || LFA_comb2 ='PNP' || LFA_comb2 ='PPP'";
 	}
-	unit<UInt32> natura2000_v2011_domain:
+	unit<uint32> natura2000_v2011_domain:
 		StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Natura2000_End2011.shp",
 		StorageType = "gdal.vect",
 		StorageReadOnly = "True",
 		SyncMode = "None";
 
-	unit<UInt32> natura2000_v2011_tiled_domain: Expr = "TiledUnit(value(5000, Range(UInt32, 0, #natura2000_v2011_domain)))";
+	unit<uint32> natura2000_v2011_tiled_domain: Expr = "TiledUnit(value(5000, Range(UInt32, 0, #natura2000_v2011_domain)))";
 
-	unit<UInt32> natura2000_v2011: Expr = "natura2000_v2011_tiled_domain",
+	unit<uint32> natura2000_v2011: Expr = "natura2000_v2011_tiled_domain",
 		StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Natura2000_End2011.shp",
 		StorageType = "gdal.vect",
 		StorageReadOnly = "True",
@@ -37,7 +37,7 @@ container ShapeData
 		attribute<Geography/LambertEA> Geometry(poly);
 	}
 
-	unit<UInt32> nda:
+	unit<uint32> nda:
 		StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/nda.shp",
 		StorageType = "gdal.vect",
 		StorageReadOnly = "True",

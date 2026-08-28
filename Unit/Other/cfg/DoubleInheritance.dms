@@ -2,22 +2,22 @@ container DoubleInheritance
 {
 	container GenericBase
 	{
-		parameter<Float32> Oppervlak: [1.5];
+		parameter<float32> Oppervlak: [1.5];
 	}
 	container BaseLine
 	{
 		container Woning := GenericBase
 		{
-			parameter<Float32> Oppervlak: Expr = "Float32(2.5)";
+			parameter<float32> Oppervlak: Expr = "Float32(2.5)";
 		}
 	}
 	container Toekomst := BaseLine // inheritance
 	{
 		container Woning := BaseLine/Woning; // auto connection with BaseLine/Woning or directly to GenericBase?
 	}
-	parameter<Float32> Result1 := Toekomst/Woning/Oppervlak;
-	parameter<Float32> Result2 := BaseLine/Woning/Oppervlak;
-	parameter<Bool> test := Result1 == result2;
+	parameter<float32> Result1 := Toekomst/Woning/Oppervlak;
+	parameter<float32> Result2 := BaseLine/Woning/Oppervlak;
+	parameter<bool> test := Result1 == result2;
 
 	parameter<string> test_log := test 
 		? '' 

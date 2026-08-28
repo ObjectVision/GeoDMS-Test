@@ -1,6 +1,6 @@
-unit<UInt32> layers : NrOfRows = 14
+unit<uint32> layers : NrOfRows = 14
 {
-	attribute<String> name :
+	attribute<string> name :
 	[
 		'beperkt_kwestbare_gebouwen'
 		,'kwestbare_gebouwen'
@@ -18,31 +18,31 @@ unit<UInt32> layers : NrOfRows = 14
 		,'Woonkernen'
 		,'zee'
 	];
-	attribute<Bool> IsDynamisch :
+	attribute<bool> IsDynamisch :
 	[
-		  TRUE
-		, TRUE
-		, FALSE
-		, TRUE
-		, FALSE
+		  true
+		, true
+		, false
+		, true
+		, false
 		// , FALSE
-		, TRUE
-		, FALSE
-		, FALSE
-		, FALSE
-		, FALSE
-		, FALSE
-		, FALSE
-		, TRUE
-		, FALSE
+		, true
+		, false
+		, false
+		, false
+		, false
+		, false
+		, false
+		, true
+		, false
 	];
 	
-	unit<UInt32> Dynamisch := select_with_org_rel(IsDynamisch)
+	unit<uint32> Dynamisch := select_with_org_rel(IsDynamisch)
 	{
-		attribute<String> name := ../name[org_rel];
+		attribute<string> name := ../name[org_rel];
 	}
-	unit<UInt32> Statisch := select_with_org_rel(!IsDynamisch)
+	unit<uint32> Statisch := select_with_org_rel(!IsDynamisch)
 	{
-		attribute<String> name := ../name[org_rel];
+		attribute<string> name := ../name[org_rel];
 	}
 }

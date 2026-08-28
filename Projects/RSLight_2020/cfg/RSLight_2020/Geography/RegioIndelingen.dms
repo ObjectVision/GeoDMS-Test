@@ -66,7 +66,7 @@ container RegioIndelingen
 		, DialogType  = "Map"
 		{
 			attribute<rdc_meter> Polygons (poly) := union_data(., impl/NL_BoundingBox/OutsideNL/geometry, Read_Provincie_GML/geometry);
-			attribute<String>    Label           := union_data(., const('Buitengebied', impl/NL_BoundingBox/OutsideNL), Read_Provincie_GML/Label);
+			attribute<string>    Label           := union_data(., const('Buitengebied', impl/NL_BoundingBox/OutsideNL), Read_Provincie_GML/Label);
 			attribute<string>    name            := union_data(., const('Buitengebied', impl/NL_BoundingBox/OutsideNL), Read_Provincie_GML/name);
 			attribute<string>    afko            := union_data(., const('', impl/NL_BoundingBox/OutsideNL), Read_Provincie_GML/afko);
 		}
@@ -92,7 +92,7 @@ container RegioIndelingen
 		{
 			attribute<rdc_meter> Polygons (poly) := Read_Corop_SHP/Geometry_rd;
 			
-			attribute<String>    Label           := Read_Corop_SHP/Label;
+			attribute<string>    Label           := Read_Corop_SHP/Label;
 			attribute<string>    name            := Read_Corop_SHP/name;
 			attribute<string>    numbered_name   := Read_Corop_SHP/numbered_name;
 		}
@@ -181,7 +181,7 @@ container RegioIndelingen
 		, DialogType  = "Map"
 		{
 			attribute<rdc_meter> geometry (poly) := Read_NVM_shp/geometry;
-			attribute<String>    Label           := Read_NVM_shp/afdeling;
+			attribute<string>    Label           := Read_NVM_shp/afdeling;
 		}
 	}
 	
@@ -232,7 +232,7 @@ container RegioIndelingen
 	{
 		attribute<rdc_meter> Polygons (poly);
 		attribute<.>         id                      := id(.); //laten staan tbv discrete_alloc vereiste
-		attribute<String>    Label;
+		attribute<string>    Label;
 		attribute<string>    name;
 		attribute<string>    numbered_name;
 		
@@ -262,8 +262,8 @@ container RegioIndelingen
 	, DialogType  = "Map"
 	{
 		attribute<rdc_meter> geometry (poly);
-		attribute<String>    Label;
-		attribute<String>    name  := replace(Label, '/', '_', '-', '_', ' ', '_');
+		attribute<string>    Label;
+		attribute<string>    name  := replace(Label, '/', '_', '-', '_', ' ', '_');
 		attribute<MRA1>      MRA1_rel := point_in_polygon(centroid_or_mid(geometry), MRA1/geometry);
 		attribute<.>         per_rdc_100m (rdc_100m) := poly2grid(geometry, rdc_100m);
 	}
@@ -390,7 +390,7 @@ container RegioIndelingen
  		// attribute<Gemeente2011> Gem2011_rel := rlookup(gem11nr, geography/RegioIndelingen/Gemeente2011/gemnr);
 		attribute<.>            LMSSubzone_rel := id(.);
 		attribute<bool> IsIjburg := id(.) == 620[.] || id(.) == 621[.];
-		attribute<Bool>         InNl := LAND == 1[uint8];
+		attribute<bool>         InNl := LAND == 1[uint8];
 		attribute<uint32>       LmsSubF := LmsSub;
 		attribute<.> Per_rdc_100m (rdc_100m) := poly2grid(Polygons, rdc_100m);
 		attribute<.> Per_rdc_25m (rdc_25m) := poly2grid(Polygons, rdc_25m);

@@ -10,32 +10,32 @@
 
 container ExportSettings: url = "='#'+ExportSettings/Docdata +'/ExportSettings.adms'"
 {
-	parameter<String> FileNameBase: ='results/result';
-	parameter<String> DocData:      =expand(.,'%projdir%/html');
+	parameter<string> FileNameBase: ='results/result';
+	parameter<string> DocData:      =expand(.,'%projdir%/html');
 
-	parameter<Float64> width:  [null];
-	parameter<Float64> height: [null];
+	parameter<float64> width:  [null];
+	parameter<float64> height: [null];
 	parameter<Dpoint>  PaperSize
 	:	=point_xy(width / 100.0 , height / 100.0)
 	,	url  = "about:papersize is <B>defined</B> as height * width";
 
-	parameter<Float64> ScaleDenom: [1000000];
-	parameter<Float64> Scale:       =1.0 / ScaleDenom;
+	parameter<float64> ScaleDenom: [1000000];
+	parameter<float64> Scale:       =1.0 / ScaleDenom;
 
-	parameter<Float64> dwsc: [null];
+	parameter<float64> dwsc: [null];
 	parameter<Dpoint>  DotWorldSize: =point_yx(dwsc,dwsc);
 
-	parameter<UInt32>  NrSubDotsPerDot: [1];
+	parameter<uint32>  NrSubDotsPerDot: [1];
 
-	parameter<Float64> dpi: [300];
+	parameter<float64> dpi: [300];
 	parameter<Dpoint>  DotSize: = point_yx(0.0254/dpi,0.0254/dpi);
 
-	parameter<Float64> ViewFactor: [1];
+	parameter<float64> ViewFactor: [1];
 
 	// parameter<Ipoint>  MaxNrSubDotsPerTile: [xy(4096, 4096)];
 	
 	container SvnImpl {
-		parameter<String> RevisionInfoCmd := Replace(Expand(., 'SubWCRev %projDir% > %projDir%/SubWCRevData.str'), '/', '\\');
+		parameter<string> RevisionInfoCmd := Replace(Expand(., 'SubWCRev %projDir% > %projDir%/SubWCRevData.str'), '/', '\\');
 		container Writer := exec_ec(Expand(., '%env:ComSpec%'), '/c ' + RevisionInfoCmd, Expand(., '%projdir%'));
 	}
 

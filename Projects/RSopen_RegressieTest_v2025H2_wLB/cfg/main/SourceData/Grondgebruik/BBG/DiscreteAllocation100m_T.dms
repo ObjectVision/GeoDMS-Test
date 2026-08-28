@@ -1,14 +1,14 @@
 Template DiscreteAllocation100m_T
 {
 	//
-	parameter<UInt32> Year;
+	parameter<uint32> Year;
 	//
 	
 	attribute <Grondgebruik/CBSKlasse> Result_discrete (rdc_100m) := Allocation/LandUse_rel[invert(Input/Compacted/ADomain/org_rel)], StorageName = "='%LocalDataProjDir%/BaseData/Grondgebruik/BBG/BBG'+string(Year)+'_100m_allocation_'+/ModelParameters/StudyArea+'.tif'", StorageType = "gdalwrite.grid";
 	
 	container Input
 	{ 
-		unit<UInt32> AggRegio := SourceData/RegioIndelingen/CBS/Last/COROP
+		unit<uint32> AggRegio := SourceData/RegioIndelingen/CBS/Last/COROP
 		{
 			attribute<.>         id                                      := id(.);
 			attribute<.>         per_rdc_10m                   (rdc_10m) := poly2grid(geometry, rdc_10m);
@@ -46,7 +46,7 @@ Template DiscreteAllocation100m_T
 					, uint32
 				)
 			{
-				attribute<UInt32> Totaal (AggRegio) := = 'add('+asItemList(Grondgebruik/CBSKlasse/name)+')';
+				attribute<uint32> Totaal (AggRegio) := = 'add('+asItemList(Grondgebruik/CBSKlasse/name)+')';
 			}
 			
 			container MinClaims := 
@@ -61,12 +61,12 @@ Template DiscreteAllocation100m_T
 	
 	container Allocation
 	{
-		unit<UInt8> Partitioning: NrOfRows = 1
+		unit<uint8> Partitioning: NrOfRows = 1
 		{
-			attribute<String> name   : ['id'];
+			attribute<string> name   : ['id'];
 		}
 		
-		parameter<Int32> threshold := int32(0);
+		parameter<int32> threshold := int32(0);
 		
 		container FeasibleSolution;
 		

@@ -1,12 +1,12 @@
 container Afleiding_Winkelcentra
 : Descr = "Voor de identificatie van winkelcentra. Dit is nodig voor het bepalen van de dynamisch windmolen restricties onder het kopje kwetsbare gebouwen."
 {
-	unit<UInt8> Type: NrOfRows = 4
+	unit<uint8> Type: NrOfRows = 4
 	{
-		attribute<String> Label       : ['geen','klein','middel','groot'], DialogType = "LabelText";
-		attribute<Int32>  ClassBreaks : [0,2000,10000,25000], DialogType = "Classification";
-		attribute<UInt32> BrushColor  : DialogType = "BrushColor", [rgb(225,225,225), rgb(0, 200,0),rgb(0,0,200),rgb(200,0,0)];
-		attribute<UInt32> PenColor    := BrushColor, DialogType = "PenColor";
+		attribute<string> Label       : ['geen','klein','middel','groot'], DialogType = "LabelText";
+		attribute<int32>  ClassBreaks : [0,2000,10000,25000], DialogType = "Classification";
+		attribute<uint32> BrushColor  : DialogType = "BrushColor", [rgb(225,225,225), rgb(0, 200,0),rgb(0,0,200),rgb(200,0,0)];
+		attribute<uint32> PenColor    := BrushColor, DialogType = "PenColor";
 	}
 	
 	// Voor het genereren van de winkelcentra
@@ -209,19 +209,19 @@ container Afleiding_Winkelcentra
 		}
 	}
  */	
-	unit<UInt32> WinkelCentra 
+	unit<uint32> WinkelCentra 
 	: StorageName = "%RSo_DataDir%/Vastgoed/WinkelCentra_afleiding.gpkg"
 	, StorageType = "gdal.vect"
 	, StorageReadOnly = "TRUE"
 	{
 		attribute<rdc_meter> geometry (poly);
-		attribute<Int32>     oppWinkel;
-		attribute<UInt32>    nrWinkel;
+		attribute<int32>     oppWinkel;
+		attribute<uint32>    nrWinkel;
 		attribute<Type>      Type_rel;
 		
-		attribute<Bool> IsWinkelComplex := nrWinkel > 5 && oppWinkel > 1000i;
+		attribute<bool> IsWinkelComplex := nrWinkel > 5 && oppWinkel > 1000i;
 		
-		unit<UInt32> WinkelComplexen := select_with_org_rel(IsWinkelComplex)
+		unit<uint32> WinkelComplexen := select_with_org_rel(IsWinkelComplex)
 		{
 			attribute<rdc_meter>  geometry (poly) := ../geometry[org_rel];
 		}

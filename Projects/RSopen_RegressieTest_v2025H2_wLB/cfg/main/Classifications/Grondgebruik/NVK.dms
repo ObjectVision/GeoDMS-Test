@@ -1,10 +1,10 @@
 container NVK : using = "Actor"
 {
-	unit<UInt8> LHMType : NrOfRows = 19 
+	unit<uint8> LHMType : NrOfRows = 19 
 	{	
 		unit<Uint32> Elements:= range(uint32, 0, nrAttr*#.)
 		{
-			attribute<String> Text: [ // @USERINPUT
+			attribute<string> Text: [ // @USERINPUT
 			// name,                             ,Label                              ,Description            , r   , g   , b  ,LU_ModelType
 			  'grondgebonden_veeteelt'           ,'grondgebonden veeteelt'           ,'gras',                '201','247','109','gg_vee'
 			 ,'mais'                             ,'mais'                             ,'mais',                '232','153', '25','gg_vee'
@@ -27,14 +27,14 @@ container NVK : using = "Actor"
 			 ,'water'                            ,'water'                            ,'zoetwater',           ' 77','217','255','water'
 			];
 		}
-		attribute<UInt8>          EK := id(.) + 1b;
+		attribute<uint8>          EK := id(.) + 1b;
 
-		attribute<String>     name         := Elements/Text[value(Uint32(id(.))* nrAttr +  0, Elements)];
-		attribute<String>     Label        := Elements/Text[value(Uint32(id(.))* nrAttr +  1, Elements)];
-		attribute<String>     Descr        := Elements/Text[value(Uint32(id(.))* nrAttr +  2, Elements)];
+		attribute<string>     name         := Elements/Text[value(Uint32(id(.))* nrAttr +  0, Elements)];
+		attribute<string>     Label        := Elements/Text[value(Uint32(id(.))* nrAttr +  1, Elements)];
+		attribute<string>     Descr        := Elements/Text[value(Uint32(id(.))* nrAttr +  2, Elements)];
 		attribute<LU_ModelType>     LU_ModelType_rel := rlookup(LowerCase(Elements/Text[value(Uint32(id(.))* nrAttr +  6, Elements)]), LowerCase(LU_ModelType/nameShort));
-		attribute<UInt32>     BrushColor   := rgb(R,G / 256,B / 256 / 256), DialogType = "BrushColor";
-		attribute<Bool>       IsVerhard    := id(.) == v/Glastuinbouw;
+		attribute<uint32>     BrushColor   := rgb(R,G / 256,B / 256 / 256), DialogType = "BrushColor";
+		attribute<bool>       IsVerhard    := id(.) == v/Glastuinbouw;
 
 		// attribute<Bool> IsExogeen := const(FALSE,.);
 		// attribute<Bool> IsEndogeen := name == 'grondgebonden_veeteelt' 
@@ -92,31 +92,31 @@ container NVK : using = "Actor"
 
 		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 		
-		parameter<UInt32> nrAttr := 7;
+		parameter<uint32> nrAttr := 7;
 	}
 
-	unit<UInt32> NVK_LHM_Tabel
+	unit<uint32> NVK_LHM_Tabel
 	: StorageName = "%ProjDir%/Data/Classificaties RS-LHM vertaaltabel mutaties_rp2.csv"
 	, StorageType = "gdal.vect"
 	, StorageReadOnly = "TRUE"
 	{
-		attribute<String>              name              := AsItemName(Label);
-		attribute<String>              Label             := Uitleg_NVK;
+		attribute<string>              name              := AsItemName(Label);
+		attribute<string>              Label             := Uitleg_NVK;
 		attribute<HDB_NVKKlasse>       HDB_NVKKlasse_rel := rlookup(trim(LowerCase(Uitleg_NVK)), trim(LowerCase(HDB_NVKKlasse/name)));
 		attribute<LHMType>             LHMType_rel       := rlookup(LowerCase(LHM_name_edit_RP), LowerCase(LHMType/name));
 		attribute<LU_ModelType>        LU_ModelType_rel  := LHMType/LU_ModelType_rel[LHMType_rel];
 		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}
 	
-	unit<UInt8> NVK_HDB_klasse 
+	unit<uint8> NVK_HDB_klasse 
 	: StorageName = "%ProjDir%/Data/Classificatie HDB_RP.csv"
 	, StorageType = "gdal.vect";
 	
-	unit<UInt8> HDB_NVKKlasse : NrOfRows = 171
+	unit<uint8> HDB_NVKKlasse : NrOfRows = 171
 	{
-		attribute<UInt8>    id         := id(.);
+		attribute<uint8>    id         := id(.);
 		// attribute<UInt32>   PenColor   := BrushColor, DialogType = "PenColor";
-		attribute<String> name:
+		attribute<string> name:
 		[
 			'No other rule applies' ,//0
 			'N01.01 Zee en Wad' ,//1
@@ -291,7 +291,7 @@ container NVK : using = "Actor"
 			'Natuurvriendelijke oever' //170  -->komt niet voor voor Huidig
 		];
 		
-		attribute<String> Label:= name, DialogType = "LabelText";
+		attribute<string> Label:= name, DialogType = "LabelText";
 	}
 
 

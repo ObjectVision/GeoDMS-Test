@@ -1,16 +1,16 @@
 container Basisjaar
 {
-	unit<UInt32> Subsector             := Classifications/Actor/Sector/xSubsector;
-	unit<UInt8>  OP                    := CaseClassifications/Vastgoed/OP;
-	unit<UInt8>  WP2                   := Classifications/Vastgoed/WP2;
-	unit<UInt8>  WP4                   := Classifications/Vastgoed/WP4;
-	unit<UInt8>  WP2xVSSH              := Classifications/Vastgoed/WP2xVSSH;
-	unit<UInt8>  vbo_gebruiksdoel_plus := Classifications/Vastgoed/vbo_gebruiksdoel_plus;
+	unit<uint32> Subsector             := Classifications/Actor/Sector/xSubsector;
+	unit<uint8>  OP                    := CaseClassifications/Vastgoed/OP;
+	unit<uint8>  WP2                   := Classifications/Vastgoed/WP2;
+	unit<uint8>  WP4                   := Classifications/Vastgoed/WP4;
+	unit<uint8>  WP2xVSSH              := Classifications/Vastgoed/WP2xVSSH;
+	unit<uint8>  vbo_gebruiksdoel_plus := Classifications/Vastgoed/vbo_gebruiksdoel_plus;
 	
-	unit<UInt32> StandVar  := CaseClassifications/StandVar
+	unit<uint32> StandVar  := CaseClassifications/StandVar
 	{
-		attribute<String> quantity_name := is_quantity ? name : '';
-		unit<UInt8> OP := CaseClassifications/StandVar/OP;
+		attribute<string> quantity_name := is_quantity ? name : '';
+		unit<uint8> OP := CaseClassifications/StandVar/OP;
 	}
 	
 	container Stand :=
@@ -67,7 +67,7 @@ container Basisjaar
 		
 	container Gebruiksoppervlak
 	{
-		unit<UInt32> pand     := ='SourceData/Vastgoed/BAG/PerJaar/Y'+string(ModelParameters/Model_StartYear)+'/pand';
+		unit<uint32> pand     := ='SourceData/Vastgoed/BAG/PerJaar/Y'+string(ModelParameters/Model_StartYear)+'/pand';
 		
 		container per_Gebruiksdoel_perAdminDomain :=
 			for_each_nedv(

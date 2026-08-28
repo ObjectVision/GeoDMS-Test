@@ -8,7 +8,7 @@ container read_tiff_configured_domain
 			parameter<uint32> nrAttr := 16; // @USERINPUT: keep in sync with nr of Text-Element attributes in the next lines
 			unit<uint32>      Elements:= Range(uint32, 0, nrAttr*#ggModel)
 			{
-				attribute<String> Text: [ // @USERINPUT
+				attribute<string> Text: [ // @USERINPUT
 				//'Name',			'Label',			'Descr',			'IsExogenous',	'r','g','b',		'Claimregion',	'IsUrbaan',	'IsOpenlandscape',	'LandPrice_A1',	'LandPrice_A2',	'LandPrice_B1',	'LandPrice_B2',	'NrInhPerHa',	'MaxDamagePerHa',
 				'exterior',			'exterior',			'exterior',			'TRUE',			'255','255','228',	'',				'FALSE',	'FALSE',			'25',			'24',			'23',			'22',			'0',			'0',
 				'residential',		'residential',		'residential',		'FALSE',		'225','0','0',		'RstIntPer',	'TRUE',		'FALSE',			'40',			'35',			'34',			'30',			'35',			'4',
@@ -22,28 +22,28 @@ container read_tiff_configured_domain
 				];
 			}
 			attribute<string>     Lnr:          = string(ID(.)+1b);
-			attribute<String>     Name:         = Elements/Text[value(UInt32(ID(.))* nrAttr +  0, Elements)];
-			attribute<String>     Label:        = Elements/Text[value(UInt32(ID(.))* nrAttr +  1, Elements)], DialogType = "LabelText";
-			attribute<String>     Descr:        = Elements/Text[value(UInt32(ID(.))* nrAttr +  2, Elements)];
-			attribute<Bool>       IsExogenous:  = bool(Elements/Text[value(UInt32(ID(.))* nrAttr +  3, Elements)]);
+			attribute<string>     Name:         = Elements/Text[value(uint32(ID(.))* nrAttr +  0, Elements)];
+			attribute<string>     Label:        = Elements/Text[value(uint32(ID(.))* nrAttr +  1, Elements)], DialogType = "LabelText";
+			attribute<string>     Descr:        = Elements/Text[value(uint32(ID(.))* nrAttr +  2, Elements)];
+			attribute<bool>       IsExogenous:  = bool(Elements/Text[value(uint32(ID(.))* nrAttr +  3, Elements)]);
 
 			attribute<uint32>     BrushColor:   = rgb(R,G / 256,B / 256 / 256), DialogType = "BrushColor";
 
 			unit<uint32>            ColorCoord;
-			attribute<ColorCoord>   r:                = value(Elements/Text[value(UInt32(ID(.))* nrAttr +  4, Elements)], ColorCoord);
-			attribute<ColorCoord>   g:                = value(Elements/Text[value(UInt32(ID(.))* nrAttr +  5, Elements)], ColorCoord)*256;
-			attribute<ColorCoord>   b:                = value(Elements/Text[value(UInt32(ID(.))* nrAttr +  6, Elements)], ColorCoord)*256*256;
-			attribute<String>       Claimregion:      = Elements/Text[value(UInt32(ID(.))* nrAttr +  7, Elements)];
-			attribute<Bool>         IsUrban:          = bool(Elements/Text[value(UInt32(ID(.))* nrAttr + 8, Elements)]);
-			attribute<Bool>         IsOpenLandscape:  = bool(Elements/Text[value(UInt32(ID(.))* nrAttr + 9, Elements)]);
+			attribute<ColorCoord>   r:                = value(Elements/Text[value(uint32(ID(.))* nrAttr +  4, Elements)], ColorCoord);
+			attribute<ColorCoord>   g:                = value(Elements/Text[value(uint32(ID(.))* nrAttr +  5, Elements)], ColorCoord)*256;
+			attribute<ColorCoord>   b:                = value(Elements/Text[value(uint32(ID(.))* nrAttr +  6, Elements)], ColorCoord)*256*256;
+			attribute<string>       Claimregion:      = Elements/Text[value(uint32(ID(.))* nrAttr +  7, Elements)];
+			attribute<bool>         IsUrban:          = bool(Elements/Text[value(uint32(ID(.))* nrAttr + 8, Elements)]);
+			attribute<bool>         IsOpenLandscape:  = bool(Elements/Text[value(uint32(ID(.))* nrAttr + 9, Elements)]);
 		}
 
 		unit<uint8> LUclasses := Range(ggModel,uint8(0),uint8(nrofrows(ggModel)))
 		{
 			attribute<ggModel>      NrOrg          := convert(ID(LUclasses), ggModel);
-			attribute<UInt32>       BrushColor     := lookup(NrOrg, ggModel/BrushColor), DialogType = "BrushColor";
-			attribute<String>       Label          := lookup(NrOrg, ggModel/Label), DialogType = "LabelText";
-			attribute<String>       Name           := lookup(NrOrg, ggModel/Name);
+			attribute<uint32>       BrushColor     := lookup(NrOrg, ggModel/BrushColor), DialogType = "BrushColor";
+			attribute<string>       Label          := lookup(NrOrg, ggModel/Label), DialogType = "LabelText";
+			attribute<string>       Name           := lookup(NrOrg, ggModel/Name);
 			//attribute<mEUR_ha>      MaxDamagePerHa := lookup(NrOrg, ggModel/MaxDamagePerHa);
 		}
 	}
@@ -52,7 +52,7 @@ container read_tiff_configured_domain
 	{
 		unit<float32> meter := baseunit('m', float32);
 		unit<fpoint> rdc_base : SpatialReference = "EPSG:28992";
-		unit<FPoint> rdc_meter := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
+		unit<fpoint> rdc_meter := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
 
 		parameter<meter> gridsize_100m := 100[meter];
 		parameter<meter> gridsize_500m := 500[meter];
@@ -66,7 +66,7 @@ container read_tiff_configured_domain
 		parameter<int16> nr_cols_500m := int16((x_max - x_min) / gridsize_500m);
 		parameter<int16> nr_rows_500m := int16((y_max - y_min) / gridsize_500m);
 
-		unit<SPoint> rdc_500lu :=
+		unit<spoint> rdc_500lu :=
 				range(
 					gridset(
 						  rdc_meter
@@ -83,7 +83,7 @@ container read_tiff_configured_domain
 			attribute<domain>    domain_rel := id(.)[domain];
 		}
 
-		unit<SPoint> rdc_100lu :=
+		unit<spoint> rdc_100lu :=
 				range(
 					gridset(
 						  rdc_meter
@@ -101,8 +101,8 @@ container read_tiff_configured_domain
 		}
 	}
 
-	unit<SPoint> domain_org := =ModelParameters/ModelResolution == '100m' ? 'Geography/rdc_100lu' : 'Geography/rdc_500lu', IsHidden = "true";
-	unit<SPoint> domain := TiledUnit(point_yx(3250s, 2800s, domain_org))
+	unit<spoint> domain_org := =ModelParameters/ModelResolution == '100m' ? 'Geography/rdc_100lu' : 'Geography/rdc_500lu', IsHidden = "true";
+	unit<spoint> domain := TiledUnit(point_yx(3250s, 2800s, domain_org))
 	{
 		attribute<Geography/rdc_100lu> rdc_100lu_rel := id(.)[Geography/rdc_100lu];
 		attribute<Geography/rdc_500lu> rdc_500lu_rel := id(.)[Geography/rdc_500lu];

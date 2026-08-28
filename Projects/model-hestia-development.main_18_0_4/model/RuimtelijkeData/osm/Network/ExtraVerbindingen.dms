@@ -7,7 +7,7 @@ container ExtraVerbindingen
 	,	source     = "handmatig gedigitaliseerd"
 	{
 		parameter<uint32> nrAttr  := 5;
-		unit<UInt32> Elements     := Range(uint32, 0, nrAttr*#.)
+		unit<uint32> Elements     := Range(uint32, 0, nrAttr*#.)
 		{
 			attribute<float32> Text:
 			[
@@ -789,15 +789,15 @@ container ExtraVerbindingen
 				// 78363.7608,370138.59, 266,1,14
 			];
 		}
-		attribute<m>                           X          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)][m];
-		attribute<m>                           Y          := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)][m];
-		attribute<link_src>                    sequence   := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)][link_src];
-		attribute<uint32>                      order      := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)][uint32];
-		attribute<OSM/wegtype> wegtype    := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)][OSM/wegtype];
+		attribute<m>                           X          := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)][m];
+		attribute<m>                           Y          := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)][m];
+		attribute<link_src>                    sequence   := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)][link_src];
+		attribute<uint32>                      order      := Elements/Text[value(uint32(ID(.))* nrAttr + 3, Elements)][uint32];
+		attribute<OSM/wegtype> wegtype    := Elements/Text[value(uint32(ID(.))* nrAttr + 4, Elements)][OSM/wegtype];
 		
 		attribute<rdc_meter>              location   := point_xy(X,Y,rdc_meter);
 		// attribute<geometries/LambertEA>        location   := location_rd[LambertEA];
-		parameter<uint32>                      nrPoly     := uint32(max(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])) + 1;
+		parameter<uint32>                      nrPoly     := uint32(max(Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)])) + 1;
 	}
 	unit<uint32> link_src := range(uint32, 0,coordinates/nrPoly)
 	{

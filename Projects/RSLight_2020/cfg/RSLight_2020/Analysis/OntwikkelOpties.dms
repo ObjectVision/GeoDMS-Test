@@ -67,7 +67,7 @@ unit<uint8> OntwikkelPakketten := Classifications/Vastgoed/OntwikkelPakket
 	container opp_Woning       := for_each_nedv(name, 'value(rjoin(''opp_''+Vastgoed/WP4/name, Kenmerken/name, KenMerken/'+EK+'), m2_woning)', Vastgoed/WP4, m2_woning);
 	container opp_Woning_log   := for_each_nedv(name, 'log(max_elem(opp_Woning/'+name+', 1f))', Vastgoed/WP4, float32);
 		
-	container is_Hoogbouw      := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/Hoogbouw], Float32)', void, Float32);
+	container is_Hoogbouw      := for_each_nedv(name, 'value(Kenmerken/'+EK+'[Kenmerken/V/Hoogbouw], Float32)', void, float32);
 	
 	container building_chars := for_each_nedv(name, + '''W''+string(ID(Vastgoed/WP4))+''_''+' + replace('string(opp_Woning/@N) + ''m2_'' + (is_Hoogbouw/@N >0f?''H'':''L'')', '@N', name), Vastgoed/WP4, string);
 	

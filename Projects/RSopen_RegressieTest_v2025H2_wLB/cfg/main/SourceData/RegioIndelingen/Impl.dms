@@ -1,6 +1,6 @@
 container Impl
 {
-	unit<UInt32> Read_GemeenteRES_2018_gdb
+	unit<uint32> Read_GemeenteRES_2018_gdb
 	:	StorageName     = "%RSo_DataDir%/RegioIndelingen/Gemeentegrenzen_2018_A1_PBL_RES.gdb"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
@@ -10,7 +10,7 @@ container Impl
 		// attribute<RESRegio>           RESregio_rel := rlookup(RESnaam, RESRegio/name);
 	}
 	
-	unit<UInt32> Read_NVM_2011_COROP2022Begrenzing_shp
+	unit<uint32> Read_NVM_2011_COROP2022Begrenzing_shp
 	:	StorageName     = "%RSo_DataDir%/RegioIndelingen/NVM_2011_COROP2022Begrenzing.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
@@ -31,29 +31,29 @@ container Impl
 						  "Stap 12: dissolve stap 11 met nvmregio" 
 	{
 		attribute<rdc_meter>    geometry (poly);
-		attribute<String>       nvmnaam;
-		attribute<String>       name  := AsItemName(nvmnaam);
+		attribute<string>       nvmnaam;
+		attribute<string>       name  := AsItemName(nvmnaam);
 		
-		unit<UInt32> ZonderBuitengebied := select_with_org_rel(id(.) > 0)
+		unit<uint32> ZonderBuitengebied := select_with_org_rel(id(.) > 0)
 		{
 			attribute<rdc_meter>    geometry (poly)               := ../geometry[org_rel];
-			attribute<String>       name                          := ../name[org_rel];
-			attribute<String>       Label                         := name;
+			attribute<string>       name                          := ../name[org_rel];
+			attribute<string>       Label                         := name;
 			attribute<.>            per_rdc_100m (rdc_100m)       := poly2grid(geometry, rdc_100m);
 			attribute<.>            per_rdc_25m   (rdc_25m)       := poly2grid(geometry, rdc_25m);
-			attribute<String>       NVM_2011_2_name               := lowercase(name) == lowercase('Almere') ? 'Amsterdam' : name;
+			attribute<string>       NVM_2011_2_name               := lowercase(name) == lowercase('Almere') ? 'Amsterdam' : name;
 			attribute<NVM_2011_2>   NVM_2011_2_rel                := rlookup(lowercase(NVM_2011_2_name), lowercase(NVM_2011_2/name));
 			
-			unit<UInt32> NVM_2011_2 := unique(NVM_2011_2_name)
+			unit<uint32> NVM_2011_2 := unique(NVM_2011_2_name)
 			{
-				attribute<String>    name := values;
-				attribute<String>    Label := name, DialogType = "LabelText";
+				attribute<string>    name := values;
+				attribute<string>    Label := name, DialogType = "LabelText";
 				attribute<rdc_meter> geometry  (polygon) := geos_union_polygon(../geometry, ../NVM_2011_2_rel);
 			}
 		}
 	}
 
-	unit<UInt32> Read_LMSSubzone_shp
+	unit<uint32> Read_LMSSubzone_shp
 	:	StorageName     = "%RSo_DataDir%/RegioIndelingen/LMS_2011_versie_2012_12_13.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
@@ -61,28 +61,28 @@ container Impl
 	{
 		attribute<rdc_meter_base> geometry(poly);
 		attribute<rdc_meter_base> geometry_base (poly) := geometry;
-		attribute<Int32>     ZONE_id;
-		attribute<Int32>     GEM2011;
-		attribute<UInt32>    LMSSUB;
-		attribute<UInt32>    LMSSUB2004;
-		attribute<UInt8>     LAND;
+		attribute<int32>     ZONE_id;
+		attribute<int32>     GEM2011;
+		attribute<uint32>    LMSSUB;
+		attribute<uint32>    LMSSUB2004;
+		attribute<uint8>     LAND;
 	}
 	
-	unit<UInt32> Read_Grootstedelijke_agglomeraties_shp
+	unit<uint32> Read_Grootstedelijke_agglomeraties_shp
 	:	StorageName     = "%RSo_DataDir%/RegioIndelingen/CBS_grootstedelijke_agglomeratie_2012.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
 	{
 		attribute<rdc_meter>  geometry  (poly);
-		attribute<String>     Label := statnaam;
+		attribute<string>     Label := statnaam;
 	}
 	
-	unit<UInt32> Read_Bevolkingskern_2011_shp
+	unit<uint32> Read_Bevolkingskern_2011_shp
 	:	StorageName     = "%RSo_DataDir%/RegioIndelingen/bevolkingskern_2011.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
 	{
 		attribute<rdc_meter> geometry (poly);
-		attribute<Float64>   Populatie        := float64(Read_Bevolkingskern_2011_shp/BEV11TOT);
+		attribute<float64>   Populatie        := float64(Read_Bevolkingskern_2011_shp/BEV11TOT);
 	}
 }

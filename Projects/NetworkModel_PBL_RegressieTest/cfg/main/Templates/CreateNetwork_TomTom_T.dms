@@ -11,8 +11,8 @@ Template CreateNetwork_TomTom_T
 	unit<uint32> Locations := union_unit(orgDomain, destDomain)
 	{
 		attribute<rdc>                             geometry                       := union_data(.,orgDomain/geometry, destDomain/geometry);
-		attribute<bool>                            IsOrg                          := union_data(.,const(TRUE , OrgDomain), const(FALSE,DestDomain));
-		attribute<bool>                            IsDest                         := union_data(.,const(FALSE, OrgDomain), const(TRUE ,DestDomain));
+		attribute<bool>                            IsOrg                          := union_data(.,const(true , OrgDomain), const(false,DestDomain));
+		attribute<bool>                            IsDest                         := union_data(.,const(false, OrgDomain), const(true ,DestDomain));
 	}
 	
 	unit<uint32> UniqueLocations    := unique(Locations/geometry) 
@@ -65,7 +65,7 @@ Template CreateNetwork_TomTom_T
 			attribute<rdc>                geometry (arc)       := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/geometry);
 			attribute<bool>               IsOneDirection       := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/IsOneDirection);
 			attribute<m>                  Meters               := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/Meters);
-			attribute<Bool >              Connectable          := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/Connectable);
+			attribute<bool >              Connectable          := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/Connectable);
 			
 			attribute<uint64>             F_JNCTID             := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/F_JNCTID_directed);
 			attribute<uint64>             T_JNCTID             := collect_by_cond(.,Roads_with_unconnected_subnetworks_w_CarRoads/IsCarRoad, Roads_with_unconnected_subnetworks_w_CarRoads/T_JNCTID_directed);
@@ -92,7 +92,7 @@ Template CreateNetwork_TomTom_T
 		{
 			attribute<rdc>                geometry (arc) := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/geometry);
 			attribute<bool>               IsOneDirection := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/IsOneDirection);
-			attribute<Bool>               Connectable    := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/Connectable);
+			attribute<bool>               Connectable    := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/Connectable);
 			attribute<m>                  Meters         := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/Meters);
 			attribute<Junctions>          F_JNCT_rel     := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/F_JNCT_rel);
 			attribute<Junctions>          T_JNCT_rel     := collect_by_cond(.,Roads_isConnected, Roads_with_unconnected_subnetworks_wo_CarRoads/T_JNCT_rel);
@@ -132,7 +132,7 @@ Template CreateNetwork_TomTom_T
 		unit<uint32> LinkSet := union_unit(Road_linestrings, UniqueLocations)
 		{
 			attribute<rdc>        geometry(arc)    := union_data(., Road_linestrings/geometry, UniqueLocations/OD_line);
-			attribute<bool>       IsOneDirection   := union_data(., Road_linestrings/IsOneDirection, const(FALSE,UniqueLocations));
+			attribute<bool>       IsOneDirection   := union_data(., Road_linestrings/IsOneDirection, const(false,UniqueLocations));
 			attribute<m>          Meters           := union_data(., Road_linestrings/Meters, UniqueLocations/Length);
 			attribute<uint64>     F_JNCTID         := union_data(., Road_linestrings/F_JNCTID, UniqueLocations/F_JNCTID);
 			attribute<uint64>     T_JNCTID         := union_data(., Road_linestrings/T_JNCTID, UniqueLocations/T_JNCTID);
@@ -164,7 +164,7 @@ Template CreateNetwork_TomTom_T
 					, s_f
 				)
 			{
-				attribute<s_f> Freeflow (LinkSet) := convert(MakeDefined(convert((LengthKm / Speed_per_ImpedanceType/freeflow), min_f), 0.0001[min_f]), s_f) + Float32(CorrectImpedanceForCrossroads/impedance_Start + CorrectImpedanceForCrossroads/impedance_End);
+				attribute<s_f> Freeflow (LinkSet) := convert(MakeDefined(convert((LengthKm / Speed_per_ImpedanceType/freeflow), min_f), 0.0001[min_f]), s_f) + float32(CorrectImpedanceForCrossroads/impedance_Start + CorrectImpedanceForCrossroads/impedance_End);
 			}
 		}
 

@@ -31,8 +31,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	container MetriekConversie
 	{
-		unit<Float32>     Meter            := BaseUnit('m', float32);
-		unit<Float32>     Meter2           := Meter * Meter;
+		unit<float32>     Meter            := BaseUnit('m', float32);
+		unit<float32>     Meter2           := Meter * Meter;
 		unit<float32>     ha               := 10000.0 * Meter2;
 		
 		parameter<Meter>  gridsize         := 500[Meter];
@@ -352,7 +352,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	container AsString
 	{
 		parameter<float64> sumAllNaturals := -1.0 / 12.0;
-		parameter<string>  sumAllNaturals_str := String(sumAllNaturals);
+		parameter<string>  sumAllNaturals_str := string(sumAllNaturals);
 		parameter<float64> round_trip := float64(sumAllNaturals_str);
 		parameter<bool> test := sumAllNaturals == round_trip;
 		
@@ -430,8 +430,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		unit<ipoint>  point_rd_mm := // for polygon functions
 			gridset(
 				 point_rd
-				,point(Float32(0.001),Float32(0.001),point_rd)
-				,point(Float32(0)    ,Float32(0)    ,point_rd)
+				,point(float32(0.001),float32(0.001),point_rd)
+				,point(float32(0)    ,float32(0)    ,point_rd)
 				,ipoint
 			);
 	
@@ -495,7 +495,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			// end case parameters
 	
 			parameter<int32> TresHold  := 30000i;
-			parameter<bool>  selGebied := True;
+			parameter<bool>  selGebied := true;
 	
 			unit<uint32> gem_sel: = = selGebied ? 'select_with_org_rel(src/GM_code ==  GM_code) ' : 'select_with_org_rel(src/OPP_TOT < ' + string(TresHold) + 'i)'
 			{
@@ -649,7 +649,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		}
 		container ParsedXML  := parse_xml(XmlData, schema);
 		
-		parameter<UInt32> nr_rows := ParsedXML/brk_krt_perceelMember/nr_rows;
+		parameter<uint32> nr_rows := ParsedXML/brk_krt_perceelMember/nr_rows;
 	}
 	
 	container String
@@ -864,8 +864,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		unit<ipoint>  point_rd_mm := // for polygon functions
 			gridset(
 				 point_rd
-				,point(Float32(0.001),Float32(0.001),point_rd)
-				,point(Float32(0)    ,Float32(0)    ,point_rd)
+				,point(float32(0.001),float32(0.001),point_rd)
+				,point(float32(0)    ,float32(0)    ,point_rd)
 				,ipoint
 		
 			);
@@ -967,15 +967,15 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		
 	container seqtest
 	{
-		parameter<Float64> x: expr = "value('33.9', Float64)";
+		parameter<float64> x: expr = "value('33.9', Float64)";
 	}
 	
 	container UndefTest {
-		parameter<Float32> Undef: Expr = "Float32( 0 / 0 )";
-		parameter<Float32> t1: expr = "min_elem(Undef, Float32(3))"; // 3
-		parameter<Float32> t2: expr = "min_elem(Float32(3), Undef)"; // undef
-		parameter<Float32> t3: expr = "max_elem(Undef, Float32(3))"; // 3
-		parameter<Float32> t4: expr = "max_elem(Float32(3), Undef)"; // undef
+		parameter<float32> Undef: Expr = "Float32( 0 / 0 )";
+		parameter<float32> t1: expr = "min_elem(Undef, Float32(3))"; // 3
+		parameter<float32> t2: expr = "min_elem(Float32(3), Undef)"; // undef
+		parameter<float32> t3: expr = "max_elem(Undef, Float32(3))"; // 3
+		parameter<float32> t4: expr = "max_elem(Float32(3), Undef)"; // undef
 	}
 	container DrawArrows
 	{
@@ -1154,7 +1154,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	
 	container poly_test 
 	{
-		parameter<String> x: [ 'xxx' ];
+		parameter<string> x: [ 'xxx' ];
 		
 		container str {
 			parameter<string> p1str: [ '{5: {10, 10} {10, 20} {20, 20} {20, 10} {10, 10}}' ];
@@ -1282,8 +1282,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
 	}
 	
-	parameter<UInt32> x: expr = "2+3";
-	unit<float32> m := BaseUnit('m', Float32);
+	parameter<uint32> x: expr = "2+3";
+	unit<float32> m := BaseUnit('m', float32);
 	unit<float32> impedance;
 	
 	unit<fpoint> TestCoord;
@@ -1320,7 +1320,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			, point_yx(0i, 0i), point_yx(80000i, 100000i)
 		)
 	{
-		attribute<bool>    test:= const(True, .);
+		attribute<bool>    test:= const(true, .);
 	
 		parameter<fpoint>  ProjFactor: expr = "fpoint(GetProjectionFactor(.))";
 		parameter<fpoint>  ProjOffset: expr = "fpoint(GetProjectionOffset(.))";
@@ -1373,8 +1373,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 				)
 				, spoint
 			)
-			,point_yx(Int16(0),Int16(0))
-			,point_yx(Int16(1000),Int16(1000))
+			,point_yx(int16(0),int16(0))
+			,point_yx(int16(1000),int16(1000))
 		)
 	{
 		attribute<float32> test:      expr = "float32(pointcol(id(TestGridLarge))) % float32(50) + float32(pointrow(id(TestGridLarge))) % float32(50) - 30f";
@@ -1462,7 +1462,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	container PropValues
 	{
-		parameter<Float32> paramA: expr = "value(10, float32)";
+		parameter<float32> paramA: expr = "value(10, float32)";
 		parameter<string> ValuesUnitA: expr = "PropValue(paramA, 'ValuesUnit')";
 		
 		unit<uint32> SubItem  : Expr = "SubItem_PropValues(AsciiGridOsStructuredException, 'Name')";
@@ -2038,16 +2038,16 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	}
 	container StringLiteral
 	{
-		parameter<String> AsHex :  Expr = "AsHex(300)";
-		parameter<String> blabla:  Expr = "UrlDecode('blabla')";
-		parameter<String> Asterisk:  Expr = "UrlDecode('%32')";
-		parameter<String> CyrillicBeta:  Expr = "UrlDecode('%D0%91')"; // U+0411
-		parameter<String> ChineseSymbol: Expr = "UrlDecode('%ED%84%9E')"; // U+D11E
-		parameter<String> CyrillicBetalHex: Expr = "AsHex(CyrillicBeta)";
-		parameter<String> ChineseSymbolHex: Expr = "AsHex(ChineseSymbol)";
-		parameter<String> BelgieANSI := 'Belgi'+ UrlDecode('%EB');
-		parameter<String> BelgieUTF8 := to_utf(BelgieANSI);
-		parameter<String> BelgieUSASCII := from_utf(BelgieUTF8);
+		parameter<string> AsHex :  Expr = "AsHex(300)";
+		parameter<string> blabla:  Expr = "UrlDecode('blabla')";
+		parameter<string> Asterisk:  Expr = "UrlDecode('%32')";
+		parameter<string> CyrillicBeta:  Expr = "UrlDecode('%D0%91')"; // U+0411
+		parameter<string> ChineseSymbol: Expr = "UrlDecode('%ED%84%9E')"; // U+D11E
+		parameter<string> CyrillicBetalHex: Expr = "AsHex(CyrillicBeta)";
+		parameter<string> ChineseSymbolHex: Expr = "AsHex(ChineseSymbol)";
+		parameter<string> BelgieANSI := 'Belgi'+ UrlDecode('%EB');
+		parameter<string> BelgieUTF8 := to_utf(BelgieANSI);
+		parameter<string> BelgieUSASCII := from_utf(BelgieUTF8);
 		parameter<bool> test: expr = "'Inwoner' == 'INWONER'";	
 		parameter<string> LangeString := aslist(string(id(range(uint32, 0, 1000))), ' ');
 	}
@@ -2119,28 +2119,28 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		   parameter<string> zone_name;
 		   unit<uint32> 	domain;
 		   parameter<string> context;
-		   parameter<String> Fieldlist;
+		   parameter<string> Fieldlist;
 		   
 		   // ExportDomain is a domain unit 
 		   // with two attributes as subitems configured: id & Dist
-		   parameter<String> FieldSeperator := ';';
-		   parameter<String> FileName       := '%LocalDataProjDir%/'+ zone_name +'.csv';
+		   parameter<string> FieldSeperator := ';';
+		   parameter<string> FileName       := '%LocalDataProjDir%/'+ zone_name +'.csv';
 
 		   unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
 		   {
 			  attribute<string> Name := ReadArray(FieldList,.,string,0);
 		   }
 		   parameter<string> NewLine := '\n';
-		   parameter<String> Header  := FieldList;
+		   parameter<string> Header  := FieldList;
 		   
 		   //attribute<String> Body (domain) : expr = "= AsList('String(' + context + Field/Name + ')', ';')";
 			  
-			 attribute<String> Body (domain) := 
+			 attribute<string> Body (domain) := 
 				=AsList(
 				 +'String(' + context + Field/Name+')',' + '+Quote(FieldSeperator)+' +'
 			  );
 		  
-		   parameter<String> Result:= Header + NewLine + AsList(Body, NewLine)
+		   parameter<string> Result:= Header + NewLine + AsList(Body, NewLine)
 		   ,  StorageName = "=FileName"
 		   ,  StorageType = "str";
 		}
@@ -2212,19 +2212,19 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		parameter<cm> width:  [19.14];
 		parameter<cm> height: [25.52];
 
-		parameter<DPoint>  PaperSize := Point_yx(height[m] , width[m]), url ="about:papersize is <B>defined</B> as height * width, both in meters";
+		parameter<dpoint>  PaperSize := Point_yx(height[m] , width[m]), url ="about:papersize is <B>defined</B> as height * width, both in meters";
 
-		parameter<Float64> ScaleDenom: [30000];
-		parameter<Float64> Scale := 1.0 / ScaleDenom;
+		parameter<float64> ScaleDenom: [30000];
+		parameter<float64> Scale := 1.0 / ScaleDenom;
 		
 		parameter<float64> dwsc:        [null];
-		parameter<DPoint>  DotWorldSize := Point_yx(dwsc,dwsc);
+		parameter<dpoint>  DotWorldSize := Point_yx(dwsc,dwsc);
 
-		parameter<UInt32 > NrSubDotsPerDot: [1];                               // alternative spec for nrSubDotsPerDot, default = 2
+		parameter<uint32 > NrSubDotsPerDot: [1];                               // alternative spec for nrSubDotsPerDot, default = 2
 
-		parameter<Float64> dpi:        [400.0];                                // alternative spec for dotSize in dots per inch (default: 600 pdi)
-		parameter<DPoint>  DotSize:    expr = " Point_yx(0.0254/dpi,0.0254/dpi)"; // size of dot on paper in meters (default 600 dpi)
-		parameter<Float64> ViewFactor: [1.0];                                  // paper view distance relative to screen view distance
+		parameter<float64> dpi:        [400.0];                                // alternative spec for dotSize in dots per inch (default: 600 pdi)
+		parameter<dpoint>  DotSize:    expr = " Point_yx(0.0254/dpi,0.0254/dpi)"; // size of dot on paper in meters (default 600 dpi)
+		parameter<float64> ViewFactor: [1.0];                                  // paper view distance relative to screen view distance
 
 		// parameter<IPoint>  MaxNrSubDotsPerTile: [yx(4096, 4096)];
 	}
@@ -2381,8 +2381,8 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		unit<ipoint>  point_rd_mm := // for polygon functions
 			gridset(
 				 point_rd
-				,point(Float32(0.001),Float32(0.001),point_rd)
-				,point(Float32(0)    ,Float32(0)    ,point_rd)
+				,point(float32(0.001),float32(0.001),point_rd)
+				,point(float32(0)    ,float32(0)    ,point_rd)
 				,ipoint
 			);
 
@@ -2557,7 +2557,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<pc6>      pc6_rel             := rlookup(postcode, pc6/values);
 		}
 
-		unit<UInt32> wijk_2016:
+		unit<uint32> wijk_2016:
 			DialogData = "geometry",
 			DialogType = "Map",
 			StorageName = "='%SourceDataDir%/CBS/2016/wijk_2016.shp'",
@@ -2772,11 +2772,11 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			}
 		}
 		
-		unit<UInt32> value_info_unit       : nrofrows = 3;
-		unit<UInt32> value_info_unit_large : nrofrows = 25;
+		unit<uint32> value_info_unit       : nrofrows = 3;
+		unit<uint32> value_info_unit_large : nrofrows = 25;
 
-		unit<Float32> s := BaseUnit('s', Float32);
-		unit<Float32> m_s := m / s;
+		unit<float32> s := BaseUnit('s', float32);
+		unit<float32> m_s := m / s;
 		
 		container attribute_artithmetic
 		{
