@@ -452,7 +452,19 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     #   major < 18             -> _tm_v17 (no thousand-sep, echoed path casing; pre-1810 config)
     #   18 <= v < 20.7         -> ""       (thousand-sep, canonical casing; long-standing reference)
     #   20.7 <= v < 20.10      -> _v2070   (adds an "Item name <path>" clipboard row; #1149 / 871a9b59)
-    #   v >= 20.10 (and local) -> _v20100  (ValuesType spelled canonical lowercase: "Float32" -> "float32")
+    #   20.10 <= v < 20.19     -> _v20100  (ValuesType spelled canonical lowercase: "Float32" -> "float32")
+    #   v >= 20.19 (and local) -> _v20190  (the item path is spelled in the engine's canonical case)
+    #
+    # The _v20190 epoch is GeoDMS 67c88835 (#1161), which re-cased the engine's own interned
+    # names to lower case: `attrID("Attr")` -> `("attr")` and its siblings. The name table is
+    # case-folded and the engine's literals are interned before any configuration is read, so
+    # the engine's spelling is the canonical one for every name that folds onto it. The item
+    # here is configured as `attr` (Arithmetics.dms), so up to 20.18 the engine reported it
+    # under its OWN spelling `Attr` and now reports the configured one: the header and the
+    # "Item name" clipboard row read `/Arithmetics/UnTiled/add/attr`. Measured on the released
+    # 20.19.1: those two lines are the ONLY difference against the _v20100 reference, every
+    # statistic is identical. See GeoDMS wiki "Tree item name" for the rule and for the same
+    # canonicalisation in written column names.
     _t1742_parts = version.split(".")
     _t1742_maj = _t1742_parts[0]
     _t1742_min = _t1742_parts[1] if len(_t1742_parts) > 1 else ""
@@ -462,9 +474,11 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
         _t1742_suffix = ""
     elif _t1742_maj.isdigit() and (int(_t1742_maj), int(_t1742_min) if _t1742_min.isdigit() else 0) < (20, 10):
         _t1742_suffix = "_v2070"
-    else:
-        # v >= 20.10, or a non-numeric pseudo-version ("local") built from current source
+    elif _t1742_maj.isdigit() and (int(_t1742_maj), int(_t1742_min) if _t1742_min.isdigit() else 0) < (20, 19):
         _t1742_suffix = "_v20100"
+    else:
+        # v >= 20.19, or a non-numeric pseudo-version ("local") built from current source
+        _t1742_suffix = "_v20190"
     reference_statfile = f"{regression_test_paths["TestRefDir"]}/t1742/Statistics_AUAA{_t1742_suffix}.html"
     regression.add_exp(exps, name=f"{result_folder_name}__t1742_command_statistics", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t1742_command_statistics.txt /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["OperatorPath"]} @statistics /Arithmetics/UnTiled/add/attr @file {generated_statfile}", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1742_command_statistics.txt", file_comparison=(reference_statfile, generated_statfile))
     
