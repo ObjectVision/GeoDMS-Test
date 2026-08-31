@@ -498,9 +498,15 @@ container StorageManagerTest
 			, StorageName = "= Parameters/StorageBasePath + 'Polygon/area.shp'"
 			, StorageType = "gdalwrite.vect"
 			{
-				attribute<units/point_rd> Polygon (polygon) := PolygonSet/poly;
-				///attribute<units/point_rd> geometry (poly) := PolygonSet/poly;
-				attribute<string>         label             := PolygonSet/label;
+				// The name `geometry` is load-bearing, not cosmetic: gdalwrite.vect checks a
+				// column's values type against the driver's creation FIELD types and exempts
+				// only a column named `geometry` (gdal_base.cpp, Gdal_DriverSupportsDmsValueType).
+				// units/point_rd is fpoint, which the ESRI Shapefile driver has no field type
+				// for, so under any other name the layer is created without its geometry and
+				// its features get no shape. Naming exports `geometry` is the common practice
+				// anyway. See GeoDMS #1232 for the composition-based fix in the engine.
+				attribute<units/point_rd> geometry (polygon) := PolygonSet/poly;
+				attribute<string>         label              := PolygonSet/label;
 			}
 		}
 	}
