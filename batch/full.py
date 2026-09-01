@@ -315,7 +315,12 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t050 — Storage: schrijf ESRI-shapefile (polygon) via de storage manager; round-trip-test.
     #        De referentie is tevens de bron-input (Storage/data/polygon/area.*) en blijft daarom
     #        bij de config in de repo — niet in TestReferenceFiles.
-    regression.add_exp(exps, name=f"{result_folder_name}__t050_Storage_Write_Shape_Polygon_Folder_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["StoragePath"]} EsriShape/polygon/Write", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt", file_comparison=(f"{regression_test_paths["TstDir"]}/Storage/data/polygon/area.*", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/Storage/polygon/area.*"))
+    #        Het gegenereerde pad wordt afgeleid van LocalDataDirRegression, dezelfde waarde die
+    #        de config via %LocalDataProjDir% (= <LocalDataDirRegression>/Storage) krijgt. Eerder
+    #        stond hier <LocalDataDir>/Regression/Storage/... : dat pad bestond niet, de glob
+    #        matchte niets, en compare_files geeft op een lege lijst True terug — de vergelijking
+    #        was dus stil inactief (GeoDMS-Test #37).
+    regression.add_exp(exps, name=f"{result_folder_name}__t050_Storage_Write_Shape_Polygon_Folder_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["StoragePath"]} EsriShape/polygon/Write", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t050_Storage_Write_Shape_Polygon_Folder_Compare.txt", file_comparison=(f"{regression_test_paths["TstDir"]}/Storage/data/polygon/area.*", f"{local_machine_parameters["LocalDataDirRegression"]}/Storage/polygon/area.*"))
 
     regression_test_paths["GEODMS_DIRECTORIES_LOCALDATAPROJDIR"] = f"{local_machine_parameters["LocalDataDirRegression"]}/BAG20"
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)

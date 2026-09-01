@@ -28,7 +28,11 @@ container StorageManagerTest
 	
 	container Parameters
 	{
-		parameter<string> StorageBasePath := "%LocalDataDir%/Regression/";
+		// %LocalDataProjDir%, like every other write in this config: full.py points it at
+		// <LocalDataDirRegression>/Storage for the storage tests, which is where the t050
+		// file comparison looks. With %LocalDataDir% the write landed a directory level
+		// higher and the comparison silently matched no files at all (GeoDMS-Test #37).
+		parameter<string> StorageBasePath := "%LocalDataProjDir%/";
 	}
 	
 	container units
@@ -495,7 +499,7 @@ container StorageManagerTest
 				parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
 			}
 			unit<uint32> Write := PolygonSet
-			, StorageName = "= Parameters/StorageBasePath + 'Polygon/area.shp'"
+			, StorageName = "= Parameters/StorageBasePath + 'polygon/area.shp'"
 			, StorageType = "gdalwrite.vect"
 			{
 				// The name `geometry` is load-bearing, not cosmetic: gdalwrite.vect checks a
