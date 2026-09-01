@@ -35,8 +35,8 @@ container JrcClueWrap:
 	
 	unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
 	
-	unit<UInt32> 	StaticFactors: 	Expr = "MetaData/StaticFactors";
-	unit<UInt32> 	DynamicFactors: 	Expr = "MetaData/DynamicFactors";
+	unit<uint32> 	StaticFactors: 	Expr = "MetaData/StaticFactors";
+	unit<uint32> 	DynamicFactors: 	Expr = "MetaData/DynamicFactors";
 	unit<uint8> 	DC:				Expr = "MetaData/DemandCharacteristics";  // demand characteristics
 	container Rules: Expr = "RunParameters/AllocSet/Rules";	
 	
@@ -75,7 +75,7 @@ container JrcClueWrap:
 		// ============ allocatable land
 		container Land: Descr = "These attributes are used to describe the freeLand for allocation"
 		{
-			attribute<Bool> IsInRunRegion(domain_grid): Expr = 
+			attribute<bool> IsInRunRegion(domain_grid): Expr = 
 				//"Geography/Regions/Runs/RegionGridSet!RunParameters/Name"; 
 				"!IsNull(RunRegions/RasterSets/RunAreas)";
 				
@@ -83,7 +83,7 @@ container JrcClueWrap:
 			
 			attribute<bool> Allocatable  (domain_grid): Expr = "IsInRunRegion && IsDefined(OrgLandUse) && IsInDestClaimRegions";
 			
-			unit<UInt32> FreeLandCells: Expr = "select_with_org_rel(Allocatable)", DialogType = "Map", DialogData = "BasisGrid"
+			unit<uint32> FreeLandCells: Expr = "select_with_org_rel(Allocatable)", DialogType = "Map", DialogData = "BasisGrid"
 			{
 				attribute<FreeLandCells> permutation: Expr = "rnd_permutation(0, FreeLandCells)";
 				attribute<domain_grid>   grid_rel (FreeLandCells): Expr = "lookup(permutation, org_rel)";
@@ -93,9 +93,9 @@ container JrcClueWrap:
 		}
 		
 		// ============ Regions meta
-		attribute<String> RegionRefs	(ModelType): Expr = "DemandSet/RegionRefs[ModelType/DemandCharacteristicsRel]";
-		attribute<String> DestRegionRefs(ModelType): Expr = "DemandSet/DestRegionRefs[ModelType/DemandCharacteristicsRel]";
-		unit<UInt8> UniqueRegionRefs:     Expr = "DemandSet/RunRegion_Specific_RegionRefs";
+		attribute<string> RegionRefs	(ModelType): Expr = "DemandSet/RegionRefs[ModelType/DemandCharacteristicsRel]";
+		attribute<string> DestRegionRefs(ModelType): Expr = "DemandSet/DestRegionRefs[ModelType/DemandCharacteristicsRel]";
+		unit<uint8> UniqueRegionRefs:     Expr = "DemandSet/RunRegion_Specific_RegionRefs";
 		unit<Uint8> UniqueDestRegionRefs: Expr = "DemandSet/UniqueDestRegionRefs";
 		unit<Uint8> AllRegionRefs:        Expr = "DemandSet/AllRegionRefs";
 	
@@ -187,8 +187,8 @@ container JrcClueWrap:
 
 		// ============ claims
 		container ClaimTables: Expr = "DemandSet/ClaimTables";
-		attribute<String> ClaimTableName		(ModelType): Expr = "MakeDefined(DC/OrgRegion[ModelType/DemandCharacteristicsRel], 'ForestDemandRegions')";
-		attribute<String> DestClaimTableName	(ModelType): Expr = "MakeDefined(DC/ModelRegion[ModelType/DemandCharacteristicsRel], ClaimTableName)";
+		attribute<string> ClaimTableName		(ModelType): Expr = "MakeDefined(DC/OrgRegion[ModelType/DemandCharacteristicsRel], 'ForestDemandRegions')";
+		attribute<string> DestClaimTableName	(ModelType): Expr = "MakeDefined(DC/ModelRegion[ModelType/DemandCharacteristicsRel], ClaimTableName)";
 		
 		container RegionGrids: Expr = "for_each_nedvn(AllRegionRefs/Values, 'RunRegions/RasterSets/'+AllRegionRefs/Values+'[domain/grid_rel]', domain, RunRegions/UnitSets, AllRegionRefs/Values)";
 
@@ -199,20 +199,20 @@ container JrcClueWrap:
 		
 			attribute<RegionsOrg> RegionMapOrg (domain): expr = "= 'RegionGrids/'+RegionsSetName";
 			
-			unit<UInt16> LocalRegions16: Expr = "RegionsOrg", DialogType = "Map", DialogData = "LocalRegionGrid"
+			unit<uint16> LocalRegions16: Expr = "RegionsOrg", DialogType = "Map", DialogData = "LocalRegionGrid"
 			{
 				attribute<.> LocalRegionGrid (domain_grid): expr = "RegionMapOrg[domain/BasisGrid]";
 				attribute<string> Label: expr = "RegionsOrg/Label";
 				attribute<RegionsOrg> Values: expr = "id(.)";
 			}
-			unit<UInt32> LocalRegions32: Expr = "Range(LocalRegions16, UInt32(0), UInt32(#LocalRegions16))", DialogType = "Map", DialogData = "LocalRegionGrid"
+			unit<uint32> LocalRegions32: Expr = "Range(LocalRegions16, UInt32(0), UInt32(#LocalRegions16))", DialogType = "Map", DialogData = "LocalRegionGrid"
 			{
 				attribute<.> LocalRegionGrid (domain_grid): Expr = "LocalRegions16/LocalRegionGrid[.]";
-				attribute<String>     Label:  Expr = "LocalRegions16/Label [value(ID(.),LocalRegions16)]", DialogType = "LabelText";
+				attribute<string>     Label:  Expr = "LocalRegions16/Label [value(ID(.),LocalRegions16)]", DialogType = "LabelText";
 				attribute<RegionsOrg> Values: Expr = "rlookup(id(.), UInt32(id(RegionsOrg)))";
 			}
 		}		
-		unit<UInt16> RegionNumbersTempl: Istemplate = "True";
+		unit<uint16> RegionNumbersTempl: Istemplate = "True";
 		
 		container RegionNumbersSpec: 	Expr = "for_each_ne(AllRegionRefs/Values, 'RegionNumbersSpecTempl(RunRegions/UnitSets/'+AllRegionRefs/Values+', '+quote(AllRegionRefs/Values)+')')";
 		container RegionNumbers: 		Expr = "for_each_net(AllRegionRefs/Values, 'RegionNumbersSpec/'+AllRegionRefs/Values+'/LocalRegions16', RegionNumbersTempl)";
@@ -262,7 +262,7 @@ container JrcClueWrap:
 			parameter<YearRange> SelYear: 	expr = "FutureYear < 2000f ? float32(0 / 0) : FutureYear";
 			unit<uint32> sel: expr = "select_with_org_rel(Float32(ClaimTable/Data/Year) == MakeDefined(SelYear, min(float32(ClaimTable/Data/Year))))"
 			{
-				attribute<String> Label: Expr = "ClaimTable/Domain/Label[org_rel]", DialogType = "LabelText";
+				attribute<string> Label: Expr = "ClaimTable/Domain/Label[org_rel]", DialogType = "LabelText";
 				
 			}
 		}
@@ -277,7 +277,7 @@ container JrcClueWrap:
 		
 		// ============ Suitabilites
 
-		unit<UInt32> CurrFactorWeights: Expr = "Rules/CurrFactorWeights";
+		unit<uint32> CurrFactorWeights: Expr = "Rules/CurrFactorWeights";
 		//container WeightedSuitabilityFactorData: expr = "for_each_nedv(CurrFactorWeights/Name, Rules/SuitTermExpr, domain, Float32)";
 		//attribute<Float32> SuitFactorWeights(CurrFactorWeights): expr = "='union_data(CurrFactorWeights,'+asItemList('sd(WeightedSuitabilityFactorData/'+CurrFactorWeights/Name+')')+')'";
 		//container SuitabilityData:  Expr = "for_each_nedv(ModelType/Name, Rules/SuitTermsExpr, domain, Float32)";
@@ -294,7 +294,7 @@ container JrcClueWrap:
 					"domain, Float32"
 				")";
 		// ============ Fixed Parameters
-		parameter<Float32> SuitScaleFactor: Expr = "value(1, Meter2 / luHa)";
+		parameter<float32> SuitScaleFactor: Expr = "value(1, Meter2 / luHa)";
 		unit<int32> EUR_Ha_int32: Expr = "int32(EUR_HA)";
 		
 		
@@ -527,14 +527,14 @@ container JrcClueWrap:
 		
 		container OutputGeneration
 		{
-			parameter<String> OutputDirName: Expr = "simulation_results/metadata/DirName + '/'+string(Periods/CurrYear[uint16(0)])";
+			parameter<string> OutputDirName: Expr = "simulation_results/metadata/DirName + '/'+string(Periods/CurrYear[uint16(0)])";
 			
 			container Indicators {
 				container NetAgriAbandonment: Expr = "IndicatorData/AgriAbandonmentStartingState(domain)";
 			}
 			
-			parameter<String> ClippedLandUseVT_FileName: Expr = "OutputDirName + '.tif'";
-			parameter<String> Qi_FileName:				 Expr = "OutputDirName + '_Qi.tif'";
+			parameter<string> ClippedLandUseVT_FileName: Expr = "OutputDirName + '.tif'";
+			parameter<string> Qi_FileName:				 Expr = "OutputDirName + '_Qi.tif'";
 			
 			attribute<Classifications/LU/ViewType> LandUseVT(domain_grid)
 				:	Expr = "MakeDefined( Classifications/LU/ModelType/VT[ LandUse_Grid ], Classifications/LU/Corine/VT[ CaseData/JrcFactorData/TiffData/CorineGrid/CorineLandUse ])";
@@ -544,7 +544,7 @@ container JrcClueWrap:
 				,	StorageName = "=ClippedLandUseVT_FileName"
 				, 	StorageType = "tif"
 			{
-				attribute<UInt32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
+				attribute<uint32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
 			}
 			
 			attribute<int32> Qi_Grid 	(domain_grid): expr = "CaseData/getOptimalk/modelledQi[domain/BasisGrid]";
@@ -607,7 +607,7 @@ container JrcClueWrap:
 	{
 		container metadata
 		{
-			parameter<String> DirName: Expr = "RunParameters/OutputDir";
+			parameter<string> DirName: Expr = "RunParameters/OutputDir";
 			
 			attribute<string> AllocStatusPerPeriod(Periods): Expr = "='union_data(Periods, '+asItemList('TimeSteps/'+Periods/Name+'/d_alloc/status')+')'";
 			parameter<string> AllocStatus: Expr = "asItemList(AllocStatusPerPeriod)";
@@ -617,7 +617,7 @@ container JrcClueWrap:
 //			attribute<ModelType> GridData(domain_grid): StorageName = "=metadata/DirName+'.tif'", Expr = "endState/LandUse_Grid"
 			attribute<Classifications/LU/ViewType> GridData(domain_grid): StorageName = "=metadata/DirName+'_VT.tif'", Expr = "=Last('TimeSteps/'+Periods/Name+'/ResultingState/OutputGeneration/ClippedLandUseVT')"
 			{
-				attribute<UInt32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
+				attribute<uint32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
 			}
 			container PerYear:     Expr = "for_each_nedvl(Periods/Name, 'TimeSteps/'+Periods/Name+'/ResultingState/LandUse', domain, ModelType, 'Land use '+Periods/YearStr)";
 			container GridPerYear: Expr = "for_each_nedvl(Periods/Name, 'TimeSteps/'+Periods/Name+'/ResultingState/LandUse_Grid', domain_grid, ModelType, 'Land use '+Periods/YearStr)";

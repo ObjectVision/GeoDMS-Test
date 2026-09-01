@@ -105,7 +105,7 @@ container Gasnetten
 				attribute<nrAsl>     nr_aansl           := sum(Aansluitingen/nr_aansl, Aansluitingen/Pand_rel_2);
 			}
 			//indicatie per pand of die geen gasaansluiting heeft
-			attribute<Bool> Gasloos := not(nr_aansl > 0[nrAsl] || Pand_2/nr_aansl[Pand_2_rel] > 0[nrAsl]);
+			attribute<bool> Gasloos := not(nr_aansl > 0[nrAsl] || Pand_2/nr_aansl[Pand_2_rel] > 0[nrAsl]);
 		}
 	}	
 
@@ -160,12 +160,12 @@ container Gasnetten
 				{
 					attribute<rdc_meter> Geometry (poly) := ../geometry[org_rel];
 					attribute<nrAsl>     nr_aansl        := sum(Aansluitingen/nr_aansl, Aansluitingen/Pand_rel_3);
-					attribute<Bool>      HeeftGas        := nr_aansl > 0[nrAsl];
+					attribute<bool>      HeeftGas        := nr_aansl > 0[nrAsl];
 				}
-				attribute<Bool> HeeftGas := nr_aansl > 0[nrAsl] || Pand_3/HeeftGas[Pand_3_rel];
+				attribute<bool> HeeftGas := nr_aansl > 0[nrAsl] || Pand_3/HeeftGas[Pand_3_rel];
 			}
 			//indicatie per pand of die geen gasaansluiting heeft
-			attribute<Bool> Gasloos := not(nr_aansl > 0[nrAsl] || Pand_2/HeeftGas[Pand_2_rel]);
+			attribute<bool> Gasloos := not(nr_aansl > 0[nrAsl] || Pand_2/HeeftGas[Pand_2_rel]);
 		}
 	}
 
@@ -196,7 +196,7 @@ container Gasnetten
 			}
 			//indicatie per pand of die geen gasaansluiting heeft
 
-			attribute<Bool> Gasloos := not(sum(uint32(isdefined(points/connect/arcid)), points/Sequence_rel) > 0[uint32]);
+			attribute<bool> Gasloos := not(sum(uint32(isdefined(points/connect/arcid)), points/Sequence_rel) > 0[uint32]);
 		}
 	}
 
@@ -226,7 +226,7 @@ container Gasnetten
 			}
 			//indicatie per pand of die geen gasaansluiting heeft
 
-			attribute<Bool> Gasloos := not(sum(uint32(isdefined(points/connect/arcid)), points/Sequence_rel) > 0[uint32]);
+			attribute<bool> Gasloos := not(sum(uint32(isdefined(points/connect/arcid)), points/Sequence_rel) > 0[uint32]);
 
 		}
 	}	

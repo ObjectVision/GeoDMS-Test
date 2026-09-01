@@ -98,8 +98,8 @@ container Geography : using = "units"
 		{
 			attribute<float64>    lat_top           := pointrow( point_yx(ID(.), const(0w, .), domain)[LatLong] );
 			attribute<float64>    lat_mid           := lat_top  + 0.5 * pointrow(getprojectionfactor(domain)[LatLong]);
-			attribute<Float32>    lat_factor        := Float32( cos(lat_mid * 2d*pi() / 360d ) );
-			parameter<km2>        Equatorial_Area   := sqr(Float32(pointrow(getprojectionfactor(domain)[LatLong])) * LatLong_base/lengthdegree);
+			attribute<float32>    lat_factor        := float32( cos(lat_mid * 2d*pi() / 360d ) );
+			parameter<km2>        Equatorial_Area   := sqr(float32(pointrow(getprojectionfactor(domain)[LatLong])) * LatLong_base/lengthdegree);
 			attribute<km2>        area              := lat_factor * Equatorial_Area;
 		}
 		
@@ -111,7 +111,7 @@ container Geography : using = "units"
 		attribute<domain_sub>     domain_sub_rel    := mapping(., domain_sub);  
 
 		parameter<uint32>         boundrange_c      := uint32(PointCol(boundrange(domain)));
-		attribute<Float32>        lat_factor        := rowset_rel->lat_factor, LazyCalculated = "True";
+		attribute<float32>        lat_factor        := rowset_rel->lat_factor, LazyCalculated = "True";
 		attribute<km2>            area              := rowset_rel->area, LazyCalculated = "True";
 		attribute<bool>           IsCompactedDomain := Impl/GridData/FreeLand;
 	}
@@ -125,8 +125,8 @@ container Geography : using = "units"
 		{
 			attribute<float64> lat_top    := pointrow( point_yx(ID(.), const(0i, .), domain_sub)[LatLong] );
 			attribute<float64> lat_mid    := lat_top  + 0.5 * pointrow(getprojectionfactor(domain_sub)[LatLong]);
-			attribute<Float32> lat_factor := Float32( cos(lat_mid * 2d*pi() / 360d ) );
-			attribute<km2>     area       := (lat_factor * sqr(Float32(pointrow(getprojectionfactor(domain_sub)[LatLong])) * LatLong_base/lengthdegree));
+			attribute<float32> lat_factor := float32( cos(lat_mid * 2d*pi() / 360d ) );
+			attribute<km2>     area       := (lat_factor * sqr(float32(pointrow(getprojectionfactor(domain_sub)[LatLong])) * LatLong_base/lengthdegree));
 		}
 		attribute<rowset>     rowset_rel   := pointrow(ID(.)), LazyCalculated = "True";
 		attribute<km2>        area         := rowset_rel->area, LazyCalculated = "True"; //use rowset area

@@ -14,8 +14,8 @@ container Past
 	{
 		attribute<int16>  dc:     [1975,1990,2000,2015];
 		attribute<int16>  dc2:    [1975,1990,2000,2014];
-		attribute<String> name := 'y'+String(dc);
-		attribute<String> name2:= 'y'+String(dc2);
+		attribute<string> name := 'y'+string(dc);
+		attribute<string> name2:= 'y'+string(dc2);
 	}
 
 	container PopSumCountry: =
@@ -24,7 +24,7 @@ container Past
 			 ,'sum(value(/Input/Population/Past/PastDates/'+ Year/name + ',float32), Input/administrative/Countries/Country_grid)'
 			,  Input/administrative/Countries/Country 
 			,  float32
-			,  'Sum population ' + String(Year/dc)
+			,  'Sum population ' + string(Year/dc)
 		);
 
 	container PopSumCountryMillion: =
@@ -33,7 +33,7 @@ container Past
 			 ,'(value(PopSumCountry/'+ Year/name + ',float32))/1000000f'
 			,  Input/administrative/Countries/Country 
 			,  float32
-			,  'Sum population in Country in Million ' + String(Year/dc)
+			,  'Sum population in Country in Million ' + string(Year/dc)
 		);
 
 	container PopUrbanSum: =
@@ -42,7 +42,7 @@ container Past
 			 ,'value(Input/Population/Past/PastDates/'+ Year/name + ',uint32) * value(Preprocessing/urban/BuiltUpBoolJRC_50prc/'+ Year/name2+',uint32)'
 			,  Input/gtopo
 			,  uint32
-			,  'Sum Urban population ' + String(Year/dc)
+			,  'Sum Urban population ' + string(Year/dc)
 		);
 
 	container PopSum: =
@@ -51,7 +51,7 @@ container Past
 			 ,'value(Input/Population/Past/PastDates/'+ Year/name + ',uint32)'
 			,  Input/gtopo
 			,  uint32
-			,  'Sum population ' + String(Year/dc)
+			,  'Sum population ' + string(Year/dc)
 		);
 
 	container PopUrbanSumCountry: =
@@ -60,7 +60,7 @@ container Past
 			 ,'sum(PopUrbanSum/'+ Year/name2 + ', Input/administrative/Countries/Country_grid)'
 			,  Input/administrative/Countries/Country 
 			,  uint32
-			,  'Sum population in Urban Area Country ' + String(Year/dc)
+			,  'Sum population in Urban Area Country ' + string(Year/dc)
 		);
 
 	container PopUrbanSumCountryMillion: =
@@ -69,7 +69,7 @@ container Past
 			 ,'(value(PopUrbanSumCountry/'+ Year/name2 + ',float32))/1000000f'
 			,  Input/administrative/Countries/Country 
 			,  float32
-			,  'Sum population in Urban Area Country in Million ' + String(Year/dc)
+			,  'Sum population in Urban Area Country in Million ' + string(Year/dc)
 		);
 
 	//y1975 quality issue according to JRC (Chris Jacobs-Crisioni)

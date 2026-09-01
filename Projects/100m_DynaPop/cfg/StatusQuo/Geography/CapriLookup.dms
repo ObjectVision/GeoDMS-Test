@@ -8,16 +8,16 @@ container getCapriData: Using = "Geography/AdministrativeBoundaries/BoundaryDoma
 			FreeData = "True",
 			StoreData = "True"
 		{
-			attribute<String> Name: 				Expr = "Nuts2_LUISA_old/ZoneId";
+			attribute<string> Name: 				Expr = "Nuts2_LUISA_old/ZoneId";
 			attribute<LambertEA> Geometry(poly): 	Expr = "Nuts2_LUISA_old/Geometry";
 			attribute<JrcRegion> JrcRegionId:		Expr = "point_in_polygon(centroid_or_mid(Geometry), JrcRegion/Geometry)";
-			attribute<String> Nuts1_Code: 			Expr = "substr(Name, 0, 3)";
+			attribute<string> Nuts1_Code: 			Expr = "substr(Name, 0, 3)";
 			attribute<Nuts1_v10> Nuts1_rel: 		Expr = "rlookup(Nuts1_Code, Nuts1_LUISA_old/ZoneId)";
 			attribute<Nuts0_v10> Nuts0_rel: 		Expr = "rlookup(Nuts0_ICC,  Nuts0_LUISA_old/ZoneId)";
 			
-			attribute<String> Label: DialogType = "LabelText", Expr = "Nuts2_LUISA_old/Label";
-			attribute<String> ICC: expr = "substr(Nuts2_LUISA_old/ZoneId, 0, 2)";
-			attribute<String> nuts0_ICC:
+			attribute<string> Label: DialogType = "LabelText", Expr = "Nuts2_LUISA_old/Label";
+			attribute<string> ICC: expr = "substr(Nuts2_LUISA_old/ZoneId, 0, 2)";
+			attribute<string> nuts0_ICC:
 				Expr = 
 					"replace(ICC, "
 						"'ND', 'UK', "  // Northern Ireland
@@ -39,17 +39,17 @@ container getCapriData: Using = "Geography/AdministrativeBoundaries/BoundaryDoma
 		{
 			attribute<LambertEA>centroid: 				Expr = "centroid_or_mid(Geometry)";
 			attribute<Nuts2All> org_rel:			Expr = "Nuts2_sel/org_rel[id(.)[Nuts2_sel]]";
-			attribute<String>   ICC_org:     			Expr = "Nuts2All/ICC[org_rel]"; // De volgorde hiervan komt niet overeen met de volgorde in de Nuts2 entiteit, dit attribuut dus verder NIET gebruiken.
+			attribute<string>   ICC_org:     			Expr = "Nuts2All/ICC[org_rel]"; // De volgorde hiervan komt niet overeen met de volgorde in de Nuts2 entiteit, dit attribuut dus verder NIET gebruiken.
 			attribute<Nuts2All> nr_Nuts2All: 			Expr = "org_rel";
-			attribute<String>   code:       			Expr = "Nuts2All/name[nr_Nuts2All]";
+			attribute<string>   code:       			Expr = "Nuts2All/name[nr_Nuts2All]";
 			attribute<JrcRegion>JrcRegion_rel: 			Expr = "point_in_polygon(centroid, JrcRegion/Geometry)";
 			attribute<Nuts0> 	Nuts0_rel:     			Expr = "point_in_polygon(centroid, Nuts0/Geometry)";
 			attribute<Country>	Country_rel:			Expr = "point_in_polygon(centroid, Country/Geometry)";
 			attribute<Nuts2_Merged> Nuts2_Merged_rel: 	Expr = "point_in_polygon(centroid, Nuts2_Merged/Geometry)";
-			attribute<String> 	Name:          			Expr = "ICC+'/'+replace(Nuts2All/Label[nr_Nuts2All], '-', '_')";
-			attribute<String> 	DemandDirName: 			Expr = "ICC+'/'+code";
-			attribute<String> 	ICC:           			Expr = "Nuts2All/ICC[nr_Nuts2All]";
-			attribute<String> 	Label:         			Expr = "code+': '+Nuts2All/Label[nr_Nuts2All]", DialogType = "LabelText";
+			attribute<string> 	Name:          			Expr = "ICC+'/'+replace(Nuts2All/Label[nr_Nuts2All], '-', '_')";
+			attribute<string> 	DemandDirName: 			Expr = "ICC+'/'+code";
+			attribute<string> 	ICC:           			Expr = "Nuts2All/ICC[nr_Nuts2All]";
+			attribute<string> 	Label:         			Expr = "code+': '+Nuts2All/Label[nr_Nuts2All]", DialogType = "LabelText";
 			attribute<Nuts1>  	Nuts1_rel:     			Expr = "Nuts2All/Nuts1_rel[nr_Nuts2All]";
 			
 			attribute<LambertEA> Geometry(poly): Expr = "Nuts2All/Geometry[nr_Nuts2All]";
@@ -58,14 +58,14 @@ container getCapriData: Using = "Geography/AdministrativeBoundaries/BoundaryDoma
 			
 			container Bounds: StorageName = "%SourceDataProjDir%/LUISA/data/BoundsNuts2_InclES70.dbf", KeepData = "False"
 			{
-				attribute<UInt16> X1(Nuts2); 
-				attribute<UInt16> X2(Nuts2); 
-				attribute<UInt16> Y1(Nuts2); 
-				attribute<UInt16> Y2(Nuts2); 
+				attribute<uint16> X1(Nuts2); 
+				attribute<uint16> X2(Nuts2); 
+				attribute<uint16> Y1(Nuts2); 
+				attribute<uint16> Y2(Nuts2); 
 			}
-			attribute<UInt32>   Width       (Nuts2): Expr = "UInt32(Bounds/X2-Bounds/X1)+1", KeepData = "False"; 
-			attribute<UInt32>   Height      (Nuts2): Expr = "UInt32(Bounds/Y2-Bounds/Y1)+1", KeepData = "False"; 
-			attribute<UInt32>   RectArea    (Nuts2): Expr = "Width*Height", KeepData = "False"; 
+			attribute<uint32>   Width       (Nuts2): Expr = "UInt32(Bounds/X2-Bounds/X1)+1", KeepData = "False"; 
+			attribute<uint32>   Height      (Nuts2): Expr = "UInt32(Bounds/Y2-Bounds/Y1)+1", KeepData = "False"; 
+			attribute<uint32>   RectArea    (Nuts2): Expr = "Width*Height", KeepData = "False"; 
 			
 			attribute<Lambert100mGrid> LB100(Nuts2): Expr = "Point_xy(Bounds/X1,Bounds/Y1, Lambert100mGrid)", KeepData = "False"; 
 			attribute<Lambert100mGrid> UB100(Nuts2): Expr = "Point_xy(Bounds/X2,Bounds/Y2, Lambert100mGrid)", KeepData = "False"; 
@@ -75,13 +75,13 @@ container getCapriData: Using = "Geography/AdministrativeBoundaries/BoundaryDoma
 			
 			attribute<Capri> Capri_rel: Expr = "CapriLookup/Capri_rel[rlookup(code, CapriLookup/Nuts2Code)]";
 	}
-	unit<UInt32> CapriLookup: NrOfRows = 267
+	unit<uint32> CapriLookup: NrOfRows = 267
 	{
 	
 	parameter<uint32> nrAttr: Expr = "4";
-	unit<UInt32> Elements: Expr = "Range(uint32, 0, nrAttr*#CapriLookup)"
+	unit<uint32> Elements: Expr = "Range(uint32, 0, nrAttr*#CapriLookup)"
 	{
-		attribute<String> Text: [ // @USERINPUT
+		attribute<string> Text: [ // @USERINPUT
 		//Nuts2Code,ICC,CapriCode,CapriName
 		//	 'AL00','AL','AL00','Albania'
 			'AT11','AT','AT11','Burgenland'
@@ -417,12 +417,12 @@ container getCapriData: Using = "Geography/AdministrativeBoundaries/BoundaryDoma
 			//,'ME01','ME','ME00','Montenegro'
 		];
 	}
-	attribute<String> Nuts2Code: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)]";
-	attribute<String> ICC:       Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)]";
-	attribute<String> CapriCode: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)]";
-	attribute<String> CapriName: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)]";
+	attribute<string> Nuts2Code: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)]";
+	attribute<string> ICC:       Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)]";
+	attribute<string> CapriCode: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)]";
+	attribute<string> CapriName: Expr =" Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)]";
 
-	attribute<Bool>   Nuts2Found: Expr = "IsDefined(rlookup(Nuts2Code, Nuts2/code))";
+	attribute<bool>   Nuts2Found: Expr = "IsDefined(rlookup(Nuts2Code, Nuts2/code))";
 	attribute<Capri>  Capri_rel:  Expr = "rlookup(CapriCode, Capri/Code)";
 	}
 }

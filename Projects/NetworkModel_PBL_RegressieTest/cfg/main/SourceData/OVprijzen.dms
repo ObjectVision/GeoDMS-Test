@@ -15,7 +15,7 @@ container OVprijzen
 	{
 		unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 		{
-			attribute<String> Text:
+			attribute<string> Text:
 			[
 				//Mode    , Vervoerder           , Provincie      , Concessiegebied                         , Lijn                               , Ritpr, Kmprijs ,Opmerking
 				'Rail'    ,'NS'                  ,'Alle'          ,''                                       , ''                                 ,''    , ''      ,'Tariefeenheden in NS tabel',
@@ -140,14 +140,14 @@ container OVprijzen
 			];
 		}
 		
-		attribute<string>       Mode            := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
-		attribute<string>       Vervoerder      := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-		attribute<string>       Provincie       := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
-		attribute<string>       Concessiegebied := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)];
-		attribute<string>       Lijn            := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)];
-		attribute<Euro>         VastePrijs      := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)][Euro];
-		attribute<Euro_km>      VariabelePrijs  := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)][Euro_km];
-		attribute<string>       Opmerking       := Elements/Text[value(UInt32(ID(.))* nrAttr + 7, Elements)];
+		attribute<string>       Mode            := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)];
+		attribute<string>       Vervoerder      := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+		attribute<string>       Provincie       := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
+		attribute<string>       Concessiegebied := Elements/Text[value(uint32(ID(.))* nrAttr + 3, Elements)];
+		attribute<string>       Lijn            := Elements/Text[value(uint32(ID(.))* nrAttr + 4, Elements)];
+		attribute<Euro>         VastePrijs      := Elements/Text[value(uint32(ID(.))* nrAttr + 5, Elements)][Euro];
+		attribute<Euro_km>      VariabelePrijs  := Elements/Text[value(uint32(ID(.))* nrAttr + 6, Elements)][Euro_km];
+		attribute<string>       Opmerking       := Elements/Text[value(uint32(ID(.))* nrAttr + 7, Elements)];
 		
 		attribute<Modes>             Mode_rel               := rlookup(Mode, Modes/name);
 		attribute<Agencies>          Agency_rel             := rlookup(Vervoerder, Agencies/name);

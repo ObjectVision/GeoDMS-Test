@@ -82,7 +82,7 @@ Container Templates  : using = "units;Geometries;classifications"
 					, 'PotentialAccessibility_T('+quote(ModelParameters/DistanceDecayVersions/formula_old)+')'
 				), Descr = "Proxy of economic opportunity: potential interactions or market access, given different distance decays"
 			{
-				parameter<bool> storeall :=  True, explicitsuppliers = "= AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')";
+				parameter<bool> storeall :=  true, explicitsuppliers = "= AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')";
 			}
 			
 			//how well does the road network perform compared to euclidean distances given an ideal speed (developed by DG REGIO)
@@ -92,7 +92,7 @@ Container Templates  : using = "units;Geometries;classifications"
 					, 'TransportPerformance_T('+string(ModelParameters/TransportPerformanceVersions/Limit1)	+'[min_f],'+string(ModelParameters/TransportPerformanceVersions/Limit2)+'[km],'+quote(ModelParameters/TransportPerformanceVersions/DistType)+', FALSE, Network/Combine_OrgDest)'
 				), Descr = "How well does the road network perform compared to euclidean distances given an ideal speed (developed by DG REGIO)", FreeData = "false"
 			{
-				parameter<bool> storeall:= True, explicitsuppliers = "= AsList(ModelParameters/TransportPerformanceVersions/name+'/store',';')";
+				parameter<bool> storeall:= true, explicitsuppliers = "= AsList(ModelParameters/TransportPerformanceVersions/name+'/store',';')";
 			}
 			
 			container TransportPerformance_FloodedNetwork   := 
@@ -101,7 +101,7 @@ Container Templates  : using = "units;Geometries;classifications"
 					, 'TransportPerformance_T('+string(ModelParameters/TransportPerformanceVersions/Limit1)	+'[min_f],'+string(ModelParameters/TransportPerformanceVersions/Limit2)+'[km],'+quote(ModelParameters/TransportPerformanceVersions/DistType)+', TRUE, Network/Combine_OrgDest)'
 				), Descr = "How well does the road network perform compared to euclidean distances given an ideal speed (developed by DG REGIO)"
 			{
-				parameter<bool> storeall:= True, explicitsuppliers = "= AsList(ModelParameters/TransportPerformanceVersions/name+'/store',';')";
+				parameter<bool> storeall:= true, explicitsuppliers = "= AsList(ModelParameters/TransportPerformanceVersions/name+'/store',';')";
 			}
 			
 			//Modelled traffic flow by population size in origin en destinations DestMass using a gravity model.
@@ -111,7 +111,7 @@ Container Templates  : using = "units;Geometries;classifications"
 					, 'TrafficAllocation_T('+quote(ModelParameters/DistanceDecayVersions/formula)+',FALSE)'
 				), Descr = "Modelled traffic flow by population size in origin en destinations DestMass using a gravity model"
 			{
-				parameter<bool> storeall :=  True, explicitsuppliers = "=AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')+''";
+				parameter<bool> storeall :=  true, explicitsuppliers = "=AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')+''";
 				
 				// container Flow_Roads := 
 					// for_each_nedv(
@@ -131,7 +131,7 @@ Container Templates  : using = "units;Geometries;classifications"
 					, 'TrafficAllocation_T('+quote(ModelParameters/DistanceDecayVersions/formula)+',TRUE)'
 				), Descr = "Modelled traffic flow by population size in origin en destinations DestMass using a gravity model"
 			{
-				parameter<bool> storeall :=  True, explicitsuppliers = "=AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')+''";
+				parameter<bool> storeall :=  true, explicitsuppliers = "=AsList(ModelParameters/DistanceDecayVersions/name+'/store',';')+''";
 				
 				// container Flow_Roads := 
 					// for_each_nedv(
@@ -326,8 +326,8 @@ Container Templates  : using = "units;Geometries;classifications"
 			unit<uint32> Locations := union_unit(orgDomain, destDomain)
 			{
 				attribute<BaseProjection>                  geometry                       := union_data(.,orgLocations, destLocations);
-				attribute<bool>                            IsOrg                          := union_data(.,const(TRUE , OrgDomain), const(FALSE,DestDomain));
-				attribute<bool>                            IsDest                         := union_data(.,const(FALSE, OrgDomain), const(TRUE ,DestDomain));
+				attribute<bool>                            IsOrg                          := union_data(.,const(true , OrgDomain), const(false,DestDomain));
+				attribute<bool>                            IsDest                         := union_data(.,const(false, OrgDomain), const(true ,DestDomain));
 				attribute<uint32>                          Population                     := union_data(.,OrgDomain/Population, DestDomain/Population)[uint32];
 			}
 			unit<uint32> UniqueLocations    := unique(Locations/geometry) 
@@ -1099,9 +1099,9 @@ Container Templates  : using = "units;Geometries;classifications"
 		parameter<string>   HeaderLine     := readLines(FileData, void, 0);
 		parameter<bool>     HeaderOK       := regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+');
 		
-		unit<uint32>        Field          := Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)
+		unit<uint32>        Field          := Range(uint32, 0, strcount(HeaderLine, FieldSeparator)+1)
 		{
-			attribute<string> Name := ReadArray(HeaderLine, Field, String, 0);
+			attribute<string> Name := ReadArray(HeaderLine, Field, string, 0);
 		}
 		
 		attribute<string>   BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos); //,  IntegrityCheck = "HeaderOK";
@@ -1127,11 +1127,11 @@ Container Templates  : using = "units;Geometries;classifications"
 	{
 		unit<uint32>      context        := ExportDomain;
 		container         RefFields;
-		parameter<String> FileName       := '%LocalDataProjDir%/dist.csv';
+		parameter<string> FileName       := '%LocalDataProjDir%/dist.csv';
 		// ExportDomain is a domain unit 
 		// with two attributes as subitems configured: id & Dist
-		parameter<String> Fieldlist      := 'id;Dist';
-		parameter<String> FieldSeparator := ';';
+		parameter<string> Fieldlist      := 'id;Dist';
+		parameter<string> FieldSeparator := ';';
 
 		unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
 		{
@@ -1139,21 +1139,21 @@ Container Templates  : using = "units;Geometries;classifications"
 		}
 
 		parameter<string> NewLine := '\n';
-		parameter<String> Header  := FieldList;
-		attribute<String> Body (context) := =AsList(+'String(RefFields/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +');
+		parameter<string> Header  := FieldList;
+		attribute<string> Body (context) := =AsList(+'String(RefFields/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +');
 
-		parameter<String> Result  := Header + NewLine + AsList(Body, NewLine),  StorageName = "=FileName",  StorageType = "str";
+		parameter<string> Result  := Header + NewLine + AsList(Body, NewLine),  StorageName = "=FileName",  StorageType = "str";
 	}
 	
 	Template TableComposer_uint64
 	{
 		unit<uint64>      context:= ExportDomain;
 		container         RefFields;
-		parameter<String> FileName       := '%LocalDataProjDir%/dist.csv';
+		parameter<string> FileName       := '%LocalDataProjDir%/dist.csv';
 		// ExportDomain is a domain unit 
 		// with two attributes as subitems configured: id & Dist
-		parameter<String> Fieldlist      := 'id;Dist';
-		parameter<String> FieldSeparator := ';';
+		parameter<string> Fieldlist      := 'id;Dist';
+		parameter<string> FieldSeparator := ';';
 
 		unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
 		{
@@ -1161,9 +1161,9 @@ Container Templates  : using = "units;Geometries;classifications"
 		}
 		
 		parameter<string> NewLine := '\n';
-		parameter<String> Header  := FieldList;
-		attribute<String> Body (context) := =AsList(+'String(RefFields/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +');
+		parameter<string> Header  := FieldList;
+		attribute<string> Body (context) := =AsList(+'String(RefFields/'+Field/Name+')',' + '+Quote(FieldSeparator)+' +');
 
-		parameter<String> Result:= Header + NewLine + AsList(Body, NewLine),  StorageName = "=FileName",  StorageType = "str";
+		parameter<string> Result:= Header + NewLine + AsList(Body, NewLine),  StorageName = "=FileName",  StorageType = "str";
 	}
 }

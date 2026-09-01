@@ -1,12 +1,12 @@
 container DynaClueTimeStep100:	IsTemplate = "True"
 {
 	parameter<YearRange> CurrYear;
-	parameter<UInt16> PeriodID;
-	parameter<Float32> ClaimFraction;
+	parameter<uint16> PeriodID;
+	parameter<float32> ClaimFraction;
 	
-	unit<UInt8>  ModelType;
-	unit<WPoint> domain_grid;
-	unit<UInt32> domain;
+	unit<uint8>  ModelType;
+	unit<wpoint> domain_grid;
+	unit<uint32> domain;
 	unit<uint16> OrgPopClaimRegion;
 	unit<uint16> DestPopClaimRegion;
 	
@@ -50,13 +50,13 @@ container DynaClueTimeStep100:	IsTemplate = "True"
 	container d_alloc :=
 		discrete_alloc(ModelType/Name, domain,
 		ScaledTransPot,
-		MakeDefined(rlookup(CaseData/DestClaimTableName, CaseData/UniqueDestRegionRefs/Values), UInt8(0)),
+		MakeDefined(rlookup(CaseData/DestClaimTableName, CaseData/UniqueDestRegionRefs/Values), uint8(0)),
 		CaseData/UniqueDestRegionRefs/Values,
 		CaseData/AtomicRegions,
 		CaseData/AtomicRegions/geometry,
 		Claims/DemandMin,
 		Claims/DemandMax,
-		Int32(value(-9999, EUR_M2) * CaseData/SuitScaleFactor), // Dit is de threshold!
+		int32(value(-9999, EUR_M2) * CaseData/SuitScaleFactor), // Dit is de threshold!
 		FeasibleSolution)
 	{
 		attribute<ModelType> landuse(domain);
@@ -64,7 +64,7 @@ container DynaClueTimeStep100:	IsTemplate = "True"
 	
 	#include<diagnostics.dms>
 	
-	parameter<String> TimeStepDirName: Expr = "simulation_results/metadata/DirName + '/'+Periods/Name[PeriodID]";
+	parameter<string> TimeStepDirName: Expr = "simulation_results/metadata/DirName + '/'+Periods/Name[PeriodID]";
 	
 	container ResultingState
 	{	
@@ -122,11 +122,11 @@ container DynaClueTimeStep100:	IsTemplate = "True"
 			container ModelSpecificFactors: expr = "for_each_nednv(ms_rel/Name, ms_rel/RegExpr + '[RunRegions/UnitSets/'+ ms_rel/TargetZones +'/org_rel]', RunRegions/UnitSets, ms_rel/TargetZones, float32)";
 		}
 		
-		unit<SPoint> ForestNeigbourhood: Expr = "Range(domain_grid, point_yx(Int16(-10),Int16(-10)), point_yx(Int16(11), Int16(11)))" // TODO: Move to outsize template to avoid duplicate instantiation
+		unit<spoint> ForestNeigbourhood: Expr = "Range(domain_grid, point_yx(Int16(-10),Int16(-10)), point_yx(Int16(11), Int16(11)))" // TODO: Move to outsize template to avoid duplicate instantiation
 		{
-			attribute<UInt32>  Dist2: Expr = "dist2(point_yx(int16(0),int16(0),ForestNeigbourhood), uint32)";
-			attribute<Float64> Dist:  Expr = "sqrt(Float64(dist2))";
-			attribute<Float32> Weight: Expr = "Float32( ScaleSum( Dist <= 10.0 && Dist > 0.0 ? 1.0 / (3.0 + Dist) : 0.0, 1.0 ) )";
+			attribute<uint32>  Dist2: Expr = "dist2(point_yx(int16(0),int16(0),ForestNeigbourhood), uint32)";
+			attribute<float64> Dist:  Expr = "sqrt(Float64(dist2))";
+			attribute<float32> Weight: Expr = "Float32( ScaleSum( Dist <= 10.0 && Dist > 0.0 ? 1.0 / (3.0 + Dist) : 0.0, 1.0 ) )";
 		}
 		
 		container ForestPotential: 

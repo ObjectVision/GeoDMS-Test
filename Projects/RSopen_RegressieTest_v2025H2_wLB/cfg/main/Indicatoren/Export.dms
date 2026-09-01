@@ -1,6 +1,6 @@
 container Export : using = "Classifications/Actor"
 {
-	parameter<String> ExportZichtjaar := 'Y2060';
+	parameter<string> ExportZichtjaar := 'Y2060';
 	container Impl
 	{
 		attribute<Ha>   Basisjaar_Areaal_perLUMT       (LU_ModelType) := pcount(Indicatoren/Basisjaar/Landgebruikskaart/Result_SA)[float32] * rdc_25m/NrHaPerCell; 
@@ -44,16 +44,16 @@ container Export : using = "Classifications/Actor"
 		}
 		
 		//transitie matrix
-		unit<UInt32> LU_ModelType_Transities := combine(Actor/LU_ModelType, Actor/LU_ModelType)
+		unit<uint32> LU_ModelType_Transities := combine(Actor/LU_ModelType, Actor/LU_ModelType)
 		{
-			attribute<UInt32> from_TransCode := uint32(first_rel) + 1;
-			attribute<String> from_name      := Actor/LU_ModelType/nameshort[first_rel];
-			attribute<UInt32> to_TransCode   := (uint32(second_rel) + 1) * 100;
-			attribute<String> to_name        := Actor/LU_ModelType/nameshort[second_rel];
-			attribute<UInt32> TransCode      := from_TransCode + to_TransCode;
-			attribute<String> Label          := from_name + '_' + to_name;
+			attribute<uint32> from_TransCode := uint32(first_rel) + 1;
+			attribute<string> from_name      := Actor/LU_ModelType/nameshort[first_rel];
+			attribute<uint32> to_TransCode   := (uint32(second_rel) + 1) * 100;
+			attribute<string> to_name        := Actor/LU_ModelType/nameshort[second_rel];
+			attribute<uint32> TransCode      := from_TransCode + to_TransCode;
+			attribute<string> Label          := from_name + '_' + to_name;
 			
-			attribute<UInt32> count          := pcount(LU_Mutatie)[uint32];
+			attribute<uint32> count          := pcount(LU_Mutatie)[uint32];
 		}
 		
 
@@ -75,8 +75,8 @@ container Export : using = "Classifications/Actor"
 		// }
 		
 		
-		attribute<UInt32> LU_Basisjaar (rdc_25m) := uint32(Indicatoren/basisjaar/Landgebruikskaart/Result_SA) + 1;
-		attribute<UInt32> LU_Zichtjaar (rdc_25m) := ='(uint32(Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA) + 1)  * 100';
+		attribute<uint32> LU_Basisjaar (rdc_25m) := uint32(Indicatoren/basisjaar/Landgebruikskaart/Result_SA) + 1;
+		attribute<uint32> LU_Zichtjaar (rdc_25m) := ='(uint32(Indicatoren/'+ExportZichtjaar+'/Landgebruikskaart/Result_SA) + 1)  * 100';
 		attribute<LU_ModelType_Transities> LU_Mutatie   (rdc_25m) := rlookup(LU_Basisjaar + LU_Zichtjaar, LU_ModelType_Transities/TransCode);
 		
 		container Basisjaar_NPV_perLUMT :=
@@ -99,7 +99,7 @@ container Export : using = "Classifications/Actor"
 			parameter</Classifications/Time/Zichtjaar> id;
 			//
 			
-			parameter<String> Zichtjaar_name := /Classifications/Time/Zichtjaar/name[id];
+			parameter<string> Zichtjaar_name := /Classifications/Time/Zichtjaar/name[id];
 			
 			container NPV_perLUMT :=
 				for_each_nedv(
@@ -177,7 +177,7 @@ container Export : using = "Classifications/Actor"
 			, uint32
 		)
 	{
-		attribute<String> from  (Actor/LU_ModelType) := Actor/LU_ModelType/nameshort;
+		attribute<string> from  (Actor/LU_ModelType) := Actor/LU_ModelType/nameshort;
 	}
 	
 	container mean_NPV_obv_LUbasisjaar_perLBK :=
@@ -206,10 +206,10 @@ container Export : using = "Classifications/Actor"
 	
 	container Bereikbaarheid_GroenBlauw 
 	{
-		parameter<String> Param_Afstand := 'Tot500m'; //opties: Tot500m Tot1000m
-		parameter<String> Param_Type    := 'Aanwezig'; //opties: Aanwezig Beschikbaar Bereikbaar
+		parameter<string> Param_Afstand := 'Tot500m'; //opties: Tot500m Tot1000m
+		parameter<string> Param_Type    := 'Aanwezig'; //opties: Aanwezig Beschikbaar Bereikbaar
 		
-		unit<UInt8> GroenBlauwK := Indicatoren/Basisjaar/BereikbaarheidGroen/GroenBlauwK;
+		unit<uint8> GroenBlauwK := Indicatoren/Basisjaar/BereikbaarheidGroen/GroenBlauwK;
 		
 		container Basisjaar := 
 			for_each_nedv(

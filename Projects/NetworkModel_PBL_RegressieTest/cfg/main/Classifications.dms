@@ -10,7 +10,7 @@ container Classifications: Using = "Units"
 		attribute<string> code: ['','N','FT','TF'];
 		attribute<string> Label: ['dual', 'nocars', 'forwards', 'backwards'];
 		
-		container V := for_each_nedv(Label, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(Label, string(ID(.))+'[..]', void, .);
 	}
 
 	unit<uint8> FuncRoadClass_EK := range(uint8, 0b, 9b);
@@ -18,7 +18,7 @@ container Classifications: Using = "Units"
 	{
 		attribute<string> Label : ['Not Applicable', 'Motorway, Freeway, or Other Major Road', 'Major Road Less Important than a Motorway', 'Other Major Road','Secondary Road','Local Connecting Road','Local Road of High Importance','Local Road','Local Road of Minor Importance','Other Road'];
 		attribute<string> name := AsItemName(label);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint32> LinkTypes: NrOfRows = 7
@@ -51,14 +51,14 @@ container Classifications: Using = "Units"
 	{
 		attribute<string>    label     : ['Bouw gestart','Bouwvergunning verleend','Niet gerealiseerd pand','Pand buiten gebruik','Pand gesloopt','Pand in gebruik','Pand in gebruik (niet ingemeten)','Sloopvergunning verleend','Pand ten onrechte opgevoerd','Verbouwing pand'], DialogType = "LabelText";
 		attribute<string>    name      := replace(label, ' ', '_', '-', '_', '(', '', ')', '');
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> vbo_status : nrofrows = 8
 	{
 		attribute<string>    label     : ['Niet gerealiseerd verblijfsobject','Verblijfsobject buiten gebruik','Verblijfsobject gevormd','Verblijfsobject in gebruik','Verblijfsobject in gebruik (niet ingemeten)','Verblijfsobject ingetrokken','Verblijfsobject ten onrechte opgevoerd', 'Verbouwing verblijfsobject'], DialogType = "LabelText";
 		attribute<string>    name      := replace(label, ' ', '_', '-', '_', '(', '', ')', '');
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	unit<uint8> vbo_gebruiksdoel: nrofrows = 11
 	{
@@ -80,7 +80,7 @@ container Classifications: Using = "Units"
 		
 		attribute<string> name := replace(replace(label,' ','_'), 'functie','');
 		attribute<uint32> BrushColor:  DialogType = "BrushColor",[rgb(255,255,255), rgb(  0,129,  0),rgb(  0,  0,255),rgb(255,220,  0),rgb(255,  0,  0)];
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> WPSrc: nrofrows = 6
@@ -90,7 +90,7 @@ container Classifications: Using = "Units"
 		// attribute<WP>  WP_rel :  [0,1,2,3,3,4];
 		// attribute<WP3> WP3_rel :  [0,1,1,1,1,2];
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 }

@@ -1,6 +1,6 @@
 container Groen
 {
-	attribute<bool> bbg2015_groen_buff (rdc_10m) := potential((Classifications/LandUsePreparation/CBSKlasse/IsGroen_breed[SourceData/Grondgebruik/BBG/dominant/per_10m/j2015])[float32], Geography/Distmatrices/Impl_10m/pot100m/potrange/binair) == 0f ? FALSE : TRUE, FreeData = "false";
+	attribute<bool> bbg2015_groen_buff (rdc_10m) := potential((Classifications/LandUsePreparation/CBSKlasse/IsGroen_breed[SourceData/Grondgebruik/BBG/dominant/per_10m/j2015])[float32], Geography/Distmatrices/Impl_10m/pot100m/potrange/binair) == 0f ? false : true, FreeData = "false";
 
 	// unit<uint32> AggRegio := = 'Regioindelingen/'+ModelParameters/AggRegioRef;
 
@@ -20,7 +20,7 @@ container Groen
 			, 'Templates/Schaarste('+string(id(Classifications/Groen/Functie))+'[Classifications/Groen/Functie])'
 		)
 	{
-		parameter<String> Generate_ontkoppelde_data := 'Ready', 
+		parameter<string> Generate_ontkoppelde_data := 'Ready', 
 			ExplicitSuppliers = "=AsList(Classifications/Groen/Functie/name+'/potential/MakeResult', ';')", IsHidden = "True";
 		
 		container rijtjeswoning

@@ -4,7 +4,7 @@
 		unit<float32> Meter      := BaseUnit('m', float32);
 		unit<float32> Meter2     := Meter * Meter;
 		unit<float32> Ha         := 10000.0 * Meter2;
-		parameter<Float32> gridsize := 500f;
+		parameter<float32> gridsize := 500f;
 		
 		unit<spoint> DomainGrid :=
 				range(
@@ -12,7 +12,7 @@
 					fpoint, 
 					point_yx(-gridsize, gridsize, TestCoords), 
 					point_yx(625000f, 10000f, TestCoords), 
-					SPoint
+					spoint
 				  ),
 				  point_yx(int16(0), int16(0))
 				, point_yx(int16(6), int16(6))
@@ -29,7 +29,7 @@
 					fpoint, 
 					point_yx(-gridsize, gridsize, TestCoords), 
 					point_yx(float32(625000.0), float32(10000.0), TestCoords), 
-					SPoint
+					spoint
 				  ),
 				  point_yx(int16(0), int16(0))
 				, point_yx(int16(0), int16(0))
@@ -150,20 +150,20 @@
 			}
 			unit<uint16> AtomicRegions := overlay(lu_type/PartioningName, DomainGrid, regionSets);
 
-			attribute<Bool> InRegio (DomainGrid):
+			attribute<bool> InRegio (DomainGrid):
 			[
-			 True, True, True,True,False,True,
-			 True, True, True,True,False,True,
-			 True, True, True,True,True,True,
-			 True, True, True,True,True,True,
-			 True, True, True,True,False,True,
-			 True, True, True,True,True,True
+			 true, true, true,true,false,true,
+			 true, true, true,true,false,true,
+			 true, true, true,true,true,true,
+			 true, true, true,true,true,true,
+			 true, true, true,true,false,true,
+			 true, true, true,true,true,true
 			];
-			attribute<Bool> FreeLand (DomainGrid) := InRegio;
+			attribute<bool> FreeLand (DomainGrid) := InRegio;
 
 			container Compacted
 			{
-				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = true),
 					label = "allocation domain";
 				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
 				
@@ -293,14 +293,14 @@
 			}
 			unit<uint16> AtomicRegions := overlay(lu_type/PartioningName, DomainGrid, regionSets);
 
-			attribute<Bool> InRegio (DomainGrid):
+			attribute<bool> InRegio (DomainGrid):
 			[
 			];
-			attribute<Bool> FreeLand (DomainGrid) := InRegio;
+			attribute<bool> FreeLand (DomainGrid) := InRegio;
 
 			container Compacted
 			{
-				unit <uint32>      ADomain := select_with_org_rel(FreeLand = True),
+				unit <uint32>      ADomain := select_with_org_rel(FreeLand = true),
 					label = "allocation domain";
 				attribute<ADomain> BaseGrid (DomainGrid) :=invert(ADomain/org_rel);
 				

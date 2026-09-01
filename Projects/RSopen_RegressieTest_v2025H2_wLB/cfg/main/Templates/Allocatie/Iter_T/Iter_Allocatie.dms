@@ -1,6 +1,6 @@
 container Allocatie
 {
-	parameter<String> sector_domain_name := lowercase(Sector_name) == lowercase('Wind') ? 'CompactedAdminDomain' : 'CompactedAllocDomain';
+	parameter<string> sector_domain_name := lowercase(Sector_name) == lowercase('Wind') ? 'CompactedAdminDomain' : 'CompactedAllocDomain';
 	unit<uint64>      sector_domain      := =sector_domain_name;
 	
 	container GeschikthedenLiggenBovenAfkapgrenzen :=
@@ -21,7 +21,7 @@ container Allocatie
 			, float32
 		)
 	{
-		attribute<Bool> AnyDefined (sector_domain) := = 'OR('+asItemList('IsDefined('+Subsector/name+')')+')';
+		attribute<bool> AnyDefined (sector_domain) := = 'OR('+asItemList('IsDefined('+Subsector/name+')')+')';
 	}
 	
 	attribute<Subsector> Resultaat (sector_domain) := = 'GeschikthedenBovenAfkapgrenzen/AnyDefined 
@@ -32,7 +32,7 @@ container Allocatie
 		? 'merge(value(Resultaat[CompactedAdminDomain/'+sector_domain_name+'_rel], UInt16), OP ,'+asItemList('Subsectoren/'+Subsector/name+'/CompactedAdminDomain/Geschiktheid_ArgMax_OP')+')'
 		: 'const(null_b, CompactedAdminDomain, OP)';
 	
-	attribute<Bool>              Beschikbaar           (CompactedAdminDomain) := = 'merge(value(Resultaat[CompactedAdminDomain/'+sector_domain_name+'_rel], UInt16), bool,'+asItemList('Subsectoren/'+Subsector/name+'/CompactedAdminDomain/Beschikbaar')+')';
+	attribute<bool>              Beschikbaar           (CompactedAdminDomain) := = 'merge(value(Resultaat[CompactedAdminDomain/'+sector_domain_name+'_rel], UInt16), bool,'+asItemList('Subsectoren/'+Subsector/name+'/CompactedAdminDomain/Beschikbaar')+')';
 	attribute<OP>                per_OP                (CompactedAdminDomain) := Beschikbaar ? Resultaat_OP : (0/0)[OP];
 	attribute<Sector/xSubsector> per_SectorxSubsector0 (CompactedAdminDomain) := ='(Subsector/SectorxSubSector_rel[Resultaat])[CompactedAdminDomain/'+sector_domain_name+'_rel]';
 	attribute<Sector/xSubsector> per_SectorxSubsector  (CompactedAdminDomain) := Beschikbaar ? per_SectorxSubsector0 : (0/0)[Sector/xSubsector];

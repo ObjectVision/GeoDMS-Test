@@ -29,7 +29,7 @@ are explained in this article and the description of the calculation rules refer
 	parameter<m2_Eur>        betaFactor        : Descr = "Zie wiskundige beschrijving; hoog (5.0) geeft een scherp beeld na veel iteraties; laag (0.5) geeft meer verdeeld ruimtegebruik";
 	// End CaseParameters
 	
-	unit<UInt32>             RegioUnit         := /Geography/RegionalUnits/RandstadIntermediatePeripheral, IsHidden = "true";
+	unit<uint32>             RegioUnit         := /Geography/RegionalUnits/RandstadIntermediatePeripheral, IsHidden = "true";
 
 	container CaseData:  IsHidden = "true"
 	{ 
@@ -106,7 +106,7 @@ are explained in this article and the description of the calculation rules refer
 						  classifications/ggEndogenous/label
 						, 'MakeDefined(Suitabilities/'+classifications/ggEndogenous/label+'[ADomain/org_rel] * 100f, 0f)[int32]'
 						, ADomain
-						, Int32
+						, int32
 					)
 				;
 	
@@ -178,7 +178,7 @@ are explained in this article and the description of the calculation rules refer
 				parameter<claimHa> totalLand     := sum(CaseData/Land/TotalLand);
 				parameter<claimHa> usedLand      := sum(CaseData/Land/UsedLand );
 				parameter<claimHa> freeLand      := sum(CaseData/Land/FreeLand);
-				parameter<Bool>    totalClaimsFit:= freeLand >= sumClaims;
+				parameter<bool>    totalClaimsFit:= freeLand >= sumClaims;
 				parameter<claimHa> claimSlack    := max_elem(freeLand - sumClaims, 0[claimHa]);
 				parameter<claimHa> claimExcess   := max_elem(sumClaims- freeLand,  0[claimHa]);
 			}
@@ -209,9 +209,9 @@ are explained in this article and the description of the calculation rules refer
 
 			container GOF: IsHidden = "True"
 			{
-				unit<uint16>          ThisIterRange                      := Range(IterRange, UInt16(0) , UInt16(nrIter));
-				attribute<String>     IterNames          (ThisIterRange) := 'iter'+String(ID(ThisIterRange));
-				attribute<claimHa>    TotalDeviations    (ThisIterRange) := ='add('+asItemList('Float32(ID(ThisIterRange)==value('+String(ID(ThisIterRange))+',ThisIterRange))*casedata/iterator/'+IterNames+'/TotalDeviation')+')';
+				unit<uint16>          ThisIterRange                      := Range(IterRange, uint16(0) , uint16(nrIter));
+				attribute<string>     IterNames          (ThisIterRange) := 'iter'+string(ID(ThisIterRange));
+				attribute<claimHa>    TotalDeviations    (ThisIterRange) := ='add('+asItemList('Float32(ID(ThisIterRange)==value('+string(ID(ThisIterRange))+',ThisIterRange))*casedata/iterator/'+IterNames+'/TotalDeviation')+')';
 				attribute<Potentiaal> LogTotalDeviations (ThisIterRange) := log(TotalDeviations);
 			}
 

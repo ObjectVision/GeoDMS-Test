@@ -47,10 +47,10 @@ container Analysis_Modelled : using = "Units;Classifications"
 			:==  '/Scenarios/SSPs/' + Scenario + '/ProjectionDates/Y2100/NewState/IsUrban[uint2]';
 			
 			attribute<string>                                        Key                                           (Input/CompactedDomain) := string(FieldUrbanY2014) + "_" + string(UrbanY2010) + "_" + string(UrbanY2020) + "_" + string(UrbanY2030) + "_" + string(UrbanY2040)+ "_" + string(UrbanY2050)+ "_" + string(UrbanY2060)+ "_" + string(UrbanY2070)+ "_" + string(UrbanY2080)+ "_" + string(UrbanY2090)+ "_" + string(UrbanY2100);
-			attribute<String>                                        ISO                                           (Input/CompactedDomain) := rjoin(Input/CompactedDomain/Country_rel,/Input/administrative/Countries/Country/id,/Input/administrative/Countries/Country/ISO3);
-			attribute<String>                                        Continent                                     (Input/CompactedDomain) := rjoin(Input/CompactedDomain/Country_rel,/Input/administrative/Countries/Country/id,/Input/administrative/Countries/Country/Continent_cor);
+			attribute<string>                                        ISO                                           (Input/CompactedDomain) := rjoin(Input/CompactedDomain/Country_rel,/Input/administrative/Countries/Country/id,/Input/administrative/Countries/Country/ISO3);
+			attribute<string>                                        Continent                                     (Input/CompactedDomain) := rjoin(Input/CompactedDomain/Country_rel,/Input/administrative/Countries/Country/id,/Input/administrative/Countries/Country/Continent_cor);
 
-			attribute<String>                                        ISOKey                                        (Input/CompactedDomain) := ISO + '_' + Key;
+			attribute<string>                                        ISOKey                                        (Input/CompactedDomain) := ISO + '_' + Key;
 			attribute<ISOKey_uq>                                     ISOKey_id                                     (Input/CompactedDomain) := rlookup(ISOKey, ISOKey_uq/Values);
 
 			attribute<bool>                                          DeUrbanization                                (Input/CompactedDomain) := strcount(key, '1_0') > 0;

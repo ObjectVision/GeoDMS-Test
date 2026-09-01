@@ -17,7 +17,7 @@ container Vastgoed : using = "Units"
 		attribute<string> name := replace(replace(label,' ','_'), 'functie','');
 		attribute<uint32> BrushColor:  DialogType = "BrushColor",[rgb(255,255,255), rgb(  0,129,  0),rgb(  0,  0,255),rgb(255,220,  0),rgb(255,  0,  0)];
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		
 		attribute<TXLJobs9> TXLJobs9_rel := union_data(., 0[TXLJobs9], 0[TXLJobs9], 8[TXLJobs9], 2[TXLJobs9], 4[TXLJobs9], 6[TXLJobs9], 5[TXLJobs9], 0[TXLJobs9], 0[TXLJobs9], 7[TXLJobs9], 0[TXLJobs9]);
 	}
@@ -29,7 +29,7 @@ container Vastgoed : using = "Units"
 		attribute<WP>                 WP_rel             :  [0,1,2,3,3,4];
 		attribute<WP3>                WP3_rel            :  [0,1,1,1,1,2];
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> WP: nrofrows = 5
@@ -41,7 +41,7 @@ container Vastgoed : using = "Units"
 		attribute<uint32>            BrushColor          :  [rgb(255,255,255), rgb(150, 0, 0),rgb(118, 159, 255),rgb(255, 180, 0),rgb(255, 100, 255)], DialogType = "BrushColor";
 		attribute<WP4>               WP4_rel             := invert(WP4/WP_rel);
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		
 		attribute<WP2>               WP2_rel             := union_data(., WP2/V/eengezins, WP2/V/eengezins, WP2/V/eengezins, WP2/V/eengezins, WP2/V/meergezins);
 		attribute<bool>              IsDetached          :  [false, true, false, false, false];
@@ -54,7 +54,7 @@ container Vastgoed : using = "Units"
 		attribute<string>            name                := replace(label, ' ', '_');
 		attribute<WP2>               WP2_rel             := invert(WP2/WP3_rel);
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> WP2 := select_with_org_rel(id(WP3) <> WP3/V/geen_woonpand) 
@@ -63,7 +63,7 @@ container Vastgoed : using = "Units"
 		attribute<string> name    := WP3/name[WP3_rel];
 		attribute<string> label   := WP3/label[WP3_rel], DialogType = "LabelText";
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> WP4 := select_with_org_rel(id(WP) <> WP/V/geen_woonpand) 
@@ -80,7 +80,7 @@ container Vastgoed : using = "Units"
 		attribute<bool>              IsDetached          : [true, false, false, false];
 		attribute<bool>              IsSemiDetached      : [false, true, false, false];
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		
 		container Per_WP2 := for_each_ne(WP2/name, 'T('+string(id(WP2))+'[WP2])');
 		
@@ -100,12 +100,12 @@ container Vastgoed : using = "Units"
 		attribute<string>    name        := union_data(., WP/name, Groen/Functie/name);
 		attribute<string>    label       := name, DialogType = "LabelText";
 		attribute<uint32>    BrushColor  := union_data(., WP/BrushColor, Groen/Functie/BrushColor), DialogType = "BrushColor";
-		attribute<bool>      IsWP        := union_data(., const(TRUE, WP), const(FALSE, Groen/Functie));
-		attribute<bool>      IsWP4       := id(.) == 0b ? FALSE : IsWP;
-		attribute<bool>      IsGroen     := union_data(., const(FALSE, WP), const(TRUE, Groen/Functie));
-		attribute<bool>      IsAllocatable := id(.) == 0b ? FALSE : TRUE;
+		attribute<bool>      IsWP        := union_data(., const(true, WP), const(false, Groen/Functie));
+		attribute<bool>      IsWP4       := id(.) == 0b ? false : IsWP;
+		attribute<bool>      IsGroen     := union_data(., const(false, WP), const(true, Groen/Functie));
+		attribute<bool>      IsAllocatable := id(.) == 0b ? false : true;
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> HouseCharacteristics : nrofrows = 11
@@ -316,9 +316,9 @@ container Vastgoed : using = "Units"
 	
 	unit<uint8> ELabelK: nrofrows = 9
 	{
-		attribute<String> Name:  ['eWP', 'EWV', 'Aplus', 'LabelB', 'LabelC', 'LabelD', 'LabelE', 'LabelF', 'LabelG'];
-		attribute<String> Label: DialogType = "LabelText",  ['eWP', 'EWV', 'A+', 'B', 'C', 'D', 'E', 'F', 'G'];
-		attribute<UInt32> Color: DialogType = "BrushColor",
+		attribute<string> Name:  ['eWP', 'EWV', 'Aplus', 'LabelB', 'LabelC', 'LabelD', 'LabelE', 'LabelF', 'LabelG'];
+		attribute<string> Label: DialogType = "LabelText",  ['eWP', 'EWV', 'A+', 'B', 'C', 'D', 'E', 'F', 'G'];
+		attribute<uint32> Color: DialogType = "BrushColor",
 		[
 				rgb(000,255,255)
 			,	rgb(000,255,000)
@@ -331,7 +331,7 @@ container Vastgoed : using = "Units"
 			,	rgb(249,026,031)
 		];
 		
-		attribute<UInt32> SymbColor: DialogType = "SymbolColor", Expr = "Color";
+		attribute<uint32> SymbColor: DialogType = "SymbolColor", Expr = "Color";
 		
 		container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 	}

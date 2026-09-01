@@ -40,7 +40,7 @@ container gdal2test
 		attribute<float32> FloatAtt        : [0,1,9999999,-2.5,99.9];
 		attribute<float32> FloatAttNull    : [null,1,9999999,-2.5,99.9];
 
-		attribute<bool>    BoolAtt         : [False, True, True, False, True];
+		attribute<bool>    BoolAtt         : [false, true, true, false, true];
 		attribute<string>  StringAtt       : ['Hello','Test',null,'Two words','88a'];
 		attribute<string>  StringAttNoNull : ['Hello','Test','12345','Two words','88a'];
 	}
@@ -105,8 +105,8 @@ container gdal2test
 			StorageReadOnly = "True"
 		{
 			unit<wpoint> World1kmGrid := TiledUnit(point(1024w, 1024w,aig));
-			attribute<UInt8> GridData(World1kmGrid);
-			attribute<UInt8> ReadData(SouthEastAsia);
+			attribute<uint8> GridData(World1kmGrid);
+			attribute<uint8> ReadData(SouthEastAsia);
 		}
 	}
 	
@@ -128,8 +128,8 @@ container gdal2test
 
 			container Test
 			{
-				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, Int32(0 / 0)), reference/IntegerAttNull);
-				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, Float32(0 / 0)), reference/FloatAttNull);
+				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, int32(0 / 0)), reference/IntegerAttNull);
+				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, float32(0 / 0)), reference/FloatAttNull);
 				attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
 			}
 

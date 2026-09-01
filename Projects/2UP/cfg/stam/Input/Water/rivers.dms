@@ -10,7 +10,7 @@
 
 container Rivers
 {
-	parameter<String> Generate_RiverFSS := 'Ready',
+	parameter<string> Generate_RiverFSS := 'Ready',
 	ExplicitSuppliers = "MakeFSS/geometry";
 	
 	container HydroRIVERS_v10
@@ -49,9 +49,9 @@ container Rivers
 		attribute<Input/LatLong> Geometry (arc);
 		unit<uint32> Riverpoint_yxSet := sequence2point_yxs(geometry)
 		{
-			attribute<Float64> lat_deg  := pointrow(point_yx);
-			attribute<Float64> long_deg := pointcol(point_yx);
-			attribute<Float64> lat_rad  := lat_deg * ( pi() / 180.0);
+			attribute<float64> lat_deg  := pointrow(point_yx);
+			attribute<float64> long_deg := pointcol(point_yx);
+			attribute<float64> lat_rad  := lat_deg * ( pi() / 180.0);
 //				attribute<float64> sinlat   := sin(lat_rad);
 			attribute<float64> mercator_y_rad := log(tan(0.25 * pi() + 0.5 * lat_rad));
 			attribute<float64> mercator_y_deg := mercator_y_rad * (180.0 / pi());
@@ -67,7 +67,7 @@ container Rivers
 		parameter<float64>               PenWorldWidth := 0.00001[float64],  DialogType = "PenWorldWidth";
 	}
 
-	attribute<Float32> Location2River_mer(Input/CompactedDomain)   := dist_info(River/geometry_mer, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
+	attribute<float32> Location2River_mer(Input/CompactedDomain)   := dist_info(River/geometry_mer, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
 	attribute<km>      Location2River_km(Input/CompactedDomain)    := (Location2River_mer * Input/lengthdegree * Input/CompactedDomain/lat_factor);
 	attribute<km>      Location2River_km_gtopo_export (input/gtopo):= Location2River_km[Input/CompactedDomain/BaseGrid], StorageName = "%LocalDataProjDir%/water/HydroRIVERSVersion1/Location2River_km.tif";
 

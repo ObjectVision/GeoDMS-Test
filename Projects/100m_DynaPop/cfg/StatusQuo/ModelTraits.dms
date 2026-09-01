@@ -4,9 +4,9 @@ container ModelTraits
 	{
 		container CalcSuitability: IsTemplate = "True"
 		{
-			unit<UInt32> domain;
+			unit<uint32> domain;
 			
-			unit<UInt8>  LUT: Expr = "Classifications/LU/ModelType";
+			unit<uint8>  LUT: Expr = "Classifications/LU/ModelType";
 			
 			container PotentialData: Expr = "for_each_nedv(Rules/UniqueFactor2Func/Name, Rules/UniqueFactor2Func/PotentialExpr, domain, Float32)";
 			container AreaData     : Expr = "for_each_nedv(Rules/UniqueFactor2Func/Name, Rules/UniqueFactor2Func/AreaExpr,      domain, Float32)";
@@ -32,8 +32,8 @@ container ModelTraits
 	{
 		container CalcSuitability: IsTemplate = "True"
 		{
-			unit<UInt32> domain;
-			unit<UInt8>  LUT: Expr = "Classifications/LU/ModelType";
+			unit<uint32> domain;
+			unit<uint8>  LUT: Expr = "Classifications/LU/ModelType";
 			
 			unit<uint16> region_domain 				:= DestPopClaimRegion;
 			
@@ -176,8 +176,8 @@ container ModelTraits
 				unit<uint16> 	   Region:					Expr = "CaseData/DestPopClaimRegion";
 				unit<uint16> 	   UrbanProjectionRegion:			Expr = "Claims/UrbanProjectionZones";
 				attribute<bool>	   proto_large_popdecline 	(Region):   Expr = "(proto_Qj - ((rules/RelocationPerYear * Parameters/PeriodSet/result/PeriodLength[PeriodId])*PrevStateQj)) < float32(0)";
-				parameter<Float32> proto_u 					:	Expr = "rules/RelocationPerYear * Parameters/PeriodSet/result/PeriodLength[PeriodId]";
-				parameter<Float32> proto_r 					:	Expr = "Float32(1.0) - proto_u";
+				parameter<float32> proto_u 					:	Expr = "rules/RelocationPerYear * Parameters/PeriodSet/result/PeriodLength[PeriodId]";
+				parameter<float32> proto_r 					:	Expr = "Float32(1.0) - proto_u";
 				
 				//Container RegionalPopParams: expr = "Parameters/PopSets/RegionalPopulation";
 				
@@ -207,8 +207,8 @@ container ModelTraits
 				attribute<float32> 		proto_Kj			(Region) : Expr = "proto_Qj - proto_r*PrevStateQj";
 				
 				attribute<bool>	   large_popdecline 	(Region):  	Expr = "Kj < 0f";
-				parameter<Float32> u 					:	Expr = "rules/RelocationPerYear * Parameters/PeriodSet/result/PeriodLength[PeriodId]";
-				parameter<Float32> r 					:	Expr = "Float32(1.0) - u";
+				parameter<float32> u 					:	Expr = "rules/RelocationPerYear * Parameters/PeriodSet/result/PeriodLength[PeriodId]";
+				parameter<float32> r 					:	Expr = "Float32(1.0) - u";
 				
 				
 				attribute<float32> 		Kj			 		(Region) : Expr = "Qj - r*PrevStateQj";
@@ -486,9 +486,9 @@ container ModelTraits
 	{
 		container CalcSuitability: IsTemplate = "True"
 		{
-			unit<UInt32> domain;
+			unit<uint32> domain;
 			
-			unit<UInt8>  LUT: Expr = "Classifications/LU/ModelType";
+			unit<uint8>  LUT: Expr = "Classifications/LU/ModelType";
 			
 			container PotentialData: Expr = "for_each_nedv(Rules/UniqueFactor2Func/Name, Rules/UniqueFactor2Func/PotentialExpr, domain, Float32)";
 			container AreaData     : Expr = "for_each_nedv(Rules/UniqueFactor2Func/Name, Rules/UniqueFactor2Func/AreaExpr,      domain, Float32)";
@@ -521,7 +521,7 @@ container ModelTraits
 			parameter<YearRange> FutureYear;
 			unit<uint32> sel: expr = "select_with_org_rel(Float32(ClaimTable/Data/Year) == FutureYear)"
 			{
-				attribute<String> Label: Expr = "ClaimTable/Domain/Label[org_rel]", DialogType = "LabelText";
+				attribute<string> Label: Expr = "ClaimTable/Domain/Label[org_rel]", DialogType = "LabelText";
 				
 			}
 		}
@@ -531,7 +531,7 @@ container ModelTraits
 			unit<uint8> ModelType;
 			unit<uint8> DemandCharacteristics;
 			unit<uint8> DemandModels;
-			unit<UInt8> ClaimTable: 	 Expr = "CaseData/UniqueRegionRefs";
+			unit<uint8> ClaimTable: 	 Expr = "CaseData/UniqueRegionRefs";
 			
 			container Conversions: expr = "CaseData/DemandZoneConversions/Conversions";
 			
@@ -558,8 +558,8 @@ container ModelTraits
 			//attribute<float32> Population (PopModelZones): expr = "sum(Proto_Pop[Conversions/Population/crossTab/first_rel] * Conversions/Population/crossTab/orgzone_weight, Conversions/Population/crossTab/second_rel)";
 			
 			
-			attribute<String> ClaimTableName	(ModelType): Expr = "CaseData/ClaimTableName";
-			attribute<String> DestClaimTableName(ModelType): Expr = "CaseData/DestClaimTableName";
+			attribute<string> ClaimTableName	(ModelType): Expr = "CaseData/ClaimTableName";
+			attribute<string> DestClaimTableName(ModelType): Expr = "CaseData/DestClaimTableName";
 			container ClaimTableSelections: Expr = "for_each_ne(ClaimTable/Values, 'ClaimTableSelectionTemplate(CaseData/ClaimTables/'+ClaimTable/Values+', Parameters/PeriodSet/result/ProjectedYear[PeriodId])')"
 			{
 				Container Population: 		expr = "ClaimTableSelectionTemplate(DemandSet/Global/Population, CurrYear)";
@@ -760,7 +760,7 @@ container ModelTraits
 		
 		container Templ: IsTemplate = "True"
 		{
-			unit<UInt32> domain;
+			unit<uint32> domain;
 			unit<wpoint> domain_grid;
 			
 			unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
@@ -778,8 +778,8 @@ container ModelTraits
 			container LandChange: IsTemplate = "True"
 			{
 				// begin case parameters
-				unit<UInt32>    domain;
-				unit<UInt16>    Regions;
+				unit<uint32>    domain;
+				unit<uint16>    Regions;
 				attribute<Regions> RegionGrid(domain);
 				attribute<bool> wasX(domain);
 				attribute<bool> isY (domain);
@@ -798,8 +798,8 @@ container ModelTraits
 			container LandChange2: IsTemplate = "True"
 			{
 				// begin case parameters
-				unit<UInt32>    domain;
-				unit<UInt16>    Regions;
+				unit<uint32>    domain;
+				unit<uint16>    Regions;
 				attribute<Regions> RegionGrid(domain);
 				
 				attribute<bool> wasP(domain);
@@ -815,12 +815,12 @@ container ModelTraits
 			{
 				// begin case parameters
 				
-				unit<UInt32> domain;
+				unit<uint32> domain;
 				container JrcFactorData;
 				attribute<bool> SpatialFilter(domain);
-				unit<UInt16> Regions;
+				unit<uint16> Regions;
 				attribute<Regions> RegionGrid(domain);
-				parameter<String> DirName;
+				parameter<string> DirName;
 				
 				// end caser parameters
 				
@@ -1078,9 +1078,9 @@ container ModelTraits
 				{		
 					container NetAbandoned
 					{
-						attribute<UInt32> Arable        (Regions): Expr = "sum(UInt32(SpatialFilter && NetAgriAbandonment/Arable        ), RegionGrid)";
-						attribute<UInt32> PermanentCrops(Regions): Expr = "sum(UInt32(SpatialFilter && NetAgriAbandonment/PermanentCrops), RegionGrid)";
-						attribute<UInt32> Pastures      (Regions): Expr = "sum(UInt32(SpatialFilter && NetAgriAbandonment/Pastures      ), RegionGrid)";
+						attribute<uint32> Arable        (Regions): Expr = "sum(UInt32(SpatialFilter && NetAgriAbandonment/Arable        ), RegionGrid)";
+						attribute<uint32> PermanentCrops(Regions): Expr = "sum(UInt32(SpatialFilter && NetAgriAbandonment/PermanentCrops), RegionGrid)";
+						attribute<uint32> Pastures      (Regions): Expr = "sum(UInt32(SpatialFilter && NetAgriAbandonment/Pastures      ), RegionGrid)";
 					}
 				}
 				container MeanSpeciesAbundance:
@@ -1099,25 +1099,25 @@ container ModelTraits
 		// these indicators are use in both OutputGeneration (per RunRegion per TimeStep) as in EvaluationIndicators100 (in simulation_results for each run region and once in /Indicators)
 		container SharedIndicators: IsTemplate = "True"
 		{
-			unit<UInt32> domain;
+			unit<uint32> domain;
 			attribute<Classifications/LU/ModelType> StartingLandUse(domain);
 			attribute<Classifications/LU/ModelType> PreviousLandUse(domain);
 			attribute<Classifications/LU/ModelType> CurrentLandUse (domain);
 			container JrcFactorData;
 			container PrevAbandonment;
 			
-			unit<UInt16> Regions;
+			unit<uint16> Regions;
 			attribute<Regions> RegionGrid(domain);
-			parameter<String>  DirName;
+			parameter<string>  DirName;
 
 			// end of Case Parameters
 			attribute<bool> LuStartDiff(domain):  Expr = "StartingLandUse <> CurrentLandUse";
 			attribute<Classifications/LU/ModelType> changed_from(domain): Expr = "LuStartDiff ? StartingLandUse : value(255, Classifications/LU/ModelType )";
 			attribute<Classifications/LU/ModelType> changed_to  (domain): Expr = "LuStartDiff ? CurrentLandUse  : value(255, Classifications/LU/ModelType )";
 			
-			unit<WPoint> xTabData: Expr = "Range(WPoint, point_xy(UInt16(0),UInt16(0)), point_xy(UInt16(#Classifications/LU/ModelType), UInt16(#Classifications/LU/ModelType)))", IsHidden = "True"
+			unit<wpoint> xTabData: Expr = "Range(WPoint, point_xy(UInt16(0),UInt16(0)), point_xy(UInt16(#Classifications/LU/ModelType), UInt16(#Classifications/LU/ModelType)))", IsHidden = "True"
 			{
-				attribute<UInt32> Count: Expr = "PCount(point_xy(UInt16(StartingLandUse), UInt16(CurrentLandUse), xTabData))";
+				attribute<uint32> Count: Expr = "PCount(point_xy(UInt16(StartingLandUse), UInt16(CurrentLandUse), xTabData))";
 			}
 			container xTab: Expr =  
 				"for_each_nedv("
@@ -1149,15 +1149,15 @@ container ModelTraits
 		}
 		container OutputGenerator: IsTemplate = "True"
 		{
-			unit<WPoint> domainGrid;
-			unit<UInt32> domain;
-			parameter<String> OutputDirName;
-			parameter<String> ClippedLandUseVT_FileName: Expr = "OutputDirName + '.tif'";
-			parameter<String> Qi_FileName:				 Expr = "OutputDirName + '_Qi.tif'";
-			parameter<String> Ai_FileName:				 Expr = "OutputDirName + '_Ai.tif'";
-			parameter<String> AgriAbandonmentRisk_FileName:		Expr = "OutputDirName + '_AgriAbandonmentRisk.tif'";
-			parameter<String> LowPopDensity_FileName:			Expr = "OutputDirName + '_LowPopDensity.tif'";
-			parameter<String> RuralRemoteness_FileName:			Expr = "OutputDirName + '_RuralRemoteness.tif'";
+			unit<wpoint> domainGrid;
+			unit<uint32> domain;
+			parameter<string> OutputDirName;
+			parameter<string> ClippedLandUseVT_FileName: Expr = "OutputDirName + '.tif'";
+			parameter<string> Qi_FileName:				 Expr = "OutputDirName + '_Qi.tif'";
+			parameter<string> Ai_FileName:				 Expr = "OutputDirName + '_Ai.tif'";
+			parameter<string> AgriAbandonmentRisk_FileName:		Expr = "OutputDirName + '_AgriAbandonmentRisk.tif'";
+			parameter<string> LowPopDensity_FileName:			Expr = "OutputDirName + '_LowPopDensity.tif'";
+			parameter<string> RuralRemoteness_FileName:			Expr = "OutputDirName + '_RuralRemoteness.tif'";
 			
 			
 			attribute<Classifications/LU/ViewType> LandUseVT(domainGrid)
@@ -1168,7 +1168,7 @@ container ModelTraits
 				// ,	StorageName = "=ClippedLandUseVT_FileName"
 				// , 	StorageType = "tif"
 			{
-				attribute<UInt32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
+				attribute<uint32> PaletteData(Classifications/LU/ViewType): Expr = "Classifications/LU/ViewType/Color";
 			}
 			attribute<int32> Clipped_Qi (domainGrid)
 				:   Expr = "CaseData/Land/IsInRunRegion ? Qi_Grid : 0[int32]";
@@ -1232,8 +1232,8 @@ container ModelTraits
 				unit<uint8> MT: Expr = "ModelType";
 				
 				container Actual {
-					attribute<Float32> Suitability     (Domain): Expr = "='merge(LandUse, Float32, '+AsItemList('DynamicComponent/Suitability/'+MT/Name)+')'";
-					attribute<Float32> DynamicNeighbour(Domain): Expr = "='merge(LandUse, Float32, '+AsItemList('DynamicComponent/DynamicNeighbour/'+MT/Name)+')'";
+					attribute<float32> Suitability     (Domain): Expr = "='merge(LandUse, Float32, '+AsItemList('DynamicComponent/Suitability/'+MT/Name)+')'";
+					attribute<float32> DynamicNeighbour(Domain): Expr = "='merge(LandUse, Float32, '+AsItemList('DynamicComponent/DynamicNeighbour/'+MT/Name)+')'";
 					attribute<EUR_M2 > TotalSuitability(Domain): Expr = "='merge(LandUse, EUR_M2,  '+AsItemList('DynamicComponent/TotalSuitability/'+MT/Name+'[EUR_M2]')+')'";
 					attribute<EUR_M2 > TransPot        (Domain): Expr = "='merge(LandUse, EUR_M2,  '+AsItemList('DynamicComponent/TransPot/'+MT/Name)+')'";
 				}
@@ -1241,8 +1241,8 @@ container ModelTraits
 				attribute<uint32> LandUseCount(MT): Expr = "pcount(LandUse)";
 				container sd
 				{
-					attribute<Float32> Suitability     (MT): Expr = "sd(Actual/Suitability,      LandUse)";
-					attribute<Float32> DynamicNeighbour(MT): Expr = "sd(Actual/DynamicNeighbour, LandUse)";
+					attribute<float32> Suitability     (MT): Expr = "sd(Actual/Suitability,      LandUse)";
+					attribute<float32> DynamicNeighbour(MT): Expr = "sd(Actual/DynamicNeighbour, LandUse)";
 					attribute<EUR_M2 > TotalSuitability(MT): Expr = "sd(Actual/TotalSuitability, LandUse)";
 					attribute<EUR_M2 > TransPot        (MT): Expr = "sd(Actual/TransPot,         LandUse)";
 				}
@@ -1258,9 +1258,9 @@ container ModelTraits
 					"OutPutDirName"
 				")";
 				
-			attribute<UInt8> written_ForestType(domainGrid): Expr = "ForestType", StorageName = "=OutputDirName+'/ForestType.tif'", 	StorageType = "tif"
+			attribute<uint8> written_ForestType(domainGrid): Expr = "ForestType", StorageName = "=OutputDirName+'/ForestType.tif'", 	StorageType = "tif"
 			{
-				attribute<UInt32> PaletteData(Classifications/LU/ForestType): DialogType = "BrushColor", Expr = "Classifications/LU/ForestType/BrushColor";
+				attribute<uint32> PaletteData(Classifications/LU/ForestType): DialogType = "BrushColor", Expr = "Classifications/LU/ForestType/BrushColor";
 			}
 			
 			

@@ -51,7 +51,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<bool>   IsThird          := id(.) == first(id(.)) + 2;
 		attribute<bool>   IsFourth         := id(.) == first(id(.)) + 3;
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	// unit<uint32> Kwartalen : nrofrows = 4
@@ -102,7 +102,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<string> label   := name , DialogType = "LabelText";
 		attribute<string> name    := 'Y' + string(id(.));
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint32> jaren96_11 := range(uint32, 1996, 2012)
@@ -110,7 +110,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<string> label   := name , DialogType = "LabelText";
 		attribute<string> name    := 'Y' + string(id(.));
 		attribute<uint32> value   := id(.);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint32> jaren00_11 := range(uint32, 2000, 2012)
@@ -119,7 +119,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<string> label   := name , DialogType = "LabelText";
 		attribute<string> name    := 'Y' + string(id(.));
 		attribute<uint32> value   := id(.);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint32> jaren00_12 := range(uint32, 2000, 2013)
@@ -212,7 +212,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<string>   name         := union_data(., NoData/name, jaren12_19/name);
 		attribute<string>   Label        := union_data(., NoData/Label, jaren12_19/Label), DialogType = "LabelText";
 		attribute<uint32>   value        := union_data(., NoData/value, jaren12_19/value);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		attribute<bool>   HeeftBAG   := value >= 2012;
 		attribute<string> prev_name := 'Y' + string(prev_value);
 		attribute<uint32> prev_value := sub_or_null(id(.),1);
@@ -225,7 +225,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<string>   name         := union_data(., NoData/name, jaren12_20/name);
 		attribute<string>   Label        := union_data(., NoData/Label, jaren12_20/Label), DialogType = "LabelText";
 		attribute<uint32>   value        := union_data(., NoData/value, jaren12_20/value);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		attribute<bool>   HeeftBAG   := value >= 2012;
 		attribute<string> prev_name := 'Y' + string(prev_value);
 		attribute<uint32> prev_value := sub_or_null(id(.),1);
@@ -238,7 +238,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		attribute<string>   name         := union_data(., NoData/name, jaren12_21/name);
 		attribute<string>   Label        := union_data(., NoData/Label, jaren12_21/Label), DialogType = "LabelText";
 		attribute<uint32>   value        := union_data(., NoData/value, jaren12_21/value);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		attribute<bool>   HeeftBAG   := value >= 2012;
 		attribute<string> prev_name := 'Y' + string(prev_value);
 		attribute<uint32> prev_value := sub_or_null(id(.),1);
@@ -331,7 +331,7 @@ container Tijd: isHidden = "True", using = "eenheden"
 		
 		attribute<Kwartalen> kwartaal_rel := rlookup(name, kwartalen/name);
 		
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	// unit<uint32> Periods_min1_nodata := union_unit(NoData, Periods_min1)
 	// {

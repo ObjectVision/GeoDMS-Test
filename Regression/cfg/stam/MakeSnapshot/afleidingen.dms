@@ -24,7 +24,7 @@ container afleidingen
 			{
 				attribute<string> label:    ['geen woonpand','vrijstaand','twee onder 1 kap','hoekwoning','tussenwoning','meergezinspand'], DialogType = "LabelText";
 				attribute<string> name := replace(label, ' ', '_');
-				container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+				container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 			}
 
 			container extents
@@ -68,7 +68,7 @@ container afleidingen
 
 			parameter<uint32> nr_x :=  7;
 			parameter<uint32> nr_y := 13;
-			parameter<Float64> inflate_size := 200.0;
+			parameter<float64> inflate_size := 200.0;
 			
 			unit<uint32> rectangle := range(uint32, 0, nr_x * nr_y)
 			{
@@ -112,8 +112,8 @@ container afleidingen
 					// nice to see
 					attribute<geometries/rdc_mm> joint(.,arc):=
 						points2sequence_ps(
-							union_data(Combine(., bool), centroid(domain/geometry_mm)[F1], centroid(domain/geometry_mm)[F2]),
-							union_data(Combine(., bool), ID(.), ID(.))
+							union_data(combine_unit(bool, .), centroid(domain/geometry_mm)[F1], centroid(domain/geometry_mm)[F2]),
+							union_data(combine_unit(bool, .), ID(.), ID(.))
 						);
 				}
 				
@@ -126,8 +126,8 @@ container afleidingen
 					// nice to see
 					attribute<geometries/rdc_mm> joint(.,arc):=
 						points2sequence_ps(
-							union_data(Combine(., bool), centroid(functioneel_pand/geometry_mm)[F1], centroid(functioneel_pand/geometry_mm)[F2]),
-							union_data(Combine(., bool), ID(.), ID(.))
+							union_data(combine_unit(bool, .), centroid(functioneel_pand/geometry_mm)[F1], centroid(functioneel_pand/geometry_mm)[F2]),
+							union_data(combine_unit(bool, .), ID(.), ID(.))
 						);
 				}
 				// Additional info for one rectangle, should not be used for final derivations
@@ -168,8 +168,8 @@ container afleidingen
 				// nice to see
 				attribute<geometries/rdc_mm> joint(.,arc):=
 					points2sequence_ps(
-						union_data(Combine(., bool), centroid(functioneel_pand/geometry_mm)[F1], centroid(functioneel_pand/geometry_mm)[F2]),
-						union_data(Combine(., bool), ID(.), ID(.))
+						union_data(combine_unit(bool, .), centroid(functioneel_pand/geometry_mm)[F1], centroid(functioneel_pand/geometry_mm)[F2]),
+						union_data(combine_unit(bool, .), ID(.), ID(.))
 					);
 			}
 		}

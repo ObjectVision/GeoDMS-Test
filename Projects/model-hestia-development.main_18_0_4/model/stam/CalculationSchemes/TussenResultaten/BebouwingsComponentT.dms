@@ -81,7 +81,7 @@ template BebouwingsComponentT
 					..,
 					yr_uint16);
 
-				attribute<bool> BouwnormNaleving (BO) := Bouwjaar < 2020[uint16] ? False :
+				attribute<bool> BouwnormNaleving (BO) := Bouwjaar < 2020[uint16] ? false :
 				rnd_uniform(JaarSeed * 101u, BO, range(float64, 0d, 1d)) <= first(ZichtjaarBeleid/NieuwbouwNorm/naleving);
 
 				container Isolatie := for_each_nedv(
@@ -143,8 +143,8 @@ template BebouwingsComponentT
 
 		attribute<bool> IsNuNieuw := (bouwjaar == zichtjaar_jaar);
 		
-		attribute<ratio> IsGebouwdFactor    := Float64(bouwjaar <= zichtjaar_jaar);
-		attribute<ratio> NietGeslooptFactor := Float64(Sloopjaar > Zichtjaar_jaar);
+		attribute<ratio> IsGebouwdFactor    := float64(bouwjaar <= zichtjaar_jaar);
+		attribute<ratio> NietGeslooptFactor := float64(Sloopjaar > Zichtjaar_jaar);
 			
 		attribute<bool>  Afbouw             := =Classifications/Periode/isHistorisch[Periode_rel] ? 'const(false,.)' : 'PrevObject/ResterendNu > 0.0 && (Sloopjaar <= Zichtjaar_jaar)';
 		attribute<bool>  Aanbouw            := MakeDefined(Bouwjaar, 0w) >= StartNieuwbouwJaar && bouwperiode_eindjaar >= Zichtjaar_jaar, ishidden = "True";
@@ -169,7 +169,7 @@ template BebouwingsComponentT
 			? 'const(1.0, BO)'
 			: 'Afbouw ? max_elem(PrevObject/ResterendNu - AanbouwPerJaar, 0.0) : Aanbouw ? max_elem(PrevObject/Aanbouwfactor, Aanbouwfactor) : NietGeslooptFactor';
 			
-		attribute<ratio> AansluitFactor := Float64(IsDefined(PlanRegio_rel)) * ResterendNu * IsGebouwdFactor;
+		attribute<ratio> AansluitFactor := float64(IsDefined(PlanRegio_rel)) * ResterendNu * IsGebouwdFactor;
 						
 		attribute<nrAsl> nrAansluitingen := AansluitFactor * nrAansluitingen_i;
 		attribute<m2>    Oppervlakte     := AansluitFactor * Oppervlakte_i;
@@ -207,7 +207,7 @@ template BebouwingsComponentT
 				parameter<string>   nameWoningVoorraad  := BouwSoortBouwJaarKlasse_label+ '_WoningVoorraad';
 				parameter<src/data> WoningVoorraad_rel  := rlookup(uppercase(nameWoningVoorraad), uppercase(src/data/BouwsoorBouwjaarklasseMutatietypeName));
 				parameter<nrAsl>    nrAslWoningvoorraad := BouwSoortBouwjaarKlasse_Overheveling_data[WoningVoorraad_rel];
-				parameter<ratio>    SchalingsFactor     := Sum(BO/nrAansluitingen * Float64(Overheveling/BouwSoortBouwJaarKlasse_rel == BouwSoortBouwJaarKlasse_rel)) / nrAslWoningvoorraad;
+				parameter<ratio>    SchalingsFactor     := Sum(BO/nrAansluitingen * float64(Overheveling/BouwSoortBouwJaarKlasse_rel == BouwSoortBouwJaarKlasse_rel)) / nrAslWoningvoorraad;
 			
 				//====== Ophalen overhevelaantallen
 				parameter<src/data> PartHuurNaarKoop_rel     := rlookup(uppercase(BouwSoortBouwJaarKlasse_label + '_PartHuur_PartHuurNaarKoop'), uppercase(src/data/name));
@@ -219,9 +219,9 @@ template BebouwingsComponentT
 				parameter<nrAsl> nrAslPartHuurNaarWoonCorp := Overheveling_data[PartHuurNaarWoonCorp_rel];
 
 				//====== Aggregeren van overheveling over eigendomsklassen
-				attribute<Bool> BONaarKoop     (BO) :=  Eigendom/PartHuur/OverhevelenNaarKoop || Eigendom/WoonCorp/OverhevelenNaarKoop;
-				attribute<Bool> BONaarWoonCorp (BO) :=  Eigendom/Koop/OverhevelenNaarWoonCorp || Eigendom/PartHuur/OverhevelenNaarWoonCorp;
-				attribute<Bool> BONaarPartHuur (BO) :=  Eigendom/Koop/OverhevelenNaarPartHuur || Eigendom/WoonCorp/OverhevelenNaarPartHuur;
+				attribute<bool> BONaarKoop     (BO) :=  Eigendom/PartHuur/OverhevelenNaarKoop || Eigendom/WoonCorp/OverhevelenNaarKoop;
+				attribute<bool> BONaarWoonCorp (BO) :=  Eigendom/Koop/OverhevelenNaarWoonCorp || Eigendom/PartHuur/OverhevelenNaarWoonCorp;
+				attribute<bool> BONaarPartHuur (BO) :=  Eigendom/Koop/OverhevelenNaarPartHuur || Eigendom/WoonCorp/OverhevelenNaarPartHuur;
 				
 				container Eigendom := for_each_ind(
 				'ne'
@@ -278,9 +278,9 @@ template BebouwingsComponentT
 			}
 
 			//====== Aggregeren van overheveling over alle woninggroepen
-			attribute<Bool> BONaarKoop     (BO) := ='or('+AsItemList('WoningGroepen/'+src/class/combines/BouwSoortBouwJaarKlasse/label+ '/BONaarKoop')+')';
-			attribute<Bool> BONaarWoonCorp (BO) := ='or('+AsItemList('WoningGroepen/'+src/class/combines/BouwSoortBouwJaarKlasse/label+ '/BONaarWoonCorp')+')';
-			attribute<Bool> BONaarPartHuur (BO) := ='or('+AsItemList('WoningGroepen/'+src/class/combines/BouwSoortBouwJaarKlasse/label+ '/BONaarPartHuur')+')';
+			attribute<bool> BONaarKoop     (BO) := ='or('+AsItemList('WoningGroepen/'+src/class/combines/BouwSoortBouwJaarKlasse/label+ '/BONaarKoop')+')';
+			attribute<bool> BONaarWoonCorp (BO) := ='or('+AsItemList('WoningGroepen/'+src/class/combines/BouwSoortBouwJaarKlasse/label+ '/BONaarWoonCorp')+')';
+			attribute<bool> BONaarPartHuur (BO) := ='or('+AsItemList('WoningGroepen/'+src/class/combines/BouwSoortBouwJaarKlasse/label+ '/BONaarPartHuur')+')';
 		}
 		
 		//====== Aanpassen eigendom van BO obv overheveling

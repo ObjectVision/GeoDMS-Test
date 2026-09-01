@@ -150,31 +150,31 @@
 		}
 		Container Regex_match
 		{
-			parameter<String> TextOk          := dquote('Corop') + ';' + dquote('CoropLabel');
-			parameter<String> TextSingleQuote :=  quote('Corop') + ';' +  quote('CoropLabel');
-			parameter<String> TextComma       := dquote('Corop') + ',' + dquote('CoropLabel');
+			parameter<string> TextOk          := dquote('Corop') + ';' + dquote('CoropLabel');
+			parameter<string> TextSingleQuote :=  quote('Corop') + ';' +  quote('CoropLabel');
+			parameter<string> TextComma       := dquote('Corop') + ',' + dquote('CoropLabel');
 
-			parameter<Bool>   testOk          := regex_match(TextOk         , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
-			parameter<Bool>   testSingleQuote := regex_match(TextSingleQuote, '\"[^\"]*+\"(;\"[^\"]*+\")*+');
-			parameter<Bool>   testCom         := regex_match(TextComma      , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<bool>   testOk          := regex_match(TextOk         , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<bool>   testSingleQuote := regex_match(TextSingleQuote, '\"[^\"]*+\"(;\"[^\"]*+\")*+');
+			parameter<bool>   testCom         := regex_match(TextComma      , '\"[^\"]*+\"(;\"[^\"]*+\")*+');
 
 			parameter<bool>   test_param      := testOk && !testSingleQuote && !testCom;
 		}
 		Container Regex_search
 		{
-			parameter<String> find           := regex_search(Regex_match/TextOk,'\"[^\"]*+\"',0);
-			parameter<Bool>   test_param     := find ==  dquote('Corop');
+			parameter<string> find           := regex_search(Regex_match/TextOk,'\"[^\"]*+\"',0);
+			parameter<bool>   test_param     := find ==  dquote('Corop');
 		}
 		Container Regex_replace
 		{
-			parameter<String> replace    := regex_replace(Regex_match/TextOk,'\"[^\"]*+\"',quote('NewLabel'));
-			parameter<Bool>   test_param := replace ==  quote('NewLabel') + ';' + quote('NewLabel');
+			parameter<string> replace    := regex_replace(Regex_match/TextOk,'\"[^\"]*+\"',quote('NewLabel'));
+			parameter<bool>   test_param := replace ==  quote('NewLabel') + ';' + quote('NewLabel');
 		}
 
 		container entropy
 		{
 			parameter<float64> entropy    := entropy(int16(1));
-			parameter<Bool>    test_param := entropy == 0d;
+			parameter<bool>    test_param := entropy == 0d;
 
 			unit<uint32> domain : nrofrows = 5
 			{
@@ -191,7 +191,7 @@
 		container average_entropy
 		{
 			parameter<float64> average_entropy    := average_entropy(int16(1));
-			parameter<Bool>    test_param := average_entropy == 0d;
+			parameter<bool>    test_param := average_entropy == 0d;
 
 			unit<uint32> domain : nrofrows = 5
 			{

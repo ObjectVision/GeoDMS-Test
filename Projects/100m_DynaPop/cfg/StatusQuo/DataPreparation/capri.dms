@@ -25,7 +25,7 @@ container Capri: using = "Units"
 		{
 			attribute<uint32> posAtt (Lines): expr = "strpos(Lines/AttStr,'CERE')";
 			unit<uint32>      uniquePosAtt:   expr = "unique(posAtt)";
-			parameter<Bool>   controlPosAtt:  expr = "#uniquePosAtt==1";
+			parameter<bool>   controlPosAtt:  expr = "#uniquePosAtt==1";
 			
 			attribute<string> AttStr(Lines):  expr = "substr(Lines/AttStr,uniquePosAtt/values[0],4)";
 		}
@@ -33,7 +33,7 @@ container Capri: using = "Units"
 		{
 			attribute<uint32>  posAtt (Lines): expr = "strpos(Lines/AttStr,'LEVL')";
 			unit<uint32>       uniquePosAtt:   expr = "unique(posAtt)";
-			parameter<Bool>    controlPosAtt:  expr = "#uniquePosAtt==1";
+			parameter<bool>    controlPosAtt:  expr = "#uniquePosAtt==1";
 			
 			attribute<string>  AttStr(Lines):  expr = "substr(Lines/AttStr,uniquePosAtt/values[0],10)";
 			attribute<kha_f32> Att(Lines):     expr = "value(AttStr, kha_f32)";
@@ -68,14 +68,14 @@ container Capri: using = "Units"
 	}
 	container PrepareSourceFile_90_05: isTemplate = "True"
 	{
-		parameter<String> country;
+		parameter<string> country;
 		
-		parameter<String>  FileName: expr = "'%SourceDataProjDir%/LUISA/capri/CAPRI_COCO1990-2005/' + country + '.txt'";
+		parameter<string>  FileName: expr = "'%SourceDataProjDir%/LUISA/capri/CAPRI_COCO1990-2005/' + country + '.txt'";
 		
-		parameter<String> FileData: StorageType = "str", StorageName = "=FileName";
+		parameter<string> FileData: StorageType = "str", StorageName = "=FileName";
 		unit<uint32> Lines:   Expr = "Range(uint32, 0, strcount(FileData, '\n')+1)"
 		{
-			attribute<String> AttStr: expr = "readLines(FileData, ., 0)";
+			attribute<string> AttStr: expr = "readLines(FileData, ., 0)";
 		}
 		
 		container Year
@@ -112,15 +112,15 @@ container Capri: using = "Units"
 	
 	container PrepareSourceFiles_10_50: isTemplate = "True"
 	{
-		parameter<String> country;
-		parameter<String> year;
+		parameter<string> country;
+		parameter<string> year;
 		
-		parameter<String>  FileName: expr = "'%SourceDataProjDir%/LUISA/capri/CAPRI_2010_2050/' + year + '/'  + country + '.txt'";
+		parameter<string>  FileName: expr = "'%SourceDataProjDir%/LUISA/capri/CAPRI_2010_2050/' + year + '/'  + country + '.txt'";
 		
-		parameter<String> FileData: StorageType = "str", StorageName = "=FileName";
+		parameter<string> FileData: StorageType = "str", StorageName = "=FileName";
 		unit<uint32>      Lines:   Expr = "Range(uint32, 0, strcount(FileData, '\n')+1)"
 		{
-			attribute<String> AttStr: expr = "readLines(FileData, ., 0)";
+			attribute<string> AttStr: expr = "readLines(FileData, ., 0)";
 		}
 		
 		container ProcessLines: expr = "ProcessCapriLines(Lines)";
@@ -131,15 +131,15 @@ container Capri: using = "Units"
 	
 	container CLCData
 	{
-		parameter<String>  FileName: expr = "'%SourceDataProjDir%/LUISA/capri/CLC/tabul06r_v2.csv'";
+		parameter<string>  FileName: expr = "'%SourceDataProjDir%/LUISA/capri/CLC/tabul06r_v2.csv'";
 		
-		parameter<String> FileData
+		parameter<string> FileData
 		:  StorageType = "str"
 		,  StorageName = "=FileName";
 		
 		unit<uint32> Import: Expr = "Range(uint32, 0, strcount(FileData, '\n'))"
 		{
-			attribute<String> Lines:       expr = "readLines(FileData, Import, 0)";
+			attribute<string> Lines:       expr = "readLines(FileData, Import, 0)";
 			attribute<string> CLCRegion:   expr = "ReadElems(Lines, string, const(0, Import))";
 			attribute<m2_u64> urban:       expr = "ReadElems(Lines, m2_u64,CLCRegion/readPos)";
 			attribute<m2_u64> industry:    expr = "ReadElems(Lines, m2_u64,urban/readPos)";
@@ -163,8 +163,8 @@ container Capri: using = "Units"
 	
 	container Combine_years: isTemplate = "True"
 	{
-		parameter<String> icc;
-		parameter<String> ccc; // capri country code
+		parameter<string> icc;
+		parameter<string> ccc; // capri country code
 		
 		unit<uint32> CLC_Data: Expr = "select_with_org_rel(substr(CLCData/Import/CLCRegion,0,2) == icc && IsDefined(CLCData/Import/capri_region))"
 		{
@@ -191,33 +191,33 @@ container Capri: using = "Units"
 		parameter<uint32> StartYear: [ 2006 ];
 		parameter<uint32> EndYear:   [ 2050 ];
 		
-		unit<UInt32> YearRange: Expr = "range(uint32, 0, EndYear+1-StartYear)"
+		unit<uint32> YearRange: Expr = "range(uint32, 0, EndYear+1-StartYear)"
 		{
-			attribute<Float64> CurrYear: Expr = "Float64(ID(.)+StartYear)";
+			attribute<float64> CurrYear: Expr = "Float64(ID(.)+StartYear)";
 			
 			// weights for linear interpolation from capri values to each year.
-			attribute<Float64> Weight_2005: expr = " CurrYear < 2010.0 ? (2010.0 - CurrYear) / 5.0"
+			attribute<float64> Weight_2005: expr = " CurrYear < 2010.0 ? (2010.0 - CurrYear) / 5.0"
 			                                       ":0.0";
-			attribute<Float64> Weight_2010: expr = " CurrYear < 2010.0 ? (CurrYear - 2005.0) /  5.0"
+			attribute<float64> Weight_2010: expr = " CurrYear < 2010.0 ? (CurrYear - 2005.0) /  5.0"
 			                                       ":CurrYear < 2020.0 ? (2020.0 - CurrYear) / 10.0"
 			                                       ":0.0";
-			attribute<Float64> Weight_2020: expr = " CurrYear < 2010.0 ? 0.0"
+			attribute<float64> Weight_2020: expr = " CurrYear < 2010.0 ? 0.0"
 			                                       ":CurrYear < 2020.0 ? (CurrYear - 2010.0) / 10.0"
 			                                       ":CurrYear < 2030.0 ? (2030.0 - CurrYear) / 10.0"
 			                                       ":0.0";
-			attribute<Float64> Weight_2030: expr = " CurrYear < 2020.0 ? 0.0"
+			attribute<float64> Weight_2030: expr = " CurrYear < 2020.0 ? 0.0"
 			                                       ":CurrYear < 2030.0 ? (CurrYear - 2020.0) / 10.0"
 			                                       ":CurrYear < 2040.0 ? (2040.0 - CurrYear) / 10.0"
 			                                       ":0.0";
-			attribute<Float64> Weight_2040: expr = " CurrYear < 2030.0 ? 0.0"
+			attribute<float64> Weight_2040: expr = " CurrYear < 2030.0 ? 0.0"
 			                                       ":CurrYear < 2040.0 ? (CurrYear - 2030.0) / 10.0"
 			                                       ":CurrYear < 2050.0 ? (2050.0 - CurrYear) / 10.0"
 			                                       ":0.0";
-			attribute<Float64> Weight_2050: expr = " CurrYear < 2040.0 ? 0.0"
+			attribute<float64> Weight_2050: expr = " CurrYear < 2040.0 ? 0.0"
 			                                       ":CurrYear < 2050.0 ? (CurrYear - 2040.0) / 10.0"
 			                                       ":CurrYear < 2060.0 ? (2060.0 - CurrYear) / 10.0"
 			                                       ":0.0";
-			attribute<Float64> TotalWeight: expr = "Weight_2005 + Weight_2010 + Weight_2020 + Weight_2030 + Weight_2040 + Weight_2050"; // must be equal to 1 for all years.
+			attribute<float64> TotalWeight: expr = "Weight_2005 + Weight_2010 + Weight_2020 + Weight_2030 + Weight_2040 + Weight_2050"; // must be equal to 1 for all years.
 		}
 		unit<uint32> CapriRegionGroupYear: expr = "Combine(CapriRegionGroup, YearRange)"
 		{
@@ -251,8 +251,8 @@ container Capri: using = "Units"
 		}
 		unit<uint32> CapriRegionYear: expr = "combine(CapriRegion, YearRange)"
 		{
-			attribute<String> Region:    expr = "CapriRegion/code[first_rel]";
-			attribute<Float64> CurrYear: expr = "YearRange/CurrYear[second_rel]";
+			attribute<string> Region:    expr = "CapriRegion/code[first_rel]";
+			attribute<float64> CurrYear: expr = "YearRange/CurrYear[second_rel]";
 			
 			parameter<float64> min_Factor_base: [ 0.90 ]; // @@@@ USER-INPUT
 			parameter<float64> max_Factor_base: [ 1.05 ]; // @@@@ USER-INPUT
@@ -319,8 +319,8 @@ container Capri: using = "Units"
 	
 	container CountryList: isTemplate = "True"
 	{
-		parameter<String> icc; // EUCS country code, also used in the clc table
-		parameter<String> ccc; // Capri Country code.
+		parameter<string> icc; // EUCS country code, also used in the clc table
+		parameter<string> ccc; // Capri Country code.
 		
 		container y2005: expr = "PrepareSourceFile_90_05 ( ccc )";
 		container y2010: expr = "PrepareSourceFiles_10_50( ccc,'2010')";

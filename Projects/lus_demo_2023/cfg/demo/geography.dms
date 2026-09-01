@@ -24,7 +24,7 @@ container Geography: Using = "Units", isHidden = "True"
 	unit<fpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "= GeoDMSVersion >= float64(7.165) && Modelparameters/EnableBackgroundMap ? 'ngr_layer' : '/Geography/RegionalUnits/Province/Province_name'"; // wms achtergrondlaag voor kaarten met rd coordinaten
 	// unit<fpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "/Geography/RegionalUnits/Province/prvnm"; // wms achtergrondlaag voor kaarten met rd coordinaten
 	
-	unit<FPoint> rdc_meter := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
+	unit<fpoint> rdc_meter := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
 
 	parameter<meter> gridsize_100m := 100[meter];
 	parameter<meter> gridsize_500m := 500[meter];
@@ -38,7 +38,7 @@ container Geography: Using = "Units", isHidden = "True"
 	parameter<int16> nr_cols_500m := int16((x_max - x_min) / gridsize_500m);
 	parameter<int16> nr_rows_500m := int16((y_max - y_min) / gridsize_500m);
 	
-	unit<SPoint> rdc_500lu :=
+	unit<spoint> rdc_500lu :=
 			range(
 				gridset(
 					  rdc_meter
@@ -55,7 +55,7 @@ container Geography: Using = "Units", isHidden = "True"
 		attribute<domain>    domain_rel := id(.)[domain];
 	}
 
-	unit<SPoint> rdc_100lu :=
+	unit<spoint> rdc_100lu :=
 			range(
 				gridset(
 					  rdc_meter
@@ -161,7 +161,7 @@ container Geography: Using = "Units", isHidden = "True"
 	}
  */	container RegionalUnits
 	{
-		unit<UInt32> RandstadIntermediatePeripheral // Regional division in Randstad Intermediate zone and Peripherap zone
+		unit<uint32> RandstadIntermediatePeripheral // Regional division in Randstad Intermediate zone and Peripherap zone
 		:	StorageName     = "%LUSDemo_DataDir%/geography/claimregions_2011.shp"
 		, 	StorageType     = "gdal.vect"
 		,	StorageReadOnly = "True"
@@ -170,10 +170,10 @@ container Geography: Using = "Units", isHidden = "True"
 			attribute<rdc_meter> geometry (poly);
 			attribute<.>         claimregio                 : Descr = "This is the entity of shapes of claimregions (0=Exterior)";
 			attribute<Meter2>    area                       := area(geometry, meter2);
-			attribute<String>    Label                      : ['none','Randstad','Intermediate zone','Peripheral zone'], DialogType = "LabelText";
+			attribute<string>    Label                      : ['none','Randstad','Intermediate zone','Peripheral zone'], DialogType = "LabelText";
 		}
 		
-		unit<UInt32> Province
+		unit<uint32> Province
 		:	StorageName     = "%LUSDemo_DataDir%/geography/provinces_2004_simplified.shp"
 		, 	StorageType     = "gdal.vect"
 		,	StorageReadOnly = "True"
@@ -191,7 +191,7 @@ container Geography: Using = "Units", isHidden = "True"
 			: StorageName = "%LUSDemo_DataDir%/DijkRingen.csv"
 			, StorageType = "gdal.vect"
 			{
-				attribute<String> Label: DialogType = "LabelText";
+				attribute<string> Label: DialogType = "LabelText";
 			}
 			unit<uint32> shp
 			: StorageName = "%LUSDemo_DataDir%/geography/dijkringen_2009_selection.shp"

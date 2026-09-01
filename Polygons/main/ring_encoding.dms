@@ -253,21 +253,32 @@ container ring_encoding
 		parameter<float64> wBow    := area(fix_winding_order(gBow), m2u);
 		parameter<bool> ok_bowtie  := abs(fBow - 50.0) <= 1e-6 && wBow == 0.0;
 
-		// N.B. geos_polygon leest de ringrollen uit de orientatie en gaat op gAllRev de
-		// mist in: de CCW-buitenring wordt overgeslagen terwijl isFirstRing waar blijft,
-		// waardoor het gat tot buitenring gepromoveerd wordt en area 32 geeft (36 - 4) in
-		// plaats van 68. Dat is een aparte kwestie in geos_create_polygons, buiten de scope
-		// van issue 302; hier bewust GEEN assertie op, want die zou omvallen zodra het
-		// gerepareerd wordt. fix_polygon omzeilt de lezer en geeft wel 68.
+		// De lezers leiden de ringrol af uit de ORIENTATIE, maar RELATIEF: de eerste ring die
+		// overleeft bepaalt wat 'buiten' betekent voor dat feature (GeoDMS issue 1212).
+		// Daardoor komt een volledig omgedraaid feature bij alle drie de families met de
+		// juiste topologie binnen. Voor 1212 keken geos en cgal ABSOLUUT - buiten is met de
+		// klok mee - en viel de CCW-buitenring weg terwijl er nog geen polygoon open stond,
+		// waarna het gat tot buitenring gepromoveerd werd: 36 - 4 = 32 in plaats van 68,
+		// zonder enige melding. geos en cgal normaliseren de winding van hun resultaat,
+		// bg laat de vorm staan zoals hij binnenkwam en geeft -68; vandaar de abs() daar.
+		parameter<float64> rGeos := area(geos_polygon(gAllRev), m2u);
+		parameter<float64> rCgal := area(cgal_polygon(gAllRev), m2u);
+		parameter<float64> rBg   := area(bg_polygon(gAllRev),   m2u);
 
-		parameter<bool> ok := ok_roundtrip && ok_negate && ok_fix && ok_area_blind && ok_predicate && ok_bowtie;
+		parameter<bool> ok_readers :=
+			   abs(rGeos      - aIn) <= aIn * 1e-6
+			&& abs(rCgal      - aIn) <= aIn * 1e-6
+			&& abs(abs(rBg)   - aIn) <= aIn * 1e-6;
+
+		parameter<bool> ok := ok_roundtrip && ok_negate && ok_fix && ok_area_blind && ok_predicate && ok_bowtie && ok_readers;
 		parameter<string> failwhat :=
 			  (ok_roundtrip  ? '' : 'roundtrip ')
 			+ (ok_negate     ? '' : 'negate ')
 			+ (ok_fix        ? '' : 'fix ' + string(float32(fOk)) + '/' + string(float32(fAllRev)) + '/' + string(float32(fMixed)) + '/' + string(float32(fIsland)) + ' ')
 			+ (ok_area_blind ? '' : 'area-blind ')
 			+ (ok_predicate  ? '' : 'predicate ')
-			+ (ok_bowtie     ? '' : 'bowtie ' + string(float32(fBow)) + '/' + string(float32(wBow)) + ' ');
+			+ (ok_bowtie     ? '' : 'bowtie ' + string(float32(fBow)) + '/' + string(float32(wBow)) + ' ')
+			+ (ok_readers    ? '' : 'readers ' + string(float32(rGeos)) + '/' + string(float32(rCgal)) + '/' + string(float32(rBg)) + ' ');
 	}
 
 	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok && winding_order/ok;

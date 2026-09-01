@@ -138,14 +138,14 @@ container BAG_MakeSnapshot
 	parameter<string> FSSDirZuidBroek := '%RegressionDataDir%/BAG/20180311/zuidbroek';
 
 	container snapshot_20170701           := MakeSnapshot( 20170701[eenheden/datum], FSSDir);
-	container snapshot_20170701_zuidbroek := MakeSnapshot( 20170701[eenheden/datum], FSSDirZuidBroek, False);
+	container snapshot_20170701_zuidbroek := MakeSnapshot( 20170701[eenheden/datum], FSSDirZuidBroek, false);
 
 	template MakeSnapshot
 	{
 		// begin case parameters
 		parameter<eenheden/datum> prik_datum;
 		parameter<string> FSSDir;
-		parameter<bool> hasVboPolygon := True;
+		parameter<bool> hasVboPolygon := true;
 		// end case parameters
 		#include<Afleidingen.dms>
 		container pand
@@ -163,7 +163,7 @@ container BAG_MakeSnapshot
 				container meta := meta_src_template(src);
 			}
 
-			container results := datum_selectie(src, prik_datum, False)
+			container results := datum_selectie(src, prik_datum, false)
 			{
 				unit<uint32> selectie
 				{
@@ -241,7 +241,7 @@ container BAG_MakeSnapshot
 				}
 			}
 
-			container results := datum_selectie(src, prik_datum, False)
+			container results := datum_selectie(src, prik_datum, false)
 			{
 				unit<uint32> selectie
 				{

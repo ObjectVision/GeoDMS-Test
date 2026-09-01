@@ -55,18 +55,18 @@ container BBG : isHidden = "True", using = "eenheden"
 		}
 		attribute<.> id:= id(.);
 
-		attribute<bbg_ek>       bbg_klasse        := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)][bbg_ek];
-		attribute<string>       bbg_name          := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-		attribute<uint8>        r                 := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)][uint8];
-		attribute<uint8>        g                 := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)][uint8];
-		attribute<uint8>        b                 := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)][uint8];
-		attribute<gg_10K>        gg_10k_rel        := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)][uint8];
-		attribute<uint8>        onbebouwbaar      := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)][uint8];
-		attribute<uint8>        potentiaal        := Elements/Text[value(UInt32(ID(.))* nrAttr + 7, Elements)][uint8];
-		attribute<gg_10K_anders>        gg_10k_anders_rel := Elements/Text[value(UInt32(ID(.))* nrAttr + 8, Elements)][uint8];
-		attribute<begr_beb_geb> begr_beb_geb_rel  := Elements/Text[value(UInt32(ID(.))* nrAttr + 9, Elements)][uint8];
-		attribute<uint8>        IsGroen_src       := Elements/Text[value(UInt32(ID(.))* nrAttr + 10, Elements)][uint8];
-		attribute<bool>         IsGroen           := IsGroen_src == 1b ? TRUE : FALSE;
+		attribute<bbg_ek>       bbg_klasse        := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)][bbg_ek];
+		attribute<string>       bbg_name          := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+		attribute<uint8>        r                 := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)][uint8];
+		attribute<uint8>        g                 := Elements/Text[value(uint32(ID(.))* nrAttr + 3, Elements)][uint8];
+		attribute<uint8>        b                 := Elements/Text[value(uint32(ID(.))* nrAttr + 4, Elements)][uint8];
+		attribute<gg_10K>        gg_10k_rel        := Elements/Text[value(uint32(ID(.))* nrAttr + 5, Elements)][uint8];
+		attribute<uint8>        onbebouwbaar      := Elements/Text[value(uint32(ID(.))* nrAttr + 6, Elements)][uint8];
+		attribute<uint8>        potentiaal        := Elements/Text[value(uint32(ID(.))* nrAttr + 7, Elements)][uint8];
+		attribute<gg_10K_anders>        gg_10k_anders_rel := Elements/Text[value(uint32(ID(.))* nrAttr + 8, Elements)][uint8];
+		attribute<begr_beb_geb> begr_beb_geb_rel  := Elements/Text[value(uint32(ID(.))* nrAttr + 9, Elements)][uint8];
+		attribute<uint8>        IsGroen_src       := Elements/Text[value(uint32(ID(.))* nrAttr + 10, Elements)][uint8];
+		attribute<bool>         IsGroen           := IsGroen_src == 1b ? true : false;
 		attribute<string>       label             := bbg_name, DialogType = "LabelText";
 		attribute<string>       name              := replace(bbg_name, ' ', '_', '-', '', '/', '_');
 		
@@ -74,7 +74,7 @@ container BBG : isHidden = "True", using = "eenheden"
 		attribute<uint32>       PenColor        := BrushColor, DialogType = "PenColor";
 		parameter<int16>        PenWidth        := 0[int16], DialogType = "penWidth";
 		attribute<uint32>       SymbolColor     := BrushColor, DialogType = "SymbolColor";
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		parameter<uint32> nrAttr := 11;
 	}
 	
@@ -82,7 +82,7 @@ container BBG : isHidden = "True", using = "eenheden"
 	{
 		attribute<string> label:    ['NoData','primair','secundair_algm','secundair_infra','buitengebied'], DialogType = "LabelText";
 		attribute<string> name := replace(label, ' ', '_');
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 
 	unit<uint8> gg_10K: nrofrows = 10
@@ -101,7 +101,7 @@ container BBG : isHidden = "True", using = "eenheden"
 		
 		DialogType = "LabelText";
 		attribute<string> name := replace(label, ' ', '_');
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		attribute<gg_3K> gg_3K_rel :[null,0,1,1,1,2,2,2,2,null];
 		attribute<uint8> id := id(.);
 	}
@@ -112,14 +112,14 @@ container BBG : isHidden = "True", using = "eenheden"
 		attribute<string> label:    ['dens','grey','green'], DialogType = "LabelText";
 		attribute<string> name := replace(label, ' ', '_');
 		attribute<uint32> BrushColor   :  [rgb(200,0,0), rgb(128,128,128),rgb(0,200,0)] , DialogType = "BrushColor";
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint8> gg_3K_change: nrofrows = 9
 	{
 		attribute<string> label:    ['dens_dens','dens_grey','dens_green','grey_dens','grey_grey','grey_green','green_dens','green_grey','green_green'], DialogType = "LabelText";
 		attribute<string> name := replace(label, ' ', '_');
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 
 	unit<uint8> gg_10K_anders: nrofrows = 10
@@ -138,7 +138,7 @@ container BBG : isHidden = "True", using = "eenheden"
 		 
 		DialogType = "LabelText";
 		attribute<string> name := replace(label, ' ', '_');
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 		// attribute<gg_3K> gg_3K_rel :[null,0,1,1,1,2,2,2,2,null];
 		attribute<uint8> id := id(.);
 	}

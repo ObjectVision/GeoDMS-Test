@@ -1,11 +1,11 @@
 container LU
 {	
-	unit<UInt8> ModelType: NrOfRows = 20 // @USERINPUT: keep in sync with the actual nr of model classes
+	unit<uint8> ModelType: NrOfRows = 20 // @USERINPUT: keep in sync with the actual nr of model classes
 	{
 		parameter<uint32> nrAttr: Expr = "10";
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, nrAttr*#ModelType)"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, nrAttr*#ModelType)"
 		{
-			attribute<String> Text: [ // @USERINPUT
+			attribute<string> Text: [ // @USERINPUT
 			//   VT,  IT,    R,    G,    B,  Label,                  	abandoned_version	Demandcharacteristics, 	MinClaimColumn, 	MaxClaimColumn
 				'1' , '0','219','000','000','Urban',                   	'AbanUrban',			'urban',    		 	'minUrban',     			'maxUrban',
 				'2' , '1','128','000','128','Industrial',              	'AbanIndustry',			'industrial', 			'IndustryMin',   			'IndustryMax',
@@ -31,19 +31,19 @@ container LU
 			];
 		}
 
-		attribute<String>           Name: Expr = "Label";
+		attribute<string>           Name: Expr = "Label";
 		attribute<ViewType>           VT: Expr =" value(Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], ViewType)";
 		attribute<IndicatorType>      IT: Expr =" value(Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)], IndicatorType)";
-		attribute<UInt8>               R: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
-		attribute<UInt8>               G: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)])";
-		attribute<UInt8>               B: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)])";
-		attribute<String>          Label: Expr ="       Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)]" , DialogType = "LabelText";
+		attribute<uint8>               R: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
+		attribute<uint8>               G: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)])";
+		attribute<uint8>               B: Expr =" UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)])";
+		attribute<string>          Label: Expr ="       Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)]" , DialogType = "LabelText";
 		attribute<uint32>          Color: Expr ="rgb(R,G,B)", DialogType = "BrushColor";
 		
 		attribute<string> Abandoned_Use:			Expr ="Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)]";
-		attribute<String> DemandCharacteristics:  	Expr ="Elements/Text[value(UInt32(ID(.))* nrAttr + 7, Elements)]";
-		attribute<String> MinClaimColumn: 			Expr ="Elements/Text[value(UInt32(ID(.))* nrAttr + 8, Elements)]";
-		attribute<String> MaxClaimColumn: 			Expr ="Elements/Text[value(UInt32(ID(.))* nrAttr + 9, Elements)]";
+		attribute<string> DemandCharacteristics:  	Expr ="Elements/Text[value(UInt32(ID(.))* nrAttr + 7, Elements)]";
+		attribute<string> MinClaimColumn: 			Expr ="Elements/Text[value(UInt32(ID(.))* nrAttr + 8, Elements)]";
+		attribute<string> MaxClaimColumn: 			Expr ="Elements/Text[value(UInt32(ID(.))* nrAttr + 9, Elements)]";
 		
 		attribute<bool>   DynamicDemand:			Expr = "!IsNull(DemandCharacteristicsRel) && MetaData/DemandCharacteristics/Dynamic[DemandCharacteristicsRel]";
 		attribute<bool>   Change:					Expr = "!IsNull(DemandCharacteristicsRel) && MetaData/DemandCharacteristics/Change[DemandCharacteristicsRel]";
@@ -90,14 +90,14 @@ container LU
 		attribute<MetaData/DemandCharacteristics> DemandCharacteristicsRel: expr = "rlookup(DemandCharacteristics, MetaData/DemandCharacteristics/Name)";
 		
 	}
-	unit<UInt32> ModelMatr: Expr = "Combine(ModelType, ModelType)";
+	unit<uint32> ModelMatr: Expr = "Combine(ModelType, ModelType)";
 	
-	unit<UInt8> ViewType: Expr = "Range(UInt8, UInt8(0), UInt8(26))"
+	unit<uint8> ViewType: Expr = "Range(UInt8, UInt8(0), UInt8(26))"
 	{
 		parameter<uint32> nrAttr: Expr = "7";
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, nrAttr*#ViewType)"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, nrAttr*#ViewType)"
 		{
-			attribute<String> Text: [
+			attribute<string> Text: [
 			//   R,    G,    B,   IsNaturalArea, GridImpedance, Label,
 			//                                   [min/cell]
 			// Model Types
@@ -130,16 +130,16 @@ container LU
 				'173','254','47', 'true' ,'0.4', 'UrbanGreenLeisure',	'7'
 			];
 		}
-		attribute<String>  Name:                                    Expr = "Label";
-		attribute<UInt8>      R:                                    Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)])";
-		attribute<UInt8>      G:                                    Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)])";
-		attribute<UInt8>      B:                                    Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
-		attribute<Bool>IsNatural:                                   Expr = " Bool (Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)])";
+		attribute<string>  Name:                                    Expr = "Label";
+		attribute<uint8>      R:                                    Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)])";
+		attribute<uint8>      G:                                    Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)])";
+		attribute<uint8>      B:                                    Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
+		attribute<bool>IsNatural:                                   Expr = " Bool (Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)])";
 		attribute<bool>IsAgricultural:								Expr = "(id(.) > uint8(2) && id(.) < uint8(6)) || (id(.) > uint8(7) && id(.) < uint8(11)) || id(.) = uint8(16) || id(.) = uint8(20)";
 		attribute<bool>IsPossiblyAgriAbandoned:						Expr = "(id(.) > uint8(10) && id(.) < uint8(14)) || id(.) = uint8(7) || id(.) = uint8(17)";
 		attribute<units/min> GridImpedance: 						Expr = "(Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)])[units/min]";
 
-		attribute<String> Label: 									Expr = "Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)]", DialogType = "LabelText";
+		attribute<string> Label: 									Expr = "Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)]", DialogType = "LabelText";
 		attribute<SimpleViewType> svt_id: 							Expr = "uint8(Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)])[SimpleViewType]";
 		attribute<uint32> Color: Expr ="rgb(R,G,B)", DialogType = "BrushColor";		
 		
@@ -154,15 +154,15 @@ container LU
 		// derived relations
 		attribute<ModelType>     MT: Expr = "invert(ModelType/VT)";
 		attribute<IndicatorType> IT: Expr = "lookup(MT, ModelType/IT)";
-		attribute<Bool>          IsBuiltupArea: Expr = "lookup(MT, ModelType/IsBuiltupArea)";
+		attribute<bool>          IsBuiltupArea: Expr = "lookup(MT, ModelType/IsBuiltupArea)";
 		
 	}
 	unit<uint8> SimpleViewType: NrOfRows = 10 {
 	
 		parameter<uint32> nrAttr: Expr = "5";
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, nrAttr*#ViewType)"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, nrAttr*#ViewType)"
 		{
-			attribute<String> Text: [
+			attribute<string> Text: [
 			'0',	'Nodata',			'254',	'254',	'254',
 			'1',	'Urban',			'219',	'0',	'0',
 			'2',	'Industrial',		'128',	'0',	'128',
@@ -174,19 +174,19 @@ container LU
 			'8',	'Infrastructure',	'128',	'128',	'128',
 			'9',	'Water',			'128',	'242',	'230'];
 		}
-		attribute<UInt8>      R: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
-		attribute<UInt8>      G: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)])";
-		attribute<UInt8>      B: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)])";
-		attribute<String> Label: Expr = "Elements/Text[value(UInt32(ID(.))* nrAttr+1, Elements)]" , DialogType = "LabelText";
+		attribute<uint8>      R: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
+		attribute<uint8>      G: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)])";
+		attribute<uint8>      B: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)])";
+		attribute<string> Label: Expr = "Elements/Text[value(UInt32(ID(.))* nrAttr+1, Elements)]" , DialogType = "LabelText";
 		attribute<uint32> Color: Expr ="rgb(R,G,B)", DialogType = "BrushColor";		
 	}
 	
-	unit<UInt8> IndicatorType: NrOfRows = 11
+	unit<uint8> IndicatorType: NrOfRows = 11
 	{
 		parameter<uint32> nrAttr: Expr = "5";
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, nrAttr*#ViewType)"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, nrAttr*#ViewType)"
 		{
-			attribute<String> Text: [
+			attribute<string> Text: [
 			//	R,    G,    B,    isAgriculture, Label,
 				'219','000','000','False',       'Urban',
 				'128','000','128','False',       'Industrial',
@@ -200,12 +200,12 @@ container LU
 				'160','000','000','False',       'AbanUrban',
 				'071','000','117','False',       'AbanIndustry'];
 		}
-		attribute<String>         Name: Expr = "Label";
-		attribute<UInt8>             R: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)])";
-		attribute<UInt8>             G: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)])";
-		attribute<UInt8>             B: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
+		attribute<string>         Name: Expr = "Label";
+		attribute<uint8>             R: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)])";
+		attribute<uint8>             G: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)])";
+		attribute<uint8>             B: Expr = " UInt8(Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)])";
 		attribute<bool>  isAgriculture: Expr = "  Bool(Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)])";
-		attribute<String>        Label: Expr = "       Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)]" , DialogType = "LabelText";
+		attribute<string>        Label: Expr = "       Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)]" , DialogType = "LabelText";
 		attribute<bool> isUrban:        Expr = "Label = 'Urban'";
 		attribute<bool> isSemiNatural:  Expr = "Label = 'SemiNatural'";
 		attribute<bool> isForest:       Expr = "Label = 'Forest'";
@@ -232,11 +232,11 @@ container LU
 	}
 	
 	
-	unit<UInt8> Corine: Expr = "Range(uint8, UInt8(0), UInt8(50))"
+	unit<uint8> Corine: Expr = "Range(uint8, UInt8(0), UInt8(50))"
 	{
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, 13*#Corine)"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, 13*#Corine)"
 		{
-			attribute<String> Text: [ // @USERINPUT: Edit columns MT and VT when changing the (definition of) the ModelType and/or ViewType
+			attribute<string> Text: [ // @USERINPUT: Edit columns MT and VT when changing the (definition of) the ModelType and/or ViewType
 				//'Grid_Code',   'CLCr06',BM18',  'MT', 'VT',   'R',   'G',   'B', 'Label1', 'Label2', 'Label3',PopulatedLandUseType', 'Water'
 				'111', '01','1111','00', null, '160', '000', '000', 'Artificial surfaces', 'Urban fabric','Urban fabric dense (>50% built-up)','0', '0',
 				'112', '02','1121','00', null, '220', '000', '000', 'Artificial surfaces', 'Urban fabric','Urban fabric medium density (30-50% built-up)', '1', '0',
@@ -299,15 +299,15 @@ container LU
 		attribute<ViewType>  VT2:       Expr = "MakeDefined(ModelType/VT[MT], VT)";
 		
 		
-		attribute<UInt32> R: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*13+5, Elements)])";
-		attribute<UInt32> G: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*13+6, Elements)])";
-		attribute<UInt32> B: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*13+7, Elements)])";
-		attribute<UInt32> BrushColor: Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
+		attribute<uint32> R: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*13+5, Elements)])";
+		attribute<uint32> G: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*13+6, Elements)])";
+		attribute<uint32> B: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*13+7, Elements)])";
+		attribute<uint32> BrushColor: Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
 
 //		attribute<Corine> nrClc:      Expr = "invert(Corine/Grid_Code)";
-		attribute<String> Label1:     Expr = "Elements/Text[value(UInt32(ID(.))*13+8, Elements)]";
-		attribute<String> Label2:     Expr = "Elements/Text[value(UInt32(ID(.))*13+9, Elements)]";
-		attribute<String> Label:      Expr = "Elements/Text[value(UInt32(ID(.))*13+10, Elements)]", DialogType = "LabelText";
+		attribute<string> Label1:     Expr = "Elements/Text[value(UInt32(ID(.))*13+8, Elements)]";
+		attribute<string> Label2:     Expr = "Elements/Text[value(UInt32(ID(.))*13+9, Elements)]";
+		attribute<string> Label:      Expr = "Elements/Text[value(UInt32(ID(.))*13+10, Elements)]", DialogType = "LabelText";
 		
 		attribute<PopulatedLandUseTypes> 	PopulatedLandUseType: 	Expr = "rlookup(uint32(Elements/Text[value(UInt32(ID(.))*13+11, Elements)]), PopulatedLandUseTypes/Lookup)";
 		attribute<bool> 					Water:					Expr = "bool(value(Elements/Text[value(UInt32(ID(.))*13+12, Elements)], uint32))";
@@ -318,9 +318,9 @@ container LU
 		
 		
 	}
-		unit<UInt8> Basemap_2018: Expr = "Range(uint8, UInt8(0), UInt8(47))"
+		unit<uint8> Basemap_2018: Expr = "Range(uint8, UInt8(0), UInt8(47))"
 		{
-			unit<UInt32> Elements: Expr = "Range(uint32, 0, 6*#Basemap_2018)"
+			unit<uint32> Elements: Expr = "Range(uint32, 0, 6*#Basemap_2018)"
 			{
 				attribute<string> Text: [
 				//'Code',	'Label',	'VT',	'R',	'G',	'B',
@@ -378,13 +378,13 @@ container LU
 		
 		//attribute<ViewType>  VT2:       Expr = "MakeDefined(LUISAModelType/VT[MT], VT)";
 		attribute<uint16> Value:		Expr = "uint16(Elements/Text[value(UInt32(ID(.))*6+0, Elements)])";
-		attribute<String> Label:      	Expr = "Elements/Text[value(UInt32(ID(.))*6+1, Elements)]", DialogType = "LabelText";
+		attribute<string> Label:      	Expr = "Elements/Text[value(UInt32(ID(.))*6+1, Elements)]", DialogType = "LabelText";
 		attribute<ViewType>  VT:        Expr = "value(Elements/Text[value(UInt32(ID(.))*6+2, Elements)], ViewType)";
 		attribute<ModelType> MT:		Expr = "rlookup(uint8(VT)-uint8(1), id(ModelType))";
-		attribute<UInt32> R: 			Expr = "uint32(Elements/Text[value(UInt32(ID(.))*6+3, Elements)])";
-		attribute<UInt32> G: 			Expr = "uint32(Elements/Text[value(UInt32(ID(.))*6+4, Elements)])";
-		attribute<UInt32> B: 			Expr = "uint32(Elements/Text[value(UInt32(ID(.))*6+5, Elements)])";
-		attribute<UInt32> BrushColor: 	Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
+		attribute<uint32> R: 			Expr = "uint32(Elements/Text[value(UInt32(ID(.))*6+3, Elements)])";
+		attribute<uint32> G: 			Expr = "uint32(Elements/Text[value(UInt32(ID(.))*6+4, Elements)])";
+		attribute<uint32> B: 			Expr = "uint32(Elements/Text[value(UInt32(ID(.))*6+5, Elements)])";
+		attribute<uint32> BrushColor: 	Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
 
 //		attribute<Corine> nrClc:      Expr = "invert(Corine/Grid_Code)";
 		//attribute<String> Label1:     Expr = "Elements/Text[value(UInt32(ID(.))*12+7, Elements)]";
@@ -400,8 +400,8 @@ container LU
 		attribute<Corine> Corine_rel: [ null, 311, 312, 313 ];
 		attribute<.>      Back_rel(Corine): Expr = "invert(Corine_rel)"; // resulted in illegal abstract before GeoDms 6.061, see issue 212
 
-		attribute<String> Label: ['', 'Broad-leaved forest', 'Coniferous forest', 'Mixed forest'];
-		attribute<String> Name:  ['', 'BroadLeaved', 'Coniferous', 'Mixed' ];
+		attribute<string> Label: ['', 'Broad-leaved forest', 'Coniferous forest', 'Mixed forest'];
+		attribute<string> Name:  ['', 'BroadLeaved', 'Coniferous', 'Mixed' ];
 		//attribute<String> NameCLC:  ['', 'BroadLeavedCLC', 'ConiferousCLC', 'MixedCLC' ];
 		
 		// as enumeration
@@ -411,7 +411,7 @@ container LU
 		parameter<.> Mixed:       [ 3 ];
 		
 		
-		attribute<UInt32> BrushColor: Expr = "Corine/BrushColor[Corine_rel]", DialogType = "BrushColor";
+		attribute<uint32> BrushColor: Expr = "Corine/BrushColor[Corine_rel]", DialogType = "BrushColor";
 	}
 	unit<uint32> PopulatedLandUseTypes:	NrOfRows = 11
 	{
@@ -424,8 +424,8 @@ container LU
 	{
 		attribute<Corine> Corine_rel: [ null, 223, 231, 242, 243, 244, 321 ];
 		attribute<.>      Back_rel(Corine): Expr = "invert(Corine_rel)"; // resulted in illegal abstract before GeoDms 6.061, see issue 212
-		attribute<String> Label: ['', 'Olives', 'Pastures', 'Complex Cultivation', 'Mixed agri-vegetation', 'Agro-forestry', 'Natural Grasslands'];
-		attribute<String> Name:  ['', 'Olives', 'Pastures', 'ComplexCultiv', 'MixedAgri', 'AgroForestry', 'NaturalGrass' ];
+		attribute<string> Label: ['', 'Olives', 'Pastures', 'Complex Cultivation', 'Mixed agri-vegetation', 'Agro-forestry', 'Natural Grasslands'];
+		attribute<string> Name:  ['', 'Olives', 'Pastures', 'ComplexCultiv', 'MixedAgri', 'AgroForestry', 'NaturalGrass' ];
 		
 		// as enumeration
 		parameter<.> NoGAECclass:    [ 0 ];
@@ -436,7 +436,7 @@ container LU
 		parameter<.> AgroFor:  		 [ 244 ];
 		parameter<.> Grassland:   	 [ 321 ];		
 		
-		attribute<UInt32> BrushColor: Expr = "Corine/BrushColor[Corine_rel]", DialogType = "BrushColor";
+		attribute<uint32> BrushColor: Expr = "Corine/BrushColor[Corine_rel]", DialogType = "BrushColor";
 	}
 	
 	unit<uint8> SNV
@@ -444,22 +444,22 @@ container LU
 		attribute<Corine> Corine_rel: [ null, 321, 324 ];
 		attribute<.>      Back_rel(Corine): Expr = "invert(Corine_rel)"; // resulted in illegal abstract before GeoDms 6.061, see issue 212
 
-		attribute<String> Label: ['', 'Natural grasslands', 'Transitional woodland-shrub'];
-		attribute<String> Name:  ['', 'NatGrass', 'TransWoodShrub' ];
+		attribute<string> Label: ['', 'Natural grasslands', 'Transitional woodland-shrub'];
+		attribute<string> Name:  ['', 'NatGrass', 'TransWoodShrub' ];
 
 		// as enumeration		
 		parameter<.> NoSNV:    			[ 0 ];
 		parameter<.> NatGrass: 			[ 321 ];
 		parameter<.> TransWoodShrub:  	[ 324 ];
 		
-		attribute<UInt32> BrushColor: Expr = "Corine/BrushColor[Corine_rel]", DialogType = "BrushColor";
+		attribute<uint32> BrushColor: Expr = "Corine/BrushColor[Corine_rel]", DialogType = "BrushColor";
 	}
 	
-		unit<UInt8> CLCr06: Expr = "Range(uint8, UInt8(0), UInt8(52))"
+		unit<uint8> CLCr06: Expr = "Range(uint8, UInt8(0), UInt8(52))"
 	{
-		unit<UInt32> Elements: Expr = "Range(uint32, 0, 12*#CLCr06)"
+		unit<uint32> Elements: Expr = "Range(uint32, 0, 12*#CLCr06)"
 		{
-			attribute<String> Text: [ // @USERINPUT: Edit columns MT and VT when changing the (definition of) the ModelType and/or ViewType
+			attribute<string> Text: [ // @USERINPUT: Edit columns MT and VT when changing the (definition of) the ModelType and/or ViewType
 			//	'Grid_Code', 'Corine', 'MT', 'VT', 'R', 'G', 'B', 'Label1', 'label2', 'Label3', 'PopulatedLandUseType', 'Water',
 				'00',  null, null, null, '000', '000', '000', null, null, null, '99', '0',
 				'01', '111', '00', null, '168', '000', '000', 'Artificial surfaces', 'Urban fabric', 'Continuous urban fabric', '0', '0',
@@ -522,15 +522,15 @@ container LU
 		attribute<ViewType>  VT2:       Expr = "MakeDefined(ModelType/VT[MT], VT)";
 		
 		
-		attribute<UInt32> R: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*12+4, Elements)])";
-		attribute<UInt32> G: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*12+5, Elements)])";
-		attribute<UInt32> B: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*12+6, Elements)])";
-		attribute<UInt32> BrushColor: Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
+		attribute<uint32> R: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*12+4, Elements)])";
+		attribute<uint32> G: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*12+5, Elements)])";
+		attribute<uint32> B: Expr = "uint32(Elements/Text[value(UInt32(ID(.))*12+6, Elements)])";
+		attribute<uint32> BrushColor: Expr = "((B*256)+G)*256+R", DialogType = "BrushColor";
 
 //	    attribute<Corine> nrClc:      Expr = "invert(CLCr2006/Grid_Code)";
-		attribute<String> Label1:     Expr = "Elements/Text[value(UInt32(ID(.))*12+7, Elements)]";
-		attribute<String> Label2:     Expr = "Elements/Text[value(UInt32(ID(.))*12+8, Elements)]";
-		attribute<String> Label:      Expr = "Elements/Text[value(UInt32(ID(.))*12+9, Elements)]", DialogType = "LabelText";
+		attribute<string> Label1:     Expr = "Elements/Text[value(UInt32(ID(.))*12+7, Elements)]";
+		attribute<string> Label2:     Expr = "Elements/Text[value(UInt32(ID(.))*12+8, Elements)]";
+		attribute<string> Label:      Expr = "Elements/Text[value(UInt32(ID(.))*12+9, Elements)]", DialogType = "LabelText";
 	    
 		attribute<PopulatedLandUseTypes> 	PopulatedLandUseType: 	Expr = "rlookup(uint32(Elements/Text[value(UInt32(ID(.))*12+10, Elements)]), PopulatedLandUseTypes/Lookup)";
 		attribute<bool> 					Water:					Expr = "bool(value(Elements/Text[value(UInt32(ID(.))*12+11, Elements)], uint32))";

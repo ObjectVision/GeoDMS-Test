@@ -33,13 +33,13 @@ container Distmatrices // := for_each_nex(Matrix/name, 'Impl/'+Matrix/name+'/Pot
 						1f :
 					0f;
 			
-			attribute<Float32> RelWeight         := scalesum(     AbsWeight , 1.0f );
-			attribute<Float32> RelWeightSqrt     := scalesum(Sqrt(AbsWeight), 1.0f );
+			attribute<float32> RelWeight         := scalesum(     AbsWeight , 1.0f );
+			attribute<float32> RelWeightSqrt     := scalesum(Sqrt(AbsWeight), 1.0f );
 			// attribute<Float32> Flat              := distMatr <= straal[uint32] ? 1f : 0f;
 			// attribute<Float32> Flat2             := dist <= straal ? 1f : 0f;
-			attribute<Float32> Flat2             := Float32(distMatr <= uint32(straal * straal));
+			attribute<float32> Flat2             := float32(distMatr <= uint32(straal * straal));
 
-			attribute<Float32> Flat_Visualisatie := dist <= 1.5f ? 1f : 0f;
+			attribute<float32> Flat_Visualisatie := dist <= 1.5f ? 1f : 0f;
 			attribute<float32> neighbourhood     := distMatr > 0 ? 1f : 0f;
 
 			parameter<float32> oppervlakte     := sum(Flat2);
@@ -47,8 +47,8 @@ container Distmatrices // := for_each_nex(Matrix/name, 'Impl/'+Matrix/name+'/Pot
 			
 			
 			attribute<Potentiaal> AbsWeight_demo     := float32(distMatr) <= (straal * straal + straal) ? 1f / (float32(distMatr) + 2f) : 0f;
-			attribute<Potentiaal> RelWeight_demo     := scalesum(AbsWeight_demo, Float32(1.0) );
-			attribute<Potentiaal> RelWeightSqrt_demo := scalesum(Sqrt(AbsWeight_demo), Float32( 1.0) );
+			attribute<Potentiaal> RelWeight_demo     := scalesum(AbsWeight_demo, float32(1.0) );
+			attribute<Potentiaal> RelWeightSqrt_demo := scalesum(Sqrt(AbsWeight_demo), float32( 1.0) );
 			
 			
 			

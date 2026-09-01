@@ -1,7 +1,7 @@
 container Carbon: url = "=Carbon/FactSheetName"
 {
-	parameter<String> CarbonDataDirName: Expr = "IndiDataDirName+'/CarbonSequestration'";
-	parameter<String> FactSheetName: Expr = "IndiDataDirName+'/carbon sequestration.pdf'";
+	parameter<string> CarbonDataDirName: Expr = "IndiDataDirName+'/CarbonSequestration'";
+	parameter<string> FactSheetName: Expr = "IndiDataDirName+'/carbon sequestration.pdf'";
 	container AdditionalData
 	{
 //		attribute<Classifications/LU/Ruralis18> RenumberTable(Classifications/LU/Ruralis18): [0, 1, 2, 3, 4, 0, 1, 10, 8, 1, 10, 0, 0, 0, 0, 15, 10, 17];
@@ -15,10 +15,10 @@ container Carbon: url = "=Carbon/FactSheetName"
 		}
 		attribute<tonneC_km2> CarbonInMatureForest(Albers1kmGrid): StorageName = "=CarbonDataDirName+'/cforbio.asc'";
 		
-		unit<UInt32> AgeTable: Expr = "Range(UInt32, 0, 8)"
+		unit<uint32> AgeTable: Expr = "Range(UInt32, 0, 8)"
 		{
 			attribute<YearDiffRange> Age:    [6, 6, 22, 22, 44, 44, 121, 121];
-			attribute<Float32>       Factor: Expr = "Float32(union_data(AgeTable, "
+			attribute<float32>       Factor: Expr = "Float32(union_data(AgeTable, "
 				"0.0, "
 				"(0.0525 * 6.0) - 0.085, (0.0525 * 22.0) - 0.085, "
 				"1.05, 1.05,"
@@ -54,7 +54,7 @@ container Carbon: url = "=Carbon/FactSheetName"
 						"? ForestPrevAge + value(0.2, YearDiffRange)"
 						": ForestPrevAge + value(0.5, YearDiffRange)";
 
-		attribute<Float32> AgeFactor(Albers1kmGrid): Expr = "interpolate_linear(ForestAge, AdditionalData/AgeTable/Age, AdditionalData/AgeTable/Factor)";
+		attribute<float32> AgeFactor(Albers1kmGrid): Expr = "interpolate_linear(ForestAge, AdditionalData/AgeTable/Age, AdditionalData/AgeTable/Factor)";
 	
 		attribute<tonneC_km2> SinkBase(Albers1kmGrid): 
 			Expr = "switch("
@@ -88,8 +88,8 @@ container Carbon: url = "=Carbon/FactSheetName"
 	
 	container AggrTempl: IsTemplate = "True", IsHidden = "True"
 	{
-		parameter<String> RegionName;
-		unit<UInt16> Regions;
+		parameter<string> RegionName;
+		unit<uint16> Regions;
 		attribute<Regions> RegionGrid(Albers1kmGrid);
 		
 		container MeanSink: StorageName = "=IndicatorDirName + '/CarbonSequestration/Sink'+RegionName+'.dbf'"
@@ -134,7 +134,7 @@ container Carbon: url = "=Carbon/FactSheetName"
 			//     temp10 = con(cseqlu0 == 10 AND age0 > 120, 0.5 * %.gridsdir%\efforest, temp9)
 			//     sink0 = int(temp10)
 		
-			attribute<Float32> AgeFactor(Albers1kmGrid): Expr = "interpolate_linear(age0, AdditionalData/AgeTable/Age, AdditionalData/AgeTable/Factor)";
+			attribute<float32> AgeFactor(Albers1kmGrid): Expr = "interpolate_linear(age0, AdditionalData/AgeTable/Age, AdditionalData/AgeTable/Factor)";
 			attribute<tonneC_km2> Sink0(Albers1kmGrid): 
 				Expr = "switch("
 					"case(cseqlu0 == value( 4, Classifications/LU/Ruralis18),                    AdditionalData/EmissionFactors/Peat  )," // Inland Wetlands

@@ -16,17 +16,17 @@ container Time
 		
 	parameter<YearDiffRange> NextYears := LastZichtjaar - FirstZichtJaar;
 	
-	unit<Int16> TigrisJaar := Range(YearRange, FirstZichtjaar, LastZichtjaar+1s) // tijdstip, of Init Final
+	unit<int16> TigrisJaar := Range(YearRange, FirstZichtjaar, LastZichtjaar+1s) // tijdstip, of Init Final
 	{
 		attribute<YearRange> Jaar := ID(.);
 		attribute<string> name := 'Y' + string(Jaar), DialogType = "LabelText";
 	}
-	unit<Int16> ZichtJaar  := Range(Int16, 0s, 1s+(LastZichtjaar - FirstZichtjaar) / ZichtJaarDuration) // tijdstip
+	unit<int16> ZichtJaar  := Range(int16, 0s, 1s+(LastZichtjaar - FirstZichtjaar) / ZichtJaarDuration) // tijdstip
 	{
-		attribute<YearRange> Jaar := (LastZichtJaar - Int16(#.-1)* ZichtJaarDuration)+ ID(.) * ZichtJaarDuration;
+		attribute<YearRange> Jaar := (LastZichtJaar - int16(#.-1)* ZichtJaarDuration)+ ID(.) * ZichtJaarDuration;
 		attribute<string> name := 'Y' + string(Jaar), DialogType = "LabelText";
 	}
-	unit<Int16> Periode := Range(Int16, 0s, Int16(RoundUp(Float32(LastZichtjaar - FirstZichtjaar) / Float32(ZichtJaarDuration)))) // periode (aka tijdstap) 
+	unit<int16> Periode := Range(int16, 0s, int16(RoundUp(float32(LastZichtjaar - FirstZichtjaar) / float32(ZichtJaarDuration)))) // periode (aka tijdstap) 
 	{
 		attribute<ZichtJaar> InitialJaar_rel := value(ID(.)-1s, ZichtJaar);
 		attribute<ZichtJaar> FinalJaar_rel   := InitialJaar_rel + 1s;

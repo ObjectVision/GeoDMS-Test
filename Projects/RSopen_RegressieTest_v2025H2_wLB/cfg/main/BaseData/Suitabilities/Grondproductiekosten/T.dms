@@ -6,9 +6,9 @@ container T
 		parameter<C/GrondproductieModelVarianten> id;
 		//
 		
-		parameter<String> StorageStr := '%RSo_DataDir%/Vastgoed/'+C/GrondproductieModelVarianten/name[id]+'SchattingDec19.csv';
+		parameter<string> StorageStr := '%RSo_DataDir%/Vastgoed/'+C/GrondproductieModelVarianten/name[id]+'SchattingDec19.csv';
 		
-		unit<UInt32> ModelVariant
+		unit<uint32> ModelVariant
 		:  StorageName = "=StorageStr"
 		,  StorageType = "gdal.vect"
 		,  StorageReadOnly = "True"
@@ -21,32 +21,32 @@ container T
 	{
 		//
 		parameter<C/Combi> id;
-		unit<UInt32> domain;
-		attribute<String> Coefficients (domain);
-		attribute<String> Stderror (domain);
-		attribute<String> Pvalue (domain);
-		parameter<String> CalcStr0;
-		parameter<String> Onzekerheid2_name;
+		unit<uint32> domain;
+		attribute<string> Coefficients (domain);
+		attribute<string> Stderror (domain);
+		attribute<string> Pvalue (domain);
+		parameter<string> CalcStr0;
+		parameter<string> Onzekerheid2_name;
 		//
 		
-		parameter<String> GenericStr := 'MakeDefined(float32(@C@), 0f)';
-		parameter<String> CoefficientStr := replace(GenericStr, '@C@', 'Coefficients');
-		parameter<String> StderrorStr    := replace(GenericStr, '@C@', 'Stderror');
-		parameter<String> CalcStr := = CalcStr0;
+		parameter<string> GenericStr := 'MakeDefined(float32(@C@), 0f)';
+		parameter<string> CoefficientStr := replace(GenericStr, '@C@', 'Coefficients');
+		parameter<string> StderrorStr    := replace(GenericStr, '@C@', 'Stderror');
+		parameter<string> CalcStr := = CalcStr0;
 		
-		attribute<Bool> IsSignificant                   (domain) := float32(Pvalue) <= Significatie_threshold;
-		attribute<Bool> IsControleVar                   (domain) := C/GrondproductieVariabelen/IsControleVar[domain/GrondproductieVariabelen_rel];
-		attribute<Bool> IsOnzekereControleVar           (domain) := C/GrondproductieVariabelen/IsOnzekereControleVar[domain/GrondproductieVariabelen_rel];
-		attribute<Bool> IsOnzekereControleVarEnNegatief (domain) := IsOnzekereControleVar && ParameterValueIsNegatief;
-		attribute<Bool> IsOnzekereControleVarEnPositief (domain) := IsOnzekereControleVar && !ParameterValueIsNegatief;
-		attribute<Bool> IsIntercept                     (domain) := domain/GrondproductieVariabelen_rel == C/GrondproductieVariabelen/V/Intercept;
+		attribute<bool> IsSignificant                   (domain) := float32(Pvalue) <= Significatie_threshold;
+		attribute<bool> IsControleVar                   (domain) := C/GrondproductieVariabelen/IsControleVar[domain/GrondproductieVariabelen_rel];
+		attribute<bool> IsOnzekereControleVar           (domain) := C/GrondproductieVariabelen/IsOnzekereControleVar[domain/GrondproductieVariabelen_rel];
+		attribute<bool> IsOnzekereControleVarEnNegatief (domain) := IsOnzekereControleVar && ParameterValueIsNegatief;
+		attribute<bool> IsOnzekereControleVarEnPositief (domain) := IsOnzekereControleVar && !ParameterValueIsNegatief;
+		attribute<bool> IsIntercept                     (domain) := domain/GrondproductieVariabelen_rel == C/GrondproductieVariabelen/V/Intercept;
 		
-		attribute<Float32> ParameterValue0    (domain) := = '('+CalcStr+')';
-		attribute<Bool> ParameterValueIsNegatief (domain) := ParameterValue0 < 0f;
-		attribute<Float32> ParameterValueSig  (domain) := = 'float32(IsSignificant) * ('+CalcStr+')';
-		attribute<Float32> ParameterValue     (domain) := IsIntercept || IsControleVar ? parameterValue0: ParameterValueSig;
+		attribute<float32> ParameterValue0    (domain) := = '('+CalcStr+')';
+		attribute<bool> ParameterValueIsNegatief (domain) := ParameterValue0 < 0f;
+		attribute<float32> ParameterValueSig  (domain) := = 'float32(IsSignificant) * ('+CalcStr+')';
+		attribute<float32> ParameterValue     (domain) := IsIntercept || IsControleVar ? parameterValue0: ParameterValueSig;
 		
-		attribute<String> VariableValue_ref (domain) :=
+		attribute<string> VariableValue_ref (domain) :=
 		//Onzekere controlevariabelen geven we een zo hoog mogelijke waarde in de High Variant en een zo laag mogelijke waarde in de Low Variant
 			lowercase(Onzekerheid2_name) == lowercase('Low')  && IsOnzekereControleVarEnNegatief ? '1f' :
 			lowercase(Onzekerheid2_name) == lowercase('Low')  && IsOnzekereControleVarEnPositief ? '0f' :
@@ -54,7 +54,7 @@ container T
 			lowercase(Onzekerheid2_name) == lowercase('High') && IsOnzekereControleVarEnPositief ? '1f':
 			C/GrondproductieVariabelen/DefaultWaarde[domain/GrondproductieVariabelen_rel];
 		
-		attribute<String> List (domain) := 'value('+VariableValue_ref+', float32) * '+string(ParameterValue);
+		attribute<string> List (domain) := 'value('+VariableValue_ref+', float32) * '+string(ParameterValue);
 		
 		attribute<Eur_Ha> Kosten0 (AdminDomain) := = 'exp(add('+asItemList(List+'[float32]')+')) + const(0[Eur_ha], AdminDomain)';
 		attribute<Eur_Ha> Kosten  (AdminDomain) := MakeDefined(Kosten0, max(Kosten0));
@@ -63,20 +63,20 @@ container T
 	Template Statistics
 	{
 		//
-		parameter<String> SrcStr;
+		parameter<string> SrcStr;
 		parameter<C/Onzekerheid> id;
 		//
 		
 		attribute<Eur_Ha> Src (AdminDomain) := = 'Results/'+SrcStr+'/'+C/Onzekerheid/name[id];
 		
-		attribute<Bool> BBG (AdminDomain) := SourceData/Diversen/Per_AdminDomain/begrenzing_bebouwd_gebied;
+		attribute<bool> BBG (AdminDomain) := SourceData/Diversen/Per_AdminDomain/begrenzing_bebouwd_gebied;
 		
 		container Result := for_each_ne(C/Extent/name, 'BBGT('+C/Extent/CalcStr+')');
 		
 		Template BBGT
 		{
 			//
-			attribute<Bool> IsExtent (AdminDomain);
+			attribute<bool> IsExtent (AdminDomain);
 			//
 			
 			attribute<Eur_ha> InExtent (AdminDomain) := Src / float32(IsExtent);
@@ -95,7 +95,7 @@ container T
 	Template Export
 	{
 		//
-		parameter<String> SrcStr;
+		parameter<string> SrcStr;
 		//
 		
 		container Results :=
@@ -108,8 +108,8 @@ container T
 				C/ExtentxIndicator, Eur_Ha
 			)
 		{
-			attribute<String> Extent_name    (C/ExtentxIndicator) := C/ExtentxIndicator/Extent_name;
-			attribute<String> Indicator_name (C/ExtentxIndicator) := C/ExtentxIndicator/Indicator_name;
+			attribute<string> Extent_name    (C/ExtentxIndicator) := C/ExtentxIndicator/Extent_name;
+			attribute<string> Indicator_name (C/ExtentxIndicator) := C/ExtentxIndicator/Indicator_name;
 		}
 	}
 }

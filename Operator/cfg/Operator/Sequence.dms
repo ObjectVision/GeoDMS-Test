@@ -182,7 +182,7 @@
 		container split_multi_numberstring
 		{
 			unit<uint32> S1: nrofrows = 1;
-			attribute<float64> q (S1, poly) := union_data(S1, Float64Seq('{5: 1 2 null 3 4}'));
+			attribute<float64> q (S1, poly) := union_data(S1, float64seq('{5: 1 2 null 3 4}'));
 			unit<uint32> sp := split_multi_numberstring(q);
 			parameter<bool> test := #sp = uint32(2) && AsDataString(sp/geometry) = '[{2: 1 2},{2: 3 4}]';
 		}
@@ -612,11 +612,11 @@
 			parameter<bool> test_attr := all(test);
 		}
 
-		container srcDomain         := source(DistrictPointsDomain, RDomain, RoadDomain, HDomain, BuildingDomain, False);
-		container srcTemplateDomain := source(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, False);
+		container srcDomain         := source(DistrictPointsDomain, RDomain, RoadDomain, HDomain, BuildingDomain, false);
+		container srcTemplateDomain := source(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, false);
 
-		container srcEDomain        := Esource(EDomain, EDomain, EDomain, EDomain, EDomain, True);
-		container srcETiledDomain   := Esource(ETiledDomain, ETiledDomain, ETiledDomain, EDomain,EDomain, True);
+		container srcEDomain        := Esource(EDomain, EDomain, EDomain, EDomain, EDomain, true);
+		container srcETiledDomain   := Esource(ETiledDomain, ETiledDomain, ETiledDomain, EDomain,EDomain, true);
 
 		template source
 		{
@@ -1094,7 +1094,7 @@
 				}
 			}
 		}
-		container UnTiled := Template(DistrictPointsDomain, RDomain, RoadDomain, HDomain,BuildingDomain, SDomain, srcDomain, False)
+		container UnTiled := Template(DistrictPointsDomain, RDomain, RoadDomain, HDomain,BuildingDomain, SDomain, srcDomain, false)
 		{
 			container canyon: Using = "source"
 			{
@@ -1230,10 +1230,10 @@
 			}
 		}
 
-		container EUnTiled := Template(EDomain, EDomain, EDomain, EDomain,EDomain,EDomain, srcEDomain, True);
+		container EUnTiled := Template(EDomain, EDomain, EDomain, EDomain,EDomain,EDomain, srcEDomain, true);
 
-		container  Tiled := Template(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, SDomain, srcTemplateDomain, False);
-		container ETiled := Template(ETiledDomain, ETiledDomain, ETiledDomain, EDomain, EDomain, EDomain, srcETiledDomain, True);
+		container  Tiled := Template(DistrictPointsTiledDomain, RTiledDomain, RoadTiledDomain, HDomain, BuildingDomain, SDomain, srcTemplateDomain, false);
+		container ETiled := Template(ETiledDomain, ETiledDomain, ETiledDomain, EDomain, EDomain, EDomain, srcETiledDomain, true);
 
 		container ResultUnitTiled
 		{
@@ -2030,7 +2030,7 @@
 						4,5,6,
 						5
 					];
-					attribute<float64> area := area(dpolygon(iborder[F1] * iborder[F2]), Float64);
+					attribute<float64> area := area(dpolygon(iborder[F1] * iborder[F2]), float64);
 					attribute<bool> test      := F1 == F1_ok && F2 == F2_ok;
 					parameter<bool> test_attr :== #District == 0 ? '#polygon_connectvity == 0' : ' all(test)';
 				}
@@ -2252,37 +2252,37 @@
 						attribute<bool> att_ok (source/pointSet) := eq_or_both_null(union_data(source/pointSet, elements/point), uint8(source/pointSet/float64));
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int64>   param_int64   (poly) := Int64Seq(source/param)
+					parameter<int64>   param_int64   (poly) := int64seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int64(source/pointSet/float64);
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int32>   param_int32   (poly) := Int32Seq(source/param)
+					parameter<int32>   param_int32   (poly) := int32seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int32(source/pointSet/float64);
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int16>   param_int16   (poly) := Int16Seq(source/param)
+					parameter<int16>   param_int16   (poly) := int16seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == int16(source/pointSet/float64);
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<int8>    param_int8    (poly) := Int8Seq(source/param)
+					parameter<int8>    param_int8    (poly) := int8seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := eq_or_both_null(union_data(source/pointSet, elements/point),int8(source/pointSet/float64));
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<float64> param_float64 (poly) := Float64Seq(source/param)
+					parameter<float64> param_float64 (poly) := float64seq(source/param)
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == source/pointSet/float64;
 						parameter<bool> test                     := all(att_ok);
 					}
-					parameter<float32> param_float32 (poly) := Float32Seq(source/param)	
+					parameter<float32> param_float32 (poly) := float32seq(source/param)	
 					{
 						unit<uint32>    elements                 := sequence2points(union_data(source/posListUnit, .));
 						attribute<bool> att_ok (source/pointSet) := union_data(source/pointSet, elements/point) == float32(source/pointSet/float64);

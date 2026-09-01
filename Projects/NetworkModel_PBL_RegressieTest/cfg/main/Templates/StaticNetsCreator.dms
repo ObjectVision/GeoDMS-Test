@@ -117,13 +117,13 @@ Template StaticNetsCreator : using = "geometries;sourcedata/regioindelingen"
 			attribute<ModesList/List_selectie> to_Mode            := inStops/Mode_rel[to_Stop_rel];
 			
 			attribute<bool>               NeedsTranferTimePenalty := ModesList/List_selectie/IsGelijkvloers[from_Mode] == 1b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 1b //van: bus, tram, walk    to bus, tram, walk  --> niks
-																		? False
+																		? false
 																		: ModesList/List_selectie/IsGelijkvloers[from_Mode] == 1b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 0b //van: bus, tram, walk to metro, rail, ferry --> penalty
-																			? TRUE
+																			? true
 																			: ModesList/List_selectie/IsGelijkvloers[from_Mode] == 0b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 0b //van: metro, rail, ferry to metro, rail, ferry --> penalty
-																				? TRUE
+																				? true
 																				: ModesList/List_selectie/IsGelijkvloers[from_Mode] == 0b && ModesList/List_selectie/IsGelijkvloers[to_Mode] == 1b //van: metro, rail, ferry to bus, tram, walk --> penalty
-																					? TRUE
+																					? true
 																					: (0/0)[bool];
 
 			attribute<uint32>             nEvents            := pcount(ScheduledSpaceTimeEvents/Stop_rel)[from_Stop_rel];

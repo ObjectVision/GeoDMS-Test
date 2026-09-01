@@ -28,7 +28,7 @@ container regression
 			&& geopackage/read/tests/results/all
 			&& geoJSON/read/tests/all;
 
-		parameter<string> vect_read_str := String(vect_read_all)
+		parameter<string> vect_read_str := string(vect_read_all)
 		,	StorageType = "str"
 		,	storagename = "%localDataProjDir%/regr_results/vect_read_regr.txt";
 
@@ -48,13 +48,13 @@ container regression
 			&& geopackage/write/tests/results/all
 			&& parquet/write/results/all;
 
-		parameter<string> vect_write_str := String(vect_write_all)
+		parameter<string> vect_write_str := string(vect_write_all)
 		,	StorageType = "str"
 		,	storagename = "%localDataProjDir%/regr_results/vect_write_regr.txt";
 
 		parameter<bool> grid_read_all := Tiff/read/results/all;
 
-		parameter<string> grid_read_str := String(grid_read_all)
+		parameter<string> grid_read_str := string(grid_read_all)
 		,	StorageType = "str"
 		,	storagename = "%localDataProjDir%/regr_results/grid_read_regr.txt";
 		
@@ -67,7 +67,7 @@ container regression
 		
 		parameter<bool> grid_write_all := Tiff/write/results/all ;
 
-		parameter<string> grid_write_str := String(grid_write_all)
+		parameter<string> grid_write_str := string(grid_write_all)
 		,	StorageType = "str"
 		,	storagename = "%localDataProjDir%/regr_results/grid_write_regr.txt";
 	}
@@ -95,10 +95,10 @@ container regression
 
 		attribute<float32> FloatAtt             : [0,1,9999999,-2.5,99.9];
 		attribute<float32> FloatAttNull         : [null,1,9999999,-2.5,99.9];
-		attribute<float64> Float64Att           := Float64(FloatAtt);
+		attribute<float64> Float64Att           := float64(FloatAtt);
 		attribute<fpoint>  FPointAtt            := point_yx(FloatAtt, FloatAtt, fpoint);
 
-		attribute<bool>    BoolAtt              : [False, True, True, False, True];
+		attribute<bool>    BoolAtt              : [false, true, true, false, true];
 		attribute<string>  StringAtt            : ['Hello','Test',null,'Two words','88a'];
 		attribute<string>  StringAttSingleEmpty : ['Hello','Test','','Two words','88a'];
 		attribute<string>  StringAttEmpty       : ['Hello','Test','','','88a'];
@@ -190,8 +190,8 @@ container regression
 
 			container tests
 			{
-				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, Int32(0 / 0)), reference/IntegerAttNull);
-				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, Float32(0 / 0)), reference/FloatAttNull);
+				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, int32(0 / 0)), reference/IntegerAttNull);
+				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, float32(0 / 0)), reference/FloatAttNull);
 				attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
 			}
 
@@ -212,9 +212,9 @@ container regression
 				attribute<uint32>  UIntegerAt  := reference/UIntegerAtt;
 				attribute<int64>   Int64Att    := reference/Int64Att;
 				attribute<uint64>  UInt64Att   := reference/UInt64Att;
-				attribute<UInt2>   UInt2Att    := reference/UInt2Att;
-				attribute<UInt4>   UInt4Att    := reference/UInt4Att;
-				attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+				attribute<uint2>   UInt2Att    := reference/UInt2Att;
+				attribute<uint4>   UInt4Att    := reference/UInt4Att;
+				attribute<uint8>   UInt8Att    := reference/UInt8Att;
 				attribute<float32> FloatAtt    := reference/FloatAtt;
 				//attribute<fpoint>  FpointAtt   := reference/FpointAtt;
 
@@ -233,9 +233,9 @@ container regression
 					attribute<uint32>  UIntegerAt;
 					attribute<int64>   Int64Att;
 					attribute<uint64>  UInt64Att;
-					attribute<UInt2>   UInt2Att;
-					attribute<UInt4>   UInt4Att;
-					attribute<UInt8>   UInt8Att;
+					attribute<uint2>   UInt2Att;
+					attribute<uint4>   UInt4Att;
+					attribute<uint8>   UInt8Att;
 					attribute<float32> FloatAtt;
 					attribute<float64> Float64Att;
 					attribute<string>  StringAtt;
@@ -431,9 +431,9 @@ container regression
 					attribute<float64> Float64Att  := reference/Float64Att;
 					attribute<string>  StringAtt   := reference/StringAtt;
 					attribute<bool>    BoolAtt     := reference/BoolAtt;
-					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
-					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
-					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+					attribute<uint2>   UInt2Att    := reference/UInt2Att;
+					attribute<uint4>   UInt4Att    := reference/UInt4Att;
+					attribute<uint8>   UInt8Att    := reference/UInt8Att;
 				}
 
 				container reread
@@ -489,9 +489,9 @@ container regression
 					attribute<float64> Float64Att  := reference/Float64Att;
 					attribute<string>  StringAtt   := reference/StringAtt;
 					attribute<bool>    BoolAtt     := reference/BoolAtt;
-					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
-					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
-					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+					attribute<uint2>   UInt2Att    := reference/UInt2Att;
+					attribute<uint4>   UInt4Att    := reference/UInt4Att;
+					attribute<uint8>   UInt8Att    := reference/UInt8Att;
 				}
 
 				container reread
@@ -512,7 +512,7 @@ container regression
 						attribute<bool>    BoolAtt     ;
 						//attribute<UInt2>   UInt2Att    ;
 						//attribute<UInt4>   UInt4Att    ;
-						attribute<UInt8>   UInt8Att    ;
+						attribute<uint8>   UInt8Att    ;
 					}
 
 					parameter<string> str:
@@ -560,9 +560,9 @@ container regression
 					attribute<float64> Float64Att  := reference/Float64Att;
 					attribute<string>  StringAtt   := reference/StringAtt;
 					attribute<bool>    BoolAtt     := reference/BoolAtt;
-					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
-					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
-					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+					attribute<uint2>   UInt2Att    := reference/UInt2Att;
+					attribute<uint4>   UInt4Att    := reference/UInt4Att;
+					attribute<uint8>   UInt8Att    := reference/UInt8Att;
 				}
 
 				container reread
@@ -583,7 +583,7 @@ container regression
 						attribute<bool>    BoolAtt     ;
 						//attribute<UInt2>   UInt2Att    ;
 						//attribute<UInt4>   UInt4Att    ;
-						attribute<UInt8>   UInt8Att    ;
+						attribute<uint8>   UInt8Att    ;
 					}
 
 					parameter<string> str:
@@ -633,9 +633,9 @@ container regression
 						attribute<float64> Float64Att (export) := reference/Float64Att;
 						attribute<string>  StringAtt  (export) := reference/StringAtt;
 						attribute<bool>    BoolAtt    (export) := reference/BoolAtt;
-						attribute<UInt2>   UInt2Att   (export) := reference/UInt2Att;
-						attribute<UInt4>   UInt4Att   (export) := reference/UInt4Att;
-						attribute<UInt8>   UInt8Att   (export) := reference/UInt8Att;
+						attribute<uint2>   UInt2Att   (export) := reference/UInt2Att;
+						attribute<uint4>   UInt4Att   (export) := reference/UInt4Att;
+						attribute<uint8>   UInt8Att   (export) := reference/UInt8Att;
 					}
 				}
 				container reread
@@ -656,7 +656,7 @@ container regression
 						attribute<bool>    BoolAtt     ;
 						//attribute<UInt2>   UInt2Att    ;
 						//attribute<UInt4>   UInt4Att    ;
-						attribute<UInt8>   UInt8Att    ;
+						attribute<uint8>   UInt8Att    ;
 					}
 
 					parameter<string> str:
@@ -707,9 +707,9 @@ container regression
 						attribute<float64> Float64Att (export) := reference/Float64Att;
 						attribute<string>  StringAtt  (export) := reference/StringAtt;
 						attribute<bool>    BoolAtt    (export) := reference/BoolAtt;
-						attribute<UInt2>   UInt2Att   (export) := reference/UInt2Att;
-						attribute<UInt4>   UInt4Att   (export) := reference/UInt4Att;
-						attribute<UInt8>   UInt8Att   (export) := reference/UInt8Att;
+						attribute<uint2>   UInt2Att   (export) := reference/UInt2Att;
+						attribute<uint4>   UInt4Att   (export) := reference/UInt4Att;
+						attribute<uint8>   UInt8Att   (export) := reference/UInt8Att;
 					}
 				}
 				container reread
@@ -730,7 +730,7 @@ container regression
 						attribute<bool>    BoolAtt     ;
 						//attribute<UInt2>   UInt2Att    ;
 						//attribute<UInt4>   UInt4Att    ;
-						attribute<UInt8>   UInt8Att    ;
+						attribute<uint8>   UInt8Att    ;
 					}
 
 					parameter<string> str:
@@ -781,9 +781,9 @@ container regression
 						attribute<float64> Float64Att (export) := reference/Float64Att;
 						attribute<string>  StringAtt  (export) := reference/StringAtt;
 						attribute<bool>    BoolAtt    (export) := reference/BoolAtt;
-						attribute<UInt2>   UInt2Att   (export) := reference/UInt2Att;
-						attribute<UInt4>   UInt4Att   (export) := reference/UInt4Att;
-						attribute<UInt8>   UInt8Att   (export) := reference/UInt8Att;
+						attribute<uint2>   UInt2Att   (export) := reference/UInt2Att;
+						attribute<uint4>   UInt4Att   (export) := reference/UInt4Att;
+						attribute<uint8>   UInt8Att   (export) := reference/UInt8Att;
 					}
 				}
 
@@ -805,7 +805,7 @@ container regression
 						attribute<bool>    BoolAtt     ;
 						//attribute<UInt2>   UInt2Att    ;
 						//attribute<UInt4>   UInt4Att    ;
-						attribute<UInt8>   UInt8Att    ;
+						attribute<uint8>   UInt8Att    ;
 					}
 
 					parameter<string> str:
@@ -1479,7 +1479,7 @@ container regression
 				parameter<uint32> nrrows_other_relations  := #src/other_relations;
 
 				unit<uint32> points := src/points;
-				attribute<UInt32> strcount_crossing(points) := MakeDefined(strcount(src/Points/highway,'crossing'), 0);
+				attribute<uint32> strcount_crossing(points) := MakeDefined(strcount(src/Points/highway,'crossing'), 0);
 				parameter<uint32> total_strcount            := sum(strcount_crossing);
 
 				parameter<bool> cardinalities := nrrows_points == 22882 && nrrows_lines == 8591 && nrrows_multilinestrings == 311 && nrrows_multipolygons == 21701 && nrrows_other_relations == 253;
@@ -1664,9 +1664,9 @@ container regression
 					attribute<uint32>  UIntegerAt  := reference/UIntegerAtt;
 					attribute<int64>   Int64Att    := reference/Int64Att;
 					attribute<uint64>  UInt64Att   := reference/UInt64Att;
-					attribute<UInt2>   UInt2Att    := reference/UInt2Att;
-					attribute<UInt4>   UInt4Att    := reference/UInt4Att;
-					attribute<UInt8>   UInt8Att    := reference/UInt8Att;
+					attribute<uint2>   UInt2Att    := reference/UInt2Att;
+					attribute<uint4>   UInt4Att    := reference/UInt4Att;
+					attribute<uint8>   UInt8Att    := reference/UInt8Att;
 					attribute<float32> FloatAtt    := reference/FloatAtt;
 
 					attribute<float64> Float64Att  := reference/Float64Att;
@@ -1939,7 +1939,7 @@ container regression
 				attribute<bool> GridData_uint8  (Grid_uint8)   := eq_or_both_null(Grid_uint8/GridData, union_data(Grid_uint8, reference/Grid/GridData_uint8));
 				attribute<bool> ReadData_uint8  (Tiff/gridsel) := eq_or_both_null(Grid_uint8/ReadData, reference/gridsel/ReadData_uint8);
 
-				attribute<bool> GridData_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, Float32(0 / 0)), union_data(Grid_float32, reference/Grid/GridData_float32));
+				attribute<bool> GridData_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, float32(0 / 0)), union_data(Grid_float32, reference/Grid/GridData_float32));
 				attribute<bool> ReadData_float32 (Tiff/gridsel) := eq_or_both_null(Grid_float32/ReadData, reference/gridsel/ReadData_float32);
 
 
@@ -2003,7 +2003,7 @@ container regression
 				, StorageType     = "gdalwrite.grid"
 				, StorageReadOnly = "false"
 				{
-					attribute<uint64> GridData := convert(Tiff/read/Grid_uint32/GridData, UInt64);
+					attribute<uint64> GridData := convert(Tiff/read/Grid_uint32/GridData, uint64);
 				}
 
 
@@ -2093,7 +2093,7 @@ container regression
 			{
 				attribute<bool> GridData_uint32  (reread/Grid_uint32)  := eq_or_both_null(reread/Grid_uint32/GridData, union_data(reread/Grid_uint32, reference/Grid/GridData_uint32));
 				attribute<bool> GridData_uint8   (reread/Grid_uint8)   := eq_or_both_null(reread/Grid_uint8/GridData, union_data(reread/Grid_uint8, reference/Grid/GridData_uint8));
-				attribute<bool> GridData_float32 (reread/Grid_float32) := eq_or_both_null(replace_value(reread/Grid_float32/GridData, -9999f, Float32(0 / 0)), union_data(reread/Grid_float32, reference/Grid/GridData_float32));
+				attribute<bool> GridData_float32 (reread/Grid_float32) := eq_or_both_null(replace_value(reread/Grid_float32/GridData, -9999f, float32(0 / 0)), union_data(reread/Grid_float32, reference/Grid/GridData_float32));
 
 				container nl_lu_2020
 				{

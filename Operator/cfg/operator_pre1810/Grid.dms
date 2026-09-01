@@ -124,7 +124,7 @@
 						  Coords
 						, point_yx(float32(-5000.0), float32(5000)  , Coords)
 						, point_yx(float32(24900.0), float32(-100.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point_yx(int16(0), int16(0))
 					, point_yx(int16(5), int16(5))
@@ -149,7 +149,7 @@
 
 			}
 
-			unit<spoint> GridTiledDomain := TiledUnit(point_yx(Int16(2), Int16(2), GridDomain));
+			unit<spoint> GridTiledDomain := TiledUnit(point_yx(int16(2), int16(2), GridDomain));
 
 			unit<spoint> EGridDomain := 
 				range(
@@ -157,7 +157,7 @@
 						  Coords
 						, point_yx(float32(-5000.0), float32(5000)  , Coords)
 						, point_yx(float32(24900.0), float32(-100.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point_yx(int16(0), int16(0))
 					, point_yx(int16(0), int16(0))
@@ -177,7 +177,7 @@
 				//attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
 				//attribute<GridDomain3000>          GridDomain3000nr         := rlookup(GridDomain3000PointSetnr, GridDomain3000/PointSetNr);
 			}
-			unit<spoint> EGridTiledDomain := TiledUnit(point_yx(Int16(0), Int16(0), EGridDomain));
+			unit<spoint> EGridTiledDomain := TiledUnit(point_yx(int16(0), int16(0), EGridDomain));
 	
 			unit<spoint> GridDomain3000 := 
 				range(
@@ -185,7 +185,7 @@
 						  Coords
 						, point_yx(float32(-3000.0), float32(3000)  , Coords)
 						, point_yx(float32(24000.0), float32(-500.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point_yx(int16(0), int16(0))
 					, point_yx(int16(8), int16(8))
@@ -195,9 +195,9 @@
 				attribute<Coords> P  := value((fpoint(id(.)) + point_yx(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<Coords> P0 := value(fpoint(id(.))  * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<Coords> P2 := convert(id(.), coords);
-				attribute<FPoint> P3 := FPoint(id(.));
+				attribute<fpoint> P3 := fpoint(id(.));
 				attribute<Coords> P4 := convert(P3, coords);
-				attribute<SPoint> P5 := spoint(P3);
+				attribute<spoint> P5 := spoint(P3);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
 				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))
@@ -216,7 +216,7 @@
 						  Coords
 						, point_yx(float32(-15.0), float32(15)  , Coords)
 						, point_yx(float32(24000.0), float32(-500.0), Coords)
-						, SPoint
+						, spoint
 					)
 					, point_yx(int16(0), int16(0))
 					, point_yx(int16(1600), int16(1600))
@@ -250,10 +250,10 @@
 		container srcEDomain      := Esource(units/EGridDomain);
 		container srcETiledDomain := Esource(units/EGridTiledDomain);
 		
-		container UnTiled  := Template(units/GridDomain,       srcDomain      , False);
-		container Tiled    := Template(units/GridTiledDomain,  srcTiledDomain , False);
-		container ETiled   := Template(units/EGridTiledDomain, srcETiledDomain, True);
-		container EUnTiled := Template(units/EGridDomain,      srcEDomain     , True);
+		container UnTiled  := Template(units/GridDomain,       srcDomain      , false);
+		container Tiled    := Template(units/GridTiledDomain,  srcTiledDomain , false);
+		container ETiled   := Template(units/EGridTiledDomain, srcETiledDomain, true);
+		container EUnTiled := Template(units/EGridDomain,      srcEDomain     , true);
 
 		template source
 		{
@@ -568,7 +568,7 @@
 				attribute<float64> gridEmpty (GridDomain): [];
 				attribute<float64> grid      (GridDomain):= = isEmpty ? 'gridEmpty' : 'gridWithValues';
 
-				parameter<GridDomain> pointset_gridid   := point_yx(Int16(0), Int16(4), GridDomain);
+				parameter<GridDomain> pointset_gridid   := point_yx(int16(0), int16(4), GridDomain);
 				attribute<float64>    dist (GridDomain) := griddist(grid, pointset_gridid, 0.0);
 				attribute<bool>       test (GridDomain) := float_isNearby(float32(dist), source/dist_paramOk, Dif_all_float32) ;
 				parameter<bool>       test_grid         := all(test); // Referentie DMS 5.81

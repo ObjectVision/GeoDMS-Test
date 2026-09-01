@@ -16,13 +16,13 @@ container GridData {
 	attribute<Person> InitTpopGrid (gtopo)        := Input/Method='M3'? convert(Input/Population/M3/TotalPopulation2010, Person) : convert(Input/Population/M1/Urban_pop_2010/PopulationData, Person);
 	attribute<Person> InitTpopGrid1990 (gtopo)    := Input/CompactedDomain/ISCD ? Input/Population/Past/PastDates/Y1990 :0f/0f;
 
-	attribute<Bool> InRegion (gtopo): = IsDefined(Input/administrative/Countries/Country_grid);
-	attribute<Bool> HasPop   (gtopo): = InitTpopGrid > 0[Person];
-	attribute<Bool> HasUrb   (gtopo): = IsDefined(administrative/Countries/Country_grid) ? ((Input/UrbanArea/UrbanArea2010/ReadData) > 0b) : false;
+	attribute<bool> InRegion (gtopo): = IsDefined(Input/administrative/Countries/Country_grid);
+	attribute<bool> HasPop   (gtopo): = InitTpopGrid > 0[Person];
+	attribute<bool> HasUrb   (gtopo): = IsDefined(administrative/Countries/Country_grid) ? ((Input/UrbanArea/UrbanArea2010/ReadData) > 0b) : false;
 
 	attribute<bool> IsNotLake(gtopo): = not(Water/Water_without_oceans/ReadData);
 	attribute<bool> IsNotIce (gtopo): = not(Physical/SnowIceCover/ReadData);
 
-	attribute<Bool> InRegionHasPopHasUrb (gtopo): = (InRegion || HasPop || HasUrb);//at file-level already present in country file 
-	attribute<Bool> FreeLand (gtopo): = InRegionHasPopHasUrb && (IsNotLake || HasUrb || HasPop) && (IsNotIce || HasUrb || HasPop), FreeData = "False";
+	attribute<bool> InRegionHasPopHasUrb (gtopo): = (InRegion || HasPop || HasUrb);//at file-level already present in country file 
+	attribute<bool> FreeLand (gtopo): = InRegionHasPopHasUrb && (IsNotLake || HasUrb || HasPop) && (IsNotIce || HasUrb || HasPop), FreeData = "False";
 }

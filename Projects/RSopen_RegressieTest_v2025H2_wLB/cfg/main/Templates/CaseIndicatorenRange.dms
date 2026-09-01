@@ -1,14 +1,14 @@
 template CasusT : using = "Units"
 {
-	parameter<String> Scenario_name;
-	parameter<String> Variant_name ;
-	parameter<String> casus_name  := Scenario_name + '_' + Variant_name;
-	parameter<Bool>   DoCalculate := FALSE;
+	parameter<string> Scenario_name;
+	parameter<string> Variant_name ;
+	parameter<string> casus_name  := Scenario_name + '_' + Variant_name;
+	parameter<bool>   DoCalculate := false;
 	
 	container    CaseClassifications := Templates/CaseClassificationsT(Scenario_name, Variant_name);
-	unit<UInt8>  Sector := Classifications/Actor/Sector;
-	unit<UInt32> Subsector := Sector/xSubsector;
-	unit<UInt8>  OP := CaseClassifications/Vastgoed/OP ;
+	unit<uint8>  Sector := Classifications/Actor/Sector;
+	unit<uint32> Subsector := Sector/xSubsector;
+	unit<uint8>  OP := CaseClassifications/Vastgoed/OP ;
 	
 	#include<../../VariantParameters.dms>
 	
@@ -94,8 +94,8 @@ template CasusT : using = "Units"
 			
 			container Gebruiksoppervlak
 			{
-				unit<UInt32> pand_src := ='SourceData/Vastgoed/BAG/PerJaar/Y'+string(ModelParameters/Model_StartYear)+'/Panden/src';
-				unit<UInt32> pand     := ='SourceData/Vastgoed/BAG/PerJaar/Y'+string(ModelParameters/Model_StartYear)+'/Panden/pand';
+				unit<uint32> pand_src := ='SourceData/Vastgoed/BAG/PerJaar/Y'+string(ModelParameters/Model_StartYear)+'/Panden/src';
+				unit<uint32> pand     := ='SourceData/Vastgoed/BAG/PerJaar/Y'+string(ModelParameters/Model_StartYear)+'/Panden/pand';
 				
 				container per_Gebruiksdoel_perAdminDomain :=
 					for_each_nedv(
@@ -132,13 +132,13 @@ template CasusT : using = "Units"
 				
 				container Per_Aggr
 				{
-					unit<UInt8>     Aggr                   := Classifications/Grondgebruik/CBSKlasse/Aggr;
+					unit<uint8>     Aggr                   := Classifications/Grondgebruik/CBSKlasse/Aggr;
 					attribute<Aggr> CbsStand (AdminDomain) := BaseData/Grondgebruik/Per_AdminDomain/Basisjaar/Per_Aggr;
 				}
 			}
 			container Banen 
 			{
-				unit<UInt8> Jobs6 := Classifications/Actor/Jobs6;
+				unit<uint8> Jobs6 := Classifications/Actor/Jobs6;
 				
 				container Stand := StartState/Werken;
 			}

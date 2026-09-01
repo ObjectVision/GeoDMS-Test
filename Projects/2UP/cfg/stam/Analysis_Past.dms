@@ -14,7 +14,7 @@ container Analysis_Past : using = "Units;Classifications"
 	{
 		attribute<int16>  dc:     [1975,1990,2000,2014];
 		attribute<int16>  dc2:    [1975,1990,2000,2015];
-		attribute<String> name:= 'y'+String(dc);
+		attribute<string> name:= 'y'+string(dc);
 	}
 
 		container UrbanDif1975_2014 
@@ -96,10 +96,10 @@ container Analysis_Past : using = "Units;Classifications"
 				attribute<string> name_country := Input/administrative/Countries/Country/name[second_rel];
 
 				attribute<.>      combine_class_country_rel(Input/gtopo) :=  combine_data(., UrbanOverlay_75_90_00_14/UnionData_copy, OverlayGrids2/Country_grid);
-				attribute<UInt32> count(.)                                       := pcount(combine_class_country_rel);
+				attribute<uint32> count(.)                                       := pcount(combine_class_country_rel);
 
-				attribute<UInt32>  sumc(Input/administrative/Countries/Country ) := sum(count, second_rel);
-				attribute<Float64> share(.)                              := Float64(count) / Float64(sumc[second_rel]);
+				attribute<uint32>  sumc(Input/administrative/Countries/Country ) := sum(count, second_rel);
+				attribute<float64> share(.)                              := float64(count) / float64(sumc[second_rel]);
 
 				attribute<uint16> start(.) := first_rel ==0[uint16] ? 1[uint16] : 0[uint16];
 			}
@@ -116,7 +116,7 @@ container Analysis_Past : using = "Units;Classifications"
 			unit<uint32> Start := select_with_org_rel(combine_class_country/first_rel == 7[uint16])
 			{
 				attribute<uint8>   second_rel     := combine_class_country/second_rel[org_rel];
-				attribute<Float64> share(.) := combine_class_country/share[org_rel];
+				attribute<float64> share(.) := combine_class_country/share[org_rel];
 				attribute<uint32>  count(.) := combine_class_country/count[org_rel];
 
 				attribute<float64> sumshare(Input/administrative/Countries/Country ) := sum(share,second_rel);
@@ -130,7 +130,7 @@ container Analysis_Past : using = "Units;Classifications"
 
 				attribute<uint8> second_rel          := combine_class_country/second_rel[org_rel];
 
-				attribute<Float64> share(.)    := combine_class_country/share[org_rel];
+				attribute<float64> share(.)    := combine_class_country/share[org_rel];
 				attribute<uint32> count(.)     := combine_class_country/count[org_rel];
 
 				attribute<float64> sumshare(Input/administrative/Countries/Country ) := sum(share,second_rel);

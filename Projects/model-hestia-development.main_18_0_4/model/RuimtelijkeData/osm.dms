@@ -8,7 +8,7 @@
 		{
 			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 			{
-				attribute<String> Text:
+				attribute<string> Text:
 				// Regio             , OrgSet , OrgPath, Land, Type, 
 				[
 				'Drenthe'                 ,'NL', 'OD',
@@ -26,10 +26,10 @@
 				]; 
 			}
 			
-			attribute<string>        label          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
+			attribute<string>        label          := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
 			attribute<string>        name           := replace(label, '-', '_');
-			attribute<string>        Country        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-			attribute<string>        Type_src       := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+			attribute<string>        Country        := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+			attribute<string>        Type_src       := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
 			
 			parameter<uint32> nrAttr := 3;
 		}
@@ -45,15 +45,15 @@
 		
 		unit<uint8> wegtype: NrOfRows = 78
 		{
-			attribute<String>       Name                 := Label;
-			attribute<km_hr>        CarSpeedOutside      := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)][km_hr];
-			attribute<km_hr>        CarSpeedInside       := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)][km_hr];
-			attribute<km_hr>        BikeSpeed            := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)][km_hr];
-			attribute<bool>         IsMain               := bool(Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)]);
-			attribute<wegtypegroep> wegtypegroepnr       := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)][wegtypegroep];
-			attribute<String>       Label                := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)], DialogType = "LabelText";
-			attribute<km_hr>        TruckSpeedOutside    := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)][km_hr];
-			attribute<km_hr>        TruckSpeedInside     := Elements/Text[value(UInt32(ID(.))* nrAttr + 7, Elements)][km_hr];
+			attribute<string>       Name                 := Label;
+			attribute<km_hr>        CarSpeedOutside      := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)][km_hr];
+			attribute<km_hr>        CarSpeedInside       := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)][km_hr];
+			attribute<km_hr>        BikeSpeed            := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)][km_hr];
+			attribute<bool>         IsMain               := bool(Elements/Text[value(uint32(ID(.))* nrAttr + 3, Elements)]);
+			attribute<wegtypegroep> wegtypegroepnr       := Elements/Text[value(uint32(ID(.))* nrAttr + 4, Elements)][wegtypegroep];
+			attribute<string>       Label                := Elements/Text[value(uint32(ID(.))* nrAttr + 5, Elements)], DialogType = "LabelText";
+			attribute<km_hr>        TruckSpeedOutside    := Elements/Text[value(uint32(ID(.))* nrAttr + 6, Elements)][km_hr];
+			attribute<km_hr>        TruckSpeedInside     := Elements/Text[value(uint32(ID(.))* nrAttr + 7, Elements)][km_hr];
 
 			attribute<bool>         IsPartOfCarNetwork    := CarSpeedInside  > value(1, km_hr);
 			attribute<bool>         IsPartOfBikeNetwork   := BikeSpeed       > value(1, km_hr);
@@ -69,9 +69,9 @@
 			attribute<m_s>          BikeSpeed_ms         := BikeSpeed       / value(3600, s / hr) * value(1000, m / km);
 		
 			parameter<uint32> nrAttr := 8;
-			unit<UInt32> Elements := Range(uint32, 0, nrAttr*#.)
+			unit<uint32> Elements := Range(uint32, 0, nrAttr*#.)
 			{
-				attribute<String> Text:
+				attribute<string> Text:
 				[
 					//Car speed outside,Car speed inside,Bike speed, IsMain, group,Label, Truck speed outside, Truck speed inside
 					' 30',' 30','15','True' ,'2','access','50','30',
@@ -155,7 +155,7 @@
 				];
 			}
 			
-			container V := for_each_nedv(replace(name,';','','ú','u',' ','_','-','_','?','','/',''), String(ID(.))+'[..]', void, .);
+			container V := for_each_nedv(replace(name,';','','ú','u',' ','_','-','_','?','','/',''), string(ID(.))+'[..]', void, .);
 		}
 		
 		container Prepare_SourceData :=

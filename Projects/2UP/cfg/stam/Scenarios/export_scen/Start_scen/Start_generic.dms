@@ -19,7 +19,7 @@ container Generic
 		attribute<Classifications/PopClass> tpop_classification :=
 				tpop_classify[uint8],StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_start_tpop_classification.tif'"
 				{
-					attribute<UInt32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
+					attribute<uint32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
 				}
 
 		attribute<float32>    upop          := MakeDefined(lookup(CompactedDomain/BaseGrid, InitialState/Pop),-9999f),                   StorageName = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_start_upop.tif'";
@@ -34,7 +34,7 @@ container Generic
 		attribute<Classifications/Urb/IsUrbClassSea> IsUrbanClassification :=
 					IsUrban_Classify[uint8],StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_start_urb_classification.tif'"
 				{
-					attribute<UInt32> PaletteData(Classifications/Urb/IsUrbClassSea): = Classifications/Urb/IsUrbClassSea/BrushColor[uint32];
+					attribute<uint32> PaletteData(Classifications/Urb/IsUrbClassSea): = Classifications/Urb/IsUrbClassSea/BrushColor[uint32];
 				}
 		
 		attribute<uint32>     urbCountry    := lookup(CompactedDomain/BaseGrid, UrbCountryCombine/urbcombine/UnionData)                , StorageName = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_start_urbCountry.tif'";
@@ -55,13 +55,13 @@ container Generic
 		attribute<Classifications/PopClass> popd_classification :=
 				popd_classify[uint8],StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_start_popd_classification.tif'"
 				{
-					attribute<UInt32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
+					attribute<uint32> PaletteData(Classifications/PopClass): = Classifications/PopClass/BrushColor[uint32];
 				}
 	
 		attribute<Classifications/Settlement_Model_L2_nomenclature_export> smod :=
 				MakeDefined(!Input/administrative/Countries/IsCountryWorld/IsCountryWorld_bool ? 0b : (!Input/administrative/Countries/IsClaimCountry ? 1b : smod_org[uint8]),10b),StorageName       = "='%LocalDataProjDir%/results/'+GridName+'/'+InputMethod+Variant+InPresentUrban+'_start_smod.tif'"
 				{
-					attribute<UInt32> PaletteData(/Classifications/Settlement_Model_L2_nomenclature_export): = /Classifications/Settlement_Model_L2_nomenclature_export/BrushColor[uint32];
+					attribute<uint32> PaletteData(/Classifications/Settlement_Model_L2_nomenclature_export): = /Classifications/Settlement_Model_L2_nomenclature_export/BrushColor[uint32];
 				}
 			}
 }

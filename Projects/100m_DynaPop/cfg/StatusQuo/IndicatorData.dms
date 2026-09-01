@@ -7,51 +7,51 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 			attribute<Percent> Classes: DialogType = "Classification",
 				[  0,10,20,30,40,50,60,70,80,90];
 	
-			attribute<String> Label: DialogType = "LabelText",
+			attribute<string> Label: DialogType = "LabelText",
 				[' 0 -  10','10 -  20','20 -  30','30 -  40','40 -  50','50 -  60','60 -  70','70 -  80','80 -  90','90 - 100'];
 		}
 		
-		attribute<UInt32> i      (Percent10K): Expr = "UInt32(ID(Percent10K))";
-		attribute<UInt32> ri     (Percent10K): Expr = "9-i";
-		attribute<UInt32> RedRamp(Percent10K): Expr = "rgb(i*21, 0, 0)";
+		attribute<uint32> i      (Percent10K): Expr = "UInt32(ID(Percent10K))";
+		attribute<uint32> ri     (Percent10K): Expr = "9-i";
+		attribute<uint32> RedRamp(Percent10K): Expr = "rgb(i*21, 0, 0)";
 		
 		attribute<Percent> PermanentPastureClasses(Percent10K): Expr = "Percent10K/Classes"
 		{
-			attribute<UInt32> YellowGreenRamp(Percent10K): DialogType = "BrushColor",
+			attribute<uint32> YellowGreenRamp(Percent10K): DialogType = "BrushColor",
 			  Expr = //255,255,128 ->0 64 0
 			  		"rgb(28*ri,21*ri+64, 14*ri)";
 		}			  		
 		attribute<Percent> AgriculturalAreaClasses(Percent10K): Expr = "Percent10K/Classes"
 		{
-			attribute<UInt32> BlueRamp(Percent10K): DialogType = "BrushColor",
+			attribute<uint32> BlueRamp(Percent10K): DialogType = "BrushColor",
 			  Expr = "rgb(25*ri,25*ri, 255)";
 		}
 		attribute<Percent> NonIrrigatedArableClasses(Percent10K): Expr = "Percent10K/Classes"
 		{
-			attribute<UInt32> OrangeRamp(Percent10K): DialogType = "BrushColor",
+			attribute<uint32> OrangeRamp(Percent10K): DialogType = "BrushColor",
 			  Expr =  //255,255,128 -> 128,0,0
 			  		"rgb(14*ri+128,28*ri, 14*ri)";
 		}
 		attribute<Percent> NaturalVegetationClasses(Percent10K): Expr = "Percent10K/Classes"
 		{
-			attribute<UInt32> GreenRamp(Percent10K): DialogType = "BrushColor",
+			attribute<uint32> GreenRamp(Percent10K): DialogType = "BrushColor",
 			  Expr =  //255,255,128 -> 0, 128, 0
 			  		"rgb(28*ri, 14*ri+128, 14*ri)";
 		}
 		attribute<Percent> BuiltUpAreaClasses(Percent10K):
 			[ 0, 1, 2, 3, 4, 5, 7, 10, 15, 25]
 		{
-			attribute<String> Label(Percent10K): DialogType = "LabelText",
+			attribute<string> Label(Percent10K): DialogType = "LabelText",
 				[' 0 -  1',' 1 -  2',' 2 -  3',' 3 -  4',' 4 -  5',' 5 -  7',' 7 - 10','10 - 15','15 - 25','25 - 100'];
-			attribute<UInt32> OrangeRamp(Percent10K): DialogType = "BrushColor",
+			attribute<uint32> OrangeRamp(Percent10K): DialogType = "BrushColor",
 			  Expr =  //255,255,128 -> 255,0,0
 			  		"rgb(255,28*ri, 14*ri)";
 		}	
 		unit<uint8> HotspotClass: NrOfRows = 4
 		{
-			attribute<String> Label: DialogType = "LabelText",
+			attribute<string> Label: DialogType = "LabelText",
 				['no hot spot', 'existing hotspot', 'new hotspot', 'intensive hotspot'];
-			attribute<UInt32> Color: DialogType = "BrushColor",
+			attribute<uint32> Color: DialogType = "BrushColor",
 				[
 					rgb(156,156,156), // Gray 20%
 					rgb(204,204,204), // Gray 40%
@@ -60,7 +60,7 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 				];
 		}
 	}	
-	parameter<String> IndiDataDirName: Expr = "'%sourceDataProjDir%/Indicators'";
+	parameter<string> IndiDataDirName: Expr = "'%sourceDataProjDir%/Indicators'";
 
 	#include <Landuse.dms>
 	#include <LisFlood.dms>
@@ -86,10 +86,10 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 			,	StorageReadOnly = "True";
 	}
 	#include <LCC.dms>
-	unit<SPoint> km10FocalPointMatr: Expr = "range(spoint, point_xy(-int16(10), -int16(10)), point_xy(int16(11), int16(11)))"
+	unit<spoint> km10FocalPointMatr: Expr = "range(spoint, point_xy(-int16(10), -int16(10)), point_xy(int16(11), int16(11)))"
 	{
-		attribute<Bool> InCircle: Expr = "dist2(point_xy(Int16(0), Int16(0), .), UInt32)  <= 100";
-		attribute<Float32> RelWeight: Expr = "Float32(InCircle) / sum(Float32(InCircle))";
+		attribute<bool> InCircle: Expr = "dist2(point_xy(Int16(0), Int16(0), .), UInt32)  <= 100";
+		attribute<float32> RelWeight: Expr = "Float32(InCircle) / sum(Float32(InCircle))";
 	}
 
 	container LccpTempl: IsTemplate = "True"
@@ -97,7 +97,7 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 		unit<Wpoint> Domain_Grid;
 
 		attribute<Classifications/LU/Ruralis18> LU18_Org(Domain_Grid);
-		unit<UInt16> FathomYears;
+		unit<uint16> FathomYears;
 		
 		container CaseData: IsHidden = "True",
 			Expr = "for_each_ne(FathomYears/Name, 'indicatorData/LCC/Templ(Domain_Grid, '+(ID(FathomYears)==value(0,FathomYears)?'LU18_Org':'..../CaseData/LU18/'+FathomYears/Name)+')')";
@@ -109,23 +109,23 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 
 	container SoilSealing100Templ: IsTemplate = "True", url = "%sourcedataprojdir%/Indicators/Soil sealing.pdf"
 	{
-		unit<WPoint> Domain_Grid;
-		unit<UInt8>  LUC;
+		unit<wpoint> Domain_Grid;
+		unit<uint8>  LUC;
 		container LandUse;
 		container JrcFactorData;
 		unit<uint16> FathomYears;
 		
 		container SealingData: IsHidden = "True"
 		{
-			unit<WPoint> SoilSealing
+			unit<wpoint> SoilSealing
 					:	DialogData = "Geography/LambertEA"
 					,	Source = "JRC:LandCover"
 					,	StorageName = "%SourceDataProjDir%/LUISA/soilsealing/ssl_0_100.tif"
 					,	StorageType = "tif"
 					,	StorageReadOnly = "True"
 			{
-					attribute<UInt8> GridData;
-					attribute<UInt8> ReadData(Domain_Grid);
+					attribute<uint8> GridData;
+					attribute<uint8> ReadData(Domain_Grid);
 			}
 			attribute<bool>   IsCountry(Domain_Grid): Expr = "IsDefined(domain/Basisgrid)";
 		
@@ -136,10 +136,10 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 			
 			unit<uint8> PercentClass: Expr = "Range(UInt8, 0[uint8], 254[uint8])" // Frequency tables for specific LUC's for debugging purposes. Why is SNV null for EU? and Indistry 0 for EU?
 			{
-				attribute<UInt32> F0: Expr = "pcount(HasSealData && OrgLandUse == 0[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
-				attribute<UInt32> F1: Expr = "pcount(HasSealData && OrgLandUse == 1[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
-				attribute<UInt32> F6: Expr = "pcount(HasSealData && OrgLandUse == 6[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
-				attribute<UInt32> F7: Expr = "pcount(HasSealData && OrgLandUse == 7[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+				attribute<uint32> F0: Expr = "pcount(HasSealData && OrgLandUse == 0[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+				attribute<uint32> F1: Expr = "pcount(HasSealData && OrgLandUse == 1[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+				attribute<uint32> F6: Expr = "pcount(HasSealData && OrgLandUse == 6[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
+				attribute<uint32> F7: Expr = "pcount(HasSealData && OrgLandUse == 7[LUC] ? SoilSealing/ReadData[PercentClass] : 255[PercentClass])";
 			}
 		}
 		container PerCell
@@ -171,11 +171,11 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 	container RiverFloodRiskTempl: IsTemplate = "True",
 		url = "%sourcedataprojdir%/Indicators/Increased river flood risk.pdf"
 	{
-		unit<WPoint> Domain_Grid;
-		unit<UInt16>  FathomYears;
+		unit<wpoint> Domain_Grid;
+		unit<uint16>  FathomYears;
 		
-		attribute<Bool>   IsFirstDecade(FathomYears): Expr = "ID(FathomYears) == value(0, FathomYears)";
-		attribute<String> DecadeName(FathomYears): Expr = "IsFirstDecade ? 'Current' : 'New'+FathomYears/Label";
+		attribute<bool>   IsFirstDecade(FathomYears): Expr = "ID(FathomYears) == value(0, FathomYears)";
+		attribute<string> DecadeName(FathomYears): Expr = "IsFirstDecade ? 'Current' : 'New'+FathomYears/Label";
 		
 		container LandUse: Expr = ".../LandUse";
 		
@@ -216,11 +216,11 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 	container UrbanSprawlTempl: IsTemplate = "True",
 		url = "%sourcedataprojdir%/Indicators/urban sprawl.pdf"
 	{
-		unit<WPoint> Domain_Grid;
+		unit<wpoint> Domain_Grid;
 		container JrcFactorData;
 		container LandUse;
-		unit<UInt16> FathomYears;
-		unit<UInt16> FathomPeriods;
+		unit<uint16> FathomYears;
+		unit<uint16> FathomPeriods;
 
 		container CaseData: IsHidden = "True"
 		{
@@ -228,27 +228,27 @@ container IndicatorData: Using = "Units;Geography", IsHidden = "True"
 			container IsLand : Expr = "for_each_nedv(FathomYears/Name, 'LandUse/'+FathomYears/Name+'/Qualifications/IsLand',        Domain_Grid, Bool)";
 			container UrbanDistrictTempl: IsTemplate = "True"
 			{
-				attribute<Bool>      IsUrban(Domain_Grid);
-				unit<UInt16>         RegionSet;
+				attribute<bool>      IsUrban(Domain_Grid);
+				unit<uint16>         RegionSet;
 				attribute<RegionSet> RegionGrid(Domain_Grid);
 				
-				unit<UInt32> DistrictSet: Expr = "District(UInt8(IsUrban))"
+				unit<uint32> DistrictSet: Expr = "District(UInt8(IsUrban))"
 				{
-					attribute<UInt32> Size: Expr = "pcount(Districts)";
+					attribute<uint32> Size: Expr = "pcount(Districts)";
 					attribute<.>      UrbanDistricts(Domain_Grid): Expr = "IsUrban ? Districts : UInt32(-1)";
-					attribute<UInt32> UrbanSize     (Domain_Grid): Expr = "Size[UrbanDistricts]";
-					attribute<UInt32> AvgSizePerCell(RegionSet): Expr = "mean(UrbanSize, RegionGrid)";
+					attribute<uint32> UrbanSize     (Domain_Grid): Expr = "Size[UrbanDistricts]";
+					attribute<uint32> AvgSizePerCell(RegionSet): Expr = "mean(UrbanSize, RegionGrid)";
 
-					parameter<UInt32> NrPatches: Expr = "NrOfRows(.)";
-					parameter<UInt32> NrRegions: Expr = "NrOfRows(RegionSet)";
-					attribute<UInt32> CombiCode(Domain_Grid): Expr = "UrbanDistricts * NrRegions + UInt32(RegionGrid)";
-					unit<UInt32> UsedCode: Expr = "Unique(CombiCode)"
+					parameter<uint32> NrPatches: Expr = "NrOfRows(.)";
+					parameter<uint32> NrRegions: Expr = "NrOfRows(RegionSet)";
+					attribute<uint32> CombiCode(Domain_Grid): Expr = "UrbanDistricts * NrRegions + UInt32(RegionGrid)";
+					unit<uint32> UsedCode: Expr = "Unique(CombiCode)"
 					{
 						attribute<RegionSet  > RegionSet_rel: Expr = "value(Values % NrRegions, RegionSet)";
 						attribute<DistrictSet> Patch: Expr = "value(Values / NrRegions, DistrictSet)";
 					}
-					attribute<UInt32> PatchCount       (RegionSet): Expr = "pcount(UsedCode/RegionSet_rel)";
-					attribute<UInt32> AvgSizePerPatch  (RegionSet): Expr = "mean(Size[UsedCode/Patch], UsedCode/RegionSet_rel)";
+					attribute<uint32> PatchCount       (RegionSet): Expr = "pcount(UsedCode/RegionSet_rel)";
+					attribute<uint32> AvgSizePerPatch  (RegionSet): Expr = "mean(Size[UsedCode/Patch], UsedCode/RegionSet_rel)";
 				}
 			}
 			
@@ -384,17 +384,17 @@ REMOVE */
 		
 		container LAI
 		{
-			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/WaterRetention/LAI_values.csv";
-			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
-			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
-			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
+			parameter<string> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/WaterRetention/LAI_values.csv";
+			parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
+			parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
 			{ 
-				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+				attribute<string> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			}
 			unit<uint32> Domain: Expr = "Range(uint32, 0, StrCount(FileData, '\n')-1)";
 			
-			attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
-			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			attribute<string> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
+			attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			container ReadData: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)";
 			container Data
 			{
@@ -406,17 +406,17 @@ REMOVE */
 		}
 		container SoilSealing
 		{
-			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/WaterRetention/SOIL_SEALING.csv";
-			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
-			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
-			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
+			parameter<string> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/WaterRetention/SOIL_SEALING.csv";
+			parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
+			parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
 			{ 
-				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+				attribute<string> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			}
 			unit<uint32> Domain: Expr = "Range(uint32, 0, StrCount(FileData, '\n')-1)";
 			
-			attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
-			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			attribute<string> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
+			attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			container ReadData: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)";
 			container Data
 			{
@@ -429,7 +429,7 @@ REMOVE */
 		}
 		unit<uint8> JrcCodes: Expr = "Range(uint8, uint8(0), uint8(11))"
 		{
-			attribute<String> Label: ['', 'Urban', 'Industry', 'Arable', 'PermCrops', 'Pastures', 'Forests', 'SNV', '', 'OtherNature', 'Wetlands'];
+			attribute<string> Label: ['', 'Urban', 'Industry', 'Arable', 'PermCrops', 'Pastures', 'Forests', 'SNV', '', 'OtherNature', 'Wetlands'];
 		}
 		unit<uint8> LuClass: Expr = "Classifications/LU/ViewType"
 		{
@@ -459,9 +459,9 @@ REMOVE */
 			attribute<JrcCodes> JrcCodes_rel: [ 0, 1, 2, 3, 3, 5, 6, 6, 3, 3, 3, 3, 3, 5, 1, 2, 3, 6, 0, 0, 0, 0, 0];
 		}
 		
-		attribute<Bool> IsCrops (LuClass): Expr = "ID(LuClass) == uint8(3) || ID(LuClass) == uint8(4) || ID(LuClass) >= uint8(8) && ID(LuClass) <= uint8(12) || ID(LuClass) == uint8(16)";
-		attribute<Bool> IsGrass (LuClass): Expr = "ID(LuClass) == uint8(5) || ID(LuClass) == uint8(13)|| ID(LuClass) == uint8(17)";
-		attribute<Bool> IsForest(LuClass): Expr = "ID(LuClass) == uint8(6) || ID(LuClass) == uint8(7)";
+		attribute<bool> IsCrops (LuClass): Expr = "ID(LuClass) == uint8(3) || ID(LuClass) == uint8(4) || ID(LuClass) >= uint8(8) && ID(LuClass) <= uint8(12) || ID(LuClass) == uint8(16)";
+		attribute<bool> IsGrass (LuClass): Expr = "ID(LuClass) == uint8(5) || ID(LuClass) == uint8(13)|| ID(LuClass) == uint8(17)";
+		attribute<bool> IsForest(LuClass): Expr = "ID(LuClass) == uint8(6) || ID(LuClass) == uint8(7)";
 		
 		unit<uint32> ChangeTable: Expr = "Combine(LuClass, LuClass)"
 		{
@@ -475,45 +475,45 @@ REMOVE */
 				"0.0[Percent]";
 			attribute<Percent> Value5yr: Expr=  "Value4yr * 5.0[Year] / 4.0[Year]";
 			
-			attribute<Float32> Factor4Yr: Expr = "(100[Percent] + Value4Yr) / 100[Percent]";
-			attribute<Float32> Factor5Yr: Expr = "(100[Percent] + Value5Yr) / 100[Percent]";
+			attribute<float32> Factor4Yr: Expr = "(100[Percent] + Value4Yr) / 100[Percent]";
+			attribute<float32> Factor5Yr: Expr = "(100[Percent] + Value5Yr) / 100[Percent]";
 		}
 			
 		
 		container Templ: IsTemplate = "True"
 		{
-			unit<WPoint> domain_grid;
+			unit<wpoint> domain_grid;
 			container JrcFactorData;
 			container LandUse;
-			unit<UInt16> FathomYears;
+			unit<uint16> FathomYears;
 			
-			unit<UInt32> AllYears: Expr = "union_unit(range(uint16, uint16(0), uint16(1)), FathomYears)"
+			unit<uint32> AllYears: Expr = "union_unit(range(uint16, uint16(0), uint16(1)), FathomYears)"
 			{
 				attribute<uint16> Year: Expr = "union_data(., First(FathomYears/PrevYear), FathomYears/Year)";
-				attribute<String> Name: Expr = "'P'+string(Year)";
+				attribute<string> Name: Expr = "'P'+string(Year)";
 				attribute<string> LuRef:Expr= "union_data(., 'CorineGrid/ViewLandUse', 'LandUse/'+FathomYears/Name+'/ViewType')";
 			}
 	
-			attribute<String> LuRef    (FathomYears): Expr = "AllYears/LuRef[value(ID(FathomYears)+uint16(1), AllYears)]";
-			attribute<String> PrevLuRef(FathomYears): Expr = "AllYears/LuRef[value(ID(FathomYears)+uint16(0), AllYears)]";
-			attribute<String> ChangeTableRef(FathomYears): Expr = "'ChangeTable/Factor'+string(FathomYears/Year - FathomYears/PrevYear)+'yr'";
+			attribute<string> LuRef    (FathomYears): Expr = "AllYears/LuRef[value(ID(FathomYears)+uint16(1), AllYears)]";
+			attribute<string> PrevLuRef(FathomYears): Expr = "AllYears/LuRef[value(ID(FathomYears)+uint16(0), AllYears)]";
+			attribute<string> ChangeTableRef(FathomYears): Expr = "'ChangeTable/Factor'+string(FathomYears/Year - FathomYears/PrevYear)+'yr'";
 			
 			// Permeability
 //			attribute<Float32> Permeability_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/PERM/Perm.tif";
-			attribute<Float32> Permeability(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/PERM/Permeability_corr.tif";
+			attribute<float32> Permeability(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/PERM/Permeability_corr.tif";
 			
 			// <HistMin>-3.976486914325506e-005</HistMin>
 			// <HistMax>9.999949455261231</HistMax>
-			attribute<Float32> R_PERM   (domain_grid) := max_elem(Permeability, 0f); // replace negative values by 0
+			attribute<float32> R_PERM   (domain_grid) := max_elem(Permeability, 0f); // replace negative values by 0
 			
 			// Slope
 //			attribute<Float32> R_slope (domain_grid) : StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/slope/slope100.tif";
 			
-			attribute<Float32> slope100_corr (domain_grid) :=  (CaseData/JrcFactorData/slope100_cont > 75degrees) ? 0f : CaseData/JrcFactorData/slope100_cont;
-			attribute<Float32> R_slope(domain_grid) := 10f - slope100_corr * (10f / 75degrees);
+			attribute<float32> slope100_corr (domain_grid) :=  (CaseData/JrcFactorData/slope100_cont > 75degrees) ? 0f : CaseData/JrcFactorData/slope100_cont;
+			attribute<float32> R_slope(domain_grid) := 10f - slope100_corr * (10f / 75degrees);
 	
 			// the capacity of plants to capture water
-			attribute<UInt8> EZ(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Env_mask.tif";
+			attribute<uint8> EZ(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Env_mask.tif";
 			container LaiCombiCode: expr = "for_each_nedv(AllYears/Name, 'uint16(EZ) * uint16(100) + uint16(LuClass/JrcCodes_rel['+AllYears/LuRef+'])', domain_grid, uint16)";
 			container R_LAI: expr = "for_each_nedv(AllYears/Name, 'MakeDefined(rjoin(LaiCombiCode/'+AllYears/Name+', LAI/Data/CombiCode, LAI/Data/LAI), Float32(0.0))', domain_grid, float32)";
 			
@@ -524,10 +524,10 @@ REMOVE */
 				, domain_grid, float32)
 			{
 //				attribute<Float32> TAWC_06(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/TAWC/TAWC_06.tif";
-				attribute<Float32> TAWC   (domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/TAWC/TAWC_jan_1res.tif";
-				attribute<Float32> P2006  (domain_grid) := max_elem(TAWC, 0f);
+				attribute<float32> TAWC   (domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/TAWC/TAWC_jan_1res.tif";
+				attribute<float32> P2006  (domain_grid) := max_elem(TAWC, 0f);
 			}
-			attribute<Float32> R_WB(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/WB_factor.tif";
+			attribute<float32> R_WB(domain_grid): StorageType = "gdal.grid", StorageName = "%SourceDataProjDir%/LUISA/WaterRetention/WB_factor.tif";
 			
 			// Soil Sealing
 			container ssCombiCode := for_each_nedv(AllYears/Name, 'uint16(JrcFactorData/Nuts0)*100w + uint16('+AllYears/LuRef+')', domain_grid, uint16);
@@ -537,7 +537,7 @@ REMOVE */
 				
 			container F_sp := for_each_nedv(AllYears/Name,
 				'(100[Percent] - R_ss/'+AllYears/Name+') * (1f / 100[Percent])',
-				domain_grid, Float32);
+				domain_grid, float32);
 				
 			container WRI := 
 				for_each_nedv(AllYears/Name,
@@ -556,26 +556,26 @@ REMOVE */
 	{
 		unit<uint8> ClimateScenario: Expr= "Range(uint8, uint8(0), uint8(5))"
 		{
-			attribute<String> Name: [ 'RCA3HAD', 'ALADIN', 'HIRHAM', 'CLM', 'RCA3BCM'];
-			attribute<String> Code: Expr = "Name";
+			attribute<string> Name: [ 'RCA3HAD', 'ALADIN', 'HIRHAM', 'CLM', 'RCA3BCM'];
+			attribute<string> Code: Expr = "Name";
 		}
 		unit<uint8> Month:  Expr= "Range(uint8, uint8(0), uint8(12))"
 		{
-			attribute<String> Name: [ 'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+			attribute<string> Name: [ 'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 		}
 		container LookupTableMonthly
 		{
-			parameter<String> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/SoilErosion/lookup-monthly.csv";
-			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
-			parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
-			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
+			parameter<string> FileData: StorageType = "str", StorageName = "%SourceDataProjDir%/LUISA/indicatordata/SoilErosion/lookup-monthly.csv";
+			parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
+			parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, ';')+1)"
 			{ 
-				attribute<String> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
+				attribute<string> Name: Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			}
 			unit<uint32> Domain: Expr = "Range(uint32, 0, StrCount(FileData, '\n')-1)";
 			
-			attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
-			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
+			attribute<string> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)";
+			attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			container ReadData: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)";
 			container Data: Expr = "for_each_nedv(Month/Name, 'Float32(ReadData/'+Month/Name+')', Domain, Float32)"
 			{
@@ -588,32 +588,32 @@ REMOVE */
 		
 		container Templ: IsTemplate = "True"
 		{
-			unit<WPoint> domain_grid;
+			unit<wpoint> domain_grid;
 			container JrcFactorData;
 			container LandUse;
-			unit<UInt16> FathomYears;
+			unit<uint16> FathomYears;
 
-			unit<UInt32> AllYears: Expr = "union_unit(range(uint16, uint16(0), uint16(1)), FathomYears)"
+			unit<uint32> AllYears: Expr = "union_unit(range(uint16, uint16(0), uint16(1)), FathomYears)"
 			{
 				attribute<uint16> Year: Expr = "union_data(., First(FathomYears/PrevYear), FathomYears/Year)";
-				attribute<String> Name: Expr = "'P'+string(Year)";
+				attribute<string> Name: Expr = "'P'+string(Year)";
 				attribute<string> LuRef:Expr= "union_data(., 'CorineGrid/ViewLandUse', 'LandUse/'+FathomYears/Name+'/ViewType')";
 			}
 			unit<uint32> FathomMonth: Expr = "Combine(AllYears, Month)"
 			{
-				attribute<String> Name: Expr = "Month/Name[second_rel]+String(AllYears/Year[first_rel])";
+				attribute<string> Name: Expr = "Month/Name[second_rel]+String(AllYears/Year[first_rel])";
 			}
 			container CaseData {
-				attribute<Float32> LS (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/ls_eu28.tif", StorageType = "gdal.grid";
-				attribute<Float32> K  (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/Kst_correct_Full.tif", StorageType = "gdal.grid";
-				attribute<Float32> LSK(domain_grid): expr = "max_elem(LS, 0.0[Float32]) * max_elem(K, 0.0[Float32])";
+				attribute<float32> LS (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/ls_eu28.tif", StorageType = "gdal.grid";
+				attribute<float32> K  (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/Kst_correct_Full.tif", StorageType = "gdal.grid";
+				attribute<float32> LSK(domain_grid): expr = "max_elem(LS, 0.0[Float32]) * max_elem(K, 0.0[Float32])";
 				
 				attribute<uint8> EZ (domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SensitiveAreas/Env_mask.tif", StorageType = "gdal.grid";
 				
 				container CombiCode: expr = "for_each_nedv(AllYears/Name, 'uint16(EZ) * uint16(100) + uint16('+AllYears/LuRef+')', domain_grid, uint16)";
 				container LC: expr = "for_each_nedv(FathomMonth/Name, 'MakeDefined(rjoin(CombiCode/'+AllYears/Name[FathomMonth/first_rel]+', LookupTableMonthly/Data/CombiCode, LookupTableMonthly/Data/'+Month/Name[FathomMonth/second_rel]+'), Float32(0.0))', domain_grid, float32)";
-				attribute<Float32> P_imp(domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/EU_PFactor_V2.tif", StorageType = "gdal.grid";
-				attribute<Float32> P(domain_grid): Expr = "MakeDefined(P_imp < 0.0[float32] ? 1.0[Float32] : p_imp, 1.0[Float32])";
+				attribute<float32> P_imp(domain_grid): StorageName = "%SourceDataProjDir%/LUISA/SoilErosion/EU_PFactor_V2.tif", StorageType = "gdal.grid";
+				attribute<float32> P(domain_grid): Expr = "MakeDefined(P_imp < 0.0[float32] ? 1.0[Float32] : p_imp, 1.0[Float32])";
 				
 				container Snow_m_imp: Expr = "for_each_ndva(FathomMonth/Name, domain_grid, uint8, '%SourceDataProjDir%/LUISA/SNOW/Rm_'+FathomMonth/Name+'.tif')";
 				container Snow_m:     Expr = "for_each_nedv(FathomMonth/Name, replace('Float32(replace_value(MakeDefined(Snow_m_imp/@M, uint8(2)), uint8(128), uint8(2)))', '@M', FathomMonth/Name),domain_grid, Float32)";
@@ -638,7 +638,7 @@ REMOVE */
 			}
 			container ScenarioTempl: IsTemplate = "True"
 			{
-				parameter<String> Code;
+				parameter<string> Code;
 				
 				container RainFallImp:  Expr = "for_each_ndvat(AllYears/Name, domain_grid, Float32, '%SourceDataProjDir%/LUISA/SoilErosion/'+Code+'/'+Code+String(AllYears/Year)+'.tif', 'gdal.grid')";
 				container RainFallData: Expr = "for_each_nedv(AllYears/Name, 'Max_elem(RainFallImp/'+AllYears/Name+',0.0[Float32])', domain_grid, Float32)";
@@ -667,9 +667,9 @@ REMOVE */
 			container Results: Expr = "for_each_ne(ClimateScenario/Name, 'ScenarioTempl('+Quote(ClimateScenario/Code)+')')"
 			{
 				container Averages {
-					parameter<String> Code: Expr = "'MEAN'";
+					parameter<string> Code: Expr = "'MEAN'";
 					
-					parameter<Float32> ScenarioFactor: Expr = "Float32(1.0) / Float32(#ClimateScenario)";
+					parameter<float32> ScenarioFactor: Expr = "Float32(1.0) / Float32(#ClimateScenario)";
 					container Y:      Expr = "for_each_nedva(AllYears/Name, 'ScenarioFactor*add('+replace(AsItemList(ClimateScenario/Name+'/Y/@Y'),'@Y', AllYears/Name)+')', Domain_Grid, Float32, DirName+'/SoilErosion/Y_'+AllYears/Name+'.tif')";
 					
 					// Soil erosion indicators
@@ -708,10 +708,10 @@ REMOVE */
 	}
 	container EvaluationTemplate100: IsTemplate = "True"
 	{
-		unit<UInt8> ModelType;
-		unit<UInt16> Periods;
+		unit<uint8> ModelType;
+		unit<uint16> Periods;
 		
-		unit<WPoint> Domain_Grid;
+		unit<wpoint> Domain_Grid;
 		unit<uint32> Domain;
 		
 		container LandUseGridPerYearMT;
@@ -719,15 +719,15 @@ REMOVE */
 		
 		container JrcFactorData;
 
-		parameter<String> DirName;
+		parameter<string> DirName;
 		
 		container PopulationData;
 
-		unit<UInt16> Decennium: Expr = "Periods/Decennium";
-		unit<UInt16> Lustrum:   Expr = "Periods/Lustrum";
-		unit<UInt16> LU_Period: Expr = "Lustrum";
+		unit<uint16> Decennium: Expr = "Periods/Decennium";
+		unit<uint16> Lustrum:   Expr = "Periods/Lustrum";
+		unit<uint16> LU_Period: Expr = "Lustrum";
 
-		unit<WPoint> CorineGrid: Expr = "JrcFactorData/TiffData/CorineGrid";
+		unit<wpoint> CorineGrid: Expr = "JrcFactorData/TiffData/CorineGrid";
 		attribute<Albers1kmGrid> AlbersGridRel(Domain_Grid): Expr = "JrcFactorData/AlbersGridRel";
 		
 		
@@ -747,7 +747,7 @@ REMOVE */
 				
 		container StartingAbandonment: Expr ="AgriAbandonmentStartingState(domain)", IsHidden = "True";
 		
-		unit<UInt16> SharedIndicatorsTimeSteps: Expr = "Lustrum"; // or "Periods" @USERINPUT
+		unit<uint16> SharedIndicatorsTimeSteps: Expr = "Lustrum"; // or "Periods" @USERINPUT
 		container SharedIndicators:
 			Expr = 
 				"for_each_ne("

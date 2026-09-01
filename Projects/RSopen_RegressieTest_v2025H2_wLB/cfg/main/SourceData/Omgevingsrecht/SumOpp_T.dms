@@ -1,9 +1,9 @@
 template SumOppT
 {
-	parameter<String> subpad;
-	parameter<String> Filename;
+	parameter<string> subpad;
+	parameter<string> Filename;
 	
-	unit<UInt32> Data
+	unit<uint32> Data
 	:	StorageName   = "='%RSo_DataDir%/Beleid/Ruimte/' + subpad + '/' + Filename + '.dbf'"
 	, StorageType     = "gdal.vect"
 	, DialogType      = "Map"
@@ -16,22 +16,22 @@ template SumOppT
 		
 		attribute<meter2>    oppm2      := area(geometry, meter2);
 		attribute<ha>        oppha      := oppm2[ha];
-		attribute<Float32>   aandeelprc := (oppha / totoppha) *100f;
+		attribute<float32>   aandeelprc := (oppha / totoppha) *100f;
 	}
 	
 	parameter<ha> totoppha := sum(Data/oppha);
 	
-	unit<UInt32> naamunique := unique(Data/naam)
+	unit<uint32> naamunique := unique(Data/naam)
 	{
-		attribute<UInt32>  aantal  := pcount(Data/naam_Rel);
-		attribute<Float32> oppha   := sum(Data/oppha,Data/naam_Rel);
-		attribute<Float32> aandeel := (oppha / totoppha) * 100f;
+		attribute<uint32>  aantal  := pcount(Data/naam_Rel);
+		attribute<float32> oppha   := sum(Data/oppha,Data/naam_Rel);
+		attribute<float32> aandeel := (oppha / totoppha) * 100f;
 	}
 	
-	unit<UInt32> themaunique := unique(Data/thema)
+	unit<uint32> themaunique := unique(Data/thema)
 	{
-		attribute<UInt32> aantal   := pcount(Data/thema_Rel);
-		attribute<Float32> oppha   := sum(Data/oppha,Data/thema_Rel);
-		attribute<Float32> aandeel := (oppha / totoppha) * 100f;
+		attribute<uint32> aantal   := pcount(Data/thema_Rel);
+		attribute<float32> oppha   := sum(Data/oppha,Data/thema_Rel);
+		attribute<float32> aandeel := (oppha / totoppha) * 100f;
 	}
 }

@@ -308,7 +308,7 @@ container RegioIndelingen : using = "geometries"
 	unit<uint32> Provincies_metBuitenland := union_unit(Provincie, Buitenland)
 	{
 		attribute<string>         name           := union_data(., Provincie/name, Buitenland/name);
-		container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		container V := for_each_nedv(name, string(ID(.))+'[..]', void, .);
 	}
 	
 	unit<uint32> LMS_gm4_2022
@@ -661,7 +661,7 @@ container RegioIndelingen : using = "geometries"
 			{
 				unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 				{
-					attribute<String> Text: //data 1 januari 2024
+					attribute<string> Text: //data 1 januari 2024
 					[
 						//Label                            , Vervoersbedrijf
 						'GD-concessie'                     , 'Qbuzz',
@@ -698,8 +698,8 @@ container RegioIndelingen : using = "geometries"
 				}
 				
 				attribute<rdc>          geometry (poly) := bp_union_polygon(Concessiegebied_Geom/geometry[rdc_mm], Concessiegebied_Geom/Concessiegebied_rel)[rdc];
-				attribute<string>       Label           := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
-				attribute<string>       Vervoerder      := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
+				attribute<string>       Label           := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)];
+				attribute<string>       Vervoerder      := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
 				attribute<string>       name            := AsItemName(label);
 				container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
 				parameter<uint32> nrAttr := 2;

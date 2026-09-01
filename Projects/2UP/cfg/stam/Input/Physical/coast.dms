@@ -61,9 +61,9 @@ container Coast
 		attribute<Input/LatLong> Geometry (arc);
 		unit<uint32> CoastpointSet := sequence2points(geometry)
 		{
-			attribute<Float64> lat_deg  := pointrow(point);
-			attribute<Float64> long_deg := pointcol(point);
-			attribute<Float64> lat_rad  := lat_deg * ( pi() / 180.0);
+			attribute<float64> lat_deg  := pointrow(point);
+			attribute<float64> long_deg := pointcol(point);
+			attribute<float64> lat_rad  := lat_deg * ( pi() / 180.0);
 //				attribute<float64> sinlat   := sin(lat_rad);
 			attribute<float64> mercator_y_rad := log(tan(0.25 * pi() + 0.5 * lat_rad));
 			attribute<float64> mercator_y_deg := mercator_y_rad * (180.0 / pi());
@@ -97,9 +97,9 @@ container Coast
 		}
 	}
 
-	attribute<Float32> Location2Coast_mer_segm(Input/CompactedDomain)   := dist_info(Coastline_Distance_GeoDMS/CoastArcSet/geometry_mer_segm, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));    
+	attribute<float32> Location2Coast_mer_segm(Input/CompactedDomain)   := dist_info(Coastline_Distance_GeoDMS/CoastArcSet/geometry_mer_segm, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));    
 	//longer calc time or error?
-	attribute<Float32> Location2Coast_mer_full(Input/CompactedDomain)   := dist_info(Coastline_Distance_GeoDMS/geometry_mer_full, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
+	attribute<float32> Location2Coast_mer_full(Input/CompactedDomain)   := dist_info(Coastline_Distance_GeoDMS/geometry_mer_full, Input/CompactedDomain/Geometry_mer, Sqr(250[km] / Input/lengthdegree / Input/CompactedDomain/lat_factor));
 
 	attribute<km>      Location2Coast_km(Input/CompactedDomain)         := (Location2Coast_mer_segm * Input/lengthdegree * Input/CompactedDomain/lat_factor);
 	attribute<km>      Location2Coast_km_gtopo_export (input/gtopo)     := Location2Coast_km[Input/CompactedDomain/BaseGrid], StorageName = "%LocalDataProjDir%/physical/Coast/Location2Coast_km.tif";
@@ -133,9 +133,9 @@ container Coast
 		unit<uint32> rowset;
 		attribute<Input/LatLong> point(rowset);
 
-		attribute<Float64> lat_deg (rowset)           := pointrow(point);
-		attribute<Float64> lon_deg (rowset)           := pointcol(point);
-		attribute<Float64> lat_rad (rowset)           := lat_deg * ( pi() / 180.0);
+		attribute<float64> lat_deg (rowset)           := pointrow(point);
+		attribute<float64> lon_deg (rowset)           := pointcol(point);
+		attribute<float64> lat_rad (rowset)           := lat_deg * ( pi() / 180.0);
 		attribute<float64> mercator_y_rad (rowset)    := log(tan(0.25 * pi() + 0.5 * lat_rad));
 		attribute<float64> mercator_y_deg (rowset)    := mercator_y_rad * (180.0 / pi());
 		attribute<float32> lat_factor (rowset)        := float32(cos(pointrow(point) * (pi() / 180.0)));

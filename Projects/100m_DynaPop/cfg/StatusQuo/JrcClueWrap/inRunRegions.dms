@@ -18,10 +18,10 @@ container RunRegions: Using = "Geography/AdministrativeBoundaries;"
 			attribute<LambertEA> centroid: expr = "centroid_or_mid(Geometry)"; 
 			attribute<float32> area: expr = "float32(area(base_zones/Geometry, float64)) / float32(1000 * 1000)";
 			
-			attribute<Float64>   CellWeight(domain_grid) := Float64(!IsNull(CaseData/OrgLandUse));
+			attribute<float64>   CellWeight(domain_grid) := float64(!IsNull(CaseData/OrgLandUse));
 			
 			attribute<LambertEA> lu_numerator         := sum(id(domain_grid)[LambertEA] * point_xy(CellWeight, CellWeight), base_raster) ;
-			attribute<Float64>   lu_denominator       := sum(CellWeight, base_raster);
+			attribute<float64>   lu_denominator       := sum(CellWeight, base_raster);
 			attribute<LambertEA> lu_weighted_centroid := lu_numerator / point_xy(lu_denominator, lu_denominator); 
 		}
 		unit<uint16> RunAreas:		 		expr = "RegionalSets/RunAreas/Set16";

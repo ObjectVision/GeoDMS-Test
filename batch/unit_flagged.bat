@@ -23,6 +23,18 @@ Set ResultDir=%LocalDataDir%\GeoDMSTestResults
 Set ResultFileName=%ResultDir%\unit\result.txt
 Call generic\SetGeoDMSPlatform.bat %version% %flavor%
 
+REM Expose the flavour to the test configurations and to the per-test scripts, so a
+REM test can assert a FLAVOUR-SPECIFIC expectation instead of being skipped.
+REM A .dms config reads it as the env:GeoDmsFlavor placeholder:
+REM    parameter<string> flavor := expand(., '<pct>env:GeoDmsFlavor<pct>');
+REM (an unset variable expands to the literal text "env:GeoDmsFlavor", which no
+REM  flavour test matches, so a hand-run config takes the default branch).
+REM Used by Unit\CRS\cfg\reproject.dms -- the G flavour is pinned to the GLOBIO
+REM GDAL 3.1.4 / PROJ 8, which selects another WGS84 -> RD datum operation than the
+REM GDAL 3.12 / PROJ 9 of m/c/l -- and by Unit\PythonTest.bat, because the geodms
+REM extension is ABI-tagged for one CPython version per flavour.
+Set GeoDmsFlavor=%flavor%
+
 Set GeoDmsRunCmdBase="%GeoDmsRunPath%" 
 Set GeoDmsQtCmdBase="%GeoDmsGuiQtPath%" 
 

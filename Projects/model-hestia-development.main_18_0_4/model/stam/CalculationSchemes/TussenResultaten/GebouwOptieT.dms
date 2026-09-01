@@ -105,7 +105,7 @@ template select_with_org_relGebouwOptieT
 			attribute<Classifications/Installatie>  Installatie_rel := ='union_data(., '+AsItemList('GeschiktObject/GebouwOptie_rel->PerProduct/'+Classifications/Product/name)+')';
 			attribute<bool>         IsActief        := ='union_data(.,'+AsItemList(replace(IPP_invest_cond, '@PN', Classifications/Product/name))+')'; 
 				
-			attribute<xInstallatie> xInstallatie_code := point_yx(UInt32(xProduct/GeschiktObject_rel), UInt32(IsActief? xProduct/Installatie_rel : classifications/Installatie/V/geen), xInstallatie);
+			attribute<xInstallatie> xInstallatie_code := point_yx(uint32(xProduct/GeschiktObject_rel), uint32(IsActief? xProduct/Installatie_rel : classifications/Installatie/V/geen), xInstallatie);
 			attribute<uInstallatie> uInstallatie_rel := rlookup(xInstallatie_code, uInstallatie/Values);
 			
 			attribute<.> per_uInstallatie(uInstallatie) :=  uInstallatie/First_xProduct_rel;
@@ -544,7 +544,7 @@ template select_with_org_relGebouwOptieT
 
 	unit<uint32> results := GeschiktObject 
 	{
-		attribute<Float64> P50P                (GeschiktObject) := Classifications/Scurve_gebouwoptie/p50p_f[combine_data(Classifications/Scurve_gebouwoptie, BO/Eigendom_rel[GeschikteOptie/BO_rel], GeschikteOptie/GebouwOptie_rel)];
+		attribute<float64> P50P                (GeschiktObject) := Classifications/Scurve_gebouwoptie/p50p_f[combine_data(Classifications/Scurve_gebouwoptie, BO/Eigendom_rel[GeschikteOptie/BO_rel], GeschikteOptie/GebouwOptie_rel)];
 		attribute<Eur_yr>  kosten_tbv_afweging (GeschiktObject) := kosten_or_undefined * P50P; 
 		
 		container BemeterdeGebouwInput_rel := Func2Meter/BemeterdeGebouwInput_rel;

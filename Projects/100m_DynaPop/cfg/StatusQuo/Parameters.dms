@@ -1,7 +1,7 @@
 container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", Using = "Units"
 {
-	unit<Float32> YearRange: Expr = "Units/YearRange";
-	unit<Float32> YearDiffRange: Expr = "Units/YearDiffRange";
+	unit<float32> YearRange: Expr = "Units/YearRange";
+	unit<float32> YearDiffRange: Expr = "Units/YearDiffRange";
 	container PeriodSet
 	{
 	
@@ -23,136 +23,136 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		,	ParamData = "YearDiffRange"
 		,	Descr     = "Periodelengte (in jaren)";
 		
-		unit<UInt16> result: Expr = "Range(UInt16, UInt16(0), UInt16( (EndYear - SpoofStartYear) / TimeStep))"
+		unit<uint16> result: Expr = "Range(UInt16, UInt16(0), UInt16( (EndYear - SpoofStartYear) / TimeStep))"
 		{
 			attribute<YearDiffRange> PeriodLength: 	Expr = "id(result) > uint16(0) ? 5.0[YearDiffRange] : 2.0[YearDiffRange]";
 			attribute<YearDiffRange> YearsPast:		Expr = "cumulate(PeriodLength)";
 			attribute<YearRange> CurrYear: 			Expr = "id(.) > uint16(0) ? StartYear + YearsPast[sub_or_null(Id(.), uint16(1))]: StartYear";
 			attribute<YearRange> ProjectedYear:		Expr = "CurrYear + PeriodLength";
-			attribute<String>  YearStr: Expr = "String(ProjectedYear)";
-			attribute<String>  IdStr: Expr = "'UInt16('+String(ID(.))+')'";
-			attribute<String>  Name:  Expr = "'P'+Replace(YearStr,'.','_')";
+			attribute<string>  YearStr: Expr = "String(ProjectedYear)";
+			attribute<string>  IdStr: Expr = "'UInt16('+String(ID(.))+')'";
+			attribute<string>  Name:  Expr = "'P'+Replace(YearStr,'.','_')";
 			
-			attribute<Float32> ClaimFraction: Expr = "Float32(CurrYear - StartYear)/Float32(EndYear - StartYear)"; // "Float32(PeriodLength)*Float32(CurrYear - StartYear)/Float32(EndYear - StartYear)";
-			attribute<String>  ClaimFractionStr: Expr = "'value('+String(ClaimFraction)+',Float32)'";
-			attribute<String>  PrevRef: Expr = "MakeDefined(Name[sub_or_null(ID(.), UInt16(1))]+'/ResultingState', 'StartingState')";
-			unit<UInt16> Decennium: Expr = "../Decennium";
-			unit<UInt16> Lustrum: Expr = "../Lustrum";
-			parameter<String> BaseYearCorineDataFileName: Expr = "'%SourceDataProjDir%/LUISA/landuse/LUISA_basemap_2018_020321_100m.tif'"; // was, in chronological order, "'%SourceDataProjDir%/LUISA/landuse/elc100_00_laea_lzw.tif'"; "'%SourceDataProjDir%/LUISA/landuse/clc06.tif'"
+			attribute<float32> ClaimFraction: Expr = "Float32(CurrYear - StartYear)/Float32(EndYear - StartYear)"; // "Float32(PeriodLength)*Float32(CurrYear - StartYear)/Float32(EndYear - StartYear)";
+			attribute<string>  ClaimFractionStr: Expr = "'value('+String(ClaimFraction)+',Float32)'";
+			attribute<string>  PrevRef: Expr = "MakeDefined(Name[sub_or_null(ID(.), UInt16(1))]+'/ResultingState', 'StartingState')";
+			unit<uint16> Decennium: Expr = "../Decennium";
+			unit<uint16> Lustrum: Expr = "../Lustrum";
+			parameter<string> BaseYearCorineDataFileName: Expr = "'%SourceDataProjDir%/LUISA/landuse/LUISA_basemap_2018_020321_100m.tif'"; // was, in chronological order, "'%SourceDataProjDir%/LUISA/landuse/elc100_00_laea_lzw.tif'"; "'%SourceDataProjDir%/LUISA/landuse/clc06.tif'"
 		}
-		unit<UInt16> Decennium: NrOfRows = 4
+		unit<uint16> Decennium: NrOfRows = 4
 		{
 			attribute<result> Year:     [ /*'2006',*/ 2020, 2030, 2040, 2050 ];
 			attribute<result> PrevYear: [             2018, 2020, 2030, 2040 ];
 			
-			attribute<String> YearStr: Expr = "String(Year)";
-			attribute<String> Label: Expr = "YearStr";
-			attribute<String> Name: Expr = "'P'+YearStr";
-			attribute<String> YearName: Expr = "'Yr'+YearStr";
+			attribute<string> YearStr: Expr = "String(Year)";
+			attribute<string> Label: Expr = "YearStr";
+			attribute<string> Name: Expr = "'P'+YearStr";
+			attribute<string> YearName: Expr = "'Yr'+YearStr";
 			
 			attribute<result> RefPeriod: Expr = "max_elem(UInt16(ID(.))*UInt16(10), UInt16(1))";
-			attribute<String> DynamicExt: Expr = "String(RefPeriod)";
+			attribute<string> DynamicExt: Expr = "String(RefPeriod)";
 			
 			attribute<.>      StartingYear: Expr = "MakeDefined(ID(.)-1[.], 0[.])";
 			attribute<.>      EndingYear:   Expr = "replace_value(ID(.), 0[.], last(ID(.)))";
-			attribute<String> PeriodName:   Expr = "'P'+YearStr[StartingYear]+'_P'+YearStr[EndingYear]";
+			attribute<string> PeriodName:   Expr = "'P'+YearStr[StartingYear]+'_P'+YearStr[EndingYear]";
 		}
-		unit<UInt16> Lustrum: NrOfRows = 7
+		unit<uint16> Lustrum: NrOfRows = 7
 		{
 			attribute<result> Year:     [ 2020, 2025, 2030, 2035, 2040, 2045, 2050 ];
 			attribute<result> PrevYear: [ 2018, 2020, 2025, 2030, 2035, 2040, 2045 ];
 			
-			attribute<String> YearStr: Expr = "String(Year)";
-			attribute<String> Label: Expr = "YearStr";
-			attribute<String> Name: Expr = "'P'+YearStr";
-			attribute<String> YearName: Expr = "'Yr'+YearStr";
+			attribute<string> YearStr: Expr = "String(Year)";
+			attribute<string> Label: Expr = "YearStr";
+			attribute<string> Name: Expr = "'P'+YearStr";
+			attribute<string> YearName: Expr = "'Yr'+YearStr";
 			
 			// Lustrum Periods with first period ranging over all periods.
 			attribute<.> StartingYear: Expr = "MakeDefined(ID(.)-1[.], 0[.])";
 			attribute<.> EndingYear:   Expr = "replace_value(ID(.), 0[.], last(ID(.)))";
-			attribute<String>  PeriodName:   Expr = "'P'+YearStr[StartingYear]+'_P'+YearStr[EndingYear]";
+			attribute<string>  PeriodName:   Expr = "'P'+YearStr[StartingYear]+'_P'+YearStr[EndingYear]";
 		}
 	}
 	container FuncKernels
 	{
-		unit<SPoint> ReciprocalRevolution10km: Expr = "range(spoint, point_yx(int16(-100), int16(-100)), point_yx(int16(101), int16(101)))", Descr = "revolution around origin of of z=1/r up to 10 km "
+		unit<spoint> ReciprocalRevolution10km: Expr = "range(spoint, point_yx(int16(-100), int16(-100)), point_yx(int16(101), int16(101)))", Descr = "revolution around origin of of z=1/r up to 10 km "
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (100*100)) ? (1.0 / Sqrt(Dist2)) : 0.0"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (100*100)) ? (1.0 / Sqrt(Dist2)) : 0.0"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
 		
-		unit<SPoint> Cylinder500m: Expr = "range(spoint, point_xy(int16(-5), int16(-5)), point_xy(int16(6), int16(6)))", Descr = "cylinder of 500m radius, excluding self interaction"
+		unit<spoint> Cylinder500m: Expr = "range(spoint, point_xy(int16(-5), int16(-5)), point_xy(int16(6), int16(6)))", Descr = "cylinder of 500m radius, excluding self interaction"
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "Float64(Dist2 > 0  && Dist2 <= (5*5))"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "Float64(Dist2 > 0  && Dist2 <= (5*5))"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
-		unit<SPoint> Cylinder5km: Expr = "range(spoint, point_xy(int16(-50), int16(-50)), point_xy(int16(51), int16(51)))", Descr = "cylinder of 5km radius, excluding self interaction"
+		unit<spoint> Cylinder5km: Expr = "range(spoint, point_xy(int16(-50), int16(-50)), point_xy(int16(51), int16(51)))", Descr = "cylinder of 5km radius, excluding self interaction"
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "Float64(Dist2 > 0  && Dist2 <= (50*50))"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "Float64(Dist2 > 0  && Dist2 <= (50*50))"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
-		unit<SPoint> LinearDecay1km: Expr = "range(spoint, point_xy(int16(-10), int16(-10)), point_xy(int16(11), int16(11)))", Descr = "linear distance decay until 2 km"
+		unit<spoint> LinearDecay1km: Expr = "range(spoint, point_xy(int16(-10), int16(-10)), point_xy(int16(11), int16(11)))", Descr = "linear distance decay until 2 km"
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (10*10)) ? 10.0 - Sqrt(Dist2) : 0.0"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (10*10)) ? 10.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
-		unit<SPoint> LinearDecay2km: Expr = "range(spoint, point_xy(int16(-20), int16(-20)), point_xy(int16(21), int16(21)))", Descr = "linear distance decay until 2 km"
+		unit<spoint> LinearDecay2km: Expr = "range(spoint, point_xy(int16(-20), int16(-20)), point_xy(int16(21), int16(21)))", Descr = "linear distance decay until 2 km"
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (20*20)) ? 20.0 - Sqrt(Dist2) : 0.0"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (20*20)) ? 20.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
 		unit<Spoint> LinearDecay5km: Expr = "range(spoint, point_xy(int16(-50), int16(-50)), point_xy(int16(51), int16(51)))", Descr = "linear distance decay until 2 km"
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (50*50)) ? 50.0 - Sqrt(Dist2) : 0.0"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (50*50)) ? 50.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
-		unit<SPoint> km10_neighbours: Expr = "range(spoint, point_xy(int16(-100), int16(-100)), point_xy(int16(101), int16(101)))", Descr = "10km neighbours"
+		unit<spoint> km10_neighbours: Expr = "range(spoint, point_xy(int16(-100), int16(-100)), point_xy(int16(101), int16(101)))", Descr = "10km neighbours"
 		{	
-			attribute<Float32>  Dist2: Expr = "float32(sqrt(Dist2(point_xy(Int16(0), Int16(0), .), uint32)))"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float32> Matr : Expr = "float32(1) / (Dist2)"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<float32>  Dist2: Expr = "float32(sqrt(Dist2(point_xy(Int16(0), Int16(0), .), uint32)))"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float32> Matr : Expr = "float32(1) / (Dist2)"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
 		unit<Spoint> LinearDecay10km: Expr = "range(spoint, point_xy(int16(-100), int16(-100)), point_xy(int16(101), int16(101)))", Descr = "linear distance decay until 2 km"
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (100*100)) ? 100.0 - Sqrt(Dist2) : 0.0"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (100*100)) ? 100.0 - Sqrt(Dist2) : 0.0"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
 				
-		unit<SPoint> ExponentialDecay7km: Expr = "range(spoint, point_xy(int16(-70), int16(-70)), point_xy(int16(71), int16(71)))", Descr = "linear distance decay until 7 km"
+		unit<spoint> ExponentialDecay7km: Expr = "range(spoint, point_xy(int16(-70), int16(-70)), point_xy(int16(71), int16(71)))", Descr = "linear distance decay until 7 km"
 		{
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (70*70)) ? Exp(-Sqrt(Dist2) / 35.0 ) : 0.0"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "(Dist2 > 0  && Dist2 <= (70*70)) ? Exp(-Sqrt(Dist2) / 35.0 ) : 0.0"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
-		unit<SPoint> RooksNeighbours: Expr = "range(spoint, point_xy(int16(-1), int16(-1)), point_xy(int16(2), int16(2)))", Descr = "Rooks case contiguous neighbours (only direct)"
+		unit<spoint> RooksNeighbours: Expr = "range(spoint, point_xy(int16(-1), int16(-1)), point_xy(int16(2), int16(2)))", Descr = "Rooks case contiguous neighbours (only direct)"
 		{	
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "float64(Dist2 > 0  && Dist2 <= (1))"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "float64(Dist2 > 0  && Dist2 <= (1))"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
- 		unit<SPoint> QueensNeighbours: Expr = "range(spoint, point_xy(int16(-1), int16(-1)), point_xy(int16(2), int16(2)))", Descr = "Queens case contiguous neighbours (only direct)"
+ 		unit<spoint> QueensNeighbours: Expr = "range(spoint, point_xy(int16(-1), int16(-1)), point_xy(int16(2), int16(2)))", Descr = "Queens case contiguous neighbours (only direct)"
 		{	
-			attribute<UInt32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
-			attribute<Float64> Attr : Expr = "float64(Dist2 > 0  && Dist2 <= (2))"; //
-			attribute<Float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
+			attribute<uint32>  Dist2: Expr = "Dist2(point_xy(Int16(0), Int16(0), .), uint32)"; // Sqare distance to origin (= cell with row=0 and col=0) in raster cell units.
+			attribute<float64> Attr : Expr = "float64(Dist2 > 0  && Dist2 <= (2))"; //
+			attribute<float32> Matr : Expr = "scalesum(Float32(Attr), Float32(1.0))"; // divides Attr by the sum of Attr so that the sum of Matr equals 1.
 		}
 
 	    unit<spoint>  Area1km2: expr =    "range(spoint,point_xy(-int16(5), -int16(5)), point_xy(int16(6), int16(6)))", Descr = "kernel with an area of approximately 1 km2"
   		 {
    		   attribute<uint32> distMatr:  expr = "dist2(point_xy(int16(0), int16(0), .), uint32)";
-      	   attribute<Float32> AbsWeight: expr =  "distMatr <=uint32(36) ? Float32(1.0) : Float32(0.0)";
+      	   attribute<float32> AbsWeight: expr =  "distMatr <=uint32(36) ? Float32(1.0) : Float32(0.0)";
    		 } 
    		 			
-		unit<UInt8> Set: Expr = "range(UInt8, UInt8(0), UInt8(4))" // @USERINPUT
+		unit<uint8> Set: Expr = "range(UInt8, UInt8(0), UInt8(4))" // @USERINPUT
 		{
-			attribute<String> Name:    [ 'ReciprocalRevolution10km', 'Cylinder5km', 'LinearDecay2km', 'ExponentialDecay7km'] ;
-			attribute<String> MatrRef: Expr = "'FuncKernels/'+Name";
+			attribute<string> Name:    [ 'ReciprocalRevolution10km', 'Cylinder5km', 'LinearDecay2km', 'ExponentialDecay7km'] ;
+			attribute<string> MatrRef: Expr = "'FuncKernels/'+Name";
 		}
 		
 	}
@@ -204,21 +204,21 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			
 			container TableChopper
 			{
-			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/ExogenousParams/' + Classifications/LU/ModelType/Name[LandUseNr] +'_weights.csv'";
+			   parameter<string> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/ExogenousParams/' + Classifications/LU/ModelType/Name[LandUseNr] +'_weights.csv'";
 			   unit<uint32>      Domain:  			expr = "range(uint32, 0, #UnitRef)";
 			   //unit<uint32>      Domain; //  			expr = "range(uint16, uint16(0), uint16(#Geography/Regions/Nuts0_v10))";
 			   
-			   parameter<String> FieldSeparator: 	expr = "';'";
+			   parameter<string> FieldSeparator: 	expr = "';'";
 			
-			   parameter<String> FileData
+			   parameter<string> FileData
 			   :  StorageType = "str"
 			   ,  StorageName = "=FileName";
-			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
-			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			   parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			        
-			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
 			   { 
-			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<string> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			   		attribute<bool>	  		Factor:		Expr = "id(.) > 1[Field]";
 					attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(UpperCase(Name), UpperCase(Factors/Name)))";
 			   		//attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(Name, Factors/Name))";
@@ -227,8 +227,8 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			   
 			   unit<uint32> FactorList: expr = "select_with_org_rel(Field/Factor)" {attribute<string> Name: expr = "Field/Name[org_rel]"; attribute<Factors> FactorRef: expr = "Field/FactorRef[org_rel]";}
 			   
-			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
-			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			   attribute<string> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
 			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			        
 			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
@@ -269,19 +269,19 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			
 			container TableChopper
 			{
-			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/Population/' + PopModel/type[ModelSel] +'.csv'";
+			   parameter<string> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/Population/' + PopModel/type[ModelSel] +'.csv'";
 			   unit<uint16>      Domain:  			expr = "range(uint16, uint16(0), uint16(#Geography/Regions/Nuts0_v10))"; //UnitRef";
-			   parameter<String> FieldSeparator: 	expr = "';'";
+			   parameter<string> FieldSeparator: 	expr = "';'";
 			
-			   parameter<String> FileData
+			   parameter<string> FileData
 			   :  StorageType = "str"
 			   ,  StorageName = "=FileName";
-			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
-			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			   parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			        
-			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
 			   { 
-			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<string> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			   		attribute<bool>	  		Factor:		Expr = "id(.) > 1[Field]";
 			   		attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(Name, Factors/Name))";
 					attribute<string> 		FactorName:	Expr = "Factors/Name[FactorRef]";
@@ -289,8 +289,8 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			   
 			   unit<uint32> FactorList: expr = "select_with_org_rel(Field/Factor)" {attribute<string> Name: expr = "Field/Name[org_rel]"; attribute<Factors> FactorRef: expr = "Field/FactorRef[org_rel]";}
 			   
-			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
-			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			   attribute<string> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
 			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			        
 			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
@@ -325,19 +325,19 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			
 			container TableChopper
 			{
-			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/DemandModels/' + DemandModelsList/Name[modelnumber] +'.csv'";
+			   parameter<string> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/DemandModels/' + DemandModelsList/Name[modelnumber] +'.csv'";
 			   unit<uint16>      Domain:  			expr = "range(uint16, uint16(0), uint16(#Geography/Regions/Nuts0_v10))"; //UnitRef";
-			   parameter<String> FieldSeparator: 	expr = "';'";
+			   parameter<string> FieldSeparator: 	expr = "';'";
 			
-			   parameter<String> FileData
+			   parameter<string> FileData
 			   :  StorageType = "str"
 			   ,  StorageName = "=FileName";
-			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
-			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			   parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			        
-			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
 			   { 
-			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<string> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			   		attribute<bool>	  		Factor:		Expr = "id(.) > (DemandModelsList/firstFactor[modelnumber])[Field]";
 			   		attribute<Factors> 		FactorRef:	Expr = "MakeDefined(rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint32) : 65535[uint32], id(Factors)), rlookup(Name, Factors/UniName))";
 					attribute<string> 		FactorName:	Expr = "Factors/UniName[FactorRef]";
@@ -345,8 +345,8 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			   
 			   unit<uint32> FactorList: expr = "select_with_org_rel(Field/Factor)" {attribute<string> Name: expr = "Field/Name[org_rel]"; attribute<Factors> FactorRef: expr = "Field/FactorRef[org_rel]";}
 			   
-			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
-			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			   attribute<string> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
 			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			        
 			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
@@ -386,19 +386,19 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			
 			container TableChopper
 			{
-			   parameter<String> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/NeighbourhoodParams/' + Classifications/LU/ModelType/Name[LandUseNr] +'_weights.csv'";
+			   parameter<string> FileName:       	expr = "ParamSets/ActiveSet/ParamPath + '/NeighbourhoodParams/' + Classifications/LU/ModelType/Name[LandUseNr] +'_weights.csv'";
 			   unit<uint16>      Domain:  			expr = "UnitRef";
-			   parameter<String> FieldSeparator: 	expr = "';'";
+			   parameter<string> FieldSeparator: 	expr = "';'";
 			
-			   parameter<String> FileData
+			   parameter<string> FileData
 			   :  StorageType = "str"
 			   ,  StorageName = "=FileName";
-			   parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
-			   parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
+			   parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
+			   parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine,'\"[^\"]*+\"(;\"[^\"]*+\")*+')";
 			        
-			   unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			   unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
 			   { 
-			   		attribute<String> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
+			   		attribute<string> 		Name: 		Expr = "ReadArray(HeaderLine, Field, String, 0)";
 			   		attribute<bool>	  		Factor:		Expr = "id(.) > 1[Field]";
 			   		attribute<LandUses> 	FactorRef:	Expr = "rlookup(Factor ? value(substr(Name, 1, strlen(Name) - 1), uint8) : 255[uint8], id(LandUses))";
 			   }
@@ -409,8 +409,8 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			   		attribute<LandUses> FactorRef: expr = "Field/FactorRef[org_rel]";
 			   }
 			   
-			   attribute<String> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
-			   attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
+			   attribute<string> BodyLines(Domain): expr = "readLines(FileData, Domain, HeaderLine/ReadPos)"; //,  IntegrityCheck = "HeaderOK";
+			   attribute<bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
 			      "regex_match(BodyLines,'(-?+[0-9]++|\"[^\"]*+\")?+(;(-?+[0-9]++|\"[^\"]*+\")?+)*+')";
 			        
 			   container Data: Expr = "for_each_nedv(Field/Name,'ReadElems(BodyLines,string,'+MakeDefined(Field/Name[ID(Field)-1]+'/ReadPos','const(0,Domain)')+')',Domain,string)"
@@ -459,22 +459,22 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				{
 					   unit<uint16> context: expr = "UnitRef";
 					   // ExportDomain is a domain unit 
-					   parameter<String> Fieldlist:      expr = "= quote('ZoneName;Constant;' + asList('w'+ string(UniFctr/Values), ';'))";
-					   parameter<String> FieldSeperator: expr = "';'";
-					   parameter<String> FileName:       expr = "ParamSets/ActiveSet/ParamPath + '/ExogenousParams/' + LandUseClass +'_weights.csv'";
+					   parameter<string> Fieldlist:      expr = "= quote('ZoneName;Constant;' + asList('w'+ string(UniFctr/Values), ';'))";
+					   parameter<string> FieldSeperator: expr = "';'";
+					   parameter<string> FileName:       expr = "ParamSets/ActiveSet/ParamPath + '/ExogenousParams/' + LandUseClass +'_weights.csv'";
 					
 					   unit<uint32> Field: expr = "range(uint32,0,strcount(Fieldlist,';')+1)"
 					   {
 					      attribute<string> Name: expr = "ReadArray(FieldList,.,string,0)";
 					   }
 					   parameter<string> NewLine: expr = "'\n'";
-					   parameter<String> Header:  expr = "FieldList";
-					   attribute<String> Body (context): expr =
+					   parameter<string> Header:  expr = "FieldList";
+					   attribute<string> Body (context): expr =
 					      "=AsList("
 					         "+'String('+Field/Name+')',' + '+Quote(FieldSeperator)+' +'"
 					      ")";
 					  
-					   parameter<String> Result
+					   parameter<string> Result
 					   :  expr        = "Header + NewLine + AsList(Body, NewLine)"
 					   ,  StorageName = "=FileName"
 					   ,  StorageType = "str";
@@ -507,22 +507,22 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				{
 					   unit<uint16> context: expr = "UnitRef";
 					   // ExportDomain is a domain unit 
-					   parameter<String> Fieldlist:      expr = "= quote('ZoneName;Constant;' + asList('l'+ string(UniLUT/Values), ';'))";
-					   parameter<String> FieldSeperator: expr = "';'";
-					   parameter<String> FileName:       expr = "ParamSets/ActiveSet/ParamPath + '/NeighbourhoodParams/' + LandUseClass +'_weights.csv'";
+					   parameter<string> Fieldlist:      expr = "= quote('ZoneName;Constant;' + asList('l'+ string(UniLUT/Values), ';'))";
+					   parameter<string> FieldSeperator: expr = "';'";
+					   parameter<string> FileName:       expr = "ParamSets/ActiveSet/ParamPath + '/NeighbourhoodParams/' + LandUseClass +'_weights.csv'";
 					
 					   unit<uint32> Field: expr = "range(uint32,0,strcount(Fieldlist,';')+1)"
 					   {
 					      attribute<string> Name: expr = "ReadArray(FieldList,.,string,0)";
 					   }
 					   parameter<string> NewLine: expr = "'\n'";
-					   parameter<String> Header:  expr = "FieldList";
-					   attribute<String> Body (context): expr =
+					   parameter<string> Header:  expr = "FieldList";
+					   attribute<string> Body (context): expr =
 					      "=AsList("
 					         "+'String('+Field/Name+')',' + '+Quote(FieldSeperator)+' +'"
 					      ")";
 					  
-					   parameter<String> Result
+					   parameter<string> Result
 					   :  expr        = "Header + NewLine + AsList(Body, NewLine)"
 					   ,  StorageName = "=FileName"
 					   ,  StorageType = "str";
@@ -533,8 +533,8 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container AllowedTempl: IsTemplate = "True"
 		{
 			parameter<string> AllowFile;
-			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
-			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			unit<uint8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
 			{
 				attribute<int16> TransitionCode: Expr = "ReadArray(AllowFile, ModelMatr, int16, 0)";
 			}
@@ -544,12 +544,12 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container TransitionCostsTempl: IsTemplate = "True"
 		{
 			//parameter<string> TransitionCostsFilePath;
-			parameter<String> TransitionCostsFile; //:  StorageName = "=TransitionCostsFilePath", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile; //:  StorageName = "=TransitionCostsFilePath", StorageType = "str", KeepData = "False";
 			
-			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
-			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			unit<uint8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
 			{
-				attribute<Float64> TransitionCosts: Expr = "ReadArray(TransitionCostsFile, ModelMatr, Float64, 0)";
+				attribute<float64> TransitionCosts: Expr = "ReadArray(TransitionCostsFile, ModelMatr, Float64, 0)";
 			}
 			container xTab: Expr = "for_each_nedv(ModelType/Name, 'ModelMatr/TransitionCosts[value(UInt32(ID(ModelType))*#ModelType+'+String(ID(ModelType))+', ModelMatr)]', ModelType, Float64)";
 		}
@@ -558,12 +558,12 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container TransitionCostsTempl2: IsTemplate = "True"
 		{
 			parameter<string> TransitionCostsFilePath;
-			parameter<String> TransitionCostsFile:  StorageName = "=TransitionCostsFilePath", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile:  StorageName = "=TransitionCostsFilePath", StorageType = "str", KeepData = "False";
 			
-			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
-			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			unit<uint8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
 			{
-				attribute<Float64> TransitionCosts: Expr = "ReadArray(TransitionCostsFile, ModelMatr, Float64, 0)";
+				attribute<float64> TransitionCosts: Expr = "ReadArray(TransitionCostsFile, ModelMatr, Float64, 0)";
 			}
 			container xTab: Expr = "for_each_nedv(ModelType/Name, 'ModelMatr/TransitionCosts[value(UInt32(ID(ModelType))*#ModelType+'+String(ID(ModelType))+', ModelMatr)]', ModelType, Float64)";
 			container pTab: Expr = "for_each_nedv(ModelType/Name, 'xTab/'+ ModelType/Name +'', ModelType, Float64)";
@@ -572,12 +572,12 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container GrossRevenuesTempl: IsTemplate = "True"
 		{
 			parameter<string> GrossRevenuesFilePath;
-			parameter<String> GrossRevenuesFile:  StorageName = "=GrossRevenuesFilePath", StorageType = "str", KeepData = "False";
+			parameter<string> GrossRevenuesFile:  StorageName = "=GrossRevenuesFilePath", StorageType = "str", KeepData = "False";
 			
-			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
-			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			unit<uint8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
 			{
-				attribute<Float64> GrossRevenues: Expr = "ReadArray(GrossRevenuesFile, ModelMatr, Float64, 0)";
+				attribute<float64> GrossRevenues: Expr = "ReadArray(GrossRevenuesFile, ModelMatr, Float64, 0)";
 			}
 			container xTab: Expr = "for_each_nedv(ModelType/Name, 'ModelMatr/GrossRevenues[value(UInt32(ID(ModelType))*#ModelType+'+String(ID(ModelType))+', ModelMatr)]', ModelType, Float64)";
 			container pTab: Expr = "for_each_nedv(ModelType/Name, 'xTab/'+ ModelType/Name +'', ModelType, Float64)";
@@ -590,8 +590,8 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			parameter<string> TransitionFactorsFile;
 			parameter<string> TransitionFactorsFilePost2030;
 			
-			unit<UInt8>  ModelType: Expr = "Classifications/LU/ModelType";
-			unit<UInt32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
+			unit<uint8>  ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint32> ModelMatr: Expr = "Classifications/LU/ModelMatr"
 			{
 				attribute<MetaData/FactorID> 			TransitionFactorIDs: 		 Expr = "ReadArray(TransitionFactorsFile, ModelMatr, MetaData/FactorID, 0)";
 				attribute<MetaData/FactorID>		 	TransitionFactorIDsPost2030: Expr = "ReadArray(TransitionFactorsFilePost2030, ModelMatr, MetaData/FactorID, 0)";
@@ -600,7 +600,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<MetaData/StaticFactors>			  	TransitionFactorsPost2030:  Expr = "rlookup(TransitionFactorIDsPost2030, MetaData/StaticFactors/id)";
 				
 				//attribute<String> TransitionExpr: Expr = "(TransitionFactors == 0[MetaData/Factors]) ? ('') : ('+iif(PrevState/LandUse == value('+String(ID(.)/#ModelType)+', ModelType), Float32(CaseData/FactorData/'+MetaData/Factors/Name[TransitionFactors]+'),Float32(0))')";
-				attribute<String> TransitionExpr: Expr = 
+				attribute<string> TransitionExpr: Expr = 
 														"((TransitionFactors == 0[MetaData/StaticFactors]) && (TransitionFactorsPost2030 == 0[MetaData/StaticFactors])) ? ('') : "
 														"'+ switch(' + "
 															"'case(PrevState/LandUse == value(' + String(ID(.)/#ModelType) + ', ModelType) && CurrYear < 2030[float32], Float32(CaseData/FactorData/' + MetaData/StaticFactors/UniqueName[TransitionFactors] + ')), ' + "
@@ -614,11 +614,11 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container MatrTempl: IsTemplate = "True"
 		{
 			parameter<string> NeighbFile;
-			parameter<UInt32> StartReadPos;
-			parameter<Int16> NrCells: Expr = "ReadValue(NeighbFile, Int16, StartReadPos)";
-			unit<SPoint> Data: Expr = "range(spoint, point_xy(-NrCells, -NrCells), point_xy(NrCells + int16(1), NrCells + int16(1)))"
+			parameter<uint32> StartReadPos;
+			parameter<int16> NrCells: Expr = "ReadValue(NeighbFile, Int16, StartReadPos)";
+			unit<spoint> Data: Expr = "range(spoint, point_xy(-NrCells, -NrCells), point_xy(NrCells + int16(1), NrCells + int16(1)))"
 			{
-				attribute<Float32> Matr: Expr = "ReadArray(NeighbFile, Data, Float32, NrCells/readPos)";
+				attribute<float32> Matr: Expr = "ReadArray(NeighbFile, Data, Float32, NrCells/readPos)";
 			}
 		}
 				
@@ -626,18 +626,18 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		{
 			parameter<string> InNeighbFile;
 			
-			parameter<String> NeighbFile: StorageName = "=InNeighbFile", StorageType = "str", KeepData = "False";
+			parameter<string> NeighbFile: StorageName = "=InNeighbFile", StorageType = "str", KeepData = "False";
 			
-			unit<UInt8> LUT: Expr = "Classifications/LU/ModelType";
+			unit<uint8> LUT: Expr = "Classifications/LU/ModelType";
 			
-			attribute<Float32> NeWeights(LUT): Expr = "ReadArray(NeighbFile, LUT, Float32, 0)";
+			attribute<float32> NeWeights(LUT): Expr = "ReadArray(NeighbFile, LUT, Float32, 0)";
 			
-			parameter<UInt8> NrNeighbFileKernels: Expr = "ReadValue(NeighbFile, UInt8, NeWeights/readPos)";
+			parameter<uint8> NrNeighbFileKernels: Expr = "ReadValue(NeighbFile, UInt8, NeWeights/readPos)";
 			
-			unit<UInt8> NeighbFileKernelSet: Expr = "range(UInt8, 0[UInt8], NrNeighbFileKernels)"
+			unit<uint8> NeighbFileKernelSet: Expr = "range(UInt8, 0[UInt8], NrNeighbFileKernels)"
 			{
-				attribute<String> Name: Expr = "'K'+String(ID(.))";
-				attribute<String> MatrRef: Expr = "'Matr/'+Name+'/Data'";
+				attribute<string> Name: Expr = "'K'+String(ID(.))";
+				attribute<string> MatrRef: Expr = "'Matr/'+Name+'/Data'";
 			}
 			container Matr: Expr = 
 				"for_each_ne("
@@ -646,9 +646,9 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 					
 			container FuncKernels: Expr = "/Parameters/FuncKernels";
 			
-			unit<UInt8> KernelSet: Expr = "Range(UInt8, uint8(0), uint8(#NeighbFileKernelSet + #FuncKernels/Set))";
+			unit<uint8> KernelSet: Expr = "Range(UInt8, uint8(0), uint8(#NeighbFileKernelSet + #FuncKernels/Set))";
 
-			attribute<String> MatrRef(KernelSet): Expr = 
+			attribute<string> MatrRef(KernelSet): Expr = 
 				"MakeDefined("
 					"NeighbFileKernelSet/MatrRef[value(ID(KernelSet), NeighbFileKernelSet)], "
 					"FuncKernels/Set/MatrRef[value(ID(KernelSet)-UInt8(#NeighbFileKernelSet), FuncKernels/Set)]"
@@ -657,126 +657,126 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		
 		container UniqueAllocSet: IsTemplate = "True"
 		{
-			parameter<String> AddPath;
-			parameter<String> FileExt;
+			parameter<string> AddPath;
+			parameter<string> FileExt;
 			
 			unit<uint16> Runs: Expr = "GeoGraphy/Regions/Runs";
 			
-			attribute<String> ParamPath  (Runs): Expr = "ParamSets/ActiveSet/ParamPath + '/' + AddPath + Runs/AllocDirName";
-			attribute<String> ParamPathN0(Runs): Expr = "ParamSets/ActiveSet/ParamPath + '/' + AddPath + Runs/AllocDirNameN0";
+			attribute<string> ParamPath  (Runs): Expr = "ParamSets/ActiveSet/ParamPath + '/' + AddPath + Runs/AllocDirName";
+			attribute<string> ParamPathN0(Runs): Expr = "ParamSets/ActiveSet/ParamPath + '/' + AddPath + Runs/AllocDirNameN0";
 			attribute<string> FileName   (Runs): Expr = "FullPathName(., ParamPath + FileExt)";
 			attribute<string> FileNameN0 (Runs): Expr = "FullPathName(., ParamPathN0 + FileExt)";
-			attribute<String> ActualFileNames(Runs): Expr = "='union_data(Runs, '+AsItemList('ExistingFile('+Quote(FileNameN0)+','+Quote(FileName)+')')+')'";
-			unit<UInt16> UniqueFiles: Expr = "Unique(ActualFileNames)"
+			attribute<string> ActualFileNames(Runs): Expr = "='union_data(Runs, '+AsItemList('ExistingFile('+Quote(FileNameN0)+','+Quote(FileName)+')')+')'";
+			unit<uint16> UniqueFiles: Expr = "Unique(ActualFileNames)"
 			{
 				attribute<Runs> RunRegion:   Expr = "rlookup(Values, FileName  )";
 				attribute<Runs> RunRegionN0: Expr = "rlookup(Values, FileNameN0)";
-				attribute<String> Name: Expr = "MakeDefined(Runs/AllocDirName[RunRegion], Runs/AllocDirNameN0[RunRegionN0])";
+				attribute<string> Name: Expr = "MakeDefined(Runs/AllocDirName[RunRegion], Runs/AllocDirNameN0[RunRegionN0])";
 			}
-			attribute<String> Name(Runs): Expr = "rjoin(ActualFileNames, UniqueFiles/Values, UniqueFiles/Name)";
+			attribute<string> Name(Runs): Expr = "rjoin(ActualFileNames, UniqueFiles/Values, UniqueFiles/Name)";
 		}
 		container Alloc1Factor: IsTemplate = "True", isHidden = "True"
 		{
-			parameter<UInt32> readPos;
+			parameter<uint32> readPos;
 			
-			parameter<Float32> Weight  : Expr = "ReadValue(AllocData, Float32, readPos)";
-			parameter<UInt16>  FactorNr: Expr = "ReadValue(AllocData, UInt16,  Weight/readPos)";
+			parameter<float32> Weight  : Expr = "ReadValue(AllocData, Float32, readPos)";
+			parameter<uint16>  FactorNr: Expr = "ReadValue(AllocData, UInt16,  Weight/readPos)";
 			
-			parameter<UInt32> NextValue: Expr = "FactorNr/readPos";
+			parameter<uint32> NextValue: Expr = "FactorNr/readPos";
 		}
 		container Alloc2Factor: IsTemplate = "True", isHidden = "True"
 		{
-			parameter<UInt32> readPos;
+			parameter<uint32> readPos;
 			
-			parameter<Float32> Weight: Expr = "ReadValue(AllocData, Float32, readPos)";
-			parameter<UInt8>   SrcLUT: Expr = "ReadValue(AllocData, UInt8,   Weight/readPos)";
-			parameter<UInt8>   Func  : Expr = "ReadValue(AllocData, UInt8,   SrcLUT/readPos)";
+			parameter<float32> Weight: Expr = "ReadValue(AllocData, Float32, readPos)";
+			parameter<uint8>   SrcLUT: Expr = "ReadValue(AllocData, UInt8,   Weight/readPos)";
+			parameter<uint8>   Func  : Expr = "ReadValue(AllocData, UInt8,   SrcLUT/readPos)";
 			
-			parameter<UInt32> NextValue: Expr = "Func/readPos";
+			parameter<uint32> NextValue: Expr = "Func/readPos";
 		}
 		container Alloc1LUT: IsTemplate = "True", isHidden = "True"
 		{
-			parameter<UInt32> readPos;
+			parameter<uint32> readPos;
 			
-			parameter<UInt8>   LUT        : Expr = "ReadValue(AllocData, UInt8,   readPos)";
-			parameter<Float32> ConstWeight: Expr = "ReadValue(AllocData, Float32, LUT/readPos)";
-			parameter<UInt32>  NrFactors  : Expr = "ReadValue(AllocData, UInt32,  ConstWeight/readPos)";
-			unit<UInt32> Factors: Expr = "Range(UInt32, 0, MakeDefined(NrFactors, 0) )"
+			parameter<uint8>   LUT        : Expr = "ReadValue(AllocData, UInt8,   readPos)";
+			parameter<float32> ConstWeight: Expr = "ReadValue(AllocData, Float32, LUT/readPos)";
+			parameter<uint32>  NrFactors  : Expr = "ReadValue(AllocData, UInt32,  ConstWeight/readPos)";
+			unit<uint32> Factors: Expr = "Range(UInt32, 0, MakeDefined(NrFactors, 0) )"
 			{
-				attribute<String> Name: Expr = "'F'+String(ID(Factors))";
-				attribute<UInt8>  LandUseType:   Expr = "const(LUT, .)";
-				attribute<UInt16>  FactorNr:Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/FactorNr')+')'     : 'const(UInt16(0), .)'";
-				attribute<Float32> Weight:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/Weight')+')' : 'const(Float32(0), .)'";
+				attribute<string> Name: Expr = "'F'+String(ID(Factors))";
+				attribute<uint8>  LandUseType:   Expr = "const(LUT, .)";
+				attribute<uint16>  FactorNr:Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/FactorNr')+')'     : 'const(UInt16(0), .)'";
+				attribute<float32> Weight:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/Weight')+')' : 'const(Float32(0), .)'";
 			}
 			container FactorData: Expr = "='iterate(Factors/Name, Alloc1Factor, ''NrFactors/readPos'')'"
 			{
-				parameter<UInt32> lastValue;
+				parameter<uint32> lastValue;
 			}
-			parameter<UInt32> NextValue: Expr = "FactorData/lastValue";
+			parameter<uint32> NextValue: Expr = "FactorData/lastValue";
 		}
 		container Alloc1Templ: IsTemplate = "True"
 		{
-			parameter<String> AllocData;
+			parameter<string> AllocData;
 			
 			container Data: Expr = "iterate(Classifications/LU/ModelType/Name, Alloc1LUT, '0')"
 			{
-				parameter<UInt32> lastValue;
+				parameter<uint32> lastValue;
 			}
 		}
 		container Alloc2LUT: IsTemplate = "True", isHidden = "True"
 		{
-			parameter<UInt32> readPos;
+			parameter<uint32> readPos;
 			
-			parameter<UInt8>   LUT        : Expr = "ReadValue(AllocData, UInt8,   readPos)";
-			parameter<Float32> ConstWeight: Expr = "ReadValue(AllocData, Float32, LUT/readPos)";
-			parameter<UInt32>  NrFactors  : Expr = "ReadValue(AllocData, UInt32,  ConstWeight/readPos)";
-			unit<UInt32> Factors: Expr = "Range(UInt32, 0, MakeDefined(NrFactors, 0) )"
+			parameter<uint8>   LUT        : Expr = "ReadValue(AllocData, UInt8,   readPos)";
+			parameter<float32> ConstWeight: Expr = "ReadValue(AllocData, Float32, LUT/readPos)";
+			parameter<uint32>  NrFactors  : Expr = "ReadValue(AllocData, UInt32,  ConstWeight/readPos)";
+			unit<uint32> Factors: Expr = "Range(UInt32, 0, MakeDefined(NrFactors, 0) )"
 			{
-				attribute<String> Name: Expr = "'F'+String(ID(Factors))";
-				attribute<UInt8>  LandUseType:   Expr = "const(LUT, .)";
-				attribute<UInt8>   SrcLUT:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/SrcLUT')+')'     : 'const(UInt8(0), .)'";
-				attribute<Float32> Weight:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/Weight')+')' : 'const(Float32(0), .)'";
-				attribute<UInt8>   Func:    Expr = "=(NrFactors > 0) ? 'union_data(., '+asItemList('FactorData/'+Name+'/Func')+')'   : 'const(UInt8(0), .)'";
+				attribute<string> Name: Expr = "'F'+String(ID(Factors))";
+				attribute<uint8>  LandUseType:   Expr = "const(LUT, .)";
+				attribute<uint8>   SrcLUT:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/SrcLUT')+')'     : 'const(UInt8(0), .)'";
+				attribute<float32> Weight:  Expr = "=NrFactors > 0 ? 'union_data(., '+asItemList('FactorData/'+Name+'/Weight')+')' : 'const(Float32(0), .)'";
+				attribute<uint8>   Func:    Expr = "=(NrFactors > 0) ? 'union_data(., '+asItemList('FactorData/'+Name+'/Func')+')'   : 'const(UInt8(0), .)'";
 			}
 			container FactorData: Expr = "='iterate(Factors/Name, Alloc2Factor, ''NrFactors/readPos'')'"
 			{
-				parameter<UInt32> lastValue;
+				parameter<uint32> lastValue;
 			}
-			parameter<UInt32> NextValue: Expr = "FactorData/lastValue";
+			parameter<uint32> NextValue: Expr = "FactorData/lastValue";
 		}
 		container Alloc2Templ: IsTemplate = "True"
 		{
-			parameter<String> AllocData;
+			parameter<string> AllocData;
 			
 			container Data: Expr = "iterate(Classifications/LU/ModelType/Name, Alloc2LUT, '0')"
 			{
-				parameter<UInt32> lastValue;
+				parameter<uint32> lastValue;
 			}
 		}
 		container Alloc1ReorderTempl: IsTemplate = "True"
 		{
 			container AllocData;
 			
-			unit<UInt16> FactorID:   Expr = "MetaData/FactorID";
-			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint16> FactorID:   Expr = "MetaData/FactorID";
+			unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
 			
-			unit<UInt32> FactorWeightsOrg: Expr = "='union_unit('+asItemList('AllocData/'+ModelType/Name+'/Factors')+')'"
+			unit<uint32> FactorWeightsOrg: Expr = "='union_unit('+asItemList('AllocData/'+ModelType/Name+'/Factors')+')'"
 			{
 				attribute<ModelType> LandUseType:
 					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/LandUseType')+'), ModelType)'";
 				attribute<FactorID> FactorNr:
 					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/FactorNr')+'), FactorID)'";
-				attribute<Float32> Weight:
+				attribute<float32> Weight:
 					Expr = "='union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/Weight')+')'";
 			}
 			container Results: StoreData = "True"
 			{
-				attribute<Float32> ConstWeight(ModelType): Expr = "='union_data(ModelType, '+asItemList('AllocData/'+ModelType/Name+'/ConstWeight')+')'";
-				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				attribute<float32> ConstWeight(ModelType): Expr = "='union_data(ModelType, '+asItemList('AllocData/'+ModelType/Name+'/ConstWeight')+')'";
+				unit<uint32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
 				{
-					attribute<String>    Name:        Expr = "'SF_'+String(LandUseType)+'_'+String(FactorNr)"; // assume this uniquely identifies a factor weight.
+					attribute<string>    Name:        Expr = "'SF_'+String(LandUseType)+'_'+String(FactorNr)"; // assume this uniquely identifies a factor weight.
 					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
-					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
 					attribute<FactorID>  FactorNr:    Expr = "FactorWeightsOrg/FactorNr   [org_rel]";
 				}
 			}
@@ -787,27 +787,27 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			container AllocData;
 			
 			unit<Uint32> FactorID:   Expr = "MetaData/FactorID";
-			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
 			
 			unit<Uint32> ConstWeightsOrg:  Expr = "select_with_org_rel(AllocData/Constants/RegionId = inRegionId)"
 			{	
 				attribute<ModelType> 	LandUseType: expr = "AllocData/Constants/LandUseType[org_rel]";
 				attribute<float32>		Weight:		 expr = "AllocData/Constants/Weight[org_rel]";
 			}
-			unit<UInt32> FactorWeightsOrg: Expr = "select_with_org_rel(AllocData/RegionId = inRegionId)"
+			unit<uint32> FactorWeightsOrg: Expr = "select_with_org_rel(AllocData/RegionId = inRegionId)"
 			{
 				attribute<ModelType> LandUseType: 	expr = "AllocData/LandUseType[org_rel]";
 				attribute<FactorID> FactorNr:	  	expr = "AllocData/FactorID[org_rel]";
-				attribute<Float32> Weight:			expr = "AllocData/Weight[org_rel]";
+				attribute<float32> Weight:			expr = "AllocData/Weight[org_rel]";
 			}
 			container Results: StoreData = "True"
 			{
-				attribute<Float32> ConstWeight(ModelType): Expr = "rjoin(id(ModelType), ConstWeightsOrg/LandUseType, ConstWeightsOrg/Weight)";
-				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				attribute<float32> ConstWeight(ModelType): Expr = "rjoin(id(ModelType), ConstWeightsOrg/LandUseType, ConstWeightsOrg/Weight)";
+				unit<uint32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
 				{
-					attribute<String>    Name:        Expr = "'SF_'+String(LandUseType)+'_'+String(FactorNr)"; // assume this uniquely identifies a factor weight.
+					attribute<string>    Name:        Expr = "'SF_'+String(LandUseType)+'_'+String(FactorNr)"; // assume this uniquely identifies a factor weight.
 					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
-					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
 					attribute<FactorID>  FactorNr:    Expr = "FactorWeightsOrg/FactorNr   [org_rel]";
 					attribute<string>	 VariableRef: Expr = "FactorId/VariableRef[FactorNr]";
 				}
@@ -816,33 +816,33 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container Alloc2ReorderTempl: IsTemplate = "True"
 		{
 			container AllocData;
-			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
-			unit<UInt8> Funcs: Expr = "NeighbourhoodLink/KernelSet";
+			unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint8> Funcs: Expr = "NeighbourhoodLink/KernelSet";
 			
-			unit<UInt32> FactorWeightsOrg: Expr = "='union_unit('+asItemList('AllocData/'+ModelType/Name+'/Factors')+')'"
+			unit<uint32> FactorWeightsOrg: Expr = "='union_unit('+asItemList('AllocData/'+ModelType/Name+'/Factors')+')'"
 			{
 				attribute<ModelType> LandUseType: 
 					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/LandUseType')+'), ModelType)'";
 				attribute<ModelType> SrcLUT:
 					Expr = "='value(union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/SrcLUT')+'), ModelType)'";
-				attribute<Float32> Weight:
+				attribute<float32> Weight:
 					Expr = "='union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/Weight')+')'";
 				attribute<Funcs> Func:
 					Expr = "='union_data(FactorWeightsOrg, '+asItemList('AllocData/'+ModelType/Name+'/Factors/Func')+')'";
 			}
 			container Results: StoreData = "True"
 			{
-				attribute<Float32> ConstWeight(ModelType): Expr = "='union_data(ModelType, '+asItemList('AllocData/'+ModelType/Name+'/ConstWeight')+')'";
-				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				attribute<float32> ConstWeight(ModelType): Expr = "='union_data(ModelType, '+asItemList('AllocData/'+ModelType/Name+'/ConstWeight')+')'";
+				unit<uint32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
 				{
 					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
-					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
 					attribute<ModelType> SrcLUT:      Expr = "FactorWeightsOrg/SrcLUT     [org_rel]";
 					attribute<Funcs>     Func:        Expr = "FactorWeightsOrg/Func       [org_rel]";
-					attribute<UInt32>    UFF_key:     Expr = "UInt32(SrcLUT) + UInt32(Func) * #ModelType";
+					attribute<uint32>    UFF_key:     Expr = "UInt32(SrcLUT) + UInt32(Func) * #ModelType";
 					attribute<UniqueFactorFuncs> UFF_rel: Expr = "rlookup(UFF_key, UniqueFactorFuncs/Values)";
 				}
-				unit<UInt32> UniqueFactorFuncs: Expr = "Unique(FactorWeights/UFF_key)"
+				unit<uint32> UniqueFactorFuncs: Expr = "Unique(FactorWeights/UFF_key)"
 				{
 					attribute<UINt32>    Values;
 					attribute<ModelType> SrcLUT:      Expr = "value(Values % #ModelType, ModelType)";
@@ -851,7 +851,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 					attribute<string> ggModelIdExpr(ModelType): Expr = "'value('+String(ID(ModelType))+', ModelType)'";
 					
 					// moved here from Rules since this is independent of the actual run-region, weight or LUT for which this is a factor
-					attribute<String> Name:           Expr = "'NE_'+ModelType/Name[SrcLUT]+'_'+String(Func)";
+					attribute<string> Name:           Expr = "'NE_'+ModelType/Name[SrcLUT]+'_'+String(Func)";
 					attribute<string> PotentialExpr:  Expr = "'potential(Float32(PrevState/Landuse_grid=='+ggModelIdExpr[SrcLUT]+'), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
 					attribute<string> AreaExpr:       Expr = "'potential(Float32(CaseData/Land/IsInRunRegion), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
 					attribute<string> NeighbourExpr:  Expr = "'PotentialData/'+Name +' / '+'AreaData/'+Name";
@@ -865,8 +865,8 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container New_Alloc2ReorderTempl: IsTemplate = "True"
 		{
 			container AllocData;
-			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
-			unit<UInt8> Funcs: Expr = "NeighbourhoodLink/KernelSet";
+			unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint8> Funcs: Expr = "NeighbourhoodLink/KernelSet";
 			
 			unit<Uint32> ConstWeightsOrg:  Expr = "select_with_org_rel(AllocData/Constants/RegionId = inRegionId)"
 			{	
@@ -874,26 +874,26 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<float32>		Weight:		 expr = "AllocData/Constants/Weight[org_rel]";
 			}
 			
-			unit<UInt32> FactorWeightsOrg: Expr = "select_with_org_rel(AllocData/RegionId = inRegionId)"
+			unit<uint32> FactorWeightsOrg: Expr = "select_with_org_rel(AllocData/RegionId = inRegionId)"
 			{
 				attribute<ModelType> LandUseType: 	Expr = "AllocData/LandUseType[org_rel]";
 				attribute<ModelType> SrcLUT:		Expr = "AllocData/SrcLUT[org_rel]";
-				attribute<Float32> Weight:			Expr = "AllocData/Weight[org_rel]";
+				attribute<float32> Weight:			Expr = "AllocData/Weight[org_rel]";
 				attribute<Funcs> Func:				Expr = "(AllocData/Func[org_rel])[Funcs]";
 			}
 			container Results: StoreData = "True"
 			{
-				attribute<Float32> ConstWeight(ModelType): Expr = "rjoin(id(ModelType), ConstWeightsOrg/LandUseType, ConstWeightsOrg/Weight)";
-				unit<UInt32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
+				attribute<float32> ConstWeight(ModelType): Expr = "rjoin(id(ModelType), ConstWeightsOrg/LandUseType, ConstWeightsOrg/Weight)";
+				unit<uint32> FactorWeights: Expr = "select_with_org_rel(FactorWeightsOrg/Weight <> Float32(0))"
 				{
 					attribute<ModelType> LandUseType: Expr = "FactorWeightsOrg/LandUseType[org_rel]";
-					attribute<Float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
+					attribute<float32>   Weight:      Expr = "FactorWeightsOrg/Weight     [org_rel]";
 					attribute<ModelType> SrcLUT:      Expr = "FactorWeightsOrg/SrcLUT     [org_rel]";
 					attribute<Funcs>     Func:        Expr = "FactorWeightsOrg/Func       [org_rel]";
-					attribute<UInt32>    UFF_key:     Expr = "UInt32(SrcLUT) + UInt32(Func) * #ModelType";
+					attribute<uint32>    UFF_key:     Expr = "UInt32(SrcLUT) + UInt32(Func) * #ModelType";
 					attribute<UniqueFactorFuncs> UFF_rel: Expr = "rlookup(UFF_key, UniqueFactorFuncs/Values)";
 				}
-				unit<UInt32> UniqueFactorFuncs: Expr = "Unique(FactorWeights/UFF_key)"
+				unit<uint32> UniqueFactorFuncs: Expr = "Unique(FactorWeights/UFF_key)"
 				{
 					attribute<UINt32>    Values;
 					attribute<ModelType> SrcLUT:      Expr = "value(Values % #ModelType, ModelType)";
@@ -902,7 +902,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 					attribute<string> ggModelIdExpr(ModelType): Expr = "'value('+String(ID(ModelType))+', ModelType)'";
 					
 					// moved here from Rules since this is independent of the actual run-region, weight or LUT for which this is a factor
-					attribute<String> Name:           Expr = "'NE_'+ModelType/Name[SrcLUT]+'_'+String(Func)";
+					attribute<string> Name:           Expr = "'NE_'+ModelType/Name[SrcLUT]+'_'+String(Func)";
 					attribute<string> PotentialExpr:  Expr = "'potential(Float32(PrevState/Landuse_grid=='+ggModelIdExpr[SrcLUT]+'), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
 					attribute<string> AreaExpr:       Expr = "'potential(Float32(CaseData/Land/IsInRunRegion), Neighbourhood/'+NeighbourhoodLink/MatrRef[Func]+'/Matr)[domain/grid_rel]'";
 					attribute<string> NeighbourExpr:  Expr = "'PotentialData/'+Name +' / '+'AreaData/'+Name";
@@ -979,19 +979,19 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		
 		container ReadAlloc1: IsTemplate = "True"
 		{
-			parameter<String> FileName;
+			parameter<string> FileName;
 			
-			parameter<String> FileData: StorageName = "=FileName", StorageType = "str", KeepData = "False";
+			parameter<string> FileData: StorageName = "=FileName", StorageType = "str", KeepData = "False";
 				
 			container RegrData: Expr = "Alloc1Templ(FileData)";
 			container Reordered: Expr = "Alloc1ReorderTempl(RegrData/Data)";
 		}
 		container ReadAlloc2: IsTemplate = "True"
 		{
-			parameter<String> FileName;
+			parameter<string> FileName;
 			container NeighbourhoodLink;
 			
-			parameter<String> FileData: StorageName = "=FileName", StorageType = "str", KeepData = "False";
+			parameter<string> FileData: StorageName = "=FileName", StorageType = "str", KeepData = "False";
 				
 			container RegrData: Expr = "Alloc2Templ(FileData)";
 			container Reordered: Expr = "Alloc2ReorderTempl(RegrData/Data)";
@@ -1014,7 +1014,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		
 	container AllocSet: IsTemplate = "True"
 		{
-			parameter<String> ParamPath;
+			parameter<string> ParamPath;
 			container Alloc1Reg; //: Expr = "Alloc1Reordered/Results";
 			//container Alloc2Reg; //: Expr = "Alloc2Reordered/Results";
 			container TransitionCostLink;
@@ -1029,7 +1029,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			
 			container ParamSet:  Expr = "ParamSets/ActiveSet";
 			
-			unit<UInt8> ModelType: Expr = "Classifications/LU/ModelType";
+			unit<uint8> ModelType: Expr = "Classifications/LU/ModelType";
 			unit<Uint32> Factors:		  	Expr = "MetaData/FactorID";
 			unit<Uint32> StaticFactors:   	Expr = "MetaData/StaticFactors";
 			unit<Uint32> DynamicFactors:   	Expr = "MetaData/DynamicFactors";
@@ -1071,7 +1071,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				
 				container DemandModels: expr = "for_each_nedv(MetaData/DemandModelsList/Name, 'DemandSets/DemandModels/'+ MetaData/DemandModelsList/Name +'/genExpressions/'+RunZoneName+'/EvalExpr', void, string)";
 				
-				unit<UInt32> CurrFactorWeights: Expr = "Alloc1Reg/FactorWeights";
+				unit<uint32> CurrFactorWeights: Expr = "Alloc1Reg/FactorWeights";
 				attribute<string> SuitTermExpr (CurrFactorWeights):
 					Expr = "'Rules/CurrFactorWeights/Weight['+String(ID(CurrFactorWeights))+'] * convert('+ CurrFactorWeights/VariableRef +', float32)'";
 				attribute<string> SuitTermsExpr (ModelType):
@@ -1165,21 +1165,21 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 					unit<uint32> Indirects: Expr = "select_with_org_rel(TransitionCode>int16(1) && TransitionCode <=int16(100))"
 					{
 						attribute<uint32> TransCode_uint32: expr = "value(TransitionCode[org_rel], uint32)";
-						attribute<String> OrgValue: Expr = "'PrevState/dFactors/'+rjoin(TransCode_uint32, DynamicFactors/ID, DynamicFactors/Name)";
-						attribute<String> Value:    Expr = "'int16('+OrgValue+')'";
+						attribute<string> OrgValue: Expr = "'PrevState/dFactors/'+rjoin(TransCode_uint32, DynamicFactors/ID, DynamicFactors/Name)";
+						attribute<string> Value:    Expr = "'int16('+OrgValue+')'";
 						//attribute<bool> IsBool: 
 						//	Expr = 
 						//		"rjoin(value(TransitionCode[org_rel], MetaData/FactorID), DynamicFactors/id, DynamicFactors/ValuesUnit2) == 'Boolean'";
-						attribute<String> AllowedExprBool: Expr = "'float32('+OrgValue+') > float32(0)'";
-						attribute<String> AllowedExprInt16:  // value = <null> => false; all non-null values in X8..X13 are above 1000.
+						attribute<string> AllowedExprBool: Expr = "'float32('+OrgValue+') > float32(0)'";
+						attribute<string> AllowedExprInt16:  // value = <null> => false; all non-null values in X8..X13 are above 1000.
 							Expr =  "'int16(PrevState/Age) >= ('+Value+'-int16(1000))'";
-						attribute<String> AllowedExpr: expr = "AllowedExprBool";
+						attribute<string> AllowedExpr: expr = "AllowedExprBool";
 		
 						//attribute<bool>   HasBottomUpCond: Expr = "cTrue";
-						attribute<String> BottomUpCond: 
+						attribute<string> BottomUpCond: 
 							Expr = "AllowedExpr";
 					}
-					attribute<String> AllowRuleValue: 
+					attribute<string> AllowRuleValue: 
 						Expr = 
 							"switch("
 								"case(Allowed/ModelMatr/TransitionCode==int16(   0), 'false'),"
@@ -1189,9 +1189,9 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 							")";
 					attribute<ModelType> RuleFrom:  	Expr = "value(ID(.) / #ModelType, ModelType)";
 					attribute<ModelType> RuleDest:  	Expr = "value(ID(.) % #ModelType, ModelType)";
-					attribute<String> AllowRuleCases:  	Expr = "(AllowRuleValue != AllowRuleElse) ? 'case(PrevState/LandUse == '+ggModelIdExpr[RuleFrom]+', '+AllowRuleValue+'),' : ''";
+					attribute<string> AllowRuleCases:  	Expr = "(AllowRuleValue != AllowRuleElse) ? 'case(PrevState/LandUse == '+ggModelIdExpr[RuleFrom]+', '+AllowRuleValue+'),' : ''";
 
-					attribute<String> BottomUpCond: 
+					attribute<string> BottomUpCond: 
 						Expr = 
 							"switch("
 								"case(Allowed/ModelMatr/TransitionCode==int16(   0), ''),"
@@ -1199,18 +1199,18 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 								// "case(Allowed/ModelMatr/TransitionCode>=int16(1000), 'PrevState/Age >= value('+String(Allowed/ModelMatr/TransitionCode-int16(1000))+', YearDiffRange)')," // commented out because this sort of post-processing is unwanted (claims!).
 								"MakeDefined(Indirects/BottomUpCond[invert(Indirects/org_rel)], '')"
 							")";
-					attribute<String> BottomUpCases: 
+					attribute<string> BottomUpCases: 
 						Expr = "BottomUpCond == '' ? '' : 'case(AllocLandUse=='+ggModelIdExpr[RuleFrom]+' && '+BottomUpCond + ', '+ggModelIdExpr[RuleDest]+'), '";
 				}
-				parameter<String> AllowRuleElse:  Expr = "'const(True, domain)'"; // CurrYear > 2010[float32] && PrevState/LandUse <> ModelType/ForestsMature ? False : True'";
-				attribute<String> AllowRules(ModelType): Expr = 
+				parameter<string> AllowRuleElse:  Expr = "'const(True, domain)'"; // CurrYear > 2010[float32] && PrevState/LandUse <> ModelType/ForestsMature ? False : True'";
+				attribute<string> AllowRules(ModelType): Expr = 
 					"'switch(' + "
 					" switch(	case(id(ModelType) = ModelType/ForestsMature, 				'case(BurntForest/NewlyBurnt || (CurrYear > 2010[float32] && PrevState/Landuse <> ModelType/ForestsMature), false),'), "
 					"			case(id(ModelType) = ModelType/ForestsYoung, 				'case(BurntForest/NewlyBurnt, false),'), "
 					"			case(id(ModelType) = ModelType/TransWoodlandShrub, 			'case(BurntForest/NewlyBurnt, true),'), '') + "
 					"asList(ModelMatr/AllowRuleCases, '', ModelMatr/RuleDest)+AllowRuleElse+')'";
 				
-				parameter<String> PostProcStep: Expr = 
+				parameter<string> PostProcStep: Expr = 
 						"'PrevState/landuse == AllocLandUse ? switch('+asList(ModelMatr/BottomUpCases, '')+'AllocLandUse) : AllocLandUse'";
 		
 				//	INCOMPLETE ANALYSIS OF REQUIRED PROHIBITIVE CONVERSION ELASTICY AND BLOCKING MINIMUM
@@ -1270,7 +1270,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 					
 		// ====== End LINEAR Support
 					
-				attribute<String> TransPotExpr   (ModelType): 
+				attribute<string> TransPotExpr   (ModelType): 
 					Expr = 
 					"'Allowed/'+ModelType/Name+' "
 						"? convert(Suitability_x_TransitionCosts/'+ModelType/Name+', EUR_M2)"
@@ -1284,22 +1284,22 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			
 			//parameter<string> ScenarioName: expr = "ParamSets/ActiveSet/ParamName";
 			
-			parameter<String> File: StorageName = "= ParamSets/ActiveSet/DemandPath +'/'+ name +'.csv'", StorageType = "str"; 
-			parameter<String> HeaderLine: Expr = "ReadLines(File, void, 0)";
-			 parameter<Bool>   HeaderOK:   expr = "regex_match(HeaderLine, '[^,]++(,[^,]++)*+')";
+			parameter<string> File: StorageName = "= ParamSets/ActiveSet/DemandPath +'/'+ name +'.csv'", StorageType = "str"; 
+			parameter<string> HeaderLine: Expr = "ReadLines(File, void, 0)";
+			 parameter<bool>   HeaderOK:   expr = "regex_match(HeaderLine, '[^,]++(,[^,]++)*+')";
 			unit<uint32>  PopField: Expr = "range(uint32, 0, strcount(HeaderLine, ','))", IntegrityCheck = "HeaderOK"
 			{
-				attribute<String> 	Name: 					Expr = "ReadArray(HeaderLine, PopField, string, strpos(HeaderLine, ',')+1)";
+				attribute<string> 	Name: 					Expr = "ReadArray(HeaderLine, PopField, string, strpos(HeaderLine, ',')+1)";
 				attribute<bool>		IsYear: 				Expr = "uppercase(substr(Name,0,1)) = 'Y'";
-				attribute<UInt16> 	Year: 					Expr = "uppercase(substr(Name,0,1)) = 'Y' ? UInt16(substr(Name, strlen(Name)-4, 4)) : Uint16(0 / 0)";
+				attribute<uint16> 	Year: 					Expr = "uppercase(substr(Name,0,1)) = 'Y' ? UInt16(substr(Name, strlen(Name)-4, 4)) : Uint16(0 / 0)";
 				attribute<PeriodSet/result> ModelYearRel: 	Expr = "rlookup(float32(Year), PeriodSet/result/ProjectedYear)";
 			}
-			unit<UInt32> BodyDomain: Expr = "Range(UInt32, 0, strcount(File, '\n')-1)"
+			unit<uint32> BodyDomain: Expr = "Range(UInt32, 0, strcount(File, '\n')-1)"
 			{
 				attribute<string> Line: Expr = "ReadLines(File, BodyDomain, HeaderLine/ReadPos)";
-				attribute<Bool> LinesAreNuts2CodeAndIntegers(BodyDomain): expr = "regex_match(Line, '[A-Z][A-Z]([A-Z]|[0-9])?+([A-Z]|[0-9])?+(,([0-9]++))*+')";
+				attribute<bool> LinesAreNuts2CodeAndIntegers(BodyDomain): expr = "regex_match(Line, '[A-Z][A-Z]([A-Z]|[0-9])?+([A-Z]|[0-9])?+(,([0-9]++))*+')";
 				
-				attribute<String> ZoneId: Expr = "ReadElems(Line, string, const(0, BodyDomain))";//, IntegrityCheck = "LinesAreNuts2CodeAndIntegers";
+				attribute<string> ZoneId: Expr = "ReadElems(Line, string, const(0, BodyDomain))";//, IntegrityCheck = "LinesAreNuts2CodeAndIntegers";
 				attribute<Zones> ZoneRel: Expr = "rlookup(ZoneId,Zones/ZoneId)";
 				container Data: Expr = 
 					"for_each_nedv("
@@ -1347,31 +1347,31 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			parameter<string> RegionName;
 			// end case parameter
 
-			parameter<String> FileName:       expr = "ParamSets/ActiveSet/DemandPath + '/' + RegionDomainName + '/' + RegionName + '.csv'";
-			parameter<String> FieldSeparator: expr = "','";
+			parameter<string> FileName:       expr = "ParamSets/ActiveSet/DemandPath + '/' + RegionDomainName + '/' + RegionName + '.csv'";
+			parameter<string> FieldSeparator: expr = "','";
 		
-			parameter<String> FileData
+			parameter<string> FileData
 			:	StorageType = "str"
 			,	StorageName = "=FileName";
-			parameter<String> HeaderLine: expr = "readLines(FileData, void, 0)";
+			parameter<string> HeaderLine: expr = "readLines(FileData, void, 0)";
 // 			parameter<Bool>   HeaderOK:   expr = 
 // 				"regex_match("
 // 					" HeaderLine"
 // 					",'\"[^\"]*+\"(,\"[^\"]*+\")*+'"
 // 				")";
 
-			unit<UInt32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
+			unit<uint32> Field: expr = "Range(UInt32, 0, strcount(HeaderLine, FieldSeparator)+1)"
 			{
-				attribute<String> Name: Expr = 
+				attribute<string> Name: Expr = 
 				"ReadArray(HeaderLine, Field, String, 0)";
 			}
 			unit<uint32> Domain: expr = "Range(UInt32, 0, strcount(FileData, '\n')-1)"
 			{
 //				attribute<.> id: expr = "id(.)";
-				attribute<String> Label: expr = "Data/Region", DialogType = "LabelText";
+				attribute<string> Label: expr = "Data/Region", DialogType = "LabelText";
 			}
 			
-			attribute<String> BodyLines(Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
+			attribute<string> BodyLines(Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
 // 			,	IntegrityCheck = "HeaderOK";
 // 			attribute<Bool> LinesAreSignedIntegerStringOrEmpy (Domain): expr = 
 // 				"regex_match("
@@ -1394,10 +1394,10 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 					",string"
 				")"
 			{
-				attribute<String> RegionUp_Raw (Domain): Expr = "UpperCase(Region)",               StoreData = "False", FreeData = "True";
-				attribute<String> RegionUp     (Domain): Expr = "RegionUp_Raw",                    IntegrityCheck = "all(region_allowed)";
-				attribute<UInt32> ZeroClaim    (Domain): Expr = "const(0,Domain)",           StoreData = "False", FreeData = "True";
-				attribute<UInt32> HighClaim    (Domain): Expr = "const(2000000000,Domain)",  StoreData = "False", FreeData = "True";
+				attribute<string> RegionUp_Raw (Domain): Expr = "UpperCase(Region)",               StoreData = "False", FreeData = "True";
+				attribute<string> RegionUp     (Domain): Expr = "RegionUp_Raw",                    IntegrityCheck = "all(region_allowed)";
+				attribute<uint32> ZeroClaim    (Domain): Expr = "const(0,Domain)",           StoreData = "False", FreeData = "True";
+				attribute<uint32> HighClaim    (Domain): Expr = "const(2000000000,Domain)",  StoreData = "False", FreeData = "True";
 				
 				// extra code for integrity check on Region Codes:
 				// they should all be known as codes in the corresponding Domain (which refers to a specific column in CAPRI_NUTS2_correspondences.xls)
@@ -1418,7 +1418,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		
 		container DemandSet: IsTemplate = "True"
 		{
-			parameter<String> DemandDirname;
+			parameter<string> DemandDirname;
 			
 			container ParamSet:  Expr = "ParamSets/ActiveSet";
 			
@@ -1427,17 +1427,17 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 			unit<uint8> ModelType: expr = "Classifications/LU/ModelType";
 			
 			
-			unit<UInt8> DC: Expr = "MetaData/DemandCharacteristics";
-			attribute<String> RegionRefs		(DC): Expr = "DC/OrgRegion";
+			unit<uint8> DC: Expr = "MetaData/DemandCharacteristics";
+			attribute<string> RegionRefs		(DC): Expr = "DC/OrgRegion";
 			
 			unit<uint8> RunRegionDemands: expr = "select_with_org_rel(!DC/EU)" {attribute<string> Regions:	expr = "RegionRefs[org_rel]"; attribute<float32> StartYearDefined: expr = "DC/StartYearDefined[org_rel]"; attribute<RunRegion_Specific_RegionRefs> rrsr_id: expr = "rlookup(Regions, RunRegion_Specific_RegionRefs/Values)";}
 			
-			attribute<String> DestRegionRefs	(DC): Expr = "DC/ModelRegion";
+			attribute<string> DestRegionRefs	(DC): Expr = "DC/ModelRegion";
 			
-			unit<UInt8> UniqueRegionRefs: Expr = "unique(RegionRefs)";
-			unit<UInt8> UniqueDestRegionRefs: Expr = "unique(DestRegionRefs)";
-			unit<UInt8> RunRegion_Specific_RegionRefs: expr = "unique(RunRegionDemands/Regions)" {attribute<float32> StartYearDefined: expr = "mean(RunRegionDemands/StartYearDefined, RunRegionDemands/rrsr_id)";}
-			unit<UInt8>	UnionedRegionRefs := union_unit_uint8(UniqueRegionRefs, UniqueDestRegionRefs)
+			unit<uint8> UniqueRegionRefs: Expr = "unique(RegionRefs)";
+			unit<uint8> UniqueDestRegionRefs: Expr = "unique(DestRegionRefs)";
+			unit<uint8> RunRegion_Specific_RegionRefs: expr = "unique(RunRegionDemands/Regions)" {attribute<float32> StartYearDefined: expr = "mean(RunRegionDemands/StartYearDefined, RunRegionDemands/rrsr_id)";}
+			unit<uint8>	UnionedRegionRefs := union_unit_uint8(UniqueRegionRefs, UniqueDestRegionRefs)
 			{
 				attribute<string> Values :=  union_data(., UniqueRegionRefs/Values, UniqueDestRegionRefs/Values);
 			}
@@ -1454,45 +1454,45 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 					")'"
 				")";
 			
-			parameter<Bool> ClaimTablesOK: Expr = "='and('+asItemList('all(ClaimTablesOrg/'+RunRegion_Specific_RegionRefs/Values+'/Data/region_allowed), all(ClaimTablesOrg/'+RunRegion_Specific_RegionRefs/Values+'/Data/check_rel)')+')'";
+			parameter<bool> ClaimTablesOK: Expr = "='and('+asItemList('all(ClaimTablesOrg/'+RunRegion_Specific_RegionRefs/Values+'/Data/region_allowed), all(ClaimTablesOrg/'+RunRegion_Specific_RegionRefs/Values+'/Data/check_rel)')+')'";
 						
 			container ClaimTables: Expr = "ClaimTablesOrg", IntegrityCheck = "ClaimTablesOK";
 		}
 		
 		container Run : IsTemplate = "True"
 		{
-			parameter<String> Name;
+			parameter<string> Name;
 			container AllocSet;
 			container DemandSet;
-			parameter<String> SuitabilityTraits;
+			parameter<string> SuitabilityTraits;
 			// ==== End of Template parameters
 			
-			parameter<String> DemandDirName: Expr = "DemandSet/DemandDirName";
+			parameter<string> DemandDirName: Expr = "DemandSet/DemandDirName";
 			
 			container ParamSet:  Expr = "AllocSet/ParamSet";
 			
-			unit<UInt8> ModelType: Expr = "AllocSet/ModelType";
-			unit<UInt8> Factors:     Expr = "AllocSet/Factors";
+			unit<uint8> ModelType: Expr = "AllocSet/ModelType";
+			unit<uint8> Factors:     Expr = "AllocSet/Factors";
 			//container Neighbourhood: Expr = "Rules/Neighbourhood"; // not necessary 17 jun 2013 because neighmatrices are now country-specific CJC
 			
-			unit<UInt16> Periods:   Expr = "PeriodSet/result";
+			unit<uint16> Periods:   Expr = "PeriodSet/result";
 // 			unit<UInt16> Decennium: Expr = "PeriodSet/Decennium";
 // 			unit<UInt16> Lustrum:   Expr = "PeriodSet/Lustrum";
 			
-			parameter<String> OutputDir: Expr = "'%LocalDataProjDir%/'+ParamSets/ActiveSet/ParamName+'/'+Name";
+			parameter<string> OutputDir: Expr = "'%LocalDataProjDir%/'+ParamSets/ActiveSet/ParamName+'/'+Name";
 		}
 	}
 
 	container ParamSets 
 	{
 		container Reference17 {
-			parameter<String> ParamName:   Expr = "'Reference17'";  	// @USERINPUT
-			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
-			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
-			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
-			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			parameter<string> ParamName:   Expr = "'Reference17'";  	// @USERINPUT
+			parameter<string> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
+			parameter<string> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<uint8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<string> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
 			
-			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			attribute<float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
 			[
 				null, 1,      		// urb, ind
 				1, 1, 1,  			// arabl, mixedcrop, livestock
@@ -1502,14 +1502,14 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				null, null,			//abandonedUrban and abandoned Industrial
 				5					//NewEnergyCrops, SHVA, ForestsYoung, NatGrass, RiceProd
 			];
-			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			parameter<string> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
 			
-			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
-			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
-			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			parameter<string> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<string> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
 			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
 			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
 			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
@@ -1530,16 +1530,16 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
 			}
 			parameter<bool>	PopulationSpillovers: expr = "False";
-			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+			parameter<string> PopulationModel: 	Expr = "'Population_REF2017'";
 		}
 		container Reference19_ewrc {
-			parameter<String> ParamName:   Expr = "'Reference19_ewrc'";  	// @USERINPUT
-			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
-			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
-			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
-			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			parameter<string> ParamName:   Expr = "'Reference19_ewrc'";  	// @USERINPUT
+			parameter<string> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
+			parameter<string> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<uint8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<string> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
 			
-			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			attribute<float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
 			[
 				null, 	1,      		// urb, ind
 				1, 		1, 		1,  	// arabl, mixedcrop, livestock
@@ -1550,14 +1550,14 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				5, 		null,			//NewEnergyCrops, SHVA, 
 				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
 			];
-			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			parameter<string> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
 			
-			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
-			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
-			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			parameter<string> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<string> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
 			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
 			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
 			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
@@ -1577,16 +1577,16 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
 			}
 			parameter<bool>	PopulationSpillovers: expr = "False";
-			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+			parameter<string> PopulationModel: 	Expr = "'Population_REF2017'";
 		}
 		container NoCAP {
-			parameter<String> ParamName:   Expr = "'NoCAP'";  	// @USERINPUT
+			parameter<string> ParamName:   Expr = "'NoCAP'";  	// @USERINPUT
 			
-			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
-			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
-			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
-			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
-			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			parameter<string> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
+			parameter<string> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<uint8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<string> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			attribute<float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
 			[
 				null, 1,      		// urb, ind
 				null, null, null,	// arabl, mixedcrop, livestock
@@ -1597,14 +1597,14 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				null, null, null,  	//NewEnergyCrops, SHVA, ForestsYoung, 
 				null, null			//NatGrass, RiceProd		
 			];
-			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			parameter<string> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
 			
-			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
-			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
-			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			parameter<string> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<string> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
 			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
 			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
 			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
@@ -1625,17 +1625,17 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
 			}
 			parameter<bool>	PopulationSpillovers: expr = "False";
-			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+			parameter<string> PopulationModel: 	Expr = "'Population_REF2017'";
 			
 		}
 		container No_int_migration_sup_change {
-			parameter<String> ParamName:   Expr = "'No_int_migration_sup_change'";  	// @USERINPUT
-			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
-			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
-			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
-			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			parameter<string> ParamName:   Expr = "'No_int_migration_sup_change'";  	// @USERINPUT
+			parameter<string> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
+			parameter<string> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<uint8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<string> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
 			
-			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			attribute<float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
 			[
 				null, 	1,      		// urb, ind
 				1, 		1, 		1,  	// arabl, mixedcrop, livestock
@@ -1646,14 +1646,14 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				5, 		null,			//NewEnergyCrops, SHVA, 
 				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
 			];
-			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			parameter<string> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
 			
-			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
-			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
-			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			parameter<string> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<string> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
 			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
 			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
 			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
@@ -1673,16 +1673,16 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
 			}
 			parameter<bool>	PopulationSpillovers: expr = "False";
-			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+			parameter<string> PopulationModel: 	Expr = "'Population_REF2017'";
 		}
 		container Ageing {
-			parameter<String> ParamName:   Expr = "'Ageing'";  	// @USERINPUT
-			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
-			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
-			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
-			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			parameter<string> ParamName:   Expr = "'Ageing'";  	// @USERINPUT
+			parameter<string> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
+			parameter<string> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<uint8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<string> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
 			
-			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			attribute<float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
 			[
 				null, 	1,      		// urb, ind
 				1, 		1, 		1,  	// arabl, mixedcrop, livestock
@@ -1693,14 +1693,14 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				5, 		null,			//NewEnergyCrops, SHVA, 
 				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
 			];
-			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			parameter<string> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
 			
-			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
-			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
-			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			parameter<string> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<string> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
 			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
 			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
 			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
@@ -1720,17 +1720,17 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<bool>   Change:			[false,					false,					false,												false,					true,				false, 						false, 					false]; // change indicates multiplicative changes.
 			}
 			parameter<bool>	PopulationSpillovers: expr = "False";
-			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+			parameter<string> PopulationModel: 	Expr = "'Population_REF2017'";
 		}
 		container Reference21 {
-			parameter<String> ParamName:   Expr = "'Reference21'";  	// @USERINPUT
-			parameter<String> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
+			parameter<string> ParamName:   Expr = "'Reference21'";  	// @USERINPUT
+			parameter<string> ParamPath:   Expr = "'%SourceDataProjDir%/LUISA/ParamSets/'+ ParamName";
 			parameter<string> DemandPath:  Expr = "'%SourceDataProjDir%/LUISA/data/Demand/'+ ParamName";
-			parameter<String> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
-			unit<UInt8>       ModelType: Expr = "Classifications/LU/ModelType";
-			parameter<String> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
+			parameter<string> LocSpecPath: Expr = "'%sourcedataprojdir%/LocSpec/' + ParamName";
+			unit<uint8>       ModelType: Expr = "Classifications/LU/ModelType";
+			parameter<string> OrgLandUseExpr: Expr= "'CorineGrid/Jrc9Data'";
 			
-			attribute<Float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
+			attribute<float32> LocationSpecificPreferenceAddition(ModelType): // @USERINPUT
 			[
 				null, 	1,      		// urb, ind
 				1, 		1, 		1,  	// arabl, mixedcrop, livestock
@@ -1741,14 +1741,14 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				5, 		null,			//NewEnergyCrops, SHVA, 
 				1,		null,	null 	//ForestsYoung, NatGrass, RiceProd
 			];
-			parameter<String> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
+			parameter<string> LocSpecContainerName: Expr = "'ReferenceLocSpecs'";
 			
-			parameter<String> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
-			parameter<String> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
-			parameter<String> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
-			parameter<String> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
+			parameter<string> AllowedFile:StorageName = "=ParamPath+'/allow.txt'",    StorageType = "str", KeepData = "False";
+			parameter<string> TransitionCostsFile:  StorageName = "=ParamPath+'/TransitionCosts.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> GrossRevenuesFile:  StorageName = "=ParamPath+'/GrossRevenues.txt'", StorageType = "str", KeepData = "False";			
+			parameter<string> TransitionFactorsFile: StorageName = "=ParamPath+'/TransitionFactors.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> TransitionFactorsFilePost2030: StorageName = "=ParamPath+'/TransitionFactorsPost2030.txt'", StorageType = "str", KeepData = "False";
+			parameter<string> NeighbFile: expr = "= quote(ParamPath+'/neighmat.txt')"; //, StorageType = "str", KeepData = "False";
 			container Allowed: Expr = "Templ/AllowedTempl(AllowedFile)";
 			container TransitionCosts:   Expr = "Templ/TransitionCostsTempl(TransitionCostsFile)";
 			container GrossRevenues:   Expr = "Templ/GrossRevenuesTempl(GrossRevenuesFile)";			
@@ -1771,15 +1771,15 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				attribute<float32>StartYearDefined:	[-1,					-1,						-1,													-1,						2018,				2018,						-1,						-1];
 			}
 			parameter<bool>	PopulationSpillovers: expr = "False";
-			parameter<String> PopulationModel: 	Expr = "'Population_REF2017'";
+			parameter<string> PopulationModel: 	Expr = "'Population_REF2017'";
 		}
 		container Reference21_210930: expr = "Reference21" {
-			parameter<String> ParamName:   Expr = "'Reference21_210930'";  	// @USERINPUT
-			parameter<String> PopulationModel: 	Expr = "'PopulationModel_Popweighted'";
+			parameter<string> ParamName:   Expr = "'Reference21_210930'";  	// @USERINPUT
+			parameter<string> PopulationModel: 	Expr = "'PopulationModel_Popweighted'";
 		}
 		container Reference21_211001: expr = "Reference21" {
-			parameter<String> 	ParamName:   Expr = "'Reference21_211001'";  	// @USERINPUT
-			parameter<String> 	PopulationModel: 	Expr = "'PopulationModel_Popweighted'";
+			parameter<string> 	ParamName:   Expr = "'Reference21_211001'";  	// @USERINPUT
+			parameter<string> 	PopulationModel: 	Expr = "'PopulationModel_Popweighted'";
 			parameter<float32> 	RelocationPerYear:	expr = "0.01f"; //percent of people relocating each year. 
 
 		}
@@ -1791,9 +1791,9 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 	{
 		unit<uint16> Run := Geography/Regions/Runs
 		{
-			attribute<String> Region100Name:    	Expr = "RegionDomainSetName+'/'+Name";
-			attribute<String> PopParamsRegionName: 	Expr = "Name";			
-			attribute<String> Code:					Expr = "ICC";
+			attribute<string> Region100Name:    	Expr = "RegionDomainSetName+'/'+Name";
+			attribute<string> PopParamsRegionName: 	Expr = "Name";			
+			attribute<string> Code:					Expr = "ICC";
 		}
 		
 		//container Alloc1Set: 			Expr = "Templ/UniqueAllocSet('Alloc/', 'alloc1.reg')";	
@@ -1802,10 +1802,10 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 		container GrossRevenuesSet:	Expr = "Templ/UniqueAllocSet('GrossRevenues/', '_GrossRevenues.txt')";		
 		//container NeighbourhoodSet:		Expr = "Templ/UniqueAllocSet('Neighmats/', '_neighmat.txt')";
 		
-		unit<UInt16> DemandSet: Expr = "Unique(Run/DemandDirName)"
+		unit<uint16> DemandSet: Expr = "Unique(Run/DemandDirName)"
 		{
-			attribute<String> Name:          Expr = "Values";
-			attribute<String> DemandDirName: Expr = "Values";
+			attribute<string> Name:          Expr = "Values";
+			attribute<string> DemandDirName: Expr = "Values";
 		}
 	}
 	
@@ -1893,7 +1893,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				"'Templ/NeighbTempl('+Quote(Meta/NeighbourhoodSet/UniqueFiles/Values)+')'"
 			")";
 */			
-	attribute<String> AllocSetComposer(Meta/Run): Expr = 
+	attribute<string> AllocSetComposer(Meta/Run): Expr = 
 				"'Templ/AllocSet('"
 					"+Quote(ParamSets/ActiveSet/ParamPath)+','"
 					"+'ExogenousParams/ExogenousEffectsSets/'+Meta/Run/name+'/Reordered/Results,'"
@@ -1921,7 +1921,7 @@ container Parameters: KeepData = "False", FreeData = "True", IsHidden = "True", 
 				"')'"
 			")", Using = "MetaData;"
 	{
-		parameter<Bool> AllClaimTablesOK: Expr = "='and('+asItemList('DemandSets/'+Meta/DemandSet/Name+'/ClaimTablesOK')+')'";
+		parameter<bool> AllClaimTablesOK: Expr = "='and('+asItemList('DemandSets/'+Meta/DemandSet/Name+'/ClaimTablesOK')+')'";
 
 		
 		container Global: FreeData = "True", StoreData = "True", Expr = 

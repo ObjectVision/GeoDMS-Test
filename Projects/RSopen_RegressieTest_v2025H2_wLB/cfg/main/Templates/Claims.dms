@@ -11,9 +11,9 @@ container Claims
 		container Claims;
 		//
 		
-		parameter<String> name := AllocatieK/name[id];
+		parameter<string> name := AllocatieK/name[id];
 		
-		attribute<Float32> Result (Claims/AllocRegio) := = replace('max_elem('+asItemList('Claims/ZichtjaarXCases/'+Time/Zichtjaren/name+'/@A@[float32]')+')', '@A@', name);
+		attribute<float32> Result (Claims/AllocRegio) := = replace('max_elem('+asItemList('Claims/ZichtjaarXCases/'+Time/Zichtjaren/name+'/@A@[float32]')+')', '@A@', name);
 	}
 	
 	Template TigrisXLTable_T
@@ -23,7 +23,7 @@ container Claims
 		container Src;
 		//
 		
-		parameter<String> FileNm := Classifications/TigrisXL/Table/ModuleNm[table_id] + '/' + Classifications/TigrisXL/Table/name[table_id] + '.dat';
+		parameter<string> FileNm := Classifications/TigrisXL/Table/ModuleNm[table_id] + '/' + Classifications/TigrisXL/Table/name[table_id] + '.dat';
 		
 		container metainfo := Src
 			, StorageName = "=FileNm"
@@ -39,32 +39,32 @@ container Claims
 		//
 		parameter<Classifications/TigrisXL/Table> table_id;
 		parameter<YearRange> Jaar;
-		parameter<String> Scenario;
-		parameter<String> Variant;
+		parameter<string> Scenario;
+		parameter<string> Variant;
 		//
 		
-		parameter<String> Filename      := Classifications/TigrisXL/Table/name[table_id]+'.dat';
-		parameter<String> Filename_bare := Classifications/TigrisXL/Table/name[table_id];
+		parameter<string> Filename      := Classifications/TigrisXL/Table/name[table_id]+'.dat';
+		parameter<string> Filename_bare := Classifications/TigrisXL/Table/name[table_id];
 		
-		parameter<String>  File
+		parameter<string>  File
 		:	StorageName = "=replace(ClaimSrcDir, '@S@', Scenario)+'_LMS/'+string(Jaar)+'/'+Variant+'_'+Filename"
 		,	StorageType = "str";
 		
-		unit<UInt32> SrcDomain := range(uint32,0,StrCount(File, '\n'))
+		unit<uint32> SrcDomain := range(uint32,0,StrCount(File, '\n'))
 		{
-			attribute<String> FullLine (SrcDomain) := ReadLines(File, .,0);
-			attribute<UInt32> EK := ReadElems(FullLine, ., const(0, .));
+			attribute<string> FullLine (SrcDomain) := ReadLines(File, .,0);
+			attribute<uint32> EK := ReadElems(FullLine, ., const(0, .));
 		}
 		
-		parameter<String> Validator := '\\s*-?\\d+(\\.\\d+)?';
+		parameter<string> Validator := '\\s*-?\\d+(\\.\\d+)?';
 		
-		unit<UInt32> SrcAttribute := ='Classifications/TigrisXL/MetaInfo/'+Classifications/TigrisXL/Table/name[table_id] +'/SrcAttribute' 
+		unit<uint32> SrcAttribute := ='Classifications/TigrisXL/MetaInfo/'+Classifications/TigrisXL/Table/name[table_id] +'/SrcAttribute' 
 		{
-			attribute<Bool> is_oke := ='union_data(., '+asItemList('all(regex_match(substr(SrcDomain/FullLine,'+string(SrcAttribute/StartPos)+','+string(SrcAttribute/Length)+'), Validator))')+')';
+			attribute<bool> is_oke := ='union_data(., '+asItemList('all(regex_match(substr(SrcDomain/FullLine,'+string(SrcAttribute/StartPos)+','+string(SrcAttribute/Length)+'), Validator))')+')';
 		}
 		
-		unit<UInt32> TargetDomain := Geography/RegioIndelingen/LMSSubzone;
-		unit<Float32> TargetValues;
+		unit<uint32> TargetDomain := Geography/RegioIndelingen/LMSSubzone;
+		unit<float32> TargetValues;
 		
 		container SrcAttributes_strings := 
 			for_each_nedv(
@@ -74,7 +74,7 @@ container Claims
 				, string
 			)
 		{
-			attribute<UInt32> EK(SrcDomain) := uint32(LmsSubzone);
+			attribute<uint32> EK(SrcDomain) := uint32(LmsSubzone);
 		}
 		
 		container SrcAttributes_oke := 
@@ -85,7 +85,7 @@ container Claims
 				, bool
 			)
 		{
-			attribute<UInt32> EK (SrcDomain) := uint32(LmsSubzone);
+			attribute<uint32> EK (SrcDomain) := uint32(LmsSubzone);
 		}
 		
 		container SrcAttributes := 
@@ -97,7 +97,7 @@ container Claims
 				, TargetValues
 			)
 		{
-			attribute<UInt32> EK(SrcDomain) := uint32(LmsSubzone);
+			attribute<uint32> EK(SrcDomain) := uint32(LmsSubzone);
 		}
 		
 		container Attributes := 
@@ -121,37 +121,37 @@ container Claims
 	Template MetaInfo_T
 	: Descr = ""
 	{
-		parameter<String> Filename;
+		parameter<string> Filename;
 		//
 		
-		unit<UInt32> FileData:
+		unit<uint32> FileData:
 			StorageName = "=Filename",
 			StorageType = "gdal.vect",
 			StorageReadOnly = "True";
 			
-		parameter<String> Filenamefss := substr(Filename, 0, strlen(Filename) - 3) + 'fss';
+		parameter<string> Filenamefss := substr(Filename, 0, strlen(Filename) - 3) + 'fss';
 		
-		unit<UInt32> MakeFileDatafss := FileData
+		unit<uint32> MakeFileDatafss := FileData
 		, StorageName = "=Filenamefss"
 		{
-			attribute<String> Variable := FileData/Variable;
-			attribute<String> Length   := FileData/Length;
+			attribute<string> Variable := FileData/Variable;
+			attribute<string> Length   := FileData/Length;
 		}
 		
-		unit<UInt32> ReadFileDatafss
+		unit<uint32> ReadFileDatafss
 		: StorageName = "=Filenamefss"
 		, StorageReadOnly = "True"
 		{
-			attribute<String> Variable;
-			attribute<String> Length;
+			attribute<string> Variable;
+			attribute<string> Length;
 		}
 		
-		unit<UInt32> SrcAttribute := ReadFileDatafss
+		unit<uint32> SrcAttribute := ReadFileDatafss
 		{
-			attribute<String> name:      = ReadFileDatafss/variable;
-			attribute<UInt32> Length:    = ReadFileDatafss/Length[uint32];
-			attribute<UInt32> EndPos:    = cumulate(Length);
-			attribute<UInt32> Startpos:  = EndPos - Length;
+			attribute<string> name:      = ReadFileDatafss/variable;
+			attribute<uint32> Length:    = ReadFileDatafss/Length[uint32];
+			attribute<uint32> EndPos:    = cumulate(Length);
+			attribute<uint32> Startpos:  = EndPos - Length;
 		}
 	}
 }

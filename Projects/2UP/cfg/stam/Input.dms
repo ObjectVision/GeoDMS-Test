@@ -117,8 +117,8 @@ container Input : using = "Units"
 			attribute<float64> lat_top := pointrow( point_yx(ID(rowset), const(0w, rowset), gtopo)[LatLong] );
 			attribute<float64> lat_mid := lat_top  + 0.5 * pointrow(getprojectionfactor(gtopo)[LatLong]);
 
-			attribute<Float32> lat_factor := Float32( cos(lat_mid * 2d*pi() / 360d ) );
-			attribute<km2> area := (lat_factor * sqr(Float32(pointrow(getprojectionfactor(gtopo)[LatLong])) * lengthdegree));
+			attribute<float32> lat_factor := float32( cos(lat_mid * 2d*pi() / 360d ) );
+			attribute<km2> area := (lat_factor * sqr(float32(pointrow(getprojectionfactor(gtopo)[LatLong])) * lengthdegree));
 		}
 
 
@@ -142,10 +142,10 @@ container Input : using = "Units"
 		attribute<uint32> number   := (rowcol +col) + 1;
 		attribute<uint8>  one_grid := number > 0 ? 1b : 0b;
 
-		attribute<Float32> lat_factor := rowset/lat_factor[row];
+		attribute<float32> lat_factor := rowset/lat_factor[row];
 
-		attribute<Float64> lat   := rowset/lat_mid[row];
-		attribute<Float64> long  := colset/long_mid[col_colset];
+		attribute<float64> lat   := rowset/lat_mid[row];
+		attribute<float64> long  := colset/long_mid[col_colset];
 
 		attribute<km2> area           := rowset/area[row]; //use rowset area
 		

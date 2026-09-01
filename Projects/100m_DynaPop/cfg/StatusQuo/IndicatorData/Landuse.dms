@@ -2,9 +2,9 @@ container Landuse
 {
 	container AdditionalData
 	{			
-		unit<SPoint> HotspotKernel: Expr = "Range(SPoint, point_xy(Int16(-5), Int16(-5)), point_xy(Int16(6), Int16(6)))"
+		unit<spoint> HotspotKernel: Expr = "Range(SPoint, point_xy(Int16(-5), Int16(-5)), point_xy(Int16(6), Int16(6)))"
 		{
-			attribute<Float32> Weights: [
+			attribute<float32> Weights: [
 				0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0,
 				0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
 				0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0,
@@ -21,14 +21,14 @@ container Landuse
 	}
 	container AggrTempl: IsTemplate = "True"
 	{
-		parameter<String> RegionName;
-		unit<UInt16> Regions;
-		unit<WPoint> Domain_Grid;
+		parameter<string> RegionName;
+		unit<uint16> Regions;
+		unit<wpoint> Domain_Grid;
 		attribute<Regions> RegionGrid(Domain_Grid);
-		unit<UInt16> FathomYears;
+		unit<uint16> FathomYears;
 		
 		attribute<Regions> Partition(Domain_Grid): Expr = "Qualifications/IsLand ? value(RegionGrid, Regions) : value(0 / 0, Regions)", IsHidden = "True";
-		attribute<Float32> LandArea (Regions):     Expr = "Float32(sum(UInt32(Qualifications/IsLand), Partition))";
+		attribute<float32> LandArea (Regions):     Expr = "Float32(sum(UInt32(Qualifications/IsLand), Partition))";
 
 		container Agricultural: url = "%sourcedataprojdir%/Indicators/Shares of agriculture.pdf"
 		{
@@ -72,12 +72,12 @@ container Landuse
 	
 	container Templ: IsTemplate = "True"
 	{
-		unit<WPoint> Domain_Grid;
+		unit<wpoint> Domain_Grid;
 		attribute<Albers1kmGrid> AlbersGridRel(Domain_Grid);
 		container JrcFactorData;
 		attribute<Classifications/LU/Corine>    LU_org(Domain_Grid);
 		attribute<Classifications/LU/ModelType> LU_arg(Domain_Grid);
-		unit<UInt16> FathomYears;
+		unit<uint16> FathomYears;
 
 		attribute<Classifications/LU/ViewType> ViewType(Domain_Grid): Expr = "MakeDefined(Classifications/LU/ModelType/VT[LU_arg], Classifications/LU/Corine/VT[LU_org])"
 		{
@@ -146,23 +146,23 @@ container Landuse
 		}
 		container km10maps
 		{
-			attribute<Float32> NearLand                   (Domain_Grid): Expr = "potential(Float32(Qualifications/IsLand),                   km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearAgriculturalArea       (Domain_Grid): Expr = "potential(Float32(Qualifications/IsAgriculturalArea),       km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearPasture                (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPasture),                km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearLand                   (Domain_Grid): Expr = "potential(Float32(Qualifications/IsLand),                   km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearAgriculturalArea       (Domain_Grid): Expr = "potential(Float32(Qualifications/IsAgriculturalArea),       km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearPasture                (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPasture),                km10FocalPointMatr/RelWeight)";
 //			attribute<Float32> NearPermanentPasture       (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPermanentPasture),       km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearArableArea             (Domain_Grid): Expr = "potential(Float32(Qualifications/IsArableArea),             km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearArableArea             (Domain_Grid): Expr = "potential(Float32(Qualifications/IsArableArea),             km10FocalPointMatr/RelWeight)";
 //			attribute<Float32> NearNonIrrigatedArableArea (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNonIrrigatedArableArea), km10FocalPointMatr/RelWeight)";
 //			attribute<Float32> NearIrrigatedArableArea    (Domain_Grid): Expr = "potential(Float32(Qualifications/IsIrrigatedArableArea),    km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearPermanentCrops         (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPermanentCrops),         km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearNaturalArea            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNaturalArea),            km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearForest                 (Domain_Grid): Expr = "potential(Float32(Qualifications/IsForest),                 km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearNaturalVegetation      (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNaturalVegetation),      km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearOtherNature            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsOtherNature),            km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearRecentlyAbandoned      (Domain_Grid): Expr = "potential(Float32(Qualifications/IsRecentlyAbandoned),      km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearBuiltupArea            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsBuiltupArea),            km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearAgriculturalAbandonment(Domain_Grid): Expr = "potential(Float32(Qualifications/AgriculturalAbandonment),  km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearAgriculturalExpansion  (Domain_Grid): Expr = "potential(Float32(Qualifications/AgriculturalExpansion),    km10FocalPointMatr/RelWeight)";
-			attribute<Float32> NearUrbanDevelopment       (Domain_Grid): Expr = "potential(Float32(Qualifications/UrbanDevelopment),         km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearPermanentCrops         (Domain_Grid): Expr = "potential(Float32(Qualifications/IsPermanentCrops),         km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearNaturalArea            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNaturalArea),            km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearForest                 (Domain_Grid): Expr = "potential(Float32(Qualifications/IsForest),                 km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearNaturalVegetation      (Domain_Grid): Expr = "potential(Float32(Qualifications/IsNaturalVegetation),      km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearOtherNature            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsOtherNature),            km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearRecentlyAbandoned      (Domain_Grid): Expr = "potential(Float32(Qualifications/IsRecentlyAbandoned),      km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearBuiltupArea            (Domain_Grid): Expr = "potential(Float32(Qualifications/IsBuiltupArea),            km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearAgriculturalAbandonment(Domain_Grid): Expr = "potential(Float32(Qualifications/AgriculturalAbandonment),  km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearAgriculturalExpansion  (Domain_Grid): Expr = "potential(Float32(Qualifications/AgriculturalExpansion),    km10FocalPointMatr/RelWeight)";
+			attribute<float32> NearUrbanDevelopment       (Domain_Grid): Expr = "potential(Float32(Qualifications/UrbanDevelopment),         km10FocalPointMatr/RelWeight)";
 		}
 		
 		container ChangeHotspots: url = "%sourcedataprojdir%/Indicators/change hotspots.pdf"

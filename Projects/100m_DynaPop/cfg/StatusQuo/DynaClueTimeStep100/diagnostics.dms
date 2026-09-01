@@ -4,7 +4,7 @@ container Diagnostics
 	unit<uint8> nbu: expr = "select_with_org_rel(!ModelType/IsBuiltUpArea)" {attribute<string> Name: expr = "ModelType/Name[org_rel]";}
 	
 
-	attribute<Int32> max_transpot 	(domain): expr = "= 'max_elem(0[Int32],'+ AsItemList('ScaledTranspot/'+ModelType/Name) +')'";
+	attribute<int32> max_transpot 	(domain): expr = "= 'max_elem(0[Int32],'+ AsItemList('ScaledTranspot/'+ModelType/Name) +')'";
 	attribute<bool>	 Change	     	(domain): expr = "PrevState/landuse != d_alloc/landuse";
 	
 	container Gone: 	Expr = "for_each_nedv(ModelType/Name, '(PrevState/landuse = '+ string(id(ModelType)) +'[ModelType]) && (d_alloc/landuse != '+ string(id(ModelType)) +'[ModelType])', domain, bool)";	

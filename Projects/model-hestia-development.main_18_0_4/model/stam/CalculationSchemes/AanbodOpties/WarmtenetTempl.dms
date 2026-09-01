@@ -47,7 +47,7 @@ template WarmtenetTempl
 		parameter<bool>    KavelPerGemeente := true; // TODO: nog enumeratie toevoegen aan classifications
 
 		//parameters vereiste rentabiliteit leverancies (1.030 of 1.046 of 1.068)
-		parameter<Float64> MinimaleRentabiliteitLeverancier := 1.068, Descr = "minimale ratio tussen CW van de verwachtte opbrengsten per hoeveelheid investeringen.";
+		parameter<float64> MinimaleRentabiliteitLeverancier := 1.068, Descr = "minimale ratio tussen CW van de verwachtte opbrengsten per hoeveelheid investeringen.";
 	}
 	
 	
@@ -160,7 +160,7 @@ template WarmtenetTempl
 			attribute<BronAllocatie/Vertex>    Vertex_rel      := rlookup(point, BronAllocatie/Vertex/Point);
 		}
 		
-		unit<uint32> Bron := union_unit(Void, Puntbronnen, VlakBronnen, Lijnbronnen)
+		unit<uint32> Bron := union_unit(void, Puntbronnen, VlakBronnen, Lijnbronnen)
 			,	KeepData = "True" // facilitate debugging; REMOVE when done		
 		{
 			attribute<rdc_meter> Geometry := union_data(., Point(0.0,0.0), Puntbronnen/Geometry, centroid_or_mid(Vlakbronnen/Geometry), first_point(Lijnbronnen/Geometry)); // for display only
@@ -459,7 +459,7 @@ template WarmtenetTempl
 			attribute<Vertex>    Vertex_rel:= rlookup(Point, Vertex/Point);
 		}
 
-		parameter<Float64> Ki_Buis_kW := 10[EUR / m / kW];
+		parameter<float64> Ki_Buis_kW := 10[EUR / m / kW];
 		
 		// TODO: cluster co-located and nearby bronnen.
 		unit<uint32> AansluitPunten := union_unit(WarmteBronnen/Puntbronnen, WarmteBronnen/Lijnbron_aansluitpunten, ContributiePand)
@@ -562,8 +562,8 @@ template WarmtenetTempl
 		attribute<Warmtebronnen/bron> best_bron_rel          (ContributiePand)    := lastIter/dest_bron_rel     , Descr = "bron waarbij een pand is ingedeeld";
 		attribute<WarmteBronnen/bron> Best_bron_rel_pand     (AllCandidate/StudieGebiedPand)   := modus(best_bron_rel, ContributiePand/SGP_rel);
 		attribute<uint32>             SGP_count              (WarmteBronnen/bron) := count(best_bron_rel, Best_bron_rel)                                                                      , Descr = "aantal panden geselecteerd per bron";
-		attribute<kW>                 NodeDemand             (Vertex)             := MakeDefined((ContributiePand/P_wd      * Float64(best_bron_rel!=0))[invert(Vertex/Per_pand)], 0[kW])     , Descr = "Vermogenvraag van aangesloten pand";
-		attribute<Celsius>            NodeDT                 (Vertex)             := MakeDefined((ContributiePand/DT        * Float64(best_bron_rel!=0))[invert(Vertex/Per_pand)], 0[Celsius]), Descr = "Verchil aanlever/retour temp aangesloten pand";
+		attribute<kW>                 NodeDemand             (Vertex)             := MakeDefined((ContributiePand/P_wd      * float64(best_bron_rel!=0))[invert(Vertex/Per_pand)], 0[kW])     , Descr = "Vermogenvraag van aangesloten pand";
+		attribute<Celsius>            NodeDT                 (Vertex)             := MakeDefined((ContributiePand/DT        * float64(best_bron_rel!=0))[invert(Vertex/Per_pand)], 0[Celsius]), Descr = "Verchil aanlever/retour temp aangesloten pand";
 		attribute<uint32>             Node_SGP_count         (Vertex)             := MakeDefined((ContributiePand/SGP_count *  uint32(best_bron_rel!=0))[invert(Vertex/Per_pand)], 0[uint32]);
 		attribute<kW>                 edge_flow              (Edge)               := trace_back(Edge/From, Edge/To, LastIter/bron_dist/TraceBack, NodeDemand)                                 , Descr = "optelling van vermogensvraag per buisleidingelement";
 		attribute<Celsius>            edge_DT_sum            (Edge)               := trace_back(Edge/From, Edge/To, LastIter/bron_dist/TraceBack, NodeDT);

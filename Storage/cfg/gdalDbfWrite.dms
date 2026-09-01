@@ -23,8 +23,8 @@ container StorageManagerTest
 	container ConfigSettings
 	{
 		// driver name is different on x64, after installing new x64 drivers (incl related SP1), see http://www.mantis.objectvision.nl/view.php?id=249
-		parameter<String> OdbcExcelDriver := (GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'; 
-		parameter<String> OdbcTxtDriver   := (GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'; 
+		parameter<string> OdbcExcelDriver := (GeoDmsPlatform()=='Win32') ? '{Microsoft Excel Driver (*.xls)}' : '{Microsoft Excel Driver (*.xls, *.xlsx, *.xlsm, *.xlsb)}'; 
+		parameter<string> OdbcTxtDriver   := (GeoDmsPlatform()=='Win32') ? '{Microsoft Text Driver (*.txt; *.csv)}' : '{Microsoft Access Text Driver (*.txt, *.csv)}'; 
 	}
 	
 	container units
@@ -51,7 +51,7 @@ container StorageManagerTest
 		attribute<float32> FloatAtt        : [0,1,9999999,-2.5,99.9];
 		attribute<float32> FloatAttNull    : [null,1,9999999,-2.5,99.9];
 
-		attribute<bool>    BoolAtt         : [False, True, True, False, True];
+		attribute<bool>    BoolAtt         : [false, true, true, false, true];
 		attribute<string>  StringAtt       : ['Hello','Test',null,'Two words','88a'];
 		attribute<string>  StringAttEmpty  : ['Hello','Test','','','88a'];
 		attribute<string>  StringAttNull   : ['Hello','Test',null, null,'88a'];
@@ -77,8 +77,8 @@ container StorageManagerTest
 
 			container Test
 			{
-				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, Int32(0 / 0)), reference/IntegerAttNull);
-				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, Float32(0 / 0)), reference/FloatAttNull);
+				attribute<bool> IntegerAtt (reference) := eq_or_both_null(replace_value(src/IntegerAtt, -9999, int32(0 / 0)), reference/IntegerAttNull);
+				attribute<bool> FloatAtt   (reference) := eq_or_both_null(replace_value(src/FloatAtt, -9999f, float32(0 / 0)), reference/FloatAttNull);
 				attribute<bool> StringAtt  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
 			}
 
@@ -102,12 +102,12 @@ container StorageManagerTest
 				attribute<uint32> UIntegerAt := MakeDefined(uint32(reference/IntegerAtt), 0);
 				attribute<int64> Int64Att     := int64(reference/IntegerAtt);
 				attribute<uint64> UInt64Att   := MakeDefined(uint64(reference/IntegerAtt), uint64(0));
-				attribute<float32> FloatAtt   := Float32(reference/FloatAtt);
-				attribute<float64> Float64Att := Float64(reference/FloatAtt);
+				attribute<float32> FloatAtt   := float32(reference/FloatAtt);
+				attribute<float64> Float64Att := float64(reference/FloatAtt);
 				attribute<string>  StringAtt  := const("a;b", .);
 				attribute<bool>    BoolAtt    := const(true, .);
-				attribute<UInt2>    UInt2Att  := const(UInt2(true), .);
-				attribute<UInt4>    UInt4Att  := const(UInt4(true), .);
+				attribute<uint2>    UInt2Att  := const(uint2(true), .);
+				attribute<uint4>    UInt4Att  := const(uint4(true), .);
 			}
 		}
 	}

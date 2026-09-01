@@ -7,7 +7,7 @@
 	parameter<string>   CentroidWeightType           := 'Addresses';                        //Als je gewogen centroide neemt bij de orgs, op welke manier wil je die gewogen hebben? Obv Population of Addresses ?
 	parameter<string>   Orgset_EnkeleBuurt_selectie  := 'Laanhuizen';                       //Als je een enkele buurt selecteert bij OrgSet, welke buurt wil je dan? BU00140107  'Laanhuizen'; 'Elzenhof';
 	parameter<string>   Orgset_EnkeleProv_selectie   := 'Zuid_Holland';                        //Als je een enkele provincie selecteert bij OrgSet, welke provincie wil je dan?
-	parameter<bool>     Export_AfgelegdeAfstand      := FALSE;                              // export (en daarmee bereken) de afgelegde afstand in de output cvs's voor private transport.
+	parameter<bool>     Export_AfgelegdeAfstand      := false;                              // export (en daarmee bereken) de afgelegde afstand in de output cvs's voor private transport.
 	
 	//OV-berekening instellingen
 	parameter<string>   GTFS_file_date               := '20220928';                         //GTFS file date #'20191007' #20201002 20211001 20120917
@@ -21,19 +21,19 @@
 	parameter<min_f>    MaxBikeTime_Org2Dest         := 30[min_f];                          //Maximale fietstijd wanneer er direct van org naar dest locatie wordt gefietst, in seconden.
 	parameter<min_f>    MaxOVTime                    := 60[min_f];                          //Maximale reistijd met OV. Te gebruiken om de rekentijd te verkorten. LET OP: hierdoor worden mogelijk de verste locaties niet bereikt. Wannneer een distance decay wordt gebruikt is niet zo erg. Maar bij een volledige OD wel! 
 	parameter<min_f>    OngelijkvloersPenalty        := 2[min_f];                           //Is er sprake van een halte waar je veel verticale afstand moet afleggen? Dan kun je daar een tijd penalty voor geven bij het overstappen, in seconden.
-	parameter<bool>     UseActualBikeSpeeds          := FALSE;                              //Gebruik van actualbike speeds in OV berekening voor voor- en natransport. TRUE: Gebruik FietsTelWeek data fietssnelheden. FALSE: Gebruik default waarde, hieronder gedefinieerd.
-	parameter<bool>     Add_OV_PriceInformation      := TRUE;                               //Wil je OV-beprijzing uitrekenen? Zet deze dan op TRUE.   fka AddODLinkSet
+	parameter<bool>     UseActualBikeSpeeds          := false;                              //Gebruik van actualbike speeds in OV berekening voor voor- en natransport. TRUE: Gebruik FietsTelWeek data fietssnelheden. FALSE: Gebruik default waarde, hieronder gedefinieerd.
+	parameter<bool>     Add_OV_PriceInformation      := true;                               //Wil je OV-beprijzing uitrekenen? Zet deze dan op TRUE.   fka AddODLinkSet
 	
 	//Auto berekening instellingen
 	parameter<min_f>    MaxCarTime                   := 60[min_f];                          //Maximale reistijd met lopen/fiets/auto //120
-	parameter<bool>     UseTomTomNetworkForCars      := TRUE;                               //Gebruik het TomTom auto netwerk, of het OSM netwerk.
+	parameter<bool>     UseTomTomNetworkForCars      := true;                               //Gebruik het TomTom auto netwerk, of het OSM netwerk.
 	
 	
 	container Advanced
 	{
-		parameter<bool>     RegioIndelingen_Ontkoppeld   := TRUE;                               //De regioindelingen kunnen in fss worden opgeslagen om het rekenproces te versnellen. heb je dit gedaan, zet dan op true. Anders moet je deze eerst creeren.
-		parameter<bool>     Create_Symmetric_fullOD      := FALSE;                              //Als je van org naar org wilt, zet deze dan op true.
-		parameter<bool>     Getiled_berekenen            := FALSE;                              //Als je getiled wilt rekenen, om het rekenproces sneller te maken. En opsplitst om het effect van crashes te verkleinen
+		parameter<bool>     RegioIndelingen_Ontkoppeld   := true;                               //De regioindelingen kunnen in fss worden opgeslagen om het rekenproces te versnellen. heb je dit gedaan, zet dan op true. Anders moet je deze eerst creeren.
+		parameter<bool>     Create_Symmetric_fullOD      := false;                              //Als je van org naar org wilt, zet deze dan op true.
+		parameter<bool>     Getiled_berekenen            := false;                              //Als je getiled wilt rekenen, om het rekenproces sneller te maken. En opsplitst om het effect van crashes te verkleinen
 		parameter<string>   Regio_voor_Tiling            := 'corop';                            //Deze indeling bepaald hoe je wilt tilen. Opties: 'corop', 'provincies'
 		parameter<string>   BAG_jaar                     := RegioIndelingen_jaar;               //Het BAG jaar laten we nu afhankelijk zijn van het gekozen regio indelingen jaar. Gebruikt voor de gewogen centroiden. 
 		parameter<string>   OSM_file_date                := rjoin(AnalyseMoment, Advanced/AnalyseMomentPresets/name, Advanced/AnalyseMomentPresets/OSM_file_date);                         //OpenStreetMap file date #'20200117' 20211004 '20211221' 20221201
@@ -41,7 +41,7 @@
 		parameter<string>   LISA_jaar                    := '2018';                             //LISA file date
 		parameter<string>   CarCongestionSpeed_date      := rjoin(AnalyseMoment, Advanced/AnalyseMomentPresets/name, Advanced/AnalyseMomentPresets/CarCongestionSpeed_date);               //De congestionspeeds worden gemaakt met een OSM bestand van een bepaalde datum. Geef hier die datum op.
 		parameter<string>   CongestionSpeed_DaySelection := replace_value(expand(., '%env:DAYGROUP%'), 'env:DAYGROUP', 'tuesday');  // 'Weekday' 'Weekend' 'Week' 'monday' 'tuesday' 'wednesday' 'thursday' 'friday' 'saturday' 'sunday' 
-		parameter<bool>     Dests_geclusterd             := FALSE;                              //Destinations clusteren? aan te raden bij bijv LISA.
+		parameter<bool>     Dests_geclusterd             := false;                              //Destinations clusteren? aan te raden bij bijv LISA.
 		parameter<string>   items_of_interest            := rjoin(lowercase(DestSet), lowercase(Advanced/dest_domain_list/label), Advanced/dest_domain_list/items_of_interest);
 		parameter<string>   Arrival_or_Departure_at_time := 'Departure';                        //Zijn de analyse tijdsstippen aankomst- of vertrektijden? Opties: 'Arrival'  'Departure'
 		parameter<m>        MaxTransferDistKm            := 500[m];                             //Maximale euclidische loopafstand tussen OV-haltes voor overstappen, in meters.
@@ -52,7 +52,7 @@
 		{
 			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 			{
-				attribute<String> Text:
+				attribute<string> Text:
 				// name, OSM date , NWB date  , NDW date  , Regios, OSM_perProv, CarCongestionSpeed_date_TomTom
 				[
 				'Y2013','20140101', '20191023', '20210928', '2022', 'FALSE', 'yr2022_12',
@@ -63,11 +63,11 @@
 				];
 			}
 			
-			attribute<string>        name                    := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
-			attribute<string>        OSM_file_date           := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-			attribute<string>        RegioIndelingen_jaar    := Elements/Text[value(UInt32(ID(.))* nrAttr + 4, Elements)];
-			attribute<bool>          OSM_NL_prov             := Elements/Text[value(UInt32(ID(.))* nrAttr + 5, Elements)][bool];
-			attribute<string>        CarCongestionSpeed_date := Elements/Text[value(UInt32(ID(.))* nrAttr + 6, Elements)];
+			attribute<string>        name                    := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)];
+			attribute<string>        OSM_file_date           := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+			attribute<string>        RegioIndelingen_jaar    := Elements/Text[value(uint32(ID(.))* nrAttr + 4, Elements)];
+			attribute<bool>          OSM_NL_prov             := Elements/Text[value(uint32(ID(.))* nrAttr + 5, Elements)][bool];
+			attribute<string>        CarCongestionSpeed_date := Elements/Text[value(uint32(ID(.))* nrAttr + 6, Elements)];
 			
 			parameter<uint32> nrAttr := 7;
 		}
@@ -76,7 +76,7 @@
 		{
 			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 			{
-				attribute<String> Text:
+				attribute<string> Text:
 				// Label, Path
 				[
 				'Buurt'                               ,'SourceData/RegioIndelingen/Buurt/Centroiden',
@@ -117,8 +117,8 @@
 			}
 			
 			attribute<uint32>        id              := id(.);
-			attribute<string>        label          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
-			attribute<string>        path           := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)], DialogType = "LabelText";
+			attribute<string>        label          := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)];
+			attribute<string>        path           := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)], DialogType = "LabelText";
 			
 			parameter<uint32> nrAttr := 2;
 		}
@@ -127,7 +127,7 @@
 		{ 
 			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 			{
-				attribute<String> Text:
+				attribute<string> Text:
 				// Label, Path
 				[
 				'LISA'                                                           ,'SourceData/locaties/LISA/ReadFSS/y@LISAJAAR@/PerYear/HeeftBanen'                                                  , 'nr_banen',
@@ -185,9 +185,9 @@
 			}
 			
 			attribute<uint32>        id                := id(.);
-			attribute<string>        label             := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)];
-			attribute<string>        path              := replace(Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)], '@LISAJAAR@', LISA_jaar), DialogType = "LabelText";
-			attribute<string>        items_of_interest := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+			attribute<string>        label             := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)];
+			attribute<string>        path              := replace(Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)], '@LISAJAAR@', LISA_jaar), DialogType = "LabelText";
+			attribute<string>        items_of_interest := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
 			
 			
 			parameter<uint32> nrAttr := 3;
@@ -360,7 +360,7 @@
 			{
 				unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 				{
-					attribute<String> Text:
+					attribute<string> Text:
 					// Regio             , OrgSet , OrgPath, Land, Type, 
 					[
 					'Netherlands'             ,'NL', 'OD',
@@ -372,10 +372,10 @@
 					]; 
 				}
 				
-				attribute<string>        label          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
+				attribute<string>        label          := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
 				attribute<string>        name           := replace(label, '-', '_');
-				attribute<string>        Country        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-				attribute<string>        Type_src       := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+				attribute<string>        Country        := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+				attribute<string>        Type_src       := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
 				
 				parameter<uint32> nrAttr := 3;
 			}
@@ -383,7 +383,7 @@
 			{
 				unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 				{
-					attribute<String> Text:
+					attribute<string> Text:
 					// Regio             , OrgSet , OrgPath, Land, Type, 
 					[
 					'Drenthe'                 ,'NL', 'OD',
@@ -408,10 +408,10 @@
 					]; 
 				}
 				
-				attribute<string>        label          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
+				attribute<string>        label          := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
 				attribute<string>        name           := replace(label, '-', '_');
-				attribute<string>        Country        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-				attribute<string>        Type_src       := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
+				attribute<string>        Country        := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+				attribute<string>        Type_src       := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
 				
 				parameter<uint32> nrAttr := 3;
 			}
@@ -463,17 +463,17 @@
 		{
 			unit<uint32> Elements  := Range(uint32, 0, nrAttr*#.)
 			{
-				attribute<String> Text:
+				attribute<string> Text:
 				// Regio             , OrgSet , OrgPath, Land, Type, 
 				[
 				'Netherlands'             , 'PC4' , '/SourceData/RegioIndelingen/Dutch_PC4_areas'      ,'NL'
 				]; 
 			}
 
-			attribute<string>        name          := Elements/Text[value(UInt32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
-			attribute<string>        OrgSet        := Elements/Text[value(UInt32(ID(.))* nrAttr + 1, Elements)];
-			attribute<string>        OrgSet_path   := Elements/Text[value(UInt32(ID(.))* nrAttr + 2, Elements)];
-			attribute<string>        short         := Elements/Text[value(UInt32(ID(.))* nrAttr + 3, Elements)];
+			attribute<string>        name          := Elements/Text[value(uint32(ID(.))* nrAttr + 0, Elements)], DialogType = "LabelText";
+			attribute<string>        OrgSet        := Elements/Text[value(uint32(ID(.))* nrAttr + 1, Elements)];
+			attribute<string>        OrgSet_path   := Elements/Text[value(uint32(ID(.))* nrAttr + 2, Elements)];
+			attribute<string>        short         := Elements/Text[value(uint32(ID(.))* nrAttr + 3, Elements)];
 			
 			parameter<uint32> nrAttr := 4;
 		}

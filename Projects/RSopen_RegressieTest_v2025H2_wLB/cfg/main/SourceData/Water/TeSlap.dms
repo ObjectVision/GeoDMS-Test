@@ -1,6 +1,6 @@
 container TeSlap
 {
-	unit<UInt32> Slap
+	unit<uint32> Slap
 	:	StorageName     = "%RSo_DataDir%/Omgeving/Water/OpWaterBasis/TeSlap/Te_slap.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
@@ -8,18 +8,18 @@ container TeSlap
 	{
 		attribute<rdc_meter> geometry (poly);
 		attribute<.> Per_AllocDomain (AllocDomain) := poly2grid(geometry, AllocDomain);
-		attribute<Bool> IsSlap (AllocDomain) := MakeDefined(DN[Per_AllocDomain][bool],FALSE);
+		attribute<bool> IsSlap (AllocDomain) := MakeDefined(DN[Per_AllocDomain][bool],false);
 		
 		attribute<.> Per_AdminDomain (AdminDomain) := poly2grid(geometry, AdminDomain);
-		attribute<Bool> IsSlap_25mtr (AdminDomain) := MakeDefined(DN[Per_AdminDomain][bool],FALSE);
+		attribute<bool> IsSlap_25mtr (AdminDomain) := MakeDefined(DN[Per_AdminDomain][bool],false);
 		
-		attribute<UInt8> IsSlap_25mtr_uint8 (AdminDomain)     :=IsSlap_25mtr ? 1b : 0b/0b
+		attribute<uint8> IsSlap_25mtr_uint8 (AdminDomain)     :=IsSlap_25mtr ? 1b : 0b/0b
 		{
 			container Grid2Vector := Templates/Grid2VectorT('IsSlap_25mtr_uint8','25');
 		}
 	}
 	
-	unit<UInt32> Zettingsgevoelig
+	unit<uint32> Zettingsgevoelig
 	:	StorageName     = "%RSo_DataDir%/Omgeving/Water/OpWaterBasis/TeSlap/Zettingsgevoelig.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
@@ -27,6 +27,6 @@ container TeSlap
 	{
 		attribute<rdc_meter> geometry (poly);
 		attribute<.> Per_AllocDomain (AllocDomain)            := poly2grid(geometry, AllocDomain);
-		attribute<Bool> IsZettingsgevoelig  (AllocDomain) := MakeDefined(DN[Per_AllocDomain][bool],FALSE);
+		attribute<bool> IsZettingsgevoelig  (AllocDomain) := MakeDefined(DN[Per_AllocDomain][bool],false);
 	}
 }

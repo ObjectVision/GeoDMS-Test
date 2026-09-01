@@ -35,8 +35,8 @@ container Geography: Using = "Units", IsHidden = "True"
 				")";
 		container Tiles
 		{
-			parameter<UInt16> TileSizeY: [ 256 ];
-			parameter<UInt16> TileSizeX: Expr = "PointCol(BoundRange(m100))";
+			parameter<uint16> TileSizeY: [ 256 ];
+			parameter<uint16> TileSizeX: Expr = "PointCol(BoundRange(m100))";
 			parameter<m100>   JrcTileExtent: Expr = "point_xy(TileSizeX, TileSizeY, m100)";
 			unit<wpoint> JrcStripes:
 				Expr  = 
@@ -127,7 +127,7 @@ container Geography: Using = "Units", IsHidden = "True"
 		
 		// Runs is now read from /ConfigSettings/Overridable/RunRegions, 
 		// which is overridable by the registry with can be edited by the Tools->Options->ConfigSettings in the GUI.
-		unit<UInt16> Runs: Expr= "=Expand(., '%RunRegions%')"; 
+		unit<uint16> Runs: Expr= "=Expand(., '%RunRegions%')"; 
 		
 		/*unit<Uint16> Country: Expr = "range(uint16, uint16(0), uint16(#Nuts0_v10))"
 			, DialogType = "Map"
@@ -253,16 +253,16 @@ container Geography: Using = "Units", IsHidden = "True"
 		unit<uint16> JrcRegion: Expr = "range(uint16, uint16(0), uint16(#AdministrativeBoundaries/LUISA_zones/RunAreas))", DialogType = "Map", DialogData = "Geometry"
 		{
 			attribute<AdministrativeBoundaries/LUISA_zones/RunAreas> Ra_id: expr = "id(.)[AdministrativeBoundaries/LUISA_zones/RunAreas]";
-			attribute<String> Label:             Expr = "AdministrativeBoundaries/LUISA_zones/RunAreas/Name[Ra_id]"; 
-			attribute<String> Name:              Expr = "Label";
-			attribute<String> AllocDirName:      Expr = "ICC"; // always use parameterization per country
-			attribute<String> AllocDirNameN0:    Expr = "ICC"; // no fall-back
-			attribute<String> DemandDirName:     Expr = "ICC";
+			attribute<string> Label:             Expr = "AdministrativeBoundaries/LUISA_zones/RunAreas/Name[Ra_id]"; 
+			attribute<string> Name:              Expr = "Label";
+			attribute<string> AllocDirName:      Expr = "ICC"; // always use parameterization per country
+			attribute<string> AllocDirNameN0:    Expr = "ICC"; // no fall-back
+			attribute<string> DemandDirName:     Expr = "ICC";
 			attribute<string> ZoneId: 			 Expr = "ICC";
-			attribute<String> ICC:               Expr = "AdministrativeBoundaries/LUISA_zones/RunAreas/ICC[Ra_id]"; 
+			attribute<string> ICC:               Expr = "AdministrativeBoundaries/LUISA_zones/RunAreas/ICC[Ra_id]"; 
 			//attribute<Nuts0>  Nuts0_rel:		 Expr = "rlookup(ICC, Nuts0/ICC)";
 			//attribute<Nuts0>  Nuts0Code:         Expr = "org_rel"; 
-			attribute<String> SuitabilityTraits: Expr = "const('MNL100',.)"; 
+			attribute<string> SuitabilityTraits: Expr = "const('MNL100',.)"; 
 			
 			attribute<.> Grid(Lambert100mGrid):  Expr = "poly2grid(Geometry, Lambert100mGrid)";
 
@@ -271,14 +271,14 @@ container Geography: Using = "Units", IsHidden = "True"
 			attribute<LambertEA> lb: 			 Expr = "lower_bound(Geometry)";
 			attribute<LambertEA> ub:			 Expr = "upper_bound(Geometry)";	
 			
-			attribute<UInt32>   Width   : Expr = "UInt32(pointCol(ub)-pointCol(lb))+1", KeepData = "False"; 
-			attribute<UInt32>   Height  : Expr = "UInt32(pointRow(ub)-pointRow(lb))+1", KeepData = "False"; 
-			attribute<UInt32>   RectArea: Expr = "Width*Height", KeepData = "False"; 
+			attribute<uint32>   Width   : Expr = "UInt32(pointCol(ub)-pointCol(lb))+1", KeepData = "False"; 
+			attribute<uint32>   Height  : Expr = "UInt32(pointRow(ub)-pointRow(lb))+1", KeepData = "False"; 
+			attribute<uint32>   RectArea: Expr = "Width*Height", KeepData = "False"; 
 			
 			attribute<Lambert100mGrid> LB100: Expr = "lb[Lambert100mGrid]", KeepData = "False"; 
 			attribute<Lambert100mGrid> UB100: Expr = "ub[Lambert100mGrid]", KeepData = "False"; 
 			
-			parameter<String> RegionDomainSetName: Expr = "'JrcRegions100m'";
+			parameter<string> RegionDomainSetName: Expr = "'JrcRegions100m'";
 		}
 		unit<uint32> MicroStates: nrofrows = 3
 		{
@@ -288,7 +288,7 @@ container Geography: Using = "Units", IsHidden = "True"
 		unit<uint32> Capri: Expr = "unique(getCapriData/CapriLookup/CapriCode)", DialogData = "Geometry", DialogType = "map", IntegrityCheck = "all(getCapriData/CapriLookup/Nuts2Found)"
 		{
 			attribute<LambertEA> Geometry (poly): expr = "bp_union_polygon(value(Geography/getCapriData/Nuts2/Geometry, ipoint), /Geography/getCapriData/Nuts2/Capri_rel)[LambertEA]";
-			attribute<String> Code: Expr = "Values";
+			attribute<string> Code: Expr = "Values";
 			attribute<string> ZoneId: expr = "Code";
 			attribute<string> Name: Expr = "rjoin(Values, getCapriData/CapriLookup/CapriCode, getCapriData/CapriLookup/CapriName)";
 			attribute<string> Label: Expr = "Code+': '+Name", DialogType = "LabelText";
@@ -312,7 +312,7 @@ container Geography: Using = "Units", IsHidden = "True"
 		unit<uint32> CapriAggr: expr = "unique(Capri/AggZoneCode)", DialogData = "Geometry", DialogType = "map"
 		{
 			attribute<LambertEA> Geometry (poly): expr = "bp_union_polygon(value(Capri/Geometry, ipoint), Capri/AggZoneId)[LambertEA]";
-			attribute<String> Code: Expr = "Values";
+			attribute<string> Code: Expr = "Values";
 			attribute<string> ZoneId: expr = "Code";
 			attribute<string> Name: Expr = "First(Capri/AggZoneName, Capri/AggZoneId)";
 			attribute<string> Label: Expr = "Code+': '+Name", DialogType = "LabelText";
@@ -372,7 +372,7 @@ container Geography: Using = "Units", IsHidden = "True"
 						")'"
 					",  WPoint)";*/
 	}
-	unit<UInt8> IndicatorRegions: NrOfRows = 5 { attribute<String> Name: [ 'Nuts0', 'Nuts1', 'Nuts2', 'Nuts2_Merged', 'Nuts3' ]; }
+	unit<uint8> IndicatorRegions: NrOfRows = 5 { attribute<string> Name: [ 'Nuts0', 'Nuts1', 'Nuts2', 'Nuts2_Merged', 'Nuts3' ]; }
 	
 	container RegionGrids: expr = "AdministrativeBoundaries/RegionGrids";
 	/*{
@@ -622,8 +622,8 @@ container Geography: Using = "Units", IsHidden = "True"
 		
 		container Tiles
 		{
-			parameter<UInt16> TileSizeY: [ 1024 ];
-			parameter<UInt16> TileSizeX: [ 1024 ];
+			parameter<uint16> TileSizeY: [ 1024 ];
+			parameter<uint16> TileSizeX: [ 1024 ];
 			parameter<Lambert100mStripedGrid>  JrcTileExtent: Expr = "point_xy(TileSizeX, TileSizeY, Lambert100mStripedGrid)";
 			unit<wpoint> TileSetNew:
 				Expr  = 
@@ -644,9 +644,9 @@ container Geography: Using = "Units", IsHidden = "True"
 				attribute<Lambert100mStripedGrid> UB100:    Expr = "point_xy(min_elem(PointCol(UB100Org), PointCol(UpperBound(Lambert100mStripedGrid))),min_elem(PointRow(UB100Org), PointRow(UpperBound(Lambert100mStripedGrid))), Lambert100mStripedGrid)", KeepData = "False";
 			}
 			attribute<TileSetNew> AggrRel(Lambert100mStripedGrid): Expr = "value((ID(Lambert100mStripedGrid) - LowerBound(Lambert100mStripedGrid)) / JrcTileExtent, TileSetNew)";
-			attribute<Bool> HasLandOrg(TileSetNew): Expr = "any(IsDefined(Nuts2GridOrg), AggrRel)", StorageName = "%SourceDataProjDir%/LUISA/data/SelectedTiles.bmp"
+			attribute<bool> HasLandOrg(TileSetNew): Expr = "any(IsDefined(Nuts2GridOrg), AggrRel)", StorageName = "%SourceDataProjDir%/LUISA/data/SelectedTiles.bmp"
 			{
-				attribute<UInt32> PaletteData(Bool): Expr = "Classifications/Boolean/Palette";
+				attribute<uint32> PaletteData(bool): Expr = "Classifications/Boolean/Palette";
 			}
 
 			#include <HasLand.dms>

@@ -14,7 +14,7 @@ container population_claimregion
 	container ExpUrbanPops := 
 		for_each_nedv(ProjectionDate/name,
 			'MakeDefined('
-				'SSPclaim/URBANPOP'+String(ProjectionDate/Yr)+'[MPerson][invert(SSPclaim/Country_rel) ] * 1000000[Person / MPerson]'
+				'SSPclaim/URBANPOP'+string(ProjectionDate/Yr)+'[MPerson][invert(SSPclaim/Country_rel) ] * 1000000[Person / MPerson]'
 			', 0[Person]'
 			')'
 		,	ClaimRegion, Person
@@ -23,7 +23,7 @@ container population_claimregion
 	container ExpRuralPops := 
 		for_each_nedv(ProjectionDate/name,
 				'MakeDefined('
-					'SSPclaim/population_to_use_'+String(ProjectionDate/Yr)+'[MPerson][invert(SSPclaim/Country_rel)] * 1000000[Person / MPerson] '
+					'SSPclaim/population_to_use_'+string(ProjectionDate/Yr)+'[MPerson][invert(SSPclaim/Country_rel)] * 1000000[Person / MPerson] '
 					'- ExpUrbanPops/'+ProjectionDate/name+', '
 				'0[Person]'
 				')'
@@ -33,7 +33,7 @@ container population_claimregion
 	container ExpPops := 
 		for_each_nedv(ProjectionDate/name,
 				'MakeDefined('
-					'SSPclaim/population_to_use_'+String(ProjectionDate/Yr)+'[MPerson][invert(SSPclaim/Country_rel)] * 1000000[Person / MPerson]'
+					'SSPclaim/population_to_use_'+string(ProjectionDate/Yr)+'[MPerson][invert(SSPclaim/Country_rel)] * 1000000[Person / MPerson]'
 				', 0[Person]'
 				')'
 		,	ClaimRegion, Person

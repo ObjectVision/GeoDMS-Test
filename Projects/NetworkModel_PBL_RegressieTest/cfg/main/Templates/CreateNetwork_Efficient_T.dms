@@ -11,8 +11,8 @@ Template CreateNetwork_Efficient_T //copy from NetworkModel_EU
 	unit<uint32> Locations := union_unit(orgDomain, destDomain)
 	{
 		attribute<rdc>                             geometry                       := union_data(.,orgDomain/geometry, destDomain/geometry);
-		attribute<bool>                            IsOrg                          := union_data(.,const(TRUE , OrgDomain), const(FALSE,DestDomain));
-		attribute<bool>                            IsDest                         := union_data(.,const(FALSE, OrgDomain), const(TRUE ,DestDomain));
+		attribute<bool>                            IsOrg                          := union_data(.,const(true , OrgDomain), const(false,DestDomain));
+		attribute<bool>                            IsDest                         := union_data(.,const(false, OrgDomain), const(true ,DestDomain));
 	}
 	
 	unit<uint32> UniqueLocations    := unique(Locations/geometry) 
@@ -323,7 +323,7 @@ Template CreateNetwork_Efficient_T //copy from NetworkModel_EU
 				// attribute<bool>                            Links_InsideJFS_IsOneDirection     := all(LinksInsideJunctionFreeSection/IsOneDirection, LinksInsideJunctionFreeSection/JunctionFreeSection_wC_rel);
 				
 				// attribute<bool>                            IsOneDirection                     := First_ConnectorLink_IsOneDirection && Last_ConnectorLink_IsOneDirection && Links_InsideJFS_IsOneDirection;
-				attribute<bool>                            IsOD_connection_road               := const(FALSE,.);
+				attribute<bool>                            IsOD_connection_road               := const(false,.);
 				
 				container per_ImpedanceType :=
 					for_each_ne(
