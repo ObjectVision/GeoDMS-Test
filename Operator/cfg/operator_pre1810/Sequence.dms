@@ -446,6 +446,61 @@
 		{
 			parameter<bool> test_param := float32(sum(area(dpolygon(bp_difference(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 8f;
 		}
+		// dms_: GeoDMS's eigen snap-rounding sweep (ObjectVision/GeoDMS#1214, sinds 20.20.0), op
+		// dezelfde vierkanten als geos_ en bp_ (dpoint en ipoint), plus wat de bibliotheken niet
+		// beloven: een zichzelf snijdende strik gelezen volgens de even-odd-regel, en het
+		// rasterargument dat een kier tussen twee polygonen dichttrekt.
+		container dms_src
+		{
+			// de strik [0,4]^2 waarvan de ring zichzelf in (2,2) kruist: twee driehoeken van 4
+			unit<uint32> QT: nrofrows = 5
+			{
+				attribute<float64>      x: [0,4,4,0,0];
+				attribute<float64>      y: [0,4,0,4,0];
+				attribute<geos_src/S1g> s: [0,0,0,0,0];
+				attribute<uint32>       o: [0,1,2,3,4];
+			}
+			attribute<dpoint> bowtie (geos_src/S1g, polygon) := points2sequence(point_yx(QT/y, QT/x, dpoint), QT/s, QT/o);
+			// een vierkant 0.3 rechts van pa: [4.3,8.3] x [0,4]; bij raster 1 valt de kier dicht
+			unit<uint32> QG: nrofrows = 5
+			{
+				attribute<float64>      x: [4.3,4.3,8.3,8.3,4.3];
+				attribute<float64>      y: [0,4,4,0,0];
+				attribute<geos_src/S1g> s: [0,0,0,0,0];
+				attribute<uint32>       o: [0,1,2,3,4];
+			}
+			attribute<dpoint> pg (geos_src/S1g, polygon) := points2sequence(point_yx(QG/y, QG/x, dpoint), QG/s, QG/o);
+		}
+		container dms_intersect
+		{
+			parameter<bool> test_param  := float32(sum(area(dms_intersect(geos_src/pa, geos_src/pb), geos_src/mu))) = 8f;
+			parameter<bool> test_int    := float32(sum(area(dpolygon(dms_intersect(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 8f;
+			// even-odd: pb = [2,6]x[0,4] snijdt de rechterdriehoek van de strik uit, oppervlak 4
+			parameter<bool> test_bowtie := float32(sum(area(dms_intersect(dms_src/bowtie, geos_src/pb), geos_src/mu))) = 4f;
+		}
+		container dms_union
+		{
+			parameter<bool> test_param  := float32(sum(area(dms_union(geos_src/pa, geos_src/pb), geos_src/mu))) = 24f;
+			parameter<bool> test_int    := float32(sum(area(dpolygon(dms_union(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 24f;
+			// de strik verenigd met zichzelf: even-odd, twee driehoeken van 4
+			parameter<bool> test_bowtie := float32(sum(area(dms_union(dms_src/bowtie, dms_src/bowtie), geos_src/mu))) = 8f;
+			// het rasterargument: zonder raster blijven pa en pg twee schillen (5 + 5 + 1 punten),
+			// bij raster 1 snapt pg naar [4,8] x [0,4] en wordt het één rechthoek van 5 punten
+			parameter<bool> test_grid   := sequence_element_count(dms_union(geos_src/pa, dms_src/pg))[0] = 11
+			                            && sequence_element_count(dms_union(geos_src/pa, dms_src/pg, 1.0))[0] = 5;
+		}
+		container dms_xor
+		{
+			parameter<bool> test_param  := float32(sum(area(dms_xor(geos_src/pa, geos_src/pb), geos_src/mu))) = 16f;
+			parameter<bool> test_int    := float32(sum(area(dpolygon(dms_xor(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 16f;
+			// A ^ A is leeg: een lege reeks, geen nul-oppervlak-restant
+			parameter<bool> test_self   := sequence_element_count(dms_xor(geos_src/pa, geos_src/pa))[0] = 0;
+		}
+		container dms_difference
+		{
+			parameter<bool> test_param  := float32(sum(area(dms_difference(geos_src/pa, geos_src/pb), geos_src/mu))) = 8f;
+			parameter<bool> test_int    := float32(sum(area(dpolygon(dms_difference(bp_src/pai, bp_src/pbi)), geos_src/mu))) = 8f;
+		}
 		container bp_split_union_polygon
 		{
 			unit<uint32> parts := bp_split_union_polygon(ipolygon(geos_src/sq4));
