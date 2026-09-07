@@ -773,6 +773,27 @@ _SQLITE_SUFFIXES = (".gpkg", ".sqlite", ".sqlite3", ".db")
 def _is_sqlite_path(path:str) -> bool:
     return path.lower().endswith(_SQLITE_SUFFIXES)
 
+# A .dbf records the day it was written in its own header: byte 0 is the version,
+# bytes 1..3 the year counted from 1900, the month and the day of the last update.
+# Every writer stamps them, so the same table written on two days differs in exactly
+# those three bytes and a byte comparison then fails on the calendar rather than on
+# the data. t050 writes the .dbf of a shapefile and compares it against the one it
+# read, so it was red on every day but the one its benchmark was written. Blanking
+# the three bytes on both sides leaves the rest of the header and every record
+# compared as strictly as before. Found while working on ObjectVision/GeoDMS#587.
+def _is_dbf_path(path:str) -> bool:
+    return path.lower().endswith(".dbf")
+
+def _dbf_bytes_without_date(path:str) -> bytes:
+    """The file's bytes with the dBase last-update date blanked. Read raw: a .dbf is
+    binary, and the CRLF collapsing that _normalised_bytes does for text would shift
+    every offset behind a 0x0D 0x0A that happens to fall inside a record."""
+    with open(path, "rb") as f:
+        data = f.read()
+    if len(data) < 32:  # shorter than a dBase header: nothing to blank
+        return data
+    return data[:1] + bytes(3) + data[4:]
+
 # Per-table columns to ignore during the content hash. These hold values
 # that vary between runs of the same producer even though the user data
 # is identical — write-timestamps, generation IDs etc. Match table-name
@@ -882,11 +903,14 @@ def _numeric_tolerant_equivalent(benchmark:str, generated:str, rel_tol:float=0.0
 
 def _files_equivalent(benchmark:str, generated:str) -> bool:
     """Dispatch: SQLite-family files go through content compare so non-
-    deterministic index packing doesn't fail the test; everything else is
-    byte-compared with CRLF/CR normalisation, with a numeric-tolerant fallback
-    for text files (float noise in @statistics output etc.)."""
+    deterministic index packing doesn't fail the test; a .dbf is byte-compared with
+    its header date blanked, since every writer stamps the day into it; everything
+    else is byte-compared with CRLF/CR normalisation, with a numeric-tolerant
+    fallback for text files (float noise in @statistics output etc.)."""
     if _is_sqlite_path(benchmark) and _is_sqlite_path(generated):
         return _sqlite_content_equivalent(benchmark, generated)
+    if _is_dbf_path(benchmark) and _is_dbf_path(generated):
+        return _dbf_bytes_without_date(benchmark) == _dbf_bytes_without_date(generated)
     if _normalised_bytes(benchmark) == _normalised_bytes(generated):
         return True
     return _numeric_tolerant_equivalent(benchmark, generated)
