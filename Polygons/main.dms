@@ -331,12 +331,13 @@ container Polygons
 					+ string(avg_split_union_count_islands)
 					+ string(avg_split_union_area);
 					
-				parameter<uint32> avg_overlay_count_islands := (bg_overlay_count_islands + bp_overlay_count_islands + cgal_overlay_count_islands + geos_overlay_count_islands) / 4;
+				parameter<uint32> avg_overlay_count_islands := (bg_overlay_count_islands + bp_overlay_count_islands + cgal_overlay_count_islands + geos_overlay_count_islands + dms_overlay_count_islands) / 5;
 				
 				parameter<uint32>  bg_overlay_count_islands     := src/bg_overlay/count_islands;
 				parameter<uint32>  bp_overlay_count_islands     := src/bp_overlay/count_islands;
 				parameter<uint32>  cgal_overlay_count_islands   := src/cgal_overlay/count_islands;
 				parameter<uint32>  geos_overlay_count_islands   := src/geos_overlay/count_islands;
+				parameter<uint32>  dms_overlay_count_islands    := src/dms_overlay/count_islands;
 				
 				// parameter<m2>     bg_overlay_area              := sum(src/bg_overlay/area);
 				// parameter<m2>     bp_overlay_area              := sum(src/bp_overlay/area);
@@ -346,61 +347,69 @@ container Polygons
 				
 				parameter<string>  bg_inflate_and_deflate_ratio_correctness := string(sum_uint32(src/bg_deflate/bg_deflate_correctness)) + '...'+ string(sum_uint32(src/bg_inflate/bg_inflate_correctness)) + ' of ' + string(#src);
 
-				parameter<uint32> avg_connectivity_count_islands := (bg_connectivity_count_islands + bp_connectivity_count_islands + cgal_connectivity_count_islands + geos_connectivity_count_islands) / 4;
+				parameter<uint32> avg_connectivity_count_islands := (bg_connectivity_count_islands + bp_connectivity_count_islands + cgal_connectivity_count_islands + geos_connectivity_count_islands + dms_connectivity_count_islands) / 5;
 	
 				parameter<uint32>  bg_connectivity_count_islands   := max(src/bg_connectivity/connected_parts/PartNr);
 				parameter<uint32>  bp_connectivity_count_islands   := max(src/bp_connectivity/connected_parts/PartNr);
 				parameter<uint32>  cgal_connectivity_count_islands := max(src/cgal_connectivity/connected_parts/PartNr);
 				parameter<uint32>  geos_connectivity_count_islands := max(src/geos_connectivity/connected_parts/PartNr);
+				parameter<uint32>  dms_connectivity_count_islands  := max(src/dms_connectivity/connected_parts/PartNr);
 				
-				parameter<uint32> avg_polygon_count_islands := (bg_polygon_count_islands + bp_polygon_count_islands + cgal_polygon_count_islands + geos_polygon_count_islands) / 4;
+				parameter<uint32> avg_polygon_count_islands := (bg_polygon_count_islands + bp_polygon_count_islands + cgal_polygon_count_islands + geos_polygon_count_islands + dms_polygon_count_islands) / 5;
 				
 				parameter<uint32>  bg_polygon_count_islands     := src/bg_polygon/count_islands;
 				parameter<uint32>  bp_polygon_count_islands     := src/bp_polygon/count_islands;
 				parameter<uint32>  cgal_polygon_count_islands   := src/cgal_polygon/count_islands;
 				parameter<uint32>  geos_polygon_count_islands   := src/geos_polygon/count_islands;
+				parameter<uint32>  dms_polygon_count_islands    := src/dms_polygon/count_islands;
 				
-				parameter<m2> avg_polygon_area := (bg_polygon_area + bp_polygon_area + cgal_polygon_area + geos_polygon_area) / 4.0;
+				parameter<m2> avg_polygon_area := (bg_polygon_area + bp_polygon_area + cgal_polygon_area + geos_polygon_area + dms_polygon_area) / 5.0;
 				
 				parameter<m2>     bg_polygon_area              := sum(src/bg_polygon/area);
 				parameter<m2>     bp_polygon_area              := sum(src/bp_polygon/area);
 				parameter<m2>     cgal_polygon_area            := sum(src/cgal_polygon/area);
 				parameter<m2>     geos_polygon_area            := sum(src/geos_polygon/area);
+				parameter<m2>     dms_polygon_area             := sum(src/dms_polygon/area);
 				
-				parameter<m2> avg_union_area := (bg_union_area + bp_union_area + cgal_union_area + geos_union_area) / 4.0;
+				parameter<m2> avg_union_area := (bg_union_area + bp_union_area + cgal_union_area + geos_union_area + dms_union_area) / 5.0;
 				
 				parameter<m2>     bg_union_area                := sum(src/bg_union/area);
 				parameter<m2>     bp_union_area                := sum(src/bp_union/area);
 				parameter<m2>     cgal_union_area              := sum(src/cgal_union/area);
 				parameter<m2>     geos_union_area              := sum(src/geos_union/area);
+				parameter<m2>     dms_union_area               := sum(src/dms_union/area);
 				
-				parameter<uint32> avg_split_count_islands := (bg_split_count_islands + bp_split_count_islands + cgal_split_count_islands + geos_split_count_islands) / 4;
+				parameter<uint32> avg_split_count_islands := (bg_split_count_islands + bp_split_count_islands + cgal_split_count_islands + geos_split_count_islands + dms_split_count_islands) / 5;
 				
 				parameter<uint32>  bg_split_count_islands       := src/bg_split/count_islands;
 				parameter<uint32>  bp_split_count_islands       := src/bp_split/count_islands;
 				parameter<uint32>  cgal_split_count_islands     := src/cgal_split/count_islands;
 				parameter<uint32>  geos_split_count_islands     := src/geos_split/count_islands;
+				parameter<uint32>  dms_split_count_islands      := src/dms_split/count_islands;
 				
-				parameter<m2> avg_split_area := (bg_split_area + bp_split_area + cgal_split_area + geos_split_area) / 4.0;
+				parameter<m2> avg_split_area := (bg_split_area + bp_split_area + cgal_split_area + geos_split_area + dms_split_area) / 5.0;
 				
 				parameter<m2>     bg_split_area                := sum(src/bg_split/area);
 				parameter<m2>     bp_split_area                := sum(src/bp_split/area);
 				parameter<m2>     cgal_split_area              := sum(src/cgal_split/area);
 				parameter<m2>     geos_split_area              := sum(src/geos_split/area);
+				parameter<m2>     dms_split_area               := sum(src/dms_split/area);
 				
-				parameter<uint32> avg_split_union_count_islands := (bg_split_union_count_islands + bp_split_union_count_islands + cgal_split_union_count_islands + geos_split_union_count_islands) / 4;
+				parameter<uint32> avg_split_union_count_islands := (bg_split_union_count_islands + bp_split_union_count_islands + cgal_split_union_count_islands + geos_split_union_count_islands + dms_split_union_count_islands) / 5;
 				
 				parameter<uint32>  bg_split_union_count_islands   := src/bg_split_union/count_islands;
 				parameter<uint32>  bp_split_union_count_islands   := src/bp_split_union/count_islands;
 				parameter<uint32>  cgal_split_union_count_islands := src/cgal_split_union/count_islands;
 				parameter<uint32>  geos_split_union_count_islands := src/geos_split_union/count_islands;
+				parameter<uint32>  dms_split_union_count_islands  := src/dms_split_union/count_islands;
 				
-				parameter<m2> avg_split_union_area := (bg_split_union_area + bp_split_union_area + cgal_split_union_area + geos_split_union_area) / 4.0;
+				parameter<m2> avg_split_union_area := (bg_split_union_area + bp_split_union_area + cgal_split_union_area + geos_split_union_area + dms_split_union_area) / 5.0;
 				
 				parameter<m2>     bg_split_union_area            := sum(src/bg_split_union/area);
 				parameter<m2>     bp_split_union_area            := sum(src/bp_split_union/area);
 				parameter<m2>     cgal_split_union_area          := sum(src/cgal_split_union/area);
 				parameter<m2>     geos_split_union_area          := sum(src/geos_split_union/area);
+				parameter<m2>     dms_split_union_area           := sum(src/dms_split_union/area);
 			}
 		}
 
@@ -587,6 +596,50 @@ container Polygons
 				}
 				
 				unit<uint32> geos_split_union := geos_split_union_polygon(geos_inflate/geos_inflate)
+				{
+					attribute<m2>     area                      := area(geometry, m2);
+					parameter<uint32>  count_islands             := #.;
+				}
+
+				////DMS//// (ObjectVision/GeoDMS#1214, vanaf 20.20.0; op een oudere build
+				//// bestaan deze operatoren niet en geven de items hieronder een foutmelding)
+				//// De sweep van GeoDMS zelf: geen bibliotheek, en de enige familie die
+				//// invoer aanneemt die geen geldige polygoon is. Er is geen dms-buffer,
+				//// dus de opgeblazen invoer komt hier net als bij geos uit geos_inflate.
+				unit<uint32> dms_overlay  := dms_overlay_polygon(geometry, BRT/Read_Relevant_Tiles_x_WegSpoor/TiledNonWegSpoor)
+				{
+					attribute<m2>     area                      := area(geometry, m2);
+					parameter<uint32>  count_islands             := #.;
+				}
+
+				unit<uint32> dms_connectivity  := dms_polygon_connectivity(geos_inflate/geos_inflate, geos_inflate/geos_inflate)
+				{
+					unit<uint32> connected_parts := connected_parts(first_rel,second_rel);
+				}
+
+				unit<uint32> dms_polygon := .
+				{
+					attribute<rdc>     dms_polygon        (poly) := dms_polygon(geos_inflate/geos_inflate);
+					attribute<m2>     area                      := area(dms_polygon, m2);
+					parameter<uint32>  count_islands             := #.;
+
+					parameter<rdc>     dms_union          (poly) := dms_union_polygon(dms_polygon);
+					parameter<m2>     union_area                := area(dms_union, m2);
+				}
+
+				unit<uint32> dms_union := .
+				{
+					parameter<rdc>     dms_union          (poly) := dms_union_polygon(geometry);
+					parameter<m2>     area                      := area(dms_union, m2);
+				}
+
+				unit<uint32> dms_split := dms_split_polygon(geos_inflate/geos_inflate)
+				{
+					attribute<m2>     area                      := area(geometry, m2);
+					parameter<uint32>  count_islands             := #.;
+				}
+
+				unit<uint32> dms_split_union := dms_split_union_polygon(geos_inflate/geos_inflate)
 				{
 					attribute<m2>     area                      := area(geometry, m2);
 					parameter<uint32>  count_islands             := #.;

@@ -9,14 +9,26 @@
 // exact getest wordt; ze zijn klein, deterministisch en hebben GEEN SourceData
 // nodig, dus ze draaien ook op machines zonder de BAG/CBS-bronnen.
 //
-// Alleen de float64-families (geos/bg/cgal) staan hier: het gaat om het lezen van
-// de puntenreeks, en bp heeft een eigen integer-pijplijn die al door de
+// Alleen de float64-families (geos/bg/cgal/dms) staan hier: het gaat om het lezen
+// van de puntenreeks, en bp heeft een eigen integer-pijplijn die al door de
 // ManySmall/FewLarge/gemeenten/panden-scenario's gedekt wordt.
+//
+// dms (ObjectVision/GeoDMS#1214, vanaf 20.20.0) leest dezelfde reeks niet met een
+// ring-parser maar als EEN gesloten wandeling volgens de even-odd-regel. Dat geeft
+// hier twee soorten toetsen: waar de invoer geldig is moet dms hetzelfde vinden als
+// de andere families, en waar ze dat niet is heeft de even-odd-lezing een exact
+// voorspelbaar antwoord waar de anderen eerst een reparatieheuristiek op loslaten.
+// Bij dat tweede soort staat het getal er hard bij, ook waar het toevallig gelijk
+// uitkomt aan wat de reparatie oplevert.
 ////////////////////////////////////////////////////////////////////////////////
 
 container ring_encoding
 {
 	unit<dpoint> crd := range(dpoint, point_yx(-100.0, -100.0), point_yx(100.0, 100.0));
+
+	// De dms-operatoren bestaan pas vanaf 20.20.0; op oudere builds worden ze niet
+	// aangeroepen (de rekenregel wordt dan een constante) en tellen hun toetsen niet mee.
+	parameter<bool> dmsSupported := GeoDmsVersion() >= 20.20;
 
 	// -------------------------------------------------------------------------
 	// island_in_hole (GeoDMS issue 1178)
@@ -55,18 +67,27 @@ container ring_encoding
 		parameter<float64> aBg   := area(bg_union_polygon(geoms), m2u);
 		parameter<float64> aCgal := area(cgal_union_polygon(geoms), m2u);
 
+		// dms leest dezelfde reeks even-odd: buitenring 100, gat 36 eromheen gekruist
+		// (even, dus buiten), eiland 4 (oneven, dus binnen) = 68. Het eiland in het gat
+		// is precies waar de cgal-lezer op omviel, en het is ook de plek waar de
+		// gat-toewijzing van de sweep moet kloppen.
+		parameter<string> dms_expr := dmsSupported ? 'area(dms_polygon(geo), m2u)' : '0.0';
+		parameter<float64> aDms := =dms_expr;
+
 		parameter<bool> ok_geos := abs(aGeos - aIn) <= aIn * 1e-6;
 		parameter<bool> ok_bg   := abs(aBg   - aIn) <= aIn * 1e-6;
 		parameter<bool> ok_cgal := abs(aCgal - aIn) <= aIn * 1e-6;
+		parameter<bool> ok_dms  := !dmsSupported || abs(aDms - aIn) <= aIn * 1e-6;
 		// De cgal-tak is GeoDMS #1178: de lezer trok elk gat van de hele verzameling af
 		// in plaats van van de polygoon waar het gat bij hoort, waardoor een eiland in
 		// een gat verdween. Gefixt vanaf 20.13; daaronder een expliciete skip met
 		// issueverwijzing in plaats van rood. geos en bg blijven wel bewaakt.
 		parameter<bool> cgalIdemFixed := GeoDmsVersion() >= 20.13;
-		parameter<bool> ok := ok_geos && ok_bg && (cgalIdemFixed ? ok_cgal : true);
+		parameter<bool> ok := ok_geos && ok_bg && ok_dms && (cgalIdemFixed ? ok_cgal : true);
 		parameter<string> failwhat :=
 			(ok_geos ? '' : 'geos ' + string(float32(aGeos)) + ' ') + (ok_bg ? '' : 'bg ' + string(float32(aBg)) + ' ')
-			+ (ok_cgal ? '' : 'cgal ' + string(float32(aCgal)) + ' ');
+			+ (ok_cgal ? '' : 'cgal ' + string(float32(aCgal)) + ' ')
+			+ (ok_dms ? '' : 'dms ' + string(float32(aDms)) + ' ');
 	}
 
 	// -------------------------------------------------------------------------
@@ -78,6 +99,8 @@ container ring_encoding
 	// consistentietoets: de reparatiepaden van geos en bg (beide via GEOS MakeValid)
 	// horen hetzelfde te zeggen. bg gaf hier vroeger ongeldige geometrie door aan
 	// boost::geometry, wat undefined behaviour is en de engine kon killen.
+	// dms hoeft niet te repareren en telt kruisingen; dat het op hetzelfde getal
+	// uitkomt is gemeten, niet aangenomen - zie het dms-blok onderaan.
 	// -------------------------------------------------------------------------
 	container overlapping_outers
 	{
@@ -104,8 +127,28 @@ container ring_encoding
 		parameter<float64> aGeos := area(geos_union_polygon(geoms), m2u);
 		parameter<float64> aBg   := area(bg_union_polygon(geoms), m2u);
 
-		parameter<bool> ok := abs(aBg - aGeos) <= aGeos * 1e-6;
-		parameter<string> failwhat := ok ? '' : 'bg ' + string(float32(aBg)) + ' vs geos ' + string(float32(aGeos)) + ' ';
+		// dms repareert niet, maar leest de reeks als EEN gesloten wandeling volgens de
+		// even-odd-regel. De twee bruggen naar de tweede ring vallen tegen elkaar weg, en
+		// wat door BEIDE buitenringen bedekt wordt telt even, dus ligt buiten. Dat is de
+		// symmetrische differentie: (100-25) + (100-25) = 150, plus het losse vierkant B
+		// van 100 = 250.
+		//
+		// Gemeten (20.20.0): geos en bg komen na MakeValid op precies datzelfde getal uit,
+		// niet op de 275 van een gewone vereniging - het reparatiepad van GEOS legt de
+		// dubbel bedekte overlap ook als gat neer. De drie families zijn het hier dus eens,
+		// langs twee verschillende wegen. Toch staat 250 hier hard opgeschreven in plaats
+		// van tegen geos aan gehouden: voor dms is het de definitie en dus een bewaking,
+		// voor geos is het het gedrag van een reparatieheuristiek die van versie kan
+		// veranderen. Verandert die, dan hoort deze regel te vertellen wie er schoof.
+		parameter<string>  dms_expr := dmsSupported ? 'area(dms_union_polygon(geoms), m2u)' : '250.0';
+		parameter<float64> aDms     := =dms_expr;
+
+		parameter<bool> ok_pair := abs(aBg - aGeos) <= aGeos * 1e-6;
+		parameter<bool> ok_dms  := !dmsSupported || abs(aDms - 250.0) <= 1e-6;
+		parameter<bool> ok := ok_pair && ok_dms;
+		parameter<string> failwhat :=
+			  (ok_pair ? '' : 'bg ' + string(float32(aBg)) + ' vs geos ' + string(float32(aGeos)) + ' ')
+			+ (ok_dms  ? '' : 'dms ' + string(float32(aDms)) + ' i.p.v. 250 ');
 	}
 
 	// -------------------------------------------------------------------------
@@ -134,14 +177,27 @@ container ring_encoding
 		parameter<float64> aSubInfix := area(geoA - geoC, m2u);
 		parameter<float64> aSubNamed := area(geos_difference(geoA, geoC), m2u);
 
+		// Dezelfde twee vierkanten, nu met de dms-sweep. Hier is de invoer WEL geldig, dus
+		// er is een juist antwoord en dat is hetzelfde: 175 / 25 / 75 m2. Een afwijking is
+		// een fout in de sweep en geen definitieverschil, dus de drie afwijkingen worden
+		// tot een getal samengenomen en tegen dezelfde tolerantie gehouden.
+		parameter<string> dms_expr := dmsSupported
+			?	'max_elem(abs(area(dms_union(geoA, geoC), m2u) - aAddNamed)'
+				+ ', abs(area(dms_intersect(geoA, geoC), m2u) - aMulNamed)'
+				+ ', abs(area(dms_difference(geoA, geoC), m2u) - aSubNamed))'
+			:	'0.0';
+		parameter<float64> dDms := =dms_expr;
+
 		parameter<bool> ok_add := abs(aAddInfix - aAddNamed) <= aAddNamed * 1e-6;
 		parameter<bool> ok_mul := abs(aMulInfix - aMulNamed) <= aMulNamed * 1e-6;
 		parameter<bool> ok_sub := abs(aSubInfix - aSubNamed) <= aSubNamed * 1e-6;
-		parameter<bool> ok := ok_add && ok_mul && ok_sub;
+		parameter<bool> ok_dms := !dmsSupported || dDms <= aAddNamed * 1e-6;
+		parameter<bool> ok := ok_add && ok_mul && ok_sub && ok_dms;
 		parameter<string> failwhat :=
 			(ok_add ? '' : 'add ' + string(float32(aAddInfix)) + '!=' + string(float32(aAddNamed)) + ' ')
 			+ (ok_mul ? '' : 'mul ' + string(float32(aMulInfix)) + '!=' + string(float32(aMulNamed)) + ' ')
-			+ (ok_sub ? '' : 'sub ' + string(float32(aSubInfix)) + '!=' + string(float32(aSubNamed)) + ' ');
+			+ (ok_sub ? '' : 'sub ' + string(float32(aSubInfix)) + '!=' + string(float32(aSubNamed)) + ' ')
+			+ (ok_dms ? '' : 'dms wijkt ' + string(float32(dDms)) + ' m2 af ');
 	}
 
 
@@ -270,7 +326,28 @@ container ring_encoding
 			&& abs(rCgal      - aIn) <= aIn * 1e-6
 			&& abs(abs(rBg)   - aIn) <= aIn * 1e-6;
 
-		parameter<bool> ok := ok_roundtrip && ok_negate && ok_fix && ok_area_blind && ok_predicate && ok_bowtie && ok_readers;
+		// dms leidt de ringrol niet af uit de orientatie maar telt kruisingen, en is dus
+		// ORIENTATIE-BLIND: alle vier de varianten zijn dezelfde verzameling randen, alleen
+		// andersom doorlopen, dus ze komen alle vier op 68 uit zonder fix_winding_order. Dat
+		// is geen betere lezing maar een andere: deze sweep kan de rol van een ring niet fout
+		// afleiden omdat hij hem niet afleidt. Wat hij daarvoor inlevert staat bij
+		// overlapping_outers - twee overlappende buitenringen worden dan een gat.
+		parameter<string> dms_expr := dmsSupported
+			?	'max_elem(abs(area(dms_polygon(gOk),     m2u) - aIn)'
+				+ ', abs(area(dms_polygon(gAllRev), m2u) - aIn)'
+				+ ', abs(area(dms_polygon(gMixed),  m2u) - aIn)'
+				+ ', abs(area(dms_polygon(gIsland), m2u) - aIn))'
+			:	'0.0';
+		parameter<float64> dDmsRings := =dms_expr;
+
+		// en de strik: het getekende oppervlak is 0, de twee lobben zijn samen 50, en die 50
+		// komt er bij deze lezing uit zonder dat er een fix_polygon aan te pas komt.
+		parameter<string>  dms_bow_expr := dmsSupported ? 'area(dms_polygon(gBow), m2u)' : '50.0';
+		parameter<float64> aDmsBow      := =dms_bow_expr;
+
+		parameter<bool> ok_dms := !dmsSupported || (dDmsRings <= aIn * 1e-6 && abs(aDmsBow - 50.0) <= 1e-6);
+
+		parameter<bool> ok := ok_roundtrip && ok_negate && ok_fix && ok_area_blind && ok_predicate && ok_bowtie && ok_readers && ok_dms;
 		parameter<string> failwhat :=
 			  (ok_roundtrip  ? '' : 'roundtrip ')
 			+ (ok_negate     ? '' : 'negate ')
@@ -278,13 +355,21 @@ container ring_encoding
 			+ (ok_area_blind ? '' : 'area-blind ')
 			+ (ok_predicate  ? '' : 'predicate ')
 			+ (ok_bowtie     ? '' : 'bowtie ' + string(float32(fBow)) + '/' + string(float32(wBow)) + ' ')
-			+ (ok_readers    ? '' : 'readers ' + string(float32(rGeos)) + '/' + string(float32(rCgal)) + '/' + string(float32(rBg)) + ' ');
+			+ (ok_readers    ? '' : 'readers ' + string(float32(rGeos)) + '/' + string(float32(rCgal)) + '/' + string(float32(rBg)) + ' ')
+			+ (ok_dms        ? '' : 'dms ringen wijken ' + string(float32(dDmsRings)) + ' m2 af, strik ' + string(float32(aDmsBow)) + ' ');
 	}
 
 	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok && winding_order/ok;
+
+	// Een overgeslagen familie mag niet lezen als een geslaagde familie: zolang een van
+	// de twee versievoorwaarden niet gehaald wordt, staat dat in de regel, ook als alles
+	// wat wel gedraaid heeft goed is.
+	parameter<string> skipnote :=
+		  (island_in_hole/cgalIdemFixed ? '' : 'cgal island-in-hole skipped (known ~0.3% area loss, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1178>#1178</a>); ')
+		+ (dmsSupported ? '' : 'dms skipped (needs GeoDMS 20.20.0, <a href=https://github.com/ObjectVision/GeoDMS/issues/1214>#1214</a>); ');
+
 	parameter<string> line := ok
-		? (island_in_hole/cgalIdemFixed ? ''
-			: '<ringenc>ring encoding: cgal island-in-hole skipped (known ~0.3% area loss, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1178>#1178</a>)</ringenc>')
+		? (skipnote == '' ? '' : '<ringenc>ring encoding: ' + skipnote + '</ringenc>')
 		: '<ringenc>ring encoding: FAILS ('
 			+ (island_in_hole/ok     ? '' : 'island-in-hole: ' + island_in_hole/failwhat)
 			+ (overlapping_outers/ok ? '' : 'overlapping-outers: ' + overlapping_outers/failwhat)
