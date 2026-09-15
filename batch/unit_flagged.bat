@@ -201,6 +201,9 @@ if not exist "%ResultDir%\unit\python" mkdir "%ResultDir%\unit\python"
 Call Unit\PythonTest.bat "%geodms_rootdir%\python\tst\UnitTests.py"     "%ResultDir%\unit\python\UnitTests.txt"
 Call Unit\PythonTest.bat "%geodms_rootdir%\python\tst\InMemoryConfig.py" "%ResultDir%\unit\python\InMemoryConfig.txt"
 
+REM SECTION SHIPPED CONTENT (GeoDMS-Test #24): the .dms files the installer ships, run from the build under test
+Call Unit\ShippedContent.bat
+
 REM SECTION STATISTICS
 Call Unit\Statistics.bat
 
