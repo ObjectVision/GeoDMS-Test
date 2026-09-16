@@ -16,12 +16,12 @@ container Write_NL_tiff_gdal_grid
 		  ,point_yx(3250s, 2700s)
 	   ), DialogData = "rdc_m"
 		{
-			attribute<int16> PointRow := pointrow(id(.));
-			attribute<int16> PointCol := pointrow(id(.));
-			attribute<int16> RowCol   := PointRow + PointCol;
+			attribute<int16> pointrow := pointrow(id(.));
+			attribute<int16> pointcol := pointrow(id(.));
+			attribute<int16> RowCol   := pointrow + pointcol;
 		}
 
-	container Export
+	container export
 	{
 		attribute<int16> GridData (rdc_100) := rdc_100/RowCol, StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/NL_tiff_gdal_grid.tif", StorageType = "gdalwrite.grid",	DialogData = "rdc_m";
 	}
@@ -47,7 +47,7 @@ container wmts_layer
 
   unit<uint32> TileMatrixElems := range(uint32, 0, nr_att * nr_row)
    {
-      attribute<string> values:      
+      attribute<string> Values:      
         //name         , ScaleDen    , Top        , Left      ,Width ,Height , MatrixWidth, MatrixHeight
       [
         'EPSG:28992:0' ,'12288000'   ,'-285401.92', '903402.0', '256' ,'256' ,    '1'  ,    '1'
@@ -70,14 +70,14 @@ container wmts_layer
    unit<uint32> TileMatrix := range(uint32, 0, nr_row)
    {
       attribute<.>       id                := id(.);
-      attribute<string>  name              := TileMatrixElems/values[value(id * nr_att + 0, TileMatrixElems)];
-      attribute<float64> ScaleDenominator  := float64(TileMatrixElems/values[value(id * nr_att + 1, TileMatrixElems)]);
-      attribute<float64> LeftCoord         := float64(TileMatrixElems/values[value(id * nr_att + 2, TileMatrixElems)]);
-      attribute<float64> TopCoord          := float64(TileMatrixElems/values[value(id * nr_att + 3, TileMatrixElems)]);
-      attribute<uint16>  TileWidth         :=  uint16(TileMatrixElems/values[value(id * nr_att + 4, TileMatrixElems)]);
-      attribute<uint16>  TileHeight        :=  uint16(TileMatrixElems/values[value(id * nr_att + 5, TileMatrixElems)]);
-      attribute<uint32>  MatrixWidth       :=  uint32(TileMatrixElems/values[value(id * nr_att + 6, TileMatrixElems)]);
-      attribute<uint32>  MatrixHeight      :=  uint32(TileMatrixElems/values[value(id * nr_att + 7, TileMatrixElems)]);
+      attribute<string>  name              := TileMatrixElems/Values[value(id * nr_att + 0, TileMatrixElems)];
+      attribute<float64> ScaleDenominator  := float64(TileMatrixElems/Values[value(id * nr_att + 1, TileMatrixElems)]);
+      attribute<float64> LeftCoord         := float64(TileMatrixElems/Values[value(id * nr_att + 2, TileMatrixElems)]);
+      attribute<float64> TopCoord          := float64(TileMatrixElems/Values[value(id * nr_att + 3, TileMatrixElems)]);
+      attribute<uint16>  TileWidth         :=  uint16(TileMatrixElems/Values[value(id * nr_att + 4, TileMatrixElems)]);
+      attribute<uint16>  TileHeight        :=  uint16(TileMatrixElems/Values[value(id * nr_att + 5, TileMatrixElems)]);
+      attribute<uint32>  MatrixWidth       :=  uint32(TileMatrixElems/Values[value(id * nr_att + 6, TileMatrixElems)]);
+      attribute<uint32>  MatrixHeight      :=  uint32(TileMatrixElems/Values[value(id * nr_att + 7, TileMatrixElems)]);
    }
 
     // Different examples of tested layers 
