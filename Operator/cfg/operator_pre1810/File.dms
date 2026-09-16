@@ -20,19 +20,19 @@
 		{
 			parameter<string> src_direct : StorageType = "str", StorageName = "%projdir%/cfg/Operator/config.ini";
 			parameter<string> att := CopyFile('%projdir%/cfg/Operator/config.ini', '%localDataProjDir%/regr_results/copy_dst.ini');
-			parameter<string> back : StorageType = "str", Storagename = "= att";
+			parameter<string> back : StorageType = "str", StorageName = "= att";
 			parameter<bool> test_param := back = src_direct && strlen(src_direct) > 0;
 		}
 		container CreateFile
 		{
 			parameter<string> att := CreateFile('%projdir%/cfg/Operator/config.ini', '%localDataProjDir%/regr_results/create_dst.ini');
-			parameter<string> back : StorageType = "str", Storagename = "= att";
+			parameter<string> back : StorageType = "str", StorageName = "= att";
 			parameter<bool> test_param := strlen(back) > 0 && strcount(att, 'create_dst.ini') = 1;
 		}
 		container InitFile
 		{
 			parameter<string> att := InitFile('%projdir%/cfg/Operator/config.ini', '%localDataProjDir%/regr_results/init_dst.ini');
-			parameter<string> back : StorageType = "str", Storagename = "= att";
+			parameter<string> back : StorageType = "str", StorageName = "= att";
 			parameter<bool> test_param := strlen(back) > 0 && strcount(att, 'init_dst.ini') = 1;
 		}
 
@@ -94,7 +94,7 @@
 			parameter<string> targetDir := Expand(., '%LocalDataDir%');
 			parameter<uint32> execDirCmdResultCode := exec_ec(impl/ComSpec, '/c ' + impl/MkDirPrefix + impl/DirCmd, targetDir);
 			parameter<string> WrittenFile := iif(execDirCmdResultCode == 0, impl/FileNameDirInfo, ''), KeepData="True";
-			parameter<string> bestand: Storagename = "=WrittenFile";
+			parameter<string> bestand: StorageName = "=WrittenFile";
 			parameter<uint32> nr_shapefiles := strcount(bestand,impl/NewLine) ;
 			parameter<bool> test := nr_shapefiles > 0 ;
 		}
@@ -162,7 +162,7 @@
 				</bag_LVC:standplaats>
 			*/
 
-			container schema// xml attributes are here modelled as sub units of the entity related unit.
+			container schema// xml attributes are here modelled as sub Units of the entity related unit.
 			{
 				unit<uint32> bag_LVC_standplaats
 				{

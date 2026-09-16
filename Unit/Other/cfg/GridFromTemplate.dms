@@ -1,6 +1,6 @@
 container GridFromTemplate
 {
-	unit<float32> m             := baseunit('m', float32);
+	unit<float32> m             := BaseUnit('m', float32);
 	unit<float32> coord_rd      := m;
 	unit<fpoint>  point_rd_base : SpatialReference = "EPSG:28992";
 	unit<fpoint>  point_rd      := range(point_rd_base, point_yx(300000[m],0[m]), point_yx(625000[m],280000[m]));
@@ -41,8 +41,8 @@ container GridFromTemplate
 			,	DialogData = "point_rd"
 			{				
 				attribute<.>     id  := id(.);
-				attribute<int16> row := PointRow(id);
-				attribute<int16> col := PointCol(id);
+				attribute<int16> row := pointrow(id);
+				attribute<int16> col := pointcol(id);
 
 			}
 
@@ -50,8 +50,8 @@ container GridFromTemplate
 			{
 				parameter<m>     size := gridsize;
 				attribute<.>     id   := id(.);
-				attribute<int16> row  := PointRow(id);
-				attribute<int16> col  := PointCol(id);			
+				attribute<int16> row  := pointrow(id);
+				attribute<int16> col  := pointcol(id);			
 			}
 		}
 	}
@@ -59,8 +59,8 @@ container GridFromTemplate
 
 	parameter<string> test_log := test
 		? '' 
-		: 'GridFromTemplate Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'GridFromTemplate Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/other/GridFromTemplate.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/other/GridFromTemplate.txt";
 
 }

@@ -3,10 +3,10 @@
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
 	container Rescale: Using = "/Domains;/Units;/Tolerances"
 	{
-		container srcUnTiled2UnTiled := Source(RegionDomain, CityDomain);
-		container srcUntiled2Tiled   := Source(RegionDomain,CityTiledDomain);
-		container srcTiled2UnTiled   := Source(RegionTiledDomain,CityTiledDomain);
-		container srcTiled2Tiled     := Source(RegionTiledDomain,CityTiledDomain);
+		container srcUnTiled2UnTiled := source(RegionDomain, CityDomain);
+		container srcUntiled2Tiled   := source(RegionDomain,CityTiledDomain);
+		container srcTiled2UnTiled   := source(RegionTiledDomain,CityTiledDomain);
+		container srcTiled2Tiled     := source(RegionTiledDomain,CityTiledDomain);
 
 		container srcEUnTiled        := ESource(EDomain,EDomain);
 		container srcETiled          := ESource(ETiledDomain,ETiledDomain);
@@ -74,14 +74,14 @@
 			}
 		}
 		
-		container UnTiled2UnTiled := Template(RegionDomain,CityDomain, srcUnTiled2UnTiled);
-		container Untiled2Tiled   := Template(RegionDomain,CityTiledDomain, srcUntiled2Tiled);
-		container Tiled2UnTiled   := Template(RegionTiledDomain,CityDomain, srcTiled2UnTiled);
-		container Tiled2Tiled     := Template(RegionTiledDomain,CityTiledDomain, srcTiled2Tiled);
-		container Euntiled        := Template(EDomain,EDomain, srcEUnTiled);
-		container ETiled          := Template(ETiledDomain,ETiledDomain, srcETiled);
+		container UnTiled2UnTiled := TestTemplate(RegionDomain,CityDomain, srcUnTiled2UnTiled);
+		container Untiled2Tiled   := TestTemplate(RegionDomain,CityTiledDomain, srcUntiled2Tiled);
+		container Tiled2UnTiled   := TestTemplate(RegionTiledDomain,CityDomain, srcTiled2UnTiled);
+		container Tiled2Tiled     := TestTemplate(RegionTiledDomain,CityTiledDomain, srcTiled2Tiled);
+		container Euntiled        := TestTemplate(EDomain,EDomain, srcEUnTiled);
+		container ETiled          := TestTemplate(ETiledDomain,ETiledDomain, srcETiled);
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<uint32> RegionDomain;

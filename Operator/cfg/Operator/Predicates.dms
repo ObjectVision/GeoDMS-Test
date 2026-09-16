@@ -79,12 +79,12 @@
 			attribute<bool>    isZerofloat32      (Domain): [];
 		}
 
-		container UnTiled  := Template(ADomain,srcDomain);
-		container Tiled    := Template(ATiledDomain,srcTiledDomain);
-		container EUnTiled := Template(EDomain,srcEDomain);
-		container ETiled   := Template(ETiledDomain,srcETiledDomain);
+		container UnTiled  := TestTemplate(ADomain,srcDomain);
+		container Tiled    := TestTemplate(ATiledDomain,srcTiledDomain);
+		container EUnTiled := TestTemplate(EDomain,srcEDomain);
+		container ETiled   := TestTemplate(ETiledDomain,srcETiledDomain);
 	
-		Template Template
+		template TestTemplate
 		{
 			unit<uint32> Domain;
 			container source;
@@ -92,17 +92,17 @@
 			container MakeDefined: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/makedefined"
 			{
 				attribute<uint8>   att_int     (Domain) := MakeDefined(source/IntegerAtt, uint8(0));
-				attribute<bool>    test_int    (Domain) := att_int = Source/makeDefineduint8;
+				attribute<bool>    test_int    (Domain) := att_int = source/makeDefineduint8;
 				attribute<float32> att_float   (Domain) := MakeDefined(source/FloatAtt, float32(0.0));
-				attribute<bool>    test_float  (Domain) := att_float = Source/makeDefinedfloat32;
+				attribute<bool>    test_float  (Domain) := att_float = source/makeDefinedfloat32;
 				attribute<string>  att_string  (Domain) := MakeDefined(source/stringAtt, 'test');
-				attribute<bool>    test_string (Domain) := att_string = Source/makeDefinedstring;
+				attribute<bool>    test_string (Domain) := att_string = source/makeDefinedstring;
 				attribute<bool>    test        (Domain) := test_int && test_float && test_string;
 				parameter<bool>    test_attr            := all(test);
 			}
 			container IsDefined: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/isdefined"
 			{
-				parameter<bool> test_param           := isDefined(source/IntegerParam) && isDefined(source/FloatParam) && isDefined(source/stringParam);
+				parameter<bool> test_param           := IsDefined(source/IntegerParam) && IsDefined(source/FloatParam) && IsDefined(source/stringParam);
 				attribute<bool> att_int     (Domain) := IsDefined(source/IntegerAtt);
 				attribute<bool> test_int    (Domain) := att_int = source/IsDefineduint8;
 				attribute<bool> att_float   (Domain) := IsDefined(source/FloatAtt);
@@ -114,7 +114,7 @@
 			}
 			container IsNull: url = "http://www.objectvision.nl/geodms/operators-a-functions/predicates/isnull"
 			{
-				parameter<bool> test_param           := isDefined(source/IntegerParam) && isDefined(source/FloatParam) && isDefined(source/stringParam);
+				parameter<bool> test_param           := IsDefined(source/IntegerParam) && IsDefined(source/FloatParam) && IsDefined(source/stringParam);
 				attribute<bool> att_int     (Domain) := IsNull(source/IntegerAtt);
 				attribute<bool> test_int    (Domain) := att_int = source/IsNulluint8;
 				attribute<bool> att_float   (Domain) := IsNull(source/FloatAtt);

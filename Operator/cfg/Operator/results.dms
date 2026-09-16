@@ -35,11 +35,11 @@
 			,	'AGG|Predicates/UnTiled/results'
 			,	'AGG|Predicates/Tiled/results'
 			,	'AGG|Predicates/EUnTiled/results'
-			,	'AGG|Predicates/Etiled/results'
+			,	'AGG|Predicates/ETiled/results'
 			,	'AGG|Logical/UnTiled/results'
 			,	'AGG|Logical/Tiled/results'
 			,	'AGG|Logical/EUnTiled/results'
-			,	'AGG|Logical/Etiled/results'
+			,	'AGG|Logical/ETiled/results'
 			,	'AGG|Relational/UnTiled2UnTiled/results'
 			,	'AGG|Relational/UnTiled2Tiled/results'
 			,	'AGG|Relational/Tiled2UnTiled/results'
@@ -57,22 +57,22 @@
 			,	'AGG|Rescale/Tiled2UnTiled/results'
 			,	'AGG|Rescale/Tiled2Tiled/results'
 			,	'AGG|Constants/UnTiled/results'
-			,	'AGG|Constants/tiled/results'
+			,	'AGG|Constants/Tiled/results'
 			,	'AGG|Constants/EUnTiled/results'
-			,	'AGG|Constants/Etiled/results'
+			,	'AGG|Constants/ETiled/results'
 			,	'AGG|Trigonometric/UnTiled/results'
-			,	'AGG|Trigonometric/tiled/results'
+			,	'AGG|Trigonometric/Tiled/results'
 			,	'AGG|Trigonometric/EUnTiled/results'
-			,	'AGG|Trigonometric/Etiled/results'
-			,	'AGG|Point/UnTiled2UnTiled/results'
-			,	'AGG|Point/UnTiled2Tiled/results'
-			,	'AGG|Point/Tiled2UnTiled/results'
-			,	'AGG|Point/Tiled2Tiled/results'
-			,	'AGG|Point/EUnTiled2UnTiled/results'
-			,	'AGG|Point/EUnTiled2Tiled/results'
-			,	'AGG|Point/ETiled2UnTiled/results'
-			,	'AGG|Point/ETiled2Tiled/results'
-			,	'Point/ResultUnitTiled/dyna_point_tiled/CalcPoint/test_attr'
+			,	'AGG|Trigonometric/ETiled/results'
+			,	'AGG|point/UnTiled2UnTiled/results'
+			,	'AGG|point/UnTiled2Tiled/results'
+			,	'AGG|point/Tiled2UnTiled/results'
+			,	'AGG|point/Tiled2Tiled/results'
+			,	'AGG|point/EUnTiled2UnTiled/results'
+			,	'AGG|point/EUnTiled2Tiled/results'
+			,	'AGG|point/ETiled2UnTiled/results'
+			,	'AGG|point/ETiled2Tiled/results'
+			,	'point/ResultUnitTiled/dyna_point_tiled/CalcPoint/test_attr'
 			,	'Sequence/UnTiled/canyon/test_attr'
 			,	'Sequence/UnTiled/canyon_empty/test_attr'
 			,	'AGG|Sequence/UnTiled/results'
@@ -89,7 +89,7 @@
 			,	'AGG|Network/ETiled/results'
 			,	'Network/ResultUnitTiled/connect/test_attr'
 			,	'Network/ResultUnitTiled/connect_info/test_attr'
-			,	'Grid/units/results/tests'
+			,	'Grid/Units/results/tests'
 			,	'AGG|Grid/UnTiled/results'
 			,	'AGG|Grid/Tiled/results'
 			,	'AGG|Grid/ETiled/results'
@@ -130,7 +130,7 @@
 			,	'AGG|UnitFunctions/UnTiled/results'
 			,	'AGG|UnitFunctions/Tiled/results'
 			,	'AGG|Miscellaneous/results'
-			,	'Trackers/Results/tests'
+			,	'Trackers/results/tests'
 			,	'MetaInfo/results/test|DocData;DocStorageManagers'
 			,	'AGG|ExplicitNullvalues/results'
 			,	'Utf8Characters/tests'
@@ -254,7 +254,7 @@
 			,	'Network/impedance_matrix/test_param|impedance_matrix'
 			// perimeter las niet-geinitialiseerd geheugen en gaf op dezelfde build per
 			// run een andere uitkomst (GeoDMS #1169, gesloten 2026-08-07). Gemeten met
-			// een standalone 4x4-grid: 20.10.0.m 6 van 10 runs fout, 19.0.0 3 van 5,
+			// een standalone 4x4-Grid: 20.10.0.m 6 van 10 runs fout, 19.0.0 3 van 5,
 			// 20.12.0.m en .c 0 van 10 -- de fix zit dus tussen 20.10 en 20.12. Onder
 			// 20.12 is deze toets een muntworp, niet een versie-uitspraak, dus daar
 			// overgeslagen in plaats van willekeurig rood.
@@ -342,20 +342,20 @@
 
 		parameter<string> tests_log := string(tests_regression)
 		,	StorageType = "str"
-		,	storagename = "%localDataProjDir%/regr_results/operator.txt";
+		,	StorageName = "%localDataProjDir%/regr_results/operator.txt";
 
 
 		parameter<string> unit_test_log := tests_regression
 			? ''
-			: 'Operator Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(tests_regression, 'fullname') + ' result: not OK; failing: ' + failing_tests
+			: 'Operator Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(tests_regression, 'FullName') + ' result: not OK; failing: ' + failing_tests
 		,	StorageType = "str"
-		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/operator.txt";
+		,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/operator.txt";
 
 		container Regression
 		{
 			parameter<string> TempDir                  := '';
 			parameter<string> results_folder_filename  := '%LocalDataDir%/Regression/log/results_folder.txt';
-			parameter<string> results_folder           :  Storagename =  "= results_folder_filename", StorageType = "str";
+			parameter<string> results_folder           :  StorageName =  "= results_folder_filename", StorageType = "str";
 
 			// (Subitems/nrTests strcount-telling vervangen door exacte telling nrTestsExecuted/nrTestsConfigured)
 
@@ -368,12 +368,12 @@
 					(failing_tests = '' ? '' : '<failing>' + failing_tests + '</failing>') + 
 					(skipped_tests = '' ? '' : '<skipped>' + skipped_tests + '</skipped>');
 
-				parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t010_operator_test.txt'";
+				parameter<string> stored_result := result, StorageType = "str", StorageName = "= results_folder + '/t010_operator_test.txt'";
 
 				// dump van alle operator-groepen in deze versie; het rapport combineert
 				// dit met de Spec-rijen tot een dekkingsregel + t010_operator_coverage.txt
-				parameter<string> operator_groups := asList(MetaInfo/OperatorList/OperatorGroups/Name, ';')
-				,	StorageType = "str", Storagename = "= results_folder + '/t010_operator_groups.txt'";
+				parameter<string> operator_groups := asList(MetaInfo/OperatorList/OperatorGroups/name, ';')
+				,	StorageType = "str", StorageName = "= results_folder + '/t010_operator_groups.txt'";
 			}
 		}
 	}

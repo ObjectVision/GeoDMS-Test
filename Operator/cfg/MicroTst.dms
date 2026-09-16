@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                            //
-//                              Operator/Functie Test                                                         //
+//                              Operator/Functie test                                                         //
 //                                                                                                            //
 //                  Configuratie voor het testen van DMS configuratie structuren                              //
 //                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
@@ -31,14 +31,14 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	container MetriekConversie
 	{
-		unit<float32>     Meter            := BaseUnit('m', float32);
-		unit<float32>     Meter2           := Meter * Meter;
-		unit<float32>     ha               := 10000.0 * Meter2;
+		unit<float32>     meter            := BaseUnit('m', float32);
+		unit<float32>     meter2           := meter * meter;
+		unit<float32>     ha               := 10000.0 * meter2;
 		
-		parameter<Meter>  gridsize         := 500[Meter];
+		parameter<meter>  gridsize         := 500[meter];
 	
 		container x {
-			parameter<Meter>  gridsize         := 500[Meter];
+			parameter<meter>  gridsize         := 500[meter];
 		}
 		
 		parameter<meter2> gridsize_mul     := gridsize * gridsize;
@@ -48,7 +48,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		parameter<ha>     NrHaPerCell_mul  := convert(gridsize * gridsize, ha);
 		parameter<ha>     NrHaPerCell_sq   := convert(gridsize^2f, ha);
 		container issue954 {
-			unit<float32> Euro      := baseunit('euro', float32);
+			unit<float32> Euro      := BaseUnit('euro', float32);
 			unit<uint16>  Ct        := uint16(0.01f * euro);
 
 			parameter<euro> euros   := 2.60[euro];
@@ -62,15 +62,15 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<string> name := 'sl'+string(id);
 		}
 
-		container Sequence_later_container := for_each_nedv(Sequence_later/name, 'string('+string(ID(Sequence_later))+')', void, string) ;
+		container Sequence_later_container := for_each_nedv(Sequence_later/name, 'string('+string(id(Sequence_later))+')', void, string) ;
 		
 		unit<uint32> issue_317_unit:= range(0, 3);
 
-		container issue_317 := for_each_nedv(Sequence_later/name, 'string('+string(ID(issue_317_unit))+')', void, string) ;
+		container issue_317 := for_each_nedv(Sequence_later/name, 'string('+string(id(issue_317_unit))+')', void, string) ;
 
 		container x :=  1+2;
 		
-		container LastSequence := ='last(Sequence_later/Name)'
+		container LastSequence := ='last(Sequence_later/name)'
 		{
 			container StateNaAllocatie := =last(Sequence_later/name)+'/StateNaAllocatie'; 
 		}
@@ -103,13 +103,13 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		}
 		unit<uint32> M30woningen := range(0, 30000)
 		{
-			attribute<bool> selection := ID(.) >  20000000;
-//			attribute<bool> isred     := ID(.) == 25000000;// || ID(.) == 26000000;
-//			attribute<bool> isred     := (ID(.) % 65536) == 3;
-			attribute<bool> isred     := (ID(.) % 5000000) == 3;
-//			attribute<bool> isred     := ID(.) == 25000000 || ID(.) == 26000000;
-//			attribute<bool> isred     := ID(.) == 20000003;
-			attribute<bool> isred2     := ID(.) == 3 ||  ID(.) == 60000; //|| ID(.) == 10000003 || ID(.) == 15000003 ||  ID(.) ==20000003 || ID(.) == 25000003;
+			attribute<bool> selection := id(.) >  20000000;
+//			attribute<bool> isred     := id(.) == 25000000;// || id(.) == 26000000;
+//			attribute<bool> isred     := (id(.) % 65536) == 3;
+			attribute<bool> isred     := (id(.) % 5000000) == 3;
+//			attribute<bool> isred     := id(.) == 25000000 || id(.) == 26000000;
+//			attribute<bool> isred     := id(.) == 20000003;
+			attribute<bool> isred2     := id(.) == 3 ||  id(.) == 60000; //|| id(.) == 10000003 || id(.) == 15000003 ||  id(.) ==20000003 || id(.) == 25000003;
 			attribute<bool> theseame := isred == isred2;
 		}
 		attribute<uint32> selcount04(bool) := sum_uint32(M4woningen/selection, M4woningen/isred);
@@ -127,9 +127,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	container include_multiple_items_test {
 		#include <multiple_items.dms>
 	}
-	container configsettings
+	container ConfigSettings
 	{
-		container overridable {
+		container Overridable {
 			parameter<string> x := 'xxx';
 			parameter<string> y := 'yyy';
 			parameter<string> z := 'zzz';
@@ -137,7 +137,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	unit<fpoint> point_rd := BackGroundLayer/point_rd;
 
-	Template MakeGrid
+	template MakeGrid
 	{
 		// begin case parameters
 		parameter<m> gridsize;
@@ -164,8 +164,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 			parameter<m>                             size:          = gridsize;
 			attribute<.>                             id:            = id(.);
-			attribute<int16>                         row:           = PointRow(id);
-			attribute<int16>                         col:           = PointCol(id);		
+			attribute<int16>                         row:           = pointrow(id);
+			attribute<int16>                         col:           = pointcol(id);		
 		}
 	}
 	
@@ -401,7 +401,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	{
 		unit<uint32> place: nrofrows = 2
 		{
-			attribute<string> label : ['Amsterdam','Rotterdam'];
+			attribute<string> Label : ['Amsterdam','Rotterdam'];
 		}
 		unit<uint32> time := range(uint32,2012,2014)
 		{
@@ -420,8 +420,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	unit<uint32> noname: nrofrows = 2, DialogType = "map", DialogData = "geometry"
 	{
 		// geografische eenheden voor ruimtelijke data
-		unit<float32> m           := baseunit('m', float32)              ,label = "meter"                 ,cdf = "Klassificaties/cl/m/ClassBreaks";
-		unit<float32> ratio       := m / m                               ,label = "ratio";
+		unit<float32> m           := BaseUnit('m', float32)              ,Label = "meter"                 ,cdf = "Klassificaties/cl/m/ClassBreaks";
+		unit<float32> ratio       := m / m                               ,Label = "ratio";
 		unit<float32> coord_rd    := m;
 		unit<fpoint>  point_rd_wms:
 			SpatialReference     = "EPSG:28992",
@@ -573,7 +573,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	container units
 	{
-		unit<float32>      m      := baseunit('m', float32);
+		unit<float32>      m      := BaseUnit('m', float32);
 		parameter<float32> factor := 1000f;
 
 		unit<float32> km_1 := 1000  * m;
@@ -589,7 +589,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	unit<uint32> HC := range(uint32, 0, 30)
 	{
 		attribute<string> Label := 'HC '+string(id(.));
-		attribute<string> HC_group_key := string(ID(.)/3);
+		attribute<string> HC_group_key := string(id(.)/3);
 		unit<uint32> HC_group := unique(HC_group_key)
 		{
 			attribute<string> Label := 'HC_Group '+values;
@@ -683,11 +683,11 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	{
 		unit<uint32> woonplaats: nrofrows = 4
 		{
-			attribute<string> label: ['Amsterdam','rotterdam','Den Haag','Åmsterdam'];
+			attribute<string> Label: ['Amsterdam','rotterdam','Den Haag','Åmsterdam'];
 		}
 		unit<uint32> wijk: nrofrows = 4
 		{
-			attribute<string> label:['wijk1','wijk2','wijk3','wijk4'];
+			attribute<string> Label:['wijk1','wijk2','wijk3','wijk4'];
 			attribute<woonplaats> woonplaats_rel:[0,1,2,3];
 		}
 		parameter<string> copy:['ëéà£€'];
@@ -841,7 +841,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 
 			attribute<uint32> nr_vlakken      := sum(pand_vlak/nr_vlakken, pand_vlak/pand_rel);
 		}
-		unit<uint32> pand_points  := select_with_org_rel(isDefined(pand/hoogte))
+		unit<uint32> pand_points  := select_with_org_rel(IsDefined(pand/hoogte))
 		{
 			attribute<string> pand_key := string(id(pand)[org_rel]);
 			attribute<pand> pand_rel := rlookup(pand_key, string(id(pand)));
@@ -961,21 +961,21 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	   container call := instantiate ns_g/g(3f);
 	}
 	container ref := impl/call;
-	parameter<float32> refres := subitem(ref, 'result');
+	parameter<float32> refres := SubItem(ref, 'result');
 	parameter<bool> Boolean := or(false, true);
 	
 		
 	container seqtest
 	{
-		parameter<float64> x: expr = "value('33.9', Float64)";
+		parameter<float64> x: Expr = "value('33.9', Float64)";
 	}
 	
 	container UndefTest {
-		parameter<float32> Undef: Expr = "Float32( 0 / 0 )";
-		parameter<float32> t1: expr = "min_elem(Undef, Float32(3))"; // 3
-		parameter<float32> t2: expr = "min_elem(Float32(3), Undef)"; // undef
-		parameter<float32> t3: expr = "max_elem(Undef, Float32(3))"; // 3
-		parameter<float32> t4: expr = "max_elem(Float32(3), Undef)"; // undef
+		parameter<float32> Undef: Expr = "float32( 0 / 0 )";
+		parameter<float32> t1: Expr = "min_elem(Undef, float32(3))"; // 3
+		parameter<float32> t2: Expr = "min_elem(float32(3), Undef)"; // undef
+		parameter<float32> t3: Expr = "max_elem(Undef, float32(3))"; // 3
+		parameter<float32> t4: Expr = "max_elem(float32(3), Undef)"; // undef
 	}
 	container DrawArrows
 	{
@@ -984,21 +984,21 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		{
 //			attribute<point_rd> startpoint: [{432327,78929}];
 			
-//			attribute<float32>  deltaX:       expr = "PointCol(endpoint) - PointCol(startpoint)";
-//			attribute<float32>  deltaY:       expr = "PointRow(endpoint) - PointRow(startpoint)";
+//			attribute<float32>  deltaX:       Expr = "pointcol(endpoint) - pointcol(startpoint)";
+//			attribute<float32>  deltaY:       Expr = "pointrow(endpoint) - pointrow(startpoint)";
 			
 			// 90 graden
-			//attribute<float32>  deltaX:       expr = "const(-500,.,float32)";
-			//attribute<float32>  deltaY:       expr = "const(500,.,float32)";
+			//attribute<float32>  deltaX:       Expr = "const(-500,.,float32)";
+			//attribute<float32>  deltaY:       Expr = "const(500,.,float32)";
 			
 			// 45 graden
-			//attribute<float32>  deltaX:       expr = "const(500,.,float32)";
-			//attribute<float32>  deltaY:       expr = "const(500,.,float32)";
+			//attribute<float32>  deltaX:       Expr = "const(500,.,float32)";
+			//attribute<float32>  deltaY:       Expr = "const(500,.,float32)";
 
-//			attribute<float32>  deltaX:       expr = "const(250,.,float32)";
-//			attribute<float32>  deltaY:       expr = "const(500,.,float32)";
+//			attribute<float32>  deltaX:       Expr = "const(250,.,float32)";
+//			attribute<float32>  deltaY:       Expr = "const(500,.,float32)";
 
-			attribute<point_rd> endpoint:   expr = "startpoint + point(deltaY,deltaX,point_rd)";
+			attribute<point_rd> endpoint:   Expr = "startpoint + point(deltaY,deltaX,point_rd)";
 
 			attribute<point_rd> startpoint := union_data(., point_yx(432327f,78929f),point_yx(432107f,78969f),point_yx(432227f,78949f),point_yx(432300f,78900f),point_yx(432327f,78959f));
 //			attribute<point_rd> endpoint:   [{432827,79400},{432827,79400},{432827,79400},{432600,78800},{433327,79000}];
@@ -1009,14 +1009,14 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			:	Expr = "points2sequence(pointset/point,pointset/sequence,pointset/ordinal)"
 			,	DialogData = "clients/LineA/line;clients/LineB/line";
 
-			attribute<float32>  dY_dX:        expr = "deltaY / deltaX";
-			attribute<float32>  AngleTOVX:    expr = "atan(dY_dX)";
-			attribute<float32>  AngleDegrees: expr = "(AngleTOVX / float32(pi())) * float32(180)";
+			attribute<float32>  dY_dX:        Expr = "deltaY / deltaX";
+			attribute<float32>  AngleTOVX:    Expr = "atan(dY_dX)";
+			attribute<float32>  AngleDegrees: Expr = "(AngleTOVX / float32(pi())) * float32(180)";
 
-			parameter<float32>  SqrtHypo:     expr = "float32(10000)";
-			parameter<float32>  ExtraAngle:   expr = "float32(15)";
-			container LineA: expr = "AngleTemplate(AngleTOVX, ExtraAngle, deltaX)";
-			container LineB: expr = "AngleTemplate(AngleTOVX,-ExtraAngle, deltaX)";
+			parameter<float32>  SqrtHypo:     Expr = "float32(10000)";
+			parameter<float32>  ExtraAngle:   Expr = "float32(15)";
+			container LineA: Expr = "AngleTemplate(AngleTOVX, ExtraAngle, deltaX)";
+			container LineB: Expr = "AngleTemplate(AngleTOVX,-ExtraAngle, deltaX)";
 		}
 		container AngleTemplate: IsTemplate = "True"
 		{
@@ -1026,9 +1026,9 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<float32> dX (clients);
 			
 			// end case paramaters
-			attribute<float32>  AngleArrowDegrees (clients): expr = "AngleDegrees + extraAngle";
+			attribute<float32>  AngleArrowDegrees (clients): Expr = "AngleDegrees + extraAngle";
 			
-			attribute<uint32>   quadrant (clients):     expr = 
+			attribute<uint32>   quadrant (clients):     Expr = 
 				"switch("
 					" case(dX >= float32(0) && AngleArrowDegrees >=float32(0) && !AngleArrowDegrees >float32(90), 1)"
 					",case(AngleArrowDegrees > float32(90) || (dX <  float32(0) && AngleArrowDegrees < float32(0)), 2)"
@@ -1036,34 +1036,34 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 					",4"
 				")";
 
-			attribute<float32>  AngleArrowDegreesMax90 (clients): expr = "AngleArrowDegrees > float32(90) ? float32(90) - extraAngle : AngleArrowDegrees";
+			attribute<float32>  AngleArrowDegreesMax90 (clients): Expr = "AngleArrowDegrees > float32(90) ? float32(90) - extraAngle : AngleArrowDegrees";
 			
-			attribute<float32>  AngleArrow        (clients): expr = "abs(AngleArrowDegreesMax90) * float32(pi()) / float32(180) ";
-			attribute<float32>  deltaY_deltaX     (clients): expr = "tan(AngleArrow)";
-			attribute<float32>  deltaX            (clients): expr = "sqrt(SqrtHypo / (float32(1) + deltaY_deltaX*deltaY_deltaX))";
-			attribute<float32>  deltaY            (clients): expr = "sqrt(SqrtHypo - deltaX*deltaX)";
+			attribute<float32>  AngleArrow        (clients): Expr = "abs(AngleArrowDegreesMax90) * float32(pi()) / float32(180) ";
+			attribute<float32>  deltaY_deltaX     (clients): Expr = "tan(AngleArrow)";
+			attribute<float32>  deltaX            (clients): Expr = "sqrt(SqrtHypo / (float32(1) + deltaY_deltaX*deltaY_deltaX))";
+			attribute<float32>  deltaY            (clients): Expr = "sqrt(SqrtHypo - deltaX*deltaX)";
 
-			attribute<float32>  X                 (clients): expr = 
-				"PointCol(clients/endpoint)"
+			attribute<float32>  X                 (clients): Expr = 
+				"pointcol(clients/endpoint)"
 				"+ ((quadrant == 1 || quadrant == 4) ? - deltaX : deltaX)";
 					
-			attribute<float32>  Y                 (clients): expr = 
-				"PointRow(clients/endpoint) "
+			attribute<float32>  Y                 (clients): Expr = 
+				"pointrow(clients/endpoint) "
 				"+ ((quadrant == 1 || quadrant == 2) ? - deltaY : deltaY)";
 
-			attribute<point_rd> endpoint          (clients): expr = "point(Y,X,point_rd)";
+			attribute<point_rd> endpoint          (clients): Expr = "point(Y,X,point_rd)";
 			
-			attribute<point_rd> point             (pointset): expr = "union_data(pointset,clients/endpoint,endpoint)";
+			attribute<point_rd> point             (pointset): Expr = "union_data(pointset,clients/endpoint,endpoint)";
 
-			attribute<point_rd> line              (clients, arc): expr = "points2sequence(point,pointset/sequence,pointset/ordinal)";
+			attribute<point_rd> line              (clients, arc): Expr = "points2sequence(point,pointset/sequence,pointset/ordinal)";
 		}
-		parameter<uint32> nrrowsps: expr = "#clients * 2";
-		unit<uint32> pointset: expr = "Range(uint32,0,nrrowsps)"
+		parameter<uint32> nrrowsps: Expr = "#clients * 2";
+		unit<uint32> pointset: Expr = "Range(uint32,0,nrrowsps)"
 		{
-			attribute<point_rd> point:    expr = "union_data(.,clients/startpoint,clients/endpoint)";
+			attribute<point_rd> point:    Expr = "union_data(.,clients/startpoint,clients/endpoint)";
 
-			attribute<clients>  sequence: expr = "value(union_data(.,id(clients),id(clients)), clients)";
-			attribute<uint32>   ordinal:  expr = "id(pointset) / #clients";
+			attribute<clients>  sequence: Expr = "value(union_data(.,id(clients),id(clients)), clients)";
+			attribute<uint32>   ordinal:  Expr = "id(pointset) / #clients";
 		}
 	}
 // 	container ExportSettings: url = "='#'+ExportSettings/Docdata +'/ExportSettings.adms'"
@@ -1076,39 +1076,39 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 // 		}
 // 		container MetaInfo
 // 		{
-// 			parameter<String> FileName: Expr = "'%storageBaseName%.xml'";
-// 			parameter<String> FileType: Expr = "'xml'"; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
+// 			parameter<string> FileName: Expr = "'%storageBaseName%.xml'";
+// 			parameter<string> FileType: Expr = "'xml'"; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
 // 			container Contents
 // 			{
 // 				container Software
 // 				{
-// 					parameter<String> GeoDmsVersion: [ '=String(GeoDmsVersion())' ];
+// 					parameter<string> GeoDmsVersion: [ '=string(GeoDmsVersion())' ];
 // 				}
 // 				container Config
 // 				{
-// 					parameter<String> FullName: Expr = "'=PropValue(this, '+Quote('FullName')+')'";
-// 					parameter<String> Expr:     Expr = "'=PropValue(this, '+Quote('Expr'    )+')'";
-// 					parameter<String> Rdc100m:  Expr = "Expand(., '%rdc_100m_version%')";
+// 					parameter<string> FullName: Expr = "'=PropValue(this, '+Quote('FullName')+')'";
+// 					parameter<string> Expr:     Expr = "'=PropValue(this, '+Quote('Expr'    )+')'";
+// 					parameter<string> Rdc100m:  Expr = "Expand(., '%rdc_100m_version%')";
 // 				}
 // 				container Environment
 // 				{
-// 					parameter<String> Processor:    Expr = "Expand(., '%env:PROCESSOR_IDENTIFIER%')";
-// 					parameter<String> User:         Expr = "Expand(., '%env:USERNAME%')";
-// 					parameter<String> ComputerName: Expr = "Expand(., '%env:COMPUTERNAME%')";
+// 					parameter<string> Processor:    Expr = "Expand(., '%env:PROCESSOR_IDENTIFIER%')";
+// 					parameter<string> User:         Expr = "Expand(., '%env:USERNAME%')";
+// 					parameter<string> ComputerName: Expr = "Expand(., '%env:COMPUTERNAME%')";
 // 				}
 // 				container Svn
 // 				{
-// 					parameter<String> RevisionInfoCmd: Expr = "Replace(Expand(., 'SubWCRev %projDir% > %projDir%/SubWCRevData.str'), Impl/SLASH, Impl/BACKSLASH)";
+// 					parameter<string> RevisionInfoCmd: Expr = "Replace(Expand(., 'SubWCRev %projDir% > %projDir%/SubWCRevData.str'), Impl/SLASH, Impl/BACKSLASH)";
 // 					container RevisionInfoWriter: Expr = "exec(Impl/ComSpec, '/c ' + RevisionInfoCmd, Expand(., '%projdir%'))";
-// 					parameter<string> RevisionInfo: Storagename = "%projDir%/SubWCRevData.str", ExplicitSuppliers = "RevisionInfoWriter";
+// 					parameter<string> RevisionInfo: StorageName = "%projDir%/SubWCRevData.str", ExplicitSuppliers = "RevisionInfoWriter";
 // 				}
 // 			}
 // 		}
 // 	}
 
 	container issue422 {
-		parameter<string> Name: [ 'RestWarmte' ];
-		parameter<string> label: DialogType = "LabelText", Expr = "Name";
+		parameter<string> name: [ 'RestWarmte' ];
+		parameter<string> Label: DialogType = "LabelText", Expr = "Name";
 	}
 	
 	container issue1134 {
@@ -1278,11 +1278,11 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
 		unit<uint32> ClipResultNL2: Expr = "overlay_polygon(str/piNL, str/piNL)",
 			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
-		unit<uint32> ClipResultNL4: Expr = "overlay_polygon(ClipResultNL2/Geometry, ClipResultNL2/Geometry)",
+		unit<uint32> ClipResultNL4: Expr = "overlay_polygon(ClipResultNL2/geometry, ClipResultNL2/geometry)",
 			DialogType = "Map", DialogData = "Geometry"; // TODO: Automate
 	}
 	
-	parameter<uint32> x: expr = "2+3";
+	parameter<uint32> x: Expr = "2+3";
 	unit<float32> m := BaseUnit('m', float32);
 	unit<float32> impedance;
 	
@@ -1298,15 +1298,15 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			, point_yx(0s, 0s), point_yx(1990s, 2025s)
 		)
 	{
-		parameter<fpoint>  ProjFactor: expr = "fpoint(GetProjectionFactor(.))";
-		parameter<fpoint>  ProjOffset: expr = "fpoint(GetProjectionOffset(.))";
+		parameter<fpoint>  ProjFactor: Expr = "fpoint(GetProjectionFactor(.))";
+		parameter<fpoint>  ProjOffset: Expr = "fpoint(GetProjectionOffset(.))";
 
-		attribute<bool>    Selection:   expr = 
-			"   (PointRow(id(.)) == int16( 800)  && PointCol(id(.)) == int16(800))"
-			"|| (PointRow(id(.)) == int16(1250)  && PointCol(id(.)) == int16(1250))";
+		attribute<bool>    Selection:   Expr = 
+			"   (pointrow(id(.)) == int16( 800)  && pointcol(id(.)) == int16(800))"
+			"|| (pointrow(id(.)) == int16(1250)  && pointcol(id(.)) == int16(1250))";
 			
-		attribute<bool> AllTrue  : expr = "const(True,.,bool)";
-		attribute<bool> PartlyTrue: = PointCol(id(.)) % int16(2) == int16(0) && PointRow(id(.)) % int16(2) == int16(0)
+		attribute<bool> AllTrue  : Expr = "const(True,.,bool)";
+		attribute<bool> PartlyTrue: = pointcol(id(.)) % int16(2) == int16(0) && pointrow(id(.)) % int16(2) == int16(0)
 		,	StorageName = "%ProjDir%/data/een_bit.tif";
 	}
 	unit<ipoint> TestGrid_ipoint :=
@@ -1322,15 +1322,15 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	{
 		attribute<bool>    test:= const(true, .);
 	
-		parameter<fpoint>  ProjFactor: expr = "fpoint(GetProjectionFactor(.))";
-		parameter<fpoint>  ProjOffset: expr = "fpoint(GetProjectionOffset(.))";
+		parameter<fpoint>  ProjFactor: Expr = "fpoint(GetProjectionFactor(.))";
+		parameter<fpoint>  ProjOffset: Expr = "fpoint(GetProjectionOffset(.))";
 
-		attribute<bool>    Selection:   expr = 
-			"   (PointRow(id(.)) == int16( 800)  && PointCol(id(.)) == int16(800))"
-			"|| (PointRow(id(.)) == int16(1250)  && PointCol(id(.)) == int16(1250))";
+		attribute<bool>    Selection:   Expr = 
+			"   (pointrow(id(.)) == int16( 800)  && pointcol(id(.)) == int16(800))"
+			"|| (pointrow(id(.)) == int16(1250)  && pointcol(id(.)) == int16(1250))";
 			
-		attribute<bool> AllTrue  : expr = "const(True,.,bool)";
-		attribute<bool> PartlyTrue: = PointCol(id(.)) % int16(2) == int16(0) && PointRow(id(.)) % int16(2) == int16(0)
+		attribute<bool> AllTrue  : Expr = "const(True,.,bool)";
+		attribute<bool> PartlyTrue: = pointcol(id(.)) % int16(2) == int16(0) && pointrow(id(.)) % int16(2) == int16(0)
 		,	StorageName = "%ProjDir%/data/een_bit.tif";
 	}
 
@@ -1352,7 +1352,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	container Kernel
 	{
 		unit<uint32> Dist2Range;
-		unit<spoint> pot500: expr = 
+		unit<spoint> pot500: Expr = 
 			"range("
 				" spoint"
 				",point_yx(-int16(500),-int16(500)),point_yx(int16(510),int16(510))"
@@ -1377,18 +1377,18 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			,point_yx(int16(1000),int16(1000))
 		)
 	{
-		attribute<float32> test:      expr = "float32(pointcol(id(TestGridLarge))) % float32(50) + float32(pointrow(id(TestGridLarge))) % float32(50) - 30f";
-		attribute<float32> potential: expr = "potential(test, Kernel/pot500/AbsWeight)";
+		attribute<float32> test:      Expr = "float32(pointcol(id(TestGridLarge))) % float32(50) + float32(pointrow(id(TestGridLarge))) % float32(50) - 30f";
+		attribute<float32> potential: Expr = "potential(test, Kernel/pot500/AbsWeight)";
 	}
 	container resistance
 	{
-		attribute<float32> grid (TestGrid): expr = "const(1,TestGrid,impedance)";
+		attribute<float32> grid (TestGrid): Expr = "const(1,TestGrid,impedance)";
 	}
 	container osversion
 	{
 		parameter<string> osversion := Expand(., '%osversion%');
 	}
-	container Test
+	container test
 	{	container VI
 		{
 			parameter<uint32> A: [3];
@@ -1411,11 +1411,11 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			attribute<TestGrid> gridnr := point_yx(id(.),id(.),TestGrid);
 		}
 	}
-	attribute<float32> DistTo (TestGrid): expr =
+	attribute<float32> DistTo (TestGrid): Expr =
 		"GridDist("
 			" resistance/grid"
-			",Test/PointSet/gridnr"
-			",const(0, Test/PointSet, impedance)"
+			",test/pointset/gridnr"
+			",const(0, test/pointset, impedance)"
 		")"
 	, FreeData = "False";
 	
@@ -1424,8 +1424,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	
 	container TestInCalcCache
 	{
-		attribute<float32> stored_ok    (TestGrid): expr = "DistTo - float32(10000) ", FreeData = "False", StoreData = "True";
-		attribute<float32> stored_error (TestGrid): expr = "DistTo", FreeData = "False";
+		attribute<float32> stored_ok    (TestGrid): Expr = "DistTo - float32(10000) ", FreeData = "False", StoreData = "True";
+		attribute<float32> stored_error (TestGrid): Expr = "DistTo", FreeData = "False";
 	}
 	container gdal_vect_CalcCache
 	{
@@ -1447,8 +1447,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 				"range("
 					"gridset("
 						" rdc"
-						",point_yx(Float32( - 100), Float32(  100), rdc)"
-						",point_yx(Float32(625000), Float32(10000), rdc)"
+						",point_yx(float32( - 100), float32(  100), rdc)"
+						",point_yx(float32(625000), float32(10000), rdc)"
 						",spoint"
 					")"
 					",point_yx(Int16(0)   , Int16(0))"
@@ -1462,20 +1462,20 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	container PropValues
 	{
-		parameter<float32> paramA: expr = "value(10, float32)";
-		parameter<string> ValuesUnitA: expr = "PropValue(paramA, 'ValuesUnit')";
+		parameter<float32> paramA: Expr = "value(10, float32)";
+		parameter<string> ValuesUnitA: Expr = "PropValue(paramA, 'ValuesUnit')";
 		
-		unit<uint32> SubItem  : Expr = "SubItem_PropValues(AsciiGridOsStructuredException, 'Name')";
-		unit<uint32> Inherited: Expr = "Inherited_PropValues(AsciiGridOsStructuredException, 'Name')";
-		unit<uint32> Inherited2: Expr = "Inherited_PropValues(ambiguous/Error, 'Name')";
+		unit<uint32> SubItem  : Expr = "SubItem_PropValues(AsciiGridOsStructuredException, 'name')";
+		unit<uint32> Inherited: Expr = "Inherited_PropValues(AsciiGridOsStructuredException, 'name')";
+		unit<uint32> Inherited2: Expr = "Inherited_PropValues(ambiguous/Error, 'name')";
 	}
 
 /* REMOVE	
 	unit<UInt32> TestSet: Expr = "TiledUnit(value(1000000, Range(UInt32, 0, 2000000)))"
 	{
-		attribute<UInt32> Sqr: Expr = "ID(.)*ID(.)";
+		attribute<UInt32> Sqr: Expr = "id(.)*id(.)";
 	}
-	unit<UInt32> select_with_org_rel: Expr = "select_with_org_rel(ID(TestSet) > 5)"
+	unit<UInt32> select_with_org_rel: Expr = "select_with_org_rel(id(TestSet) > 5)"
 	{
 		attribute<UInt32> Sqr: Expr = "TestSet/Sqr[org_rel]";
 	}
@@ -1489,7 +1489,7 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 				unit<UInt32> Domain: Expr = "DomainRef";
 			}
 			// end of parameters
-			attribute<DomainHolder/Domain> ID(DomainHolder/Domain): Expr = "ID(DomainHolder/Domain)";
+			attribute<DomainHolder/Domain> id(DomainHolder/Domain): Expr = "id(DomainHolder/Domain)";
 		}
 		container CaseP1 {
 			Unit<UInt32> Domain: Expr = "Range(UINt32, 0, 10)";
@@ -1498,10 +1498,10 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 			Unit<UInt8> Domain: Expr = "Range(UInt8, 0[UInt8], 20[UInt8])";
 		}
 		container CaseP3 {
-//			Unit<IPoint> Domain: Expr = "Range(UPoint, Point(Int32(0),Int32(0), IPoint), Point(Int32(5),Int32(5), IPoint))";  // upoint not supported as domain
-//			Unit<UPoint> Domain: Expr = "Range(UPoint, Point(0, 0), Point(5, 5))";                                            // ipoint not supported as domain
-//			Unit<SPoint> Domain: Expr = "Range(SPoint, Point(Int16(0),Int16(0), SPoint), Point(Int16(5),Int16(5), SPoint))";  // spoint is supported as domain
-			Unit<WPoint> Domain: Expr = "Range(WPoint, Point(UInt16(0),UInt16(0), WPoint), Point(UInt16(5),UInt16(5), WPoint))";  // wpoint is supported as domain
+//			Unit<IPoint> Domain: Expr = "Range(UPoint, point(int32(0),int32(0), IPoint), point(int32(5),int32(5), IPoint))";  // upoint not supported as domain
+//			Unit<UPoint> Domain: Expr = "Range(UPoint, point(0, 0), point(5, 5))";                                            // ipoint not supported as domain
+//			Unit<SPoint> Domain: Expr = "Range(SPoint, point(Int16(0),Int16(0), SPoint), point(Int16(5),Int16(5), SPoint))";  // spoint is supported as domain
+			Unit<WPoint> Domain: Expr = "Range(WPoint, point(UInt16(0),UInt16(0), WPoint), point(UInt16(5),UInt16(5), WPoint))";  // wpoint is supported as domain
 		}
 		container Inst1: Expr = "Templ(CaseP1)";
 		container Inst2: Expr = "Templ(CaseP2)";
@@ -1509,47 +1509,47 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 	}
 	container MetricConversions
 	{
-		unit<Float32> sec: expr = "baseUnit('sec', Float32)";
-		unit<Float32> min: expr = "60*sec";
-		unit<Float32> hr:  expr = "60*min";
+		unit<float32> sec: Expr = "BaseUnit('sec', Float32)";
+		unit<float32> min: Expr = "60*sec";
+		unit<float32> hr:  Expr = "60*min";
 		
 		parameter<Hr>  WorkTime: Expr = "8[Hr]";
 		parameter<min> WorkTimeExtra: Expr = "(WorkTime+2[Hr])[min]";
 		parameter<min>  WorkTime2: Expr = "8[Hr][Min]";
 		
-		unit<Float32> Ratio: expr= "sec / sec";
-		unit<Float32> Percent: expr = "0.01 * ratio";
+		unit<float32> Ratio: Expr= "sec / sec";
+		unit<float32> Percent: Expr = "0.01 * ratio";
 		
-		parameter<Float32> F3: Expr = "Float32(3.0)";    // should be 3.0
+		parameter<float32> F3: Expr = "float32(3.0)";    // should be 3.0
 		parameter<Ratio  > R3: Expr = "3.0[Ratio]";      // should be 3.0
 		parameter<Percent> P3:  Expr = "3[Percent]";     // should be 3.0[Percent]
 		parameter<Percent> P3b: Expr = "F3[Percent]";    // should be 3.0[Percent]
 		parameter<Percent> P3c: Expr = "R3[Percent]";    // should be 300.0[Percent]
-		parameter<Float32> RP3:  Expr = "P3 [Ratio]";    // should be 0.03[Ratio]
-		parameter<Float32> RP3b: Expr = "P3b[Ratio]";    // should be 0.03[Ratio]
-		parameter<Float32> RP3c: Expr = "P3c[Ratio]";    // should be 3.00[Ratio]
-		parameter<Float32> RP3d: Expr = "P3c[Float32][Ratio]";    // should be 300.0[Ratio]
+		parameter<float32> RP3:  Expr = "P3 [Ratio]";    // should be 0.03[Ratio]
+		parameter<float32> RP3b: Expr = "P3b[Ratio]";    // should be 0.03[Ratio]
+		parameter<float32> RP3c: Expr = "P3c[Ratio]";    // should be 3.00[Ratio]
+		parameter<float32> RP3d: Expr = "P3c[Float32][Ratio]";    // should be 300.0[Ratio]
 	}
 	
 	container Regex {
-//		parameter<String> FulePathPattern: [ '\a:\\~\\+' ];
-		parameter<String> BadNumericPattern: [ '[0-9]+(.[0-9]+?' ];
-		parameter<String> NumericPattern: [ '[0-9]+(.[0-9]+)?' ];
-		attribute <String> data(UInt2) : [ 'abc23.5s', "Toys 'R4Us", "3.14", null];
+//		parameter<string> FulePathPattern: [ '\a:\\~\\+' ];
+		parameter<string> BadNumericPattern: [ '[0-9]+(.[0-9]+?' ];
+		parameter<string> NumericPattern: [ '[0-9]+(.[0-9]+)?' ];
+		attribute <string> data(UInt2) : [ 'abc23.5s', "Toys 'R4Us", "3.14", null];
 		
-		attribute<String> regex_search (UInt2): Expr = "regex_search (data, NumericPattern)";
-		attribute<Bool>   regex_match  (UInt2): Expr = "regex_match  (data, NumericPattern)";
-		attribute<String> regex_replace(UInt2): Expr = "regex_replace(data, NumericPattern, 'Some')";
-		attribute<String> regex_replaceFrac(UInt2): Expr = "regex_replace(data, NumericPattern, '$1')";
+		attribute<string> regex_search (UInt2): Expr = "regex_search (data, NumericPattern)";
+		attribute<bool>   regex_match  (UInt2): Expr = "regex_match  (data, NumericPattern)";
+		attribute<string> regex_replace(UInt2): Expr = "regex_replace(data, NumericPattern, 'Some')";
+		attribute<string> regex_replaceFrac(UInt2): Expr = "regex_replace(data, NumericPattern, '$1')";
 		
-		parameter<String> Line: [ '1	1	53 	12 	4 	26 	3 	0 	0 	1 	40 	40 	28 	Oost-Groningen'];
-		parameter<String>  LinesSearch: expr = "regex_search(Line, ' *(?:[0-9]+)(?: *[,\t] *[0-9]+){9}')";
+		parameter<string> Line: [ '1	1	53 	12 	4 	26 	3 	0 	0 	1 	40 	40 	28 	Oost-Groningen'];
+		parameter<string>  LinesSearch: Expr = "regex_search(Line, ' *(?:[0-9]+)(?: *[,\t] *[0-9]+){9}')";
 			
 	}
 	
 	container TestInterestDecrement
 	{
-		container RewriteLabel : expr = "rjoin(label, b, c)"; // Test this for interestcount decrement bug after failure
+		container RewriteLabel : Expr = "rjoin(label, b, c)"; // test this for interestcount decrement bug after failure
 	}
 	
 	container RewriteLabel
@@ -1562,8 +1562,8 @@ container Mini: FreeData = "True" //: IntegrityCheck = "GeoDmsVersion() >= 5.97"
 		}
 		unit<uint32> dest: nrofrows = 4
 		{
-			attribute<string> label: ['a','b','b','a'];
-			attribute<uint32> X:     expr = "rjoin(label, org/key, org/X)";
+			attribute<string> Label: ['a','b','b','a'];
+			attribute<uint32> X:     Expr = "rjoin(label, org/key, org/X)";
 		}
 	}
 	*/
@@ -1674,9 +1674,9 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 				[0,200,500,1000];
 			attribute<uint32> BrushColor: DialogType = "BrushColor",
 				[rgb(254,240,217),rgb(253,187,132),rgb(239,101,72),rgb(153,0,0)];
-			attribute<uint32> PenColor: DialogType = "PenColor", expr = "BrushColor";
-			attribute<uint32> SymbolColor: DialogType = "SymbolColor", expr = "BrushColor";
-			attribute<int16>  PenWidth: DialogType = "PenWidth", expr = "const(1,.,int16)";
+			attribute<uint32> PenColor: DialogType = "PenColor", Expr = "BrushColor";
+			attribute<uint32> SymbolColor: DialogType = "SymbolColor", Expr = "BrushColor";
+			attribute<int16>  PenWidth: DialogType = "PenWidth", Expr = "const(1,.,int16)";
 			
 			unit<uint8> selectie:= select_with_org_rel(classBreaks > 100);
 		}
@@ -1733,7 +1733,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		}
 
 // 		attribute<point_rd> border (.,polygon)
-// //		:	expr       = "points2sequence(source/pointset/point, \r\nsource/pointset/districtnr, \r\nsource/pointset/ordinal)"
+// //		:	Expr       = "points2sequence(source/pointset/point, \r\nsource/pointset/districtnr, \r\nsource/pointset/ordinal)"
 // 		:=	points2sequence(
 // 				source/pointset/point, 
 // 				source/pointset/districtnr, source/pointset/ordinal
@@ -1745,33 +1745,33 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		,	DialogType = "Map"
 		{
 			attribute<point_rd> border (.,polygon)
-//			:	expr       = "points2polygon(source/pointset/point, \r\nsource/pointset/districtnr, \r\nsource/pointset/ordinal)"
+//			:	Expr       = "points2polygon(source/pointset/point, \r\nsource/pointset/districtnr, \r\nsource/pointset/ordinal)"
 			:=	points2polygon(
 					source/pointset/point,
 					source/pointset/districtnr, source/pointset/ordinal
 				)
 			{
-				parameter<uint32> BrushColor: expr = "rgb(200,0,0)", DialogType = "BrushColor";
-				parameter<uint32> PenColor:   expr = "rgb(100,0,0)", DialogType = "PenColor";
+				parameter<uint32> BrushColor: Expr = "rgb(200,0,0)", DialogType = "BrushColor";
+				parameter<uint32> PenColor:   Expr = "rgb(100,0,0)", DialogType = "PenColor";
 			}
 			attribute<point_rd> simplified_border(., polygon) := bg_buffer_multi_polygon(border, 10.0, 4b);
 
-			attribute<string> label
+			attribute<string> Label
 			:	['gebied1','gebied2','gebied3','gebied4','gebied5','gebied6','gebied7']
 			,	DialogData = "hoek_centroid"
 			{
 				parameter<uint32> LabelColor
 				:	DialogType = "LabelColor"
-				,	expr       = "rgb(0,0,0)";
+				,	Expr       = "rgb(0,0,0)";
 				parameter<uint32> LabelBackColor
 				:	DialogType = "LabelBackColor"
-				,	expr       = "rgb(245,245,245)";
+				,	Expr       = "rgb(245,245,245)";
 				parameter<float32> LabelSize
 				:	DialogType = "LabelSize"
-				,	expr       = "float32(12)";
+				,	Expr       = "float32(12)";
 				parameter<string>  LabelFont
 				:	DialogType = "LabelFont"
-				,	expr       = "'Tahoma'";
+				,	Expr       = "'Tahoma'";
 			}
 //			attribute<uint32> hoek:          [100,300,500,700,900,1200,1500], DialogType = "LabelAngle", cdf = "hoek_classes/classBreaks";
 			attribute<int32> hoek:          [-100,-300,5, 700,900,1200,1500];
@@ -1785,14 +1785,14 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<bool> is_hoek := hoek > 700i;
 					
 			attribute<float32> SymbolSize:      DialogType = "SymbolSize",
-				expr = "float32(3) * sqrt(float32(hoek))";
+				Expr = "float32(3) * sqrt(float32(hoek))";
 			attribute<float32>  SymbolWorldSize: DialogType = "SymbolWorldSize", 
-				expr = "float32(2) * float32(sqrt(hoek))";
+				Expr = "float32(2) * float32(sqrt(hoek))";
 
-			attribute<uint32> hoek_centroid: expr = "uint32(hoek)", cdf = "hoek_classes/classBreaks"
+			attribute<uint32> hoek_centroid: Expr = "uint32(hoek)", cdf = "hoek_classes/classBreaks"
 			{
-				parameter<int16>    SymbolIndex: DialogType = "SymbolIndex", expr = "int16(66)";
-				attribute<point_rd> lokatie (district): expr = "centroid(border)", DialogType = "feature";
+				parameter<int16>    SymbolIndex: DialogType = "SymbolIndex", Expr = "int16(66)";
+				attribute<point_rd> lokatie (district): Expr = "centroid(border)", DialogType = "feature";
 			}
 			attribute<point_rd> hoek_centroid_wingdings := hoek_centroid/lokatie
 			{
@@ -1808,9 +1808,9 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			}
 			attribute<string> labelcode: ['code1','code2','code1','code2','code3','code1','code2'];
 
-			attribute<point_rd> kader(.,polygon): expr = "border"
+			attribute<point_rd> kader(.,polygon): Expr = "border"
 			{
-				parameter<uint32> BrushColor: expr = "4294967295"    , DialogType = "BrushColor";
+				parameter<uint32> BrushColor: Expr = "4294967295"    , DialogType = "BrushColor";
 			}
 		}
 
@@ -1826,51 +1826,51 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 					source/pointset/districtnr[district_no_background], source/pointset/ordinal
 				)
 			{
-				parameter<uint32> BrushColor: expr = "rgb(200,0,0)", DialogType = "BrushColor";
-				parameter<uint32> PenColor:   expr = "rgb(100,0,0)", DialogType = "PenColor";
+				parameter<uint32> BrushColor: Expr = "rgb(200,0,0)", DialogType = "BrushColor";
+				parameter<uint32> PenColor:   Expr = "rgb(100,0,0)", DialogType = "PenColor";
 			}
 
-			attribute<string> label
+			attribute<string> Label
 			:	['gebied1','gebied2','gebied3','gebied4','gebied5','gebied6','gebied7']
 			,	DialogData = "hoek_centroid"
 			{
 				parameter<uint32> LabelColor
 				:	DialogType = "LabelColor"
-				,	expr       = "rgb(0,0,0)";
+				,	Expr       = "rgb(0,0,0)";
 				parameter<uint32> LabelBackColor
 				:	DialogType = "LabelBackColor"
-				,	expr       = "rgb(245,245,245)";
+				,	Expr       = "rgb(245,245,245)";
 				parameter<float32> LabelSize
 				:	DialogType = "LabelSize"
-				,	expr       = "float32(8)";
+				,	Expr       = "float32(8)";
 				parameter<string>  LabelFont
 				:	DialogType = "LabelFont"
-				,	expr       = "'Tahoma'";
+				,	Expr       = "'Tahoma'";
 			}
 			attribute<uint32> hoek:          [100,300,500,700,900,1200,1500];
 		}
 		
 		unit<uint32> district_kader
-		:	expr       = "district"
+		:	Expr       = "district"
 		,	DialogData = "border"
 		,	DialogType = "Map"
 		{
-			attribute<point_rd> kader(.,polygon): expr = "district/border"
+			attribute<point_rd> kader(.,polygon): Expr = "district/border"
 			{
-				parameter<uint32> BrushColor: expr = "4294967295"    , DialogType = "BrushColor";
-				parameter<int16>  PenWidth:   expr = "int16(5)"      , DialogType = "PenWidth";
-				parameter<uint32> PenColor:   expr = "rgb( 50,50,50)", DialogType = "PenColor";
+				parameter<uint32> BrushColor: Expr = "4294967295"    , DialogType = "BrushColor";
+				parameter<int16>  PenWidth:   Expr = "int16(5)"      , DialogType = "PenWidth";
+				parameter<uint32> PenColor:   Expr = "rgb( 50,50,50)", DialogType = "PenColor";
 			}
-			attribute<point_rd> WithTransp(.,polygon): expr = "district/border"
+			attribute<point_rd> WithTransp(.,polygon): Expr = "district/border"
 			{
-				parameter<uint32> BrushColor: expr = "4294967295"    , DialogType = "BrushColor";
-				parameter<int16>  PenWidth:   expr = "int16(5)"      , DialogType = "PenWidth";
-				parameter<uint32> PenColor:   expr = "rgb( 50,50,50)", DialogType = "PenColor";
+				parameter<uint32> BrushColor: Expr = "4294967295"    , DialogType = "BrushColor";
+				parameter<int16>  PenWidth:   Expr = "int16(5)"      , DialogType = "PenWidth";
+				parameter<uint32> PenColor:   Expr = "rgb( 50,50,50)", DialogType = "PenColor";
 			}
 		}
 
 		unit<uint32> district_transparant
-		:	expr       = "district"
+		:	Expr       = "district"
 		,	DialogData = "border"
 		,	DialogType = "Map"
 		{
@@ -1882,8 +1882,8 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			attribute<point_rd> point := union_data(., point_yx(402000f,113000f),point_yx(402084f, 113193f))
 			{
-				parameter<float32> SymbolSize:  DialogType = "SymbolSize",  expr = "float32(32)";
-				parameter<int16>   SymbolIndex: DialogType = "SymbolIndex", expr = "int16(66)";
+				parameter<float32> SymbolSize:  DialogType = "SymbolSize",  Expr = "float32(32)";
+				parameter<int16>   SymbolIndex: DialogType = "SymbolIndex", Expr = "int16(66)";
 			}
 			attribute<float32> altitude := float32(id(.));
 
@@ -1895,46 +1895,46 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	,	DialogType = "Map"
 	{
 		attribute<BackGroundLayer/point_rd> border (polygon)
-		:	expr       = "points2polygon(BackGroundLayer/source/pointset/point, BackGroundLayer/source/pointset/districtnr[styles], BackGroundLayer/source/pointset/ordinal)"
+		:	Expr       = "points2polygon(BackGroundLayer/source/pointset/point, BackGroundLayer/source/pointset/districtnr[styles], BackGroundLayer/source/pointset/ordinal)"
 		,	DialogData = "district_kader/kader" 
 		{
-			parameter<uint32> BrushColor: expr = "rgb(200,0,0)", DialogType = "BrushColor";
-			parameter<uint32> PenColor:   expr = "rgb(100,0,0)", DialogType = "PenColor";
-			parameter<int16>  PenStyle:   expr = "int16(3)", DialogType = "PenStyle";
-			parameter<int16>  PenWidth:   expr = "int16(4)", DialogType = "PenWidth";
+			parameter<uint32> BrushColor: Expr = "rgb(200,0,0)", DialogType = "BrushColor";
+			parameter<uint32> PenColor:   Expr = "rgb(100,0,0)", DialogType = "PenColor";
+			parameter<int16>  PenStyle:   Expr = "int16(3)", DialogType = "PenStyle";
+			parameter<int16>  PenWidth:   Expr = "int16(4)", DialogType = "PenWidth";
 		}
-		attribute<BackGroundLayer/point_rd> lokatie: expr = "centroid(border)"
+		attribute<BackGroundLayer/point_rd> lokatie: Expr = "centroid(border)"
 		{
 			parameter<uint32> SymbolColor 
 			:	DialogType = "SymbolColor"
-			,	expr       = "rgb(0,0,100)";
+			,	Expr       = "rgb(0,0,100)";
 			parameter<float32> SymbolSize
 			:	DialogType = "SymbolSize"
-			,	expr       = "float32(48)";
+			,	Expr       = "float32(48)";
 			parameter<m> SymbolWorldSize
 			:	DialogType = "SymbolWorldSize"
-			,	expr       = "value(10, m)";
+			,	Expr       = "value(10, m)";
 			parameter<int16> SymbolIndex
 			:	DialogType = "SymbolIndex"
-			,	expr       = "int16(61)";
+			,	Expr       = "int16(61)";
 		}
-		attribute<string> label: ['a','b','c','d','e','f','g'], DialogType = "LabelText"
+		attribute<string> Label: ['a','b','c','d','e','f','g'], DialogType = "LabelText"
 		{
 			parameter<uint32> LabelColor
 			:	DialogType = "LabelColor"
-			,	expr       = "rgb(100,100,100)";
+			,	Expr       = "rgb(100,100,100)";
 			parameter<uint32> LabelBackColor
 			:	DialogType = "LabelBackColor"
-			,	expr       = "rgb(0,255,0)";
+			,	Expr       = "rgb(0,255,0)";
 			parameter<float32> LabelSize
 			:	DialogType = "LabelSize"
-			,	expr       = "float32(42)";
+			,	Expr       = "float32(42)";
 			parameter<m> LabelWorldSize
 			:	DialogType = "LabelWorldSize"
-			,	expr       = "value(10, m)";
+			,	Expr       = "value(10, m)";
 			parameter<string>  LabelFont
 			:	DialogType = "LabelFont"
-			,	expr       = "'Tahoma'";
+			,	Expr       = "'Tahoma'";
 		}
 	}
 	container Tiff_GUI
@@ -1946,7 +1946,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		container TrueColor
 		{
 			parameter<string> dir := '%projdir%/data';
-			unit<spoint> Grid: 
+			unit<spoint> grid: 
 				StorageName     = "= dir + '/tiff_tc.tif'",
 				DialogData      = "units/point_rd",
 				StorageReadOnly = "True"
@@ -1965,10 +1965,10 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			unit<uint4> colorindex: isHidden = "True"
 			{
-				attribute<units/color> palette: DialogType = "BrushColor", expr = "Grid/PaletteData";
+				attribute<units/color> Palette: DialogType = "BrushColor", Expr = "grid/PaletteData";
 			}
 
-			unit<spoint> Grid:
+			unit<spoint> grid:
 				StorageName     = "%projdir%/data/tiff_pa.tif", 
 				DialogData      = "units/point_rd",
 				StorageReadOnly = "True"
@@ -1979,21 +1979,21 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 
 			container OtherValuesUnits
 			{
-				attribute<uint2>  uint2  (Grid): expr = "uint2(Grid/GridData)";
-				attribute<uint8>  uint8  (Grid): expr = "uint8(Grid/GridData)";
-				attribute<uint16> uint16 (Grid): expr = "uint16(Grid/GridData)";
-				attribute<uint32> uint32 (Grid): expr = "uint32(Grid/GridData)";
-				attribute<uint64> uint64 (Grid): expr = "uint64(Grid/GridData)";
+				attribute<uint2>  uint2  (grid): Expr = "uint2(grid/GridData)";
+				attribute<uint8>  uint8  (grid): Expr = "uint8(grid/GridData)";
+				attribute<uint16> uint16 (grid): Expr = "uint16(grid/GridData)";
+				attribute<uint32> uint32 (grid): Expr = "uint32(grid/GridData)";
+				attribute<uint64> uint64 (grid): Expr = "uint64(grid/GridData)";
 
-				attribute<int8>  int8  (Grid): expr = "int8(Grid/GridData)";
-				attribute<int16> int16 (Grid): expr = "int16(Grid/GridData)";
-				attribute<int32> int32 (Grid): expr = "int32(Grid/GridData)";
-				attribute<int64> int64 (Grid): expr = "int64(Grid/GridData)";
+				attribute<int8>  int8  (grid): Expr = "int8(grid/GridData)";
+				attribute<int16> int16 (grid): Expr = "int16(grid/GridData)";
+				attribute<int32> int32 (grid): Expr = "int32(grid/GridData)";
+				attribute<int64> int64 (grid): Expr = "int64(grid/GridData)";
 
-				attribute<float32> float32 (Grid): expr = "float32(Grid/GridData)";
-				attribute<float64> float64 (Grid): expr = "float64(Grid/GridData)";
+				attribute<float32> float32 (grid): Expr = "float32(grid/GridData)";
+				attribute<float64> float64 (grid): Expr = "float64(grid/GridData)";
 
-				attribute<bool> bool (Grid): expr = "bool(Grid/GridData)";
+				attribute<bool> bool (grid): Expr = "bool(grid/GridData)";
 
 			}
 		}
@@ -2002,8 +2002,8 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	{
 		container GeoDMSDriver
 		{
-			unit<spoint> Grid: 
-				StorageName     = "%SourceDataDir%/EuClueScanner/Test/permeability100.tif",
+			unit<spoint> grid: 
+				StorageName     = "%SourceDataDir%/EuClueScanner/test/permeability100.tif",
 				//DialogData      = "units/point_rd",
 				StorageReadOnly = "True"
 			{
@@ -2013,8 +2013,8 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		}
 		container GDALDriver
 		{
-			unit<ipoint> Grid: 
-				StorageName     = "%SourceDataDir%/EuClueScanner/Test/permeability100.tif",
+			unit<ipoint> grid: 
+				StorageName     = "%SourceDataDir%/EuClueScanner/test/permeability100.tif",
 				StorageType = "gdal.grid",
 				//DialogData      = "units/point_rd",
 				StorageReadOnly = "True"
@@ -2048,8 +2048,8 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		parameter<string> BelgieANSI := 'Belgi'+ UrlDecode('%EB');
 		parameter<string> BelgieUTF8 := to_utf(BelgieANSI);
 		parameter<string> BelgieUSASCII := from_utf(BelgieUTF8);
-		parameter<bool> test: expr = "'Inwoner' == 'INWONER'";	
-		parameter<string> LangeString := aslist(string(id(range(uint32, 0, 1000))), ' ');
+		parameter<bool> test: Expr = "'Inwoner' == 'INWONER'";	
+		parameter<string> LangeString := asList(string(id(range(uint32, 0, 1000))), ' ');
 	}
 	
 	container RelativePaths
@@ -2058,25 +2058,25 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			unit<uint32> pand: nrofrows = 5
 			{
-				attribute<string> key : expr = "string(id(.))";
+				attribute<string> key : Expr = "string(id(.))";
 
 			}
 		}
-		unit<uint32> pand: expr = "RelativePaths/fileset/pand"
+		unit<uint32> pand: Expr = "RelativePaths/fileset/pand"
 		{
-			attribute<string> key : expr = "'I' + string(id(.))";
-			attribute<string> key2: expr = "'II' + string(id(RelativePaths/fileset/pand))";
+			attribute<string> key : Expr = "'I' + string(id(.))";
+			attribute<string> key2: Expr = "'II' + string(id(RelativePaths/fileset/pand))";
 			container later {
-			unit<uint32> pand_sel: expr = "select_with_org_rel(id(RelativePaths/fileset/pand) <= 3)"
+			unit<uint32> pand_sel: Expr = "select_with_org_rel(id(RelativePaths/fileset/pand) <= 3)"
 			{
-				attribute<string> key:  expr = "pand/key[org_rel]";
-				attribute<string> key2: expr = "pand/key2[org_rel]";
+				attribute<string> key:  Expr = "pand/key[org_rel]";
+				attribute<string> key2: Expr = "pand/key2[org_rel]";
 			}
 			}
 			
 			container hide {
 			container hide {
-//				attribute<string> key_ref(...) : expr = "pand/key", Using = "UndefTest";
+//				attribute<string> key_ref(...) : Expr = "pand/key", Using = "UndefTest";
 				container T: IsTemplate = "True";
 				container TI: Expr  = "T(xxx)";
 			}}
@@ -2086,10 +2086,10 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	container PotentialLargeGrids
 	{
 		unit<uint32> Dist2Range;
-		unit<spoint> pot2: expr = "range(spoint, point(int16(-2), int16(-2)), point(int16(3),int16(3)))"
+		unit<spoint> pot2: Expr = "range(spoint, point(int16(-2), int16(-2)), point(int16(3),int16(3)))"
 		{
-			attribute<Dist2Range> distMatr:  expr = "dist2(point(int16(0), int16(0), pot2), Dist2Range)";
-			attribute<float32> AbsWeight: expr = "distMatr <= uint32(4) ? Float32(1.0) : Float32(0.0)";
+			attribute<Dist2Range> distMatr:  Expr = "dist2(point(int16(0), int16(0), pot2), Dist2Range)";
+			attribute<float32> AbsWeight: Expr = "distMatr <= uint32(4) ? float32(1.0) : float32(0.0)";
 		}
 
 		container Potential
@@ -2101,17 +2101,17 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			,	StorageReadOnly = "True"
 			{
 				attribute<float32> GridData:   DialogType = "BrushColor";
-				attribute<float32> potential_2: expr = "potential(GridData < float32(0) ? float32(0) : GridData ,pot2/AbsWeight)";
+				attribute<float32> potential_2: Expr = "potential(GridData < float32(0) ? float32(0) : GridData ,pot2/AbsWeight)";
 			}
 		}
 	}
 	container export
 	{
 /*	
-		attribute<uint32> GridData      (Tiff_GUI/TrueColor/Grid): expr = "Tiff_GUI/TrueColor/Grid/GridData";
-		attribute<uint32> mod_255       (Tiff_GUI/TrueColor/Grid): expr = "GridData % 255";
-		attribute<uint32> GridData_grey (Tiff_GUI/TrueColor/Grid)
-		:	expr         = "rgb(mod_255,mod_255,mod_255)"
+		attribute<uint32> GridData      (Tiff_GUI/TrueColor/grid): Expr = "Tiff_GUI/TrueColor/grid/GridData";
+		attribute<uint32> mod_255       (Tiff_GUI/TrueColor/grid): Expr = "GridData % 255";
+		attribute<uint32> GridData_grey (Tiff_GUI/TrueColor/grid)
+		:	Expr         = "rgb(mod_255,mod_255,mod_255)"
 		,	StorageName  = "%projdir%/data/tiff_grey.tif";
 */		
 		template TableComposer
@@ -2128,19 +2128,19 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 
 		   unit<uint32> Field := range(uint32,0,strcount(Fieldlist,';')+1)
 		   {
-			  attribute<string> Name := ReadArray(FieldList,.,string,0);
+			  attribute<string> name := ReadArray(FieldList,.,string,0);
 		   }
 		   parameter<string> NewLine := '\n';
 		   parameter<string> Header  := FieldList;
 		   
-		   //attribute<String> Body (domain) : expr = "= AsList('String(' + context + Field/Name + ')', ';')";
+		   //attribute<string> Body (domain) : Expr = "= asList('string(' + context + Field/name + ')', ';')";
 			  
 			 attribute<string> Body (domain) := 
-				=AsList(
-				 +'String(' + context + Field/Name+')',' + '+Quote(FieldSeperator)+' +'
+				=asList(
+				 +'string(' + context + Field/name+')',' + '+Quote(FieldSeperator)+' +'
 			  );
 		  
-		   parameter<string> Result:= Header + NewLine + AsList(Body, NewLine)
+		   parameter<string> result:= Header + NewLine + asList(Body, NewLine)
 		   ,  StorageName = "=FileName"
 		   ,  StorageType = "str";
 		}
@@ -2151,15 +2151,15 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<uint32> x2 := x*2;
 		}
 		container writetable := TableComposer('bigsettest', bigset, 'bigset/', 'x;x2');
-		parameter<string> readback: StorageName = "%localdataprojdir%/bigsettest.csv", storagetype = "str", storagereadonly = "TRUE";
+		parameter<string> readback: StorageName = "%localdataprojdir%/bigsettest.csv", StorageType = "str", storagereadonly = "TRUE";
 		parameter<string> right := right(readback, 300);
-		parameter<string> rightResult := right(writetable/Result, 300);
+		parameter<string> rightResult := right(writetable/result, 300);
 		
 	}
 	container ambiguous
 	{
 		unit<spoint> Error
-		:	Expr            = "Tiff_GUI/TrueColor/Grid"
+		:	Expr            = "Tiff_GUI/TrueColor/grid"
 		,	StorageName     = "%projdir%/data/tiff_grey.tif"
 		,	DialogData      = "units/point_rd"
 		,	StorageReadOnly = "True"
@@ -2167,12 +2167,12 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<uint32> GridData: DialogType = "BrushColor";
 		}
 		container OK
-		//:	Expr            = "Tiff_GUI/TrueColor/Grid"
+		//:	Expr            = "Tiff_GUI/TrueColor/grid"
 		:	StorageName     = "%projdir%/data/tiff_grey.tif"
 		,	DialogData      = "units/point_rd"
 		,	StorageReadOnly = "True"
 		{
-			attribute<uint32> GridData (Tiff_GUI/TrueColor/Grid): DialogType = "BrushColor";
+			attribute<uint32> GridData (Tiff_GUI/TrueColor/grid): DialogType = "BrushColor";
 		}
 	}
 	container issue599_unique_exportnames
@@ -2204,7 +2204,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	}
 	container ExportSettings
 	{
-		unit<float64> meter := baseunit('m', float64);
+		unit<float64> meter := BaseUnit('m', float64);
 		unit<float64> cm := 0.01 * meter;
 		unit<float64> mm := 0.001 * meter;
 		unit<uint64>  inch := 0.0254 * meter;
@@ -2212,25 +2212,25 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		parameter<cm> width:  [19.14];
 		parameter<cm> height: [25.52];
 
-		parameter<dpoint>  PaperSize := Point_yx(height[m] , width[m]), url ="about:papersize is <B>defined</B> as height * width, both in meters";
+		parameter<dpoint>  PaperSize := point_yx(height[m] , width[m]), url ="about:papersize is <B>defined</B> as height * width, both in meters";
 
 		parameter<float64> ScaleDenom: [30000];
 		parameter<float64> Scale := 1.0 / ScaleDenom;
 		
 		parameter<float64> dwsc:        [null];
-		parameter<dpoint>  DotWorldSize := Point_yx(dwsc,dwsc);
+		parameter<dpoint>  DotWorldSize := point_yx(dwsc,dwsc);
 
 		parameter<uint32 > NrSubDotsPerDot: [1];                               // alternative spec for nrSubDotsPerDot, default = 2
 
 		parameter<float64> dpi:        [400.0];                                // alternative spec for dotSize in dots per inch (default: 600 pdi)
-		parameter<dpoint>  DotSize:    expr = " Point_yx(0.0254/dpi,0.0254/dpi)"; // size of dot on paper in meters (default 600 dpi)
+		parameter<dpoint>  DotSize:    Expr = " point_yx(0.0254/dpi,0.0254/dpi)"; // size of dot on paper in meters (default 600 dpi)
 		parameter<float64> ViewFactor: [1.0];                                  // paper view distance relative to screen view distance
 
 		// parameter<IPoint>  MaxNrSubDotsPerTile: [yx(4096, 4096)];
 	}
 	container ExprNewSyntax
 	{
-		parameter<float64> OK: expr =
+		parameter<float64> OK: Expr =
 			"  ExportSettings/width"
 //			"+ ExportSettings/height"
 			"+ ExportSettings/width"
@@ -2262,7 +2262,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	{
 		unit<uint32> table: nrofrows = 15
 		{
-			attribute<string> label:
+			attribute<string> Label:
 			[
 				 'Wijk 00 Onderbanken'
 				,'Wijk 00 Schaesberg'
@@ -2298,17 +2298,17 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			unit<uint32> zichtjaren: nrOfrows = 2
 			{
-				attribute<string> label : ['j2014', 'j2018'];
+				attribute<string> Label : ['j2014', 'j2018'];
 			}
 
 			unit<uint32> buurt := ChangingReferences/buurt/selectie // ,	FreeData   = "False"
 			{
 				container per_zichtjaar :=
 					for_each_ne(zichtjaren/Label
-						, 'Template(buurt)'
+						, 'TestTemplate(buurt)'
 					)
 				{
-					Template template
+					template template
 					{
 						unit<uint32> domain;
 					}
@@ -2376,8 +2376,8 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	
 	container Overlap
 	{
-		unit<float32> coord_rd    := baseunit('m', float32);
-		unit<fpoint>  point_rd; //    := baseunit('m', fpoint);
+		unit<float32> coord_rd    := BaseUnit('m', float32);
+		unit<fpoint>  point_rd; //    := BaseUnit('m', fpoint);
 		unit<ipoint>  point_rd_mm := // for polygon functions
 			gridset(
 				 point_rd
@@ -2419,16 +2419,16 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			attribute<point_rd> geometry (poly) := value(overlap_vector/intersect[org_rel], point_rd);
 		}
 
-		container Grid
+		container grid
 		{
-			attribute<point_rd> lowerbound (buurt) := lower_bound(buurt/geometry);
-			attribute<point_rd> upperbound (buurt) := upper_bound(buurt/geometry);
+			attribute<point_rd> LowerBound (buurt) := lower_bound(buurt/geometry);
+			attribute<point_rd> UpperBound (buurt) := upper_bound(buurt/geometry);
 	
-			parameter<m> x_min := 13871.5[m]; //min(PointCol(lowerbound)[m]);
-			parameter<m> x_max := 278026[m]; // max(PointCol(upperbound)[m]);
+			parameter<m> x_min := 13871.5[m]; //min(pointcol(lowerbound)[m]);
+			parameter<m> x_max := 278026[m]; // max(pointcol(upperbound)[m]);
 	
-			parameter<m> y_min := 306846[m]; // min(PointRow(lowerbound)[m]);
-			parameter<m> y_max := 619328[m]; //max(PointRow(upperbound)[m]);
+			parameter<m> y_min := 306846[m]; // min(pointrow(lowerbound)[m]);
+			parameter<m> y_max := 619328[m]; //max(pointrow(upperbound)[m]);
 		
 			parameter<m> gridsize:= 10[m];
 
@@ -2452,12 +2452,12 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			{
 				parameter<m>     size := gridsize;
 				attribute<.>     id   := id(.);
-				attribute<int16> row  := PointRow(id);
-				attribute<int16> col  := PointCol(id);
+				attribute<int16> row  := pointrow(id);
+				attribute<int16> col  := pointcol(id);
 			}
 		}
 		
-		Template uniqueOverlap
+		template uniqueOverlap
 		{
 			// begin case parameters
 			unit<uint32> buurt;
@@ -2516,9 +2516,9 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 				
 			container BU16580300_BU16580308
 			{
-				unit<uint32> overlappende_intermediates:= select_with_org_rel(isDefined(rlookup(pointset_per_buurt/BU16580308/Point, pointset_per_buurt/BU16580300/Point)))
+				unit<uint32> overlappende_intermediates:= select_with_org_rel(IsDefined(rlookup(pointset_per_buurt/BU16580308/point, pointset_per_buurt/BU16580300/point)))
 				{
-					attribute<point_rd> geometry  := pointset_per_buurt/BU16580308/Point[org_rel];
+					attribute<point_rd> geometry  := pointset_per_buurt/BU16580308/point[org_rel];
 				}
 			}
 		}
@@ -2530,7 +2530,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	
 	container table
 	{
-		unit<fpoint>  point_rd    := baseunit('m', fpoint);
+		unit<fpoint>  point_rd    := BaseUnit('m', fpoint);
 
 		unit<uint32> adres_nl
 		:	StorageName     = "='%SourceDataDir%/BAG/snapshots.ext/20170908/adres.fss'"
@@ -2545,15 +2545,15 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		}
 
 		unit<uint32> adres := 
-		  select_with_org_rel(isDefined(adres_nl/geometry) && strlen(trim(adres_nl/postcode))==6)
+		  select_with_org_rel(IsDefined(adres_nl/geometry) && strlen(trim(adres_nl/postcode))==6)
 		,	DialogData      = "geometry"
 		,	DialogType      = "Map"
 		{
 			attribute<point_rd> geometry            := adres_nl/geometry[org_rel];
 			attribute<string>   nummeraanduiding_id := adres_nl/nummeraanduiding_id[org_rel];
 			attribute<string>   postcode            := adres_nl/postcode[org_rel];
-			attribute<float32>  X_rd                := PointCol(geometry);
-			attribute<float32>  Y_rd                := PointRow(geometry);
+			attribute<float32>  X_rd                := pointcol(geometry);
+			attribute<float32>  Y_rd                := pointrow(geometry);
 			attribute<pc6>      pc6_rel             := rlookup(postcode, pc6/values);
 		}
 
@@ -2565,7 +2565,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			StorageType = "gdal.vect",
 			SyncMode = "all"
 		{
-			attribute<point_rd> Geometry(.,poly);
+			attribute<point_rd> geometry(.,poly);
 		}
 		
 		container statistics
@@ -2612,13 +2612,13 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 
 		container writer  := exec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataProjDir%'));
 		parameter<string> WrittenFile := do(writer, impl/FileNameDirInfo), KeepData="True";
-		parameter<string> bestand: Storagename = "=WrittenFile", StorageReadOnly = "True";
+		parameter<string> bestand: StorageName = "=WrittenFile", StorageReadOnly = "True";
 
 		container bestand_selectie
 		{
 			unit<uint32> alle_regels := range(uint32, 0, strcount(bestand,impl/NewLine))
 			{
-				attribute<string> inhoud := uppercase(readLines(bestand, ., 0));
+				attribute<string> inhoud := UpperCase(ReadLines(bestand, ., 0));
 			}
 		}
 	}
@@ -2627,7 +2627,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	{
 		unit<uint32> direction_uint32: nrofrows = 4
 		{
-			attribute<string> label: ['North','East','West','South'];
+			attribute<string> Label: ['North','East','West','South'];
 		}
 		unit<uint8> direction_uint8 := uint8(direction_uint32)
 		{
@@ -2639,19 +2639,19 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		unit<float32>nr_persons;
 		unit<float32>degrees_celsius;
 
-		unit<uint32> state: NrOfRows = 5
+		unit<uint32> state: nrofrows = 5
 		{
-			attribute<string> label: ['StateI','StateII','StateII','StateIII','StateV'];
+			attribute<string> Label: ['StateI','StateII','StateII','StateIII','StateV'];
 			attribute<string> name := label;
 		}
 
-		unit<uint32> time: NrOfRows = 2
+		unit<uint32> time: nrofrows = 2
 		{
-			attribute<string> label: ['2000','2010'];
+			attribute<string> Label: ['2000','2010'];
 			attribute<string> name := 'j' + label;
 		}
 
-		unit<uint32> RegionTime: NrOfRows = 5
+		unit<uint32> RegionTime: nrofrows = 5
 		{
 			attribute<string>          districtname      : ['RegA','RegB','regC','RegD','RegX'];
 			attribute<nr_persons>      nr_inhabitants    : [100,200,150,50,250];
@@ -2704,13 +2704,13 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 	
 	container ShowExpressioninDetailPage
 	{
-		unit<uint32> class: nrofrows = 3
+		unit<uint32> Class: nrofrows = 3
 		{
 			attribute<string> name     := 'n' + string(id(.));
 			attribute<string> argument :=  string(id(.) * 5 + 2 + 21 +4 - (id(.) * 2));
 		}
 
-		template Ok
+		template OK
 		{
 			parameter<string> label;
 		}
@@ -2720,8 +2720,8 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 			parameter<m4> label;
 		}
 
-		container Show    := for_each_ne(class/name, 'Ok(' + quote(class/argument) + ')');
-		container NoShow := for_each_ne(class/name, 'withError(' + quote(class/argument) + ')');
+		container Show    := for_each_ne(Class/name, 'OK(' + quote(Class/argument) + ')');
+		container NoShow := for_each_ne(Class/name, 'withError(' + quote(Class/argument) + ')');
 	}
 	
 	container table_crash_irregular_tiling
@@ -2737,7 +2737,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			unit<ipoint> Landuse: StorageName = "%SourceDataDir%/Africa/landuse/LU.tif", StorageType = "gdal.grid", StorageReadOnly = "True", DialogData = "geometries/BaseProjection";
 		}
-		unit<ipoint> Base_grid_1km  := range(proto_base_grid_1k, point_yx(0i,0i,ipoint), upperbound(Base_grid_100m) / point_yx(10i,10i,ipoint) ), DialogData = "BaseProjection";
+		unit<ipoint> Base_grid_1km  := range(proto_base_grid_1k, point_yx(0i,0i,ipoint), UpperBound(Base_grid_100m) / point_yx(10i,10i,ipoint) ), DialogData = "BaseProjection";
 
 		unit<uint32> StudyAreaTile: nrofrows = 6
 		{
@@ -2837,14 +2837,14 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 				{
 					attribute<string> label    := 'wijk_' + string(id(.));
 					attribute<string> code    := 'WK_' + string(id(.));
-					attribute<string> GM_code := 'GM_' + string(round(float32(id(.)) / 10f)); 
+					attribute<string> GM_code := 'GM_' + string(Round(float32(id(.)) / 10f)); 
 				}
 				unit<uint32> buurt : nrofrows = 10000
 				{
 					attribute<string> label    := 'buurt' + string(id(.));
 					attribute<string> code    := 'BU_' + string(id(.));
-					attribute<string> WK_code := 'WK_' + string(round(float32(id(.)) / 10f)); 
-					attribute<string> GM_code := 'GM_' + string(round(float32(id(.)) / 40f)); 
+					attribute<string> WK_code := 'WK_' + string(Round(float32(id(.)) / 10f)); 
+					attribute<string> GM_code := 'GM_' + string(Round(float32(id(.)) / 40f)); 
 				}
 			}
 
@@ -2858,7 +2858,7 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		}
 	}
 
-	// Issue #634: a classification whose class breaks, colours and labels are all genuinely
+	// Issue #634: a classification whose Class breaks, colours and labels are all genuinely
 	// calculated, so that editing a legend cell has to copy them instead of writing them.
 	// hoek_classes/PenColor cannot serve for this: it is a plain reference, which resolves
 	// through to the editable data block hoek_classes/BrushColor and is written directly.
@@ -2868,19 +2868,19 @@ https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0
 		{
 			attribute<uint32> classBreaks := uint32(id(.)), DialogType = "Classification";
 			attribute<uint32> BrushColor  := rgb(uint32(id(.)) * 60, 0, 255 - uint32(id(.)) * 60), DialogType = "BrushColor";
-			attribute<string> Label       := 'calc class ' + string(id(.));
+			attribute<string> Label       := 'calc Class ' + string(id(.));
 		}
 
 		// Its own geometry, so that the aspect lookup lands on calc_classes/BrushColor. Themed on
 		// BackGroundLayer/district/border instead, the BrushColor and PenColor parameters that
-		// border carries would occupy the legend's colour slots and the class palette would never
+		// border carries would occupy the legend's colour slots and the Class Palette would never
 		// be reached.
 		attribute<uint32> hoek_calc (BackGroundLayer/district)
-		:	expr = "BackGroundLayer/district/hoek2 + 0"
+		:	Expr = "BackGroundLayer/district/hoek2 + 0"
 		,	cdf  = "calc_classes/classBreaks"
 		{
 			attribute<BackGroundLayer/point_rd> geometry (BackGroundLayer/district, polygon)
-			:	expr = "points2polygon(BackGroundLayer/source/pointset/point, BackGroundLayer/source/pointset/districtnr, BackGroundLayer/source/pointset/ordinal)"
+			:	Expr = "points2polygon(BackGroundLayer/source/pointset/point, BackGroundLayer/source/pointset/districtnr, BackGroundLayer/source/pointset/ordinal)"
 			,	DialogType = "feature";
 		}
 	}

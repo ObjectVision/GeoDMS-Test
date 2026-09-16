@@ -44,7 +44,7 @@
 			// orde-onafhankelijke semantiek: het teruggegeven lid hoort bij zijn huishouden,
 			// en elke gedefinieerde Next-verwijzing blijft binnen hetzelfde huishouden
 			attribute<bool> test (House3) := hrel[inv] = id(House3);
-			attribute<bool> testNext (Person6) := isNull(inv/Next) || hrel[MakeDefined(inv/Next, id(Person6))] = hrel;
+			attribute<bool> testNext (Person6) := IsNull(inv/Next) || hrel[MakeDefined(inv/Next, id(Person6))] = hrel;
 			parameter<bool> test_attr := all(test) && all(testNext);
 		}
 		container join_near_values
@@ -239,15 +239,15 @@
 			parameter<bool> test := all(att == TD5/v);
 		}
 
-		container srcUnTiled2UnTiledDomain := Source(CityDomain      , RegionDomain      , CountryDomain,      RoadDomain);
-		container srcUnTiled2TiledDomain   := Source(CityDomain      , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
-		container srcTiled2UnTiledDomain   := Source(CityTiledDomain , RegionDomain      , CountryDomain,      RoadDomain);
-		container srcTiled2TiledDomain     := Source(CityTiledDomain , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
+		container srcUnTiled2UnTiledDomain := source(CityDomain      , RegionDomain      , CountryDomain,      RoadDomain);
+		container srcUnTiled2TiledDomain   := source(CityDomain      , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
+		container srcTiled2UnTiledDomain   := source(CityTiledDomain , RegionDomain      , CountryDomain,      RoadDomain);
+		container srcTiled2TiledDomain     := source(CityTiledDomain , RegionTiledDomain , CountryTiledDomain, RoadTiledDomain);
 
-		container srcEDomain               := ESource(EDomain        , EDomain           , EDomain,            Edomain);
+		container srcEDomain               := ESource(EDomain        , EDomain           , EDomain,            EDomain);
 		container srcETiledDomain          := ESource(ETiledDomain   , ETiledDomain      , ETiledDomain,       ETiledDomain);
 
-		template Source
+		template source
 		{
 			// begin case parameters
 			unit<uint32> CityDomain;
@@ -296,7 +296,7 @@
 			
 			
 
-			unit <uint32> Road := RoadDomain
+			unit <uint32> road := RoadDomain
 			{
 				attribute<CountryDomain>  CountryDomain_rel:       [1,0,2];
 			}
@@ -355,7 +355,7 @@
 				attribute<m2>             area:                    [];
 			}
 
-			unit <uint32> Road := RoadDomain
+			unit <uint32> road := RoadDomain
 			{
 				attribute<CountryDomain>  CountryDomain_rel:       [];
 			}
@@ -381,13 +381,13 @@
 			attribute<uint32> att_large (UDomain1) := const(2,UDomain1);
 		}
 
-		container UnTiled2UnTiled  := Template(srcUnTiled2UnTiledDomain/Region, srcUnTiled2UnTiledDomain/City, srcUnTiled2UnTiledDomain/Years, srcUnTiled2UnTiledDomain, false);
-		container UnTiled2Tiled    := Template(srcUnTiled2TiledDomain/Region  , srcUnTiled2TiledDomain/City  , srcUnTiled2TiledDomain/Years  , srcUnTiled2TiledDomain, false);
-		container Tiled2UnTiled    := Template(srcTiled2UnTiledDomain/Region  , srcTiled2UnTiledDomain/City  , srcTiled2UnTiledDomain/Years  , srcTiled2UnTiledDomain, false);
-		container Tiled2Tiled      := Template(srcTiled2TiledDomain/Region    , srcTiled2TiledDomain/City    , srcTiled2TiledDomain/Years    , srcTiled2TiledDomain, false);
+		container UnTiled2UnTiled  := TestTemplate(srcUnTiled2UnTiledDomain/Region, srcUnTiled2UnTiledDomain/City, srcUnTiled2UnTiledDomain/Years, srcUnTiled2UnTiledDomain, false);
+		container UnTiled2Tiled    := TestTemplate(srcUnTiled2TiledDomain/Region  , srcUnTiled2TiledDomain/City  , srcUnTiled2TiledDomain/Years  , srcUnTiled2TiledDomain, false);
+		container Tiled2UnTiled    := TestTemplate(srcTiled2UnTiledDomain/Region  , srcTiled2UnTiledDomain/City  , srcTiled2UnTiledDomain/Years  , srcTiled2UnTiledDomain, false);
+		container Tiled2Tiled      := TestTemplate(srcTiled2TiledDomain/Region    , srcTiled2TiledDomain/City    , srcTiled2TiledDomain/Years    , srcTiled2TiledDomain, false);
 
-		container EunTiled         := Template(EDomain, EDomain, EDomain, srcEDomain, true);
-		container ETiled           := Template(ETiledDomain, ETiledDomain, ETiledDomain, srcETiledDomain, true);
+		container EunTiled         := TestTemplate(EDomain, EDomain, EDomain, srcEDomain, true);
+		container ETiled           := TestTemplate(ETiledDomain, ETiledDomain, ETiledDomain, srcETiledDomain, true);
 
 		container ResultUnitTiled
 		{
@@ -412,79 +412,79 @@
 			}
 		}
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<uint32> Region;
 			unit<uint32> City;
 			unit<uint32> Years;
-			container Source;
+			container source;
 			parameter<bool> isEmpty;
 			// end case parameters
 
 			container id: url  = "http://www.objectvision.nl/geodms/operators-a-functions/id"
 			{
-				attribute<uint32> att  (Region) := ID(Region);
-				attribute<bool>   test (Region) := att = Source/Region/RegionNr;
+				attribute<uint32> att  (Region) := id(Region);
+				attribute<bool>   test (Region) := att = source/Region/RegionNr;
 				parameter<bool>   test_attr            := all(test);
 			}
 			container mapping
 			{
-				attribute<Years>  years_rel (Region) := mapping(Region,Source/Years);
-				attribute<string> att       (Region) := Source/Years/Names[years_rel];
-				attribute<bool>   test      (Region) := att == Source/Region/year;
+				attribute<Years>  years_rel (Region) := mapping(Region,source/Years);
+				attribute<string> att       (Region) := source/Years/Names[years_rel];
+				attribute<bool>   test      (Region) := att == source/Region/year;
 				parameter<bool>   test_attr                 := all(test);
 			}
 			container mapping_count
 			{
-				attribute<uint32>                    count              (Grid/units/GridDomain3000) := mapping_count(Grid/units/GridDomain15, Grid/units/GridDomain3000, uint32);
-				attribute<uint16>                    count_uint16       (Grid/units/GridDomain3000) := mapping_count(Grid/units/GridDomain15, Grid/units/GridDomain3000, uint16);
-				attribute<Grid/units/GridDomain3000> GridDomain3000_rel (Grid/units/GridDomain15)   := mapping(Grid/units/GridDomain15,Grid/units/GridDomain3000);
-				attribute<uint32>                    pcount             (Grid/units/GridDomain3000) := pcount(GridDomain3000_rel);
-				attribute<bool>                      test1              (Grid/units/GridDomain3000) := count == pcount;
-				attribute<bool>                      test2              (Grid/units/GridDomain3000) := count_uint16 == uint16(pcount);
-				attribute<bool>                      test               (Grid/units/GridDomain3000) := test1 && test2;
+				attribute<uint32>                    count              (Grid/Units/GridDomain3000) := mapping_count(Grid/Units/GridDomain15, Grid/Units/GridDomain3000, uint32);
+				attribute<uint16>                    count_uint16       (Grid/Units/GridDomain3000) := mapping_count(Grid/Units/GridDomain15, Grid/Units/GridDomain3000, uint16);
+				attribute<Grid/Units/GridDomain3000> GridDomain3000_rel (Grid/Units/GridDomain15)   := mapping(Grid/Units/GridDomain15,Grid/Units/GridDomain3000);
+				attribute<uint32>                    pcount             (Grid/Units/GridDomain3000) := pcount(GridDomain3000_rel);
+				attribute<bool>                      test1              (Grid/Units/GridDomain3000) := count == pcount;
+				attribute<bool>                      test2              (Grid/Units/GridDomain3000) := count_uint16 == uint16(pcount);
+				attribute<bool>                      test               (Grid/Units/GridDomain3000) := test1 && test2;
 				parameter<bool>                      test_attr          := all(test);
 			}
 			container lookup_op: url  = "http://www.objectvision.nl/geodms/operators-a-functions/lookup"
 			{
-				attribute<DegreesCelsius> att  (City) := Source/Region/AvgDailyTemperature[Source/City/RegionNr];
-				attribute<bool>           test (City) := eq_or_both_null(att, Source/City/AvgDailyTemperature);
+				attribute<DegreesCelsius> att  (City) := source/Region/AvgDailyTemperature[source/City/RegionNr];
+				attribute<bool>           test (City) := eq_or_both_null(att, source/City/AvgDailyTemperature);
 				parameter<bool>           test_attr   := all(test);
 			}
 			container lookup: url  = "http://www.objectvision.nl/geodms/operators-a-functions/lookup"
 			{
-				attribute<DegreesCelsius> att  (City) := lookup(Source/City/RegionNr, Source/Region/AvgDailyTemperature);
-				attribute<DegreesCelsius> att2 (City) := Source/City/RegionNr->AvgDailyTemperature; // arrow operator
-				attribute<bool>           test (City) := eq_or_both_null(att, Source/City/AvgDailyTemperature);
+				attribute<DegreesCelsius> att  (City) := lookup(source/City/RegionNr, source/Region/AvgDailyTemperature);
+				attribute<DegreesCelsius> att2 (City) := source/City/RegionNr->AvgDailyTemperature; // arrow operator
+				attribute<bool>           test (City) := eq_or_both_null(att, source/City/AvgDailyTemperature);
 				parameter<bool>           test_attr := all(test);
 			}
 			container rlookup: url  = "http://www.objectvision.nl/geodms/operators-a-functions/rlookup"
 			{
-				attribute<Region> att  (City) := rlookup(Source/City/RegionCode, Source/Region/RegionCode);
-				attribute<bool>   test        (City) := eq_or_both_null(att, Source/City/RegionNr);
+				attribute<Region> att  (City) := rlookup(source/City/RegionCode, source/Region/RegionCode);
+				attribute<bool>   test        (City) := eq_or_both_null(att, source/City/RegionNr);
 				parameter<bool>   test_attr   := all(test);
 			}
 			container rjoin: url  = "http://www.objectvision.nl/geodms/operators-a-functions/rjoin"
 			{
-				attribute<DegreesCelsius> att  (City) := rjoin(Source/City/RegionCode, Source/Region/RegionCode, Source/Region/AvgDailyTemperature);
-				attribute<bool>           test (City) := eq_or_both_null(att, Source/City/AvgDailyTemperature);
+				attribute<DegreesCelsius> att  (City) := rjoin(source/City/RegionCode, source/Region/RegionCode, source/Region/AvgDailyTemperature);
+				attribute<bool>           test (City) := eq_or_both_null(att, source/City/AvgDailyTemperature);
 				parameter<bool>           test_attr   := all(test);
 			}
 
 			container index: url = "http://www.objectvision.nl/geodms/operators-a-functions/index"
 			{
-				attribute<City> att  (City) := index(Source/City/AvgDailyTemperature);
-				attribute<bool>        test (City) := att = Source/City/indexTemp;
+				attribute<City> att  (City) := index(source/City/AvgDailyTemperature);
+				attribute<bool>        test (City) := att = source/City/indexTemp;
 				parameter<bool> test_attr   := all(test);
-				attribute<DegreesCelsius> AvgDailyTemperature_sorted (City):= Source/City/AvgDailyTemperature[att];
-				attribute<City> ranking  (City):= rlookup(Source/City/AvgDailyTemperature, AvgDailyTemperature_sorted);
+				attribute<DegreesCelsius> AvgDailyTemperature_sorted (City):= source/City/AvgDailyTemperature[att];
+				attribute<City> ranking  (City):= rlookup(source/City/AvgDailyTemperature, AvgDailyTemperature_sorted);
 				
 			}
 			container direct_index: url  = "http://www.objectvision.nl/geodms/operators-a-functions/direct_index"
 			{
-				attribute<uint32> att    (City) := direct_index(Source/City/AvgDailyTemperature);
-				attribute<bool>   test   (City) := att = Source/City/direct_indexTemp;
+				attribute<uint32> att    (City) := direct_index(source/City/AvgDailyTemperature);
+				attribute<bool>   test   (City) := att = source/City/direct_indexTemp;
 				parameter<bool>   test_attr     := all(test);
 			}
 			/*
@@ -496,8 +496,8 @@
 			}*/
 			container invert: url  = "http://www.objectvision.nl/geodms/operators-a-functions/invert"
 			{
-				attribute<City>   att  (Region) := invert(Source/City/RegionNr);
-				attribute<bool>   test (Region) := eq_or_both_null(att, Source/Region/invertRegion);
+				attribute<City>   att  (Region) := invert(source/City/RegionNr);
+				attribute<bool>   test (Region) := eq_or_both_null(att, source/Region/invertRegion);
 				parameter<bool>   test_attr     := all(test);
 			}
 			/*
@@ -509,9 +509,9 @@
 			}*/
 			container select_with_org_rel
 			{
-				unit<uint32> s_uint32 := select_with_org_rel(Source/City/RegionCode = 200)
+				unit<uint32> s_uint32 := select_with_org_rel(source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					attribute<bool> att  := const(200, ., uint32) = source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -521,7 +521,7 @@
 				unit<bool>   u_bool;
 				
 				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
-				,  label = "rijksdriehoekmeting in meters";
+				,  Label = "rijksdriehoekmeting in meters";
 				
 				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
 				{
@@ -588,9 +588,9 @@
 			}
 			container select_uint32_with_org_rel
 			{
-				unit<uint32> s_uint32 := select_uint32_with_org_rel(Source/City/RegionCode = 200)
+				unit<uint32> s_uint32 := select_uint32_with_org_rel(source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					attribute<bool> att  := const(200, ., uint32) = source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -600,7 +600,7 @@
 				unit<bool>   u_bool;
 				
 				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
-				,  label = "rijksdriehoekmeting in meters";
+				,  Label = "rijksdriehoekmeting in meters";
 				
 				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
 				{
@@ -667,9 +667,9 @@
 			}
 			container select_uint16_with_org_rel
 			{
-				unit<uint16> s_uint32 := select_uint16_with_org_rel(Source/City/RegionCode = 200)
+				unit<uint16> s_uint32 := select_uint16_with_org_rel(source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					attribute<bool> att  := const(200, ., uint32) = source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -679,7 +679,7 @@
 				unit<bool>   u_bool;
 				
 				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
-				,  label = "rijksdriehoekmeting in meters";
+				,  Label = "rijksdriehoekmeting in meters";
 				
 				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
 				{
@@ -746,9 +746,9 @@
 			}
 			container select_uint8_with_org_rel
 			{
-				unit<uint8> s_uint32 := select_uint8_with_org_rel(Source/City/RegionCode = 200)
+				unit<uint8> s_uint32 := select_uint8_with_org_rel(source/City/RegionCode = 200)
 				{
-					attribute<bool> att  := const(200, ., uint32) = Source/City/RegionCode[org_rel];
+					attribute<bool> att  := const(200, ., uint32) = source/City/RegionCode[org_rel];
 					parameter<bool> test := all(att);
 				}
 
@@ -758,7 +758,7 @@
 				unit<bool>   u_bool;
 				
 				unit<fpoint> rdc_m := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f))
-				,  label = "rijksdriehoekmeting in meters";
+				,  Label = "rijksdriehoekmeting in meters";
 				
 				unit<spoint> u_spoint := range(gridset(rdc_m,point_yx(     -100f,     100f, rdc_m),point_yx(625000f, 10000f, rdc_m),spoint),point_yx(0s,0s),point_yx(3250s, 2700s))
 				{
@@ -825,16 +825,16 @@
 			}
 			container select_unit: url  = "http://www.objectvision.nl/geodms/operators-a-functions/select_unit"
 			{
-				unit<uint32> ZHCities := select(Source/City/RegionCode = 200)
+				unit<uint32> ZHCities := select(source/City/RegionCode = 200)
 				{
-					attribute<bool> att := const(200, ., uint32) = collect_by_cond(., Source/City/RegionCode = 200, Source/City/RegionCode);
+					attribute<bool> att := const(200, ., uint32) = collect_by_cond(., source/City/RegionCode = 200, source/City/RegionCode);
 				}
 				parameter<bool> test := all(ZHCities/att);
 			}
 
 			container select_with_attr_by_org_rel
 			{
-				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -843,7 +843,7 @@
 			}
 			container select_uint32_with_attr_by_org_rel
 			{
-				unit<uint32> selection := select_uint32_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_uint32_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -852,7 +852,7 @@
 			}
 			container select_uint16_with_attr_by_org_rel
 			{
-				unit<uint16> selection := select_uint16_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint16> selection := select_uint16_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -861,7 +861,7 @@
 			}
 			container select_uint8_with_attr_by_org_rel
 			{
-				unit<uint8> selection := select_uint8_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint8> selection := select_uint8_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -871,7 +871,7 @@
 			
 			container select_with_attr_by_cond
 			{
-				unit<uint32> selection := select_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_with_attr_by_cond(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -880,7 +880,7 @@
 			}
 			container select_uint32_with_attr_by_cond
 			{
-				unit<uint32> selection := select_uint32_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_uint32_with_attr_by_cond(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -889,7 +889,7 @@
 			}
 			container select_uint16_with_attr_by_cond
 			{
-				unit<uint16> selection := select_uint16_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				unit<uint16> selection := select_uint16_with_attr_by_cond(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -898,7 +898,7 @@
 			}
 			container select_uint8_with_attr_by_cond
 			{
-				unit<uint8> selection := select_uint8_with_attr_by_cond(Source/City, Source/City/RegionCode = 200)
+				unit<uint8> selection := select_uint8_with_attr_by_cond(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -907,33 +907,33 @@
 			}
 			container collect_by_cond
 			{
-				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
-				attribute<float32> AvgDailyTemperature (selection) := collect_by_cond(selection, Source/City/RegionCode = 200, Source/City/AvgDailyTemperature);
+				attribute<float32> AvgDailyTemperature (selection) := collect_by_cond(selection, source/City/RegionCode = 200, source/City/AvgDailyTemperature);
 				
 				parameter<bool> test := #selection == 2 ? sum(AvgDailyTemperature) == 22f : sum(AvgDailyTemperature) == 0f;
 			}
 			container collect_attr_by_org_rel
 			{
-				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
-				container by_org_rel := collect_attr_by_org_rel(Source/City, selection, selection/org_rel);
+				container by_org_rel := collect_attr_by_org_rel(source/City, selection, selection/org_rel);
 				
 				unit<uint32> select_subitems := SubItem_PropValues(by_org_rel,'name'); 
 				parameter<bool> test := (#select_subitems == 7 || #select_subitems == 8) && (#selection == 0 ? sum(by_org_rel/area) == 0f : sum(by_org_rel/area) == 675f);
 			}
 			container collect_attr_by_cond
 			{
-				unit<uint32> selection := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> selection := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
-				container by_cond                  := collect_attr_by_cond(Source/City, selection, Source/City/RegionCode = 200);
-				container by_cond_wrong_condition   := collect_attr_by_cond(Source/City, selection, selection/selection_condition);
+				container by_cond                  := collect_attr_by_cond(source/City, selection, source/City/RegionCode = 200);
+				container by_cond_wrong_condition   := collect_attr_by_cond(source/City, selection, selection/selection_condition);
 
 				unit<uint32> select_subitems := SubItem_PropValues(by_cond,'name'); 
 				unit<uint32> select_subitems_wrongcondition := SubItem_PropValues(by_cond_wrong_condition,'name'); 
@@ -942,15 +942,15 @@
 			}
 			container collect_attr_by_cond_CalcRuleClickingIssue
 			{
-				unit<uint32> src := Source/City
+				unit<uint32> src := source/City
 				{
-					attribute<DegreesCelsius> AvgDailyTemperature := Source/City/AvgDailyTemperature;
-					attribute<RegionEK>       RegionCode          := Source/City/RegionCode;
-					attribute<Region>         RegionNr            := Source/City/RegionNr;
-					attribute<uint32>         indexTemp           := Source/City/indexTemp;
-					attribute<uint32>         direct_indexTemp    := Source/City/direct_indexTemp;
-					attribute<uint32>         SubIndexTemp        := Source/City/SubIndexTemp;
-					attribute<m2>             area                := Source/City/area;
+					attribute<DegreesCelsius> AvgDailyTemperature := source/City/AvgDailyTemperature;
+					attribute<RegionEK>       RegionCode          := source/City/RegionCode;
+					attribute<Region>         RegionNr            := source/City/RegionNr;
+					attribute<uint32>         indexTemp           := source/City/indexTemp;
+					attribute<uint32>         direct_indexTemp    := source/City/direct_indexTemp;
+					attribute<uint32>         SubIndexTemp        := source/City/SubIndexTemp;
+					attribute<m2>             area                := source/City/area;
 				
 					unit<uint32> selection := select_with_attr_by_org_rel(., RegionCode = 200)
 					{
@@ -967,11 +967,11 @@
 			container select_spec_equivalence
 			{
 				// the spec form must reproduce the named operator exactly
-				unit<uint32> named := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200)
+				unit<uint32> named := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
-				unit<uint32> spec := select_spec('use_org_rel;attr', Source/City, Source/City/RegionCode = 200)
+				unit<uint32> spec := select_spec('use_org_rel;attr', source/City, source/City/RegionCode = 200)
 				{
 					attribute<bool> att := AvgDailyTemperature == const(11[DegreesCelsius ],.) && RegionCode == const(200,.);
 				}
@@ -985,7 +985,7 @@
 				// sub-items of its own, so the attributes of the unit it is bound to are
 				// reachable only through the referred-item chain. Without 'ref' nothing is
 				// collected and the call only warns.
-				Template SelectFromParam
+				template SelectFromParam
 				{
 					// begin case parameters
 					unit<uint32> inStops;
@@ -993,9 +993,9 @@
 					unit<uint32> sel   := select_spec('use_org_rel;attr;ref', inStops, inStops/RegionCode = 200);
 					unit<uint32> n_sel := SubItem_PropValues(sel,'name');
 				}
-				container viaParam := SelectFromParam(Source/City);
+				container viaParam := SelectFromParam(source/City);
 
-				unit<uint32> direct   := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
+				unit<uint32> direct   := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200);
 				unit<uint32> n_direct := SubItem_PropValues(direct,'name');
 
 				// collecting through the case parameter finds what collecting straight
@@ -1006,39 +1006,39 @@
 			{
 				// 'sub' mirrors a sub-container into the result. A sub-container attribute
 				// needs its domain spelled out, as it is not a direct child of the unit.
-				unit<uint32> src := Source/City
+				unit<uint32> src := source/City
 				{
-					attribute<RegionEK> RegionCode := Source/City/RegionCode;
+					attribute<RegionEK> RegionCode := source/City/RegionCode;
 					container nested
 					{
-						attribute<m2> area (src) := Source/City/area;
+						attribute<m2> area (src) := source/City/area;
 					}
 				}
 				unit<uint32> sel   := select_spec('use_org_rel;attr;sub', src, src/RegionCode = 200);
 				unit<uint32> names := SubItem_PropValues(sel,'name');
 
 				// RegionCode plus nested (plus org_rel): staying under 4 is what proves the
-				// referred-item chain was NOT followed -- 'ref' would add Source/City's own.
+				// referred-item chain was NOT followed -- 'ref' would add source/City's own.
 				parameter<bool> test := #names <= 3 && (#sel == 0 ? sum(sel/nested/area) == 0f : sum(sel/nested/area) == 675f);
 			}
 			container collect_spec_ref
 			{
 				// the collect family mirrors the select family: same words, same rules.
-				unit<uint32> src := Source/City;   // a reference: no sub-items of its own
-				unit<uint32> sel := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
+				unit<uint32> src := source/City;   // a reference: no sub-items of its own
+				unit<uint32> sel := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200);
 				container by_ref := collect_spec('by_org_rel;ref', src, sel, sel/org_rel);
 
 				unit<uint32> names := SubItem_PropValues(by_ref,'name');
 				// plain collect_attr_by_org_rel would find nothing on src; 'ref' reaches
-				// Source/City's attributes through the chain.
+				// source/City's attributes through the chain.
 				parameter<bool> test := #names >= 7 && (#sel == 0 ? sum(by_ref/area) == 0f : sum(by_ref/area) == 675f);
 			}
 			container collect_spec_by_cond
 			{
 				// the by_cond path through the spec form must match the named operator
-				unit<uint32> sel := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
-				container named := collect_attr_by_cond(Source/City, sel, Source/City/RegionCode = 200);
-				container spec  := collect_spec('by_cond', Source/City, sel, Source/City/RegionCode = 200);
+				unit<uint32> sel := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200);
+				container named := collect_attr_by_cond(source/City, sel, source/City/RegionCode = 200);
+				container spec  := collect_spec('by_cond', source/City, sel, source/City/RegionCode = 200);
 
 				unit<uint32> n_named := SubItem_PropValues(named,'name');
 				unit<uint32> n_spec  := SubItem_PropValues(spec,'name');
@@ -1048,61 +1048,61 @@
 			{
 				// 'sub' mirrors a sub-container into the collected result; the nested
 				// member's calculation rule has to resolve one level deeper than a direct one.
-				unit<uint32> src := Source/City
+				unit<uint32> src := source/City
 				{
-					attribute<RegionEK> RegionCode := Source/City/RegionCode;
+					attribute<RegionEK> RegionCode := source/City/RegionCode;
 					container nested
 					{
-						attribute<m2> area (src) := Source/City/area;
+						attribute<m2> area (src) := source/City/area;
 					}
 				}
-				unit<uint32> sel    := select_with_attr_by_org_rel(Source/City, Source/City/RegionCode = 200);
+				unit<uint32> sel    := select_with_attr_by_org_rel(source/City, source/City/RegionCode = 200);
 				container    by_sub := collect_spec('by_org_rel;sub', src, sel, sel/org_rel);
 
 				unit<uint32> names := SubItem_PropValues(by_sub,'name');
 				// RegionCode plus nested: staying at 2 proves the referred-item chain was
-				// NOT followed -- 'ref' would add Source/City's own attributes as well.
+				// NOT followed -- 'ref' would add source/City's own attributes as well.
 				parameter<bool> test := #names <= 2 && (#sel == 0 ? sum(by_sub/nested/area) == 0f : sum(by_sub/nested/area) == 675f);
 			}
 			container unique: url  = "http://www.objectvision.nl/geodms/operators-a-functions/unique"
 			{
-				unit<uint32>      Regions       := unique(Source/City/RegionCode)
+				unit<uint32>      Regions       := unique(source/City/RegionCode)
 				{
-					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+					attribute<uint32> att := source/Region/uniqueTst[id(Regions)[source/Region]];
 				}
-				unit<uint32>      RegionStrings       := unique(string(Source/City/RegionCode))
+				unit<uint32>      RegionStrings       := unique(string(source/City/RegionCode))
 				{
-					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+					attribute<uint32> att := source/Region/uniqueTst[id(Regions)[source/Region]];
 				}
 				parameter<bool>   test          := all(Regions/Values == Regions/att);
 			}
 			container unique_uint16
 			{
-				unit<uint16>      Regions       := unique_uint16(Source/City/RegionCode)
+				unit<uint16>      Regions       := unique_uint16(source/City/RegionCode)
 				{
-					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+					attribute<uint32> att := source/Region/uniqueTst[id(Regions)[source/Region]];
 				}
 				parameter<bool>   test          := all(Regions/Values == Regions/att);
 			}
 			container unique_uint8
 			{
-				unit<uint8>      Regions       := unique_uint8(Source/City/RegionCode)
+				unit<uint8>      Regions       := unique_uint8(source/City/RegionCode)
 				{
-					attribute<uint32> att := Source/Region/uniqueTst[id(Regions)[Source/Region]];
+					attribute<uint32> att := source/Region/uniqueTst[id(Regions)[source/Region]];
 				}
 				parameter<bool>   test          := all(Regions/Values == Regions/att);
 			}
 			container unique_with_null
 			{
-				unit<uint32>      Regions       := unique_with_null(Source/City/RegionCode)
+				unit<uint32>      Regions       := unique_with_null(source/City/RegionCode)
 				{
-					attribute<uint32> att := Source/Region/unique_with_null_tst[id(Regions)[Source/Region]];
+					attribute<uint32> att := source/Region/unique_with_null_tst[id(Regions)[source/Region]];
 				}
 				parameter<bool>   test          := all(eq_or_both_null(Regions/Values, Regions/att));
 			}
 			container union: url  = "http://www.objectvision.nl/geodms/operators-a-functions/union"
 			{
-				unit<uint32>    unit_ProvCity   := union(Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames)
+				unit<uint32>    unit_ProvCity   := union(source/NoordHollandBigCities/CityNames, source/ZuidHollandBigCities/CityNames)
 				{
 					attribute<string> CityNamesWithEntries:   ['Amsterdam','Haarlem','Alkmaar','Zaanstad','Purmerend','Rotterdam','DenHaag','Leiden','Dordrecht','Leiden'];
 					attribute<string> CityNamesWithoutEntries:[];
@@ -1113,12 +1113,12 @@
 			}
 			container union_unit: url  = "http://www.objectvision.nl/geodms/operators-a-functions/union_unit"
 			{
-				unit<uint32>    unit_ProvCity        := union_unit(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
+				unit<uint32>    unit_ProvCity        := union_unit(source/NoordHollandBigCities, source/ZuidHollandBigCities);
 
-				unit<uint16>    unit_ProvCity_uint16 := union_unit_uint16(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
-				unit<uint32>    unit_ProvCity_uint32 := union_unit_uint32(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
-				unit<uint64>    unit_ProvCity_uint64 := union_unit_uint64(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
-				unit<uint8>     unit_ProvCity_uint8  := union_unit_uint8(Source/NoordHollandBigCities, Source/ZuidHollandBigCities);
+				unit<uint16>    unit_ProvCity_uint16 := union_unit_uint16(source/NoordHollandBigCities, source/ZuidHollandBigCities);
+				unit<uint32>    unit_ProvCity_uint32 := union_unit_uint32(source/NoordHollandBigCities, source/ZuidHollandBigCities);
+				unit<uint64>    unit_ProvCity_uint64 := union_unit_uint64(source/NoordHollandBigCities, source/ZuidHollandBigCities);
+				unit<uint8>     unit_ProvCity_uint8  := union_unit_uint8(source/NoordHollandBigCities, source/ZuidHollandBigCities);
 
 				parameter<bool> test_uint16 := sum(id(unit_ProvCity_uint16)) == 45w;
 				parameter<bool> test_uint32 := sum(id(unit_ProvCity_uint32)) == 45u;
@@ -1137,8 +1137,8 @@
 				attribute<string> CityNamesSrcWithoutEntries (union_unit/unit_ProvCity) : [];
 				attribute<string> CityNamesSrc               (union_unit/unit_ProvCity) := = isEmpty ? 'CityNamesSrcWithoutEntries' : 'CityNamesSrcWithEntries';
 
-				attribute<string> CityNames                  (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/ZuidHollandBigCities/CityNames);
-				attribute<string> CityNames_shouldbeerror    (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, Source/NoordHollandBigCities/CityNames, Source/NoordHollandBigCities/CityNames);
+				attribute<string> CityNames                  (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, source/NoordHollandBigCities/CityNames, source/ZuidHollandBigCities/CityNames);
+				attribute<string> CityNames_shouldbeerror    (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity, source/NoordHollandBigCities/CityNames, source/NoordHollandBigCities/CityNames);
 				attribute<bool>   test                       (union_unit/unit_ProvCity) := CityNames == CityNamesSrc;
 				parameter<bool>   test_attr                                             := all(test);
 				attribute<string> GhosttownNames             (union_unit/unit_ProvCity) := union_data(union_unit/unit_ProvCity); // should emit diagnostic, see https://github.com/ObjectVision/GeoDMS/issues/534
@@ -1148,13 +1148,13 @@
 			}
 			container union_data_single
 			{
-				attribute<uint32> att  (UDomain2) := union_data(UDomain2, Source/att_large);
+				attribute<uint32> att  (UDomain2) := union_data(UDomain2, source/att_large);
 				attribute<bool>   test (UDomain2) := att == 2;
 				parameter<bool>   test_attr       := all(test);
 			}
 			container combine: url  = "http://www.objectvision.nl/geodms/operators-a-functions/combine"
 			{
-				unit<uint32>    unit_CityForEachYear  := combine(Source/NoordHollandBigCities, Source/Years);
+				unit<uint32>    unit_CityForEachYear  := combine(source/NoordHollandBigCities, source/Years);
 				
 				unit<uint32>    unit_two_bools        : nrofrows = 4
 				{
@@ -1162,10 +1162,10 @@
 					attribute<bool> B: [true,false,true, false];
 				}
 
-				unit<uint16>    unit_CityForEachYear_uint16 := combine_uint16(Source/NoordHollandBigCities, Source/Years);
-				unit<uint32>    unit_CityForEachYear_uint32 := combine_uint32(Source/NoordHollandBigCities, Source/Years);
-				unit<uint64>    unit_CityForEachYear_uint64 := combine_uint64(Source/NoordHollandBigCities, Source/Years);
-				unit<uint8>     unit_CityForEachYear_uint8  := combine_uint8(Source/NoordHollandBigCities, Source/Years);
+				unit<uint16>    unit_CityForEachYear_uint16 := combine_uint16(source/NoordHollandBigCities, source/Years);
+				unit<uint32>    unit_CityForEachYear_uint32 := combine_uint32(source/NoordHollandBigCities, source/Years);
+				unit<uint64>    unit_CityForEachYear_uint64 := combine_uint64(source/NoordHollandBigCities, source/Years);
+				unit<uint8>     unit_CityForEachYear_uint8  := combine_uint8(source/NoordHollandBigCities, source/Years);
 
 				parameter<bool>  test_uint16 := sum(id(unit_CityForEachYear_uint16)) == 300w;
 				parameter<bool>  test_uint32 := sum(id(unit_CityForEachYear_uint32)) == 300u;
@@ -1230,7 +1230,7 @@
 			}
 			container join_equal_values
 			{
-				unit<uint32> Region_City := join_equal_values(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				unit<uint32> Region_City := join_equal_values(source/Region/CountryDomain_rel , source/road/CountryDomain_rel)
 				{
 					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
 					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
@@ -1247,26 +1247,7 @@
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
 
-				unit<uint8> Region_City_uint8 := join_equal_values_uint8(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
-				{
-					parameter<bool> isEmpty := #Region_City == 0;
-
-					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
-					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
-					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
-					
-					attribute<uint32> nr_1_rel_empty_OK: [];
-					attribute<uint32> nr_2_rel_empty_OK: [];
-					attribute<uint32> nr_X_rel_empty_OK: [];
-
-					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
-					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
-					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
-					
-					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
-				}
-
-				unit<uint16> Region_City_uint16 := join_equal_values_uint16(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				unit<uint8> Region_City_uint8 := join_equal_values_uint8(source/Region/CountryDomain_rel , source/road/CountryDomain_rel)
 				{
 					parameter<bool> isEmpty := #Region_City == 0;
 
@@ -1285,7 +1266,26 @@
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
 
-				unit<uint32> Region_City_uint32 := join_equal_values_uint32(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				unit<uint16> Region_City_uint16 := join_equal_values_uint16(source/Region/CountryDomain_rel , source/road/CountryDomain_rel)
+				{
+					parameter<bool> isEmpty := #Region_City == 0;
+
+					attribute<uint32> nr_1_rel_OK: [0,1,2,3,4];
+					attribute<uint32> nr_2_rel_OK: [1,1,0,0,2];
+					attribute<uint32> nr_X_rel_OK: [0,0,1,1,2];
+					
+					attribute<uint32> nr_1_rel_empty_OK: [];
+					attribute<uint32> nr_2_rel_empty_OK: [];
+					attribute<uint32> nr_X_rel_empty_OK: [];
+
+					attribute<bool> test_nr_1_rel := = isEmpty ? 'first_rel == nr_1_rel_empty_OK' : 'first_rel == nr_1_rel_OK';
+					attribute<bool> test_nr_2_rel := = isEmpty ? 'second_rel == nr_2_rel_empty_OK' : 'second_rel == nr_2_rel_OK';
+					attribute<bool> test_nr_X_rel := = isEmpty ? 'X_rel == nr_X_rel_empty_OK' : 'X_rel == nr_X_rel_OK';
+					
+					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
+				}
+
+				unit<uint32> Region_City_uint32 := join_equal_values_uint32(source/Region/CountryDomain_rel , source/road/CountryDomain_rel)
 				{
 					parameter<bool> isEmpty := #Region_City == 0;
 
@@ -1304,7 +1304,7 @@
 					parameter<bool> attr_test := all(test_nr_1_rel) && all(test_nr_2_rel) && all(test_nr_X_rel);
 				}
 
-				unit<uint64> Region_City_uint64 := join_equal_values_uint64(Source/Region/CountryDomain_rel , Source/Road/CountryDomain_rel)
+				unit<uint64> Region_City_uint64 := join_equal_values_uint64(source/Region/CountryDomain_rel , source/road/CountryDomain_rel)
 				{
 					parameter<bool> isEmpty := #Region_City == 0;
 

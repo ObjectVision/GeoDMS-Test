@@ -33,12 +33,12 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 	
 	unit<uint32> RoadDomain:   nrofrows = 3;
 	
-	unit<fpoint>  point_rd;//:= baseunit('m', fpoint);
+	unit<fpoint>  point_rd;//:= BaseUnit('m', fpoint);
 	
 	// gebruikte values units
-	unit<uint32>  color           :Range = "[0, 16777217)";
+	unit<uint32>  color           :range = "[0, 16777217)";
 	unit<int16>   fontsize;
-	unit<float32> m               := baseunit('m', float32), label = "meter", cdf = "classifications/m_4K/classes";
+	unit<float32> m               := BaseUnit('m', float32), Label = "meter", cdf = "classifications/m_4K/classes";
 	
 	// vergelijkingsparameters voor floating point items
 	parameter <float32> Dif_all_float32   :=float32(0.99);
@@ -176,7 +176,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				{
 					attribute<fpoint> location;
 					attribute<uint32> straatcode;
-					attribute<bool>   straatcode_komt_voor_in_roads := isDefined(rlookup(straatcode, roads/straatcode)), DisableStorage = "True";
+					attribute<bool>   straatcode_komt_voor_in_roads := IsDefined(rlookup(straatcode, roads/straatcode)), DisableStorage = "True";
 				}
 			}
 		}
@@ -284,19 +284,19 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 			}
 			container shapefiles
 			{
-				unit<uint32> roads: nrOfRows = 0
+				unit<uint32> roads: nrofrows = 0
 				{
 					attribute<fpoint> lijn(arc)  := points2sequence(locations/location, id(locations)[roads], id(locations));
 					attribute<uint32> straatcode : [];
 				}
-				unit<uint32> locations: nrOfRows = 0
+				unit<uint32> locations: nrofrows = 0
 				{
 					attribute<float32> X:[];
 					attribute<float32> Y:[];
 
 					attribute<fpoint> location   := point(X,Y, fpoint);
 					attribute<uint32> straatcode : [];
-					attribute<bool>   straatcode_komt_voor_in_roads := isDefined(rlookup(straatcode, roads/straatcode)), DisableStorage = "True";
+					attribute<bool>   straatcode_komt_voor_in_roads := IsDefined(rlookup(straatcode, roads/straatcode)), DisableStorage = "True";
 				}
 			}
 		}
@@ -306,7 +306,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 //		container EUnTiled := Template(EDomain,      EDomain,         EDomain,      EDomain      ,EDomain     , srcEDomain);
 //		container ETiled   := Template(ETiledDomain, ETiledDomain,    ETiledDomain, ETiledDomain ,ETiledDomain, srcETiledDomain);
 
-		Template Template
+		template Template
 		{
 			// begin case parameters
 			unit<uint32> RDomain;
@@ -377,7 +377,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 					attribute<fpoint> UnionData (arc);
 					attribute<m>      length      := arc_length(UnionData, m);
 					parameter<m>      length_tot  := sum(length);
-					parameter<bool>   test        := round(length_tot)[m] == 293161[m];
+					parameter<bool>   test        := Round(length_tot)[m] == 293161[m];
 				}
 			}
 			unit<uint32> connect_eq := connect_eq(source/road/line, source/road/streetcode, source/location/location, source/location/streetcode)
@@ -459,7 +459,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<float64> cap_without_values  (DDomain) :[];
 				attribute<float64> cap  (DDomain) := = #DDomain == 0 ? 'cap_without_values' : 'cap_with_values';
 				
-				attribute<DDomain> att  (ODomain) := capacitated_connect(destination/location, cap, origin/location, const(60D,origin));
+				attribute<DDomain> att  (ODomain) := capacitated_connect(destination/location, cap, origin/location, const(60d,origin));
 				attribute<bool>    test (ODomain) := att == origin/capacitated_connect;
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -501,14 +501,14 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				,	DialogData = "segments"
 				,	DialogType = "Map"
 				{
-					attribute<point_rd> point     := Union_Data(.,LinkSet_org/point    ,LinkSet_extra/point);
-					attribute<point_rd> nextpoint := Union_Data(.,LinkSet_org/nextpoint,LinkSet_extra/nextpoint);
+					attribute<point_rd> point     := union_data(.,LinkSet_org/point    ,LinkSet_extra/point);
+					attribute<point_rd> nextpoint := union_data(.,LinkSet_org/nextpoint,LinkSet_extra/nextpoint);
 		
 					unit<uint32> pointset := Union(point, nextpoint)
 					{
 						attribute<point_rd> UnionData;
-						attribute<LinkSet>  ArcID  := value(ID(pointset) % nrofrows(LinkSet), LinkSet);
-						attribute<uint32>   VolgNr := ID(pointset) / nrofrows(LinkSet);
+						attribute<LinkSet>  ArcID  := value(id(pointset) % nrofrows(LinkSet), LinkSet);
+						attribute<uint32>   VolgNr := id(pointset) / nrofrows(LinkSet);
 					}
 					attribute<point_rd> segments(arc) := points2sequence(pointset/UnionData, pointset/ArcID, pointset/VolgNr);
 					attribute<m>        dist          := value(dist(point, nextpoint), /m);
@@ -581,7 +581,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords>   P          := value((fpoint(id(.)) + point(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(IsDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
@@ -610,7 +610,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<Coords>   P          := value((fpoint(id(.)) + point(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
+				unit<uint32> PointSet := select_with_org_rel(IsDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
@@ -643,7 +643,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 				attribute<spoint> P5 := spoint(P3);
 				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
 
-				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))
+				unit<uint32> PointSet := select_with_org_rel(IsDefined(GridDomain3000/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
@@ -672,7 +672,7 @@ container OperatorTest: url = "%projdir%/doc/test.htm", FreeData = "True"
 
 			unit<uint32>  Dist2Range;
 			unit<float32> Potentiaal;
-			unit<spoint>  pot3Range: Range = "[xy(-1; -1), xy(2; 2)) "
+			unit<spoint>  pot3Range: range = "[xy(-1; -1), xy(2; 2)) "
 			{
 				attribute<Dist2Range> distMatr3 (pot3Range) := dist2(point(int16(0), int16(0), pot3Range), Dist2Range);
 				attribute<Potentiaal> AbsWeight (pot3Range) := float32(1.0) / float32(distMatr3 + 2);

@@ -10,7 +10,7 @@ container categorical_unit
 		attribute<string> label := 'Y' + string(value);
 	}
 
-	unit<uint32> NoData: NrOfrows = 1
+	unit<uint32> NoData: nrofrows = 1
 	{
 		attribute<uint32> value := const(0,.);
 		attribute<uint32> year  : [null];
@@ -27,8 +27,8 @@ container categorical_unit
 	{
 	
 		attribute<uint32>           A_kw           : [201304, 201210, 201704, 201801, 202207];
-		attribute<Kwartalen>        A              := rlookup(a_kw, Kwartalen/value); 
-		attribute<Kwartalen_nodata> AA              := rlookup(a_kw, Kwartalen/value); 
+		attribute<Kwartalen>        A              := rlookup(A_kw, Kwartalen/value); 
+		attribute<Kwartalen_nodata> AA              := rlookup(A_kw, Kwartalen/value); 
 		attribute<bool>             selection_attr := A > 3;
 		attribute<Kwartalen_nodata> B              := A;
 		attribute<Kwartalen_nodata> C              := 1 * A;
@@ -47,8 +47,8 @@ container categorical_unit
 
 	parameter<string> test_log := test
 		? '' 
-		: 'Categorical Unit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'Categorical Unit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/unit/categorical_unit.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/unit/categorical_unit.txt";
 
 }

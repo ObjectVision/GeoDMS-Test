@@ -1,6 +1,6 @@
 	container Grid: Using = "/Domains;/Units;/Tolerances"
 	{
-		// tests voor grid-operatoren (werklijst gedocumenteerde operatoren)
+		// tests voor Grid-operatoren (werklijst gedocumenteerde operatoren)
 		container perimeter_src
 		{
 			unit<fpoint> gbase;
@@ -62,7 +62,7 @@
 		}
 		container griddist_latitude_specific
 		{
-			// vergt een grid met echte CRS: horizontale stappen schalen ~cos(breedtegraad)
+			// vergt een Grid met echte CRS: horizontale stappen schalen ~cos(breedtegraad)
 			unit<dpoint> wgs_base : SpatialReference = "EPSG:4326";
 			unit<spoint> GW := range(gridset(wgs_base, point_yx(0.1, 0.1, wgs_base), point_yx(50.0, 4.0, wgs_base), spoint), point_yx(0s, 0s), point_yx(4s, 4s));
 			attribute<float64> imp (GW) := const(1.0, GW);
@@ -91,7 +91,7 @@
 		// untiled-, maximp- en zonale combinatievarianten van griddist: allemaal gelijk
 		// aan hun basisvorm op dezelfde invoer (untiled = andere tegelverwerking;
 		// maximp met ruime limiet knipt niets af; zonale grens kost alleen bij
-		// zone-overgangen). De latitude-varianten draaien op het EPSG:4326-grid.
+		// zone-overgangen). De latitude-varianten draaien op het EPSG:4326-Grid.
 		container griddist_variants
 		{
 			attribute<float64> base (griddist_src/G4) := griddist(griddist_src/imp, griddist_src/Dest/loc, const(0.0, griddist_src/Dest));
@@ -112,7 +112,7 @@
 				&& all(griddist_zonal_maximp_untiled_latitude_specific(griddist_latitude_specific/imp, griddist_latitude_specific/Dest/loc, zconstW, 10.0, 100.0) == griddist_latitude_specific/att);
 		}
 
-		container units
+		container Units
 		{
 			unit<fpoint> Coords;
 			unit<spoint> GridDomain :=
@@ -129,19 +129,19 @@
 				DialogType = "Map"
 			{
 				attribute<Coords>   P          := value((fpoint(id(.)) + point_yx(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
-				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
+				attribute<pointset> PointSetNr := rlookup(P, pointset/P);
 
-				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain/P))
+				unit<uint32> pointset := select_with_org_rel(IsDefined(GridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
 					attribute<Coords>                  P                := GridDomain/P[org_rel];
-					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
+					attribute<GridDomain3000/pointset> GridDomain3000nr := connect(GridDomain3000/pointset/P,P);
 				}
-				attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
+				attribute<GridDomain3000/pointset> GridDomain3000PointSetnr := pointset/GridDomain3000nr[GridDomain/PointSetNr];
 				attribute<GridDomain3000>          GridDomain3000nr         := rlookup(GridDomain3000PointSetnr, GridDomain3000/PointSetNr);
 				
-				attribute<int16>    col := PointCol (id(.));
+				attribute<int16>    col := pointcol (id(.));
 				attribute<float64> x := Get_x (id(.));
 
 			}
@@ -162,16 +162,16 @@
 				DialogType = "Map"
 			{
 				attribute<Coords>   P          := value((fpoint(id(.)) + point_yx(float32(0.5), float32(0.5))) * fpoint(GetProjectionFactor(.)) + fpoint(GetProjectionOffset(.)), Coords);
-				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
+				attribute<pointset> PointSetNr := rlookup(P, pointset/P);
 
-				unit<uint32> PointSet := select_with_org_rel(isDefined(EGridDomain/P))
+				unit<uint32> pointset := select_with_org_rel(IsDefined(EGridDomain/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
 					attribute<Coords>                  P                := EGridDomain/P[org_rel];
-					attribute<GridDomain3000/Pointset> GridDomain3000nr := connect(GridDomain3000/Pointset/P,P);
+					attribute<GridDomain3000/pointset> GridDomain3000nr := connect(GridDomain3000/pointset/P,P);
 				}
-				//attribute<GridDomain3000/PointSet> GridDomain3000PointSetnr := PointSet/GridDomain3000nr[GridDomain/PointSetNr];
+				//attribute<GridDomain3000/pointset> GridDomain3000PointSetnr := pointset/GridDomain3000nr[GridDomain/PointSetNr];
 				//attribute<GridDomain3000>          GridDomain3000nr         := rlookup(GridDomain3000PointSetnr, GridDomain3000/PointSetNr);
 			}
 			unit<spoint> EGridTiledDomain := TiledUnit(point_yx(int16(0), int16(0), EGridDomain));
@@ -195,9 +195,9 @@
 				attribute<fpoint> P3 := fpoint(id(.));
 				attribute<Coords> P4 := convert(P3, coords);
 				attribute<spoint> P5 := spoint(P3);
-				attribute<PointSet> PointSetNr := rlookup(P, PointSet/P);
+				attribute<pointset> PointSetNr := rlookup(P, pointset/P);
 
-				unit<uint32> PointSet := select_with_org_rel(isDefined(GridDomain3000/P))
+				unit<uint32> pointset := select_with_org_rel(IsDefined(GridDomain3000/P))
 				,	DialogType = "Map"
 				,	DialogData = "P"
 				{
@@ -235,22 +235,22 @@
 			{
 				attribute<string> namen: ['NoordZuid', 'OostWest'];
 			}
-			container Results
+			container results
 			{
-				parameter<bool> Tests := all(GridDomain3000/T1) && all( GridDomain3000/T4) && all(GridDomain3000/T5);
+				parameter<bool> tests := all(GridDomain3000/T1) && all( GridDomain3000/T4) && all(GridDomain3000/T5);
 			}
 		}
 		unit<uint8> raster_merge_codes;
 
-		container srcDomain       :=  source(units/GridDomain);
-		container srcTiledDomain  :=  source(units/GridTiledDomain);
-		container srcEDomain      := Esource(units/EGridDomain);
-		container srcETiledDomain := Esource(units/EGridTiledDomain);
+		container srcDomain       :=  source(Units/GridDomain);
+		container srcTiledDomain  :=  source(Units/GridTiledDomain);
+		container srcEDomain      := Esource(Units/EGridDomain);
+		container srcETiledDomain := Esource(Units/EGridTiledDomain);
 		
-		container UnTiled  := Template(units/GridDomain,       srcDomain      , false);
-		container Tiled    := Template(units/GridTiledDomain,  srcTiledDomain , false);
-		container ETiled   := Template(units/EGridTiledDomain, srcETiledDomain, true);
-		container EUnTiled := Template(units/EGridDomain,      srcEDomain     , true);
+		container UnTiled  := TestTemplate(Units/GridDomain,       srcDomain      , false);
+		container Tiled    := TestTemplate(Units/GridTiledDomain,  srcTiledDomain , false);
+		container ETiled   := TestTemplate(Units/EGridTiledDomain, srcETiledDomain, true);
+		container EUnTiled := TestTemplate(Units/EGridDomain,      srcEDomain     , true);
 
 		template source
 		{
@@ -435,7 +435,7 @@
 		}
 		
 		
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<spoint> GridDomain;
@@ -443,7 +443,7 @@
 			parameter<bool> isEmpty;
 			// end case parameters
 
-			container district: url  = "http://www.objectvision.nl/geodms/operators-a-functions/grid/district"
+			container district: url  = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/district"
 			{
 				unit<uint32>    unit_district     := district(source/src), DialogType = "Map", DialogData = "Districts" // use this as BaseGrid to visualize unit_district attributes.
 				{
@@ -512,28 +512,28 @@
 					&& uint32(#d8_32) = n_base8 && sum(sqr(float64(pcount(d8_32/districts)))) = prof_base8
 					&& uint32(#d8_64) = n_base8 && sum(sqr(float64(pcount(d8_64/districts)))) = prof_base8;
 			}
-			container diversity: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/diversity"
+			container diversity: url = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/diversity"
 			{
-				attribute<uint8>  grid (GridDomain) := diversity(source/src, uint16(2), uint16(1));
-				attribute<bool>   test (GridDomain) := grid = source/diversityOk;
+				attribute<uint8>  Grid (GridDomain) := diversity(source/src, uint16(2), uint16(1));
+				attribute<bool>   test (GridDomain) := Grid = source/diversityOk;
 				parameter<bool>   test_grid         := all(test);
 			}
-			container dist2: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/dist2"
+			container dist2: url = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/dist2"
 			{
-				attribute<grid/units/Dist2Range> dis  (grid/units/pot3Range) : [2,1,2,1,0,1,2,1,2];
-				attribute<grid/units/Dist2Range> att  (grid/units/pot3Range) := dist2(point_yx(int16(0), int16(0), grid/units/pot3Range), grid/units/Dist2Range);
-				attribute<bool>                  test (grid/units/pot3Range) := dis = att;
+				attribute<Grid/Units/Dist2Range> dis  (Grid/Units/pot3Range) : [2,1,2,1,0,1,2,1,2];
+				attribute<Grid/Units/Dist2Range> att  (Grid/Units/pot3Range) := dist2(point_yx(int16(0), int16(0), Grid/Units/pot3Range), Grid/Units/Dist2Range);
+				attribute<bool>                  test (Grid/Units/pot3Range) := dis = att;
 				parameter<bool>                  test_grid                   := all(test);
 			}
 			container perimeter
 			{
-				attribute<uint32> att  (District/unit_district) := perimeter(District/unit_district/Districts);
+				attribute<uint32> att  (district/unit_district) := perimeter(district/unit_district/Districts);
 			}
-			container potential: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/potential"
+			container potential: url = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/potential"
 			{
-				attribute<float32> grid (GridDomain) := potential(float32(source/src), units/pot3Range/RelWeight);
-				attribute<float64> grid64 (GridDomain) := potential(float64(source/src), float64(units/pot3Range/RelWeight));
-				attribute<bool>    test  (GridDomain) := float_isNearby(grid, source/potentialOk, Dif_all_float32) ;
+				attribute<float32> Grid (GridDomain) := potential(float32(source/src), Units/pot3Range/RelWeight);
+				attribute<float64> grid64 (GridDomain) := potential(float64(source/src), float64(Units/pot3Range/RelWeight));
+				attribute<bool>    test  (GridDomain) := float_isNearby(Grid, source/potentialOk, Dif_all_float32) ;
 				attribute<bool>    test64(GridDomain) := float_isNearby(float32(grid64), source/potentialOk, Dif_all_float32) ;
 				parameter<bool>    test_grid         := all(test) && all(test64);
 			}
@@ -543,17 +543,17 @@
 			container potential_variants
 			{
 				parameter<bool> test :=
-					   all(abs(potentialSlow  (float32(source/src), units/pot3Range/RelWeight) - potential/grid) <= 1e-4f)
-					&& all(abs(potentialIpps64(float32(source/src), units/pot3Range/RelWeight) - potential/grid) <= 1e-4f)
-					&& all(abs(potentialRaw64 (float32(source/src), units/pot3Range/RelWeight) - potential/grid) <= 1e-4f);
+					   all(abs(potentialSlow  (float32(source/src), Units/pot3Range/RelWeight) - potential/Grid) <= 1e-4f)
+					&& all(abs(potentialIpps64(float32(source/src), Units/pot3Range/RelWeight) - potential/Grid) <= 1e-4f)
+					&& all(abs(potentialRaw64 (float32(source/src), Units/pot3Range/RelWeight) - potential/Grid) <= 1e-4f);
 			}
-			container proximity: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/proximity"
+			container proximity: url = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/proximity"
 			{
-				attribute<float32> grid (GridDomain) := proximity(float32(source/src), units/pot3Range/RelWeight);
-				attribute<bool>    test (GridDomain) := float_isNearby(grid, source/proximityOk, Dif_all_float32) ;
+				attribute<float32> Grid (GridDomain) := proximity(float32(source/src), Units/pot3Range/RelWeight);
+				attribute<bool>    test (GridDomain) := float_isNearby(Grid, source/proximityOk, Dif_all_float32) ;
 				parameter<bool>    test_grid         := all(test);
 			}
-			container griddist_param : url  = "http://www.objectvision.nl/geodms/operators-a-functions/grid/griddist"
+			container griddist_param : url  = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/griddist"
 			{
 				attribute<float64> gridWithValues (GridDomain): [
 					1, 1, 1, 1, 1,
@@ -563,14 +563,14 @@
 					2, 2, 1, 1, 1
 				];
 				attribute<float64> gridEmpty (GridDomain): [];
-				attribute<float64> grid      (GridDomain):= = isEmpty ? 'gridEmpty' : 'gridWithValues';
+				attribute<float64> Grid      (GridDomain):= = isEmpty ? 'gridEmpty' : 'gridWithValues';
 
 				parameter<GridDomain> pointset_gridid   := point_yx(int16(0), int16(4), GridDomain);
-				attribute<float64>    dist (GridDomain) := griddist(grid, pointset_gridid, 0.0);
+				attribute<float64>    dist (GridDomain) := griddist(Grid, pointset_gridid, 0.0);
 				attribute<bool>       test (GridDomain) := float_isNearby(float32(dist), source/dist_paramOk, Dif_all_float32) ;
 				parameter<bool>       test_grid         := all(test); // Referentie DMS 5.81
 			}
-			container griddist: url  = "http://www.objectvision.nl/geodms/operators-a-functions/grid/griddist"
+			container griddist: url  = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/griddist"
 			{
 				attribute<float64> gridWithValues (GridDomain): 
 				[
@@ -581,7 +581,7 @@
 					2, 2, 1, 1, 1
 				];
 				attribute<float64> gridEmpty (GridDomain): [];
-				attribute<float64> grid      (GridDomain):= = isEmpty ? 'gridEmpty' : 'gridWithValues';
+				attribute<float64> Grid      (GridDomain):= = isEmpty ? 'gridEmpty' : 'gridWithValues';
 				
 				//attribute<spoint> pointset_gridid_sp   (point/UnTiled2UnTiled/source/destination) := union_data(point/UnTiled2UnTiled/source/destination, point_yx(1s,1s), point_yx(1s,3s),point_yx(4s,1s),point_yx(4s,4s));
 				attribute<GridDomain> pointset_gridid   (point/UnTiled2UnTiled/source/destination) := union_data(point/UnTiled2UnTiled/source/destination, point_yx(1s,1s, GridDomain), point_yx(1s,3s, GridDomain),point_yx(4s,1s, GridDomain),point_yx(4s,4s, GridDomain));
@@ -589,14 +589,14 @@
 				//attribute<GridDomain> pointset_gridid3   (point/UnTiled2UnTiled/source/destination) := convert(pointset_gridid_sp, GridDomain);
 	
 				attribute<float64>    dist0      (GridDomain) := griddist(const(0.0, GridDomain), pointset_gridid, const(0.0, point/UnTiled2UnTiled/source/destination));
-				attribute<float64>    dist       (GridDomain) := griddist        (grid, pointset_gridid, const(0.0, point/UnTiled2UnTiled/source/destination));
-				attribute<float64>    bounded_dist(GridDomain) := griddist_maximp(grid, pointset_gridid, 2.0);
-				attribute<float64>    bounded_dist_with_startdist(GridDomain) := griddist_maximp(grid, pointset_gridid, 2.0, const(0.0, point/UnTiled2UnTiled/source/destination));
+				attribute<float64>    dist       (GridDomain) := griddist        (Grid, pointset_gridid, const(0.0, point/UnTiled2UnTiled/source/destination));
+				attribute<float64>    bounded_dist(GridDomain) := griddist_maximp(Grid, pointset_gridid, 2.0);
+				attribute<float64>    bounded_dist_with_startdist(GridDomain) := griddist_maximp(Grid, pointset_gridid, 2.0, const(0.0, point/UnTiled2UnTiled/source/destination));
 				attribute<bool>       test0      (GridDomain) := dist0 == 0.0 ;
 				attribute<bool>       test       (GridDomain) := float_isNearby(float32(dist), source/distOk, Dif_all_float32) ;
 				parameter<bool>       test_grid               := all(test0 && test); // Referentie DMS 5.81
 			}
-			unit<uint16> overlay := overlay(units/OverlayRegios/namen, GridDomain, source/OverlayGrids),
+			unit<uint16> overlay := overlay(Units/OverlayRegios/namen, GridDomain, source/OverlayGrids),
 				url       = "http://www.objectvision.nl/geodms/operators-a-functions/overlay",
 				StoreData = "True"
 			{
@@ -604,7 +604,7 @@
 				attribute<.>     union_data_copy (GridDomain) := UnionData;
 				parameter<bool>  test_attr                    := all(test);
 			}
-			unit<uint32> overlay32 := overlay32(units/OverlayRegios/namen, GridDomain, source/OverlayGrids),
+			unit<uint32> overlay32 := overlay32(Units/OverlayRegios/namen, GridDomain, source/OverlayGrids),
 				url       = "http://www.objectvision.nl/geodms/operators-a-functions/overlay",
 				StoreData = "True"
 			{
@@ -703,7 +703,7 @@
 				parameter<string> skipped      := =selection/skip_expr;
 			}
 		}
-		container potential_with_tiles: url = "http://www.objectvision.nl/geodms/operators-a-functions/grid/potential"
+		container potential_with_tiles: url = "http://www.objectvision.nl/geodms/operators-a-functions/Grid/potential"
 		{
 			unit<float32> m;
 			unit<float32> coord_rd := m;

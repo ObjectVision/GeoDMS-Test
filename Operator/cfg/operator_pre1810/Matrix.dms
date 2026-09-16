@@ -78,7 +78,7 @@
 				];
 			}
 		}
-		unit<spoint> GridTiledDomain  := TiledUnit(Point_yx(int16(1), int16(1), GridDomain))
+		unit<spoint> GridTiledDomain  := TiledUnit(point_yx(int16(1), int16(1), GridDomain))
 		{
 			container source
 			{
@@ -132,31 +132,31 @@
 			}
 		}
 	
-		container UnTiled  := Template(GridDomain);
-		container Tiled    := Template(GridTiledDomain);
-		container ETiled   := Template(EGridTiledDomain);
-		container EUnTiled := Template(EGridDomain);
+		container UnTiled  := TestTemplate(GridDomain);
+		container Tiled    := TestTemplate(GridTiledDomain);
+		container ETiled   := TestTemplate(EGridTiledDomain);
+		container EUnTiled := TestTemplate(EGridDomain);
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<spoint> GridDomain;
 			// end case parameters
 			container matr_mul
 			{
-				attribute<float32> att       (GridDomain) := matr_mul(GridDomain/Source/left, GridDomain/Source/right, GridDomain);
+				attribute<float32> att       (GridDomain) := matr_mul(GridDomain/source/left, GridDomain/source/right, GridDomain);
 				attribute<bool>    test      (GridDomain) := eq_or_both_null(att, GridDomain/source/mul_OK);
 				parameter<bool>    test_attr              := all(test);
 			}
 			container matr_inv
 			{
-				attribute<float32> att       (GridDomain) := matr_inv(GridDomain/Source/left);
+				attribute<float32> att       (GridDomain) := matr_inv(GridDomain/source/left);
 				attribute<bool>    test      (GridDomain) := float_isNearby(att, GridDomain/source/inv_OK, Dif_all_float32);
 				parameter<bool>    test_attr              := all(test);
 			}
 			container matr_var
 			{
-				attribute<float32> att       (GridDomain) := matr_var(GridDomain/Source/left, GridDomain);
+				attribute<float32> att       (GridDomain) := matr_var(GridDomain/source/left, GridDomain);
 				attribute<bool>    test      (GridDomain) := eq_or_both_null(att, GridDomain/source/var_OK);
 				parameter<bool>    test_attr              := all(test);
 			}

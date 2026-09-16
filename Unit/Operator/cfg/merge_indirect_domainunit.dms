@@ -19,7 +19,7 @@ container merge_indirect_domainunit
 
 	container Geography
 	{
-		unit<spoint> rdc_25m := TiledUnit(Point_yx(1024s, 1280s, rdc_25m_org)); 
+		unit<spoint> rdc_25m := TiledUnit(point_yx(1024s, 1280s, rdc_25m_org)); 
 		unit<spoint> rdc_25m_org := range(
 						gridset(
 							 rdc_meter
@@ -37,7 +37,7 @@ container merge_indirect_domainunit
 		attribute<uint32> arg_1A := uint32(mod(id(.), 3b));
 	}
 
-	attribute<CBSKlasse> arg_1B (/SrcDomain_grid) := value((mod(PointCol(id(/SrcDomain_grid)), int16(39))), CBSKlasse);
+	attribute<CBSKlasse> arg_1B (/SrcDomain_grid) := value((mod(pointcol(id(/SrcDomain_grid)), int16(39))), CBSKlasse);
 
 	attribute<Eur_m2> arg_2 (/SrcDomain_grid) := rnd_uniform(0, /SrcDomain_grid, range(float32, 0[Eur_m2], 100[Eur_m2]));
 	attribute<Eur_m2> arg_3 (/SrcDomain_grid) := rnd_uniform(1, /SrcDomain_grid, range(float32, 0[Eur_m2], 100[Eur_m2]));
@@ -53,13 +53,13 @@ container merge_indirect_domainunit
 			, arg_4
 			, arg_5
 		);
-	parameter<int32> mean_merge := round(mean(merge));
+	parameter<int32> mean_merge := Round(mean(merge));
 	parameter<bool> test := mean_merge == 50i;
 
 	parameter<string> test_log := test
 		? '' 
-		: 'merge indirect domainunit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'merge indirect domainunit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/merge_indirect_domainunit.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/merge_indirect_domainunit.txt";
 
 }

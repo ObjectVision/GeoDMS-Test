@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                            //
-//                                    Storage Manager Test                                                    //
+//                                    Storage Manager test                                                    //
 //                                                                                                            //
 //                  Configuratie voor het testen van de DMS Storage Managers                                  //
 //                  Geschreven in het kader van het project: Beheer RuimteScanner                             //
@@ -15,7 +15,7 @@
 // xdb write werkt niet, see xdb
 // bmp truecolor leest verkeerde waarden uit, zie /bmp/TrueColor/grid/GridData
 // bmp palette based leest geen palette information, zie /bmp/Palette/grid/PaletteData
-// tiff truecolor geeft verkeerde waarde bij wegschrijven, zie: Tiff/TrueColor/Write/GridData
+// tiff truecolor geeft verkeerde waarde bij wegschrijven, zie: Tiff/TrueColor/write/GridData
 
 container StorageManagerTest
 {
@@ -31,16 +31,16 @@ container StorageManagerTest
 		// %LocalDataProjDir%, like every other write in this config: full.py points it at
 		// <LocalDataDirRegression>/Storage for the storage tests, which is where the t050
 		// file comparison looks. With %LocalDataDir% the write landed a directory level
-		// higher and the comparison silently matched no files at all (GeoDMS-Test #37).
+		// higher and the comparison silently matched no files at all (GeoDMS-test #37).
 		parameter<string> StorageBasePath := "%LocalDataProjDir%/";
 	}
 	
 	container units
 	{
 		unit<uint32>  color;
-		unit<float32> m         := baseunit('m', float32);
-		unit<fpoint>  point_rd  := baseunit('m', fpoint), SpatialReference = "EPSG:28992";
-		unit<dpoint>  dpoint_rd := baseunit('m', dpoint);
+		unit<float32> m         := BaseUnit('m', float32);
+		unit<fpoint>  point_rd  := BaseUnit('m', fpoint), SpatialReference = "EPSG:28992";
+		unit<dpoint>  dpoint_rd := BaseUnit('m', dpoint);
 		unit<fpoint>  LatLong : SpatialReference = "EPSG:4326";
 
 //		#include<wmts_layer.dms>
@@ -65,13 +65,13 @@ container StorageManagerTest
 
 		parameter<string> read_str := string(read)
 		,	StorageType = "str"
-		,	storagename = "%localDataProjDir%/regr_results/read_regr.txt";
+		,	StorageName = "%localDataProjDir%/regr_results/read_regr.txt";
 		
 		parameter<string> unit_test_log := read 
 			? '' 
-			: 'Storage Read GeoDMS formats : ' + expand(., '%configDir%') + '.dms ' + PropValue(read, 'fullname') + ' result: not OK'
+			: 'Storage Read GeoDMS formats : ' + expand(., '%configDir%') + '.dms ' + PropValue(read, 'FullName') + ' result: not OK'
 		,	StorageType = "str"
-		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_geodms_formats.txt";
+		,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/read_geodms_formats.txt";
 	}
 
 	parameter <float32> Dif_all_float32   := 0.99f;
@@ -132,7 +132,7 @@ container StorageManagerTest
 				attribute<bool> BoolAtt    (reference) := src/BoolAtt    == reference/BoolAtt;
 				attribute<bool> StringAtt  (reference) := eq_or_both_null(src/StringAtt, reference/StringAtt);
 			}
-			container Results
+			container results
 			{
 				parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
 				parameter<bool> FloatAtt   := all(Tests/FloatAtt);
@@ -162,7 +162,7 @@ container StorageManagerTest
 				attribute<bool> BoolAtt    (reference) := src/BoolAtt    == reference/BoolAtt;
 				attribute<bool> StringAtt  (reference) := src/StringAtt  == MakeDefined(reference/StringAtt,'');
 			}
-			container Results
+			container results
 			{
 				parameter<bool> IntegerAtt := all(Tests/IntegerAtt);
 				parameter<bool> FloatAtt   := all(Tests/FloatAtt);
@@ -192,14 +192,14 @@ container StorageManagerTest
 			attribute<bool> FloatAttr   (reference) := eq_or_both_null(src/FloatAtt, reference/FloatAtt);
 			attribute<bool> StringAttr  (reference) := eq_or_both_null(reference/StringAtt,  reference/StringAtt);
 		}
-		container Results
+		container results
 		{
 			parameter<bool> IntegerAttr := all(Tests/IntegerAttr);
 			parameter<bool> FloatAttr   := all(Tests/FloatAttr);
 			parameter<bool> StringAttr  := all(Tests/StringAttr);
 			parameter<bool> all        := IntegerAttr && FloatAttr && StringAttr;
 		}
-		container Write: StorageName = "%localDataProjDir%/regr_results/dbf.dbf"
+		container write: StorageName = "%localDataProjDir%/regr_results/dbf.dbf"
 		{
 			attribute<int32>   IntegerAtt (reference) := reference/IntegerAtt;
 			attribute<float32> FloatAtt   (reference) := reference/FloatAtt;
@@ -208,27 +208,27 @@ container StorageManagerTest
 	}
 	container mmd
 	{
-		container src := FenceContainer(dbf/src, 'Read dbf and stored in MMD'), StorageName = "%projdir%/data/mmd", StorageType = "MMD"
+		container src := FenceContainer(dbf/src, 'Read dbf and stored in MMD'), StorageName = "%projdir%/data/mmd", StorageType = "mmd"
 		{
 			unit<uint8> scenario := range(uint8, 0b, 10b)
 			{
 				/* Strings aren't stored in .MMD yet. !!?!	
-					attribute<String> naam(.): [ 'referentie', 'hoog', 'laag'];
-					attribute<String> NAAM_(.);
+					attribute<string> naam(.): [ 'referentie', 'hoog', 'laag'];
+					attribute<string> NAAM_(.);
 				*/
-				attribute<uint8> squares := ID(.) * ID(.);
+				attribute<uint8> squares := id(.) * id(.);
 				attribute<uint8> data: [ 9,8,7,6,5,4,3,2,1,0];
 			}
 			
 			attribute<float32> result(reference) := float32(integerAtt)+float32(floatAtt);
 		}
 		
-		container dst: StorageName = "%projdir%/data/mmd", StorageType = "MMD", StorageReadOnly = "True";
+		container dst: StorageName = "%projdir%/data/mmd", StorageType = "mmd", StorageReadOnly = "True";
 	}
 
 	container Str // ASCII String file
 	{
-		unit<uint8> Five: NrOfRows = 5;
+		unit<uint8> Five: nrofrows = 5;
 		container FileSet
 		{
 			parameter<string> StringParam: StorageType = "str", StorageName = "%projDir%/data/strfiles/regr/file01.txt";
@@ -244,7 +244,7 @@ container StorageManagerTest
 		{
 			parameter<bool> all := all(Tests/UInt8Array) && Tests/StringParam;
 		}
-		container Write
+		container write
 		{
 			parameter<string> StringParam      := FileSet/StringParam, StorageType = "str", StorageName = "%localDataProjDir%/regr_results/strfiles/regr/str.txt";  
 			attribute<uint8>  UInt8Array(Five) := FileSet/UInt8Array,  StorageType = "str", StorageName = "%localDataProjDir%/regr_results/strfiles/regr/uint8.txt";
@@ -257,15 +257,15 @@ container StorageManagerTest
 			attribute<string>  StringAtt (reference) : StorageType = "strfiles", StorageName = "%projDir%/data/strfiles/regr";
 			attribute<string>  FileName  (reference) : ['file01.txt','file02.txt','file03.txt','file04.txt','file05.txt'];
 		}
-		container Test
+		container test
 		{
 			attribute<bool> StringAtt (reference) := eq_or_both_null(FileSet/StringAtt, reference/StringAttNoNull);
 		}
 		container results
 		{
-			parameter<bool> all := all(Test/StringAtt);
+			parameter<bool> all := all(test/StringAtt);
 		}
-		container Write
+		container write
 		{
 			attribute<string> FileName  (reference) : ['file01.txt','file02.txt','file03.txt','file04.txt','file05.txt'];
 			attribute<string> StringAtt (reference) := FileSet/StringAtt, StorageType = "strfiles", StorageName = "%localDataProjDir%/regr_results/strfiles/regr";
@@ -288,7 +288,7 @@ container StorageManagerTest
 			attribute<.> id := id(.);
 		}
 
-		unit<spoint> Grid_uint32:
+		unit<spoint> grid_uint32:
 			StorageName     = "%projdir%/data/tiff_uint32.tif",
 			DialogData      = "units/point_rd",
 			StorageReadOnly = "True"
@@ -296,14 +296,14 @@ container StorageManagerTest
 			attribute<units/color> GridData          : DialogType = "BrushColor";
 			attribute<units/color> ReadData (gridsel): DialogType = "BrushColor";
 		}
-		unit<spoint> Grid_uint8:
+		unit<spoint> grid_uint8:
 			StorageName     = "%projdir%/data/tiff_uint8.tif",
 			DialogData      = "units/point_rd",
 			StorageReadOnly = "True"
 		{
 			attribute<uint8> GridData;
 		}
-		unit<spoint> Grid_float32:
+		unit<spoint> grid_float32:
 			StorageName     = "%projdir%/data/tiff_float32.tif",
 			DialogData      = "units/point_rd",
 			StorageReadOnly = "True"
@@ -319,10 +319,10 @@ container StorageManagerTest
 			attribute<bool> GridData;
 		}
 
-		// Write Test Grids
+		// write test Grids
 		//container WriteUint32: StorageName = "%projdir%/data/tiff_uint32.tif"
 		//{
-		//	attribute<uint32> GridData (Grid_uint32) := GridReference/GridData_uint32;
+		//	attribute<uint32> GridData (grid_uint32) := GridReference/GridData_uint32;
 		//}
 
 		container reference
@@ -332,24 +332,24 @@ container StorageManagerTest
 
 		container tests
 		{
-			attribute<bool> test_uint32  (Grid_uint32)  := eq_or_both_null(Grid_uint32/GridData,  GridReference/GridData_uint32);
-			attribute<bool> test_uint8   (Grid_uint8)   := eq_or_both_null(Grid_uint8/GridData ,  union_data(Grid_uint8,   GridReference/GridData_uint8));
-			attribute<bool> test_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, float32(0 / 0)), union_data(Grid_float32, GridReference/GridData_float32));
+			attribute<bool> test_uint32  (grid_uint32)  := eq_or_both_null(grid_uint32/GridData,  GridReference/GridData_uint32);
+			attribute<bool> test_uint8   (grid_uint8)   := eq_or_both_null(grid_uint8/GridData ,  union_data(grid_uint8,   GridReference/GridData_uint8));
+			attribute<bool> test_float32 (grid_float32) := eq_or_both_null(replace_value(grid_float32/GridData, -9999f, float32(0 / 0)), union_data(grid_float32, GridReference/GridData_float32));
 			attribute<bool> test_bool    (Grid_bool)    := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
 
-			attribute<bool> test_sel     (gridsel)      := Grid_uint32/ReadData == reference/ReadData_uint32;
+			attribute<bool> test_sel     (gridsel)      := grid_uint32/ReadData == reference/ReadData_uint32;
 		}
 
-		container Results
+		container results
 		{
 			parameter<bool> all := all(tests/test_uint32) && all(tests/test_uint8) && all(tests/test_float32) && all(tests/test_uint32) && all (tests/test_sel); 
 		}
 
 		container TrueColor
 		{
-			container Write: StorageName = "%localDataProjDir%/regr_results/tiff_tc.tif"
+			container write: StorageName = "%localDataProjDir%/regr_results/tiff_tc.tif"
 			{
-				attribute<units/color> GridData (Grid_uint32): [0, 4202720, 12607552, 4243488, 65535, 8405088, 49376, 12624096, 16777215, 12639424, 4219040, 8437920, 12624064, 8421504, 4210752, 8446176];
+				attribute<units/color> GridData (grid_uint32): [0, 4202720, 12607552, 4243488, 65535, 8405088, 49376, 12624096, 16777215, 12639424, 4219040, 8437920, 12624064, 8421504, 4210752, 8446176];
 			}
 		}
 
@@ -357,9 +357,9 @@ container StorageManagerTest
 		{
 			unit<uint4> colorindex
 			{
-				attribute<units/color> palette := Grid/PaletteData, DialogType = "BrushColor";
+				attribute<units/color> palette := grid/PaletteData, DialogType = "BrushColor";
 			}
-			unit<spoint> Grid: 
+			unit<spoint> grid: 
 				StorageName     = "%projdir%/data/tiff_pa.tif", 
 				DialogData      = "units/point_rd",
 				StorageReadOnly = "True"
@@ -369,17 +369,17 @@ container StorageManagerTest
 			}
 			container reference
 			{
-				attribute<colorindex> GridData (Grid): [2, 2, 6, 6, 6, 4, 0, 0, 0, 3, 5, 6, 6, 6, 5, 5, 3, 3, 3, 5, 11, 11, 11, 11, 11];
-				attribute<bool>       test     (Grid):= Grid/GridData == reference/GridData;
+				attribute<colorindex> GridData (grid): [2, 2, 6, 6, 6, 4, 0, 0, 0, 3, 5, 6, 6, 6, 5, 5, 3, 3, 3, 5, 11, 11, 11, 11, 11];
+				attribute<bool>       test     (grid):= grid/GridData == reference/GridData;
 			}
-			container Results
+			container results
 			{
 				parameter<bool> all := all(reference/test);
 			}
-			container Write: StorageName = "%localDataProjDir%/regr_results/tiff_pa.tif", ExplicitSuppliers = "Grid"
+			container write: StorageName = "%localDataProjDir%/regr_results/tiff_pa.tif", ExplicitSuppliers = "grid"
 			{
-				attribute<colorindex>  GridData    (Grid)       := Grid/GridData;
-				attribute<units/color> PaletteData (colorindex) := Grid/PaletteData;
+				attribute<colorindex>  GridData    (grid)       := grid/GridData;
+				attribute<units/color> PaletteData (colorindex) := grid/PaletteData;
 			}
 		}
 
@@ -393,15 +393,15 @@ container StorageManagerTest
 				? 'xy(40.5; -40.5)*m+xy(216000; 384000)'
 				: '{-40.5, 40.5}*m+{384000, 216000}';
 			parameter<bool> test :=
-				PropValue(Grid_uint32, 'Projection') = expected &&
-				PropValue(Palette/Grid, 'Projection') = expected;
+				PropValue(grid_uint32, 'Projection') = expected &&
+				PropValue(Palette/grid, 'Projection') = expected;
 		}
 	}
 	container EsriShape
 	{
-		container Point
+		container point
 		{
-			unit<uint32> PointSet:
+			unit<uint32> pointset:
 				StorageName     = "%projdir%/data/point/point.dbf",
 				DialogType      = "map",
 				DialogData      = "location",
@@ -412,20 +412,20 @@ container StorageManagerTest
 			}
 			container reference
 			{
-				attribute<float32>        x        (PointSet) : [115135,111803,114903,111353,111741];
-				attribute<float32>        y        (PointSet) : [401331,399476,399289,401729,398696];
-				attribute<units/point_rd> location (PointSet) := point_yx(y, x, units/point_rd);
-				attribute<string>         name     (PointSet) := 'point_' + string(id(PointSet));
-				attribute<bool>           test     (PointSet) := PointSet/location == location && PointSet/name == reference/name;
+				attribute<float32>        x        (pointset) : [115135,111803,114903,111353,111741];
+				attribute<float32>        y        (pointset) : [401331,399476,399289,401729,398696];
+				attribute<units/point_rd> location (pointset) := point_yx(y, x, units/point_rd);
+				attribute<string>         name     (pointset) := 'point_' + string(id(pointset));
+				attribute<bool>           test     (pointset) := pointset/location == location && pointset/name == reference/name;
 			}
-			container Results
+			container results
 			{
 				parameter<bool> all := all(reference/test);
 			}
-			container Write: StorageName = "%localDataProjDir%/regr_results/point/point.dbf"
+			container write: StorageName = "%localDataProjDir%/regr_results/point/point.dbf"
 			{
-				attribute<units/point_rd> location (PointSet) := PointSet/location, StorageName= "%localDataProjDir%/regr_results/point/point.shp";
-				attribute<string>         name     (PointSet) := PointSet/name;
+				attribute<units/point_rd> location (pointset) := pointset/location, StorageName= "%localDataProjDir%/regr_results/point/point.shp";
+				attribute<string>         name     (pointset) := pointset/name;
 			}
 		}
 		container Arc
@@ -441,32 +441,32 @@ container StorageManagerTest
 			}
 			container reference
 			{
-				unit<uint32> PointSet: = Sequence2Points(ArcSet/arc);
+				unit<uint32> pointset: = sequence2points(ArcSet/arc);
 
-				attribute<float32>        x          (PointSet): [120157,120487,120584,119680,120157,120123,120146,120157];
-				attribute<float32>        y          (PointSet): [411022,413887,414205,410929,411022,410640,410900,411022];
-				attribute<ArcSet>         sequence   (PointSet): [0,0,0,1,1,2,2,2];
-				attribute<uint32>         ordinal    (PointSet): [0,1,2,0,1,0,1,2];
+				attribute<float32>        x          (pointset): [120157,120487,120584,119680,120157,120123,120146,120157];
+				attribute<float32>        y          (pointset): [411022,413887,414205,410929,411022,410640,410900,411022];
+				attribute<ArcSet>         sequence   (pointset): [0,0,0,1,1,2,2,2];
+				attribute<uint32>         ordinal    (pointset): [0,1,2,0,1,0,1,2];
 
-				attribute<units/point_rd> point      (PointSet) := Point_yx(y, x, units/point_rd);
+				attribute<units/point_rd> point      (pointset) := point_yx(y, x, units/point_rd);
 				attribute<string>         name       (ArcSet): ['A27;E311','A59','A27;E311'];
 
-				attribute<bool>           test_point (PointSet) := point_isNearby(pointset/point, point, Dif_all_float32);
-				attribute<bool>           test_seq   (PointSet) := pointset/sequence_rel ==  sequence;
-				attribute<bool>           test_ord   (PointSet) := pointset/ordinal ==  ordinal;
+				attribute<bool>           test_point (pointset) := point_isNearby(pointset/point, point, Dif_all_float32);
+				attribute<bool>           test_seq   (pointset) := pointset/sequence_rel ==  sequence;
+				attribute<bool>           test_ord   (pointset) := pointset/ordinal ==  ordinal;
 				attribute<bool>           test_label (ArcSet)   := ArcSet/label == name;
 			}
-			container Results
+			container results
 			{
 				parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
 			}
-			container Write: StorageName = "%localDataProjDir%/regr_results/arc/road.dbf"
+			container write: StorageName = "%localDataProjDir%/regr_results/arc/road.dbf"
 			{
 				attribute<units/point_rd> arc   (ArcSet, arc) := ArcSet/arc, StorageName= "%localDataProjDir%/regr_results/arc/road.shp";
 				attribute<string>         label (ArcSet)      := ArcSet/label;
 			}
 		}
-		container Polygon
+		container polygon
 		{
 			unit<uint32> PolygonSet:
 				StorageName     = "%projdir%/data/polygon/area.dbf",
@@ -479,26 +479,26 @@ container StorageManagerTest
 			}
 			container reference
 			{
-				unit<uint32> PointSet := Sequence2Points(PolygonSet/poly);
+				unit<uint32> pointset := sequence2points(PolygonSet/poly);
 
-				attribute<float32>        x          (PointSet)   : [120157,120487,120584,120157,120123,120146,120157,120123];
-				attribute<float32>        y          (PointSet)   : [411022,413887,414205,411022,410640,410900,411022,410640];
-				attribute<PolygonSet>     sequence   (PointSet)   : [0,0,0,0,2,2,2,2];
-				attribute<uint32>         ordinal    (PointSet)   : [0,1,2,3,0,1,2,3];
+				attribute<float32>        x          (pointset)   : [120157,120487,120584,120157,120123,120146,120157,120123];
+				attribute<float32>        y          (pointset)   : [411022,413887,414205,411022,410640,410900,411022,410640];
+				attribute<PolygonSet>     sequence   (pointset)   : [0,0,0,0,2,2,2,2];
+				attribute<uint32>         ordinal    (pointset)   : [0,1,2,3,0,1,2,3];
 
-				attribute<units/point_rd> point      (PointSet)   := Point_yx(y, x, units/point_rd);
+				attribute<units/point_rd> point      (pointset)   := point_yx(y, x, units/point_rd);
 				attribute<string>         name       (PolygonSet) : ['A27;E311','A59','A27;E311'];
 
-				attribute<bool>           test_point (PointSet)   := point_isNearby(pointset/point, point, Dif_all_float32);
-				attribute<bool>           test_seq   (PointSet)   := pointset/sequence_rel == sequence;
-				attribute<bool>           test_ord   (PointSet)   := pointset/ordinal == ordinal;
+				attribute<bool>           test_point (pointset)   := point_isNearby(pointset/point, point, Dif_all_float32);
+				attribute<bool>           test_seq   (pointset)   := pointset/sequence_rel == sequence;
+				attribute<bool>           test_ord   (pointset)   := pointset/ordinal == ordinal;
 				attribute<bool>           test_label (PolygonSet) := PolygonSet/label == name;
 			}
-			container Results
+			container results
 			{
 				parameter<bool> all := all(reference/test_point) && all(reference/test_seq) && all(reference/test_ord) && all(reference/test_label);
 			}
-			unit<uint32> Write := PolygonSet
+			unit<uint32> write := PolygonSet
 			, StorageName = "= Parameters/StorageBasePath + 'polygon/area.shp'"
 			, StorageType = "gdalwrite.vect"
 			{
@@ -519,7 +519,7 @@ container StorageManagerTest
 	{
 		container TIFF
 		{
-			unit<spoint> Grid_uint32:
+			unit<spoint> grid_uint32:
 				StorageName     = "%projdir%/data/gdal/tiff_uint32.tif",
 				StorageType     = "gdal.grid",
 				DialogData      = "units/point_rd"
@@ -527,12 +527,12 @@ container StorageManagerTest
 				attribute<units/color> GridData                : DialogType = "BrushColor";
 				attribute<units/color> ReadData (/Tiff/gridsel): DialogType = "BrushColor";
 			}
-			unit<spoint> WriteGrid_uint32 := Grid_uint32,
+			unit<spoint> WriteGrid_uint32 := grid_uint32,
 				StorageName     = "%localDataProjDir%/regr_results/gdal/tiff_uint32.tif", // check that folder exists and file(s) doesn't.
 				StorageType     = "gdalwrite.grid",
 				DialogData      = "units/point_rd"
 			{
-				attribute<units/color> GridData  := Grid_uint32/GridData;
+				attribute<units/color> GridData  := grid_uint32/GridData;
 			}
 			unit<spoint> ReadWrittenGrid_uint32:
 				StorageName     = "%localDataProjDir%/regr_results/gdal/tiff_uint32.tif",
@@ -541,14 +541,14 @@ container StorageManagerTest
 			{
 				attribute<units/color> GridData;
 			}
-			unit<spoint> Grid_uint8:
+			unit<spoint> grid_uint8:
 				StorageName     = "%projdir%/data/gdal/tiff_uint8.tif",
 				StorageType     = "gdal.grid",
 				DialogData      = "units/point_rd"
 			{
 				attribute<uint8> GridData;
 			}
-			unit<spoint> Grid_float32:
+			unit<spoint> grid_float32:
 				StorageName     = "%projdir%/data/gdal/tiff_float32.tif",
 				StorageType     = "gdal.grid",
 				DialogData      = "units/point_rd"
@@ -565,16 +565,16 @@ container StorageManagerTest
 
 			container tests
 			{
-				attribute<bool> test_uint32  (Grid_uint32)   := eq_or_both_null(Grid_uint32/GridData,  union_data(Grid_uint32,  GridReference/GridData_uint32));
-				attribute<bool> test_uint32_W(Grid_uint32)   := eq_or_both_null(ReadWrittenGrid_uint32/GridData,  union_data(Grid_uint32,  GridReference/GridData_uint32));
-				attribute<bool> test_uint8   (Grid_uint8)    := eq_or_both_null(Grid_uint8/GridData ,  union_data(Grid_uint8,   GridReference/GridData_uint8));
-				attribute<bool> test_float32 (Grid_float32)  := eq_or_both_null(Grid_float32/GridData, union_data(Grid_float32, GridReference/GridData_float32));
+				attribute<bool> test_uint32  (grid_uint32)   := eq_or_both_null(grid_uint32/GridData,  union_data(grid_uint32,  GridReference/GridData_uint32));
+				attribute<bool> test_uint32_W(grid_uint32)   := eq_or_both_null(ReadWrittenGrid_uint32/GridData,  union_data(grid_uint32,  GridReference/GridData_uint32));
+				attribute<bool> test_uint8   (grid_uint8)    := eq_or_both_null(grid_uint8/GridData ,  union_data(grid_uint8,   GridReference/GridData_uint8));
+				attribute<bool> test_float32 (grid_float32)  := eq_or_both_null(grid_float32/GridData, union_data(grid_float32, GridReference/GridData_float32));
 				attribute<bool> test_bool    (Grid_bool)     := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
 
-				attribute<bool> test_sel     (/Tiff/gridsel) := Grid_uint32/ReadData == /Tiff/reference/ReadData_uint32;
+				attribute<bool> test_sel     (/Tiff/gridsel) := grid_uint32/ReadData == /Tiff/reference/ReadData_uint32;
 			}
 
-			container Results
+			container results
 			{
 				parameter<bool> all := all(tests/test_uint32) && all(tests/test_uint32_W) && all(tests/test_uint8) && all(tests/test_float32) && all(tests/test_uint32) && all (tests/test_sel); 
 			}		
@@ -698,7 +698,7 @@ container StorageManagerTest
 		{
 			parameter<string> tests_log := string(all)
 			,	StorageType = "str"
-			,	storagename = "%localDataProjDir%/regr_results/cfs.txt";
+			,	StorageName = "%localDataProjDir%/regr_results/cfs.txt";
 
 			parameter<bool>    all      := str && int && float && point;
 			parameter<bool>    str      := AsItemList(read/att_str) == 'label1,label2,label3,label4,label5';
@@ -736,7 +736,7 @@ container StorageManagerTest
 		{
 			parameter<string> tests_log := string(all)
 			,	StorageType = "str"
-			,	storagename = "%localDataProjDir%/regr_results/fss.txt";
+			,	StorageName = "%localDataProjDir%/regr_results/fss.txt";
 			parameter<bool>    all      := str && int && float && point;
 			parameter<bool>    str      := AsItemList(read/att_str) = 'label1,label2,label3,label4,label5';
 			parameter<bool>    int      := sum(read/att_int) = 931;
@@ -776,7 +776,7 @@ container StorageManagerTest
 		container semicolon_seperated := TableChopperT('%projdir%/data/TableChopperSemicolon.csv',';'); 
 		container comma_seperated     := TableChopperT('%projdir%/data/TableChopperComma.csv',',');
 
-		Template TableChopperT
+		template TableChopperT
 		{
 			// begin case parameters
 			parameter<string> FileName;
@@ -787,15 +787,15 @@ container StorageManagerTest
 			unit<uint32>      Domain         := range(uint32,0,nrRows );
 
 			parameter<string> FileData: StorageType = "str", StorageName = "=FileName", StorageReadOnly="True";
-			parameter<string> HeaderLine := readLines(FileData, void, 0);
+			parameter<string> HeaderLine := ReadLines(FileData, void, 0);
 
 			unit<uint32> Field := Range(uint32, 0, strcount(HeaderLine, FieldSeparator)+1)
 			{
-				attribute<string> Name := ReadArray(HeaderLine, Field, string, 0);
+				attribute<string> name := ReadArray(HeaderLine, Field, string, 0);
 			}
-			attribute<string> BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
+			attribute<string> BodyLines (Domain) := ReadLines(FileData, Domain, HeaderLine/ReadPos);
 
-			container Data := for_each_nedv(Field/Name, 'ReadElems(BodyLines, string, '+MakeDefined(Field/Name[sub_or_null(ID(Field), 1)]+'/ReadPos','const(0, Domain)')+')', Domain, string)
+			container Data := for_each_nedv(Field/name, 'ReadElems(BodyLines, string, '+MakeDefined(Field/name[sub_or_null(id(Field), 1)]+'/ReadPos','const(0, Domain)')+')', Domain, string)
 			{
 				attribute<float32> Max_elem (Domain) := Max_elem(float32(bedrijventerrein_min),float32(bedrijventerrein_max),float32(openbarevoorz_min),float32(openbarevoorz_max),float32(zeehaven_min),float32(zeehaven_max));
 			}
@@ -824,7 +824,7 @@ container StorageManagerTest
 				attribute<bool> zeehaven_max         (Domain):= Data/zeehaven_max == Reference/zeehaven_max;
 			}
 
-			container Results
+			container results
 			{
 				parameter<bool> all :=
 					   all(Tests/Corop)             && all(Tests/CoropLabel)        && all(Tests/bedrijventerrein_min) && all(Tests/bedrijventerrein_max)
@@ -859,15 +859,15 @@ container StorageManagerTest
 		parameter<string> Metric :=
 			=asList(
 				Quote('[')+'+PropValue(
-					ValuesUnit(context/' + Field/Name +')
+					ValuesUnit(context/' + Field/name +')
 					,' + quote('metric') + '
 				) + ' + Quote(']' )
 				, '+' + Quote(FieldSeperator) + '+'
 			);
 		
-		attribute<string> Body (context):= =AsList(+'String(context/' +Field/Name +')',' + ' + quote(FieldSeperator) +' +');
+		attribute<string> Body (context):= =asList(+'string(context/' +Field/name +')',' + ' + quote(FieldSeperator) +' +');
 
-		parameter<string> Result := Header + NewLine + Metric + NewLine + AsList(Body,NewLine)
+		parameter<string> result := Header + NewLine + Metric + NewLine + asList(Body,NewLine)
 		,	StorageName = "=FileName"
 		,	StorageType = "str";
 	}
@@ -885,24 +885,24 @@ container StorageManagerTest
 		}
 // 		unit<uint32> motorway
 // 		:	StorageName = "%LocalDataProjDir%/regr_results/motorway.cfs"
-// 		,	expr        = "select_with_org_rel(src/type = 'Motorway')"
+// 		,	Expr        = "select_with_org_rel(src/type = 'Motorway')"
 // 		{
-// 			attribute<string> type: expr = "src/type[org_rel]";
+// 			attribute<string> type: Expr = "src/type[org_rel]";
 // 		}
 		unit<uint32> motorway
 		:	StorageName = "%LocalDataProjDir%/regr_results/motorway.cfs"
-		,	expr        = "src"
+		,	Expr        = "src"
 		{
-			attribute<string> type: expr = "src/type";
+			attribute<string> type: Expr = "src/type";
 		}
-		parameter<uint32> all: expr = "sum(uint32(motorway/type))";
+		parameter<uint32> all: Expr = "sum(uint32(motorway/type))";
 		
 		unit<uint32> motorway2
 		:	StorageName = "%LocalDataProjDir%/regr_results/motorway2.cfs"
-		,	expr        = "src"
+		,	Expr        = "src"
 		{
-			attribute<string> type: expr = "src/type + src/type";
+			attribute<string> type: Expr = "src/type + src/type";
 		}
-		parameter<uint32> all2: expr = "sum(uint32(motorway2/type))";
+		parameter<uint32> all2: Expr = "sum(uint32(motorway2/type))";
 	}
 }

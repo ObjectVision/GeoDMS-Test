@@ -66,40 +66,40 @@
 			attribute<uint8>   complement (Domain): [];
 		}
 
-		container UnTiled  := Template(ADomain, srcDomain);
-		container Tiled    := Template(ATiledDomain, srcTiledDomain);
-		container EUnTiled := Template(EDomain, srcEDomain);
-		container ETiled   := Template(ETiledDomain, srcETiledDomain);
+		container UnTiled  := TestTemplate(ADomain, srcDomain);
+		container Tiled    := TestTemplate(ATiledDomain, srcTiledDomain);
+		container EUnTiled := TestTemplate(EDomain, srcEDomain);
+		container ETiled   := TestTemplate(ETiledDomain, srcETiledDomain);
 
-		Template Template
+		template TestTemplate
 		{
 			unit<uint32> Domain;
 			container source;
 
 			container iif_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/iif"
 			{
-				parameter<bool>    test_param    := source/Paramtrue && not(source/ParamFalse) ? true : false;
+				parameter<bool>    test_param    := source/ParamTrue && not(source/ParamFalse) ? true : false;
 				attribute<float32> att  (Domain) := MakeDefined(source/floatA, -9999f) >= MakeDefined(source/floatB, 9999f) ? float32(1) : float32(0);
 				attribute<bool>    test (Domain) := att = source/iifA;
 				parameter<bool>    test_attr     := all(test);
 			}
 			container iif: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/iif"
 			{
-				parameter<bool>    test_param    := iif(source/Paramtrue && not(source/ParamFalse), true, false);
+				parameter<bool>    test_param    := iif(source/ParamTrue && not(source/ParamFalse), true, false);
 				attribute<float32> att  (Domain) := iif(MakeDefined(source/floatA, -9999f) >= MakeDefined(source/floatB, 9999f), float32(1), float32(0));
 				attribute<bool>    test (Domain) := att = source/iifA;
 				parameter<bool>    test_attr     := all(test);
 			}
 			container and_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/and"
 			{
-				parameter<bool> test_param    := source/Paramtrue && not(source/ParamFalse);
+				parameter<bool> test_param    := source/ParamTrue && not(source/ParamFalse);
 				attribute<bool> att  (Domain) := source/A && source/B;
 				attribute<bool> test (Domain) := att = source/andAB;
 				parameter<bool> test_attr     := all(test);
 			}
 			container and: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/and"
 			{
-				parameter<bool>  test_param          := and(source/Paramtrue && not(source/ParamFalse));
+				parameter<bool>  test_param          := and(source/ParamTrue && not(source/ParamFalse));
 				attribute<bool>  att        (Domain) := and(source/A, source/B);
 				attribute<bool>  test       (Domain) := att = source/andAB;
 				attribute<uint8> att_uint8  (Domain) := and(source/uint8A);
@@ -111,14 +111,14 @@
 			}
 			container or_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/or"
 			{
-				parameter<bool> test_param    := source/Paramtrue || source/ParamFalse;
+				parameter<bool> test_param    := source/ParamTrue || source/ParamFalse;
 				attribute<bool> att  (Domain) := source/A || source/B;
 				attribute<bool> test (Domain) := att = source/orAB;
 				parameter<bool> test_attr     := all(test);
 			}
 			container or: url = "http://www.objectvision.nl/geodms/operators-a-functions/logical/or"
 			{
-				parameter<bool>  test_param          := or(source/Paramtrue, source/ParamFalse);
+				parameter<bool>  test_param          := or(source/ParamTrue, source/ParamFalse);
 				attribute<bool>  att        (Domain) := or(source/A, source/B);
 				attribute<bool>  test       (Domain) := att = source/orAB;
 				
@@ -150,14 +150,14 @@
 			}
 			container bitand
 			{
-				parameter<bool>  test_param    :=!bitand(source/Paramtrue, source/ParamFalse);
+				parameter<bool>  test_param    :=!bitand(source/ParamTrue, source/ParamFalse);
 				attribute<uint8> att  (Domain) := bitand(source/uint8A, source/uint8B);
 				attribute<bool>  test (Domain) := eq_or_both_null(att, source/bitandAB);
 				parameter<bool>  test_attr     := all(test);
 			}
 			container bitor
 			{
-				parameter<bool>  test_param    := bitor(source/Paramtrue, source/ParamFalse);
+				parameter<bool>  test_param    := bitor(source/ParamTrue, source/ParamFalse);
 				attribute<uint8> att  (Domain) := bitor(source/uint8A, source/uint8B);
 				attribute<bool>  test (Domain) := eq_or_both_null(att, source/bitorAB);
 				parameter<bool>  test_attr     := all(test);
@@ -171,7 +171,7 @@
 			}
 			container bitxor
 			{
-				parameter<bool>  test_param    := bitxor(source/Paramtrue, source/ParamFalse);
+				parameter<bool>  test_param    := bitxor(source/ParamTrue, source/ParamFalse);
 				attribute<uint8> att  (Domain) := bitxor(source/uint8A, source/uint8B);
 				// xor = or minus and
 				attribute<bool>  test (Domain) := eq_or_both_null(att, source/bitorAB - source/bitandAB);
@@ -181,9 +181,9 @@
 			{
 				attribute<string> att (Domain)
 					 := switch(
-						  case( MakeDefined(Source/floatA, 9999f) < MakeDefined(Source/floatB, -9999f), 'A<B')
-						, case( MakeDefined(Source/floatA, -9999f) > MakeDefined(Source/floatB, 9999f), 'A>B')
-						, case( Source/floatA == Source/floatB, 'A==B')
+						  case( MakeDefined(source/floatA, 9999f) < MakeDefined(source/floatB, -9999f), 'A<B')
+						, case( MakeDefined(source/floatA, -9999f) > MakeDefined(source/floatB, 9999f), 'A>B')
+						, case( source/floatA == source/floatB, 'A==B')
 						, 'Missing'
 						);
 				attribute<bool> test (Domain) := att == source/switchcase;

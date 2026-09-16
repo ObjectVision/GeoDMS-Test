@@ -16,8 +16,8 @@ container Write_NL_tiff_gdal_grid
 		  ,point_yx(3250s, 2700s)
 	   ), DialogData = "rdc_m"
 		{
-			attribute<int16> PointRow := PointRow(id(.));
-			attribute<int16> PointCol := PointRow(id(.));
+			attribute<int16> PointRow := pointrow(id(.));
+			attribute<int16> PointCol := pointrow(id(.));
 			attribute<int16> RowCol   := PointRow + PointCol;
 		}
 
@@ -36,9 +36,9 @@ container Write_NL_tiff_gdal_grid
 
 	parameter<string> test_log := test
 		? '' 
-		: 'Write NL Tiff with gdalwrite.grid: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'Write NL Tiff with gdalwrite.grid: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	, StorageType = "str"
-	, Storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteNLTiff_gdal.txt";
+	, StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteNLTiff_gdal.txt";
 
 container wmts_layer 
 {

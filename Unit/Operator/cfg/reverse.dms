@@ -14,7 +14,7 @@ container reverse
 
 	container srcDomain := sourceT(CDomain);
 
-	Template XXX
+	template XXX
 	{
 		unit<uint32> Domain;
 		container source;
@@ -22,7 +22,7 @@ container reverse
 
 		container reverse: url = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/reverse"
 		{
-			attribute<float32> att (Domain) := reverse(Source/A);
+			attribute<float32> att (Domain) := reverse(source/A);
 		}
 	}
 	container UnTiled  := XXX(CDomain, srcDomain);
@@ -37,7 +37,7 @@ container reverse
 
 	parameter<string> test_log := test
 		? '' 
-		: 'reverse Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'reverse Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/reverse.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/reverse.txt";
 }
