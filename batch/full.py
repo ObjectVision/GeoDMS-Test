@@ -963,6 +963,22 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
                   + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
             operator_experiments = [e for e in operator_experiments if "GeoDmsGuiQt" not in (e.command or "")]
 
+    # Inject /SH (RSF_ShowThousandSeparator) on every flavor, right after the last /S<N>
+    # multithreading flag. The reference files (t1742's statistics HTML, test_log strings) were
+    # captured with the thousand separator on, and on Windows that flag is the running account's
+    # registry setting, so a round under an account without it reported t1742 as "output differs"
+    # (20.21.0.m and 20.21.1.m on OVSRV05, 2026-09-16 and -20) while the same build under another
+    # account passed. On the command line the flag makes the output the same under every account
+    # and every flavor; .l already got it here for the same reason.
+    for exp in operator_experiments:
+        cmd = exp.command or ""
+        if " /SH " in cmd:
+            continue
+        for tail in (" /S3 ", " /S2 ", " /S1 "):
+            if tail in cmd:
+                exp.command = cmd.replace(tail, tail.rstrip() + " /SH ", 1)
+                break
+
     # Linux-flavor path translation. The whole command line + every env var
     # value contains Windows-style paths (C:/…, F:/…); the WSL-side binary
     # needs them in /mnt/<letter>/… form. Translate both, and prepend a
@@ -1053,17 +1069,7 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
                 print(f"[clean] could not remove {ext4_projdir_base}: {e}")
 
         for exp in operator_experiments:
-            # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
-            # Linux-produced output (statistics HTML, test_log strings) matches
-            # the reference files captured on Windows where the dev's persistent
-            # registry setting has thousand-separator on. Insert just after the
-            # last /S<N> multithreading flag.
-            cmd = exp.command
-            for tail in (" /S3 ", " /S2 ", " /S1 "):
-                if tail in cmd:
-                    cmd = cmd.replace(tail, tail.rstrip() + " /SH ", 1)
-                    break
-            exp.command = to_wsl_path(cmd)
+            exp.command = to_wsl_path(exp.command) # /SH was injected above, for every flavor
             if exp.environment_variables:
                 ev = to_wsl_path(exp.environment_variables)
                 # t641 (RSopen) writes GBs of BaseData TIFs under %LocalDataProjDir%;
