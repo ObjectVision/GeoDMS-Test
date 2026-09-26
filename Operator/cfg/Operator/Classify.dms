@@ -33,6 +33,9 @@
 				// nonzero-equal-interval: eerste klassegrens 0 (voor de nullen), daarna
 				// equal-interval over de niet-nulwaarden 2..1025 in 3 klassen (stap 341)
 				attribute<nrPersons> NonzeroEqualInterval : [0,2,343,684];
+				// nonzero-equal-count: eerste klassegrens 0 (voor de nul), daarna
+				// equal-count over de niet-nulwaarden 2..1025 in 3 klassen
+				attribute<nrPersons> NonzeroEqualCount    : [0,2,200,750];
 
 				attribute<nrPersons> LogInterval   : [0,10,100,1000];
 			}
@@ -69,6 +72,7 @@
 				attribute<nrPersons> JenksFisher   : [];
 				attribute<nrPersons> NonzeroJenksFisher : [];
 				attribute<nrPersons> NonzeroEqualInterval : [];
+				attribute<nrPersons> NonzeroEqualCount : [];
 				attribute<nrPersons> LogInterval   : [];
 			}
 
@@ -156,7 +160,10 @@
 				attribute<bool>      test_one_class      (ClassDomainOneClass) := eq_or_both_null(att_one_class, ClassDomainOneClass/ok);
 
 				attribute<nrPersons> att                 (ClassDomain) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomain);
-				attribute<bool>      test                (ClassDomain) := eq_or_both_null(att, ClassDomain/EqualCount);
+				// before 20.21 (GeoDmsVersion < 20.21), ClassifyNonzeroEqualCount gave ClassifyEqualCount's breaks on data with a 0; since 20.21, 0 is a break with a class of its own.
+				attribute<bool>      test                (ClassDomain) := GeoDmsVersion() < 20.21d
+					? eq_or_both_null(att, ClassDomain/EqualCount)
+					: eq_or_both_null(att, ClassDomain/NonzeroEqualCount);
 
 				attribute<nrPersons> att_many_classes                 (ClassDomainManyClasses) := ClassifyNonzeroEqualCount(District/NrInhabitants, ClassDomainManyClasses);
 				attribute<nrPersons> att_many_classes_okwithvalues    (ClassDomainManyClasses) : [0,2,20,55,100,200,300,550,750,860,1025,1025,1025,1025,1025,1025,1025,1025,1025,1025];
