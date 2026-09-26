@@ -141,12 +141,15 @@
 			// "x64-windows-msbuild", "x64-linux-cmake" (see rtc/dll/src/gen/General.cpp).
 			// The plain "x64-windows" / "x64-linux" / "x64-osx" forms are kept for
 			// older builds that pre-date the toolset suffix.
+			// The GLOBIO compatibility flavour names itself in the toolset part, since it is
+			// msbuild-built but against the old conda spatial stack (GDAL 3.1.4 / GEOS 3.9.1).
 			parameter<bool>   test        := BuildConfig == 'Win32' || BuildConfig == 'x64'
 			                              || BuildConfig == 'x64-windows' || BuildConfig == 'x86-windows'
 			                              || BuildConfig == 'x64-linux'   || BuildConfig == 'x64-osx'
 			                              || BuildConfig == 'x64-windows-cmake'   || BuildConfig == 'x64-windows-msbuild'
 			                              || BuildConfig == 'x86-windows-cmake'   || BuildConfig == 'x86-windows-msbuild'
-			                              || BuildConfig == 'x64-linux-cmake'     || BuildConfig == 'x64-osx-cmake';
+			                              || BuildConfig == 'x64-linux-cmake'     || BuildConfig == 'x64-osx-cmake'
+			                              || BuildConfig == 'x64-windows-msbuild for GLOBIO';
 		}
 		Container Regex_match
 		{
