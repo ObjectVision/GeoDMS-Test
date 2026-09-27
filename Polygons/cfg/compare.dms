@@ -1,6 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Vergelijking van de vier geometrie-families (geos / bg / bp / cgal) op
+// Vergelijking van de vijf geometrie-families (geos / bg / bp / cgal / dms) op
 // synthetische, deterministische data - draait zonder SourceData.
+//
+// dms is de sweep die GeoDMS zelf implementeert (ObjectVision/GeoDMS#1214, vanaf
+// 20.20.0). Op oudere builds bestaan die operatoren niet: de familie is dan een
+// expliciete skip en haar items worden niet aangeroepen, zodat de test op elke
+// versie blijft draaien.
 //
 // Twee scenario's (issue 775/767/882/903-lijn):
 //   ManySmall: veel kleine polygonen (rooster met jitter, partities)
@@ -196,6 +201,14 @@ container PolygonCompare
 			// voor cm); bp heeft een 25-bits coordinaatlimiet, dus landsdekkende data
 			// past niet in mm en krijgt een grovere schaal
 			parameter<float64> intAreaDiv;
+			// telt de afwijking van dms t.o.v. geos mee in het oordeel? Op de
+			// synthetische scenario's wel: de invoer is daar geldig, dus beide families
+			// horen hetzelfde te vinden. Op de echte data niet: die bevat ringen die
+			// geen geldige polygoon zijn (zie de bg-skip voor de panden, #1176), en daar
+			// repareert geos met MakeValid terwijl dms even-odd leest. Dat de twee dan
+			// verschillen is geen defect maar een definitieverschil; de afwijking wordt
+			// wel gemeten en in de regel gemeld zodra ze boven de tolerantie komt.
+			parameter<bool> dmsVsGeos;
 			// end case parameters
 
 			container geos
@@ -273,14 +286,53 @@ container PolygonCompare
 				parameter<string> failwhat :=
 					(ok_area ? '' : 'area-sum ') + (ok_idem ? '' : 'idempotence ') + (ok_split ? '' : 'split-count ') + (ok_dev ? '' : 'area-vs-geos ');
 			}
+			// dms: de sweep die GeoDMS zelf implementeert (#1214). De aanroepen zitten in
+			// calc, en ok/failwhat/devVsGeos wijzen daar alleen naar zodra de operatoren
+			// bestaan; op een oudere build wordt calc dus nooit aangeroepen en kan de
+			// onbekende operatornaam de test niet laten vallen.
+			container dms
+			{
+				parameter<bool>    supported := GeoDmsVersion() >= 20.20;
+				// de rekenregel eerst als tekst, dan pas indirect toegepast: zo staat er
+				// op een oudere build letterlijk 'True' / '' / '0.0' in de regel en komt
+				// er geen onbekende operatornaam aan te pas
+				parameter<string>  ok_expr   := supported ? 'calc/ok'        : 'True';
+				parameter<string>  fw_expr   := supported ? 'calc/failwhat'  : '''''';
+				parameter<string>  dev_expr  := supported ? 'calc/devVsGeos' : '0.0';
+				parameter<bool>    ok        := =ok_expr;
+				parameter<string>  failwhat  := =fw_expr;
+				parameter<float64> devVsGeos := =dev_expr;
+
+				container calc
+				{
+					attribute<dpoint> u_part (Parts, polygon) := dms_union_polygon(geometry, part_rel);
+					parameter<float64> uA := sum(area(u_part, m2u));
+					parameter<dpoint> u_tot (polygon) := dms_union_polygon(geometry);
+					parameter<dpoint> u_tot2 (polygon) := dms_union_polygon(u_part);
+					parameter<float64> uiA  := area(u_tot2, m2u);
+					parameter<float64> utA  := area(u_tot, m2u);
+					unit<uint32> su := dms_split_union_polygon(geometry);
+					parameter<uint32>  suN := #su;
+					parameter<float64> devVsGeos := abs(uA - geos/uA) / geos/uA;
+					parameter<bool> ok_area  := uA <= sumA * (1.0 + relTolF);
+					parameter<bool> ok_idem  := abs(uiA - utA) <= utA * relTolF;
+					parameter<bool> ok_split := suN > uint32(0) && suN <= #Elems;
+					parameter<bool> ok_dev   := !dmsVsGeos || devVsGeos <= relTolF * 100.0;
+					parameter<bool> ok := ok_area && ok_idem && ok_split && ok_dev;
+					parameter<string> failwhat :=
+						(ok_area ? '' : 'area-sum ') + (ok_idem ? '' : 'idempotence ') + (ok_split ? '' : 'split-count ') + (ok_dev ? '' : 'area-vs-geos ');
+				}
+			}
 		}
 
-		container ManySmall := Scenario_T(../ManySmall/Cells, ../ManySmall/Parts, ../ManySmall/geometry, ../ManySmall/geometry_i, ../ManySmall/Cells/part_rel, ../ManySmall/sumA, Parameters/relTol, 1e6);
-		container FewLarge  := Scenario_T(../FewLarge/Polys, ../FewLarge/Parts, ../FewLarge/geometry, ../FewLarge/geometry_i, ../FewLarge/Polys/part_rel, ../FewLarge/sumA, Parameters/relTol, 1e6);
+		container ManySmall := Scenario_T(../ManySmall/Cells, ../ManySmall/Parts, ../ManySmall/geometry, ../ManySmall/geometry_i, ../ManySmall/Cells/part_rel, ../ManySmall/sumA, Parameters/relTol, 1e6, True);
+		container FewLarge  := Scenario_T(../FewLarge/Polys, ../FewLarge/Parts, ../FewLarge/geometry, ../FewLarge/geometry_i, ../FewLarge/Polys/part_rel, ../FewLarge/sumA, Parameters/relTol, 1e6, True);
 
-		// echte-datascenario's (alleen berekend via results/real); gemeenten in cm
-		container GemReal    := Scenario_T(../RealData/Gemeenten/Elems, ../RealData/Gemeenten/Parts, ../RealData/Gemeenten/geometry, ../RealData/Gemeenten/geometry_i, ../RealData/Gemeenten/part_rel, ../RealData/Gemeenten/sumA, Parameters/relTol, 1.0);
-		container PandenReal := Scenario_T(../RealData/PandenAms/Elems, ../RealData/PandenAms/Parts, ../RealData/PandenAms/geometry, ../RealData/PandenAms/geometry_i, ../RealData/PandenAms/part_rel, ../RealData/PandenAms/sumA, Parameters/relTol, 1.0);
+		// echte-datascenario's (alleen berekend via results/real); gemeenten in cm.
+		// De laatste vlag: op deze data wordt dms niet tegen geos afgerekend, zie de
+		// toelichting bij de case parameter dmsVsGeos.
+		container GemReal    := Scenario_T(../RealData/Gemeenten/Elems, ../RealData/Gemeenten/Parts, ../RealData/Gemeenten/geometry, ../RealData/Gemeenten/geometry_i, ../RealData/Gemeenten/part_rel, ../RealData/Gemeenten/sumA, Parameters/relTol, 1.0, False);
+		container PandenReal := Scenario_T(../RealData/PandenAms/Elems, ../RealData/PandenAms/Parts, ../RealData/PandenAms/geometry, ../RealData/PandenAms/geometry_i, ../RealData/PandenAms/part_rel, ../RealData/PandenAms/sumA, Parameters/relTol, 1.0, False);
 	}
 
 	// Een gezamenlijke uitslag voor de vier families: per familie een eigen tagregel
@@ -345,21 +397,38 @@ container PolygonCompare
 		container bg   := FamLine_T('bg',   'Bg',   Ops/ManySmall/bg/ok,   Ops/FewLarge/bg/ok,   Ops/ManySmall/bg/failwhat,   Ops/FewLarge/bg/failwhat);
 		container bp   := FamLine_T('bp',   'Bp',   Ops/ManySmall/bp/ok,   Ops/FewLarge/bp/ok,   Ops/ManySmall/bp/failwhat,   Ops/FewLarge/bp/failwhat);
 		container cgal := FamLine_T('cgal', 'CGAL', Ops/ManySmall/cgal/ok, Ops/FewLarge/cgal/ok, Ops/ManySmall/cgal/failwhat, Ops/FewLarge/cgal/failwhat);
+		// dms krijgt geen FamLine_T: op een build zonder de operatoren moet de regel
+		// zeggen dat er niets gedraaid is, en niet OK - een familie die stilzwijgend
+		// overgeslagen wordt leest als een geslaagde familie.
+		container dms
+		{
+			parameter<bool>   supported := GeoDmsVersion() >= 20.20;
+			parameter<bool>   ok := Ops/ManySmall/dms/ok && Ops/FewLarge/dms/ok;
+			parameter<string> line :=
+				'<dms>&bull; Dms: ' + (!supported ? 'skipped (needs GeoDMS 20.20.0)'
+					: ok ? 'OK'
+					: 'FAILS ('
+						+ (Ops/ManySmall/dms/ok ? '' : 'ManySmall: ' + Ops/ManySmall/dms/failwhat)
+						+ (Ops/FewLarge/dms/ok  ? '' : 'FewLarge: ' + Ops/FewLarge/dms/failwhat) + ')')
+				+ '</dms>';
+			parameter<string> failnote :=
+				(Ops/ManySmall/dms/ok ? '' : 'dms-ManySmall; ') + (Ops/FewLarge/dms/ok ? '' : 'dms-FewLarge; ');
+		}
 		// geos-anker: exacte arealen, zodat elke versieafwijking oplicht in de diff
 		parameter<string> anchor_line :=
 			'<anchor>geos union area: ManySmall ' + string(float32(Ops/ManySmall/geos/uA)) + ' m2, FewLarge ' + string(float32(Ops/FewLarge/geos/uA)) + ' m2</anchor>';
 
 		// de ringformaat-bewakers zijn synthetisch en draaien dus in beide uitslagen mee;
 		// ze zijn stil zolang ze slagen, net als de issue-882-repro
-		parameter<bool>   syntOk      := geos/ok && bg/ok && bp/ok && cgal/ok && /ring_encoding/ok;
-		parameter<string> syntFailing := geos/failnote + bg/failnote + bp/failnote + cgal/failnote + /ring_encoding/failnote;
-		parameter<string> syntLines   := anchor_line + geos/line + bg/line + bp/line + cgal/line + /ring_encoding/line;
+		parameter<bool>   syntOk      := geos/ok && bg/ok && bp/ok && cgal/ok && dms/ok && /ring_encoding/ok;
+		parameter<string> syntFailing := geos/failnote + bg/failnote + bp/failnote + cgal/failnote + dms/failnote + /ring_encoding/failnote;
+		parameter<string> syntLines   := anchor_line + geos/line + bg/line + bp/line + cgal/line + dms/line + /ring_encoding/line;
 
 		// synthetisch-only uitslag: voor machines zonder de echte databronnen
 		container all
 		{
 			parameter<string> result :=
-				'<description>polygon family compare (geos/bg/bp/cgal), synthetic data only</description>'
+				'<description>polygon family compare (geos/bg/bp/cgal/dms), synthetic data only</description>'
 				+ syntLines
 				+ (syntFailing == '' ? '' : '<failing>' + syntFailing + '</failing>')
 				+ '<result>' + (syntOk ? 'OK' : 'False') + '</result>';
@@ -431,6 +500,35 @@ container PolygonCompare
 					+ (Ops/GemReal/cgal/ok ? '' : 'cgal-municipalities; ') + (okPand ? '' : 'cgal-buildings; ');
 			}
 
+			// dms: pas vanaf 20.20.0 geregistreerd (#1214), daaronder een expliciete skip.
+			// Op de echte data telt de afwijking t.o.v. geos niet mee in het oordeel (zie
+			// de case parameter dmsVsGeos): daar bevat de bron ringen die geen geldige
+			// polygoon zijn, en dan repareert geos terwijl dms even-odd leest. De
+			// afwijking wordt wel gemeten en gemeld zodra ze boven de tolerantie komt,
+			// want dat zegt iets over hoe ver de twee lezingen uiteenlopen.
+			container dms_c
+			{
+				parameter<bool>    supported := GeoDmsVersion() >= 20.20;
+				parameter<bool>    ok := Ops/ManySmall/dms/ok && Ops/FewLarge/dms/ok && Ops/GemReal/dms/ok && Ops/PandenReal/dms/ok;
+				parameter<float64> devTol := Parameters/relTol * 100.0;
+				parameter<string>  devNote := !supported ? ''
+					: (Ops/GemReal/dms/devVsGeos    <= devTol ? '' : '; municipalities ' + string(float32(Ops/GemReal/dms/devVsGeos * 100.0)) + '% from geos')
+					+ (Ops/PandenReal/dms/devVsGeos <= devTol ? '' : '; buildings ' + string(float32(Ops/PandenReal/dms/devVsGeos * 100.0)) + '% from geos');
+				parameter<string>  line :=
+					'<dms>&bull; Dms: ' + (!supported ? 'skipped (needs GeoDMS 20.20.0)'
+						: ok ? 'OK'
+						: 'FAILS ('
+							+ (Ops/ManySmall/dms/ok  ? '' : 'ManySmall: ' + Ops/ManySmall/dms/failwhat)
+							+ (Ops/FewLarge/dms/ok   ? '' : 'FewLarge: ' + Ops/FewLarge/dms/failwhat)
+							+ (Ops/GemReal/dms/ok    ? '' : 'municipalities: ' + Ops/GemReal/dms/failwhat)
+							+ (Ops/PandenReal/dms/ok ? '' : 'buildings: ' + Ops/PandenReal/dms/failwhat) + ')')
+					+ (devNote == '' ? '' : devNote + ' (even-odd reading where geos repairs; not counted as a failure)')
+					+ '</dms>';
+				parameter<string>  failnote :=
+					  (Ops/ManySmall/dms/ok ? '' : 'dms-ManySmall; ') + (Ops/FewLarge/dms/ok ? '' : 'dms-FewLarge; ')
+					+ (Ops/GemReal/dms/ok ? '' : 'dms-municipalities; ') + (Ops/PandenReal/dms/ok ? '' : 'dms-buildings; ');
+			}
+
 			// regressiewacht op de gefixte issue-882 (infix-union op de originele
 			// probleemgeometrie); stil zolang hij slaagt, een regel zodra hij faalt
 			container i882
@@ -452,12 +550,12 @@ container PolygonCompare
 					(ok_union ? '' : 'i882-union; ') + (ok_section ? '' : 'i882-section; ');
 			}
 
-			parameter<bool>   allOk   := geos_c/ok && bg_c/ok && bp_c/ok && cgal_c/ok && i882/ok_union && i882/ok_section && /ring_encoding/ok;
-			parameter<string> failing := geos_c/failnote + bg_c/failnote + bp_c/failnote + cgal_c/failnote + i882/failnote + /ring_encoding/failnote;
+			parameter<bool>   allOk   := geos_c/ok && bg_c/ok && bp_c/ok && cgal_c/ok && dms_c/ok && i882/ok_union && i882/ok_section && /ring_encoding/ok;
+			parameter<string> failing := geos_c/failnote + bg_c/failnote + bp_c/failnote + cgal_c/failnote + dms_c/failnote + i882/failnote + /ring_encoding/failnote;
 			parameter<string> result :=
 				'<description>polygon family compare: synthetic scenarios + CBS/BAG data</description>'
 				+ anchor_all
-				+ geos_c/line + bg_c/line + bp_c/line + cgal_c/line + i882/line + /ring_encoding/line
+				+ geos_c/line + bg_c/line + bp_c/line + cgal_c/line + dms_c/line + i882/line + /ring_encoding/line
 				+ (failing == '' ? '' : '<failing>' + failing + '</failing>')
 				+ '<result>' + (allOk ? 'OK' : 'False') + '</result>';
 			parameter<string> stored_result := result, StorageType = "str", Storagename = "= results_folder + '/t020_polygons.txt'";
@@ -489,6 +587,7 @@ container PolygonCompare
 			container n_bg   := Note_T('bg',   bg_c/line,   bg_c/ok);
 			container n_bp   := Note_T('bp',   bp_c/line,   bp_c/ok);
 			container n_cgal := Note_T('cgal', cgal_c/line, cgal_c/ok);
+			container n_dms  := Note_T('dms',  dms_c/line,  dms_c/ok);
 			// ring_encoding zit wel in allOk van de legacy .txt, maar het rapport geeft
 			// de .json voorrang: zonder deze note zou een falende ringformaat-bewaker
 			// nergens meer opduiken. Net als i882 alleen een regel zodra hij faalt.
@@ -498,7 +597,7 @@ container PolygonCompare
 
 			parameter<string> result_json :=
 				'{"schema":2,"test":"t020","kind":"reference_comparison"'
-				+ ',"title":"Polygon family compare (geos/bg/bp/cgal)"'
+				+ ',"title":"Polygon family compare (geos/bg/bp/cgal/dms)"'
 				+ ',"compared":"union invariants on synthetic scenarios and on CBS/BAG data"'
 				+ ',"reference":{"source":"inline","compare":"scalar"}'
 				// de ankerregel in notes toont deze waarden al; een regel per metric
@@ -506,7 +605,7 @@ container PolygonCompare
 				+ ',"metrics_display":"on_deviation"'
 				+ ',"metrics":[' + m_ms/result + ',' + m_fl/result + ',' + m_gem/result + ',' + m_pnd/result + ']'
 				+ ',"notes":[{"key":"anchor","text":"' + anchor_text + '","ok":true}'
-				+ ',' + n_geos/result + ',' + n_bg/result + ',' + n_bp/result + ',' + n_cgal/result
+				+ ',' + n_geos/result + ',' + n_bg/result + ',' + n_bp/result + ',' + n_cgal/result + ',' + n_dms/result
 				+ (i882/line == '' ? '' : ',{"key":"i882","text":"issue-882 repro: FAILS","ok":false}')
 				+ (/ring_encoding/line == '' ? '' : ',' + n_ringenc/result)
 				+ ']}'

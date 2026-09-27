@@ -169,15 +169,15 @@
 			attribute<float32> medianFloatDEF       (DomDomain): [];
 		}
 
-		container UnTiled  := Template(CDomain     , ADomain     , srcDomain     , srcDomDomain);
-		container EunTiled := Template(EDomain     , EDomain     , srcEDomain    , srcEDomDomain);
-		container Tiled    := Template(CTiledDomain, ATiledDomain, srcTiledDomain, srcTiledDomDomain);
-		container ETiled   := Template(ETiledDomain, ETiledDomain, srcETileDomain, srcETiledDomDomain);
+		container UnTiled  := TestTemplate(CDomain     , ADomain     , srcDomain     , srcDomDomain);
+		container EunTiled := TestTemplate(EDomain     , EDomain     , srcEDomain    , srcEDomDomain);
+		container Tiled    := TestTemplate(CTiledDomain, ATiledDomain, srcTiledDomain, srcTiledDomDomain);
+		container ETiled   := TestTemplate(ETiledDomain, ETiledDomain, srcETileDomain, srcETiledDomDomain);
 
-		//container UnTiled := Template(CDomain, ADomain);
-		//container Tiled := Template(CTiledDomain, ATiledDomain);
+		//container UnTiled := TestTemplate(CDomain, ADomain);
+		//container Tiled := TestTemplate(CTiledDomain, ATiledDomain);
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<uint32> Domain;
@@ -252,7 +252,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/le"
 			{
 				parameter<bool> test_param          := source/ParamB <= source/ParamB;
-				attribute<bool> attr (Domain)       := MakeDefined(Source/A, 9999f) <= MakeDefined(source/B, -9999f);
+				attribute<bool> attr (Domain)       := MakeDefined(source/A, 9999f) <= MakeDefined(source/B, -9999f);
 				attribute<bool> test (Domain)       := attr = source/AlteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := 'T' <= 't';
@@ -262,7 +262,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/le"
 			{
 				parameter<bool> test_param          := le(source/ParamB, source/ParamB);
-				attribute<bool> attr (Domain)       := le(MakeDefined(Source/A, 9999f), MakeDefined(source/B, -9999f));
+				attribute<bool> attr (Domain)       := le(MakeDefined(source/A, 9999f), MakeDefined(source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/AlteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := le('T', 't');
@@ -282,7 +282,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/gt"
 			{
 				parameter<bool> test_param          := source/ParamB > source/ParamA;
-				attribute<bool> attr (Domain)       := MakeDefined(Source/A, -9999f) > MakeDefined(source/B, 9999f);
+				attribute<bool> attr (Domain)       := MakeDefined(source/A, -9999f) > MakeDefined(source/B, 9999f);
 				attribute<bool> test (Domain)       := attr = source/AgtB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not('T' > 't');
@@ -292,7 +292,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/gt"
 			{
 				parameter<bool> test_param          := gt(source/ParamB, source/ParamA);
-				attribute<bool> attr (Domain)       := gt(MakeDefined(Source/A, -9999f), MakeDefined(source/B, 9999f));
+				attribute<bool> attr (Domain)       := gt(MakeDefined(source/A, -9999f), MakeDefined(source/B, 9999f));
 				attribute<bool> test (Domain)       := attr = source/AgtB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(gt('T', 't'));
@@ -302,7 +302,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/gt_or_rhs_null"
 			{
 				parameter<bool> test_param          := gt_or_rhs_null(source/ParamB, source/ParamA);
-				attribute<bool> attr (Domain)       := gt_or_rhs_null(MakeDefined(Source/A, -9999f), MakeDefined(source/B, -9999f));
+				attribute<bool> attr (Domain)       := gt_or_rhs_null(MakeDefined(source/A, -9999f), MakeDefined(source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/gtAB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(gt_or_rhs_null('T','t'));
@@ -312,7 +312,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/ge"
 			{
 				parameter<bool> test_param          := source/ParamB >= source/ParamB;
-				attribute<bool> attr (Domain)       := MakeDefined(Source/A, -9999f) >=  MakeDefined(Source/B, 9999f);
+				attribute<bool> attr (Domain)       := MakeDefined(source/A, -9999f) >=  MakeDefined(source/B, 9999f);
 				attribute<bool> test (Domain)       := attr = source/AgteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not('T' >= 't');
@@ -322,7 +322,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/ge"
 			{
 				parameter<bool> test_param          := ge(source/ParamB, source/ParamB);
-				attribute<bool> attr (Domain)       := ge(MakeDefined(Source/A, -9999f), MakeDefined(Source/B, 9999f));
+				attribute<bool> attr (Domain)       := ge(MakeDefined(source/A, -9999f), MakeDefined(source/B, 9999f));
 				attribute<bool> test (Domain)       := attr = source/AgteqB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(ge('T', 't'));
@@ -332,7 +332,7 @@
 			,	url   = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/ge_or_rhs_null"
 			{
 				parameter<bool> test_param          := ge_or_rhs_null(source/ParamB, source/ParamA);
-				attribute<bool> attr (Domain)       := ge_or_rhs_null(MakeDefined(Source/A, -9999f), MakeDefined(Source/B, -9999f));
+				attribute<bool> attr (Domain)       := ge_or_rhs_null(MakeDefined(source/A, -9999f), MakeDefined(source/B, -9999f));
 				attribute<bool> test (Domain)       := attr = source/geAB;
 				parameter<bool> test_attr           := all(test);
 				parameter<bool> test_case_sensitive := not(ge_or_rhs_null('T','t'));
@@ -463,13 +463,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
 
 				attribute<uint32> att_first_undefined   (DomDomain) := argmax_alldefined(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint32> att_second_undefined  (DomDomain) := argmax_alldefined(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint32> att_both_undefined    (DomDomain) := argmax_alldefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -490,13 +490,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0w;
 
 				attribute<uint16> att_first_undefined   (DomDomain) := argmax_alldefined_uint16(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint16> att_second_undefined  (DomDomain) := argmax_alldefined_uint16(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint16> att_both_undefined    (DomDomain) := argmax_alldefined_uint16(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -517,13 +517,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0b;
 
 				attribute<uint8>  att_first_undefined   (DomDomain) := argmax_alldefined_uint8(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint8>  att_second_undefined  (DomDomain) := argmax_alldefined_uint8(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint8>  att_both_undefined    (DomDomain) := argmax_alldefined_uint8(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -550,7 +550,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
 
 				attribute<uint32> att_both_undefined    (DomDomain) := argmax_ifdefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -577,7 +577,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0w;
 
 				attribute<uint16> att_both_undefined    (DomDomain) := argmax_ifdefined_uint16(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -604,7 +604,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0b;
 
 				attribute<uint8>  att_both_undefined    (DomDomain) := argmax_ifdefined_uint8(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -702,13 +702,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
 
 				attribute<uint32> att_first_undefined   (DomDomain) := argmin_alldefined(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint32> att_second_undefined  (DomDomain) := argmin_alldefined(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint32> att_both_undefined    (DomDomain) := argmin_alldefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -728,13 +728,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0w;
 
 				attribute<uint16> att_first_undefined   (DomDomain) := argmin_alldefined_uint16(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint16> att_second_undefined  (DomDomain) := argmin_alldefined_uint16(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint16> att_both_undefined    (DomDomain) := argmin_alldefined_uint16(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -754,13 +754,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0b;
 
 				attribute<uint8>  att_first_undefined   (DomDomain) := argmin_alldefined_uint8(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint8>  att_second_undefined  (DomDomain) := argmin_alldefined_uint8(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint8>  att_both_undefined    (DomDomain) := argmin_alldefined_uint8(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -786,7 +786,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
 
 				attribute<uint32> att_both_undefined    (DomDomain) := argmin_ifdefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -812,7 +812,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0w;
 
 				attribute<uint16> att_both_undefined    (DomDomain) := argmin_ifdefined_uint16(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -838,7 +838,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0b;
 
 				attribute<uint8>  att_both_undefined    (DomDomain) := argmin_ifdefined_uint8(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -866,7 +866,7 @@
 				attribute<bool>    test_second_undefined (DomDomain) := att_second_undefined == 0;
 
 				attribute<uint32>  att_both_undefined    (DomDomain) := max_elem(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>    test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>    test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>    test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -887,13 +887,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
 
 				attribute<uint32> att_first_undefined   (DomDomain) := max_elem_alldefined(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint32> att_second_undefined  (DomDomain) := max_elem_alldefined(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint32> att_both_undefined    (DomDomain) := max_elem_alldefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>    test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -921,7 +921,7 @@
 				attribute<bool>    test_second_undefined (DomDomain) := att_second_undefined == 0;
 
 				attribute<uint32>  att_both_undefined    (DomDomain) := max_elem_ifdefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>    test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>    test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>    test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -948,7 +948,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
 
 				attribute<uint32> att_both_undefined    (DomDomain) := min_elem(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -983,13 +983,13 @@
 				attribute<bool>   test_all_defined      (DomDomain) := att_all_defined == 0;
 
 				attribute<uint32> att_first_undefined   (DomDomain) := min_elem_alldefined(0 / 0 , const( 0,DomDomain));
-				attribute<bool>   test_first_undefined  (DomDomain) := isNull(att_first_undefined);
+				attribute<bool>   test_first_undefined  (DomDomain) := IsNull(att_first_undefined);
 
 				attribute<uint32> att_second_undefined  (DomDomain) := min_elem_alldefined(0     , const( 0 / 0,DomDomain));
-				attribute<bool>   test_second_undefined (DomDomain) := isNull(att_second_undefined);
+				attribute<bool>   test_second_undefined (DomDomain) := IsNull(att_second_undefined);
 
 				attribute<uint32> att_both_undefined    (DomDomain) := min_elem_alldefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -1016,7 +1016,7 @@
 				attribute<bool>   test_second_undefined (DomDomain) := att_second_undefined == 0;
 
 				attribute<uint32> att_both_undefined    (DomDomain) := min_elem_ifdefined(0 / 0 , const( 0 / 0,DomDomain));
-				attribute<bool>   test_both_undefined   (DomDomain) := isNull(att_both_undefined);
+				attribute<bool>   test_both_undefined   (DomDomain) := IsNull(att_both_undefined);
 
 				parameter<bool>   test_attr := all(test) && all(test_all_defined) && all(test_first_undefined) && all(test_second_undefined) && all(test_both_undefined);
 			}
@@ -1046,7 +1046,7 @@
 //				attribute<bool>   test_first_second_undefined (DomDomain) := att_first_second_undefined == 0;
 
 //				attribute<uint32> att_all_undefined    (DomDomain) := median(0 / 0 ,0 / 0,  const( 0 / 0,DomDomain));
-//				attribute<bool>   test_all_undefined   (DomDomain) := isNull(att_all_undefined);
+//				attribute<bool>   test_all_undefined   (DomDomain) := IsNull(att_all_undefined);
 
 				parameter<bool>    test_attr              :=  all(test) && all(test_all_defined) ;
 //					&& all(test_first_undefined) && all(test_second_undefined) && all(test_third_undefined) && all(test_first_second_undefined) && all(test_all_undefined);
@@ -1054,13 +1054,13 @@
 			}
 			container sort: url  = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/sort"
 			{
-				attribute<float32> att (Domain) := sort(Source/A);
-				attribute<bool>    test(Domain) := eq_or_both_null(Source/SortA, att);
+				attribute<float32> att (Domain) := sort(source/A);
+				attribute<bool>    test(Domain) := eq_or_both_null(source/SortA, att);
 				parameter<bool>    test_attr    := all(test);
 			}
 			container reverse: url = "http://www.objectvision.nl/geodms/operators-a-functions/ordering/reverse"
 			{
-				attribute<float32> att (Domain) := reverse(Source/A);
+				attribute<float32> att (Domain) := reverse(source/A);
 				unit<uint8> uint8Domain: nrofrows = 10
 				{
 					attribute<.>    id         := id(.);
@@ -1068,13 +1068,13 @@
 					attribute<bool> test       := reverse_id == max(id) - id;
 					parameter<bool> test_attr  := all(test);
 				}
-				attribute<bool>    test(Domain) := eq_or_both_null(Source/RevA, att);
+				attribute<bool>    test(Domain) := eq_or_both_null(source/RevA, att);
 				parameter<bool>    test_attr    := all(test) && uint8Domain/test_attr;
 			}
 			container float_is_nearby
 			{
-				attribute<bool> att  (Domain) := float_isNearby(Source/A, Source/B_nearby, 0.99f);
-				attribute<bool> test (Domain) := att == Source/flNAB;
+				attribute<bool> att  (Domain) := float_isNearby(source/A, source/B_nearby, 0.99f);
+				attribute<bool> test (Domain) := att == source/flNAB;
 				parameter<bool> test_attr     := all(test);
 			}
 			container results

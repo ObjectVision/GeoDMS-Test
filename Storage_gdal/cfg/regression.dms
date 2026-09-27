@@ -4,10 +4,10 @@ container regression
 	
 	parameter<string> export_all := 'OK'
 	,	ExplicitSuppliers = 
-		"dbf/Write/export;"
-		"csv/write/basic/Export;csv/write/semicolon/Export;csv/write/comma/Export;csv/write/sublevel_container/Export;csv/write/sublevel_unit/Export;csv/write/sublevel_container_unit/Export;"
-		"csv/write/one_column/Export;csv/write/Geometry/polygon/Export;csv/write/Geometry/arc/Export;csv/write/Geometry/Point/Export;csv/write/Grid/Export;"
-		"EsriShape/Point/write/Export;EsriShape/arc/write/Export;EsriShape/polygon/write/Export;EsriShape/extra_level/Export;EsriShape/with_index/Export;"
+		"dbf/write/export;"
+		"csv/write/basic/export;csv/write/semicolon/export;csv/write/comma/export;csv/write/sublevel_container/export;csv/write/sublevel_unit/export;csv/write/sublevel_container_unit/export;"
+		"csv/write/one_column/export;csv/write/geometry/polygon/export;csv/write/geometry/arc/export;csv/write/geometry/point/export;csv/write/grid/export;"
+		"EsriShape/point/write/export;EsriShape/arc/write/export;EsriShape/polygon/write/export;EsriShape/extra_level/export;EsriShape/with_index/export;"
 		"gml/write/poly/export;"
 		"geoJSON/write/export/mask_ettenleur;"
 		
@@ -21,7 +21,7 @@ container regression
 	{
 		parameter<bool> vect_read_all := 
 			   dbf/read/results/all && csv/read/results/all 
-			&& EsriShape/Point/read/results/all && EsriShape/arc/read/results/all && EsriShape/Polygon/read/results/all
+			&& EsriShape/point/read/results/all && EsriShape/arc/read/results/all && EsriShape/polygon/read/results/all
 			&& gml/read/poly/results/all
 			&& fgdb/read/results/all
 			&& pbf/read/tests/all
@@ -30,19 +30,19 @@ container regression
 
 		parameter<string> vect_read_str := string(vect_read_all)
 		,	StorageType = "str"
-		,	storagename = "%localDataProjDir%/regr_results/vect_read_regr.txt";
+		,	StorageName = "%localDataProjDir%/regr_results/vect_read_regr.txt";
 
 		parameter<string> unit_test_vect_read_log := vect_read_all
 			? '' 
-			: 'Storage Read GDAL vector formats: ' + expand(., '%configDir%') + '.dms ' + PropValue(vect_read_all, 'fullname') + ' result: not OK'
+			: 'Storage Read GDAL vector formats: ' + expand(., '%configDir%') + '.dms ' + PropValue(vect_read_all, 'FullName') + ' result: not OK'
 		,	StorageType = "str"
-		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_gdal_vect_formats.txt";
+		,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/read_gdal_vect_formats.txt";
 
 
 		parameter<bool> vect_write_all := 
 			   dbf/write/results/all && csv/write/results/all
-			&& EsriShape/Point/write/results/all && EsriShape/arc/write/results/all && EsriShape/polygon/write/results/all && EsriShape/extra_level/results/all 
-			//&& EsriShape/with_index/Test/All 
+			&& EsriShape/point/write/results/all && EsriShape/arc/write/results/all && EsriShape/polygon/write/results/all && EsriShape/extra_level/results/all 
+			//&& EsriShape/with_index/test/All 
 			&& gml/write/results/all  
 			&& geoJSON/write/tests/all 
 			&& geopackage/write/tests/results/all
@@ -50,32 +50,32 @@ container regression
 
 		parameter<string> vect_write_str := string(vect_write_all)
 		,	StorageType = "str"
-		,	storagename = "%localDataProjDir%/regr_results/vect_write_regr.txt";
+		,	StorageName = "%localDataProjDir%/regr_results/vect_write_regr.txt";
 
 		parameter<bool> grid_read_all := Tiff/read/results/all;
 
 		parameter<string> grid_read_str := string(grid_read_all)
 		,	StorageType = "str"
-		,	storagename = "%localDataProjDir%/regr_results/grid_read_regr.txt";
+		,	StorageName = "%localDataProjDir%/regr_results/grid_read_regr.txt";
 		
 		parameter<string> unit_test_grid_read_log := grid_read_all
 			? '' 
-			: 'Storage Read GDAL grid formats: ' + expand(., '%configDir%') + '.dms ' + PropValue(grid_read_all, 'fullname') + ' result: not OK'
+			: 'Storage Read GDAL grid formats: ' + expand(., '%configDir%') + '.dms ' + PropValue(grid_read_all, 'FullName') + ' result: not OK'
 		,	StorageType = "str"
-		,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_gdal_grid_formats.txt";
+		,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/read_gdal_grid_formats.txt";
 		
 		
 		parameter<bool> grid_write_all := Tiff/write/results/all ;
 
 		parameter<string> grid_write_str := string(grid_write_all)
 		,	StorageType = "str"
-		,	storagename = "%localDataProjDir%/regr_results/grid_write_regr.txt";
+		,	StorageName = "%localDataProjDir%/regr_results/grid_write_regr.txt";
 	}
 	
 	container units 
 	{ 
 		#include<wmts_layer.dms>
-		unit<float32> m         := baseunit('m', float32);
+		unit<float32> m         := BaseUnit('m', float32);
 		unit<fpoint>  point_rd_base : 
 			DialogData = "wmts_layer" 
 		,	SpatialReference     = "EPSG:28992";
@@ -109,7 +109,7 @@ container regression
 		unit<uint32> point: nrofrows = 5
 		{
 			attribute<fpoint> geometry :[yx(401331, 115135),yx(399476, 111803),yx(399289, 114903),yx(401729, 111353),yx(398696, 111741)];
-			attribute<string> label    := 'point_' + string(id(.));
+			attribute<string> Label    := 'point_' + string(id(.));
 			attribute<string> wkt      : 
 				[
 					 'POINT (115135 401331)'
@@ -120,7 +120,7 @@ container regression
 				];
 		}
 
-		unit<uint32> arc := EsriShape/arc/read/arcset 
+		unit<uint32> arc := EsriShape/arc/read/ArcSet 
 		{
 			unit<uint32> pointset: nrofrows = 8
 			{
@@ -129,7 +129,7 @@ container regression
 				attribute<uint32> ordinal  : [0,1,2,0,1,0,1,2];
 			}
 			attribute<fpoint> geometry (arc) := points2sequence(pointset/geometry, pointset/seq_nr, pointset/ordinal);
-			attribute<string> label          : ['A27;E311','A59','A27;E311'];
+			attribute<string> Label          : ['A27;E311','A59','A27;E311'];
 			attribute<string> wkt            : 
 				[
 					 'LINESTRING (120157 411022,120487 413887,120584 414205)'
@@ -147,7 +147,7 @@ container regression
 				attribute<uint32>  ordinal  : [0,1,2,3,0,1,2,3];
 			}
 			attribute<fpoint> geometry (poly) := points2sequence(pointset/geometry, pointset/seq_nr, pointset/ordinal);
-			attribute<string> label           : ['A27;E311','A59','A27;E311'];
+			attribute<string> Label           : ['A27;E311','A59','A27;E311'];
 			attribute<string> wkt             : 
 				[
 					 'MULTIPOLYGON (((120157 411022,120487 413887,120584 414205,120157 411022)))'
@@ -156,7 +156,7 @@ container regression
 				];
 		}
 
-		unit<spoint> grid := Tiff/read/Grid_uint32
+		unit<spoint> grid := Tiff/read/grid_uint32
 		{
 			attribute<uint32>  GridData_uint32  : [0, 100, 12607552, 2000, 65535, 8405088, 49376, 1, 16777215, 12639424, 17, 8437920, 12624064, 4294967294, null, null];
 			attribute<uint8>   GridData_uint8   : [0, 254, 100, 200, 55, 1, 200, 10, 125, 37, 189, 5, 150, null, null, null];
@@ -417,7 +417,7 @@ container regression
 			}
 		}
 
-		container Write: Using = "csv/read"
+		container write: Using = "csv/read"
 		{
 			container basic
 			{
@@ -451,18 +451,18 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)          , int32(ReRead/gdal/IntegerAtt));
-					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)         , uint32(ReRead/gdal/UIntegerAtt));
-					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)            , int64(ReRead/gdal/Int64Att));
-					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)           , uint64(ReRead/gdal/UInt64Att));
-					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)            , float32(ReRead/gdal/FloatAtt));
-					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)          , float64(ReRead/gdal/Float64Att));
-					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty), string(ReRead/gdal/StringAtt));
-					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)             , bool(ReRead/gdal/BoolAtt));
-					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)         , uint2(ReRead/gdal/UInt2Att);
-					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)          , uint4(ReRead/gdal/UInt4Att);
-					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)            , uint8(ReRead/gdal/UInt8Att));
-					parameter<uint32> nr_comma := strcount(ReRead/str,',');
+					attribute<bool> IntegerAtt  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/IntegerAtt)          , int32(reread/gdal/IntegerAtt));
+					attribute<bool> UIntegerAtt (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UIntegerAtt)         , uint32(reread/gdal/UIntegerAtt));
+					attribute<bool> Int64Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Int64Att)            , int64(reread/gdal/Int64Att));
+					attribute<bool> UInt64Att   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt64Att)           , uint64(reread/gdal/UInt64Att));
+					attribute<bool> FloatAtt    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/FloatAtt)            , float32(reread/gdal/FloatAtt));
+					attribute<bool> Float64Att  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Float64Att)          , float64(reread/gdal/Float64Att));
+					attribute<bool> StringAtt   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/StringAttSingleEmpty), string(reread/gdal/StringAtt));
+					attribute<bool> BoolAtt     (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/BoolAtt)             , bool(reread/gdal/BoolAtt));
+					//attribute<bool> UInt2Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt2Att)         , uint2(reread/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt4Att)          , uint4(reread/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt8Att)            , uint8(reread/gdal/UInt8Att));
+					parameter<uint32> nr_comma := strcount(reread/str,',');
 				}
 
 				container results
@@ -522,18 +522,18 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
-					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
-					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
-					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
-					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
-					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
-					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
-					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
-					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
-					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
-					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
-					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+					attribute<bool> IntegerAtt  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/IntegerAtt)           , reread/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UIntegerAtt)          , reread/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Int64Att)             , reread/gdal/Int64Att);
+					attribute<bool> UInt64Att   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt64Att)            , reread/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/FloatAtt)             , reread/gdal/FloatAtt);
+					attribute<bool> Float64Att  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Float64Att)           , reread/gdal/Float64Att);
+					attribute<bool> StringAtt   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/StringAttSingleEmpty) , reread/gdal/StringAtt);
+					attribute<bool> BoolAtt     (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/BoolAtt)              , reread/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt2Att)           , reread/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt4Att)           , reread/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt8Att)             , reread/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(reread/str,';');
 				}
 
 				container results
@@ -593,18 +593,18 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
-					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
-					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
-					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
-					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
-					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
-					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
-					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
-					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
-					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
-					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
-					parameter<uint32> nr_comma := strcount(ReRead/str,',');
+					attribute<bool> IntegerAtt  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/IntegerAtt)           , reread/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UIntegerAtt)          , reread/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Int64Att)             , reread/gdal/Int64Att);
+					attribute<bool> UInt64Att   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt64Att)            , reread/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/FloatAtt)             , reread/gdal/FloatAtt);
+					attribute<bool> Float64Att  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Float64Att)           , reread/gdal/Float64Att);
+					attribute<bool> StringAtt   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/StringAttSingleEmpty) , reread/gdal/StringAtt);
+					attribute<bool> BoolAtt     (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/BoolAtt)              , reread/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt2Att)           , reread/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt4Att)           , reread/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt8Att)             , reread/gdal/UInt8Att);
+					parameter<uint32> nr_comma := strcount(reread/str,',');
 				}
 
 				container results
@@ -666,18 +666,18 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
-					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
-					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
-					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
-					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
-					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
-					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
-					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
-					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
-					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
-					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
-					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+					attribute<bool> IntegerAtt  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/IntegerAtt)           , reread/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UIntegerAtt)          , reread/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Int64Att)             , reread/gdal/Int64Att);
+					attribute<bool> UInt64Att   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt64Att)            , reread/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/FloatAtt)             , reread/gdal/FloatAtt);
+					attribute<bool> Float64Att  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Float64Att)           , reread/gdal/Float64Att);
+					attribute<bool> StringAtt   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/StringAttSingleEmpty) , reread/gdal/StringAtt);
+					attribute<bool> BoolAtt     (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/BoolAtt)              , reread/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt2Att)           , reread/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt4Att)           , reread/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt8Att)             , reread/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(reread/str,';');
 				}
 		
 				container results
@@ -740,18 +740,18 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
-					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
-					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
-					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
-					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
-					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
-					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
-					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
-					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
-					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
-					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
-					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+					attribute<bool> IntegerAtt  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/IntegerAtt)           , reread/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UIntegerAtt)          , reread/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Int64Att)             , reread/gdal/Int64Att);
+					attribute<bool> UInt64Att   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt64Att)            , reread/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/FloatAtt)             , reread/gdal/FloatAtt);
+					attribute<bool> Float64Att  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Float64Att)           , reread/gdal/Float64Att);
+					attribute<bool> StringAtt   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/StringAttSingleEmpty) , reread/gdal/StringAtt);
+					attribute<bool> BoolAtt     (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/BoolAtt)              , reread/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt2Att)           , reread/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt4Att)           , reread/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt8Att)             , reread/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(reread/str,';');
 				}
 
 				container results
@@ -815,18 +815,18 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)           , ReRead/gdal/IntegerAtt);
-					attribute<bool> UIntegerAtt (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UIntegerAtt)          , ReRead/gdal/UIntegerAtt);
-					attribute<bool> Int64Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Int64Att)             , ReRead/gdal/Int64Att);
-					attribute<bool> UInt64Att   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt64Att)            , ReRead/gdal/UInt64Att);
-					attribute<bool> FloatAtt    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/FloatAtt)             , ReRead/gdal/FloatAtt);
-					attribute<bool> Float64Att  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/Float64Att)           , ReRead/gdal/Float64Att);
-					attribute<bool> StringAtt   (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/StringAttSingleEmpty) , ReRead/gdal/StringAtt);
-					attribute<bool> BoolAtt     (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/BoolAtt)              , ReRead/gdal/BoolAtt);
-					//attribute<bool> UInt2Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt2Att)           , ReRead/gdal/UInt2Att);
-					//attribute<bool> UInt4Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt4Att)           , ReRead/gdal/UInt4Att);
-					attribute<bool> UInt8Att    (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/UInt8Att)             , ReRead/gdal/UInt8Att);
-					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+					attribute<bool> IntegerAtt  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/IntegerAtt)           , reread/gdal/IntegerAtt);
+					attribute<bool> UIntegerAtt (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UIntegerAtt)          , reread/gdal/UIntegerAtt);
+					attribute<bool> Int64Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Int64Att)             , reread/gdal/Int64Att);
+					attribute<bool> UInt64Att   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt64Att)            , reread/gdal/UInt64Att);
+					attribute<bool> FloatAtt    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/FloatAtt)             , reread/gdal/FloatAtt);
+					attribute<bool> Float64Att  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/Float64Att)           , reread/gdal/Float64Att);
+					attribute<bool> StringAtt   (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/StringAttSingleEmpty) , reread/gdal/StringAtt);
+					attribute<bool> BoolAtt     (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/BoolAtt)              , reread/gdal/BoolAtt);
+					//attribute<bool> UInt2Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt2Att)           , reread/gdal/UInt2Att);
+					//attribute<bool> UInt4Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt4Att)           , reread/gdal/UInt4Att);
+					attribute<bool> UInt8Att    (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/UInt8Att)             , reread/gdal/UInt8Att);
+					parameter<uint32> nr_semicolon := strcount(reread/str,';');
 				}
 
 				container results
@@ -866,7 +866,7 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> IntegerAtt  (ReRead/gdal) := eq_or_both_null(Union_Data(ReRead/gdal, reference/IntegerAtt)  , ReRead/gdal/IntegerAtt);
+					attribute<bool> IntegerAtt  (reread/gdal) := eq_or_both_null(union_data(reread/gdal, reference/IntegerAtt)  , reread/gdal/IntegerAtt);
 					parameter<uint32> nr_semicolon := strcount(reread/str,';');
 				}
 
@@ -882,10 +882,10 @@ container regression
 
 				container polygon
 				{
-					unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_poly.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
+					unit<uint32> export := reference/polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_poly.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
 					{
-						attribute<fPoint> geometry (poly) := reference/Polygon/Geometry ;
-						attribute<string> label           := reference/Polygon/Label ;
+						attribute<fpoint> geometry (poly) := reference/polygon/geometry ;
+						attribute<string> Label           := reference/polygon/Label ;
 					}
 
 					container reread
@@ -897,7 +897,7 @@ container regression
 							SyncMode        = "all"
 						{
 							attribute<string> geometry;
-							attribute<string> label;
+							attribute<string> Label;
 						}
 
 						parameter<string> str:
@@ -908,8 +908,8 @@ container regression
 
 					container tests
 					{
-						attribute<bool> test_WKT   (ReRead/gdal) := ReRead/gdal/geometry == union_data(ReRead/gdal, reference/Polygon/WKT);
-						attribute<bool> test_label (ReRead/gdal) := ReRead/gdal/label    == union_data(ReRead/gdal, reference/Polygon/label);
+						attribute<bool> test_WKT   (reread/gdal) := reread/gdal/geometry == union_data(reread/gdal, reference/polygon/WKT);
+						attribute<bool> test_label (reread/gdal) := reread/gdal/Label    == union_data(reread/gdal, reference/polygon/Label);
 
 						parameter<uint32> nr_semicolon := strcount(reread/str,';');
 					}
@@ -924,11 +924,11 @@ container regression
 				{
 					unit<uint32> export := reference/arc, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_arc.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
 					{
-						attribute<fPoint> geometry (arc) := reference/arc/Geometry ;
-						attribute<string> label          := reference/arc/Label ;
+						attribute<fpoint> geometry (arc) := reference/arc/geometry ;
+						attribute<string> Label          := reference/arc/Label ;
 					}
 
-					container ReRead
+					container reread
 					{
 						unit<uint32> gdal:
 							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_arc.csv",
@@ -937,7 +937,7 @@ container regression
 							SyncMode        = "all"
 						{
 							attribute<string> geometry;
-							attribute<string> label;
+							attribute<string> Label;
 						}
 
 						parameter<string> str:
@@ -948,10 +948,10 @@ container regression
 
 					container tests
 					{
-						attribute<bool> test_WKT   (ReRead/gdal) := ReRead/gdal/geometry == union_data(ReRead/gdal, reference/arc/WKT);
-						attribute<bool> test_label (ReRead/gdal) := ReRead/gdal/label    == union_data(ReRead/gdal, reference/arc/label);
+						attribute<bool> test_WKT   (reread/gdal) := reread/gdal/geometry == union_data(reread/gdal, reference/arc/WKT);
+						attribute<bool> test_label (reread/gdal) := reread/gdal/Label    == union_data(reread/gdal, reference/arc/Label);
 
-						parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+						parameter<uint32> nr_semicolon := strcount(reread/str,';');
 					}
 
 					container results
@@ -964,11 +964,11 @@ container regression
 				{
 					unit<uint32> export := reference/point, StorageName = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_point.csv", StorageType = "gdalwrite.vect", StorageReadOnly = "false"
 					{
-						attribute<fPoint> geometry := reference/point/Geometry ;
-						attribute<string> label    := reference/point/Label ;
+						attribute<fpoint> geometry := reference/point/geometry ;
+						attribute<string> Label    := reference/point/Label ;
 					}
 
-					container ReRead
+					container reread
 					{
 						unit<uint32> gdal:
 							StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_point.csv",
@@ -977,7 +977,7 @@ container regression
 							SyncMode        = "all"
 						{
 							attribute<string> geometry;
-							attribute<string> label;
+							attribute<string> Label;
 						}
 
 						parameter<string> str:
@@ -988,10 +988,10 @@ container regression
 					
 					container tests
 					{
-						attribute<bool> test_WKT   (ReRead/gdal) := ReRead/gdal/geometry == union_data(ReRead/gdal, reference/point/WKT);
-						attribute<bool> test_label (ReRead/gdal) := ReRead/gdal/label    == union_data(ReRead/gdal, reference/point/label);
+						attribute<bool> test_WKT   (reread/gdal) := reread/gdal/geometry == union_data(reread/gdal, reference/point/WKT);
+						attribute<bool> test_label (reread/gdal) := reread/gdal/Label    == union_data(reread/gdal, reference/point/Label);
 
-						parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+						parameter<uint32> nr_semicolon := strcount(reread/str,';');
 					}
 
 					container results
@@ -1023,7 +1023,7 @@ container regression
 					attribute<.>     id  := id(.);
 					attribute<int16> col := pointCol(id);
 				}
-				container ReRead
+				container reread
 				{
 					unit<uint32> gdal:
 						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/csv/gdal_spoint.csv",
@@ -1042,10 +1042,10 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> id  (ReRead/gdal) := ReRead/gdal/id  == union_data(ReRead/gdal, id(export));
-					attribute<bool> col (ReRead/gdal) := ReRead/gdal/col == union_data(ReRead/gdal, pointCol(id(export)));
+					attribute<bool> id  (reread/gdal) := reread/gdal/id  == union_data(reread/gdal, id(export));
+					attribute<bool> col (reread/gdal) := reread/gdal/col == union_data(reread/gdal, pointCol(id(export)));
 
-					parameter<uint32> nr_semicolon := strcount(ReRead/str,';');
+					parameter<uint32> nr_semicolon := strcount(reread/str,';');
 				}
 
 				container results
@@ -1058,18 +1058,18 @@ container regression
 				parameter <bool> all:= 
 				    basic/results/all && semicolon/results/all && comma/results/all 
 				 && sublevel_container/results/all && sublevel_unit/results/all && sublevel_container_unit/results/all && one_column/results/all 
-				 && Geometry/polygon/results/all && Geometry/arc/results/all && Geometry/Point/results/all && grid/results/all;
+				 && geometry/polygon/results/all && geometry/arc/results/all && geometry/point/results/all && grid/results/all;
 			}
 		}
 
 	}
 	container EsriShape
 	{
-		container Point
+		container point
 		{
 			container read
 			{
-				unit<uint32> PointSet:
+				unit<uint32> pointset:
 					StorageName     = "%projdir%/data/vect/point/point.shp",
 					StorageType     = "gdal.vect",
 					StorageReadOnly = "True",
@@ -1081,8 +1081,8 @@ container regression
 
 				container tests
 				{
-					attribute<bool> geometry (PointSet) := Union_Data(Pointset, reference/Point/Geometry) == PointSet/geometry;
-					attribute<bool> name     (PointSet) := Union_Data(Pointset, reference/Point/label)    == PointSet/name;
+					attribute<bool> geometry (pointset) := union_data(pointset, reference/point/geometry) == pointset/geometry;
+					attribute<bool> name     (pointset) := union_data(pointset, reference/point/Label)    == pointset/name;
 				}
 
 				container results
@@ -1090,16 +1090,16 @@ container regression
 					parameter<bool> all := all(tests/geometry) && all(tests/name);
 				}
 			}
-			container Write
+			container write
 			{
-				unit<uint32> export := reference/Point, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/point.shp", StorageType = "gdalwrite.vect"
+				unit<uint32> export := reference/point, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/point.shp", StorageType = "gdalwrite.vect"
 				{
-					attribute<fpoint> geometry := reference/Point/Geometry;
-					attribute<string> name     := reference/Point/label;
+					attribute<fpoint> geometry := reference/point/geometry;
+					attribute<string> name     := reference/point/Label;
 					attribute<string> name2 := name, DisableStorage="true";
 					attribute<string> name3 := name;
 				}
-				container ReRead
+				container reread
 				{
 					unit<uint32> export:
 						StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/point.shp",
@@ -1112,8 +1112,8 @@ container regression
 				}
 				container tests
 				{
-					attribute<bool> geometry (ReRead/export) := Union_Data(ReRead/export, reference/Point/Geometry) == ReRead/export/geometry;
-					attribute<bool> name     (ReRead/export) := Union_Data(ReRead/export, reference/Point/label)    == ReRead/export/name;
+					attribute<bool> geometry (reread/export) := union_data(reread/export, reference/point/geometry) == reread/export/geometry;
+					attribute<bool> name     (reread/export) := union_data(reread/export, reference/point/Label)    == reread/export/name;
 				}
 
 				container results
@@ -1123,7 +1123,7 @@ container regression
 			}
 		}
 
-		container Arc
+		container arc
 		{
 			container read
 			{
@@ -1133,18 +1133,18 @@ container regression
 					StorageReadOnly = "True"
 				{
 					attribute<fpoint> geometry (arc);
-					attribute<string> label;
+					attribute<string> Label;
 				}
 				container tests
 				{
-					unit<uint32> PointSet: = Sequence2Points(ArcSet/geometry);
+					unit<uint32> pointset: = sequence2points(ArcSet/geometry);
 	
-					attribute<fpoint> point_ref  (PointSet) := union_data(Pointset, reference/arc/pointset/geometry);
-					attribute<bool>   test_point (PointSet) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet) := pointset/sequence_rel ==  union_data(Pointset, reference/arc/pointset/seq_nr);
-					attribute<bool>   test_ord   (PointSet) := pointset/ordinal ==  union_data(Pointset, reference/arc/pointset/ordinal);
+					attribute<fpoint> point_ref  (pointset) := union_data(pointset, reference/arc/pointset/geometry);
+					attribute<bool>   test_point (pointset) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (pointset) := pointset/sequence_rel ==  union_data(pointset, reference/arc/pointset/seq_nr);
+					attribute<bool>   test_ord   (pointset) := pointset/ordinal ==  union_data(pointset, reference/arc/pointset/ordinal);
 
-					attribute<bool>   test_label (ArcSet)   := ArcSet/label == union_data(ArcSet, reference/arc/label);
+					attribute<bool>   test_label (ArcSet)   := ArcSet/Label == union_data(ArcSet, reference/arc/Label);
 				}
 				container results
 				{
@@ -1152,16 +1152,16 @@ container regression
 				}
 			}
 
-			container Write
+			container write
 			{
 				unit<uint32> export := reference/arc, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/arc.shp", StorageType = "gdalwrite.vect"
 				{
 					attribute<fpoint> geometry (arc) := reference/arc/geometry;
-					attribute<string> name           := reference/arc/label;
+					attribute<string> name           := reference/arc/Label;
 				}
-				container ReRead
+				container reread
 				{
-					unit<uint32> Export
+					unit<uint32> export
 					: StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/arc.shp"
 					, StorageType     = "gdal.vect"
 					, StorageReadOnly = "True"
@@ -1172,14 +1172,14 @@ container regression
 				}
 				container tests
 				{
-					unit<uint32> PointSet: = Sequence2Points(ReRead/Export/geometry);
+					unit<uint32> pointset: = sequence2points(reread/export/geometry);
 	
-					attribute<fpoint> point_ref  (PointSet) := union_data(Pointset, reference/arc/pointset/geometry);
-					attribute<bool>   test_point (PointSet) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet) := pointset/sequence_rel ==  union_data(Pointset, reference/arc/pointset/seq_nr)[EsriShape/arc/Write/reread/export];
-					attribute<bool>   test_ord   (PointSet) := pointset/ordinal    ==  union_data(Pointset, reference/arc/pointset/ordinal);
+					attribute<fpoint> point_ref  (pointset) := union_data(pointset, reference/arc/pointset/geometry);
+					attribute<bool>   test_point (pointset) := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (pointset) := pointset/sequence_rel ==  union_data(pointset, reference/arc/pointset/seq_nr)[EsriShape/arc/write/reread/export];
+					attribute<bool>   test_ord   (pointset) := pointset/ordinal    ==  union_data(pointset, reference/arc/pointset/ordinal);
 
-					attribute<bool>   test_label (ReRead/Export)   := ReRead/Export/name == union_data(ReRead/Export, reference/arc/label);
+					attribute<bool>   test_label (reread/export)   := reread/export/name == union_data(reread/export, reference/arc/Label);
 				}
 				container results
 				{
@@ -1188,7 +1188,7 @@ container regression
 			}
 		}
 
-		container Polygon
+		container polygon
 		{
 			container read
 			{
@@ -1198,19 +1198,19 @@ container regression
 					StorageReadOnly = "True"
 				{
 					attribute<fpoint> geometry (poly);
-					attribute<string> label;
+					attribute<string> Label;
 				}
 				container tests
 				{
-					unit<uint32> PointSet: = Sequence2Points(PolygonSet/geometry);
+					unit<uint32> pointset: = sequence2points(PolygonSet/geometry);
 	
-					attribute<fpoint> point_ref  (PointSet)   := union_data(Pointset,   reference/polygon/pointset/geometry);
-					attribute<string> name_ref   (PolygonSet) := union_data(PolygonSet, reference/polygon/label);
+					attribute<fpoint> point_ref  (pointset)   := union_data(pointset,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref   (PolygonSet) := union_data(PolygonSet, reference/polygon/Label);
 	
-					attribute<bool>   test_point (PointSet)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet)   := pointset/sequence_rel == union_data(Pointset, reference/polygon/pointset/seq_nr);
-					attribute<bool>   test_ord   (PointSet)   := pointset/ordinal      == union_data(Pointset, reference/polygon/pointset/ordinal);
-					attribute<bool>   test_label (PolygonSet) := PolygonSet/label      == name_ref;
+					attribute<bool>   test_point (pointset)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (pointset)   := pointset/sequence_rel == union_data(pointset, reference/polygon/pointset/seq_nr);
+					attribute<bool>   test_ord   (pointset)   := pointset/ordinal      == union_data(pointset, reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (PolygonSet) := PolygonSet/Label      == name_ref;
 				}
 				container results
 				{
@@ -1218,14 +1218,14 @@ container regression
 				}
 			}
 
-			container Write
+			container write
 			{
-				unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly.shp", StorageType = "gdalwrite.vect"
+				unit<uint32> export := reference/polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly.shp", StorageType = "gdalwrite.vect"
 				{
-					attribute<fpoint> geometry (polygon) := reference/Polygon/geometry;
-					attribute<string> name               := reference/Polygon/label;
+					attribute<fpoint> geometry (polygon) := reference/polygon/geometry;
+					attribute<string> name               := reference/polygon/Label;
 				}
-				container ReRead
+				container reread
 				{
 					unit<uint32> export 
 					: StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/poly.shp"
@@ -1238,15 +1238,15 @@ container regression
 				}
 				container tests
 				{
-					unit<uint32> PointSet: = Sequence2Points(ReRead/export/geometry);
+					unit<uint32> pointset: = sequence2points(reread/export/geometry);
 	
-					attribute<fpoint> point_ref  (PointSet)      := union_data(Pointset,   reference/polygon/pointset/geometry);
-					attribute<string> name_ref   (ReRead/export) := union_data(ReRead/export, reference/polygon/label);
+					attribute<fpoint> point_ref  (pointset)      := union_data(pointset,   reference/polygon/pointset/geometry);
+					attribute<string> name_ref   (reread/export) := union_data(reread/export, reference/polygon/Label);
 	
-					attribute<bool>   test_point (PointSet)      := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-					attribute<bool>   test_seq   (PointSet)      := pointset/sequence_rel == union_data(Pointset, reference/polygon/pointset/seq_nr)[reread/export];
-					attribute<bool>   test_ord   (PointSet)      := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
-					attribute<bool>   test_label (ReRead/export) := ReRead/export/name  == name_ref;
+					attribute<bool>   test_point (pointset)      := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+					attribute<bool>   test_seq   (pointset)      := pointset/sequence_rel == union_data(pointset, reference/polygon/pointset/seq_nr)[reread/export];
+					attribute<bool>   test_ord   (pointset)      := pointset/ordinal    == union_data(pointset, reference/polygon/pointset/ordinal);
+					attribute<bool>   test_label (reread/export) := reread/export/name  == name_ref;
 				}
 				container results
 				{
@@ -1256,16 +1256,16 @@ container regression
 		}
 		container MultiGeometry
 		{
-			unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/geom_multi.shp", StorageType = "gdalwrite.vect"
+			unit<uint32> export := reference/polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/geom_multi.shp", StorageType = "gdalwrite.vect"
 			{
-				attribute<fpoint> geometry_poly  (polygon) := reference/polygon/Geometry;
-				attribute<fpoint> geometry_arc   (arc)     := union_data(., reference/arc/Geometry);
+				attribute<fpoint> geometry_poly  (polygon) := reference/polygon/geometry;
+				attribute<fpoint> geometry_arc   (arc)     := union_data(., reference/arc/geometry);
 				attribute<fpoint> geometry_point           := centroid(geometry_poly);
-				attribute<string> name                     := reference/polygon/label;
+				attribute<string> name                     := reference/polygon/Label;
 			}
-			container ReRead
+			container reread
 			{
-				unit<uint32> export := Polygon/read/PolygonSet
+				unit<uint32> export := polygon/read/PolygonSet
 				, StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/geom_multi.shp"
 				, StorageType     = "gdal.vect"
 				, StorageReadOnly = "True"
@@ -1276,15 +1276,15 @@ container regression
 			}
 			container tests
 			{
-				unit<uint32> PointSet: = Sequence2Points(ReRead/export/geometry);
+				unit<uint32> pointset: = sequence2points(reread/export/geometry);
 
-				attribute<units/point_rd> point_ref  (PointSet)   := union_data(Pointset,   reference/point/geometry);
+				attribute<units/point_rd> point_ref  (pointset)   := union_data(pointset,   reference/point/geometry);
 				attribute<string>         name_ref   (PolygonSet) := union_data(PolygonSet, reference/point/name);
 
-				attribute<bool>           test_point (PointSet)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
-				attribute<bool>           test_seq   (PointSet)   := pointset/sequence_rel ==  union_data(Pointset, /EsriShape/polygon/reference/sequence);
-				attribute<bool>           test_ord   (PointSet)   := pointset/ordinal ==  union_data(Pointset, /EsriShape/polygon/reference/ordinal);
-				attribute<bool>           test_label (PolygonSet) := PolygonSet/label == name_ref;
+				attribute<bool>           test_point (pointset)   := point_isNearby(pointset/point, point_ref, Dif_all_float32);
+				attribute<bool>           test_seq   (pointset)   := pointset/sequence_rel ==  union_data(pointset, /EsriShape/polygon/reference/sequence);
+				attribute<bool>           test_ord   (pointset)   := pointset/ordinal ==  union_data(pointset, /EsriShape/polygon/reference/ordinal);
+				attribute<bool>           test_label (PolygonSet) := PolygonSet/Label == name_ref;
 			}
 
 			container results
@@ -1294,10 +1294,10 @@ container regression
 		}
 		container extra_level
 		{
-			unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_mulev.shp", StorageType = "gdalwrite.vect"
+			unit<uint32> export := reference/polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_mulev.shp", StorageType = "gdalwrite.vect"
 			{
-				attribute<fpoint> geometry (polygon) := reference/Polygon/geometry;
-				attribute<string> name               := reference/Polygon/label;
+				attribute<fpoint> geometry (polygon) := reference/polygon/geometry;
+				attribute<string> name               := reference/polygon/Label;
 
 				container extracontainer
 				{
@@ -1307,7 +1307,7 @@ container regression
 					attribute<string>  name_4  (export) :=left(name,4);
 				}
 			}
-			container ReRead
+			container reread
 			{
 				unit<uint32> export:
 					StorageName     = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_mulev.shp",
@@ -1318,17 +1318,17 @@ container regression
 			
 			container tests
 			{
-				unit<uint32> PointSet: = Sequence2Points(ReRead/export/geometry);
+				unit<uint32> pointset: = sequence2points(reread/export/geometry);
 
-				attribute<fpoint> point_ref  (PointSet)      := union_data(Pointset     , reference/polygon/pointset/geometry);
-				attribute<string> name_ref   (ReRead/export) := union_data(ReRead/export, reference/polygon/label);
+				attribute<fpoint> point_ref  (pointset)      := union_data(pointset     , reference/polygon/pointset/geometry);
+				attribute<string> name_ref   (reread/export) := union_data(reread/export, reference/polygon/Label);
 
-				attribute<bool>   test_point (PointSet)      := point_isNearby(fpoint(pointset/point), point_ref, Dif_all_float32);
-				attribute<bool>   test_seq   (PointSet)      := pointset/sequence_rel == union_data(Pointset, reference/polygon/pointset/seq_nr)[reread/export];
-				attribute<bool>   test_ord   (PointSet)      := pointset/ordinal    == union_data(Pointset, reference/polygon/pointset/ordinal);
-				attribute<bool>   test_label (ReRead/export) := ReRead/export/name   == name_ref;
-				attribute<bool>   area       (ReRead/export) := float32(ReRead/export/area)   == area(fpolygon(ReRead/export/geometry), float32);
-				attribute<bool>   name_4     (ReRead/export) := ReRead/export/name_4 == left(name_ref,4);
+				attribute<bool>   test_point (pointset)      := point_isNearby(fpoint(pointset/point), point_ref, Dif_all_float32);
+				attribute<bool>   test_seq   (pointset)      := pointset/sequence_rel == union_data(pointset, reference/polygon/pointset/seq_nr)[reread/export];
+				attribute<bool>   test_ord   (pointset)      := pointset/ordinal    == union_data(pointset, reference/polygon/pointset/ordinal);
+				attribute<bool>   test_label (reread/export) := reread/export/name   == name_ref;
+				attribute<bool>   area       (reread/export) := float32(reread/export/area)   == area(fpolygon(reread/export/geometry), float32);
+				attribute<bool>   name_4     (reread/export) := reread/export/name_4 == left(name_ref,4);
 			}
 
 			container results
@@ -1341,10 +1341,10 @@ container regression
 			unit<uint32> optionSet:= range(uint32, 0, 1);
 			attribute<string> GDAL_LayerCreationOptions(optionSet) : ["SPATIAL_INDEX=YES"];
 
-			unit<uint32> export := reference/Polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_index.shp", StorageType = "gdalwrite.vect"
+			unit<uint32> export := reference/polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/shp/poly_index.shp", StorageType = "gdalwrite.vect"
 			{
-				attribute<fpoint> geometry (polygon) := reference/Polygon/geometry;
-				attribute<string> name               := reference/Polygon/label;
+				attribute<fpoint> geometry (polygon) := reference/polygon/geometry;
+				attribute<string> name               := reference/polygon/Label;
 			}
 
 			container test
@@ -1369,18 +1369,18 @@ container regression
 				,	StorageReadOnly = "True"
 				,	SyncMode        = "AllTables"
 				{
-					attribute<int32> area (waterdeel) := round(area(waterdeel/geometry,float64));
+					attribute<int32> area (waterdeel) := Round(area(waterdeel/geometry,float64));
 				}
 
-				container Test
+				container test
 				{
 					parameter<bool> area                   := sum(src/area) == 435432i && src/area[0] == 594i && src/area[100] == 747i;
 					attribute<bool> status (src/waterdeel) := src/waterdeel/BGT_STATUS == const('bestaand',src/waterdeel);
 				}
 				container results
 				{
-					parameter<bool>    status  := all(Test/status);
-					parameter<bool>    all     := Test/area && status;
+					parameter<bool>    status  := all(test/status);
+					parameter<bool>    all     := test/area && status;
 				}
 			}
 		}
@@ -1390,11 +1390,11 @@ container regression
 			{
 				unit<uint32> export := read/poly/src/waterdeel, StorageName = "%localDataProjDir%/regr_results/gdal_vect/gml/waterdeel.gml", StorageType = "gdalwrite.vect"
 				{
-					attribute<dpoint> geometry (polygon) := read/poly/src/waterdeel/Geometry;
+					attribute<dpoint> geometry (polygon) := read/poly/src/waterdeel/geometry;
 					attribute<string> type               := read/poly/src/waterdeel/plus_type ;
 				}
 			}
-			container ReRead
+			container reread
 			{
 				unit<uint32> src
 				: StorageName     = "%localDataProjDir%/regr_results/gdal_vect/gml/waterdeel.gml"
@@ -1403,22 +1403,22 @@ container regression
 				{
 					attribute<fpoint> geometry (polygon);
 					attribute<string> type; 
-					attribute<int32>  area  := round(area(geometry,float32));
+					attribute<int32>  area  := Round(area(geometry,float32));
 				}
 				parameter<string> xsd: StorageName = "%localDataProjDir%/regr_results/gdal_vect/gml/waterdeel.xsd", StorageType = "str";
 			}
-			container Test
+			container test
 			{
-				parameter<bool> area   := sum(ReRead/src/area) == 435438i && ReRead/src/area[0] == 594i && ReRead/src/area[100] == 748i;
-				parameter<bool> status := sum(strcount(ReRead/src/type, 'sloot')) == 156;
+				parameter<bool> area   := sum(reread/src/area) == 435438i && reread/src/area[0] == 594i && reread/src/area[100] == 748i;
+				parameter<bool> status := sum(strcount(reread/src/type, 'sloot')) == 156;
 				#include<gml_xsd_reference.dms>
-				parameter<bool> xsd    := replace(ReRead/xsd,' ','') == replace(gml_xsd_reference/xsd,' ','');
+				parameter<bool> xsd    := replace(reread/xsd,' ','') == replace(gml_xsd_reference/xsd,' ','');
 			}
 			
 			container results
 			{
-				parameter<bool> status  := all(Test/status);
-				parameter<bool> all     := Test/area && status && Test/xsd;
+				parameter<bool> status  := all(test/status);
+				parameter<bool> all     := test/area && status && test/xsd;
 			}
 		}
 	}
@@ -1472,19 +1472,19 @@ container regression
 			}
 			container tests
 			{
-				parameter<uint32> nrrows_points           := #src/Points;
+				parameter<uint32> nrrows_points           := #src/points;
 				parameter<uint32> nrrows_lines            := #src/lines;
 				parameter<uint32> nrrows_multilinestrings := #src/multilinestrings;
 				parameter<uint32> nrrows_multipolygons    := #src/multipolygons;
 				parameter<uint32> nrrows_other_relations  := #src/other_relations;
 
 				unit<uint32> points := src/points;
-				attribute<uint32> strcount_crossing(points) := MakeDefined(strcount(src/Points/highway,'crossing'), 0);
+				attribute<uint32> strcount_crossing(points) := MakeDefined(strcount(src/points/highway,'crossing'), 0);
 				parameter<uint32> total_strcount            := sum(strcount_crossing);
 
 				parameter<bool> cardinalities := nrrows_points == 22882 && nrrows_lines == 8591 && nrrows_multilinestrings == 311 && nrrows_multipolygons == 21701 && nrrows_other_relations == 253;
-				parameter<bool> contents      := total_strcount == 557;
-				parameter<bool> all           := cardinalities && contents;
+				parameter<bool> Contents      := total_strcount == 557;
+				parameter<bool> all           := cardinalities && Contents;
 			}
 		}
 	}
@@ -1499,16 +1499,16 @@ container regression
 			}
 			container tests
 			{
-				unit<uint32> PointSet_geojson := Sequence2Points(src/mask_ettenleur/Geometry)
+				unit<uint32> PointSet_geojson := sequence2points(src/mask_ettenleur/geometry)
 				{
 					attribute<src/mask_ettenleur> sequenceNr_from_shp  := union_data(PointSet_geojson, PointSet_shp/sequenceNr_PointSet_geojson)[src/mask_ettenleur];
 				}
-				unit<uint32> PointSet_shp     := Sequence2Points(src_shp/mask_ettenleur/Geometry)
+				unit<uint32> PointSet_shp     := sequence2points(src_shp/mask_ettenleur/geometry)
 				{
 					attribute<PointSet_geojson> sequenceNr_PointSet_geojson := sequence_rel[PointSet_geojson];
 				}
 
-				attribute<bool> test_point (PointSet_geojson)   := point_isNearby(union_data(PointSet_geojson, fpoint(PointSet_shp/point)), fPoint(PointSet_geojson/point), Dif_all_float32);
+				attribute<bool> test_point (PointSet_geojson)   := point_isNearby(union_data(PointSet_geojson, fpoint(PointSet_shp/point)), fpoint(PointSet_geojson/point), Dif_all_float32);
 				attribute<bool> test_seq   (PointSet_geojson)   := PointSet_geojson/sequenceNr_from_shp == PointSet_geojson/sequence_rel;
 				attribute<bool> test_ord   (PointSet_geojson)   := union_data(PointSet_geojson, PointSet_shp/ordinal)        == PointSet_geojson/ordinal;
 				attribute<bool> test_id    (src/mask_ettenleur) := union_data(src/mask_ettenleur, int32(src_shp/mask_ettenleur/id)) == int32(src/mask_ettenleur/id);
@@ -1522,7 +1522,7 @@ container regression
 			{
 				unit<uint32> mask_ettenleur := read/src/mask_ettenleur
 				{
-					attribute<dpoint> geometry (polygon) := read/src/mask_ettenleur/Geometry;
+					attribute<dpoint> geometry (polygon) := read/src/mask_ettenleur/geometry;
 					attribute<int32>  id                 := read/src/mask_ettenleur/id;
 				}
 			}
@@ -1531,9 +1531,9 @@ container regression
 
 			container tests
 			{
-				unit<uint32> PointSet_geojson := Sequence2Points(reread/mask_ettenleur/Geometry);
+				unit<uint32> PointSet_geojson := sequence2points(reread/mask_ettenleur/geometry);
 
-				attribute<bool> test_point (PointSet_geojson)      := point_isNearby(union_data(PointSet_geojson, fpoint(read/tests/PointSet_shp/point)), fPoint(PointSet_geojson/point), Dif_all_float32);
+				attribute<bool> test_point (PointSet_geojson)      := point_isNearby(union_data(PointSet_geojson, fpoint(read/tests/PointSet_shp/point)), fpoint(PointSet_geojson/point), Dif_all_float32);
 				attribute<bool> test_seq   (PointSet_geojson)      := union_data(PointSet_geojson, read/tests/PointSet_shp/sequence_rel)[reread/mask_ettenleur] == PointSet_geojson/sequence_rel[reread/mask_ettenleur];
 				attribute<bool> test_ord   (PointSet_geojson)      := union_data(PointSet_geojson, read/tests/PointSet_shp/ordinal)         == PointSet_geojson/ordinal;
 				attribute<bool> test_id    (reread/mask_ettenleur) := union_data(reread/mask_ettenleur, int32(read/src_shp/mask_ettenleur/id)) == int32(reread/mask_ettenleur/id);
@@ -1554,10 +1554,10 @@ container regression
 
 			container tests
 			{
-				unit<uint32> PointSet_single_polygon_layer : = Sequence2Points(single_polygon_layer/geometry)
+				unit<uint32> PointSet_single_polygon_layer : = sequence2points(single_polygon_layer/geometry)
 				{
 					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
-					attribute<string> name_ref (single_polygon_layer) := union_data(single_polygon_layer, reference/polygon/label);
+					attribute<string> name_ref (single_polygon_layer) := union_data(single_polygon_layer, reference/polygon/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 
@@ -1565,20 +1565,20 @@ container regression
 
 					attribute<bool>   test_seq   := sequence_rel == seq_ok;
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
-					attribute<bool>   test_label (single_polygon_layer) := single_polygon_layer/label == name_ref;
+					attribute<bool>   test_label (single_polygon_layer) := single_polygon_layer/Label == name_ref;
 				}
 				unit<uint32> PointSet_multi_layer_point : = multi_layer/point
 				{
 					attribute<fpoint> point_ref  := union_data(., reference/point/geometry);
-					attribute<string> name_ref   := union_data(., reference/point/label);
+					attribute<string> name_ref   := union_data(., reference/point/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(multi_layer/point/geometry), point_ref, Dif_all_float32);
 					attribute<bool>   test_label := multi_layer/point/name == name_ref;
 				}
-				unit<uint32> PointSet_multi_layer_arc : = Sequence2Points(multi_layer/arc/geometry)
+				unit<uint32> PointSet_multi_layer_arc : = sequence2points(multi_layer/arc/geometry)
 				{
 					attribute<fpoint> point_ref  := union_data(.,   reference/arc/pointset/geometry);
-					attribute<string> name_ref (multi_layer/arc) := union_data(multi_layer/arc, reference/arc/label);
+					attribute<string> name_ref (multi_layer/arc) := union_data(multi_layer/arc, reference/arc/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 					
@@ -1588,10 +1588,10 @@ container regression
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/arc/pointset/ordinal);
 					attribute<bool>   test_label (multi_layer/arc) := multi_layer/arc/name == name_ref;
 				}
-				unit<uint32> PointSet_multi_layer_polygon : = Sequence2Points(multi_layer/polygon/geometry)
+				unit<uint32> PointSet_multi_layer_polygon : = sequence2points(multi_layer/polygon/geometry)
 				{
 					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
-					attribute<string> name_ref (multi_layer/polygon) := union_data(multi_layer/polygon, reference/polygon/label);
+					attribute<string> name_ref (multi_layer/polygon) := union_data(multi_layer/polygon, reference/polygon/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 					
@@ -1635,27 +1635,27 @@ container regression
 			{
 				unit<uint32> polygon := reference/polygon, StorageName = "%localDataProjDir%/regr_results/gdal_vect/gpkg/single_polygon_layer.gpkg", StorageType = "gdalwrite.vect"
 				{
-					attribute<fpoint> geometry (polygon) := reference/polygon/Geometry;
-					attribute<string> label              := reference/polygon/Label  ;
+					attribute<fpoint> geometry (polygon) := reference/polygon/geometry;
+					attribute<string> Label              := reference/polygon/Label  ;
 				}
 			}
 			container multi_layer: StorageName = "%localDataProjDir%/regr_results/gdal_vect/gpkg/multi_layer.gpkg", StorageType = "gdalwrite.vect"
 			{
-				unit<uint32> point := reference/Point 
+				unit<uint32> point := reference/point 
 				{
-					attribute<fpoint> geometry := reference/Point/Geometry;
-					attribute<string> name     := reference/Point/Label;
+					attribute<fpoint> geometry := reference/point/geometry;
+					attribute<string> name     := reference/point/Label;
 				}
 
 				unit<uint32> arc := reference/arc
 				{
-					attribute<fpoint> geometry (arc) := reference/arc/Geometry;
+					attribute<fpoint> geometry (arc) := reference/arc/geometry;
 					attribute<string> name           := reference/arc/Label;
 				}
 				
 				unit<uint32> polygon := reference/polygon 
 				{
-					attribute<fpoint> geometry (poly) := reference/polygon/Geometry;
+					attribute<fpoint> geometry (poly) := reference/polygon/geometry;
 					attribute<string> name            := reference/polygon/Label;
 				}
 				unit<uint32> no_geometry := reference
@@ -1681,38 +1681,38 @@ container regression
 			}
 			container tests
 			{
-				unit<uint32> PointSet_single_polygon_layer : = Sequence2Points(reread/single_polygon_layer/geometry)
+				unit<uint32> PointSet_single_polygon_layer : = sequence2points(reread/single_polygon_layer/geometry)
 				{
 					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
-					attribute<string> name_ref (reread/single_polygon_layer) := union_data(reread/single_polygon_layer, reference/polygon/label);
+					attribute<string> name_ref (reread/single_polygon_layer) := union_data(reread/single_polygon_layer, reference/polygon/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 					attribute<bool>   test_seq   := sequence_rel[EsriShape/polygon/read/PolygonSet] == union_data(., reference/polygon/pointset/seq_nr);
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/polygon/pointset/ordinal);
-					attribute<bool>   test_label (reread/single_polygon_layer) := reread/single_polygon_layer/label == name_ref;
+					attribute<bool>   test_label (reread/single_polygon_layer) := reread/single_polygon_layer/Label == name_ref;
 				}
 				unit<uint32> PointSet_multi_layer_point : = reread/multi_layer/point
 				{
 					attribute<fpoint> point_ref  := union_data(., reference/point/geometry);
-					attribute<string> name_ref   := union_data(., reference/point/label);
+					attribute<string> name_ref   := union_data(., reference/point/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(reread/multi_layer/point/geometry), point_ref, Dif_all_float32);
 					attribute<bool>   test_label := reread/multi_layer/point/name == name_ref;
 				}
-				unit<uint32> PointSet_multi_layer_arc : = Sequence2Points(reread/multi_layer/arc/geometry)
+				unit<uint32> PointSet_multi_layer_arc : = sequence2points(reread/multi_layer/arc/geometry)
 				{
 					attribute<fpoint> point_ref  := union_data(.,   reference/arc/pointset/geometry);
-					attribute<string> name_ref (reread/multi_layer/arc) := union_data(reread/multi_layer/arc, reference/arc/label);
+					attribute<string> name_ref (reread/multi_layer/arc) := union_data(reread/multi_layer/arc, reference/arc/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 					attribute<bool>   test_seq   := sequence_rel[EsriShape/arc/read/ArcSet] == union_data(., reference/arc/pointset/seq_nr);
 					attribute<bool>   test_ord   := ordinal    == union_data(., reference/arc/pointset/ordinal);
 					attribute<bool>   test_label (reread/multi_layer/arc) := reread/multi_layer/arc/name == name_ref;
 				}
-				unit<uint32> PointSet_multi_layer_polygon : = Sequence2Points(reread/multi_layer/polygon/geometry)
+				unit<uint32> PointSet_multi_layer_polygon : = sequence2points(reread/multi_layer/polygon/geometry)
 				{
 					attribute<fpoint> point_ref  := union_data(.,   reference/polygon/pointset/geometry);
-					attribute<string> name_ref (reread/multi_layer/polygon) := union_data(reread/multi_layer/polygon, reference/polygon/label);
+					attribute<string> name_ref (reread/multi_layer/polygon) := union_data(reread/multi_layer/polygon, reference/polygon/Label);
 
 					attribute<bool>   test_point := point_isNearby(fpoint(point), point_ref , Dif_all_float32);
 					attribute<bool>   test_seq   := sequence_rel[EsriShape/polygon/read/PolygonSet] == union_data(., reference/polygon/pointset/seq_nr);
@@ -1823,15 +1823,15 @@ container regression
 		}
 		unit<uint4> colorindex
 		{
-			attribute<uint32> palette := Read/grid_palet/PaletteData, DialogType = "BrushColor";
+			attribute<uint32> palette := read/grid_palet/PaletteData, DialogType = "BrushColor";
 		}
 		unit<uint8> cl_lu: nrofrows = 9
 		{
-			attribute<string> label      : ['residential','industrial','recreation','agriculture','nature','buildinglot','infrastructure','water','exterior'];
+			attribute<string> Label      : ['residential','industrial','recreation','agriculture','nature','buildinglot','infrastructure','water','exterior'];
 			attribute<uint32> BrushColor : [rgb(225,0,0), rgb(128,0,255),rgb(255,228,0),rgb(192,255,128),rgb(100,192,100),rgb(128,128,128),rgb(128,0,0),rgb(159,255,255),rgb(255,255,228)], DialogType = "BrushColor";
 		}
 
-		container Read
+		container read
 		{
 			unit<spoint> grid_uint32
 			: StorageName     = "%projdir%/data/grid/tiff/uint32.tif"
@@ -1933,14 +1933,14 @@ container regression
 
 			container tests
 			{
-				attribute<bool> GridData_uint32 (Grid_uint32)  := eq_or_both_null(Grid_uint32/GridData, reference/Grid/GridData_uint32);
-				attribute<bool> ReadData_uint32 (Tiff/gridsel) := eq_or_both_null(Grid_uint32/ReadData, reference/gridsel/ReadData_uint32);
+				attribute<bool> GridData_uint32 (grid_uint32)  := eq_or_both_null(grid_uint32/GridData, reference/grid/GridData_uint32);
+				attribute<bool> ReadData_uint32 (Tiff/gridsel) := eq_or_both_null(grid_uint32/ReadData, reference/gridsel/ReadData_uint32);
 
-				attribute<bool> GridData_uint8  (Grid_uint8)   := eq_or_both_null(Grid_uint8/GridData, union_data(Grid_uint8, reference/Grid/GridData_uint8));
-				attribute<bool> ReadData_uint8  (Tiff/gridsel) := eq_or_both_null(Grid_uint8/ReadData, reference/gridsel/ReadData_uint8);
+				attribute<bool> GridData_uint8  (grid_uint8)   := eq_or_both_null(grid_uint8/GridData, union_data(grid_uint8, reference/grid/GridData_uint8));
+				attribute<bool> ReadData_uint8  (Tiff/gridsel) := eq_or_both_null(grid_uint8/ReadData, reference/gridsel/ReadData_uint8);
 
-				attribute<bool> GridData_float32 (Grid_float32) := eq_or_both_null(replace_value(Grid_float32/GridData, -9999f, float32(0 / 0)), union_data(Grid_float32, reference/Grid/GridData_float32));
-				attribute<bool> ReadData_float32 (Tiff/gridsel) := eq_or_both_null(Grid_float32/ReadData, reference/gridsel/ReadData_float32);
+				attribute<bool> GridData_float32 (grid_float32) := eq_or_both_null(replace_value(grid_float32/GridData, -9999f, float32(0 / 0)), union_data(grid_float32, reference/grid/GridData_float32));
+				attribute<bool> ReadData_float32 (Tiff/gridsel) := eq_or_both_null(grid_float32/ReadData, reference/gridsel/ReadData_float32);
 
 
 				container nl_lu_2020
@@ -1965,12 +1965,12 @@ container regression
 					 && pointRow(rd_coord_378_342) == 436000f && pointCol(rd_coord_378_342) == 181000f
 					 ;
 				}
-				//attribute<bool> test_float32 (Grid_float32)  := eq_or_both_null(Grid_float32/GridData, union_data(Grid_float32, GridReference/GridData_float32));
+				//attribute<bool> test_float32 (grid_float32)  := eq_or_both_null(grid_float32/GridData, union_data(grid_float32, GridReference/GridData_float32));
 				//attribute<bool> test_bool    (Grid_bool)     := Grid_bool/GridData == union_data(Grid_bool, GridReference/GridData_bool);
 
 			}
 
-			container Results
+			container results
 			{
 				parameter<bool> all := 
 				//all(tests/GridData_uint32) && all(tests/ReadData_uint32);
@@ -1982,7 +1982,7 @@ container regression
 				//&& all(tests/test_uint8) && all(tests/test_float32) && all(tests/test_uint32) && all (tests/test_sel); 
 			}	
 		}
-		container Write
+		container write
 		{
 			container export
 			{
@@ -1990,36 +1990,36 @@ container regression
 				unit<uint32> optionSet := range(uint32, 0, 3);
 				attribute<string> GDAL_Options(optionSet) : [ 'NUM_THREADS=ALL_CPUS', 'COMPRESS=LZW', 'PREDICTOR=2'];
 
-				unit<spoint> grid_uint32 := Tiff/read/Grid_uint32
+				unit<spoint> grid_uint32 := Tiff/read/grid_uint32
 				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint32.tif"
 				, StorageType     = "gdalwrite.grid"
 				, StorageReadOnly = "false"
 				{
-					attribute<uint32> GridData := Tiff/read/Grid_uint32/GridData;
+					attribute<uint32> GridData := Tiff/read/grid_uint32/GridData;
 				}
 				
-				unit<spoint> grid_uint64 := Tiff/read/Grid_uint32
+				unit<spoint> grid_uint64 := Tiff/read/grid_uint32
 				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint64.tif"
 				, StorageType     = "gdalwrite.grid"
 				, StorageReadOnly = "false"
 				{
-					attribute<uint64> GridData := convert(Tiff/read/Grid_uint32/GridData, uint64);
+					attribute<uint64> GridData := convert(Tiff/read/grid_uint32/GridData, uint64);
 				}
 
 
-				unit<spoint> grid_uint8 := Tiff/read/Grid_uint8
+				unit<spoint> grid_uint8 := Tiff/read/grid_uint8
 				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint8.tif"
 				, StorageType     = "gdalwrite.grid"
 				, StorageReadOnly = "false"
 				{
-					attribute<uint8> GridData := Tiff/read/Grid_uint8/GridData;
+					attribute<uint8> GridData := Tiff/read/grid_uint8/GridData;
 				}
-				unit<spoint> grid_float32 := Tiff/read/Grid_float32
+				unit<spoint> grid_float32 := Tiff/read/grid_float32
 				, StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_float32.tif"
 				, StorageType     = "gdalwrite.grid"
 				, StorageReadOnly = "false"
 				{
-					attribute<float32> GridData := Tiff/read/Grid_float32/GridData;
+					attribute<float32> GridData := Tiff/read/grid_float32/GridData;
 				}
 				
 				/*
@@ -2043,7 +2043,7 @@ container regression
 				*/
 			}
 
-			container ReRead
+			container reread
 			{
 				unit<spoint> grid_uint32
 				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/tiff/gdal_uint32.tif"
@@ -2091,9 +2091,9 @@ container regression
 
 			container tests
 			{
-				attribute<bool> GridData_uint32  (reread/Grid_uint32)  := eq_or_both_null(reread/Grid_uint32/GridData, union_data(reread/Grid_uint32, reference/Grid/GridData_uint32));
-				attribute<bool> GridData_uint8   (reread/Grid_uint8)   := eq_or_both_null(reread/Grid_uint8/GridData, union_data(reread/Grid_uint8, reference/Grid/GridData_uint8));
-				attribute<bool> GridData_float32 (reread/Grid_float32) := eq_or_both_null(replace_value(reread/Grid_float32/GridData, -9999f, float32(0 / 0)), union_data(reread/Grid_float32, reference/Grid/GridData_float32));
+				attribute<bool> GridData_uint32  (reread/grid_uint32)  := eq_or_both_null(reread/grid_uint32/GridData, union_data(reread/grid_uint32, reference/grid/GridData_uint32));
+				attribute<bool> GridData_uint8   (reread/grid_uint8)   := eq_or_both_null(reread/grid_uint8/GridData, union_data(reread/grid_uint8, reference/grid/GridData_uint8));
+				attribute<bool> GridData_float32 (reread/grid_float32) := eq_or_both_null(replace_value(reread/grid_float32/GridData, -9999f, float32(0 / 0)), union_data(reread/grid_float32, reference/grid/GridData_float32));
 
 				container nl_lu_2020
 				{
@@ -2119,7 +2119,7 @@ container regression
 				}
 			}
 
-			container Results
+			container results
 			{
 				parameter<bool> all := 
 				//all(tests/GridData_uint32) && all(tests/ReadData_uint32);
@@ -2132,7 +2132,7 @@ container regression
 	}
 	container bmp
 	{
-		container Read
+		container read
 		{
 			//parameter<string> GDAL_Driver : ['BMP'];
 			unit<spoint> grid_uint32
@@ -2152,7 +2152,7 @@ container regression
 				attribute<string> data_2 := data;
 			}
 		}
-		container Write
+		container write
 		{
 			container export
 			{
@@ -2167,7 +2167,7 @@ container regression
 				}
 			}
 
-			container ReRead
+			container reread
 			{
 				unit<spoint> nl_lu_2010
 				: StorageName     = "%localDataProjDir%/regr_results/gdal_grid/bmp/gdal_nl_lu_2010.bmp"
@@ -2205,7 +2205,7 @@ container regression
 				}
 			}
 
-			container Results
+			container results
 			{
 				parameter<bool> all := tests/nl_lu_2020/all;
 			}
@@ -2213,7 +2213,7 @@ container regression
 	}
 	container png
 	{
-		container Read
+		container read
 		{
 			unit<spoint> grid_uint32
 			: StorageName     = "%projdir%/data/grid/png/2_1.png"
@@ -2225,7 +2225,7 @@ container regression
 			}
 			unit<uint8> colorindex
 			{
-				attribute<uint32> palette := Read/grid_palet/PaletteData, DialogType = "BrushColor";
+				attribute<uint32> palette := read/grid_palet/PaletteData, DialogType = "BrushColor";
 			}
 			unit<spoint> nl_lu_2010
 			: StorageName     = "%projdir%/data/grid/png/nl_lu_2010.png"

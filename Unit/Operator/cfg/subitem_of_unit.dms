@@ -16,25 +16,25 @@ container subitem_of_unit
 
 	container R1 := T1(RegionDomain);
 
-	Template T2
+	template T2
 	{
 		unit<uint32> ArgRegion;
 	}
 
 	container R2 := T2(R1/Region);
 
-	container Result
+	container result
 	{
 		parameter<uint32> test0 := sum(R1/Region!'AvgDailyTemperature');
 		parameter<uint32> test1 := sum(R2/ArgRegion!'AvgDailyTemperature');
 		parameter<uint32> test2 := sum(R2!'ArgRegion'!'AvgDailyTemperature');
 	}
 
-	parameter<bool> test := Result/test0 == 50 && Result/test1 == 50 && Result/test2 == 50;
+	parameter<bool> test := result/test0 == 50 && result/test1 == 50 && result/test2 == 50;
 
 	parameter<string> test_log := test
 		? '' 
-		: 'subitem of unit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'subitem of unit Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/subitem_of_unit.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/subitem_of_unit.txt";
 }

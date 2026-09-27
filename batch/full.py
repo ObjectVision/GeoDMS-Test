@@ -278,7 +278,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # add experiments
     # t010 — Operator/functie-test: draait de Operator-config die vele DMS-operatoren/functies dekt.
     regression.add_exp(exps, name=f"{result_folder_name}__t010_operator_test", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t010_operator_test.txt /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["OperatorPath"]} results/regression/t010_operator_test/stored_result results/regression/t010_operator_test/operator_groups", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t010_operator_test.txt", indicator_results_file=f"{result_paths["results_folder"]}/t010_operator_test.txt")
-    # t020 — Polygonen: vergelijk de vier geometrie-families (geos/bg/bp/cgal) op
+    # t020 — Polygonen: vergelijk de vijf geometrie-families (geos/bg/bp/cgal/dms) op
     # synthetische, deterministische data (Polygons/cfg/compare.dms, geen SourceData
     # nodig). Eén gezamenlijk experiment; de indicator splitst per familie uit
     # (status, uniearealen, afwijking t.o.v. de geos-referentie) met een EN-oordeel.

@@ -34,8 +34,8 @@
 
 		container PropValue: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/propvalue"
 		{
-			attribute<meter> A (ADomain):= value(Arithmetics/UnTiled/Source/B, meter) + value(Arithmetics/UnTiled/Source/C, meter),
-				descr = "A is the sum of B and C"
+			attribute<meter> A (ADomain):= value(Arithmetics/UnTiled/source/B, meter) + value(Arithmetics/UnTiled/source/C, meter),
+				Descr = "A is the sum of B and C"
 			{
 				parameter<string> name      := Uppercase(PropValue(A, 'name'));
 				parameter<bool>   test_name := (name) = 'A';
@@ -46,10 +46,10 @@
 				// changed -> switch the expected literal by version (cf. the GeoDmsVersion() switches in this config).
 				parameter<bool>   test_valueunit := valuesunit = (GeoDmsVersion() < 18d ? 'meter' : '../meter');
 	
-				parameter<string> expr      := LowerCase(PropValue(A, 'expr'));
+				parameter<string> expr      := LowerCase(PropValue(A, 'Expr'));
 				parameter<bool>   test_expr := expr == 'value(arithmetics/untiled/source/b, meter) + value(arithmetics/untiled/source/c, meter)';
 	
-				parameter<string> descr      := LowerCase(PropValue(A, 'descr'));
+				parameter<string> descr      := LowerCase(PropValue(A, 'Descr'));
 				parameter<bool>   test_descr := descr == 'a is the sum of b and c';
 			}
 			parameter<bool> test := A/test_name && A/test_valueunit && A/test_expr && A/test_descr;
@@ -99,7 +99,7 @@
 		}
 		container subitem: url = "http://www.objectvision.nl/geodms/operators-a-functions/miscellaneous/subitem"
 		{
-			attribute<uint32> att (Relational/UnTiled2UnTiled/unique/Regions) := subitem(Relational/UnTiled2UnTiled/unique/Regions,'Values');
+			attribute<uint32> att (Relational/UnTiled2UnTiled/unique/Regions) := SubItem(Relational/UnTiled2UnTiled/unique/Regions,'Values');
 			attribute<bool>   test(Relational/UnTiled2UnTiled/unique/Regions) := eq_or_both_null(att, Relational/UnTiled2UnTiled/unique/Regions/Values);
 			parameter<bool>   test_attr                                       := all(test);
 		}
@@ -207,7 +207,7 @@
 
 		Container TemplateSyntax
 		{
-			Template Org
+			template Org
 			{
 				// begin case parameters
 				parameter<uint32> A;
@@ -215,7 +215,7 @@
 				
 				parameter<uint32> B := A + 1;
 			}
-			Template New
+			template New
 			{
 				// begin case parameters
 				parameter<uint32> A;

@@ -6,7 +6,7 @@ container Write_tiff_pal
 
 	unit<uint4> colorindex 
 	{
-		attribute<uint32> palette : [262660,8684164,16580348,5527124,13942468,2369060,6600436,7798784,13795952,15991021,15794194,0,16646800,16711680,16711680,16711680];
+		attribute<uint32> Palette : [262660,8684164,16580348,5527124,13942468,2369060,6600436,7798784,13795952,15991021,15794194,0,16646800,16711680,16711680,16711680];
 	}
 
 	unit<spoint> grid := range(
@@ -24,10 +24,10 @@ container Write_tiff_pal
 	}
 
 	parameter<string> FileName := '%localDataDir%/GeoDMSTestResults/unit/storage/tiff_pa.tif';
-	container Export: StorageName = "=FileName", explicitSuppliers = "grid", StorageType = "tif"
+	container export: StorageName = "=FileName", ExplicitSuppliers = "grid", StorageType = "tif"
 	{
-		attribute<colorindex> GridData    (Grid)       := grid/data;
-		attribute<uint32>     PaletteData (colorindex) := colorindex/palette;
+		attribute<colorindex> GridData    (grid)       := grid/data;
+		attribute<uint32>     PaletteData (colorindex) := colorindex/Palette;
 	}
 
 	unit<spoint> reRead: StorageName = "=FileName", StorageType = "tif"
@@ -37,12 +37,12 @@ container Write_tiff_pal
 	}
 
 	attribute<bool> test_griddata (reRead)     := reRead/GridData    == union_data(reRead, grid/data);
-	attribute<bool> test_palette  (colorindex) := reRead/PaletteData == colorindex/palette;
+	attribute<bool> test_palette  (colorindex) := reRead/PaletteData == colorindex/Palette;
 	parameter<bool> test                       := all(test_griddata) && all(test_palette);
 
 	parameter<string> test_log := test
 		? '' 
-		: 'Write Tiff with Palette Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'Write Tiff with Palette Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteTiff_pal.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/WriteTiff_pal.txt";
 }

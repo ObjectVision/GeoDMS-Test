@@ -8,7 +8,7 @@ container subitem
 			parameter<uint32> UInt32Item   := 4321;
 			parameter<float32> Float32Item := 3.14f;
 		}
-		parameter<float32> Float32ItemFromRef := subitem(SrcSet, "Float32Item");
+		parameter<float32> Float32ItemFromRef := SubItem(SrcSet, "Float32Item");
 	}
 	
 	container getSubItemParameterRefFromSetUsingParameter
@@ -20,13 +20,13 @@ container subitem
 			parameter<float32> Float32Item := 3.14f;
 		}
 		parameter<string> subItemRef 		  := "Float32Item";
-		parameter<float32> Float32ItemFromRef := subitem(SrcSet, subItemRef);
+		parameter<float32> Float32ItemFromRef := SubItem(SrcSet, subItemRef);
 	}
 
 	parameter<bool>   test     := getSubItemParameterRefFromSetUsingRawString/Float32ItemFromRef == 3.14f && getSubItemParameterRefFromSetUsingParameter/Float32ItemFromRef == 3.14f;
 	parameter<string> test_log := test 
 		? '' 
-		: 'Subtem Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'Subtem Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/subitem.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/subitem.txt";
 }

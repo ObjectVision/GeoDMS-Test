@@ -81,12 +81,12 @@
 			attribute<float32> sqrtA (Domain): [];
 		}
 
-		container UnTiled  := Template(ADomain, srcDomain);
-		container EunTiled := Template(EDomain, srcEDomain);
-		container Tiled    := Template(ATiledDomain, srcTiledDomain);
-		container ETiled   := Template(ETiledDomain, srcETileDomain);
+		container UnTiled  := TestTemplate(ADomain, srcDomain);
+		container EunTiled := TestTemplate(EDomain, srcEDomain);
+		container Tiled    := TestTemplate(ATiledDomain, srcTiledDomain);
+		container ETiled   := TestTemplate(ETiledDomain, srcETileDomain);
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<uint32> Domain;
@@ -112,7 +112,7 @@
 			container add_or_null
 			{
 				parameter<uint8>   param         := add_or_null(uint8(source/ParamA * 50), uint8(source/ParamB));
-				parameter<bool>    test_param    := isNull(param);
+				parameter<bool>    test_param    := IsNull(param);
 
 				attribute<uint8>   attr (Domain) := add_or_null(source/A1, source/B1);
 				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Add_or_nullAB);
@@ -135,7 +135,7 @@
 			container sub_or_null
 			{
 				parameter<uint8>   param         := sub_or_null(uint8(source/ParamA), uint8(source/ParamB));
-				parameter<bool>    test_param    := isNull(param);
+				parameter<bool>    test_param    := IsNull(param);
 
 				attribute<uint8>    attr (Domain) := sub_or_null(source/A1, source/B1);
 				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Sub_or_nullAB);
@@ -145,19 +145,19 @@
 			{
 				parameter<bool>    test_param    :=source/ParamA * source/ParamB = 35;
 				attribute<float32> attr (Domain) := source/A * source/B * float32(source/C);
-				attribute<bool>    test (Domain) := float_isNearby(attr, Source/mulABC, Dif_all_float32);
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/mulABC, Dif_all_float32);
 				parameter<bool>    test_attr     := all(test);
 			}
 			container mul: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mul"
 			{
 				attribute<float32> attr (Domain) := mul(source/A,source/B,float32(source/C));
-				attribute<bool>    test (Domain) := float_isNearby(attr, Source/mulABC, Dif_all_float32);
+				attribute<bool>    test (Domain) := float_isNearby(attr, source/mulABC, Dif_all_float32);
 				parameter<bool>    test_attr     := all(test);
 			}
 			container mul_or_null
 			{
 				parameter<uint8>   param         := mul_or_null(uint8(source/ParamA * 10), uint8(source/ParamB));
-				parameter<bool>    test_param    := isNull(param);
+				parameter<bool>    test_param    := IsNull(param);
 
 				attribute<uint8>   attr (Domain) := mul_or_null(source/A2, source/B1);
 				attribute<bool>    test (Domain) := eq_or_both_null(attr, source/Mul_or_nullAB);
@@ -179,14 +179,14 @@
 			}
 			container mod_op: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mod"
 			{
-				parameter<bool>    test_param    := source/ParamB % source/ParamA = 2 && isNull(2 % 0); 
+				parameter<bool>    test_param    := source/ParamB % source/ParamA = 2 && IsNull(2 % 0); 
 				attribute<int32>   attr (Domain) := source/C % source/D;
 				attribute<bool>    test (Domain) := attr = source/CModD;
 				parameter<bool>    test_attr     := all(test);
 			}
 			container mod: url = "http://www.objectvision.nl/geodms/operators-a-functions/arithmetic/mod"
 			{
-				parameter<bool>    test_param    := mod(source/ParamB, source/ParamA) = 2 && isNull(mod(2, 0)); 
+				parameter<bool>    test_param    := mod(source/ParamB, source/ParamA) = 2 && IsNull(mod(2, 0)); 
 				attribute<int32>   attr (Domain) := mod(source/C, source/D);
 				attribute<bool>    test (Domain) := attr = source/CModD;
 				parameter<bool>    test_attr     := all(test);
@@ -197,7 +197,7 @@
 				attribute<float32> attr (Domain) := float32(source/C) ^ float32(source/D);
 				// pre-#839 (GeoDmsVersion < 20.01): a^b was rewritten to exp(b*log(a)), giving Null for any base <= 0; first-class pow operator since 20.1.0 returns the sign-correct value.
 				attribute<bool>    test (Domain) := GeoDmsVersion() < 20.01d
-					? (float32(source/C) <= 0f ? isNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
+					? (float32(source/C) <= 0f ? IsNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
 					: float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
 				parameter<bool>    test_attr     := all(test);
 			}
@@ -207,7 +207,7 @@
 				attribute<float32> attr (Domain) := pow(float32(source/C), float32(source/D));
 				// pre-#839 (GeoDmsVersion < 20.01): pow(a,b) was rewritten to exp(b*log(a)), giving Null for any base <= 0; first-class pow operator since 20.1.0 returns the sign-correct value.
 				attribute<bool>    test (Domain) := GeoDmsVersion() < 20.01d
-					? (float32(source/C) <= 0f ? isNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
+					? (float32(source/C) <= 0f ? IsNull(attr) : float_isNearby(attr, float32(source/CPowD), Dif_all_float32))
 					: float_isNearby(attr, float32(source/CPowD), Dif_all_float32) ;
 				parameter<bool>    test_attr     := all(test);
 			}

@@ -54,6 +54,25 @@ def get_empty_table_row_col_html(note:str=None) -> str:
         return f'<td class="cell skip"><span class="pill skip noted" title="{_esc_attr(note)}">not run</span></td>\n'
     return '<td class="cell skip"><span class="pill skip">not run</span></td>\n'
 
+# Crash decoding for get_status_meta. Popen.wait() reports a POSIX signal death as
+# -N (N <= 64), while Windows surfaces a crash as an NTSTATUS in the exit code, which
+# Python hands back signed (0xC0000409 -> -1073740791).
+_MAX_SIGNAL = 64
+_SIGNAL_NAMES = {2: "SIGINT", 4: "SIGILL", 6: "SIGABRT", 7: "SIGBUS", 8: "SIGFPE",
+                 9: "SIGKILL", 11: "SIGSEGV", 13: "SIGPIPE", 15: "SIGTERM"}
+_NTSTATUS_NAMES = {
+    0x80000003: "breakpoint",
+    0xC0000005: "access violation",
+    0xC000001D: "illegal instruction",
+    0xC0000094: "integer divide by zero",
+    0xC0000096: "privileged instruction",
+    0xC00000FD: "stack overflow",
+    0xC000013A: "interrupted (Ctrl+C)",
+    0xC0000374: "heap corruption",
+    0xC0000409: "stack buffer overrun / fastfail",
+    0xC0000417: "invalid CRT parameter",
+}
+
 def get_status_meta(status:str) -> tuple:
     """Map a raw status (OK / TIMEOUT / FCFAIL / a numeric GeoDmsRun exit code /
     an indicator <result> text) to (human label, css class, code note) for the
@@ -75,8 +94,22 @@ def get_status_meta(status:str) -> tuple:
     if status in ("False", "false"):
         return ("failed", "fail", "")
     if status.lstrip("-").isdigit():
-        if int(status) < 0:
-            return ("not run", "skip", "")
+        code = int(status)
+        if code < 0:
+            # A negative code is a CRASH, and must render red -- never a grey skip.
+            # status_code is the raw process exit code (profiler.getPerformance ->
+            # Popen.wait()); nothing anywhere sets a negative "not executed" sentinel.
+            # An experiment that genuinely did not run has no summary at all and is
+            # drawn by get_empty_table_row_col_html instead. Showing these as "not run"
+            # hid a reproducible 0xC0000409 fastfail on 20.19.0.c t641_2, which read as
+            # "this test was skipped" when the process had in fact died after 21 minutes.
+            if code >= -_MAX_SIGNAL:  # POSIX (.l): killed by signal -code
+                return (f"crashed ({_SIGNAL_NAMES.get(-code, f'signal {-code}')})",
+                        "fail", f"exit {code}")
+            ntstatus = code & 0xFFFFFFFF  # Windows: NTSTATUS, surfaced signed
+            named = _NTSTATUS_NAMES.get(ntstatus)
+            return (f"crashed ({named})" if named else "crashed",
+                    "fail", f"0x{ntstatus:08X}")
         return (code_labels.get(status, f"error (code {status})"), "fail", f"exit {status}")
     return (status, "ok", "")  # arbitrary <result> text
 

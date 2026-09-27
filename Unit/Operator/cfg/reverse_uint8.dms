@@ -5,7 +5,7 @@ container reverse_uint8
 		unit<uint8> uint8Domain: nrofrows = 10
 		{
 			attribute<.>    id         := id(.);
-			attribute<.>    reverse_id := lookup((UpperBound(domainUnit(id))+LowerBound(domainUnit(id))) - 1[domainUnit(id)] - ID(domainUnit(id)), id);
+			attribute<.>    reverse_id := lookup((UpperBound(DomainUnit(id))+LowerBound(DomainUnit(id))) - 1[DomainUnit(id)] - id(DomainUnit(id)), id);
 
 			attribute<bool> test_attr  := reverse_id == max(id) - id;
 			parameter<bool> test       := all(test_attr);
@@ -16,7 +16,7 @@ container reverse_uint8
 
 	parameter<string> test_log := I/uint8Domain/test
 		? '' 
-		: 'reverse Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(I/uint8Domain/test, 'fullname') + ' result: not OK'
+		: 'reverse Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(I/uint8Domain/test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/reverse_uint8.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/reverse_uint8.txt";
 }

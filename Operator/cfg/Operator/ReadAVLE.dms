@@ -29,9 +29,9 @@
 			Attribute<float64> Row4  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row3/ReadPos);
 			Attribute<float64> Row5  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row4/ReadPos);
 			Attribute<float64> Row6  (RDomain) := ReadArray(ReadValue/File, RDomain, float64, Row5/ReadPos);
-			Attribute<bool>    testH (HDomain) := Row1 == Source/ReadArray1;
+			Attribute<bool>    testH (HDomain) := Row1 == source/ReadArray1;
 			Attribute<bool>    test  (RDomain) := 
-				Row2 == Source/ReadArray2 && Row3 == Source/ReadArray3 && Row4 == Source/ReadArray4 && Row5 == Source/ReadArray5 && Row6 == Source/ReadArray6;
+				Row2 == source/ReadArray2 && Row3 == source/ReadArray3 && Row4 == source/ReadArray4 && Row5 == source/ReadArray5 && Row6 == source/ReadArray6;
 			parameter<bool>    test_attr       := all(testH) && all(test);
 		}
 		container ReadArrayII
@@ -50,12 +50,12 @@
 		{
 			attribute<uint32> FirstColum (ReadLines/BodyDomain) := ReadElems(ReadLines/Body, ReadLines/BodyDomain, const( 0, ReadLines/BodyDomain));
 			attribute<uint32> LastCoumn  (ReadLines/BodyDomain) := ReadElems(ReadLines/Body, ReadLines/BodyDomain, const(32, ReadLines/BodyDomain));
-			attribute<bool>   test       (ReadLines/BodyDomain) := FirstColum = Source/ReadElem1 && LastCoumn = Source/ReadElem2;
+			attribute<bool>   test       (ReadLines/BodyDomain) := FirstColum = source/ReadElem1 && LastCoumn = source/ReadElem2;
 			parameter<bool>   test_attr                         := all(test);
 		}
 		container ReadLines: url = "http://www.objectvision.nl/geodms/operators-a-functions/file/readline"
 		{
-			unit<uint32>      BodyDomain:         nrOfRows = 6;
+			unit<uint32>      BodyDomain:         nrofrows = 6;
 			parameter<string> Header             := ReadLines(ReadValue/File, void, 0);
 			parameter<bool>   test_param         := Header = '6\t9.02\tTest\tTrue';
 			Attribute<string> Body  (BodyDomain) := ReadLines(ReadValue/File, BodyDomain, Header/ReadPos);

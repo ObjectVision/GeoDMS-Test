@@ -41,12 +41,12 @@
 			attribute<string>  conststring   (Domain): [];
 		}
 
-		container UnTiled  := Template(ADomain     , srcDomain);
-		container Tiled    := Template(ATiledDomain, srcTiledDomain);
-		container EUnTiled := Template(EDomain     , srcEDomain);
-		container ETiled   := Template(ETiledDomain, srcETiledDomain);
+		container UnTiled  := TestTemplate(ADomain     , srcDomain);
+		container Tiled    := TestTemplate(ATiledDomain, srcTiledDomain);
+		container EUnTiled := TestTemplate(EDomain     , srcEDomain);
+		container ETiled   := TestTemplate(ETiledDomain, srcETiledDomain);
 
-		Template Template
+		template TestTemplate
 		{
 			unit<uint32> Domain;
 			container source;
@@ -81,13 +81,13 @@
 			}
 			container true_const: url  = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/constants/true"
 			{
-				parameter<bool> test_param    := source/Paramtrue = true;
+				parameter<bool> test_param    := source/ParamTrue = true;
 				attribute<bool> test (Domain) := source/Atrue = true;
 				parameter<bool> test_attr     := all(test);
 			}
 			container false_const: url  = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/constants/false"
 			{
-				parameter<bool> test_param    := source/Paramfalse = false;
+				parameter<bool> test_param    := source/ParamFalse = false;
 				attribute<bool> test (Domain) := source/Bfalse = false;
 				parameter<bool> test_attr     := all(test);
 			}

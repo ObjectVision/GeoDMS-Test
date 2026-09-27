@@ -6,28 +6,28 @@
 		{
 			unit<uint32> ObjectTypes
 			{
-				attribute<string> Name;
+				attribute<string> name;
 			}
 			unit<uint32> OperatorGroups
 			{
-				attribute<string> Name;
-				attribute<string> NameLC := lowercase(Name);
+				attribute<string> name;
+				attribute<string> NameLC := lowercase(name);
 			}
 			unit<uint32> Operators
 			{
 				attribute<OperatorGroups> nr_Group;
 				attribute<ObjectTypes>    nr_ResType;
 
-				attribute<string> GroupName   := OperatorGroups/Name[nr_Group];
-				attribute<string> ResTypeName := ObjectTypes/Name[nr_ResType];
+				attribute<string> GroupName   := OperatorGroups/name[nr_Group];
+				attribute<string> ResTypeName := ObjectTypes/name[nr_ResType];
 			}
 			unit<uint32> OperatorArgs
 			{
 				attribute<Operators>      nr_Operator;
 				attribute<ObjectTypes>    nr_ArgType;
 				attribute<OperatorGroups> nr_Group    := Operators/nr_Group[nr_Operator];
-				attribute<string>         GroupName   := OperatorGroups/Name[nr_Group];
-				attribute<string>         ArgTypeName := ObjectTypes/Name[nr_ArgType];
+				attribute<string>         GroupName   := OperatorGroups/name[nr_Group];
+				attribute<string>         ArgTypeName := ObjectTypes/name[nr_ArgType];
 			}
 		}
 		container StorageManagersInfo := DocStorageManagers();

@@ -20,10 +20,10 @@
 
 		unit<uint32> PropValueSource := Region
 		{
-			parameter<uint32> label: ['ABC'];
+			parameter<uint32> Label: ['ABC'];
 			attribute<uint32> sumNrInhabitants: [2,5,3,2,0];
 			unit<uint32>      domainA: nrofrows = 9;
-			unit<float64>     valuesB := baseunit('b',float64);
+			unit<float64>     valuesB := BaseUnit('b',float64);
 		}
 
 		container for_each: url = "http://www.objectvision.nl/geodms/operators-a-functions/metascript/for_each"
@@ -114,7 +114,7 @@
 		{
 			parameter<bool> test := loop/lastIter/results/LoopWaarde == uint16(4);
 		}
-		Template LoopTemplate
+		template LoopTemplate
 		{
 			parameter<uint16> NrIter;
 			container currValue;
@@ -126,26 +126,26 @@
 		}
 		container SubItem_PropValues
 		{
-			unit<uint32> Name := SubItem_PropValues(PropValueSource,'name')
+			unit<uint32> name := SubItem_PropValues(PropValueSource,'name')
 			{
 				attribute<string> ok: ['label','sumnrinhabitants','domaina','valuesb'];
 				attribute<bool>   test      := lowercase(name) == ok;
 				parameter<bool>   test_attr := all(test);
 			}
-			unit<uint32> Expr := SubItem_PropValues(PropValueSource,'expr')
+			unit<uint32> Expr := SubItem_PropValues(PropValueSource,'Expr')
 			{
 				attribute<string> ok7411: [
 					'',
 					'',
 					'=''range(BaseUnit(Left(''+Quote(PropValue(., ''FullName'')+''/domainA'')+'',0),UInt32),UInt32(0),UInt32(9))''',
-					'baseunit(''b'',float64)'
+					'BaseUnit(''b'',float64)'
 				];
 			
 				attribute<string> ok8001: [
 					'',
 					'',
 					'',
-					'baseunit(''b'',float64)'
+					'BaseUnit(''b'',float64)'
 				];
 			
 				attribute<string> ok := =(GeoDmsVersion() < 7.9) ? 'ok7411' : 'ok8001';
@@ -154,27 +154,27 @@
 				parameter<bool>   test_attr := all(test);
 			}
 			unit<uint32> PropValuesSet: nrofrows = 4;
-			unit<uint32> MultipleAttributes := SubItem_PropValues(PropValueSource,union_data(PropValuesSet, 'name', 'fullname','ValuesUnit','DomainUnit'));
+			unit<uint32> MultipleAttributes := SubItem_PropValues(PropValueSource,union_data(PropValuesSet, 'name', 'FullName','ValuesUnit','DomainUnit'));
 
 		}
 		container Inherited_PropValues
 		{
-			unit<uint32> Name := Inherited_PropValues(PropValueSource,'name')
+			unit<uint32> name := Inherited_PropValues(PropValueSource,'name')
 			{
 				attribute<string> ok: ['label','sumnrinhabitants','domaina','valuesb','regionnr','metascriptname','sumnrinhabitants','regionlabel','regiondescr'];
 				attribute<bool>   test      := lowercase(name) == ok;
 				parameter<bool>   test_attr := all(test);
 			}
-			unit<uint32> Expr := Inherited_PropValues(PropValueSource,'expr')
+			unit<uint32> Expr := Inherited_PropValues(PropValueSource,'Expr')
 			{
 				attribute<string> ok7411: ['','',
 				'=''range(BaseUnit(Left(''+Quote(PropValue(., ''FullName'')+''/domainA'')+'',0),UInt32),UInt32(0),UInt32(9))''',
-				'baseunit(''b'',float64)','','','','',''
+				'BaseUnit(''b'',float64)','','','','',''
 				];
 				attribute<string> ok8001: ['','',
 //				'=''range(BaseUnit(Left(''+Quote(PropValue(., ''FullName'')+''/domainA'')+'',0),UInt32),UInt32(0),UInt32(9))''',
 				'',
-				'baseunit(''b'',float64)','','','','',''
+				'BaseUnit(''b'',float64)','','','','',''
 				];
 				attribute<string> ok := =(GeoDmsVersion() < 7.9) ? 'ok7411' : 'ok8001';
 				attribute<bool>   test      := lowercase(Expr) == LowerCase(ok);
@@ -183,7 +183,7 @@
 		}
 		container SubTree_PropValues
 		{
-			unit<uint32> Name := SubTree_PropValues(MetaScript/loop/iter0,'name')
+			unit<uint32> name := SubTree_PropValues(MetaScript/loop/iter0,'name')
 			{
 				attribute<string> ok: ['nriter','currvalue','nextvalue','results','loopwaarde'];
 				attribute<bool>   test      := lowercase(name) == ok;
@@ -192,7 +192,7 @@
 			
 			unit<uint32> Property: nrofrows = 4
 			{
-				attribute<string> name: ['name','fullname','label','expr'];
+				attribute<string> name: ['name','FullName','Label','Expr'];
 			}
 
 			unit<uint32> Multiple := SubTree_PropValues(MetaScript/loop/iter0, Property/name)
@@ -212,7 +212,7 @@
 		{
 			unit<uint32> iters: nrofrows = 3 { attribute<string> name := 'it' + string(id(.)); }
 			parameter<string> init := 'uint32(0)';
-			Template step
+			template step
 			{
 				parameter<uint32> currValue;
 				parameter<uint32> nextValue := currValue + uint32(1);
@@ -274,11 +274,11 @@
 				,	'loop/test'
 				,	'for_each_ind/test'
 				,	'for_each_ind_empty/test'
-				,	'SubItem_PropValues/Name/test_attr'
+				,	'SubItem_PropValues/name/test_attr'
 				,	'SubItem_PropValues/Expr/test_attr'
-				,	'Inherited_PropValues/Name/test_attr'
+				,	'Inherited_PropValues/name/test_attr'
 				,	'Inherited_PropValues/Expr/test_attr'
-				,	'SubTree_PropValues/Name/test_attr'
+				,	'SubTree_PropValues/name/test_attr'
 				,	'SubTree_PropValues/Multiple/test_attr'
 				,	'iterate_test/test|iterate'
 				,	'generate_test/test|Generate'

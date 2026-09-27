@@ -20,16 +20,16 @@ container TemplDefinition
 	{
 		parameter<float64> y := 7.0;
 		
-		container f1 := definition_container/f(1.0);
-		container f2 := definition_container/f(2.0);
+		container F1 := definition_container/f(1.0);
+		container F2 := definition_container/f(2.0);
 		
 	}
 	
-	parameter<bool> test := (instantion_container/f1/result == definition_container/y);
+	parameter<bool> test := (instantion_container/F1/result == definition_container/y);
 
 	parameter<string> test_log := test
 		? '' 
-		: 'Namespaces/TemplDefinition Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'Namespaces/TemplDefinition Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/Namespaces/TemplDefinition.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/Namespaces/TemplDefinition.txt";
 }

@@ -159,7 +159,7 @@
 				attribute<bool>           isCapital:               [-1,0,0,0,0,0,0];
 				attribute<string>         CityName:                ['Amsterdam','Rotterdam','Utrecht','DenHaag','Eindhoven','Haarlem',null];
 				attribute<Region>         RegionNr:                [0,1,2,1,3,null,3];
-				attribute<grid/units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
+				attribute<Grid/Units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(Grid/Units/GridDomain));
 				// results
 				attribute<uint32>         CumulNrInhabitants:         [550,1075,1375,1875,2075,2250,2250];
 				attribute<uint32>         CumulNrInhabitantsPerRegion:[550,525,300,1025,200,null, 200];
@@ -273,7 +273,7 @@
 				attribute<bool>           isCapital:               [];
 				attribute<string>         CityName:                [];
 				attribute<Region>         RegionNr:                [];
-				attribute<grid/units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(grid/units/GridDomain));
+				attribute<Grid/Units/GridDomain> GridNr := rlookup(point_xy(int16(RegionNr),int16(RegionNr),spoint), id(Grid/Units/GridDomain));
 				// results
 				attribute<uint32>         CumulNrInhabitants:         [];
 				attribute<uint32>         CumulNrInhabitantsPerRegion:[];
@@ -288,17 +288,17 @@
 			}
 		}
 
-		container UnTiled2UnTiled  := Template(RegionDomain     , CityDomain     , CDomain     , srcDomainUU);
-		container UnTiled2Tiled    := Template(RegionTiledDomain, CityDomain     , CDomain     , srcDomainUT);
-		container Tiled2UnTiled    := Template(RegionDomain     , CityTiledDomain, CTiledDomain, srcDomainTU);
-		container Tiled2Tiled      := Template(RegionTiledDomain, CityTiledDomain, CTiledDomain, srcDomainTT);
+		container UnTiled2UnTiled  := TestTemplate(RegionDomain     , CityDomain     , CDomain     , srcDomainUU);
+		container UnTiled2Tiled    := TestTemplate(RegionTiledDomain, CityDomain     , CDomain     , srcDomainUT);
+		container Tiled2UnTiled    := TestTemplate(RegionDomain     , CityTiledDomain, CTiledDomain, srcDomainTU);
+		container Tiled2Tiled      := TestTemplate(RegionTiledDomain, CityTiledDomain, CTiledDomain, srcDomainTT);
 
-		container EUnTiled2UnTiled  := Template(EDomain         , EDomain        , EDomain      , EsrcDomainUU);
-		container EUnTiled2Tiled    := Template(ETiledDomain    , EDomain        , EDomain      , EsrcDomainUT);
-		container ETiled2UnTiled    := Template(EDomain         , ETiledDomain   , ETiledDomain , EsrcDomainTU);
-		container ETiled2Tiled      := Template(ETiledDomain    , ETiledDomain   , ETiledDomain , EsrcDomainTT);
+		container EUnTiled2UnTiled  := TestTemplate(EDomain         , EDomain        , EDomain      , EsrcDomainUU);
+		container EUnTiled2Tiled    := TestTemplate(ETiledDomain    , EDomain        , EDomain      , EsrcDomainUT);
+		container ETiled2UnTiled    := TestTemplate(EDomain         , ETiledDomain   , ETiledDomain , EsrcDomainTU);
+		container ETiled2Tiled      := TestTemplate(ETiledDomain    , ETiledDomain   , ETiledDomain , EsrcDomainTT);
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<uint32> RegionDomain;
@@ -355,7 +355,7 @@
 				parameter<bool>   test_param := test_tuint32;
 	
 				attribute<City>   att_uint32          (Region) := min_index(City/NrInhabitants, City/RegionNr);
-				attribute<City>   att_uint32_gridrel  (grid/units/GridDomain) := min_index(City/NrInhabitants, City/gridnr);
+				attribute<City>   att_uint32_gridrel  (Grid/Units/GridDomain) := min_index(City/NrInhabitants, City/gridnr);
 				
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/minIndex);
 				parameter<bool>   test_attr            := all(test_uint32);
@@ -368,7 +368,7 @@
 				parameter<bool>   test_param        := test_param_uint32 && test_param_string;
 	
 				attribute<uint32> att_uint32          (Region) := max(MakeDefined(City/NrInhabitants, 0), City/RegionNr);
-				attribute<uint32> att_uint32_gridrel  (grid/units/GridDomain) := max(City/NrInhabitants, City/gridnr);
+				attribute<uint32> att_uint32_gridrel  (Grid/Units/GridDomain) := max(City/NrInhabitants, City/gridnr);
 				
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/maxNrInhabitants);
 				attribute<string> att_string  (Region) := max(MakeDefined(City/CityName, ''), City/RegionNr);
@@ -383,7 +383,7 @@
 				attribute<City>   att_uint32          (Region) := max_index(City/NrInhabitants, City/RegionNr);
 				attribute<City>   att_bool            (Region) := max_index(City/isLarge      , City/RegionNr);
 				
-				attribute<uint32> att_uint32_gridrel  (grid/units/GridDomain) := max_index(City/NrInhabitants, City/gridnr);
+				attribute<uint32> att_uint32_gridrel  (Grid/Units/GridDomain) := max_index(City/NrInhabitants, City/gridnr);
 				
 				attribute<bool>   test_uint32 (Region) := eq_or_both_null(att_uint32, Region/maxIndex);
 				parameter<bool>   test_attr            := all(test_uint32);
@@ -594,13 +594,13 @@
 				attribute<uint32>  att        (Region) := modus(City/LifeStyleCode, City/RegionNr);
 				attribute<int32>   att_int32  (Region) := modus(int32(City/LifeStyleCode), City/RegionNr);
 
-				attribute<uint32> att_uint32_gridrel (grid/units/GridDomain) := modus(uint32(City/AvgDailyTemperature), City/gridnr);
+				attribute<uint32> att_uint32_gridrel (Grid/Units/GridDomain) := modus(uint32(City/AvgDailyTemperature), City/gridnr);
 
-				attribute<uint32> modus_temp_met_data (grid/units/GridDomain) :[12,null,null,null,null,null,11,null,null,null,null,null,null,null,null,null,null,null,14,null,null,null,null,null,null];
+				attribute<uint32> modus_temp_met_data (Grid/Units/GridDomain) :[12,null,null,null,null,null,11,null,null,null,null,null,null,null,null,null,null,null,14,null,null,null,null,null,null];
 				
-				attribute<uint32> modus_temp          (grid/units/GridDomain) := 
+				attribute<uint32> modus_temp          (Grid/Units/GridDomain) := 
 					#City == 0
-						? const( 0 / 0, grid/units/GridDomain)
+						? const( 0 / 0, Grid/Units/GridDomain)
 						: modus_temp_met_data;
 
 				attribute<uint16>  att_uint16 (Region) := modus(uint16(City/LifeStyleCode), City/RegionNr);
@@ -613,23 +613,23 @@
 				attribute<bool>    att_bool   (Region) := modus(bool(City/LifeStyleCode), City/RegionNr);
 	
 				attribute<bool>    test         (Region)                := eq_or_both_null(att, Region/modusLifeStyle);
-				attribute<bool>    test_gridrel (grid/units/GridDomain) := eq_or_both_null(att_uint32_gridrel, modus_temp);
+				attribute<bool>    test_gridrel (Grid/Units/GridDomain) := eq_or_both_null(att_uint32_gridrel, modus_temp);
 
 				parameter<bool>    test_attr := all(test) && all(test_gridrel);
 			}
 			container modus_weighted: url  = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/modus_weighted"
 			{
-				parameter<bool>    test_param          := eq_or_both_null(modus_weighted(City/LifeStyleCode, City/nrinhabitants), params/modus_weightedLSC);
-				attribute<uint32>  att        (Region) := modus_weighted(City/LifeStyleCode, City/nrinhabitants, City/RegionNr);
-				attribute<int32>   att_int32  (Region) := modus_weighted(int32(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-				attribute<uint16>  att_uint16 (Region) := modus_weighted(uint16(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-				attribute<int16>   att_int16  (Region) := modus_weighted(int16(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-				attribute<uint8>   att_uint8  (Region) := modus_weighted(uint8(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-				attribute<int8>    att_int8   (Region) := modus_weighted(int8(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-				attribute<uint4>   att_uint4  (Region) := modus_weighted(uint4(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-				attribute<uint2>   att_uint2  (Region) := modus_weighted(uint2(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-	//			attribute<string>  att_string (Region) := modus_weighted(string(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
-				attribute<bool>    att_bool   (Region) := modus_weighted(bool(City/LifeStyleCode), City/nrinhabitants, City/RegionNr);
+				parameter<bool>    test_param          := eq_or_both_null(modus_weighted(City/LifeStyleCode, City/NrInhabitants), params/modus_weightedLSC);
+				attribute<uint32>  att        (Region) := modus_weighted(City/LifeStyleCode, City/NrInhabitants, City/RegionNr);
+				attribute<int32>   att_int32  (Region) := modus_weighted(int32(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+				attribute<uint16>  att_uint16 (Region) := modus_weighted(uint16(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+				attribute<int16>   att_int16  (Region) := modus_weighted(int16(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+				attribute<uint8>   att_uint8  (Region) := modus_weighted(uint8(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+				attribute<int8>    att_int8   (Region) := modus_weighted(int8(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+				attribute<uint4>   att_uint4  (Region) := modus_weighted(uint4(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+				attribute<uint2>   att_uint2  (Region) := modus_weighted(uint2(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+	//			attribute<string>  att_string (Region) := modus_weighted(string(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
+				attribute<bool>    att_bool   (Region) := modus_weighted(bool(City/LifeStyleCode), City/NrInhabitants, City/RegionNr);
 	
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/modusLifeStyle);
 				parameter<bool>    test_attr           := all(test);
@@ -649,9 +649,9 @@
 
 				parameter<bool>   test_param_extra := eq_or_both_null(test_v0, params/nth_element_wei_v0) && eq_or_both_null(test_v1, params/nth_element_wei_v1) && eq_or_both_null(test_v2, params/nth_element_wei_v2) && not(IsDefined(test_v9));
 				parameter<uint32> test_v9          := nth_element_weighted(nth_e_w_Domain/Rank, 1000f, nth_e_w_Domain/Weight);
-				parameter<bool>   test_param       := test_param_extra && eq_or_both_null(nth_element_weighted(City/Ranking, float32(1800), float32(City/nrinhabitants)), params/nth_element_wei_v9);
+				parameter<bool>   test_param       := test_param_extra && eq_or_both_null(nth_element_weighted(City/Ranking, float32(1800), float32(City/NrInhabitants)), params/nth_element_wei_v9);
 	
-				attribute<uint32> att  (Region) := nth_element_weighted(City/Ranking, float32(400), float32(City/nrinhabitants),City/RegionNr);
+				attribute<uint32> att  (Region) := nth_element_weighted(City/Ranking, float32(400), float32(City/NrInhabitants),City/RegionNr);
 				attribute<bool>   test (Region) := eq_or_both_null(att, Region/nth_element_weightedNrIn);
 				parameter<bool>   test_attr     := all(test);
 			}
@@ -666,7 +666,7 @@
 			{
 				parameter<float32> param               := var(float32(City/NrInhabitants));
 				
-				parameter<bool>    test_param          := float_isNearby(param, params/varNrInhabitants, Dif_all_float32) || isNull(param);
+				parameter<bool>    test_param          := float_isNearby(param, params/varNrInhabitants, Dif_all_float32) || IsNull(param);
 				attribute<float32> att        (Region) := var(float32(City/NrInhabitants), City/RegionNr);
 				attribute<bool>    test       (Region) := float_isNearby(att, Region/varNrInhabitants, Dif_all_float32) ;
 				parameter<bool>    test_attr           := all(test);
@@ -675,7 +675,7 @@
 			{
 				parameter<float32> param               := sd(float32(City/NrInhabitants));
 
-				parameter<bool>    test_param          := float_isNearby(param, params/sdNrInhabitants, Dif_all_float32) || isNull(param);
+				parameter<bool>    test_param          := float_isNearby(param, params/sdNrInhabitants, Dif_all_float32) || IsNull(param);
 				attribute<float32> att        (Region) := sd(float32(City/NrInhabitants), City/RegionNr);
 				attribute<bool>    test       (Region) := float_isNearby(att, Region/sdNrInhabitants, Dif_all_float32) ;
 				parameter<bool>    test_attr           := all(test);
@@ -684,7 +684,7 @@
 			{
 				parameter<float32> param               := corr(float32(City/NrInhabitants), City/AvgDailyTemperature);
 
-				parameter<bool>    test_param          := float_isNearby(param, params/corrNrInhabitants, Dif_all_float32) || isNull(param);
+				parameter<bool>    test_param          := float_isNearby(param, params/corrNrInhabitants, Dif_all_float32) || IsNull(param);
 				attribute<float32> att        (Region) := corr(float32(City/NrInhabitants), float32(City/AvgDailyTemperature), City/RegionNr);
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/corrNrInhTemp);
 				parameter<bool>    test_attr           := all(test);
@@ -693,7 +693,7 @@
 			{
 				parameter<float32> param               := cov(float32(City/NrInhabitants), City/AvgDailyTemperature);
 
-				parameter<bool>    test_param          := float_isNearby(param, params/covNrInhabitants, Dif_all_float32) || isNull(param);
+				parameter<bool>    test_param          := float_isNearby(param, params/covNrInhabitants, Dif_all_float32) || IsNull(param);
 				attribute<float32> att        (Region) := cov(float32(City/NrInhabitants), float32(City/AvgDailyTemperature), City/RegionNr);
 				attribute<bool>    test       (Region) := eq_or_both_null(att, Region/covNrInhTemp);
 				parameter<bool>    test_attr           := all(test);
@@ -701,7 +701,7 @@
 			container all: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/all"
 			{
 				parameter<bool> test_param          := all(true);
-				attribute<bool> test_region(Region) := all(MakeDefined(City/NrInhabitants, 9999) < 500, City/RegionNr); // has region a city >= 500 [Inh]
+				attribute<bool> test_region(Region) := all(MakeDefined(City/NrInhabitants, 9999) < 500, City/RegionNr); // has Region a city >= 500 [Inh]
 				parameter<bool> test_attr := #(Region) > 0
 					?	 all(test_region == Region/allInh)
 						&& all(Region/condA) 
@@ -712,7 +712,7 @@
 			container any: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/any"
 			{
 				parameter<bool> test_param := any(true);
-				attribute<bool> test_region(Region) := any(MakeDefined(City/NrInhabitants, 0) >= 500, City/RegionNr); // has region a city >= 500 [Inh]
+				attribute<bool> test_region(Region) := any(MakeDefined(City/NrInhabitants, 0) >= 500, City/RegionNr); // has Region a city >= 500 [Inh]
 				parameter<bool> test_attr  := #(Region) > 0
 					?	 all(test_region ==  Region/anyInh)
 						&&     any(Region/condA) 
@@ -720,114 +720,114 @@
 						&& not(any(Region/condC))
 					: true;
 			}
-			container reg_count: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			container reg_count: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for Tiled data
 			{
-				container units
+				container Units
 				{
 					unit<uint32> Domain: nrofrows = 10;
 					unit<uint8>  RegioA: nrofrows = 5;
 					unit<uint8>  RegioB: nrofrows = 3;
 					unit<uint8>  Class:  nrofrows = 4
 					{
-						attribute<string> label: ['class1','class2','class3','class4'];
+						attribute<string> Label: ['class1','class2','class3','class4'];
 					}
 				}
 				container Regios
 				{
-					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
-					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+					attribute<Units/RegioA> A (Units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<Units/RegioB> B (Units/Domain): [1,0,2,2,0,0,1,2,1,0];
 				}
-				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
-				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+				attribute<Units/Class> src (Units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(Units/Class):  ['A','A','B','A']; // partitioning-name for each class
 	
 				container references // expected results
 				{
-					attribute<uint32> class1 (units/regioA):[1,1,0,1,0];
-					attribute<uint32> class2 (units/regioA):[2,0,1,0,0];
-					attribute<uint32> class3 (units/regioB):[0,1,1];
-					attribute<uint32> class4 (units/regioA):[1,1,0,0,0];
+					attribute<uint32> class1 (Units/RegioA):[1,1,0,1,0];
+					attribute<uint32> class2 (Units/RegioA):[2,0,1,0,0];
+					attribute<uint32> class3 (Units/RegioB):[0,1,1];
+					attribute<uint32> class4 (Units/RegioA):[1,1,0,0,0];
 				}
-				container attributes := reg_count(src, units/Class/label, Regios, refs);
+				container attributes := reg_count(src, Units/Class/label, Regios, refs);
 				container tests
 				{
-					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
-					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
-					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
-					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+					attribute<bool> class1 (Units/RegioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (Units/RegioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (Units/RegioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (Units/RegioA) := attributes/class4 == references/class4;
 				}
 				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
 			}
-			container reg_count_uint16: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			container reg_count_uint16: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for Tiled data
 			{
-				container units
+				container Units
 				{
 					unit<uint32> Domain: nrofrows = 10;
 					unit<uint8>  RegioA: nrofrows = 5;
 					unit<uint8>  RegioB: nrofrows = 3;
 					unit<uint8>  Class:  nrofrows = 4
 					{
-						attribute<string> label: ['class1','class2','class3','class4'];
+						attribute<string> Label: ['class1','class2','class3','class4'];
 					}
 				}
 				container Regios
 				{
-					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
-					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+					attribute<Units/RegioA> A (Units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<Units/RegioB> B (Units/Domain): [1,0,2,2,0,0,1,2,1,0];
 				}
-				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
-				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+				attribute<Units/Class> src (Units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(Units/Class):  ['A','A','B','A']; // partitioning-name for each class
 	
 				container references // expected results
 				{
-					attribute<uint16> class1 (units/regioA):[1,1,0,1,0];
-					attribute<uint16> class2 (units/regioA):[2,0,1,0,0];
-					attribute<uint16> class3 (units/regioB):[0,1,1];
-					attribute<uint16> class4 (units/regioA):[1,1,0,0,0];
+					attribute<uint16> class1 (Units/RegioA):[1,1,0,1,0];
+					attribute<uint16> class2 (Units/RegioA):[2,0,1,0,0];
+					attribute<uint16> class3 (Units/RegioB):[0,1,1];
+					attribute<uint16> class4 (Units/RegioA):[1,1,0,0,0];
 				}
-				container attributes := reg_count_uint16(src, units/Class/label, Regios, refs);
+				container attributes := reg_count_uint16(src, Units/Class/label, Regios, refs);
 				container tests
 				{
-					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
-					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
-					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
-					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+					attribute<bool> class1 (Units/RegioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (Units/RegioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (Units/RegioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (Units/RegioA) := attributes/class4 == references/class4;
 				}
 				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
 			}
-			container reg_count_uint32: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			container reg_count_uint32: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for Tiled data
 			{
-				container units
+				container Units
 				{
 					unit<uint32> Domain: nrofrows = 10;
 					unit<uint8>  RegioA: nrofrows = 5;
 					unit<uint8>  RegioB: nrofrows = 3;
 					unit<uint8>  Class:  nrofrows = 4
 					{
-						attribute<string> label: ['class1','class2','class3','class4'];
+						attribute<string> Label: ['class1','class2','class3','class4'];
 					}
 				}
 				container Regios
 				{
-					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
-					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+					attribute<Units/RegioA> A (Units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<Units/RegioB> B (Units/Domain): [1,0,2,2,0,0,1,2,1,0];
 				}
-				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
-				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+				attribute<Units/Class> src (Units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(Units/Class):  ['A','A','B','A']; // partitioning-name for each class
 
 				container references // expected results
 				{
-					attribute<uint32> class1 (units/regioA):[1,1,0,1,0];
-					attribute<uint32> class2 (units/regioA):[2,0,1,0,0];
-					attribute<uint32> class3 (units/regioB):[0,1,1];
-					attribute<uint32> class4 (units/regioA):[1,1,0,0,0];
+					attribute<uint32> class1 (Units/RegioA):[1,1,0,1,0];
+					attribute<uint32> class2 (Units/RegioA):[2,0,1,0,0];
+					attribute<uint32> class3 (Units/RegioB):[0,1,1];
+					attribute<uint32> class4 (Units/RegioA):[1,1,0,0,0];
 				}
-				container attributes := reg_count_uint32(src, units/Class/label, Regios, refs);
+				container attributes := reg_count_uint32(src, Units/Class/label, Regios, refs);
 				container tests
 				{
-					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
-					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
-					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
-					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+					attribute<bool> class1 (Units/RegioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (Units/RegioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (Units/RegioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (Units/RegioA) := attributes/class4 == references/class4;
 				}
 				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
 			}
@@ -877,71 +877,71 @@
 				parameter<bool> test_modus_count_u16 :=
 					params/count = uint32(0) || uint32(modus_count_uint16(rn8)) = mc_ref;
 			}
-			container reg_count_uint8: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			container reg_count_uint8: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for Tiled data
 			{
-				container units
+				container Units
 				{
 					unit<uint32> Domain: nrofrows = 10;
 					unit<uint8>  RegioA: nrofrows = 5;
 					unit<uint8>  RegioB: nrofrows = 3;
 					unit<uint8>  Class:  nrofrows = 4
 					{
-						attribute<string> label: ['class1','class2','class3','class4'];
+						attribute<string> Label: ['class1','class2','class3','class4'];
 					}
 				}
 				container Regios
 				{
-					attribute<units/RegioA> A (units/Domain): [0,0,1,2,3,0,4,2,1,0];
-					attribute<units/RegioB> B (units/Domain): [1,0,2,2,0,0,1,2,1,0];
+					attribute<Units/RegioA> A (Units/Domain): [0,0,1,2,3,0,4,2,1,0];
+					attribute<Units/RegioB> B (Units/Domain): [1,0,2,2,0,0,1,2,1,0];
 				}
-				attribute<units/Class> src (units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
-				attribute<string>      refs(units/Class):  ['A','A','B','A']; // partitioning-name for each class
+				attribute<Units/Class> src (Units/Domain): [0,1,3,2,0,1,2,1,0,3]; // class-value for each domain-element
+				attribute<string>      refs(Units/Class):  ['A','A','B','A']; // partitioning-name for each class
 	
 				container references // expected results
 				{
-					attribute<uint8> class1 (units/regioA):[1,1,0,1,0];
-					attribute<uint8> class2 (units/regioA):[2,0,1,0,0];
-					attribute<uint8> class3 (units/regioB):[0,1,1];
-					attribute<uint8> class4 (units/regioA):[1,1,0,0,0];
+					attribute<uint8> class1 (Units/RegioA):[1,1,0,1,0];
+					attribute<uint8> class2 (Units/RegioA):[2,0,1,0,0];
+					attribute<uint8> class3 (Units/RegioB):[0,1,1];
+					attribute<uint8> class4 (Units/RegioA):[1,1,0,0,0];
 				}
-				container attributes := reg_count_uint8(src, units/Class/label, Regios, refs);
+				container attributes := reg_count_uint8(src, Units/Class/label, Regios, refs);
 				container tests
 				{
-					attribute<bool> class1 (units/regioA) := attributes/class1 == references/class1;
-					attribute<bool> class2 (units/regioA) := attributes/class2 == references/class2;
-					attribute<bool> class3 (units/regioB) := attributes/class3 == references/class3;
-					attribute<bool> class4 (units/regioA) := attributes/class4 == references/class4;
+					attribute<bool> class1 (Units/RegioA) := attributes/class1 == references/class1;
+					attribute<bool> class2 (Units/RegioA) := attributes/class2 == references/class2;
+					attribute<bool> class3 (Units/RegioB) := attributes/class3 == references/class3;
+					attribute<bool> class4 (Units/RegioA) := attributes/class4 == references/class4;
 				}
 				parameter<bool> test_attr := all(tests/class1) && all(tests/class2) && all(tests/class3) && all(tests/class4);
 			}
-			container reg_count_empty: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for tiled data
+			container reg_count_empty: url = "http://www.objectvision.nl/geodms/operators-a-functions/aggregation/reg_count" // Not yet tested for Tiled data
 			{
-				container units
+				container Units
 				{
 					unit<uint32> Domain: nrofrows = 0;
 					unit<uint8>  RegioA: nrofrows = 0;
 					unit<uint8>  RegioB: nrofrows = 0;
 					unit<uint8>  Class:  nrofrows = 0
 					{
-						attribute<string> label: [];
+						attribute<string> Label: [];
 					}
 				}
 				container Regios
 				{
-					attribute<units/RegioA> A (units/Domain): [];
-					attribute<units/RegioB> B (units/Domain): [];
+					attribute<Units/RegioA> A (Units/Domain): [];
+					attribute<Units/RegioB> B (Units/Domain): [];
 				}
-				attribute<units/Class> src (units/Domain): []; // class-value for each domain-element
-				attribute<string>      refs(units/Class):  []; // partitioning-name for each class
+				attribute<Units/Class> src (Units/Domain): []; // class-value for each domain-element
+				attribute<string>      refs(Units/Class):  []; // partitioning-name for each class
 	
 				container references // expected results
 				{
-					attribute<uint32> class1 (units/regioA):[];
-					attribute<uint32> class2 (units/regioA):[];
-					attribute<uint32> class3 (units/regioB):[];
-					attribute<uint32> class4 (units/regioA):[];
+					attribute<uint32> class1 (Units/RegioA):[];
+					attribute<uint32> class2 (Units/RegioA):[];
+					attribute<uint32> class3 (Units/RegioB):[];
+					attribute<uint32> class4 (Units/RegioA):[];
 				}
-				container attributes := reg_count(src, units/Class/label, Regios, refs);
+				container attributes := reg_count(src, Units/Class/label, Regios, refs);
 
 				unit<uint32> reg_count_subitems:= SubItem_PropValues(attributes,'name');
 

@@ -5,13 +5,13 @@ container must_write
 		attribute<uint32> A    :[1,2,3];
 		attribute<uint32> test := A, IntegrityCheck = "sum(A) == 6";
 	}
-	parameter<string> export := string(mean(data/test) + 1), storagename = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_write_result.txt", StorageType = "str";
+	parameter<string> export := string(mean(data/test) + 1), StorageName = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_write_result.txt", StorageType = "str";
 
 
-	parameter<string> read_result: storagename = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_write_result.txt", StorageType = "str";
+	parameter<string> read_result: StorageName = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_write_result.txt", StorageType = "str";
 	parameter<string> test_log := read_result == '3'
 		? '' 
-		: 'integrity check must write test: ' + expand(., '%configDir%') + '.dms ' + PropValue(data/test, 'fullname') + ' result: not OK'
+		: 'integrity check must write test: ' + expand(., '%configDir%') + '.dms ' + PropValue(data/test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_write.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/integrity_check/must_write.txt";
 }

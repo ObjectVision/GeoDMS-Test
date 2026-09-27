@@ -2,8 +2,8 @@ Echo off
 CLS
 
 REM Calling convention (changed 2026-05-12):
-REM   %1 = version selector (D32/R32/D64/R64/CD64/CR64 or numeric like 20.0.0)
-REM   %2 = flavor suffix    (m / c / l; required when %1 is numeric)
+REM   %1 = version selector (D32/R32/D64/R64/CD64/CR64/GD64/GR64 or numeric like 20.0.0)
+REM   %2 = flavor suffix    (m / c / g / l; required when %1 is numeric, g with GD64/GR64)
 REM   %3 %4 %5 = MT flags   (S1/S2/S3 or C1/C2/C3; defaulted below)
 set version=%1
 set flavor=%2
@@ -200,6 +200,9 @@ REM SECTION PYTHON BINDINGS (geodms module: load/query a config + build an in-me
 if not exist "%ResultDir%\unit\python" mkdir "%ResultDir%\unit\python"
 Call Unit\PythonTest.bat "%geodms_rootdir%\python\tst\UnitTests.py"     "%ResultDir%\unit\python\UnitTests.txt"
 Call Unit\PythonTest.bat "%geodms_rootdir%\python\tst\InMemoryConfig.py" "%ResultDir%\unit\python\InMemoryConfig.txt"
+
+REM SECTION SHIPPED CONTENT (GeoDMS-Test #24): the .dms files the installer ships, run from the build under test
+Call Unit\ShippedContent.bat
 
 REM SECTION STATISTICS
 Call Unit\Statistics.bat

@@ -49,16 +49,16 @@ container xml_parse
 			'237037.507 438780.781 0.0 237039.05 438780.447 0.0 237040.341 438780.167 0.0 237041.241 438785.24 0.0 237038.439 438785.859 0.0 237037.507 438780.781 0.0';
 
 		parameter<float32> area_polygon := area(fpolygon(geoBuilder/result[0]), float32);
-		parameter<bool> area_polygon_cond:= round(area_polygon) == 14909184i;
+		parameter<bool> area_polygon_cond:= Round(area_polygon) == 14909184i;
 
 		parameter<bool> all := identificatie && bouwjaar && count_poslist && poslist && area_polygon_cond;
 	}
 
 	parameter<string> test_log := tests/all 
 		? '' 
-		: 'Parse xml file: ' + expand(., '%configDir%') + '.dms ' + PropValue(tests/all, 'fullname') + ' result: not OK'
+		: 'Parse xml file: ' + expand(., '%configDir%') + '.dms ' + PropValue(tests/all, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/parse_xml_pand.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/parse_xml_pand.txt";
 
 	/* pand voorbeeld schema
 	<bag_LVC:Pand>
@@ -91,7 +91,7 @@ container xml_parse
 	*/
 	container Templates
 	{
-		Template ProcessGmlPolygon
+		template ProcessGmlPolygon
 		{
 			// begin case parameters
 			unit<uint32>    gmlContext;
@@ -107,7 +107,7 @@ container xml_parse
 			container geometry := = geometry_expr;
 			attribute<rdc_mm> result (gmlContext, polygon) := geometry/result;
 		}
-		Template ProcessGmlPolygonImpl
+		template ProcessGmlPolygonImpl
 		{
 			// begin case parameters
 			unit<uint32> gmlPolygon;
@@ -121,7 +121,7 @@ container xml_parse
 				gmlPolygon/gml_Interior/Parent_rel
 			);
 		}
-		Template LinearRing
+		template LinearRing
 		{
 			// begin case parameters
 			unit<uint32> parsedXMLsrc;
@@ -134,7 +134,7 @@ container xml_parse
 			}
 			attribute<rdc_mm> geometry_mm(poly,parsedXMLsrc) := impl/union/result;
 		}
-		Template Polygon
+		template Polygon
 		{
 			// begin case parameters
 			unit<uint32>        Exterior;
@@ -165,7 +165,7 @@ container xml_parse
 			attribute<rdc_mm> result(poly,Exterior) := impl/count == 0 ? ExtGeometry : impl/result;
 			attribute<int32>  area  (Exterior)      := area(result, int32); // DEBUG
 		}
-		Template posListProcessor {
+		template posListProcessor {
 			// begin case parameters
 			unit<uint32> posList;
 			parameter<bool> isExterior;
@@ -197,7 +197,7 @@ container xml_parse
 			}
 			attribute<rdc_mm> result (posList, poly) := impl/geometry_mm[rdc_mm];
 		}
-		Template union 
+		template union 
 		{
 			// begin case parameters
 			unit<uint32> child;
@@ -209,7 +209,7 @@ container xml_parse
 			attribute<rdc_mm> result(poly,parent) := bp_union_polygon(geometry, parent_rel);
 		}
 
-		Template optimized_union {
+		template optimized_union {
 			// begin case parameters
 			unit<uint32> child;
 			unit<uint32> parent;
@@ -235,7 +235,7 @@ container xml_parse
 			attribute<int32>  area   (parent)      := area(result, int32); // DEBUG
 		}
 
-		Template one2one_union {
+		template one2one_union {
 			// begin case parameters
 			unit<uint32> child;
 			unit<uint32> parent;
@@ -245,7 +245,7 @@ container xml_parse
 	
 			container impl {
 	//			attribute<uint32> count(parent) := pcount(parent_rel);
-				parameter<bool> Check := (#child == #parent) && all(value(parent_rel, child) == ID(child));
+				parameter<bool> Check := (#child == #parent) && all(value(parent_rel, child) == id(child));
 			}
 			attribute<rdc_mm> result(poly,parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
 		}

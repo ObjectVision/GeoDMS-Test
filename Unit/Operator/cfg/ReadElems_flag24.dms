@@ -14,20 +14,20 @@ container ReadElems_flag24
 			parameter<string> filedata   := replace(filedata_src, ',', '', '\''','');
 			parameter<uint32> count_rows := strcount(filedata, '\n') - 1; //   4136157 
 
-			parameter<string> headerline := readLines(filedata, void, 0);
+			parameter<string> headerline := ReadLines(filedata, void, 0);
 
 			unit<uint32> field := Range(uint32, 0, strcount(headerline, fieldseparator) + 1)
 			{
 				attribute<string> name := ReadArray(headerline , field, string, 0);
 			}
 
-			attribute<string> bodylines (domain) := readLines(filedata, domain, headerline/ReadPos);
+			attribute<string> bodylines (domain) := ReadLines(filedata, domain, headerline/ReadPos);
 
 			container data :=
 				for_each_nedv(
 					field/name
 					,'ReadElems(
-						BodyLines
+						bodylines
 						,string
 						,'+ MakeDefined(field/name[sub_or_null(id(field), 1)] + '/ReadPos','const(0, domain)')+'
 						,24
@@ -40,8 +40,8 @@ container ReadElems_flag24
 	
 	parameter<string> test_log := test
 		? '' 
-		: 'ReadElems flag24 Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'ReadElems flag24 Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/ReadElems_flag24.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/ReadElems_flag24.txt";
 	
 }

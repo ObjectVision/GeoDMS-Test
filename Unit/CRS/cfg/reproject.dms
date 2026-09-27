@@ -24,7 +24,7 @@ container reproject
 	
 	// test
 	//parameter<bool> check1 := upoint(rdc_wgs84_conv_point*point_yx(10000.0, 10000.0, dpoint) == upoint(wgs_point*point_yx(10000.0, 10000.0, dpoint));
-	parameter<bool> check2 := PointRow(be_rdc_conv_point)    == PointRow(rdc_point);
+	parameter<bool> check2 := pointrow(be_rdc_conv_point)    == pointrow(rdc_point);
 
 	// check3 (WGS84 -> RD) is FLAVOUR-SPECIFIC, because the datum operation that gets
 	// selected depends on the GDAL/PROJ the flavour ships. GeoDMS asks GDAL for the
@@ -40,15 +40,15 @@ container reproject
 	// unit_flagged.bat exports GeoDmsFlavor; unset (a hand-run) takes the m/c/l branch.
 	parameter<string> flavor                 := expand(., '%env:GeoDmsFlavor%');
 	parameter<bool>   has_globio_gdal        := flavor == 'g';
-	parameter<uint32> expected_wgs84_rdc_row := has_globio_gdal ? uint32(390289) : PointRow(rdc_point);
-	parameter<bool> check3 := PointRow(wgs84_rdc_conv_point) == expected_wgs84_rdc_row;
+	parameter<uint32> expected_wgs84_rdc_row := has_globio_gdal ? uint32(390289) : pointrow(rdc_point);
+	parameter<bool> check3 := pointrow(wgs84_rdc_conv_point) == expected_wgs84_rdc_row;
 
 	// test all
 	parameter<bool>   test     := check2 && check3 ;
 	parameter<string> test_log := test 
 		? '' 
-		: 'Reproject Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname')
+		: 'Reproject Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName')
 		  + ' result: not OK (flavour ' + flavor + ', check2=' + string(check2) + ', check3=' + string(check3) + ')'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/crs/reproject.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/crs/reproject.txt";
 }

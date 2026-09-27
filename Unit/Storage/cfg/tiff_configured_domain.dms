@@ -3,7 +3,7 @@ container read_tiff_configured_domain
 	container Classifications
 	{
 		// =========== landusesTypering
-		unit<uint8> ggModel: NrOfRows = 9 // @USERINPUT: keep in sync with the actual nr of model classes
+		unit<uint8> ggModel: nrofrows = 9 // @USERINPUT: keep in sync with the actual nr of model classes
 		{	
 			parameter<uint32> nrAttr := 16; // @USERINPUT: keep in sync with nr of Text-Element attributes in the next lines
 			unit<uint32>      Elements:= Range(uint32, 0, nrAttr*#ggModel)
@@ -21,36 +21,36 @@ container read_tiff_configured_domain
 				'water',			'water',			'water',			'TRUE',			'159','255','255',	'',				'FALSE',	'FALSE',			'30',			'28',			'26',			'24',			'0',			'0'
 				];
 			}
-			attribute<string>     Lnr:          = string(ID(.)+1b);
-			attribute<string>     Name:         = Elements/Text[value(uint32(ID(.))* nrAttr +  0, Elements)];
-			attribute<string>     Label:        = Elements/Text[value(uint32(ID(.))* nrAttr +  1, Elements)], DialogType = "LabelText";
-			attribute<string>     Descr:        = Elements/Text[value(uint32(ID(.))* nrAttr +  2, Elements)];
-			attribute<bool>       IsExogenous:  = bool(Elements/Text[value(uint32(ID(.))* nrAttr +  3, Elements)]);
+			attribute<string>     Lnr:          = string(id(.)+1b);
+			attribute<string>     name:         = Elements/Text[value(uint32(id(.))* nrAttr +  0, Elements)];
+			attribute<string>     Label:        = Elements/Text[value(uint32(id(.))* nrAttr +  1, Elements)], DialogType = "LabelText";
+			attribute<string>     Descr:        = Elements/Text[value(uint32(id(.))* nrAttr +  2, Elements)];
+			attribute<bool>       IsExogenous:  = bool(Elements/Text[value(uint32(id(.))* nrAttr +  3, Elements)]);
 
 			attribute<uint32>     BrushColor:   = rgb(R,G / 256,B / 256 / 256), DialogType = "BrushColor";
 
 			unit<uint32>            ColorCoord;
-			attribute<ColorCoord>   r:                = value(Elements/Text[value(uint32(ID(.))* nrAttr +  4, Elements)], ColorCoord);
-			attribute<ColorCoord>   g:                = value(Elements/Text[value(uint32(ID(.))* nrAttr +  5, Elements)], ColorCoord)*256;
-			attribute<ColorCoord>   b:                = value(Elements/Text[value(uint32(ID(.))* nrAttr +  6, Elements)], ColorCoord)*256*256;
-			attribute<string>       Claimregion:      = Elements/Text[value(uint32(ID(.))* nrAttr +  7, Elements)];
-			attribute<bool>         IsUrban:          = bool(Elements/Text[value(uint32(ID(.))* nrAttr + 8, Elements)]);
-			attribute<bool>         IsOpenLandscape:  = bool(Elements/Text[value(uint32(ID(.))* nrAttr + 9, Elements)]);
+			attribute<ColorCoord>   r:                = value(Elements/Text[value(uint32(id(.))* nrAttr +  4, Elements)], ColorCoord);
+			attribute<ColorCoord>   g:                = value(Elements/Text[value(uint32(id(.))* nrAttr +  5, Elements)], ColorCoord)*256;
+			attribute<ColorCoord>   b:                = value(Elements/Text[value(uint32(id(.))* nrAttr +  6, Elements)], ColorCoord)*256*256;
+			attribute<string>       Claimregion:      = Elements/Text[value(uint32(id(.))* nrAttr +  7, Elements)];
+			attribute<bool>         IsUrban:          = bool(Elements/Text[value(uint32(id(.))* nrAttr + 8, Elements)]);
+			attribute<bool>         IsOpenLandscape:  = bool(Elements/Text[value(uint32(id(.))* nrAttr + 9, Elements)]);
 		}
 
 		unit<uint8> LUclasses := Range(ggModel,uint8(0),uint8(nrofrows(ggModel)))
 		{
-			attribute<ggModel>      NrOrg          := convert(ID(LUclasses), ggModel);
+			attribute<ggModel>      NrOrg          := convert(id(LUclasses), ggModel);
 			attribute<uint32>       BrushColor     := lookup(NrOrg, ggModel/BrushColor), DialogType = "BrushColor";
 			attribute<string>       Label          := lookup(NrOrg, ggModel/Label), DialogType = "LabelText";
-			attribute<string>       Name           := lookup(NrOrg, ggModel/Name);
+			attribute<string>       name           := lookup(NrOrg, ggModel/name);
 			//attribute<mEUR_ha>      MaxDamagePerHa := lookup(NrOrg, ggModel/MaxDamagePerHa);
 		}
 	}
 
 	container geography
 	{
-		unit<float32> meter := baseunit('m', float32);
+		unit<float32> meter := BaseUnit('m', float32);
 		unit<fpoint> rdc_base : SpatialReference = "EPSG:28992";
 		unit<fpoint> rdc_meter := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
 
@@ -112,17 +112,17 @@ container read_tiff_configured_domain
 		parameter<string> ModelResolution := '100m'; // '100m' '500m'
 	}
 	
-	attribute<classifications/LUclasses> A1_GE_Discr   (domain): Storagename = "%projDir%/data/A1_GE_Discr.tif";
+	attribute<classifications/LUclasses> A1_GE_Discr   (domain): StorageName = "%projDir%/data/A1_GE_Discr.tif";
 
-	parameter<uint32> def_A1_GE_Discr  := sum(uint32(isDefined(A1_GE_Discr))); 
+	parameter<uint32> def_A1_GE_Discr  := sum(uint32(IsDefined(A1_GE_Discr))); 
 	parameter<uint32> sum_A1_GE_Discr  := sum(uint32(A1_GE_Discr)); 
 
 	parameter<bool>   test     := def_A1_GE_Discr == 9100000 && sum_A1_GE_Discr == 37816332;
 	parameter<string> test_log := test 
 		? '' 
-		: 'Read Tiff with configured_domaintest: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK.'
+		: 'Read Tiff with configured_domaintest: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK.'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/storage/read_tiff_configured_domain_error.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/storage/read_tiff_configured_domain_error.txt";
 
 
 }

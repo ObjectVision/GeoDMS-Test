@@ -23,7 +23,7 @@ container connect
 		attribute<bool> isOK  :=
 		switch(
 			  case(id(.)[SourceData/arc] < 3892[.]                , arc_rel == id(.)[SourceData/arc])
-			, case(id(.)[SourceData/arc] > 3891[.] && id(.) < 3902[.], isNull(arc_rel))
+			, case(id(.)[SourceData/arc] > 3891[.] && id(.) < 3902[.], IsNull(arc_rel))
 			, true
 			);
 			
@@ -33,7 +33,7 @@ container connect
 	parameter<bool>   test     := all(connect_point_arc/isOK) && connect_point_arc/count_isOK;
 	parameter<string> test_log := test 
 		? '' 
-		: 'Connect point to arc Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'fullname') + ' result: not OK'
+		: 'Connect point to arc Test: ' + expand(., '%configDir%') + '.dms ' + PropValue(test, 'FullName') + ' result: not OK'
 	,	StorageType = "str"
-	,	storagename = "%localDataDir%/GeoDMSTestResults/unit/operator/connect_point_arc.txt";
+	,	StorageName = "%localDataDir%/GeoDMSTestResults/unit/operator/connect_point_arc.txt";
 }

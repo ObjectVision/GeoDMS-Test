@@ -30,12 +30,12 @@
 		unit<uint32> EProv_nrd  : nrofrows = 0;
 		unit<uint32> ERegions   : nrofrows = 0;
 
-		container srcDomain        := Source(ADomain       ,Steden_nrd, Prov_nrd, Regions);
-		container srcTiledDomain   := Source(ATiledDomain  ,Steden_nrd, Prov_nrd, Regions);
+		container srcDomain        := source(ADomain       ,Steden_nrd, Prov_nrd, Regions);
+		container srcTiledDomain   := source(ATiledDomain  ,Steden_nrd, Prov_nrd, Regions);
 		container srcEDomain       := ESource(EDomain      ,ESteden_nrd, EProv_nrd, ERegions);
 		container srcETiledDomain  := ESource(ETiledDomain ,ESteden_nrd, EProv_nrd, ERegions);
 
-		template Source
+		template source
 		{
 			// begin case parameters
 			unit<uint32> Domain;
@@ -224,12 +224,12 @@
 			}
 		}
 
-		container UnTiled  := Template(ADomain       ,Prov_nrd , srcDomain      , false);
-		container Tiled    := Template(ATiledDomain  ,Prov_nrd , srcTiledDomain , false);
-		container EUnTiled := Template(EDomain       ,EProv_nrd, srcEDomain     , true);
-		container ETiled   := Template(ETiledDomain  ,EProv_nrd, srcETiledDomain, true);
+		container UnTiled  := TestTemplate(ADomain       ,Prov_nrd , srcDomain      , false);
+		container Tiled    := TestTemplate(ATiledDomain  ,Prov_nrd , srcTiledDomain , false);
+		container EUnTiled := TestTemplate(EDomain       ,EProv_nrd, srcEDomain     , true);
+		container ETiled   := TestTemplate(ETiledDomain  ,EProv_nrd, srcETiledDomain, true);
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<uint32> domain;
@@ -328,14 +328,14 @@
 			}
 			container UpperCase: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/uppercase"
 			{
-				attribute<string> att  (Domain) := uppercase(source/A);
+				attribute<string> att  (Domain) := UpperCase(source/A);
 				attribute<bool>   test (Domain) := att = source/uppercaseA;
 				parameter<bool>   test_attr     := all(test);
 			}
 			container LowerCase: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/lowercase"
 			{
 				attribute<string> att  (Domain) := lowercase(source/A);
-				attribute<bool>   test (Domain) := uppercase(att) = uppercase(source/uppercaseA);
+				attribute<bool>   test (Domain) := UpperCase(att) = UpperCase(source/uppercaseA);
 				parameter<bool>   test_attr     := all(test);
 			}
 			container strpos: url = "http://www.objectvision.nl/geodms/operators-a-functions/string/strpos"
@@ -492,9 +492,9 @@
 			{
 				parameter<bool>   test_param        := asDatastring(source/teststring) = '[' + quote(source/teststring) +']';
 				parameter<string> param_att         := asDatastring(source/Steden_nrd/Stad);
-//				parameter<string> param_att_float :=asDatastring(Conversion/Source/FloatAtt);
-//				parameter<string> param_att_uint :=asDatastring(Conversion/Source/IntegerAtt);
-//				parameter<string> param_att_bool :=asDatastring(Conversion/Source/BoolAtt);
+//				parameter<string> param_att_float :=asDatastring(Conversion/source/FloatAtt);
+//				parameter<string> param_att_uint :=asDatastring(Conversion/source/IntegerAtt);
+//				parameter<string> param_att_bool :=asDatastring(Conversion/source/BoolAtt);
 //				parameter<string> param_att_string := asDatastring(Conversion/SPoint/att);
 //				parameter<string> param_att_point :=asDatastring(Conversion/SPoint/att);
 	
@@ -516,23 +516,23 @@
 			}
 			container from_utf
 			{
-				parameter<bool> testA := from_utf(Source/special_characters/A)  == 'AAAAAAA';
-				parameter<bool> testa_:= from_utf(Source/special_characters/a_) == 'aaaaaaa';
-				parameter<bool> testC := from_utf(Source/special_characters/C)  == 'C';
-				parameter<bool> testc_:= from_utf(Source/special_characters/c_) == 'c';
-				parameter<bool> testE := from_utf(Source/special_characters/E)  == 'EEEE';
-				parameter<bool> teste_:= from_utf(Source/special_characters/e_) == 'eeee';
-				parameter<bool> testI := from_utf(Source/special_characters/I)  == 'IIII';
-				parameter<bool> testi_:= from_utf(Source/special_characters/i_) == 'iiii';
-				parameter<bool> testN := from_utf(Source/special_characters/N)  == 'N';
-				parameter<bool> testn_:= from_utf(Source/special_characters/n_) == 'n';
-				parameter<bool> testO := from_utf(Source/special_characters/O)  == 'OOOOOOO';
-				parameter<bool> testo_:= from_utf(Source/special_characters/o_) == 'ooooooo';
-				parameter<bool> testU := from_utf(Source/special_characters/U)  == 'UUUU';
-				parameter<bool> testu_:= from_utf(Source/special_characters/u_) == 'uuuu';
-				parameter<bool> testY := from_utf(Source/special_characters/Y)  == 'Y';
-				parameter<bool> testy_:= from_utf(Source/special_characters/y_) == 'yy';
-				parameter<bool> testOC:= from_utf(Source/special_characters/OC) == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+				parameter<bool> testA := from_utf(source/special_characters/A)  == 'AAAAAAA';
+				parameter<bool> testa_:= from_utf(source/special_characters/a_) == 'aaaaaaa';
+				parameter<bool> testC := from_utf(source/special_characters/C)  == 'C';
+				parameter<bool> testc_:= from_utf(source/special_characters/c_) == 'c';
+				parameter<bool> testE := from_utf(source/special_characters/E)  == 'EEEE';
+				parameter<bool> teste_:= from_utf(source/special_characters/e_) == 'eeee';
+				parameter<bool> testI := from_utf(source/special_characters/I)  == 'IIII';
+				parameter<bool> testi_:= from_utf(source/special_characters/i_) == 'iiii';
+				parameter<bool> testN := from_utf(source/special_characters/N)  == 'N';
+				parameter<bool> testn_:= from_utf(source/special_characters/n_) == 'n';
+				parameter<bool> testO := from_utf(source/special_characters/O)  == 'OOOOOOO';
+				parameter<bool> testo_:= from_utf(source/special_characters/o_) == 'ooooooo';
+				parameter<bool> testU := from_utf(source/special_characters/U)  == 'UUUU';
+				parameter<bool> testu_:= from_utf(source/special_characters/u_) == 'uuuu';
+				parameter<bool> testY := from_utf(source/special_characters/Y)  == 'Y';
+				parameter<bool> testy_:= from_utf(source/special_characters/y_) == 'yy';
+				parameter<bool> testOC:= from_utf(source/special_characters/OC) == 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 				
 				parameter<bool> test_param := 
 					   testA  && testa_ && testC  && testc_ && testE  && teste_ && testI 

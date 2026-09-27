@@ -1,19 +1,19 @@
 // AUTO-GENERATED from Operator.dms (+includes) by batch/make_operator_pre1810.py -- DO NOT EDIT BY HAND.
 // Pre-18.1.0 GeoDMS variant: bare point literals rewritten to the brace {y,x} notation.
 // Edit Operator.dms / Operator/*.dms and re-run the script instead.
-	container Point: Using = "/Domains;/Units;/Tolerances"
+	container point: Using = "/Domains;/Units;/Tolerances"
 	{
-		container srcUnTiled2Untiled  := Source(ADomain,      HDomain,      DistrictPointsDomain,      RDomain,      PandPointsDomain      , PandDomain);
-		container srcTiled2Untiled    := Source(ATiledDomain, HDomain,      DistrictPointsTiledDomain, RDomain,      PandPointsTiledDomain , PandDomain);
-		container srcUnTiled2Tiled    := Source(ADomain,      HTiledDomain, DistrictPointsDomain,      RTiledDomain, PandPointsDomain      , PandTiledDomain);
-		container srcTiled2Tiled      := Source(ATiledDomain, HTiledDomain, DistrictPointsTiledDomain, RTiledDomain, PandPointsTiledDomain , PandTiledDomain);
+		container srcUnTiled2Untiled  := source(ADomain,      HDomain,      DistrictPointsDomain,      RDomain,      PandPointsDomain      , PandDomain);
+		container srcTiled2Untiled    := source(ATiledDomain, HDomain,      DistrictPointsTiledDomain, RDomain,      PandPointsTiledDomain , PandDomain);
+		container srcUnTiled2Tiled    := source(ADomain,      HTiledDomain, DistrictPointsDomain,      RTiledDomain, PandPointsDomain      , PandTiledDomain);
+		container srcTiled2Tiled      := source(ATiledDomain, HTiledDomain, DistrictPointsTiledDomain, RTiledDomain, PandPointsTiledDomain , PandTiledDomain);
 
 		container EsrcUnTiled2Untiled := ESource(EDomain     , EDomain,      EDomain,      EDomain,      EDomain      , EDomain);
 		container EsrcTiled2Untiled   := ESource(ETiledDomain, EDomain,      ETiledDomain, EDomain,      ETiledDomain , ETiledDomain);
 		container EsrcUnTiled2Tiled   := ESource(EDomain,      ETiledDomain, EDomain,      ETiledDomain, EDomain      , ETiledDomain);
 		container EsrcTiled2Tiled     := ESource(ETiledDomain, ETiledDomain, ETiledDomain, ETiledDomain, ETiledDomain , ETiledDomain);
 
-		template Source
+		template source
 		{
 			// begin case parameters
 			unit<uint32> ODomain;
@@ -158,7 +158,7 @@
 				attribute<PandDomain> second_rel_OK : [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19,15,20];
 				attribute<float32>    rank          := abs(1f / area(geometry, float32));
 			}
-			unit<spoint> Grid := /grid/units/GridDomain
+			unit<spoint> Grid := /Grid/Units/GridDomain
 			{
 				attribute<float64> X: [-100,4900,9900,14900,19900,-100,4900,9900,14900,19900,-100,4900,9900,14900,19900,-100,4900,9900,14900,19900,-100,4900,9900,14900,19900];
 				attribute<float64> Y: [24900,24900,24900,24900,24900,19900,19900,19900,19900,19900,14900,14900,14900,14900,14900,9900,9900,9900,9900,9900,4900,4900,4900,4900,4900];
@@ -250,7 +250,7 @@
 				attribute<EDomain>  first_rel_OK:    [];
 				attribute<EDomain>  second_rel_OK: [];
 			}
-			unit<spoint> Grid := /grid/units/EGridDomain
+			unit<spoint> Grid := /Grid/Units/EGridDomain
 			{
 				attribute<float64> X: [];
 				attribute<float64> Y: [];
@@ -258,15 +258,15 @@
 
 
 		}
-		container UnTiled2Untiled := Template(ADomain,      HDomain,      DistrictPointsDomain,      RDomain       ,HDomain ,PandDomain      , srcUnTiled2Untiled, false);
-		container Tiled2Untiled   := Template(ATiledDomain, HDomain,      DistrictPointsTiledDomain, RDomain       ,HDomain ,PandDomain      , srcTiled2Untiled  , false);
-		container UnTiled2Tiled   := Template(ADomain,      HTiledDomain, DistrictPointsDomain,      RTiledDomain  ,HDomain ,PandTiledDomain , srcUnTiled2Tiled  , false);
-		container Tiled2Tiled     := Template(ATiledDomain, HTiledDomain, DistrictPointsTiledDomain, RTiledDomain  ,HDomain ,PandTiledDomain , srcTiled2Tiled    , false);
+		container UnTiled2Untiled := TestTemplate(ADomain,      HDomain,      DistrictPointsDomain,      RDomain       ,HDomain ,PandDomain      , srcUnTiled2Untiled, false);
+		container Tiled2Untiled   := TestTemplate(ATiledDomain, HDomain,      DistrictPointsTiledDomain, RDomain       ,HDomain ,PandDomain      , srcTiled2Untiled  , false);
+		container UnTiled2Tiled   := TestTemplate(ADomain,      HTiledDomain, DistrictPointsDomain,      RTiledDomain  ,HDomain ,PandTiledDomain , srcUnTiled2Tiled  , false);
+		container Tiled2Tiled     := TestTemplate(ATiledDomain, HTiledDomain, DistrictPointsTiledDomain, RTiledDomain  ,HDomain ,PandTiledDomain , srcTiled2Tiled    , false);
 
-		container EUnTiled2Untiled := Template(EDomain     , EDomain,      EDomain,      EDomain      , EDomain      , EDomain        , EsrcUnTiled2Untiled  , true);
-		container ETiled2Untiled   := Template(ETiledDomain, EDomain,      ETiledDomain, EDomain      , EDomain      , EDomain        , EsrcTiled2Untiled    , true);
-		container EUnTiled2Tiled   := Template(EDomain,      ETiledDomain, EDomain,      ETiledDomain , ETiledDomain , ETiledDomain   , EsrcUnTiled2Tiled    , true);
-		container ETiled2Tiled     := Template(ETiledDomain, ETiledDomain, ETiledDomain, ETiledDomain , ETiledDomain , ETiledDomain   , EsrcTiled2Tiled      , true);
+		container EUnTiled2Untiled := TestTemplate(EDomain     , EDomain,      EDomain,      EDomain      , EDomain      , EDomain        , EsrcUnTiled2Untiled  , true);
+		container ETiled2Untiled   := TestTemplate(ETiledDomain, EDomain,      ETiledDomain, EDomain      , EDomain      , EDomain        , EsrcTiled2Untiled    , true);
+		container EUnTiled2Tiled   := TestTemplate(EDomain,      ETiledDomain, EDomain,      ETiledDomain , ETiledDomain , ETiledDomain   , EsrcUnTiled2Tiled    , true);
+		container ETiled2Tiled     := TestTemplate(ETiledDomain, ETiledDomain, ETiledDomain, ETiledDomain , ETiledDomain , ETiledDomain   , EsrcTiled2Tiled      , true);
 		
 		container ResultUnitTiled
 		{
@@ -283,16 +283,16 @@
 				parameter<float32> CalcDist                 := float32(0.0001);
 				unit<uint32> CalcPoint                      := dyna_point(point, nextpoint, CalcDist)
 				{
-					attribute<float32> x          := PointCol(point);
-					attribute<float32> y          := PointRow(point);
+					attribute<float32> x          := pointcol(point);
+					attribute<float32> y          := pointrow(point);
 					parameter<bool>    test_point := float_isNearby(mean(x), 371378.637f, Dif_all_float32) && float_isNearby(mean(y), 13745.7163f, Dif_all_float32);
-					parameter<bool>    test_attr  := test_point && #. == 476867 && sum(Sequence_rel) = 860582 && max(Ordinal) == 149999 && ordinal[270787] == 78591;
+					parameter<bool>    test_attr  := test_point && #. == 476867 && sum(Sequence_rel) = 860582 && max(ordinal) == 149999 && ordinal[270787] == 78591;
 				}
 			}
 		}
 
 
-		Template Template
+		template TestTemplate
 		{
 			// begin case parameters
 			unit<uint32> origin;
@@ -360,9 +360,9 @@
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
 			{
-				attribute<float64> att  (Source/Grid) := Get_X(id(Source/Grid));
+				attribute<float64> att  (source/Grid) := Get_X(id(source/Grid));
 				
-				attribute<bool>    test (Source/Grid) := att = grid/x;
+				attribute<bool>    test (source/Grid) := att = Grid/x;
 				parameter<bool>    test_attr     := all(test);
 			}
 
@@ -379,9 +379,9 @@
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/pointrow"
 			{
-				attribute<float64> att  (Source/Grid) := Get_Y(id(Source/Grid));
+				attribute<float64> att  (source/Grid) := Get_Y(id(source/Grid));
 				
-				attribute<bool>    test (Source/Grid) := att = grid/y;
+				attribute<bool>    test (source/Grid) := att = Grid/y;
 				parameter<bool>    test_attr     := all(test);
 			}
 
@@ -405,7 +405,7 @@
 			:	Using = "source"
 			,	url   = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/point_in_polygon"
 			{
-				attribute<DistrictDomain> att  (origin) := point_in_polygon(origin/district_location, source/district/Border)
+				attribute<DistrictDomain> att  (origin) := point_in_polygon(origin/district_location, source/district/border)
 				{
 					attribute<point_rd> locatie (origin) := origin/district_location, dialogtype = "feature";
 				}
@@ -454,7 +454,7 @@
 					attribute<ADomain>  seq: [0,0,1,1,2,2,2,3,3,4];
 					attribute<uint32>  ord: [0,1,0,1,0,1,2,0,1,0];
 					attribute<m_int16> z:   [10,30,20,15,20,0,20,60,15, null];
-					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && Ordinal = ord;
+					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && ordinal = ord;
 					parameter<bool>    test_attr := all(test);
 				}
 			}
@@ -476,7 +476,7 @@
 					attribute<RoadDomain>  seq: [0,0,0,1,1,2,2,2];
 					attribute<uint32>  ord: [0,1,2,0,1,0,1,2];
 					attribute<m_int16> z:   [10,30,20,15,20,0,20,60];
-					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && Ordinal = ord;
+					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && ordinal = ord;
 					parameter<bool>    test_attr := all(test);
 				}
 			}
@@ -499,7 +499,7 @@
 					attribute<ATiledDomain>  seq: [0,0,1,1,2,2,2,3,3,4];
 					attribute<uint32>  ord: [0,1,0,1,0,1,2,0,1,0];
 					attribute<m_int16> z:   [10,30,20,15,20,0,20,60,15, null];
-					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && Ordinal = ord;
+					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && ordinal = ord;
 					parameter<bool>    test_attr := all(test);
 				}
 			}
@@ -521,7 +521,7 @@
 					attribute<EDomain>  seq: [];
 					attribute<uint32>  ord: [];
 					attribute<m_int16> z:   [];
-					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && Ordinal = ord;
+					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point) && Sequence_rel = seq && ordinal = ord;
 					parameter<bool>    test_attr := all(test);
 				}
 			}
@@ -554,7 +554,7 @@
 					attribute<bool>    test_point       := point_ref     == point_ipoint; 
 					attribute<bool>    test_nextpoint   := nextpoint_ref == nextpoint_ipoint; 
 
-					attribute<bool>    test         := test_point && test_nextpoint; // && Sequence_rel = seq && Ordinal = ord;
+					attribute<bool>    test         := test_point && test_nextpoint; // && Sequence_rel = seq && ordinal = ord;
 					parameter<bool>    test_attr    := all(test);
 				}
 			}
@@ -576,7 +576,7 @@
 					attribute<origin>  seq: [];
 					attribute<uint32>  ord: [];
 					attribute<m_int16> z:   [];
-					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point); // && Sequence_rel = seq; // && Ordinal = ord;
+					attribute<bool>    test      := point_yx(y,x,ipoint) = ipoint(point); // && Sequence_rel = seq; // && ordinal = ord;
 					parameter<bool>    test_attr := all(test);
 				}
 			}
@@ -610,7 +610,7 @@
 					attribute<bool>    test_point       := point_ref     == point_ipoint; 
 					attribute<bool>    test_nextpoint   := nextpoint_ref == nextpoint_ipoint; 
 
-					attribute<bool>    test         := test_point && test_nextpoint; // && Sequence_rel = seq && Ordinal = ord;
+					attribute<bool>    test         := test_point && test_nextpoint; // && Sequence_rel = seq && ordinal = ord;
 					parameter<bool>    test_attr    := all(test);
 				}
 			}
@@ -628,7 +628,7 @@
 				unit<uint64> dse64 := dyna_segment_with_ends_uint64(a, b, 2.5);
 				unit<uint32> dse32 := dyna_segment_with_ends(a, b, 2.5);
 				parameter<bool> test :=
-					   uint32(#dp64) = #dp32 && AsList(string(dp64/point), ';') = AsList(string(dp32/point), ';')
+					   uint32(#dp64) = #dp32 && asList(string(dp64/point), ';') = asList(string(dp32/point), ';')
 					&& uint32(#dpe64) = #dpe32 && uint32(#ds64) = #ds32 && uint32(#dse64) = #dse32;
 			}
 			container RD2LatLongWgs84: url = "http://www.objectvision.hosting.it-rex.nl/geodms/operators-a-functions/point/rd2latlongwgs84"
@@ -636,10 +636,10 @@
 				parameter<dpoint> coordinate                     := point_yx(437651.878, 81897.9383, dpoint);
 				parameter<dpoint> param                          := RD2LatLongWgs84(coordinate, dpoint);
 				parameter<bool>   test_param                     := point_isNearby(param, point_yx(51.9225381, 4.32450214,  dpoint),Dif_pconv_float64);
-				attribute<dpoint> attr (DistrictDomain, polygon) := RD2LatLongWgs84(Source/district/border, dpoint);
+				attribute<dpoint> attr (DistrictDomain, polygon) := RD2LatLongWgs84(source/district/border, dpoint);
 				unit<uint32> pointset := sequence2points(attr)
 				{
-					attribute<bool>   test := point_isnearby(point, att_ok,  Dif_all_float64);
+					attribute<bool>   test := point_isNearby(point, att_ok,  Dif_all_float64);
 					attribute<dpoint> att_ok_with_values:
 					[
 						 {51.6145901,4.79249609},{51.6103314,4.79112269},{51.6103806,4.79018364},{51.6092114,4.79005466},{51.609379,4.78768484}, {51.6096497,4.78438968},{51.6098425,4.78168743},{51.6104317,4.77916752},{51.6104857,4.77918123},{51.6105031,4.7790655}, {51.611113,4.77709386}, {51.6115485,4.77441708},{51.6115574,4.77440253},{51.6140229,4.77317084},{51.614059,4.77319922} ,{51.619143,4.77080556}, {51.6192377,4.77513622},{51.6181919,4.77799492},{51.6169862,4.78123104},{51.6158722,4.78657383},{51.6145901,4.79249609}
@@ -665,7 +665,7 @@
 				attribute<dpoint> attr (DistrictDomain, polygon) := LatLongWgs842RD(RD2LatLongWgs84/attr, dpoint);
 				unit<uint32> pointset := sequence2points(attr)
 				{
-					attribute<bool>   test := point_isnearby(point, att_ok,  Dif_all_float64);
+					attribute<bool>   test := point_isNearby(point, att_ok,  Dif_all_float64);
 					attribute<dpoint> att_ok_with_values:
 					[
 						 {403025,113810},{402552,113711},{402558,113646},{402428,113636},{402448,113472},{402480,113244},{402503,113057},{402570,112883},{402576,112884},{402578,112876},{402647,112740},{402697,112555},{402698,112554},{402973,112471},{402977,112473},{403544,112312},{403552,112612},{403434,112809},{403298,113032},{403171,113401},{403025,113810}
@@ -689,10 +689,10 @@
 				parameter<dpoint> coordinate := point_yx(437651.878, 81897.9383,  dpoint);
 				parameter<dpoint> param      := RD2LatLongGE(coordinate, dpoint);
 				parameter<bool>   test_param := point_isNearby(param, point_yx(51.9225625, 4.3245894,  dpoint),Dif_pconv_float64);
-				attribute<dpoint> attr (DistrictDomain, polygon) := RD2LatLongGE(Source/district/border, dpoint);
+				attribute<dpoint> attr (DistrictDomain, polygon) := RD2LatLongGE(source/district/border, dpoint);
 				unit<uint32> pointset := sequence2points(attr)
 				{
-					attribute<bool>   test := point_isnearby(point, att_ok,  Dif_all_float64);
+					attribute<bool>   test := point_isNearby(point, att_ok,  Dif_all_float64);
 					attribute<dpoint> att_ok_with_values:
 					[
 						 {51.6146385,4.79255458},{51.6103801,4.79118136},{51.6104293,4.79024237},{51.6092602,4.79011343},{51.6094278,4.78774378},{51.6096985,4.78444886},{51.6098913,4.7817468} ,{51.6104805,4.77922707},{51.6105345,4.77924078},{51.6105518,4.77912506},{51.6111617,4.77715355},{51.6115972,4.77447696},{51.6116061,4.77446241},{51.6140713,4.77323076},{51.6141074,4.77325914},{51.6191911,4.77086556},{51.6192857,4.7751959} ,{51.61824,4.77805441}  ,{51.6170344,4.78129031},{51.6159205,4.78663273},{51.6146385,4.79255458}
@@ -717,10 +717,10 @@
 				parameter<dpoint> param      := RD2LatLongEd50(coordinate, dpoint);
 				parameter<bool>   test_param := point_isNearby(param, point_yx(51.923335, 4.325787,  dpoint),Dif_pconv_float64);
 	
-				attribute<dpoint> attr (DistrictDomain, polygon) := RD2LatLongEd50(Source/district/border, dpoint);
+				attribute<dpoint> attr (DistrictDomain, polygon) := RD2LatLongEd50(source/district/border, dpoint);
 				unit<uint32> pointset := sequence2points(attr)
 				{
-					attribute<bool>   test := point_isnearby(point, att_ok,  Dif_all_float64);
+					attribute<bool>   test := point_isNearby(point, att_ok,  Dif_all_float64);
 					attribute<dpoint> att_ok_with_values:
 					[
 						 {51.6153922,4.79375852},{51.6111336,4.792385}  ,{51.6111828,4.79144598},{51.6100136,4.79131697},{51.6101813,4.78894721},{51.610452 ,4.78565214},{51.6106448,4.78294997},{51.611234 ,4.78043014},{51.611288 ,4.78044385},{51.6113054,4.78032813},{51.6119154,4.77835655},{51.6123508,4.77567986},{51.6123597,4.7756653} ,{51.6148251,4.77443373},{51.6148612,4.77446212},{51.6199451,4.77206868},{51.6200397,4.77639924},{51.618994 ,4.77925783},{51.6177883,4.78249383},{51.6166743,4.78783645},{51.6153922,4.79375852}
@@ -744,10 +744,10 @@
 				parameter<dpoint> coordinate := point_yx(437651.878, 81897.9383,  dpoint);
 				parameter<dpoint> param      := RD2LatLong(coordinate, dpoint);
 				parameter<bool>   test_param := point_isNearby(param, point_yx(51.923496, 4.324782,  dpoint),Dif_pconv_float64);
-				attribute<dpoint> attr (DistrictDomain, polygon) :=RD2LatLong(Source/district/border, dpoint);
+				attribute<dpoint> attr (DistrictDomain, polygon) :=RD2LatLong(source/district/border, dpoint);
 				unit<uint32> pointset := sequence2points(attr)
 				{
-					attribute<bool>   test := point_isnearby(point, att_ok,  Dif_all_float64);
+					attribute<bool>   test := point_isNearby(point, att_ok,  Dif_all_float64);
 					attribute<dpoint> att_ok_with_values:
 					[
 						 {51.6155134,4.79284599},{51.6112543,4.7914724} ,{51.6113034,4.79053321},{51.6101341,4.79040422},{51.6103017,4.78803405},{51.6105725,4.78473841},{51.6107653,4.78203576},{51.6113545,4.77951548},{51.6114085,4.7795292} ,{51.6114259,4.77941345},{51.6120359,4.77744151},{51.6124714,4.77476434},{51.6124803,4.77474978},{51.6149461,4.77351791},{51.6149822,4.7735463} ,{51.6200668,4.77115226},{51.6201615,4.77548356},{51.6191156,4.77834268},{51.6179098,4.78157928},{51.6167957,4.78692286},{51.6155134,4.79284599}
