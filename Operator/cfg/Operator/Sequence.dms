@@ -410,8 +410,10 @@
 		container geos_buffer_multi_polygon
 		{
 			attribute<dpoint> att (geos_src/D4, polygon) := geos_buffer_multi_polygon(geos_src/sq4, 1.0, 16b);
-			// Minkowski: 4 + 8 + pi(64-hoek) ~ 15.1365
-			attribute<bool> test (geos_src/D4) := abs(area(att, geos_src/mu) - 15.1365) < 0.05;
+			// Minkowski: 4 + 8 + oppervlak van de cirkelbenadering. Sinds 20.22.1 (GeoDMS GEO-A19) betekent 16b
+			// 16 punten per cirkel (16-hoek ~ 15.0615); daarvoor 16 per kwartcirkel (64-hoek ~ 15.1365).
+			parameter<float64> expected := GeoDmsVersion() < 20.22005d ? 15.1365 : 15.0615;
+			attribute<bool> test (geos_src/D4) := abs(area(att, geos_src/mu) - expected) < 0.05;
 			parameter<bool> test_attr := all(test);
 		}
 		container geos_simplify_multi_polygon

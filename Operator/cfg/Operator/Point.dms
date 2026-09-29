@@ -594,9 +594,15 @@
 					attribute<int32>   yp:   [ 13735,13738,13742,13746,13750,13754,13758];
 					attribute<ipoint>  point_ref := point_yx(yp,xp,ipoint);
 					
-					attribute<int32>   xn:   [371391,371387,371387,371381,371378,371375,371372];
-					attribute<int32>   yn:   [ 13732,13735,13735,13742,13746,13750,13754];
-					attribute<ipoint>  nextpoint_ref := point_yx(yn,xn,ipoint);
+					// since 20.22.1 (GeoDMS GEO-A17) the end chord of a segment starts at that segment's own first
+					// point; before, it started at the last point of the previous segment (371387, 13735).
+					attribute<int32>   xn_pre20221: [371391,371387,371387,371381,371378,371375,371372];
+					attribute<int32>   yn_pre20221: [ 13732,13735,13735,13742,13746,13750,13754];
+					attribute<int32>   xn:   [371391,371387,371384,371381,371378,371375,371372];
+					attribute<int32>   yn:   [ 13732,13735,13738,13742,13746,13750,13754];
+					attribute<ipoint>  nextpoint_ref := GeoDmsVersion() < 20.22005d
+						? point_yx(yn_pre20221,xn_pre20221,ipoint)
+						: point_yx(yn,xn,ipoint);
 										
 					attribute<origin>  seq: [0,0,1,1,2,2,2];
 					attribute<uint32>  ord: [0,1,0,1,0,1,2];
