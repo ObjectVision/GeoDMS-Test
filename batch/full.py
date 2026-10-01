@@ -461,7 +461,18 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t1640 — GUI: vergelijk detailpagina value-info op aggregaties met opgenomen referentie (14.5.0). (Mantis #1434, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t1640_value_info", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1640_value_info.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["OperatorPath"]} t1640_value_info", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1640_value_info.txt")
     # t1642 — GUI: vergelijk detailpagina statistics/value-info met group-by op geometrie. (Mantis #1438, gearchiveerd)
-    regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["MicroTstPath"]} t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt")
+    # The script saves the two value-info pages (City grouped by region, City/inhabitants) with
+    # SaveValueInfo; from 20.10.0 on (GeoDMS 176980a46) that writes the page text and the pages
+    # are compared with the reference recorded from 20.20.0.m (TestReferenceFiles/t1642/v20100,
+    # one file per page, same names as the script writes -- a later format change gets its own
+    # epoch folder). Before 20.10.0 the GUI writes an EMPTY file by construction (SaveValueInfo
+    # and SaveDetailPage are both stubs), so there is nothing to compare and the report marks the
+    # cell as "only the GUI's survival checked" (_LIMITED_CHECK_NOTE in regression.py).
+    _t1642_out = f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/regression/t1642_value_info_group_by"
+    _t1642_cmp = None
+    if _vm and tuple(int(g) for g in _vm.groups()) >= (20, 10, 0):
+        _t1642_cmp = (f"{regression_test_paths["TestRefDir"]}/t1642/v20100/t1642_value_info_group_by*.txt", f"{_t1642_out}/t1642_value_info_group_by*.txt")
+    regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["MicroTstPath"]} t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt", file_comparison=_t1642_cmp, pre_clean=[f"{_t1642_out}/t1642_value_info_group_by.txt", f"{_t1642_out}/t1642_value_info_group_by_inh.txt"])
 
     # t1742 — command-line @statistics op de Operator-config (/Arithmetics/UnTiled/add/attr);
     #         vergelijk gegenereerde HTML met TestReferenceFiles/t1742/Statistics_AUAA.html.

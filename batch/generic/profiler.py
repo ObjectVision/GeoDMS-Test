@@ -919,6 +919,12 @@ def _files_equivalent(benchmark:str, generated:str) -> bool:
 def compare_files(file_comparison:tuple):
     benchmark_files = glob.glob(file_comparison[0])
     generated_files = glob.glob(file_comparison[1])
+    # No reference file at all is a FAILED comparison, not a vacuous pass: with an empty
+    # benchmark list there are no pairs to disagree, and a test whose reference was never
+    # recorded (or whose glob no longer matches) read as green.
+    if not benchmark_files:
+        print(f"compare_files: no reference file matches {file_comparison[0]} -- comparison failed")
+        return False
     filepairs = get_filepairs(benchmark_files, generated_files)
 
     for benchmark_file, generated_file in filepairs:

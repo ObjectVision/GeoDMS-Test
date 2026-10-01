@@ -41,6 +41,16 @@ _HEAVY_L_SKIP_NOTE = {
     "t2000": "skipped on the Linux (.l) build: Hestia working set ~73 GB exceeds this test host's RAM (needs a >=96 GB machine); runs on Windows, where the OS page file absorbs the overflow",
 }
 
+# Tests whose check is only PARTLY possible below some GeoDMS version: the cell says so, instead
+# of a green that reads as a full pass. t1642: before 20.10.0 the GUI's SaveValueInfo (and
+# SaveDetailPage) are stubs that write an empty file -- GeoDMS 176980a46 made SaveValueInfo
+# write the page text, first in v20.10.0 -- so only the GUI's survival of the script can be
+# checked there; from 20.10.0 on full.py compares the two saved pages with the reference.
+_LIMITED_CHECK_NOTE = {
+    "t1642": ("20.10.0", "value-info pages not compared: before GeoDMS 20.10.0 SaveValueInfo writes an "
+                         "empty file (fixed in 176980a46), so only the GUI's survival of the script is checked"),
+}
+
 def _esc_attr(s:str) -> str:
     """Escape a string for use inside a double-quoted HTML attribute (title/hover)."""
     return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
@@ -175,7 +185,7 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # shows as a red (failing) line via the status. So it is driven by _epoch_changed.
     set_indicator_flag = bool(parsed_results.get("_epoch_changed", [False])[0])
     for indicator in parsed_results:
-        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_ref_lin", "_epoch_hover", "_ref_note", "_ref_srcs", "_ref_pending"):  # verdict pill / under title / metadata / cell flags
+        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_ref_lin", "_epoch_hover", "_ref_note", "_ref_srcs", "_ref_pending", "_limited"):  # verdict pill / under title / metadata / cell flags
             continue
         value = _add_thousand_separators(parsed_results[indicator][0])
         status = parsed_results[indicator][1]
@@ -233,6 +243,8 @@ def _verdict_basis(cell:dict) -> str:
     if status == "no result":
         return "not judged: the declared result indicator is missing"
     parsed = cell["results"][1] if cell.get("results") else {}
+    if parsed.get("_limited"):
+        return "ran without errors; " + parsed["_limited"][0]
     srcs = parsed.get("_ref_srcs", [None])[0]
     if srcs is not None:   # the report judged each metric against references.json
         counts = collections.Counter()
@@ -1175,7 +1187,17 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
     if not indicators:
         # exit 0 but the declared result indicator is missing -> the test ran but
         # was never validated. Surface it (red) instead of a hollow "OK".
-        return ("no result", {}) if declared_indicator else ("OK", {})
+        if declared_indicator:
+            return ("no result", {})
+        # a check that is only partly possible on this build: say so in the cell (one grey
+        # line, and the status hover) instead of a green that reads as a full pass
+        _m = re.match(r"t\d+", regression_test)
+        _lim = _LIMITED_CHECK_NOTE.get(_m.group(0)) if _m else None
+        if _lim and not file_comparison:
+            _ver = _try_parse_version(get_semantic_version_from_folder_name(os.path.basename(regression_test_folder)))
+            if _ver is not None and _ver < Version(_lim[0]):
+                return ("OK", {"result": ["OK", True], "limited": [_lim[1], True], "_limited": [_lim[1], True]})
+        return ("OK", {})
     
     # compare previous with current indicators for flagging differences
     parsed_indicators = parse_indicators(indicators)

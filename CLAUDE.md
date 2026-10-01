@@ -285,8 +285,16 @@ rood staan.
   stops at the host's RAM once a run swaps; t641 commits 160–380 GB). Green badge =
   better (warn bar mirrored, completed runs only); Maarten's rule — more memory is
   fine when it buys speed, slower never is — is read off the badge pair.
-- **Results + report**: one folder per version (`20_1_0_m`, `19_0_0`, `20_1_0_l`, …)
-  plus `reports/*.html`, all under the results base.
+- **t1642 (GUI value-info pages)** compares the two pages its script saves
+  (`%LocalDataDir%/regression/t1642_value_info_group_by/*.txt`) with
+  `TestReferenceFiles/t1642/v20100/*.txt` from **20.10.0** on — GeoDMS 176980a46 made
+  `SaveValueInfo` write the page text; before that the GUI writes an empty file
+  (`SaveDetailPage` is a stub too), so those cells only check that the GUI survives
+  the script and say so (`_LIMITED_CHECK_NOTE` in regression.py). A format change
+  gets a new epoch folder plus a new `_t1642_cmp` branch in full.py; re-record from
+  a trusted build by copying that run's `*.txt` into the epoch folder. t1640's script
+  produced no value-info file on any build measured on 2026-10-01 (cause not
+  investigated), so that test is still exit-code only.
 - The report scripts (`profiler.py`, `regression.py`) are bundled in `batch/generic/`.
 
 ## More
