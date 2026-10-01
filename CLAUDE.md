@@ -96,6 +96,12 @@ gewerkt, vaak in dezelfde bestanden. Twee regels die dat werkbaar houden:
 - **Regenereer de pre-1810-spiegelboom** na elke wijziging in
   `Operator/cfg/Operator/`: `python batch/make_operator_pre1810.py`, en kijk of
   er een diff uit komt. Bij een merge wordt dat makkelijk vergeten.
+- **Idem de pre-20.19-spiegel van `MicroTst.dms`** (t1642) na elke wijziging
+  daarin: `python batch/make_microtst_pre2019.py`. `MicroTst/functions.dms` bevat
+  de function/instantiate-syntaxis van GeoDMS ≥ 20.19; syntaxis is niet met
+  `GeoDmsVersion()` te poorten — een oudere GeoDmsGuiQt crasht (≤ 20.8) of hangt
+  (20.12–20.17) bij het laden, en t1642 stond daardoor vanaf 2026-08-25 stil-
+  verouderd groen t/m 20.17. Nieuwe syntaxis dus in die include, nooit in de stam.
 
 ## Testjes nooit vooruit op de engine aanzetten
 
