@@ -175,25 +175,39 @@ def get_indicator_part_from_parsed_results(parsed_results:dict)->list:
     # shows as a red (failing) line via the status. So it is driven by _epoch_changed.
     set_indicator_flag = bool(parsed_results.get("_epoch_changed", [False])[0])
     for indicator in parsed_results:
-        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_epoch_hover", "_ref_note"):  # verdict pill / under title / metadata / cell flags
+        if indicator in ("result", "description", "issue", "_epoch_changed", "_is_ref", "_ref_lin", "_epoch_hover", "_ref_note", "_ref_srcs", "_ref_pending"):  # verdict pill / under title / metadata / cell flags
             continue
-        value = parsed_results[indicator][0]
+        value = _add_thousand_separators(parsed_results[indicator][0])
         status = parsed_results[indicator][1]
-        cls = "ind-line changed" if not status else "ind-line"   # red for a failing metric (vs its reference)
-        indicator_part += f"<div class='{cls}'>{_add_thousand_separators(value)}</div>"
+        drift = len(parsed_results[indicator]) > 2 and parsed_results[indicator][2] == "drift"
+        # red = failing (vs its reference); amber Δ = changed since the previous shown version --
+        # a legacy .txt test reports no per-metric verdict, so a changed count or skip list is
+        # information, not a failure
+        if not status:
+            indicator_part += f"<div class='ind-line changed'>{value}</div>"
+        elif drift:
+            indicator_part += f"<div class='ind-line drift' title='changed since the previous shown version (not a failure)'>{value}</div>"
+        else:
+            indicator_part += f"<div class='ind-line'>{value}</div>"
     if indicator_part:
         indicator_part = f"<div class='ind'>{indicator_part}</div>"
     return [indicator_part, set_indicator_flag]
 
-def _perf_class(value, baseline, warn_ratio, bad_ratio, floor, abs_warn=None, abs_bad=None):
+def _perf_class(value, baseline, warn_ratio, bad_ratio, floor, abs_warn=None, abs_bad=None, completed=True):
     # Colour a duration/memory cell by how far it sits ABOVE the reference build's value.
     # Needs an absolute jump >= floor first (kills sub-floor wobble: 3:50-vs-4:00, 5s-vs-9s),
     # then flags on EITHER a large relative ratio OR a large absolute delta. The absolute arm
     # matters on long/heavy tests: t641_2 ran +10 min (~+25%, a hair under the ratio) and a
     # ratio-only check missed it. abs_warn/abs_bad are in the value's own unit (sec / GB).
+    # BELOW: the warn bar mirrored (as many percent or GB lower, past the same floor) is an
+    # improvement, "perf-good" -- otherwise a speed-up never shows and a trade-off of more memory
+    # for less time reads as a pure loss. Only for a run that ran to completion: a crash or a
+    # timeout stops early without being any faster.
     if not baseline or not value:
         return ""
     delta = value - baseline
+    if completed and -delta >= floor and (-delta >= (warn_ratio - 1) * baseline or (abs_warn is not None and -delta >= abs_warn)):
+        return "perf-good"
     if delta < floor:
         return ""
     r = value / baseline
@@ -202,6 +216,48 @@ def _perf_class(value, baseline, warn_ratio, bad_ratio, floor, abs_warn=None, ab
     if r >= warn_ratio or (abs_warn is not None and delta >= abs_warn):
         return "perf-warn"
     return ""
+
+def _ran_to_completion(status:str) -> bool:
+    """True when the run exited normally, whatever its verdict (OK, failed, output differs).
+    A timeout or an exit/crash code stops a run early without it being any faster."""
+    status = str(status)
+    return status not in ("TIMEOUT", "error") and not status.lstrip("-").isdigit()
+
+def _verdict_basis(cell:dict) -> str:
+    """Hover of the status pill: what the verdict was judged against -- the reference
+    version(s) for a <test>.result.json, the recorded file for a file comparison, or the
+    test's own check."""
+    status = str(cell.get("status", ""))
+    if not _ran_to_completion(status):
+        return "not judged: the run did not complete"
+    if status == "no result":
+        return "not judged: the declared result indicator is missing"
+    parsed = cell["results"][1] if cell.get("results") else {}
+    srcs = parsed.get("_ref_srcs", [None])[0]
+    if srcs is not None:   # the report judged each metric against references.json
+        counts = collections.Counter()
+        for src, n in srcs.items():
+            counts["an unrecorded build" if src == "unknown" else src] += n
+        order = sorted(counts, key=lambda s: (_try_parse_version(s) is None, _try_parse_version(s) or Version("0")))
+        if len(order) == 1:
+            txt = f"result judged against the {order[0]} reference set"
+        elif order:   # reference epochs are kept per test, so this only shows up for a half-captured set
+            txt = "result judged against reference values from " + ", ".join(f"{s} ({counts[s]} metric{'s' * (counts[s] != 1)})" for s in order)
+        else:
+            txt = "no reference value involved"
+        pending = parsed.get("_ref_pending", [0])[0]
+        if pending:
+            txt += f"; no reference yet for {pending} metric{'s' * (pending != 1)}"
+        return txt
+    fc = cell.get("file_comparison")
+    if fc:
+        ref = str(fc[0]).replace("\\", "/")
+        m = re.search(r"TestReferenceFiles/.*$", ref)
+        shown = m.group(0) if m else re.sub(r"^.*?/GeoDMS-Test/", "", ref)
+        return f"output compared with the recorded reference {shown}; the build it was captured from is not recorded"
+    if parsed:
+        return "verdict reported by the test itself; no reference version recorded"
+    return "ran without errors; this step has no result check of its own"
 
 def _dur_thresholds(baseline):
     # Graduated duration thresholds: a long run needs only a small % to read as a notable
@@ -221,15 +277,60 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
     regression_test_row = regression_test_row.replace("@@@TESTNAME_RAW@@@", testname)
     regression_test_row = regression_test_row.replace("@@@TESTCLASS@@@", testclass)
     regression_test_row = regression_test_row.replace("@@@TESTDESC@@@", get_test_description(testname))
-    # perf-colouring baseline = the test's REFERENCE (refset) build on the SAME platform, so mem/
-    # time read as a regression against the version the VALUES are judged against -- not a fixed
-    # 17.4.6. Windows (.m/.c/pre-20): the most recent Windows cell that is a reference source whose
-    # version is <= the cell's (never a newer refset), else 17.4.6. Linux (.l): the oldest .l run
-    # (the .m-captured refset isn't its platform). NB columns run newest->oldest.
-    _win_refcells = [c for c in summary_row[1:] if c and c.get("results") and c.get("flavor") != "l" and c["results"][1].get("_is_ref", [False])[0]]
-    _ref_fallback = next((c for c in summary_row[1:] if c and c.get("version") == REFERENCE_BUILD), None)
-    _lin_runs = [c for c in summary_row[1:] if c and c.get("flavor") == "l"]
-    _lin_ref = _lin_runs[-1] if _lin_runs else None   # columns run newest->oldest, so [-1] is the oldest .l
+    # perf baseline = ONE run per cell that both duration and memory are compared with, on the
+    # SAME platform, and deliberately NOT the result reference: a value epoch says the RESULT
+    # changed acceptably, not the speed, so it must not reset timing/memory (t641.2 got 11% slower
+    # and 7% heavier at its 18.1.2 value epoch, and nobody saw it). The chain of baseline runs is
+    # the REFERENCE_BUILD run (17.4.6; a test without it: its oldest run) followed by the
+    # PERF_EPOCHS: "*" = an accepted engine step for every test, "<test>" = that test does other
+    # work from there on. A cell is compared with the newest baseline run at or below its version;
+    # a baseline run itself with the one before it, so an accepted step stays visible where it was
+    # accepted -- except a workload epoch, whose run is not comparable with the previous one (other
+    # work). A cell older than the first baseline is not judged (never against a newer run). A
+    # baseline is ONE build: the .m (or pre-20, flavorless) run, never its .c sibling, so the
+    # choice doesn't hang on column order; Linux (.l) has its own chain: the oldest .l run and the
+    # .l runs of the same epochs. NB columns run newest->oldest.
+    _test_key = get_test_code(testname).split(" ")[0].replace(".", "_")
+    _global_epochs = PERF_EPOCHS.get("*", {})
+    _test_epochs = PERF_EPOCHS.get(_test_key, {})
+    _vkey = lambda v: _try_parse_version(v) or Version("0")
+    def _chain(runs):
+        """baseline runs among `runs` (newest->oldest): the epoch runs, then the first run"""
+        first = next((c for c in runs if c.get("version") == REFERENCE_BUILD), runs[-1] if runs else None)
+        epochs = [c for c in runs if c is not first and (c.get("version") in _global_epochs or c.get("version") in _test_epochs)]
+        return epochs + ([first] if first else [])
+    _chains = {"l": _chain([c for c in summary_row[1:] if c and c.get("flavor") == "l"]),
+               "":  _chain([c for c in summary_row[1:] if c and c.get("flavor") not in ("l", "c")])}
+    def _chain_of(cell):
+        return _chains["l" if cell.get("flavor") == "l" else ""]
+    def _baseline(cell):
+        chain = _chain_of(cell)
+        if any(cell is b for b in chain) and cell.get("version") in _test_epochs:
+            return None   # a workload-epoch run: other work than before, nothing to compare with
+        vc = _try_parse_version(cell.get("version"))
+        cands = [b for b in chain if b is not cell and (vc is None or _vkey(b.get("version")) <= vc)]
+        return cands[0] if cands else None   # newest first; none = older than the first baseline
+    def _label(cell):
+        return (cell["version"] + ("." + cell["flavor"] if cell.get("flavor") else "")) if cell else ""
+    def _signed_pct(cur, base):
+        p = round((cur / base - 1) * 100)
+        return f"+{p}%" if p >= 0 else f"−{-p}%"
+    def _perf_role(cell):
+        """hover of the "perf" pill: why this run is a baseline, and for which versions"""
+        chain = _chain_of(cell)
+        if not any(cell is b for b in chain):
+            return ""
+        ver = cell.get("version")
+        note = (_test_epochs.get(ver) or _global_epochs.get(ver) or {}).get("note", "")
+        if cell is not chain[-1]:
+            role = f"timing/memory baseline from {ver} on"
+        else:
+            later = [b.get("version") for b in chain if b is not cell]
+            until = f"for the versions before {min(later, key=_vkey)}" if later else "for this test"
+            what = ("oldest Linux run" if cell.get("flavor") == "l" else
+                    "the reference build" if ver == REFERENCE_BUILD else "oldest run of this test")
+            role = f"timing/memory baseline {until} ({what})"
+        return role + (f" — {note}" if note else "")
     for _col, summary_col_row in enumerate(summary_row[1:], start=1):
         if not summary_col_row:
             # An empty cell = the test was not run for this version. On the .l (Linux)
@@ -250,28 +351,14 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
         table_col_header = table_col_header.replace("@@@STATUSLABEL@@@", status_label)
         table_col_header = table_col_header.replace("@@@STATUSCLASS@@@", status_class)
         table_col_header = table_col_header.replace("@@@STATUSCODE@@@", status_code)
-        # baseline for THIS cell: same platform. Linux -> oldest .l. Windows -> the refset build
-        # (most recent reference source whose version <= this cell's), else 17.4.6. Never its own baseline.
-        if summary_col_row.get("flavor") == "l":
-            _pref = _lin_ref
-        else:
-            _vc = _try_parse_version(summary_col_row.get("version"))
-            _pref = _ref_fallback
-            if _vc is not None:
-                for _rc in _win_refcells:
-                    _rv = _try_parse_version(_rc.get("version"))
-                    if _rv is not None and _rv <= _vc:
-                        _pref = _rc
-                        break
-        if _pref is summary_col_row:
-            _pref = None
+        table_col_header = table_col_header.replace("@@@STATUSTITLE@@@", _esc_attr(_verdict_basis(summary_col_row)))
+        # the one perf baseline run for THIS cell (see above), for duration and memory alike
+        _pref = _baseline(summary_col_row)
+        _pbl = _label(_pref)
+        _completed = _ran_to_completion(status)   # only a completed run can be "faster"
         _base_dur = _pref["duration"] if _pref else 0
-        # fysiek geheugen (rss) is de zinvolle metriek; oude cachesummaries zonder
-        # highest_rss vallen terug op de virtuele piek zodat de vergelijking blijft werken
-        _base_mem = (_pref.get("highest_rss") or _pref["highest_commit"]) if _pref else 0
         _dwarn, _dbad = _dur_thresholds(_base_dur)
-        _pbl = (_pref["version"] + ("." + _pref.get("flavor") if _pref.get("flavor") else "")) if _pref else ""
-        _dcls = _perf_class(summary_col_row["duration"], _base_dur, _dwarn, _dbad, 10)   # graduated %, same-platform baseline (10s floor kills sub-floor wobble)
+        _dcls = _perf_class(summary_col_row["duration"], _base_dur, _dwarn, _dbad, 10, completed=_completed)   # graduated %, same-platform baseline (10s floor kills sub-floor wobble)
         _dval = format_duration(summary_col_row["duration"])
         table_col_header = table_col_header.replace("@@@DURATION@@@", f'<span class="{_dcls}" title="duration vs {_pbl}">{_dval}</span>' if _dcls else _dval)
 
@@ -288,22 +375,28 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
         table_col_header = table_col_header.replace("@@@GEODMS_CMD@@@", command)
         start_time_value = summary_col_row["start_time"]
         table_col_header = table_col_header.replace("@@@STARTTIME@@@", start_time_value.strftime("%Y-%m-%d %H:%M") if start_time_value else "n/a")
-        # twee geheugenmetrieken naast elkaar, elk met eigen label en eenheid:
-        # fys = piek fysiek (rss), cmt = piek committed (vms; de tegelallocator
-        # reserveert ruim, dus dit getal is structureel veel groter)
-        _cur_mem = summary_col_row.get("highest_rss") or summary_col_row["highest_commit"]
-        _mcls = _perf_class(_cur_mem, _base_mem, 1.05, 1.13, 0.5, abs_warn=10, abs_bad=32)  # >=0.5GB, then >=5%/13% OR >=10/32 GB heavier than the same-platform baseline
-        _mval = f"fys {fmt_gb(_cur_mem)} GB"
-        _mtitle = f"peak physical memory (rss) vs {_pbl}"
-        _mspan = f'<span class="{_mcls}" title="{_mtitle}">{_mval}</span>' if _mcls else f'<span title="{_mtitle}">{_mval}</span>'
-        _mspan += f' <span title="peak committed memory (vms)">&middot; cmt {fmt_gb(summary_col_row["highest_commit"])} GB</span>'
+        # twee geheugenmetrieken naast elkaar, elk met eigen label en eenheid. Het oordeel
+        # (kleur + badge) gaat over cmt = piek committed (vms): wat de run nodig heeft, ook
+        # als het niet in het RAM past. fys = piek fysiek (rss) loopt vast op het RAM van de
+        # testmachine zodra er geswapt wordt -- t641 stond zo op ~61 GB terwijl hij 160-380 GB
+        # commit -- en mist bij korte runs de piek tussen twee samples (t102: 0.6-2.5 GB,
+        # cmt 2.3-2.6 GB). Op .l is vms de virtuele adresruimte (VmSize), geen commit charge;
+        # dat blijft vergelijkbaar omdat een .l-cel alleen tegen een .l-run wordt gelegd.
+        _cur_mem = summary_col_row["highest_commit"]
+        _base_mem = _pref["highest_commit"] if _pref else 0
+        _mcls = _perf_class(_cur_mem, _base_mem, 1.05, 1.13, 0.5, abs_warn=10, abs_bad=32, completed=_completed)  # >=0.5GB, then >=5%/13% OR >=10/32 GB heavier (or >=5% / 10 GB lighter) than the same-platform baseline
+        _mval = f"cmt {fmt_gb(_cur_mem)} GB"
+        _mtitle = f"peak committed memory (vms) vs {_pbl}"
+        _mspan = f'<span title="peak physical memory (rss); stops at the test host\'s RAM once a run swaps">fys {fmt_gb(summary_col_row.get("highest_rss") or 0)} GB</span> &middot; '
+        _mspan += f'<span class="{_mcls}" title="{_mtitle}">{_mval}</span>' if _mcls else f'<span title="{_mtitle}">{_mval}</span>'
         table_col_header = table_col_header.replace("@@@HIGHESTCOMMIT@@@", _mspan)
-        # perf badge next to the status pill: a green/OK cell can still hide a 2x-memory or much-slower run
+        # perf badge next to the status pill: a green/OK cell can still hide a 2x-memory or much-slower
+        # run, and a gain shows as well (green), so a trade-off reads as one ("mem +30% dur −40%")
         _pbadge = ""
         if _mcls:
-            _pbadge += f'<span class="perfbadge {_mcls}" title="peak physical memory vs {_pbl}">mem +{round((_cur_mem/_base_mem - 1) * 100)}%</span>'
+            _pbadge += f'<span class="perfbadge {_mcls}" title="{_mtitle}">mem {_signed_pct(_cur_mem, _base_mem)}</span>'
         if _dcls:
-            _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs {_pbl}">dur +{round((summary_col_row["duration"]/_base_dur - 1) * 100)}%</span>'
+            _pbadge += f'<span class="perfbadge {_dcls}" title="duration vs {_pbl}">dur {_signed_pct(summary_col_row["duration"], _base_dur)}</span>'
         table_col_header = table_col_header.replace("@@@PERF_BADGE@@@", _pbadge)
         table_col_header = table_col_header.replace("@@@MAXTHREADS@@@", str(summary_col_row["max_threads"]))
         table_col_header = table_col_header.replace("@@@TOTALREAD@@@", fmt_gb(summary_col_row["total_read"]))
@@ -319,32 +412,23 @@ def get_table_regression_test_row(result_paths:dict, summary_row:list, header_ro
         _flag_title = summary_col_row["results"][1].get("_epoch_hover", [""])[0] or "comparison baseline (refset) changed at this version"
         _flag_title = _esc_attr(_flag_title)  # hover may carry an author note (issue #32)
         table_col_header = table_col_header.replace("@@@INDICATOR_FLAG@@@", f'<span class="flag" title="{_flag_title}">&#9650;</span>' if (indicator_flag and not is_ref_cell) else "")
-        # The reference is captured from ONE version+flavor (Windows .m, or a pre-20 build with no
-        # flavor). Show the "ref" pill only there -- not on a sibling .l/.c build of the same version.
-        _show_pill = is_ref_cell and summary_col_row.get("flavor") not in ("l", "c")
-        # An optional epoch "note" (references.json, issue #32) explains WHY this is the baseline;
-        # append it to the pill hover, and mark the pill so it reads as annotated (dotted, help cursor).
+        # Pills, top-right: "ref" on the run the RESULT reference values were captured from (ONE
+        # build: Windows .m / pre-20, or a Linux run for a Linux platform epoch -- never a .c
+        # sibling), "perf" on a run that timing and memory are compared with (the reference build
+        # or a perf epoch; an epoch's note says why, issue #32). A run can be both (17.4.6 mostly).
+        _show_pill = is_ref_cell and summary_col_row.get("flavor") != "c" and (
+            summary_col_row.get("flavor") != "l" or summary_col_row["results"][1].get("_ref_lin", [False])[0])
         _ref_note = summary_col_row["results"][1].get("_ref_note", [""])[0]
-        _ref_title = "this version+flavor IS the reference (baseline) for this test"
+        _ref_title = "the result reference values of this test were captured from this run"
         if _ref_note:
             _ref_title += " — " + _ref_note
-        _ref_cls = "refpill noted" if _ref_note else "refpill"
-        _ref_title = _esc_attr(_ref_title)
-        # Tests zonder referentiewaarde (t010, t050, t060, t151, t405.1, t641.1, de
-        # GUI-tests, t1742) krijgen nooit een "ref"-pil, terwijl hun mem/dur-badges wel
-        # degelijk tegen REFERENCE_BUILD worden gerekend -- die basislijn was dus
-        # onzichtbaar. Markeer hem apart: "perf", want alleen tijd en geheugen worden
-        # hier vergeleken, niet de uitkomst.
-        _is_perf_base = (not _win_refcells) and (summary_col_row is _ref_fallback)
-        _perf_title = _esc_attr(
-            "timing/memory baseline for this test — no reference value is recorded, "
-            "so only duration and memory are compared against this version")
-        _pill = ""
+        _role = _perf_role(summary_col_row)
+        _pills = ""
         if _show_pill:
-            _pill = f'<span class="{_ref_cls}" title="{_ref_title}">ref</span>'
-        elif _is_perf_base:
-            _pill = f'<span class="refpill perfref" title="{_perf_title}">perf</span>'
-        table_col_header = table_col_header.replace("@@@REF_PILL@@@", _pill)
+            _pills += f'<span class="{"refpill noted" if _ref_note else "refpill"}" title="{_esc_attr(_ref_title)}">ref</span>'
+        if _role:
+            _pills += f'<span class="{"refpill perfref noted" if " — " in _role else "refpill perfref"}" title="{_esc_attr(_role)}">perf</span>'
+        table_col_header = table_col_header.replace("@@@REF_PILL@@@", f'<span class="pills">{_pills}</span>' if _pills else "")
         table_col_header = table_col_header.replace("@@@INDICATORS@@@", indicator_part)
 
         regression_test_row += table_col_header
@@ -424,7 +508,7 @@ def get_table_row_col_html_template(result_paths:dict, log_fn:str=None, profile_
     geodms_part = '<a href="@@@GEODMS_CMD@@@" onclick="copy_href(event, this)" title="copy GeoDmsRun command">command</a>'
     return f'<td class="cell @@@STATUSCLASS@@@">\
     <details class=@@@TESTCLASS@@@>\
-    <summary><span class="pill @@@STATUSCLASS@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@PERF_BADGE@@@@@@INDICATOR_FLAG@@@@@@REF_PILL@@@</summary>\
+    <summary><span class="pill @@@STATUSCLASS@@@" title="@@@STATUSTITLE@@@">@@@STATUSLABEL@@@</span><span class="code">@@@STATUSCODE@@@</span>@@@PERF_BADGE@@@@@@INDICATOR_FLAG@@@@@@REF_PILL@@@</summary>\
     <div class="meta">@@@STARTTIME@@@ &middot; @@@DURATION@@@</div>\
     <div class="metrics">@@@HIGHESTCOMMIT@@@ &middot; rd @@@TOTALREAD@@@ GB &middot; wr @@@TOTALWRITE@@@ GB &middot; @@@MAXTHREADS@@@ thr</div>\
     @@@INDICATORS@@@\
@@ -473,6 +557,7 @@ def collect_experiment_summaries(version_range:tuple, result_paths:dict, sorted_
             summaries[row][col] = experiment.summary()
             summaries[row][col]["version"] = get_semantic_version_from_folder_name(sorted_valid_result_folders[col-1][0])
             summaries[row][col]["flavor"] = parse_folder_name(sorted_valid_result_folders[col-1][0])[3]
+            summaries[row][col]["file_comparison"] = getattr(experiment, "file_comparison", None)   # -> status-pill hover
             regression_test_experiments.append(experiment)
             log_filename = get_log_filename(sorted_valid_result_folders[col-1][0], regression_test)
             profile_fig_filename = get_profile_figure_filename(sorted_valid_result_folders[col-1][0], regression_test)
@@ -575,6 +660,7 @@ def _label_failing(parsed:dict):
             hint = (segs[leaf_i - 1] if leaf_i > 0 else segs[-1]) + " &mdash; "
         lines.append(f"&bull; {hint}{it}")
     parsed["failing"][0] = f"FAILING ({len(items)}):<br>" + "<br>".join(lines)
+    parsed["failing"][1] = False   # a failing list is a failure (red), whatever the previous version showed
 
 def _compress_skipped(parsed:dict, rdir:str, regression_test:str):
     """De <skipped>-lijst beschrijft VERWACHT versie-afhankelijk gedrag (rijen die
@@ -638,6 +724,14 @@ def _load_reference_doc() -> dict:
 _REFERENCE_DOC   = _load_reference_doc()
 REFERENCE_BUILD  = _REFERENCE_DOC.get("_captured_from", "reference")
 REFERENCE_VALUES = {k: v for k, v in _REFERENCE_DOC.items() if not k.startswith("_")}
+# Perf epochs ({"*" | "<test>": {version: {"note": ...}}}): from such a version on, its own run
+# is the ONE baseline that both duration and memory are compared with. "*" = an accepted engine
+# step for every test (18.1.2: GeoDMS 18 changed its memory management); "<test>" = that test
+# does other work from there on (t020: CBS/BAG part from 20.3, dms family from 20.20).
+# Deliberately separate from _captured_from: that is the provenance of the VALUE references
+# (every scalar reference and the "ref" pills hang off it), so moving it to shift only the perf
+# baseline would relabel them.
+PERF_EPOCHS      = _REFERENCE_DOC.get("_perf_epochs", {})
 
 # Kolommen die het rapport standaard uitgevinkt toont, met de mapnaam als tag
 # (16_0_5, 20_13_0_m, ...). Bedoeld om de default-weergave te beperken tot wat de
@@ -655,7 +749,11 @@ DEFAULT_HIDDEN_COLUMNS = [
 ]
 
 # Optional per test+metric tolerance override (percent); default 0.0 = exact match.
-TOLERANCES = {}
+TOLERANCES = {
+    # '2050 Ha Landbouw' reads 0.5 ha (0.00002%) under its 18.1.2 reference on every 20.x build
+    # incl. cmake (#34): float rounding, not a changed result -- so a tolerance, not a reference epoch.
+    "t641_2": {"2050 Ha Landbouw": 0.0001},
+}
 
 def _tol(test:str, name:str) -> float:
     return TOLERANCES.get(test, {}).get(name, 0.0)
@@ -764,10 +862,13 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     flavor  = _flavor_from_result_path(path)
     epoch_changed = False   # did any metric's reference EPOCH begin at THIS version (a new refset baseline)?
     is_ref = False          # is THIS version the source/baseline for any metric? (-> "ref" pill, top-right of the cell)
+    ref_on_linux = False    # ... through a Linux platform epoch (src "<ver>.l")?
     epoch_srcs = set()      # refset identity now in force here (its threshold/source -- always <= this version, never newer)
     epoch_prev_srcs = set() # refset identity the PREVIOUS shown version still used (-> triangle hover)
     ref_notes = set()       # "note" of an epoch THIS version is the source of (-> appended to the "ref" pill hover)
     epoch_notes = set()     # "note" of an epoch that BEGINS at this version (-> appended to the triangle hover)
+    ref_srcs = collections.Counter()   # reference build each metric is judged against (-> status-pill hover)
+    n_pending = 0
 
     for m in metrics:
         name = str(m.get("name", "metric"))
@@ -775,8 +876,15 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
         unit_s = f" {unit}" if unit else ""
         tol = _tol(test, name)
         ref, epoch, src, note = _resolve_ref(refs.get(name), version, flavor)
+        # a cell metric is judged against its recorded reference file (src = where it came from),
+        # a value metric only once it has a reference value
+        if ref is not None or "n_diff" in m:
+            ref_srcs[src or "unknown"] += 1
+        else:
+            n_pending += 1
         if src is not None and version is not None and version == _try_parse_version(src):
             is_ref = True   # this version's own value IS the reference for this metric/epoch
+            if src.endswith(".l"): ref_on_linux = True   # a Linux platform epoch -> the .l cell carries the "ref" pill
             if note: ref_notes.add(note)   # why this baseline exists -> shown on the "ref" pill hover (issue #32)
         if prev_version is not None and ref is not None:
             prev_ref, prev_epoch, prev_src, _ = _resolve_ref(refs.get(name), prev_version, flavor)
@@ -857,6 +965,9 @@ def parse_result_json(path:str, prev_indicators:dict={}, prev_version=None) -> t
     # WHY this baseline exists. Surfaced on the "ref" pill hover when this version is the epoch
     # source, and appended to the triangle hover where the epoch begins.
     parsed["_ref_note"] = ["; ".join(sorted(ref_notes)), True]
+    parsed["_ref_lin"] = [ref_on_linux, True]
+    parsed["_ref_srcs"] = [dict(ref_srcs), True]
+    parsed["_ref_pending"] = [n_pending, True]
     # Triangle hover: name the refset now in force and the one the previous shown version
     # still used, so a refset whose own version isn't a column (the >=19.5.0 connect-change
     # baseline lives at 19.5.0, not a column) stays identifiable. We always compare against
@@ -1072,11 +1183,13 @@ def get_regression_test_result(status_code:int, regression_test:str, regression_
         _append_t010_coverage(parsed_indicators, rdir)   # voor de flag-loop, zodat wijzigingen t.o.v. de vorige versie oplichten
     _compress_skipped(parsed_indicators, rdir, regression_test)  # idem: compacte vorm diffstabiel tegen de vorige versie
     _label_failing(parsed_indicators)
+    # drift against the previous shown version: a legacy .txt test reports no per-metric verdict,
+    # so a changed line is information (amber Δ in the cell), not a failure (red)
     for indicator in parsed_indicators:
         if not indicator in prev_indicators:
             continue
         if parsed_indicators[indicator][0] != prev_indicators[indicator][0]:
-            parsed_indicators[indicator][1] = False
+            parsed_indicators[indicator].append("drift")
 
     if parsed_indicators.get("result"):    
         result_text = parsed_indicators["result"][0]
@@ -1506,13 +1619,16 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .metrics { color:#444441; font-size:12px; margin-top:3px; white-space:nowrap; font-variant-numeric:tabular-nums; }\
               .ind { margin-top:6px; padding-top:5px; border-top:1px solid #ececE6; font-size:11.5px; color:#5f5e5a; }\
               .ind-line.changed { color:#a32d2d; font-weight:500; }\
+              .ind-line.drift { color:#7a5c00; cursor:help; } .ind-line.drift::before { content:\"\\0394 \"; }\
               td.testname .testdesc { font-weight:400; font-style:italic; color:#86867e; font-size:11px; white-space:normal; max-width:300px; margin-top:3px; display:none; }\
               tr:has(td.cell details[open]) td.testname .testdesc { display:block; }\
               .flag { color:#a32d2d; font-size:11px; font-weight:500; white-space:nowrap; }\
               .perf-warn { color:#b8860b; font-weight:600; }\
               .perf-bad { color:#a32d2d; font-weight:700; }\
+              .perf-good { color:#1f6f3f; font-weight:600; }\
               .perfbadge { font-size:10px; font-weight:600; white-space:nowrap; }\
-              .refpill { display:inline-flex; align-items:center; line-height:1; margin-left:auto; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:3px 7px; border-radius:9px; letter-spacing:.3px; }\
+              .pills { margin-left:auto; display:inline-flex; gap:4px; }\
+              .refpill { display:inline-flex; align-items:center; line-height:1; background:#2d6da3; color:#fff; font-size:10px; font-weight:600; padding:3px 7px; border-radius:9px; letter-spacing:.3px; }\
               .refpill.noted { cursor:help; box-shadow:0 0 0 1.5px #cfe0ef; } .refpill.noted::after { content:\"\\2009*\"; }\
               /* alleen tijd/geheugen-basislijn, geen referentiewaarde: doffer dan de echte ref-pil */\
               .refpill.perfref { background:#8fa9bd; cursor:help; }\
@@ -1523,6 +1639,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
               .colchip { border:1px solid #c9c9c0; background:#eef0ef; color:#1c1c1a; font:inherit; font-size:11.5px; padding:3px 10px; border-radius:999px; cursor:pointer; }\
               .colchip.off { background:#fbfbfa; color:#b0b0a8; text-decoration:line-through; border-style:dashed; }\
               .colpreset { border:0; background:transparent; color:#534ab7; font:inherit; font-size:11.5px; cursor:pointer; text-decoration:underline; margin-left:2px; }\
+              .legend { color:#86867e; font-size:11.5px; margin:-6px 0 14px; } .legend .refpill { font-size:9px; padding:2px 6px; }\
             </style>\
             <style id="colhide"></style>\
         </head>\
@@ -1576,6 +1693,7 @@ def render_regression_test_result_html(version_range:tuple, result_paths:dict, r
                 window.addEventListener("DOMContentLoaded", function () { _apply_col_hide(false); });\
             </script>\
             @@@TOGGLE_BAR@@@\
+            <div class="legend"><span class="refpill">ref</span> = run the result reference values were captured from &middot; <span class="refpill perfref">perf</span> = run that timing and memory are compared with &middot; <span class="flag">&#9650;</span> = result reference changes here &middot; mem/dur badge = vs the perf run, red worse, green better &middot; &Delta; line = changed since the previous version, not a failure &middot; hover for details</div>\
             <table class="report">\
                 @@@TABLE_CONTENT@@@\
             </Table>\

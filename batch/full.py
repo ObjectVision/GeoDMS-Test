@@ -910,6 +910,14 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         regression.collect_and_generate_test_results(display_version, result_paths)
         return
 
+    # The GeoDmsRun command lines below embed the config paths unquoted, so a TstDir with a space
+    # ("C:/Users/Jip Claassens/...") is split into two arguments: every experiment dies with
+    # exit 2 within a second -- AFTER -tests has wiped the cached .bin files it meant to re-run
+    # (2026-10-01: 19 results of 17.4.6 lost that way). Refuse up front; -report-only is fine.
+    if " " in regression_test_paths["TstDir"]:
+        sys.exit(f"TstDir '{regression_test_paths['TstDir']}' contains a space, which the unquoted "
+                 "GeoDmsRun command lines cannot carry. Run from a space-free checkout (e.g. C:/dev/...).")
+
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3, SP)
 

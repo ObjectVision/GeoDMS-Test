@@ -112,8 +112,9 @@ def main() -> None:
             if args.note:
                 entry["note"] = args.note
             cur = doc.setdefault(test, {}).setdefault(m["name"], {})
-            if not isinstance(cur, dict):        # legacy bare value -> lift into an epoch map
-                cur = {"0.0.0": {"v": cur, "src": "unknown"}}
+            if not isinstance(cur, dict):        # legacy bare value -> lift into an epoch map; a bare
+                # value comes from the file's _captured_from build by convention, so keep that provenance
+                cur = {"0.0.0": {"v": cur, "src": doc.get("_captured_from", "unknown")}}
                 doc[test][m["name"]] = cur
             old = cur.get(args.epoch)
             if old is None:
