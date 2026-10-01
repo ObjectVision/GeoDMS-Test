@@ -272,6 +272,23 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
             print("operator_pre1810 ontbreekt of is ouder dan Operator.dms(+includes); regenereren...", file=sys.stderr)
             subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "make_operator_pre1810.py")], check=True)
 
+    # MicroTst.dms (t1642) includes MicroTst/functions.dms, which uses the function/instantiate
+    # syntax of GeoDMS >= 20.19. That is syntax, so GeoDmsVersion() cannot gate it: an older
+    # GeoDmsGuiQt crashes with an access violation (<= 20.8) or hangs (20.12-20.17) while loading
+    # the config -- t1642 did on every build below 20.19 from 2026-08-25 on, while its cells
+    # stayed green from earlier runs. Route those builds to MicroTst_pre2019.dms, a generated
+    # mirror without that include (batch/make_microtst_pre2019.py), like operator_pre1810 above.
+    regression_test_paths["MicroTstPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst.dms"
+    if _vm and tuple(int(g) for g in _vm.groups()) < (20, 19, 0):
+        regression_test_paths["MicroTstPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst_pre2019.dms"
+        _pre = regression_test_paths["MicroTstPath"]
+        _srcs = [f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst.dms"] \
+              + glob.glob(f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst/*.dms")
+        _newest = max((os.path.getmtime(p) for p in _srcs if os.path.exists(p)), default=0)
+        if not os.path.exists(_pre) or _newest > os.path.getmtime(_pre):
+            print("MicroTst_pre2019 ontbreekt of is ouder dan MicroTst.dms(+includes); regenereren...", file=sys.stderr)
+            subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "make_microtst_pre2019.py")], check=True)
+
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)
 
@@ -444,7 +461,7 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t1640 — GUI: vergelijk detailpagina value-info op aggregaties met opgenomen referentie (14.5.0). (Mantis #1434, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t1640_value_info", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1640_value_info.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["OperatorPath"]} t1640_value_info", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1640_value_info.txt")
     # t1642 — GUI: vergelijk detailpagina statistics/value-info met group-by op geometrie. (Mantis #1438, gearchiveerd)
-    regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["TstDir"]}/operator/cfg/MicroTst.dms t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt")
+    regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["MicroTstPath"]} t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt")
 
     # t1742 — command-line @statistics op de Operator-config (/Arithmetics/UnTiled/add/attr);
     #         vergelijk gegenereerde HTML met TestReferenceFiles/t1742/Statistics_AUAA.html.
@@ -909,6 +926,14 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         print("-report-only: regenerating HTML report from existing result folders (no experiments run)")
         regression.collect_and_generate_test_results(display_version, result_paths)
         return
+
+    # The GeoDmsRun command lines below embed the config paths unquoted, so a TstDir with a space
+    # ("C:/Users/Jip Claassens/...") is split into two arguments: every experiment dies with
+    # exit 2 within a second -- AFTER -tests has wiped the cached .bin files it meant to re-run
+    # (2026-10-01: 19 results of 17.4.6 lost that way). Refuse up front; -report-only is fine.
+    if " " in regression_test_paths["TstDir"]:
+        sys.exit(f"TstDir '{regression_test_paths['TstDir']}' contains a space, which the unquoted "
+                 "GeoDmsRun command lines cannot carry. Run from a space-free checkout (e.g. C:/dev/...).")
 
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3, SP)

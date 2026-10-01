@@ -413,7 +413,8 @@
 		container geos_buffer_multi_polygon
 		{
 			attribute<dpoint> att (geos_src/D4, polygon) := geos_buffer_multi_polygon(geos_src/sq4, 1.0, 16b);
-			// Minkowski: 4 + 8 + pi(64-hoek) ~ 15.1365
+			// Minkowski: 4 + 8 + pi(64-hoek) ~ 15.1365. De polygoonbuffers van geos geven 16b door als 16 segmenten
+			// per kwartcirkel, anders dan de punt- en lijnbuffers (GeoDMS GEO-A19 is teruggedraaid).
 			attribute<bool> test (geos_src/D4) := abs(area(att, geos_src/mu) - 15.1365) < 0.05;
 			parameter<bool> test_attr := all(test);
 		}

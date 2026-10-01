@@ -30,6 +30,14 @@ container ring_encoding
 	// aangeroepen (de rekenregel wordt dan een constante) en tellen hun toetsen niet mee.
 	parameter<bool> dmsSupported := GeoDmsVersion() >= 20.20;
 
+	// De ringvolgorde-operatoren (fix_winding_order, reverse_polygon, has_correct_winding,
+	// fix_polygon; GeoDMS #302) bestaan pas vanaf 20.19.0. Daaronder wordt het hele
+	// winding_order-blok niet aangeroepen (zie wo_ok/wo_fail onderaan) en staat het als
+	// skip in de regel. Zonder die poort houdt de ExprParser-fout op de onbekende
+	// operator de HELE t020 tegen: 17.4.6 gaf exit 1 bij de herhaalmeting van 2026-10-01,
+	// terwijl de cellen t/m 20.17 nog groen stonden van voor dit blok (12 augustus).
+	parameter<bool> windingSupported := GeoDmsVersion() >= 20.19;
+
 	// -------------------------------------------------------------------------
 	// island_in_hole (GeoDMS issue 1178)
 	//
@@ -359,13 +367,21 @@ container ring_encoding
 			+ (ok_dms        ? '' : 'dms ringen wijken ' + string(float32(dDmsRings)) + ' m2 af, strik ' + string(float32(aDmsBow)) + ' ');
 	}
 
-	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok && winding_order/ok;
+	// winding_order alleen via deze indirectie aanspreken: een directe verwijzing laat
+	// GeoDMS het blok parsen, ook op een build zonder de operatoren.
+	parameter<string> wo_ok_expr   := windingSupported ? 'winding_order/ok'       : 'true';
+	parameter<string> wo_fail_expr := windingSupported ? 'winding_order/failwhat' : '''''';
+	parameter<bool>   wo_ok   := =wo_ok_expr;
+	parameter<string> wo_fail := =wo_fail_expr;
+
+	parameter<bool>   ok := island_in_hole/ok && overlapping_outers/ok && infix/ok && wo_ok;
 
 	// Een overgeslagen familie mag niet lezen als een geslaagde familie: zolang een van
-	// de twee versievoorwaarden niet gehaald wordt, staat dat in de regel, ook als alles
+	// de versievoorwaarden niet gehaald wordt, staat dat in de regel, ook als alles
 	// wat wel gedraaid heeft goed is.
 	parameter<string> skipnote :=
 		  (island_in_hole/cgalIdemFixed ? '' : 'cgal island-in-hole skipped (known ~0.3% area loss, GeoDMS <a href=https://github.com/ObjectVision/GeoDMS/issues/1178>#1178</a>); ')
+		+ (windingSupported ? '' : 'winding-order skipped (needs GeoDMS 20.19.0, <a href=https://github.com/ObjectVision/GeoDMS/issues/302>#302</a>); ')
 		+ (dmsSupported ? '' : 'dms skipped (needs GeoDMS 20.20.0, <a href=https://github.com/ObjectVision/GeoDMS/issues/1214>#1214</a>); ');
 
 	parameter<string> line := ok
@@ -374,10 +390,10 @@ container ring_encoding
 			+ (island_in_hole/ok     ? '' : 'island-in-hole: ' + island_in_hole/failwhat)
 			+ (overlapping_outers/ok ? '' : 'overlapping-outers: ' + overlapping_outers/failwhat)
 			+ (infix/ok              ? '' : 'infix: ' + infix/failwhat)
-			+ (winding_order/ok      ? '' : 'winding-order: ' + winding_order/failwhat) + ')</ringenc>';
+			+ (wo_ok                 ? '' : 'winding-order: ' + wo_fail) + ')</ringenc>';
 	parameter<string> failnote :=
 		  (island_in_hole/ok     ? '' : 'ringenc-island-in-hole; ')
 		+ (overlapping_outers/ok ? '' : 'ringenc-overlapping-outers; ')
 		+ (infix/ok              ? '' : 'ringenc-infix; ')
-		+ (winding_order/ok      ? '' : 'ringenc-winding-order; ');
+		+ (wo_ok                 ? '' : 'ringenc-winding-order; ');
 }

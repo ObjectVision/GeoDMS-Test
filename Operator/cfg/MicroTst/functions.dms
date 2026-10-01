@@ -1,0 +1,32 @@
+// GeoDMS >= 20.19 only: function definitions with a declared result ("function g(...) ->
+// parameter<float32>") and "instantiate". That is SYNTAX, so GeoDmsVersion() cannot gate it:
+// an older GeoDmsGuiQt crashes with an access violation (<= 20.8) or hangs (20.12-20.17) while
+// loading a config that contains it -- t1642 did on every build below 20.19 from 2026-08-25 on.
+// Hence an include of its own: the generated pre-20.19 mirror of MicroTst.dms
+// (batch/make_microtst_pre2019.py) leaves this include out. Put any further new syntax here too.
+
+	function g(parameter<float32> y) -> parameter<float32> {
+		parameter<float32> result := y*y;
+	}
+	
+	template f {
+		parameter<float32> x;
+		container call_g := instantiate g(x);
+		parameter<float32> result := call_g/result;
+	}
+	
+	container ns_g {
+		parameter<float32> a := 4f;
+		function g(parameter<float32> x) -> parameter<float32>
+		{
+			container call_f := f(x*a);
+			parameter<float32> result := call_f/result;
+		}
+	}
+	container impl
+	{
+	   container invisible;
+	   container call := instantiate ns_g/g(3f);
+	}
+	container ref := impl/call;
+	parameter<float32> refres := SubItem(ref, 'result');

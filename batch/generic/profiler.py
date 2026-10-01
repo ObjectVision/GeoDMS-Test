@@ -106,9 +106,10 @@ class Experiment:
         start_time = log['time'][0]
         end_time = log['time'][-1]
         duration = (end_time - start_time).total_seconds()
-        # vms = piek VIRTUEEL adresruimtegebruik: de GeoDMS-tegelallocator reserveert
-        # grote blokken (honderden GB's) die nooit fysiek belegd worden. rss = piek
-        # FYSIEK geheugen; dat is het getal dat er in het rapport toe doet.
+        # vms = piek COMMITTED: psutil's vms is op Windows de commit charge (PagefileUsage),
+        # wat de run nodig heeft ook als het niet in het RAM past -- het getal waarop het
+        # rapport geheugen beoordeelt. Op Linux is het VmSize (virtuele adresruimte).
+        # rss = piek FYSIEK geheugen; loopt vast op het RAM zodra de run swapt.
         highest_commit = max(log['vms'])
         highest_rss = max(log['rss'])
         total_read = log['total_read_bytes'][-1]
