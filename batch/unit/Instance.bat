@@ -13,10 +13,11 @@ Rem grades the aggregate on FAILED. Until 2026-10-03 this script wrote only the 
 Rem and the D64 round of that morning, four operator groups failing, passed the gate.
 Rem
 Rem The log is deleted before the run, so the log graded is the one this run wrote. The
-Rem export steps share their log with the test_log step after them, and the del lines for
-Rem unit\operator and unit\storage at the top of unit_flagged.bat delete nothing (their
-Rem closing quote stands after the stderr redirect, so it is part of the file pattern),
-Rem so an export step would otherwise grade the previous round's failure as its own.
+Rem export steps share their log with the test_log step after them, and the del lines at
+Rem the top of unit_flagged.bat do not cover every result folder (unit\unit, grid, crs and
+Rem Template have none; those for unit\operator and unit\storage deleted nothing until
+Rem 2026-10-03, their closing quote stood after the stderr redirect), so an export step
+Rem would otherwise grade the previous round's failure as its own.
 Set RegrResult=OK
 
 Set command=%GeoDmsRunCmdBase% /%4 /%5 /%6 %1 %2

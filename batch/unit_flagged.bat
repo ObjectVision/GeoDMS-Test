@@ -54,11 +54,11 @@ Echo ResultDir: %ResultDir%
 Echo.
 
 REM REMOVE OLD RESULTS
-del "%ResultDir%\unit\operator\*.txt 2>nul"
-del "%ResultDir%\unit\storage\*.txt 2>nul"
-del "%ResultDir%\unit\storage\*.dbf 2>nul"
-del "%ResultDir%\unit\storage\*.tif 2>nul"
-del "%ResultDir%\unit\storage\*.tfw 2>nul"
+del "%ResultDir%\unit\operator\*.txt" 2>nul
+del "%ResultDir%\unit\storage\*.txt" 2>nul
+del "%ResultDir%\unit\storage\*.dbf" 2>nul
+del "%ResultDir%\unit\storage\*.tif" 2>nul
+del "%ResultDir%\unit\storage\*.tfw" 2>nul
 del "%ResultDir%\unit\storage\OneRecord.fss\*.dmsdata" 2>nul
 del "%ResultDir%\unit\storage\OneRecord.fss\*.fss" 2>nul
 del "%ResultDir%\unit\storage\ZeroRecord.fss\*.dmsdata" 2>nul
