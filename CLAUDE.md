@@ -6,7 +6,11 @@ across GeoDMS versions. Entry point: `batch/full.py`.
 ## Running
 
 - **Always run from `batch/`** — `TstDir` is derived from the current directory:
-  `python full.py -version 20.1.0.m`
+  `python full.py -version 20.1.0.m`. The checkout path must be **space-free**
+  (`C:\dev\...`, not `C:\Users\Jip Claassens\...`): GeoDmsRun command lines embed the
+  config paths unquoted, so a space splits them and every experiment dies with exit 2
+  after `-tests` has already wiped the `.bin` caches it meant to refresh. `full.py`
+  refuses up front; `-report-only` works from anywhere.
 - **`-version` selects an installed GeoDms build** (mapped in `get_geodms_paths`):
   - Windows: `20.1.0.m` / `20.1.0.c` → `%ProgramFiles%/ObjectVision/GeoDms<ver>`
     (`.m` = msbuild, `.c` = cmake; pre-20 builds have no flavor suffix).
@@ -92,6 +96,12 @@ gewerkt, vaak in dezelfde bestanden. Twee regels die dat werkbaar houden:
 - **Regenereer de pre-1810-spiegelboom** na elke wijziging in
   `Operator/cfg/Operator/`: `python batch/make_operator_pre1810.py`, en kijk of
   er een diff uit komt. Bij een merge wordt dat makkelijk vergeten.
+- **Idem de pre-20.19-spiegel van `MicroTst.dms`** (t1642) na elke wijziging
+  daarin: `python batch/make_microtst_pre2019.py`. `MicroTst/functions.dms` bevat
+  de function/instantiate-syntaxis van GeoDMS ≥ 20.19; syntaxis is niet met
+  `GeoDmsVersion()` te poorten — een oudere GeoDmsGuiQt crasht (≤ 20.8) of hangt
+  (20.12–20.17) bij het laden, en t1642 stond daardoor vanaf 2026-08-25 stil-
+  verouderd groen t/m 20.17. Nieuwe syntaxis dus in die include, nooit in de stam.
 
 ## Testjes nooit vooruit op de engine aanzetten
 
@@ -212,8 +222,12 @@ rood staan.
   puntenreeksen, geen SourceData nodig, dus ze draaien ook in `results/all`:
   `island_in_hole` (polygoon in het gat van een andere polygoon, moet 68 m²
   opleveren bij geos/bg/cgal), `overlapping_outers` (ongeldige invoer: geos en bg
-  moeten hetzelfde repareren) en `infix` (`+`/`*`/`-` gelijk aan
-  geos_union/intersect/difference).
+  moeten hetzelfde repareren), `infix` (`+`/`*`/`-` gelijk aan
+  geos_union/intersect/difference) en `winding_order` (GeoDMS #302; de operatoren
+  bestaan pas vanaf **20.19.0**, dus gepoort via `windingSupported` met
+  string-indirectie — een directe verwijzing laat oudere builds het blok parsen en
+  de hele t020 met exit 1 stoppen; de cellen t/m 20.17 stonden daardoor tot
+  2026-10-01 stil-verouderd groen, van vóór dit blok).
 - **bp-schaal**: de gridset-units (rd_mm/rd_cm) dragen hun schaal zelf in
   `area()` — geen extra deling (intAreaDiv = 1.0 voor de echte scenario's;
   gemeenten in cm wegens de 25-bits-coordinaatlimiet van bp).
@@ -255,8 +269,32 @@ rood staan.
 - **References** are read-only under `%SourceDataDir%/TestReferenceFiles/<test>`
   (`%TestRefDir%`). Project configs live in `Projects/`; the large source data lives
   in SourceData and is passed to the configs via `GEODMS_Overridable_*` env vars.
-- **Results + report**: one folder per version (`20_1_0_m`, `19_0_0`, `20_1_0_l`, …)
-  plus `reports/*.html`, all under the results base.
+- **Three axes, one reference per axis per cell.** *Result*: the test's reference
+  set in `batch/generic/references.json` (`_captured_from` = 17.4.6 is the provenance
+  of bare values). Reference epochs are kept **per test**, not per metric: when a
+  test is re-captured, every metric gets the epoch (`capture_references.py` does
+  that; unchanged values included), so a cell is judged against one version — the
+  status pill's hover names it. A float-rounding difference is a `TOLERANCES` entry,
+  not an epoch. *Timing and memory* (one baseline for both, "perf" pill): the
+  17.4.6 run, then the `_perf_epochs` — `"*"` = an accepted engine step for every
+  test (18.1.2, GeoDMS 18's memory management, accepted by Maarten 2026-10-01; the
+  epoch's own cell shows the step), `"<test>"` = that test does other work from
+  there on (t020 at 20.3 and 20.20; not compared back). Never a value epoch as
+  perf baseline (that hid t641.2 getting 11% slower at 18.1.2), never a newer run
+  (16.0.5 gets no verdict), `.l` against `.l`. Memory = **peak committed** (rss
+  stops at the host's RAM once a run swaps; t641 commits 160–380 GB). Green badge =
+  better (warn bar mirrored, completed runs only); Maarten's rule — more memory is
+  fine when it buys speed, slower never is — is read off the badge pair.
+- **t1642 (GUI value-info pages)** compares the two pages its script saves
+  (`%LocalDataDir%/regression/t1642_value_info_group_by/*.txt`) with
+  `TestReferenceFiles/t1642/v20100/*.txt` from **20.10.0** on — GeoDMS 176980a46 made
+  `SaveValueInfo` write the page text; before that the GUI writes an empty file
+  (`SaveDetailPage` is a stub too), so those cells only check that the GUI survives
+  the script and say so (`_LIMITED_CHECK_NOTE` in regression.py). A format change
+  gets a new epoch folder plus a new `_t1642_cmp` branch in full.py; re-record from
+  a trusted build by copying that run's `*.txt` into the epoch folder. t1640's script
+  produced no value-info file on any build measured on 2026-10-01 (cause not
+  investigated), so that test is still exit-code only.
 - The report scripts (`profiler.py`, `regression.py`) are bundled in `batch/generic/`.
 
 ## More

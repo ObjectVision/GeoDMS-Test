@@ -272,6 +272,23 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
             print("operator_pre1810 ontbreekt of is ouder dan Operator.dms(+includes); regenereren...", file=sys.stderr)
             subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "make_operator_pre1810.py")], check=True)
 
+    # MicroTst.dms (t1642) includes MicroTst/functions.dms, which uses the function/instantiate
+    # syntax of GeoDMS >= 20.19. That is syntax, so GeoDmsVersion() cannot gate it: an older
+    # GeoDmsGuiQt crashes with an access violation (<= 20.8) or hangs (20.12-20.17) while loading
+    # the config -- t1642 did on every build below 20.19 from 2026-08-25 on, while its cells
+    # stayed green from earlier runs. Route those builds to MicroTst_pre2019.dms, a generated
+    # mirror without that include (batch/make_microtst_pre2019.py), like operator_pre1810 above.
+    regression_test_paths["MicroTstPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst.dms"
+    if _vm and tuple(int(g) for g in _vm.groups()) < (20, 19, 0):
+        regression_test_paths["MicroTstPath"] = f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst_pre2019.dms"
+        _pre = regression_test_paths["MicroTstPath"]
+        _srcs = [f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst.dms"] \
+              + glob.glob(f"{regression_test_paths["TstDir"]}/Operator/cfg/MicroTst/*.dms")
+        _newest = max((os.path.getmtime(p) for p in _srcs if os.path.exists(p)), default=0)
+        if not os.path.exists(_pre) or _newest > os.path.getmtime(_pre):
+            print("MicroTst_pre2019 ontbreekt of is ouder dan MicroTst.dms(+includes); regenereren...", file=sys.stderr)
+            subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "make_microtst_pre2019.py")], check=True)
+
     env_vars = regression.get_full_regression_test_environment_string(local_machine_parameters, geodms_paths, regression_test_paths, result_paths)
     result_folder_name = regression.get_result_folder_name(version, geodms_paths, MT1, MT2, MT3)
 
@@ -444,7 +461,18 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # t1640 — GUI: vergelijk detailpagina value-info op aggregaties met opgenomen referentie (14.5.0). (Mantis #1434, gearchiveerd)
     regression.add_exp(exps, name=f"{result_folder_name}__t1640_value_info", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1640_value_info.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["OperatorPath"]} t1640_value_info", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1640_value_info.txt")
     # t1642 — GUI: vergelijk detailpagina statistics/value-info met group-by op geometrie. (Mantis #1438, gearchiveerd)
-    regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["TstDir"]}/operator/cfg/MicroTst.dms t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt")
+    # The script saves the two value-info pages (City grouped by region, City/inhabitants) with
+    # SaveValueInfo; from 20.10.0 on (GeoDMS 176980a46) that writes the page text and the pages
+    # are compared with the reference recorded from 20.20.0.m (TestReferenceFiles/t1642/v20100,
+    # one file per page, same names as the script writes -- a later format change gets its own
+    # epoch folder). Before 20.10.0 the GUI writes an EMPTY file by construction (SaveValueInfo
+    # and SaveDetailPage are both stubs), so there is nothing to compare and the report marks the
+    # cell as "only the GUI's survival checked" (_LIMITED_CHECK_NOTE in regression.py).
+    _t1642_out = f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/regression/t1642_value_info_group_by"
+    _t1642_cmp = None
+    if _vm and tuple(int(g) for g in _vm.groups()) >= (20, 10, 0):
+        _t1642_cmp = (f"{regression_test_paths["TestRefDir"]}/t1642/v20100/t1642_value_info_group_by*.txt", f"{_t1642_out}/t1642_value_info_group_by*.txt")
+    regression.add_exp(exps, name=f"{result_folder_name}__t1642_value_info_group_by", cmd=f"{geodms_paths["GeoDmsGuiQtPath"]} /L{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt /T{regression_test_paths["TstDir"]}/dmsscript/value_info_group_by.dmsscript /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["MicroTstPath"]} t1642_value_info_group_by", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t1642_value_info_group_by.txt", file_comparison=_t1642_cmp, pre_clean=[f"{_t1642_out}/t1642_value_info_group_by.txt", f"{_t1642_out}/t1642_value_info_group_by_inh.txt"])
 
     # t1742 — command-line @statistics op de Operator-config (/Arithmetics/UnTiled/add/attr);
     #         vergelijk gegenereerde HTML met TestReferenceFiles/t1742/Statistics_AUAA.html.
@@ -910,6 +938,14 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
         regression.collect_and_generate_test_results(display_version, result_paths)
         return
 
+    # The GeoDmsRun command lines below embed the config paths unquoted, so a TstDir with a space
+    # ("C:/Users/Jip Claassens/...") is split into two arguments: every experiment dies with
+    # exit 2 within a second -- AFTER -tests has wiped the cached .bin files it meant to re-run
+    # (2026-10-01: 19 results of 17.4.6 lost that way). Refuse up front; -report-only is fine.
+    if " " in regression_test_paths["TstDir"]:
+        sys.exit(f"TstDir '{regression_test_paths['TstDir']}' contains a space, which the unquoted "
+                 "GeoDmsRun command lines cannot carry. Run from a space-free checkout (e.g. C:/dev/...).")
+
     regression.header_stuff_to_be_removed_in_future(local_machine_parameters, result_paths, MT1, MT2, MT3)
     operator_experiments = get_experiments(local_machine_parameters, geodms_paths, regression_test_paths, result_paths, display_version, MT1, MT2, MT3, SP)
 
@@ -962,6 +998,22 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
             print(f"-no-gui: skipping {len(gui_exps)} GUI test(s): "
                   + ", ".join(e.name.split('__', 1)[-1] for e in gui_exps))
             operator_experiments = [e for e in operator_experiments if "GeoDmsGuiQt" not in (e.command or "")]
+
+    # Inject /SH (RSF_ShowThousandSeparator) on every flavor, right after the last /S<N>
+    # multithreading flag. The reference files (t1742's statistics HTML, test_log strings) were
+    # captured with the thousand separator on, and on Windows that flag is the running account's
+    # registry setting, so a round under an account without it reported t1742 as "output differs"
+    # (20.21.0.m and 20.21.1.m on OVSRV05, 2026-09-16 and -20) while the same build under another
+    # account passed. On the command line the flag makes the output the same under every account
+    # and every flavor; .l already got it here for the same reason.
+    for exp in operator_experiments:
+        cmd = exp.command or ""
+        if " /SH " in cmd:
+            continue
+        for tail in (" /S3 ", " /S2 ", " /S1 "):
+            if tail in cmd:
+                exp.command = cmd.replace(tail, tail.rstrip() + " /SH ", 1)
+                break
 
     # Linux-flavor path translation. The whole command line + every env var
     # value contains Windows-style paths (C:/…, F:/…); the WSL-side binary
@@ -1053,17 +1105,7 @@ def run_full_regression_test(version:str="20.0.1.m", MT1="S1", MT2="S2", MT3="S3
                 print(f"[clean] could not remove {ext4_projdir_base}: {e}")
 
         for exp in operator_experiments:
-            # Inject /SH (RSF_ShowThousandSeparator) so number formatting in
-            # Linux-produced output (statistics HTML, test_log strings) matches
-            # the reference files captured on Windows where the dev's persistent
-            # registry setting has thousand-separator on. Insert just after the
-            # last /S<N> multithreading flag.
-            cmd = exp.command
-            for tail in (" /S3 ", " /S2 ", " /S1 "):
-                if tail in cmd:
-                    cmd = cmd.replace(tail, tail.rstrip() + " /SH ", 1)
-                    break
-            exp.command = to_wsl_path(cmd)
+            exp.command = to_wsl_path(exp.command) # /SH was injected above, for every flavor
             if exp.environment_variables:
                 ev = to_wsl_path(exp.environment_variables)
                 # t641 (RSopen) writes GBs of BaseData TIFs under %LocalDataProjDir%;
