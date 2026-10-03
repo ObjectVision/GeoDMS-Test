@@ -194,7 +194,7 @@ Call Unit\InstanceErrorIsOk.bat %TstDir%\Unit\Integrity_check\cfg\CompareFloat64
 
 REM SECTION WriteStorageIndirect in two steps, first export results, second read exported results
 Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms export "%ResultDir%\unit\other\WriteStorageIndirect.txt" %flag1% %flag2% %flag3%
-Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms test_log "%ResultDir%\unit\other\CloseGUIIssue1.txt" %flag1% %flag2% %flag3%
+Call Unit\Instance.bat %TstDir%\Unit\other\cfg\WriteStorageIndirect.dms test_log "%ResultDir%\unit\other\WriteStorageIndirect.txt" %flag1% %flag2% %flag3%
 
 REM SECTION PYTHON BINDINGS (geodms module: load/query a config + build an in-memory config)
 if not exist "%ResultDir%\unit\python" mkdir "%ResultDir%\unit\python"

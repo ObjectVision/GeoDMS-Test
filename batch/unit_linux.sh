@@ -269,7 +269,7 @@ geodms_instance_error_is_ok "$TST_DIR/Unit/Integrity_check/cfg/CompareFloat64Wit
 # WriteStorageIndirect
 # ---------------------------------------------------------------------------
 geodms_instance "$TST_DIR/Unit/other/cfg/WriteStorageIndirect.dms" export   "$RESULT_DIR/unit/other/WriteStorageIndirect.txt"  $flag1 $flag2 $flag3
-geodms_instance "$TST_DIR/Unit/other/cfg/WriteStorageIndirect.dms" test_log "$RESULT_DIR/unit/other/CloseGUIIssue1.txt"        $flag1 $flag2 $flag3
+geodms_instance "$TST_DIR/Unit/other/cfg/WriteStorageIndirect.dms" test_log "$RESULT_DIR/unit/other/WriteStorageIndirect.txt"  $flag1 $flag2 $flag3
 
 # ---------------------------------------------------------------------------
 # Statistics
