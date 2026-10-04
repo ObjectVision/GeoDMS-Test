@@ -127,7 +127,12 @@ container Regression:	FreeData = "True"
 			attribute<uint32>     OrgZone_rel;
 			attribute<uint32>     DstZone_rel;
 		}
-		unit<uint32> PC4_impedance_ok: StorageName = "%TestRefDir%/t101/PC4_impedance.fss", StorageReadOnly = "True"
+		// Since GeoDMS 20.22.1 connect gives a point, of equally near arcs, the one with the lowest index
+		// (ObjectVision/GeoDMS#1290). One PC4 point lies 3.98 m from two arcs and now splits the other one of them, which
+		// changes 8,180 of the 16,532,356 OD cells; the _v20221 reference is 20.22.1 at 15651313f, which gives the same
+		// matrix with the spatial index splitting at 4 and at 16 objects (OVSRV05, 2026-10-04).
+		parameter<string> PC4_impedance_ok_filename := '%TestRefDir%/t101/PC4_impedance' + (GeoDMSVersion() >= 20.22005d ? '_v20221' : '') + '.fss';
+		unit<uint32> PC4_impedance_ok: StorageName = "= PC4_impedance_ok_filename", StorageReadOnly = "True"
 		{
 			attribute<eenheden/m> alt_imp;
 			attribute<eenheden/s> impedance;
@@ -536,7 +541,7 @@ container Regression:	FreeData = "True"
 				'{"schema":2,"test":"t101","kind":"reference_comparison"'
 				+ ',"title":"OD PC4 dense matrix with road network (NL/BE/GE)"'
 				+ ',"compared":"PC4 OD impedance matrix vs reference (issue #1021)"'
-				+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"%TestRefDir%/t101/PC4_impedance.fss"}'
+				+ ',"reference":{"source":"TestReferenceFiles","compare":"cell","path":"' + brondata/PC4_impedance_ok_filename + '"}'
 				+ ',"metrics":[' + m/result + ']'
 				+ '}'
 			,	StorageType = "str"
