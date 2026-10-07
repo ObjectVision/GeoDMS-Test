@@ -118,13 +118,14 @@
 					parameter<fontsize> SymbolSize:      DialogType = "SymbolSize",       = value(20, fontsize);
 					parameter<m>        SymbolWorldSize: DialogType = "SymbolWorldSize",  = value(20, m);
 				}
-				// since 20.22.1 (GeoDMS #1289) a point in several polygons of the highest rank gets the one with the lowest
-				// index; before, the first one the spatial index visited. vbo 1 lies in pand 1..14, fourteen identical
-				// polygons of one rank: 3 with the index of before 20.22.1, 14 with the index of #1289 before this rule.
+				// Of the polygons that hold a point, point_in_ranked_polygon takes the one with the highest rank. vbo 1 lies in
+				// pands 1..14, identical polygons with one rank. Since GeoDMS 20.22.1 (ObjectVision/GeoDMS#1290) such a tie goes
+				// to the lowest index, 1; before, to the first polygon the spatial index visited: 3 with its split threshold of 4,
+				// 14 with the threshold of 16 that interim 20.22.1 builds had (#1289).
 				attribute<pand > point_in_ranked_polygon_ok_pre20221 : [0,3,18,15];
-				attribute<pand > point_in_ranked_polygon_ok_since    : [0,1,18,15];
-				attribute<pand > point_in_ranked_polygon_ok := GeoDmsVersion() < 20.22005d ? point_in_ranked_polygon_ok_pre20221 : point_in_ranked_polygon_ok_since;
-
+				attribute<pand > point_in_ranked_polygon_ok_20221    : [0,1,18,15];
+				attribute<pand > point_in_ranked_polygon_ok := GeoDmsVersion() >= 20.22005d ? point_in_ranked_polygon_ok_20221 : point_in_ranked_polygon_ok_pre20221;
+				
 				attribute<point_rd> first_point        := first(centroid_or_mid(pand/geometry), pand/first_rel_OK);
 				attribute<point_rd> first_poly  (poly) := first(pand/geometry, pand/first_rel_OK);
 			}
@@ -434,16 +435,20 @@
 				attribute<pand> att  (vbo) := point_in_ranked_polygon(vbo/geometry, pand/geometry, pand/rank);
 				attribute<bool> test (vbo) := eq_or_both_null(att, vbo/point_in_ranked_polygon_ok);
 				parameter<bool> test_attr  := all(test);
-				
-				// with a constant rank, the polygon with the lowest index that contains the point (since 20.22.1, GeoDMS #1289);
-				// point_in_polygon gives the first one it finds, for a point in several polygons unspecified which. They agree
-				// where a point lies in one polygon only. test_attr was all(test), the test of point_in_ranked_polygon above.
+
+				// One rank for every polygon, so the highest rank is a tie among all polygons that hold the point. Since
+				// GeoDMS 20.22.1 (ObjectVision/GeoDMS#1290) the tie goes to the lowest index, the smallest second_rel of
+				// point_in_all_polygons; before, to the first polygon the spatial index visited, which is what
+				// point_in_polygon gives as well. test_attr used to read all(test), which resolved to the test of
+				// point_in_ranked_polygon above, so this case checked nothing of its own.
 				container rank_constant
 				{
-					unit<uint32>      vbo_pand := point_in_all_polygons(vbo/geometry, pand/geometry);
-					attribute<uint32> nr_pand  (vbo) := pcount(vbo_pand/first_rel);
-					attribute<bool>   att      (vbo) := nr_pand > 1 || eq_or_both_null(point_in_ranked_polygon(vbo/geometry, pand/geometry, const(0, pand)), point_in_polygon(vbo/geometry, pand/geometry));
-					parameter<bool>   test_attr      := all(att);
+					attribute<pand> att    (vbo) := point_in_ranked_polygon(vbo/geometry, pand/geometry, const(0, pand));
+					attribute<pand> lowest (vbo) := min(point_in_all_polygons/vbo_pand_rel/second_rel, point_in_all_polygons/vbo_pand_rel/first_rel);
+					attribute<bool> test   (vbo) := GeoDmsVersion() >= 20.22005d
+						? eq_or_both_null(att, lowest)
+						: att == point_in_polygon(vbo/geometry, pand/geometry);
+					parameter<bool> test_attr    := all(test);
 				}
 			}
 			container dyna_point:
