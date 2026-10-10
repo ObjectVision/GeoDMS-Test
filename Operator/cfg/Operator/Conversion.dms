@@ -304,7 +304,10 @@
 					&& uint2(source/FloatParam)   == uint2(-999.99) 
 					&& uint2(source/BoolParam)    == uint2(1) 
 					&& uint2(source/stringParam)  == uint2(0);
-				parameter<bool> test_param_u2 := uint2(source/IntegerParam) == 7u2 && uint2(source/BoolParam) == 1u2;
+				// uint2 of an integer above 3 is 0 (wiki Uint2), so IntegerParam 7 gives 0u2. The literal was 7u2, which became
+				// that same cast until GeoDMS 20.24.0 made a suffixed literal outside its type's range an error (STX-A25); the
+				// u2 suffix exists since 7.105, so every build this suite runs reads 0u2.
+				parameter<bool> test_param_u2 := uint2(source/IntegerParam) == 0u2 && uint2(source/BoolParam) == 1u2;
 
 				attribute<uint2> att_int     (Domain) := uint2(source/IntegerAtt);
 				attribute<bool>  test_int    (Domain) := att_int = source/uint2Integer;
