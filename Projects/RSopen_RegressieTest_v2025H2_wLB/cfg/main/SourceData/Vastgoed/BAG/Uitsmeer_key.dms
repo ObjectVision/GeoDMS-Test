@@ -44,8 +44,8 @@ container Uitsmeer_key
 		attribute<AllocDomain/id_key>        AllocDomain_id_rel                 := value(uint32(PointRow(AllocDomain_rel)) * AllocDomain/nr_cols + uint32(PointCol(AllocDomain_rel)), AllocDomain/id_key);
 		
 		//om te bepalen hoeveel kleine blokjes (5m) in grote blokken (25m) liggen moeten we eerst de set van pand-groteblok-combinaties bepalen.
-		unit<uint64> pandAdmin_keyset := combine_unit_uint64(pand_domain, AdminDomain), Descr = "";
-		unit<uint64> pandAlloc_keyset := combine_unit_uint64(pand_domain, AllocDomain), Descr = "";
+		unit<uint64> pandAdmin_keyset := combine_unit_uint64(pand_domain, AdminDomain/id_key), Descr = "";
+		unit<uint64> pandAlloc_keyset := combine_unit_uint64(pand_domain, AllocDomain/id_key), Descr = "";
 		
 		attribute<pandAdmin_keyset>          pandAdmin_keyset_rel               := combine_Data(pandAdmin_keyset, Pand_rel, AdminDomain_id_rel);
 		attribute<AdminDomain_in_all_panden> AdminDomain_in_all_panden_rel      := rlookup(pandAdmin_keyset_rel, AdminDomain_in_all_panden/pandAdmin_keyset_rel);
