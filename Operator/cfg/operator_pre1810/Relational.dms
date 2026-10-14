@@ -1155,7 +1155,8 @@
 			container combine: url  = "http://www.objectvision.nl/geodms/operators-a-functions/combine"
 			{
 				unit<uint32>    unit_CityForEachYear  := combine(source/NoordHollandBigCities, source/Years);
-				
+				unit<uint32>    unit_YearForEachCity  := combine(source/Years, source/NoordHollandBigCities);
+
 				unit<uint32>    unit_two_bools        : nrofrows = 4
 				{
 					attribute<bool> A: [true,true,false, false];
@@ -1183,8 +1184,13 @@
 			}
 			container combine_data
 			{
-				attribute<combine/unit_CityForEachYear> CityForEachYear_rel (combine/unit_CityForEachYear) := 
-					combine_data(combine/unit_CityForEachYear, combine/unit_CityForEachYear/second_rel, combine/unit_CityForEachYear/first_rel);
+				// Since GeoDMS 20.24.1 (#1293) combine_data checks each relation against the factor at its position,
+				// so the relations come in the order of the factors. The relations of unit_CityForEachYear,
+				// given to the combine with the factors the other way round, give the transposed numbering.
+				attribute<combine/unit_CityForEachYear> CityForEachYear_rel (combine/unit_CityForEachYear) :=
+					combine_data(combine/unit_CityForEachYear, combine/unit_CityForEachYear/first_rel, combine/unit_CityForEachYear/second_rel);
+				attribute<combine/unit_YearForEachCity> YearForEachCity_rel (combine/unit_CityForEachYear) :=
+					combine_data(combine/unit_YearForEachCity, combine/unit_CityForEachYear/second_rel, combine/unit_CityForEachYear/first_rel);
 
 				attribute<combine/unit_CityForEachYear> att_two_bools (combine/unit_two_bools) := 
 					combine_data(combine/unit_two_bools, combine/unit_two_bools/A, combine/unit_two_bools/B);
@@ -1193,7 +1199,7 @@
 				attribute<uint32> okWithoutEntries (combine/unit_CityForEachYear) : [];
 				attribute<uint32> ok               (combine/unit_CityForEachYear) := = isEmpty ? 'okWithoutEntries' : 'okWithEntries';
 
-				attribute<bool>   test_attr        (combine/unit_CityForEachYear) := CityForEachYear_rel == ok;
+				attribute<bool>   test_attr        (combine/unit_CityForEachYear) := CityForEachYear_rel == id(combine/unit_CityForEachYear) && YearForEachCity_rel == ok;
 				parameter<bool>   test                                     := all(test_attr);
 			}
 
