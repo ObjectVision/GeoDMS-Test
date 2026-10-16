@@ -145,7 +145,11 @@ container Regression:	FreeData = "True"
 		// overlapping panden that the spatial index visits (unspecified, ObjectVision/GeoDMS#1290); 20.22.1 splits its
 		// nodes from 16 objects instead of 4 (#1289), which changes 16,048 of the 10,644,899 panden. Built with 4, the
 		// same commit gives the older reference exactly; a later change to the index may move the result again.
-		parameter<string> BAG_type_woonpand_rel_filename := '%TestRefDir%/t301/type_woonpand_rel_ok' + (GeoDMSVersion() >= 20.22005d ? '_v20221' : '') + '.fss';
+		// It did in 20.25.0: from there on the reference is the _v20250 store, recorded from 20.25.0 at cd3e83ec7
+		// (OVSRV05, 2026-10-16). 20.25.0 keeps polygons in a loose quadtree (ObjectVision/GeoDMS#1292), which visits
+		// them in another order and changes 43,495 panden against _v20221; the release 20.24.2 (0176bebdb), whose code
+		// differs only by that change, gives _v20221 exactly.
+		parameter<string> BAG_type_woonpand_rel_filename := '%TestRefDir%/t301/type_woonpand_rel_ok' + (GeoDMSVersion() >= 20.24995d ? '_v20250' : GeoDMSVersion() >= 20.22005d ? '_v20221' : '') + '.fss';
 
 		// GUARD — this is the manual "(re)generate the t301 reference" tool, NOT part of any test run.
 		// It writes THIS build's `calculated` straight into the live reference

@@ -347,7 +347,15 @@ def get_experiments(local_machine_parameters:dict, geodms_paths:dict, regression
     # (unspecified, ObjectVision/GeoDMS#1290), and 20.22.1 splits its nodes from 16 objects instead of 4 (#1289),
     # which moves 3,331 vbo's to another pand and the per-pand counts with them. Built with 4, the same commit
     # gives the older reference exactly; a later change to the index may move the result again.
-    _t060_ref = "snapshot_Utrecht_20210701_v20221.gpkg" if _vm and tuple(int(g) for g in _vm.groups()) >= (20, 22, 1) else "snapshot_Utrecht_20210701.gpkg"
+    # It did in 20.25.0: from there on the reference is the gpkg of the 20.25.0 round at cd3e83ec7 (OVSRV05,
+    # 2026-10-16). 20.25.0 keeps polygons in a loose quadtree (ObjectVision/GeoDMS#1292), which moves 11,160 vbo's
+    # to another of the panden they lie in; the release 20.24.2 (0176bebdb), whose code differs only by that
+    # change, gives the 20.22.1 gpkg.
+    _t060_ref = "snapshot_Utrecht_20210701.gpkg"
+    if _vm and tuple(int(g) for g in _vm.groups()) >= (20, 25, 0):
+        _t060_ref = "snapshot_Utrecht_20210701_v20250.gpkg"
+    elif _vm and tuple(int(g) for g in _vm.groups()) >= (20, 22, 1):
+        _t060_ref = "snapshot_Utrecht_20210701_v20221.gpkg"
     regression.add_exp(exps, name=f"{result_folder_name}__t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["BAG20MakeSnapShotPath"]} snapshot_date_nl_geoparaat_gpkg/result_gpkg/make_geopackage", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t060_Storage_BAGSnapshot_Utrecht_GeoPackage_Compare.txt", file_comparison=(f"{regression_test_paths["TestRefDir"]}/t060/{_t060_ref}", f"{local_machine_parameters["GEODMS_DIRECTORIES_LOCALDATADIR"]}/Regression/BAG20/snapshot_Utrecht_20210701.gpkg"))
     # t100 — Netwerk: verbind PC6-punten aan het wegennet (NL/BE/GE); vergelijk met opgenomen referentie.
     regression.add_exp(exps, name=f"{result_folder_name}__t100_network_connect", cmd=f"{geodms_paths["GeoDmsRunPath"]} /L{result_paths["results_log_folder"]}/t100_network_connect.txt /{MT1} /{MT2} /{MT3} {SP}{regression_test_paths["RegressionPath"]} results/t100_network_connect/result_json", exp_fldr=f"{result_paths["results_folder"]}", env=env_vars, log_fn=f"{result_paths["results_log_folder"]}/t100_network_connect.txt", indicator_results_file=f"{result_paths["results_folder"]}/t100_network_connect.txt")
